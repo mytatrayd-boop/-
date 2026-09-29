@@ -1,0 +1,27 @@
+{
+  "name": "asraty-functions",
+  "private": true,
+  "main": "build/src/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node --test build/test/*.test.js",
+    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-asraty \"node --test rules-test/rules.test.mjs\"",
+    "serve": "npm run build && firebase emulators:start",
+    "deploy": "firebase deploy --only functions",
+    "test:api": "tsc && firebase emulators:exec --only auth,firestore,functions,storage --project demo-asraty \"node --test --test-concurrency=1 rules-test/api.test.mjs\""
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@types/node": "^22.20.4",
+    "firebase": "^12.19.0",
+    "firebase-tools": "^15.32.0",
+    "typescript": "^5.9.3"
+  }
+}

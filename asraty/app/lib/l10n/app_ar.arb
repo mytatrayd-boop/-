@@ -1,0 +1,579 @@
+{
+  "@@locale": "ar",
+  "appName": "أسرتي",
+  "tagline": "مهام البيت… بروح التحدي",
+  "feedback": "اقتراحات وشكاوى",
+  "demoMailbox": "البريد التجريبي",
+  "signOut": "خروج",
+  "settings": "الإعدادات",
+  "familyMembers": "أفراد الأسرة",
+  "pendingVerification": "بانتظار التحقق",
+  "roleOwner": "مسؤول الأسرة",
+  "roleAdmin": "مسؤول مفوَّض",
+  "roleMember": "عضو",
+  "changeMyAvatar": "تغيير رمزي",
+  "changeAvatarOf": "تغيير رمز {name}",
+  "@changeAvatarOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "welcome": "أهلاً بك في أسرتي",
+  "howUse": "كيف ستستخدم التطبيق؟",
+  "chooseAdmin": "مسؤول الأسرة",
+  "chooseAdminSub": "أنشئ أسرتك، وزّع المهام، وأدر المكافآت والمسابقات",
+  "chooseMember": "أحد أفراد الأسرة",
+  "chooseMemberSub": "انضم لأسرتك بالبريد الذي أضافه المسؤول",
+  "tryDemo": "تجربة سريعة بأسرة جاهزة",
+  "demoNote": "التجربة السريعة تعمل على جهازك فقط، ولا تُرسل أي بيانات.",
+  "back": "‹ رجوع",
+  "loginAdmin": "دخول مسؤول الأسرة",
+  "loginMember": "دخول فرد من الأسرة",
+  "hintSetup": "أنشئ أسرتك الآن، وسنرسل كود تحقق إلى بريدك. إذا كنت مسؤولاً مضافاً في أسرة، اترك الاسمين فارغين.",
+  "hintAdmin": "أدخل بريدك المسجّل كمسؤول وسنرسل لك كود تحقق.",
+  "hintMember": "أدخل البريد الذي أضافه مسؤول الأسرة وسنرسل لك كود تحقق.",
+  "familyNameHint": "اسم الأسرة، مثل: أسرة آل محمد",
+  "yourNameHint": "اسمك، مثل: أبو أصيل",
+  "emailHint": "name@example.com",
+  "email": "البريد الإلكتروني",
+  "sendCode": "إرسال كود التحقق",
+  "enterCode": "أدخل كود التحقق",
+  "codeSentTo": "أرسلنا كوداً من 6 أرقام إلى",
+  "verify": "تحقق واربط الحساب",
+  "resendCode": "إعادة إرسال الكود",
+  "demoCodeNote": "في الوضع التجريبي لا يُرسل بريد حقيقي. اضغط 📧 في الأعلى لرؤية الرسالة والكود.",
+  "codeSent": "📧 أُرسل كود التحقق إلى {email}",
+  "@codeSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "codeAlreadySent": "الكود مُرسل مسبقاً إلى بريدك",
+  "linkedTo": "تم ربطك بـ{family} ✓",
+  "@linkedTo": {
+    "placeholders": {
+      "family": {
+        "type": "String"
+      }
+    }
+  },
+  "hello": "أهلاً {name}",
+  "@hello": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "demoWelcome": "دخلت كمسؤول الأسرة في أسرة تجريبية",
+  "codeFromEmail": "كود التحقق",
+  "errBadEmail": "اكتب بريداً إلكترونياً صحيحاً.",
+  "errSetupNeeded": "اكتب اسم الأسرة واسمك.",
+  "errRegisteredAsMember": "هذا البريد مضاف كعضو. ارجع واختر «أحد أفراد الأسرة».",
+  "errRegisteredAsAdmin": "هذا البريد مسجّل كمسؤول. ارجع واختر «مسؤول الأسرة».",
+  "errNotInvited": "هذا البريد غير مضاف لأي أسرة. اطلب من مسؤول أسرتك إضافة بريدك من لوحته.",
+  "errNotAdminOf": "هذا البريد غير مضاف كمسؤول في {family}. اطلب من مسؤول الأسرة إضافتك.",
+  "@errNotAdminOf": {
+    "placeholders": {
+      "family": {
+        "type": "String"
+      }
+    }
+  },
+  "errBadCode": "الكود غير صحيح. تأكد منه أو اطلب كوداً جديداً.",
+  "errCodeExpired": "انتهت صلاحية الكود. اطلب كوداً جديداً.",
+  "errTooManyAttempts": "تجاوزت عدد المحاولات. اطلب كوداً جديداً.",
+  "errRateLimited": "طلبت أكواداً كثيرة. حاول بعد ساعة.",
+  "errTooSoon": "انتظر {seconds} ثانية قبل طلب كود جديد.",
+  "@errTooSoon": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "errAlreadyRegistered": "هذا البريد مسجّل مسبقاً. سجّل الدخول به.",
+  "errEmailTaken": "هذا البريد مضاف مسبقاً",
+  "errNoPermission": "لا تملك صلاحية هذا الإجراء.",
+  "errAlreadyDone": "أرسلت هذه المهمة مسبقاً",
+  "errAlreadyDecided": "تم البت في هذا الطلب مسبقاً",
+  "errCompOver": "انتهى وقت المسابقة",
+  "errAlreadyEntered": "شاركت في هذه المسابقة مسبقاً",
+  "errNetwork": "تعذّر الاتصال. تحقق من الإنترنت وحاول مجدداً.",
+  "errUpload": "تعذّر رفع الصورة، جرّب مرة أخرى.",
+  "errOwnerMustDeleteFamily": "أنت المسؤول الرئيسي: احذف الأسرة كاملة بدلاً من حسابك.",
+  "errRemoved": "لم تعد ضمن هذه الأسرة.",
+  "errGeneric": "حدث خطأ غير متوقع. حاول مجدداً.",
+  "errNameEmail": "اكتب الاسم وبريداً صحيحاً",
+  "errTaskInput": "اكتب اسم المهمة ونقاطاً أكبر من صفر",
+  "errCompTitle": "اكتب اسم المسابقة",
+  "errAlertBody": "اكتب نص التنبيه",
+  "errTierInput": "اكتب اسم المكافأة وحدّاً أدنى من النقاط",
+  "errFbShort": "اكتب رسالتك أولاً",
+  "errFbEmail": "البريد غير صحيح، صحّحه أو اتركه فارغاً",
+  "errImage": "تعذّر قراءة الصورة، جرّب صورة أخرى",
+  "adminDashboard": "لوحة المسؤول",
+  "statMembers": "أعضاء",
+  "statTodayPoints": "نقاط اليوم",
+  "statActiveComps": "مسابقات جارية",
+  "yourPerms": "صلاحياتك المفوَّضة:",
+  "viewTasksOnly": "عرض المهام فقط",
+  "backToDashboard": "‹ لوحة المسؤول",
+  "tileApprovals": "الموافقات",
+  "tileAddAdmin": "إضافة مسؤول أسرة",
+  "tileAddMember": "إضافة عضو أسرة",
+  "tileReports": "تقارير الإنجاز",
+  "tileSendReport": "إرسال ترتيب اليوم",
+  "tileTasks": "مهام أفراد الأسرة",
+  "tileAlerts": "إرسال تنبيه",
+  "tileComps": "المسابقات",
+  "tileRewards": "الجوائز والمكافآت",
+  "permAddMembers": "إضافة أعضاء للأسرة",
+  "permApprove": "الموافقة على إنجاز المهام",
+  "permTasks": "إضافة وتعديل وحذف المهام",
+  "permReport": "إرسال تقرير الترتيب اليومي",
+  "permComps": "إنشاء مسابقات",
+  "permViewReports": "الاطلاع على التقارير",
+  "approvalsEmpty": "لا شيء بانتظارك. عندما ينجز أحد الأعضاء مهمة ستظهر هنا.",
+  "tasksAwaiting": "مهام تنتظر موافقتك",
+  "compAchievements": "إنجازات المسابقات",
+  "pointsPlus": "+{points} نقطة",
+  "@pointsPlus": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "photoAttached": "📷 مرفقة",
+  "approve": "موافقة",
+  "reject": "رفض",
+  "approveBtn": "✓ موافقة",
+  "rejectBtn": "✕ رفض",
+  "viewPhoto": "عرض صورة الإنجاز",
+  "place": "المركز {rank}",
+  "@place": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "approvedToast": "تمت الموافقة! +{points} نقاط لـ{name} 🎉",
+  "@approvedToast": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectedToast": "أُعيدت المهمة ليحاول مرة أخرى",
+  "entryApprovedToast": "+{points} نقطة لـ{name} 🏆",
+  "@entryApprovedToast": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addAdminSub": "يصله كود على بريده، ويدخل به من خيار «مسؤول الأسرة».",
+  "nameHint": "الاسم",
+  "adminNameHint": "الاسم، مثل: أم أصيل",
+  "avatarLabel": "الرمز",
+  "emailHint2": "email@example.com",
+  "delegatedPerms": "الصلاحيات المفوَّضة",
+  "viewOnlyNote": "اختيار «الاطلاع على التقارير» وحده يجعله مسؤولاً للاطلاع فقط.",
+  "addAndSend": "إضافة وإرسال الكود",
+  "admins": "المسؤولون",
+  "mainOwner": "المسؤول الرئيسي · كل الصلاحيات",
+  "remove": "إزالة",
+  "linked": "مرتبط ✓",
+  "addMemberSub": "يصله كود على بريده، ويدخل به من خيار «أحد أفراد الأسرة». اضغط على رمز أي عضو لتغييره.",
+  "familyMembersTitle": "أعضاء الأسرة",
+  "noMembers": "لم تُضف أي عضو بعد.",
+  "confirmRemove": "إزالة {name} من الأسرة؟",
+  "@confirmRemove": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "إلغاء",
+  "permsUpdated": "حُدّثت صلاحيات {name}",
+  "@permsUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteSent": "📧 أُرسل كود التحقق إلى {email}",
+  "@inviteSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "today": "اليوم",
+  "thisWeek": "هذا الأسبوع",
+  "familyTotal": "مجموع نقاط الأسرة",
+  "achievements": "إنجاز",
+  "familyEarned": "الأسرة استحقت:",
+  "ranking": "الترتيب",
+  "reportsEmpty": "أضف أعضاء للأسرة لتظهر التقارير.",
+  "countAchievements": "{n} إنجاز",
+  "@countAchievements": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "earnedTier": "استحق {tier}",
+  "@earnedTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "sendReportSub": "يصل هذا التقرير كتنبيه لكل أعضاء الأسرة.",
+  "sendToAll": "إرسال لكل الأعضاء",
+  "reportSent": "أُرسل التقرير لكل الأعضاء",
+  "reportTitleLine": "ترتيب إنجاز اليوم — {date}",
+  "@reportTitleLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportLine": "{medal} {name}: {points} نقطة ({n} إنجاز)",
+  "@reportLine": {
+    "placeholders": {
+      "medal": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTotal": "مجموع الأسرة: {points} نقطة",
+  "@reportTotal": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "reportNoMembers": "لا يوجد أعضاء بعد.",
+  "tasksEditSub": "أضف أو عدّل أو احذف مهام أي عضو.",
+  "tasksViewOnly": "عرض فقط — لا تملك صلاحية تعديل المهام.",
+  "addMembersFirst": "أضف أعضاء للأسرة أولاً.",
+  "taskTitleHint": "اسم المهمة، مثل: ترتيب الغرفة",
+  "allMembers": "كل الأعضاء",
+  "dailyF": "يومية",
+  "weeklyF": "أسبوعية",
+  "points": "النقاط",
+  "addTask": "إضافة المهمة",
+  "noTasks": "لا توجد مهام.",
+  "save": "حفظ",
+  "notDone": "لم تُنجز",
+  "waiting": "⏳ بانتظار",
+  "doneCheck": "منجزة ✓",
+  "taskMeta": "{repeat} · {points} نقطة",
+  "@taskMeta": {
+    "placeholders": {
+      "repeat": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "taskAdded": "أُضيفت المهمة ✓",
+  "taskSaved": "حُفظت التعديلات ✓",
+  "edit": "تعديل",
+  "delete": "حذف",
+  "forWhom": "لمن",
+  "repeat": "التكرار",
+  "alertBodyHint": "نص التنبيه، مثل: لا تنسون ترتيب المجلس قبل وصول الضيوف",
+  "sendAlert": "إرسال التنبيه",
+  "lastSent": "آخر ما أُرسل",
+  "toAll": "للجميع",
+  "toName": "إلى {name}",
+  "@toName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noAlerts": "لم تُرسل أي تنبيهات بعد.",
+  "alertSentAll": "أُرسل التنبيه لكل الأعضاء",
+  "alertSentTo": "أُرسل التنبيه إلى {name}",
+  "@alertSentTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "to": "إلى",
+  "compsSub": "أول من ينجز يأخذ نقاط البداية، والتالي أقل بنقطة، وهكذا.",
+  "compTitleHint": "المسابقة، مثل: أسرع من يرتّب غرفته",
+  "firstPlacePoints": "نقاط المركز الأول",
+  "timerMinutes": "المؤقت بالدقائق (اختياري)",
+  "noTimer": "بدون مؤقت",
+  "launchComp": "إطلاق المسابقة",
+  "noComps": "لا توجد مسابقات بعد.",
+  "running": "جارية",
+  "ended": "انتهت",
+  "nextPlaceGets": "المركز القادم يحصل على {points} نقطة",
+  "@nextPlaceGets": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "yourPlace": "مركزك {rank} · {points} نقطة",
+  "@yourPlace": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "iDidIt": "أنجزت!",
+  "nobodyYet": "لم ينجز أحد بعد.",
+  "rejectedTag": "مرفوض",
+  "endComp": "إنهاء المسابقة",
+  "compLaunched": "انطلقت المسابقة وأُبلغ الجميع 🏁",
+  "compEnded": "انتهت المسابقة",
+  "yourRankToast": "مركزك {rank} — {points} نقطة بانتظار الموافقة",
+  "@yourRankToast": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "timeUp": "انتهى الوقت",
+  "noCompsMember": "لا توجد مسابقات الآن. ترقّب التنبيهات!",
+  "pastComps": "مسابقات سابقة",
+  "rewardsSub": "حدّد مستويات بالنقاط. من يصل لمستوى أعلى يستحق مكافأته، ومن يقل عنه يأخذ المستوى الذي تحته.",
+  "rewardNameHint": "المكافأة، مثل: نزهة",
+  "icon": "الأيقونة",
+  "minPoints": "الحد الأدنى من النقاط",
+  "period": "الفترة",
+  "countedFor": "تُحسب النقاط",
+  "scopeEach": "لكل فرد على حدة",
+  "scopeFamily": "لمجموع نقاط الأسرة",
+  "addTier": "إضافة المستوى",
+  "noTiers": "لا توجد مستويات مكافآت بعد.",
+  "groupEach": "لكل فرد",
+  "groupFamily": "لمجموع الأسرة",
+  "tierPoints": "{points}+ نقطة",
+  "@tierPoints": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "dueNow": "المستحقون الآن",
+  "wholeFamily": "👨‍👩‍👧 الأسرة كاملة",
+  "delivered": "سُلّمت ✓",
+  "markDelivered": "تم التسليم",
+  "noDue": "لم يصل أحد لأي مستوى بعد.",
+  "tierAdded": "أُضيف المستوى ✓",
+  "deliveredToast": "سُجّل التسليم ✓",
+  "daily": "يومي",
+  "weekly": "أسبوعي",
+  "weekPoints": "نقاط الأسبوع",
+  "helloMember": "أهلاً {name}",
+  "@helloMember": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todaySummary": "اليوم: {points} نقطة · أنجزت {done} من {total}",
+  "@todaySummary": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      },
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "tabMyTasks": "مهامي",
+  "tabComps": "المسابقات",
+  "tabRewards": "المكافآت",
+  "tabNotices": "التنبيهات",
+  "noTasksNow": "لا توجد مهام لك الآن.",
+  "doneIt": "أنجزتها",
+  "doneWithPhoto": "أنجزتها مع صورة",
+  "awaitingApproval": "بانتظار الموافقة ⏳",
+  "todayLabel": "اليوم",
+  "weekLabel": "هذا الأسبوع",
+  "photoOptional": "📷 تقدر ترفق صورة للمهمة كإثبات، وهذا اختياري.",
+  "sentForApproval": "أُرسلت للمسؤول بانتظار الموافقة ⏳",
+  "sentWithPhoto": "أُرسلت مع الصورة للمسؤول ⏳",
+  "rewardToday": "مكافأة اليوم",
+  "rewardWeek": "مكافأة الأسبوع",
+  "forWholeFamily": " · للأسرة كاملة",
+  "yourPoints": "نقاطك",
+  "familyPoints": "نقاط الأسرة",
+  "youEarned": "استحققت: {tier}",
+  "@youEarned": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "notYet": "لم تصل لأي مستوى بعد",
+  "remainingFor": " · باقي {n} نقطة لـ{tier}",
+  "@remainingFor": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "noRewardsYet": "لم يحدد المسؤول مكافآت بعد.",
+  "noNotices": "لا توجد تنبيهات.",
+  "camera": "الكاميرا",
+  "gallery": "المعرض",
+  "attachProof": "إرفاق صورة إثبات",
+  "now": "الآن",
+  "minutesAgo": "قبل {n} دقيقة",
+  "@minutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "قبل {n} ساعة",
+  "@hoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseAvatarFor": "اختر رمزاً لـ{name}",
+  "@chooseAvatarFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "avatarChangedMine": "تغيّر رمزك ✓",
+  "avatarChanged": "تغيّر رمز {name} ✓",
+  "@avatarChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "close": "إغلاق",
+  "fbIntro": "رسالتك تصل مباشرة لفريق أسرتي، ونقرأ كل رسالة.",
+  "fbSuggestion": "اقتراح",
+  "fbComplaint": "شكوى",
+  "fbBug": "مشكلة تقنية",
+  "fbTextHint": "اكتب رسالتك هنا… مثلاً: أتمنى إضافة مهام خاصة برمضان",
+  "fbEmailHint": "بريدك للرد عليك (اختياري)",
+  "send": "إرسال",
+  "fbPrevious": "رسائلك السابقة",
+  "fbSentAgo": "أُرسلت · {ago}",
+  "@fbSentAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "fbThanks": "وصلت رسالتك ✓ شكراً لمساعدتنا في تحسين أسرتي",
+  "mailboxNote": "يحاكي الرسائل التي سيرسلها التطبيق الحقيقي إلى بريد كل شخص.",
+  "noMail": "لا توجد رسائل بعد.",
+  "mailTo": "إلى:",
+  "appearance": "المظهر",
+  "themeSystem": "حسب الجهاز",
+  "themeLight": "فاتح",
+  "themeDark": "ليلي",
+  "privacyPolicy": "سياسة الخصوصية",
+  "deleteMyAccount": "حذف حسابي",
+  "deleteAccountConfirm": "سيُحذف حسابك وبياناتك من الأسرة نهائياً. هل أنت متأكد؟",
+  "deleteFamily": "حذف الأسرة كاملة",
+  "deleteFamilyConfirm": "ستُحذف الأسرة وكل أفرادها ومهامها ونقاطها نهائياً ولا يمكن التراجع. هل أنت متأكد؟",
+  "deleteConfirmBtn": "حذف نهائي",
+  "deleted": "تم الحذف",
+  "dangerZone": "الحذف",
+  "version": "الإصدار {v}",
+  "@version": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "demoMode": "الوضع التجريبي",
+  "demoBanner": "أنت في التجربة السريعة — البيانات على جهازك فقط",
+  "loading": "جارٍ التحميل…",
+  "taskPresets": "ترتيب السرير|قراءة صفحة قرآن|صلاة الفجر في وقتها|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب",
+  "@taskPresets": {
+    "description": "Quick task suggestions, separated by |"
+  },
+  "memberTaskMeta": "{when} · {points} نقطة",
+  "@memberTaskMeta": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+# أسرتي (Asraty)
+
+تطبيق مهام البيت للأسرة بالنقاط والمسابقات والمكافآت — Flutter (iOS + Android) مع Firebase.
+
+| المجلد | المحتوى |
+|---|---|
+| `app/` | تطبيق Flutter (عربي RTL، Riverpod، go_router) |
+| `functions/` | Cloud Functions بـ TypeScript: الدخول بكود البريد، الصلاحيات، النقاط، المسابقات، الإشعارات |
+| `firestore.rules`, `storage.rules` | قواعد الأمان (العميل يقرأ فقط، وكل كتابة عبر الخادم) |
+| `hosting/` | صفحة سياسة الخصوصية وحذف الحساب |
+| `design/`, `docs/SPEC.md` | النموذج الأولي والمواصفات |
+| `docs/RELEASE.md` | **دليل النشر التجريبي على Google Play و TestFlight** |
+| `docs/STORE_LISTING.md` | نصوص صفحة المتجر |
+
+## التشغيل محلياً
+
+```bash
+# التطبيق بالتجربة السريعة فقط (بدون Firebase)
+cd app && flutter run
+
+# مع محاكيات Firebase
+cd functions && npm ci && npm run serve                # في نافذة
+cd app && flutter run --dart-define-from-file=env.json --dart-define=EMULATOR_HOST=10.0.2.2
+# أكواد الدخول تظهر في سجل المحاكي وفي مجموعة devMail (http://localhost:4000)
+```
+
+## الاختبارات
+
+```bash
+cd app && flutter analyze && flutter test
+cd functions && npm test && npm run test:rules && npm run test:api   # المحاكيات تحتاج Java
+```
+
+## النشر
+اتبع [`docs/RELEASE.md`](docs/RELEASE.md). البناء والرفع يتمّان من GitHub Actions:
+«Asraty — deploy Firebase backend»، «Asraty — Android»، «Asraty — iOS (TestFlight)».

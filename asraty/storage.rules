@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Optional proof photos: proofs/{familyId}/{personId}/{file}
+    // Uploaded by the member, viewed by the family, deleted by a function after approve/reject.
+    match /proofs/{fid}/{pid}/{file} {
+      allow read: if request.auth != null && request.auth.token.familyId == fid;
+      allow create: if request.auth != null
+        && request.auth.uid == pid
+        && request.auth.token.familyId == fid
+        && request.auth.token.role == 'member'
+        && request.resource.size < 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow update, delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
