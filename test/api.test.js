@@ -18,10 +18,24 @@ test('demo scan returns at most 2 picks with explicit sources and yaqeen exclusi
   assert.deepEqual(d.yaqeenExcluded, { LCID: 'غير شرعي' });
   assert.ok(d.picks.length <= 2 && d.picks.length > 0);
   for (const p of d.picks) {
-    assert.equal(p.sources.news.active, false);
+    assert.ok(['ok', 'capped', 'error'].includes(p.sources.news.status));
+    assert.ok(p.sources.earnings === null || 'reportDate' in p.sources.earnings);
+    assert.ok(p.score > 0);
     assert.equal(p.bars.c.length, 60);
     assert.ok(Number.isFinite(p.trade.entry) && Number.isFinite(p.trade.stop) && Number.isFinite(p.trade.target));
   }
+});
+
+test('news gate never lets a strongly opposed pick through, and newsMax=0 skips news', async () => {
+  const tickers = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'META', 'AMD', 'NFLX', 'JPM', 'XOM', 'BA'];
+  const d = await (await scan({ tickers, volMult: 0.5 })).json();
+  for (const r of d.all.filter(r => r.ok && r.news.status === 'ok')) {
+    assert.equal(r.newsGated, r.news.aligned <= -d.params.newsGate);
+    if (r.newsGated) assert.equal(r.score, 0);
+  }
+  assert.ok(!d.picks.some(p => p.sources.news.gated));
+  const none = await (await scan({ tickers, volMult: 0.5, newsMax: 0 })).json();
+  assert.ok(none.all.filter(r => r.ok && r.passesGate).every(r => r.news.status === 'capped' && r.score === r.baseScore));
 });
 
 test('rejects empty and oversized lists', async () => {

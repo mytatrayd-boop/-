@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { barsFromAlphaVantage, scoreTicker, buildTrade, parseYaqeenList, applyYaqeen, rankResults, rsiArr } from '../server/engine.js';
+import { barsFromAlphaVantage, scoreTicker, buildTrade, parseYaqeenList, applyYaqeen, rankResults, rsiArr, parseNewsFeed, newsEffect, parseEarningsCalendar, upcomingEarnings, parseAvTime, toAvTime } from '../server/engine.js';
 
 const P = { volAvgDays: 20, volMult: 1.5 };
 
@@ -84,4 +84,68 @@ test('rankResults returns top 2 by score and separates rejected/failed', () => {
   });
   assert.deepEqual(r.top.map(([s]) => s), ['B', 'C']);
   assert.equal(r.gateRejected.length, 1); assert.equal(r.failed.length, 1);
+});
+
+/* ---------- news ---------- */
+const NOW = Date.UTC(2026, 8, 29, 12, 0);
+const art = (time, tickers, extra = {}) => ({ title: 'x', url: 'https://e.x', source: 'S', time_published: time, ticker_sentiment: tickers, ...extra });
+const ts = (ticker, rel, score) => ({ ticker, relevance_score: String(rel), ticker_sentiment_score: String(score), ticker_sentiment_label: 'n/a' });
+
+test('AV time format round-trips', () => {
+  assert.equal(parseAvTime('20260929T120000'), NOW);
+  assert.equal(parseAvTime(toAvTime(NOW)), NOW);
+});
+
+test('parseNewsFeed: relevance-weighted, filters by ticker, relevance and time window', () => {
+  const since = NOW - 3 * 86400000;
+  const feed = { feed: [
+    art('20260929T100000', [ts('NVDA', 0.9, 0.5), ts('AMD', 0.9, -0.9)]),
+    art('20260928T100000', [ts('NVDA', 0.3, -0.1)]),
+    art('20260928T100000', [ts('NVDA', 0.1, -0.9)]),           // relevance too low
+    art('20260920T100000', [ts('NVDA', 1, -0.9)]),             // too old
+    art('20260929T100000', [ts('AMD', 1, 0.9)]),               // other ticker
+    art('garbage', [ts('NVDA', 1, -0.9)]),                     // bad time
+    { title: 'no sentiment', time_published: '20260929T100000' },
+  ] };
+  const n = parseNewsFeed(feed, 'NVDA', { sinceMs: since, minRelevance: 0.3 });
+  assert.equal(n.count, 2);
+  assert.ok(Math.abs(n.sentiment - (0.9 * 0.5 + 0.3 * -0.1) / 1.2) < 1e-9);
+  assert.equal(n.articles[0].relevance, 0.9);
+  assert.equal(parseNewsFeed({ feed: [] }, 'NVDA').label, 'لا يوجد خبر');
+  assert.throws(() => parseNewsFeed({ Information: 'rate limit' }, 'NVDA'));
+});
+
+test('newsEffect: soft gate + boost', () => {
+  const opts = { newsBoost: 0.5, newsGate: 0.35 };
+  assert.deepEqual(newsEffect({ count: 0, sentiment: 0 }, 1, opts), { aligned: 0, multiplier: 1, gated: false });
+  assert.equal(newsEffect({ count: 2, sentiment: 0.5 }, 1, opts).multiplier, 1.5);      // strong agree → capped boost
+  assert.equal(newsEffect({ count: 2, sentiment: -0.5 }, -1, opts).multiplier, 1.5);    // bearish news on a short agrees
+  assert.equal(newsEffect({ count: 2, sentiment: -0.4 }, 1, opts).gated, true);         // strong oppose → excluded
+  assert.equal(newsEffect({ count: 2, sentiment: 0.4 }, -1, opts).gated, true);
+  const mild = newsEffect({ count: 1, sentiment: -0.175 }, 1, opts);
+  assert.equal(mild.gated, false); assert.ok(Math.abs(mild.multiplier - 0.75) < 1e-9);
+});
+
+/* ---------- earnings ---------- */
+const CAL = 'symbol,name,reportDate,fiscalDateEnding,estimate,currency,timeOfTheDay\r\n'
+  + 'NVDA,NVIDIA CORP,2026-10-02,2026-09-30,0.95,USD,post-market\r\n'
+  + 'AAPL,"Apple, Inc",2026-10-30,2026-09-30,,USD,post-market\r\n'
+  + 'NVDA,NVIDIA CORP,2027-01-02,2026-12-31,1.1,USD,post-market\r\n';
+
+test('parseEarningsCalendar: confirmed header, commas in names, sorted per symbol', () => {
+  const c = parseEarningsCalendar(CAL);
+  assert.equal(c.NVDA.length, 2); assert.equal(c.NVDA[0].reportDate, '2026-10-02');
+  assert.equal(c.AAPL[0].estimate, null); assert.equal(c.AAPL[0].timeOfTheDay, 'post-market');
+});
+
+test('parseEarningsCalendar rejects a rate-limit message disguised as CSV (observed live)', () => {
+  assert.throws(() => parseEarningsCalendar('symbol,name,reportDate,fiscalDateEnding,estimate,currency,timeOfTheDay\r\nI,n,f,o,r,m,a\r\n'));
+  assert.throws(() => parseEarningsCalendar({ Information: 'x' }));
+});
+
+test('upcomingEarnings: only within trade horizon', () => {
+  const c = parseEarningsCalendar(CAL);
+  assert.deepEqual(upcomingEarnings(c, 'NVDA', NOW, 7), { reportDate: '2026-10-02', daysAway: 3, timeOfTheDay: 'post-market', estimate: 0.95 });
+  assert.equal(upcomingEarnings(c, 'AAPL', NOW, 7), null);
+  assert.equal(upcomingEarnings(c, 'MSFT', NOW, 7), null);
 });

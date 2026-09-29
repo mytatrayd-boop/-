@@ -3,6 +3,7 @@
 const DEFAULTS = {
   tickers: ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'META', 'AMD', 'NFLX', 'JPM', 'XOM', 'BA'],
   volAvgDays: 20, volMult: 1.5, slAtr: 1.5, rr: 1.5,
+  newsDays: 3, newsBoost: 0.5, newsGate: 0.35, newsMax: 5,
   excludeHaram: true, excludeMashbooh: false,
   // snapshot يقين بتاريخ 2026-09-28 (الأسهم الأكثر بحثًا)
   yaqeen: { NVDA: 'شرعي', AAPL: 'محل نظر', TSLA: 'محل نظر', AMD: 'محل نظر' },
@@ -52,6 +53,7 @@ $('#scanBtn').addEventListener('click', async () => {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tickers: settings.tickers, volAvgDays: settings.volAvgDays, volMult: settings.volMult, slAtr: settings.slAtr, rr: settings.rr,
+        newsDays: settings.newsDays, newsBoost: settings.newsBoost, newsGate: settings.newsGate, newsMax: settings.newsMax,
         yaqeen: settings.yaqeen, excludeHaram: settings.excludeHaram, excludeMashbooh: settings.excludeMashbooh,
       }),
     });
@@ -60,7 +62,7 @@ $('#scanBtn').addEventListener('click', async () => {
     lastScan = data; save('rased.lastScan', data);
     setMode(data.demo);
     if (data.fatal) toast('⚠️ ' + data.fatal, 'err');
-    else toast(`تم المسح: ${data.counts.passed} اجتاز بوابة السيولة من ${data.counts.requested}.`, 'ok');
+    else toast(`تم المسح: ${data.counts.passed} مؤهّل من ${data.counts.requested}${data.counts.newsRejected ? ` (${data.counts.newsRejected} استُبعد بخبر معاكس)` : ''}.`, 'ok');
   } catch (e) {
     toast('❌ ' + (e.message === 'Failed to fetch' ? 'ما قدرنا نوصل للخادم — تأكد من الاتصال.' : e.message), 'err');
   } finally {
@@ -70,6 +72,31 @@ $('#scanBtn').addEventListener('click', async () => {
 });
 
 /* ---------- home ---------- */
+const NEWS_STATUS = { capped: 'لم يُفحص (حد الحصة)', skipped: 'لم يُفحص', error: 'تعذّر الجلب' };
+function newsCell(n) {
+  if (n.status !== 'ok') return `<div class="src off" title="${esc(n.error || '')}"><div class="k"><i></i>خبر</div><div class="v">${NEWS_STATUS[n.status] || 'لم يُفحص'}</div></div>`;
+  if (!n.count) return `<div class="src off"><div class="k"><i></i>خبر</div><div class="v">لا يوجد خبر</div></div>`;
+  const against = n.aligned <= -0.15; // نفس حد "سلبي نسبيًا" عند Alpha Vantage
+  return `<div class="src news ${against ? 'against' : ''}"><div class="k"><i></i>خبر · ${n.count}</div><div class="v">${esc(n.label)}</div></div>`;
+}
+function headlines(n) {
+  if (n.status !== 'ok' || !n.articles || !n.articles.length) return '';
+  return `<ul class="headlines">${n.articles.map(a => {
+    const when = new Date(a.time).toISOString().slice(5, 16).replace('T', ' ');
+    const title = esc(a.title);
+    const safeUrl = /^https?:\/\//.test(a.url) ? esc(a.url) : '';
+    return `<li><span class="dot ${a.score >= 0.15 ? 'pos' : a.score <= -0.15 ? 'neg' : ''}"></span>
+      ${safeUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener">${title}</a>` : `<span>${title}</span>`}
+      <small class="mono">${esc(a.source)} · ${when}</small></li>`;
+  }).join('')}</ul>`;
+}
+function earningsBanner(e) {
+  if (e === null) return '';
+  if (!e || e.error) return `<div class="earn off">📅 تقويم الأرباح: ${esc((e && e.error) || 'لم يُفحص')}</div>`;
+  const when = e.daysAway === 0 ? 'اليوم' : e.daysAway === 1 ? 'بكرة' : e.daysAway === 2 ? 'بعد يومين' : `بعد ${e.daysAway} ${e.daysAway <= 10 ? 'أيام' : 'يوم'}`;
+  const tod = e.timeOfTheDay === 'pre-market' ? 'قبل الافتتاح' : e.timeOfTheDay === 'post-market' ? 'بعد الإغلاق' : '';
+  return `<div class="earn">⚠️ <b>أرباح ${when}</b> <span class="mono">${esc(e.reportDate)}</span>${tod ? ' · ' + tod : ''}<br><small>إعلان الأرباح داخل أسبوع الصفقة قد يسبب فجوة سعرية تتخطى وقف الخسارة. تنبيه فقط — لا يغيّر النتيجة.</small></div>`;
+}
 function yqClass(v) { return v === 'شرعي' ? 'ok' : v === 'محل نظر' ? 'warn' : v === 'غير شرعي' ? 'bad' : ''; }
 const pct = (a, b) => ((b - a) / a * 100);
 
@@ -100,8 +127,10 @@ function renderHome() {
         <div class="sources" aria-label="مصدر الترشيح">
           <div class="src liq"><div class="k"><i></i>سيولة</div><div class="v mono">×${fmt(p.liqRatio, 1)}</div></div>
           <div class="src tech"><div class="k"><i></i>فني RSI</div><div class="v mono">${fmt(p.rsi, 1)}</div></div>
-          <div class="src off"><div class="k"><i></i>خبر</div><div class="v">${esc(p.sources.news.note)}</div></div>
+          ${newsCell(p.sources.news)}
         </div>
+        ${earningsBanner(p.sources.earnings)}
+        ${headlines(p.sources.news)}
         <div class="levels">
           <div class="lvl en"><span class="lbl">الدخول</span><span class="val">${fmt(t.entry)}</span></div>
           <div class="lvl tp"><span class="lbl">الهدف · أسبوع</span><span class="val">${fmt(t.target)}</span><span class="pct">${pct(t.entry, t.target) >= 0 ? '+' : ''}${fmt(pct(t.entry, t.target), 1)}%</span></div>
@@ -112,7 +141,7 @@ function renderHome() {
           <span class="yq ${yqClass(p.yaqeen)}">يقين: ${esc(p.yaqeen)}</span>
           <a class="link" href="https://yaaqen.com/stocks/${encodeURIComponent(p.sym)}" target="_blank" rel="noopener">🔍 تحقق في يقين</a>
         </div>
-        <p class="hint">${buy ? 'زخم صاعد' : 'زخم هابط'}، قوة الإشارة ${Math.round(p.momentum * 100)}% · حجم اليوم ${fmt(p.liqRatio, 1)}× متوسط ${lastScan.params.volAvgDays} يوم.</p>
+        <p class="hint">${buy ? 'زخم صاعد' : 'زخم هابط'}، قوة الإشارة ${Math.round(p.momentum * 100)}% · حجم اليوم ${fmt(p.liqRatio, 1)}× متوسط ${lastScan.params.volAvgDays} يوم${p.sources.news.status === 'ok' && p.sources.news.count ? ` · أثر الخبر ×${fmt(p.sources.news.multiplier, 2)} على النتيجة` : ''}.</p>
       </article>`;
     }).join('');
   }
@@ -120,7 +149,7 @@ function renderHome() {
   const c = lastScan.counts;
   summary.hidden = false;
   summary.innerHTML = [
-    ['اجتاز السيولة', c.passed, ''], ['سيولة ضعيفة', c.gateRejected, ''],
+    ['مؤهّل', c.passed, ''], ['سيولة ضعيفة', c.gateRejected, ''], ['خبر معاكس', c.newsRejected || 0, ''],
     ['استبعاد يقين', c.yaqeenExcluded, ''], ['فشل الجلب', c.failed, c.failed ? 'bad' : ''],
   ].map(([l, n, cls]) => `<div class="stat ${cls}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
   requestAnimationFrame(drawCharts);
@@ -183,7 +212,7 @@ function renderList() {
   if (!lastScan) { el.innerHTML = '<div class="empty">امسح السوق أولاً.</div>'; return; }
   const mult = lastScan.params.volMult;
   const rows = [
-    ...lastScan.all.map(r => ({ ...r, kind: !r.ok ? 'err' : r.passesGate ? 'pass' : 'rej' })),
+    ...lastScan.all.map(r => ({ ...r, kind: !r.ok ? 'err' : !r.passesGate ? 'rej' : r.newsGated ? 'newsrej' : 'pass' })),
     ...Object.entries(lastScan.yaqeenExcluded).map(([sym, v]) => ({ sym, kind: 'yq', verdict: v })),
   ].filter(r => listFilter === 'all' || (listFilter === 'passed' ? r.kind === 'pass' : r.kind !== 'pass'));
   if (!rows.length) { el.innerHTML = '<div class="empty">لا يوجد.</div>'; return; }
@@ -193,9 +222,9 @@ function renderList() {
     const fill = Math.min(100, r.liqRatio / (mult * 2) * 100);
     return `<div class="row">
       <span class="sym">${esc(r.sym)}</span>
-      <div class="mid">سيولة <b class="mono">×${fmt(r.liqRatio, 2)}</b> · RSI <b class="mono">${fmt(r.rsi, 1)}</b> ${r.direction === 1 ? '▲' : '▼'}
+      <div class="mid">سيولة <b class="mono">×${fmt(r.liqRatio, 2)}</b> · RSI <b class="mono">${fmt(r.rsi, 1)}</b> ${r.direction === 1 ? '▲' : '▼'}${r.news && r.news.status === 'ok' ? ` · خبر: <b>${esc(r.news.label)}</b>${r.news.count ? ` <span class="mono">×${fmt(r.news.multiplier, 2)}</span>` : ''}` : ''}
         <div class="bar"><i class="${r.passesGate ? '' : 'under'}" style="width:${fill}%"></i></div></div>
-      <span class="tag ${r.kind}">${r.kind === 'pass' ? 'اجتاز' : 'سيولة ضعيفة'}</span></div>`;
+      <span class="tag ${r.kind}">${{ pass: 'مؤهّل', rej: 'سيولة ضعيفة', newsrej: 'خبر معاكس' }[r.kind]}</span></div>`;
   }).join('');
 }
 
@@ -223,9 +252,10 @@ $('#excludeMashbooh').addEventListener('change', e => { settings.excludeMashbooh
 function renderSettings() {
   $('#chips').innerHTML = settings.tickers.map(s => `<span class="chip">${esc(s)}<button data-rm="${esc(s)}" aria-label="احذف ${esc(s)}">×</button></span>`).join('');
   const n = settings.tickers.length;
-  $('#quotaHint').innerHTML = `⚠️ كل سهم = طلب من حصتك اليومية (~${QUOTA} مجانًا). القائمة الحالية <b class="mono">${n}</b> طلب لكل مسح (الخادم يخزّن النتائج مؤقتًا فتكرار المسح بنفس اليوم ما يستهلك).`;
+  const worst = n + Math.min(settings.newsMax, n) + 1;
+  $('#quotaHint').innerHTML = `⚠️ حصتك المجانية ~${QUOTA} طلب/يوم. أسوأ حالة لكل مسح: <b class="mono">${n}</b> سعر + <b class="mono">${Math.min(settings.newsMax, n)}</b> خبر + <b class="mono">1</b> تقويم أرباح = <b class="mono" style="color:${worst > QUOTA ? 'var(--sell)' : 'inherit'}">${worst}</b>. الخادم يخزّن النتائج مؤقتًا فتكرار المسح بنفس اليوم ما يستهلك.`;
   document.querySelectorAll('.stepper').forEach(st => {
-    const k = st.dataset.key, dec = st.dataset.step.includes('.') ? 1 : 0;
+    const k = st.dataset.key, dec = (st.dataset.step.split('.')[1] || '').length;
     st.innerHTML = `<button data-d="-1" aria-label="إنقاص">−</button><output class="mono">${settings[k].toFixed(dec)}</output><button data-d="1" aria-label="زيادة">+</button>`;
   });
 }
@@ -244,7 +274,7 @@ $('#addTicker').addEventListener('submit', e => {
 document.querySelectorAll('.stepper').forEach(st => st.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const k = st.dataset.key, step = +st.dataset.step;
-  const v = Math.round((settings[k] + step * +b.dataset.d) * 10) / 10;
+  const v = Math.round((settings[k] + step * +b.dataset.d) * 100) / 100;
   settings[k] = Math.min(+st.dataset.max, Math.max(+st.dataset.min, v)); persist(); renderSettings();
 }));
 $('#resetBtn').addEventListener('click', () => {

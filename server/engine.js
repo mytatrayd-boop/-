@@ -126,11 +126,103 @@ export function buildTrade(s, { slAtr, rr }) {
 
 export function rankResults(perTicker, top = 2) {
   const entries = Object.entries(perTicker);
-  const passed = entries.filter(([, v]) => v.ok && v.passesGate).sort((a, b) => b[1].score - a[1].score);
+  const passed = entries.filter(([, v]) => v.ok && v.passesGate && !v.newsGated).sort((a, b) => b[1].score - a[1].score);
   return {
     top: passed.slice(0, top),
     passed,
     gateRejected: entries.filter(([, v]) => v.ok && !v.passesGate),
+    newsRejected: entries.filter(([, v]) => v.ok && v.passesGate && v.newsGated),
     failed: entries.filter(([, v]) => !v.ok),
   };
+}
+
+/* ---------- الأخبار (NEWS_SENTIMENT) — خبر غير متوقع ---------- */
+// ⚠️ شكل الرد مبني على توثيق Alpha Vantage (feed[].ticker_sentiment[]) — لم يُلاحظ رد حي كامل بعد
+// (الحصة كانت منتهية وقت الكتابة). التحليل دفاعي: أي حقل ناقص يُتجاهل بدل ما يكسر المسح.
+export const NEWS_DEFAULTS = { newsDays: 3, minRelevance: 0.3, newsBoost: 0.5, newsGate: 0.35 };
+
+// "20260928T143000" -> ms
+export function parseAvTime(s) {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?/.exec(String(s || ''));
+  return m ? Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)) : NaN;
+}
+export function toAvTime(ms) {
+  const d = new Date(ms), p = n => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}T${p(d.getUTCHours())}${p(d.getUTCMinutes())}`;
+}
+
+// نفس حدود تصنيف Alpha Vantage للمشاعر
+export function sentimentLabel(x) {
+  if (x <= -0.35) return 'سلبي';
+  if (x <= -0.15) return 'سلبي نسبيًا';
+  if (x < 0.15) return 'محايد';
+  if (x < 0.35) return 'إيجابي نسبيًا';
+  return 'إيجابي';
+}
+
+export function parseNewsFeed(payload, symbol, { sinceMs = 0, minRelevance = NEWS_DEFAULTS.minRelevance } = {}) {
+  if (!payload || typeof payload !== 'object' || !Array.isArray(payload.feed)) {
+    throw new Error('شكل رد أخبار غير متوقع. بداية الرد: ' + JSON.stringify(payload).slice(0, 200));
+  }
+  const articles = [];
+  for (const item of payload.feed) {
+    const time = parseAvTime(item.time_published);
+    if (!(time >= sinceMs)) continue;
+    const ts = (Array.isArray(item.ticker_sentiment) ? item.ticker_sentiment : []).find(x => String(x.ticker).toUpperCase() === symbol);
+    if (!ts) continue;
+    const relevance = parseFloat(ts.relevance_score), score = parseFloat(ts.ticker_sentiment_score);
+    if (!Number.isFinite(relevance) || !Number.isFinite(score) || relevance < minRelevance) continue;
+    articles.push({ title: String(item.title || ''), url: String(item.url || ''), source: String(item.source || ''), time, relevance, score });
+  }
+  articles.sort((a, b) => b.relevance - a.relevance || b.time - a.time);
+  const wSum = articles.reduce((s, a) => s + a.relevance, 0);
+  const sentiment = wSum > 0 ? articles.reduce((s, a) => s + a.relevance * a.score, 0) / wSum : 0;
+  return { count: articles.length, sentiment, label: articles.length ? sentimentLabel(sentiment) : 'لا يوجد خبر', articles: articles.slice(0, 3) };
+}
+
+// بوابة لينة + تعزيز: خبر معاكس للاتجاه بقوة ≥ newsGate يستبعد السهم، الموافق يعزّز حتى ×(1+newsBoost)،
+// المعاكس الأخف يخفّض، وغياب الخبر محايد (×1).
+export function newsEffect(news, direction, { newsBoost = NEWS_DEFAULTS.newsBoost, newsGate = NEWS_DEFAULTS.newsGate } = {}) {
+  if (!news || !news.count) return { aligned: 0, multiplier: 1, gated: false };
+  const aligned = news.sentiment * direction;
+  if (aligned <= -newsGate) return { aligned, multiplier: 0, gated: true };
+  const clamped = Math.max(-newsGate, Math.min(newsGate, aligned));
+  return { aligned, multiplier: 1 + (clamped / newsGate) * newsBoost, gated: false };
+}
+
+/* ---------- تقويم الأرباح (EARNINGS_CALENDAR) — خبر متوقع: تنبيه مخاطرة فقط، لا يغيّر النتيجة ---------- */
+// الترويسة مؤكدة من رد حقيقي: symbol,name,reportDate,fiscalDateEnding,estimate,currency,timeOfTheDay
+const EARNINGS_HEADER = 'symbol,name,reportdate,fiscaldateending,estimate,currency,timeoftheday';
+
+export function parseEarningsCalendar(text) {
+  if (typeof text !== 'string') throw new Error('شكل رد تقويم الأرباح غير متوقع.');
+  const lines = text.trim().split(/\r?\n/);
+  if (lines[0].trim().toLowerCase() !== EARNINGS_HEADER) throw new Error('ترويسة تقويم الأرباح غير متوقعة: ' + lines[0].slice(0, 80));
+  const map = {};
+  let bad = 0;
+  for (let i = 1; i < lines.length; i++) {
+    // الاسم قد يحتوي فاصلة، فنقرأ الحقول من الطرفين
+    const parts = lines[i].split(',');
+    if (parts.length < 7) continue;
+    const sym = parts[0].trim().toUpperCase();
+    const tail = parts.slice(-5); // reportDate,fiscalDateEnding,estimate,currency,timeOfTheDay
+    const date = Date.parse(tail[0] + 'T00:00:00Z');
+    if (!sym || isNaN(date)) { bad++; continue; }
+    (map[sym] ||= []).push({ date, reportDate: tail[0], estimate: tail[2] === '' ? null : +tail[2], timeOfTheDay: tail[4].trim() });
+  }
+  // لوحظ فعليًا: رسالة تجاوز الحصة ترجع مقطّعة كصف CSV تحت ترويسة سليمة ("I,n,f,o,r,m,a").
+  if (bad > 0 && Object.keys(map).length === 0) throw new Error('رد تقويم الأرباح بلا صفوف صالحة (غالبًا رسالة تجاوز حصة).');
+  for (const k in map) map[k].sort((a, b) => a.date - b.date);
+  return map;
+}
+
+// أقرب إعلان أرباح خلال أفق الصفقة (أيام تقويمية من تاريخ آخر شمعة)
+export function upcomingEarnings(calendar, symbol, fromMs, horizonDays = 7) {
+  const dayStart = fromMs - (fromMs % 86400000);
+  for (const e of (calendar && calendar[symbol]) || []) {
+    const daysAway = Math.round((e.date - dayStart) / 86400000);
+    if (daysAway < 0) continue;
+    return daysAway <= horizonDays ? { reportDate: e.reportDate, daysAway, timeOfTheDay: e.timeOfTheDay, estimate: e.estimate } : null;
+  }
+  return null;
 }

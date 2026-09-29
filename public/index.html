@@ -36,7 +36,7 @@
 
     <details class="disclaimer">
       <summary><b>مو توصية مالية</b> — اضغط للتفاصيل</summary>
-      <p>السيولة هنا = حجم تداول غير طبيعي (تقريب، مو تدفق خيارات حقيقي بعد). الأخبار غير مفعّلة. الإشارة الفنية RSI(14) فقط. المنطق لم يُختبر تاريخيًا بعد. القرار والمخاطرة عليك بالكامل.</p>
+      <p>السيولة هنا = حجم تداول غير طبيعي (تقريب، مو تدفق خيارات حقيقي بعد). الأخبار من مشاعر Alpha Vantage الآلية (تقريب). الإشارة الفنية RSI(14) فقط. المنطق لم يُختبر تاريخيًا بعد. القرار والمخاطرة عليك بالكامل.</p>
     </details>
   </section>
 
@@ -45,7 +45,7 @@
     <h2 class="view-title">نتيجة كل سهم</h2>
     <div class="seg" role="tablist">
       <button class="seg-btn active" data-filter="all">الكل</button>
-      <button class="seg-btn" data-filter="passed">اجتاز</button>
+      <button class="seg-btn" data-filter="passed">مؤهّل</button>
       <button class="seg-btn" data-filter="rejected">مستبعد</button>
     </div>
     <div id="allList" class="list"><div class="empty">امسح السوق أولاً.</div></div>
@@ -81,6 +81,15 @@
       <div class="stepper-row"><span>متوسط الحجم (يوم)</span><div class="stepper" data-key="volAvgDays" data-step="1" data-min="5" data-max="60"></div></div>
       <div class="stepper-row"><span>أقل مضاعف للدخول</span><div class="stepper" data-key="volMult" data-step="0.1" data-min="0.5" data-max="10"></div></div>
       <div class="hint">سهم حجمه اليوم أقل من هذا المضاعف عن متوسطه يُستبعد فورًا، بغض النظر عن قوته الفنية.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">الأخبار (بوابة لينة + تعزيز)</div>
+      <div class="stepper-row"><span>أخبار آخر (يوم)</span><div class="stepper" data-key="newsDays" data-step="1" data-min="1" data-max="7"></div></div>
+      <div class="stepper-row"><span>أقصى تعزيز للنتيجة</span><div class="stepper" data-key="newsBoost" data-step="0.1" data-min="0" data-max="1"></div></div>
+      <div class="stepper-row"><span>حد الاستبعاد (خبر معاكس)</span><div class="stepper" data-key="newsGate" data-step="0.05" data-min="0.15" data-max="1"></div></div>
+      <div class="stepper-row"><span>أقصى طلبات أخبار/مسح</span><div class="stepper" data-key="newsMax" data-step="1" data-min="0" data-max="25"></div></div>
+      <div class="hint">خبر معاكس لاتجاه الصفقة بمشاعر ≥ حد الاستبعاد يستبعد السهم. الموافق يرفع النتيجة حتى ×(1 + أقصى تعزيز)، والمعاكس الأخف يخفضها، وغياب الخبر محايد. الأخبار تُجلب فقط للأسهم اللي اجتازت بوابة السيولة، الأقوى أولاً.</div>
     </div>
 
     <div class="card">

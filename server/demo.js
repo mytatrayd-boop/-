@@ -32,3 +32,29 @@ export function demoBars(symbol, days = 100) {
   }
   return out;
 }
+
+const DEMO_HEADLINES = ['تقرير محلل يرفع السعر المستهدف', 'صفقة استحواذ محتملة', 'تحقيق تنظيمي جديد', 'إطلاق منتج جديد', 'تراجع توقعات المبيعات'];
+
+export function demoNews(symbol) {
+  const today = new Date().toISOString().slice(0, 10);
+  const r = rng(seedFrom('news' + symbol + today));
+  const count = r() < 0.3 ? 0 : 1 + Math.floor(r() * 4);
+  const now = Date.now(), articles = [];
+  for (let i = 0; i < count; i++) {
+    articles.push({ title: `[تجريبي] ${symbol}: ${DEMO_HEADLINES[Math.floor(r() * DEMO_HEADLINES.length)]}`, url: '', source: 'Demo', time: now - Math.floor(r() * 3 * 86400000), relevance: 0.3 + r() * 0.7, score: (r() - 0.45) * 0.9 });
+  }
+  const w = articles.reduce((s, a) => s + a.relevance, 0);
+  const sentiment = w ? articles.reduce((s, a) => s + a.relevance * a.score, 0) / w : 0;
+  return { count, sentiment, articles: articles.sort((a, b) => b.relevance - a.relevance).slice(0, 3) };
+}
+
+export function demoEarnings(symbols) {
+  const today = new Date().toISOString().slice(0, 10), base = Date.parse(today + 'T00:00:00Z');
+  const map = {};
+  for (const s of symbols) {
+    const r = rng(seedFrom('earn' + s + today));
+    const d = base + Math.floor(r() * 60) * 86400000;
+    map[s] = [{ date: d, reportDate: new Date(d).toISOString().slice(0, 10), estimate: null, timeOfTheDay: r() < 0.5 ? 'pre-market' : 'post-market' }];
+  }
+  return map;
+}
