@@ -12,7 +12,9 @@
 html,body{margin:0;background:var(--bg);color:var(--text);}
 body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;font-size:15px;line-height:1.6;min-height:100dvh;overscroll-behavior-y:contain;}
 .mono{font-family:'IBM Plex Mono',monospace;direction:ltr;unicode-bidi:isolate;display:inline-block;}
-button{font-family:inherit;color:inherit;}
+button{font-family:inherit;color:inherit;cursor:pointer;}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--liq);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 [hidden]{display:none!important;}
 
 /* ---------- top bar ---------- */
@@ -156,6 +158,7 @@ main{max-width:560px;margin:0 auto;padding:14px 16px calc(var(--tabbar-h) + var(
 .stepper button{width:34px;height:34px;border:0;border-radius:9px;background:var(--panel);font-size:18px;}
 .stepper output{min-width:48px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:600;}
 .btn-ghost{width:100%;border:1px solid var(--border);background:none;border-radius:14px;padding:12px;color:var(--muted);}
+.btn-ghost.armed{border-color:rgba(240,96,90,.6);color:var(--sell);background:rgba(240,96,90,.08);}
 
 /* ---------- FAB + tabbar ---------- */
 .fab{

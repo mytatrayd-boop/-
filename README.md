@@ -16,12 +16,21 @@ npm test
 
 لا توجد أي مكتبات خارجية — Node 18+ فقط. أي استضافة Node تكفي (Railway / Render / Fly): أمر التشغيل `npm start` ومتغير البيئة `ALPHA_VANTAGE_KEY`.
 
+## تجربة سريعة بدون خادم
+
+```bash
+npm run build:standalone   # → dist/rased-standalone.html
+```
+
+ملف واحد فيه التطبيق كاملًا بوضع تجريبي (نفس الواجهة ونفس منطق المسح في `server/scan.js`، مع بيانات مصطنعة). مناسب للمعاينة على الجوال أو النشر كـ Claude Artifact.
+
 ## البنية
 
 | الملف | الدور |
 |---|---|
 | `server/engine.js` | منطق النموذج الأولي منقول كما هو: `barsFromAlphaVantage` (JSON + CSV)، `scoreTicker`، `buildTrade`، فلتر يقين |
 | `server/alphavantage.js` | جلب الأسعار والأخبار وتقويم الأرباح بالمفتاح (يبقى في الخادم فقط)، طابور بفاصل 1.1 ثانية (حد الثانية الواحدة)، تخزين مؤقت (4 ساعات، والأرباح 24 ساعة)، كشف تجاوز الحصة |
+| `server/scan.js` | تنسيق المسح (أسعار → سيولة → أخبار → أرباح → ترتيب)، بدون اعتماد على Node — يشغّله الخادم والنسخة المستقلة |
 | `server/index.js` | خادم HTTP: `POST /api/scan`، `GET /api/health`، ويخدم `public/` |
 | `public/` | واجهة الجوال: الترشيحات، كل الأسهم، يقين، الإعدادات |
 

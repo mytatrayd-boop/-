@@ -4,10 +4,13 @@
   "private": true,
   "description": "راصد — تطبيق جوال (PWA) يرشّح أقوى سهمين أسبوعيًا: سيولة + فني + فلتر يقين",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "build:standalone": "node scripts/build-standalone.mjs"
   }
 }

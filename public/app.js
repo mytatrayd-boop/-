@@ -41,6 +41,21 @@ function toast(msg, kind = '') {
 }
 
 /* ---------- scan ---------- */
+// النسخة المستقلة (بدون خادم) تعرّف window.RASED_LOCAL وتشغّل نفس منطق المسح محليًا ببيانات تجريبية.
+const LOCAL = window.RASED_LOCAL || null;
+
+async function scanRequest(req) {
+  if (LOCAL) {
+    const { status, body } = await LOCAL.runScan(req);
+    if (status !== 200) throw new Error(body.error);
+    return body;
+  }
+  const res = await fetch('api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `الخادم رد بالحالة ${res.status}`);
+  return data;
+}
+
 $('#scanBtn').addEventListener('click', async () => {
   const btn = $('#scanBtn');
   if (!settings.tickers.length) { toast('قائمة المسح فاضية — أضف أسهم من الإعدادات.', 'err'); return; }
@@ -49,16 +64,12 @@ $('#scanBtn').addEventListener('click', async () => {
   $('#summary').hidden = true;
   show('home');
   try {
-    const res = await fetch('api/scan', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const req = {
         tickers: settings.tickers, volAvgDays: settings.volAvgDays, volMult: settings.volMult, slAtr: settings.slAtr, rr: settings.rr,
         newsDays: settings.newsDays, newsBoost: settings.newsBoost, newsGate: settings.newsGate, newsMax: settings.newsMax,
         yaqeen: settings.yaqeen, excludeHaram: settings.excludeHaram, excludeMashbooh: settings.excludeMashbooh,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `الخادم رد بالحالة ${res.status}`);
+    };
+    const data = await scanRequest(req);
     lastScan = data; save('rased.lastScan', data);
     setMode(data.demo);
     if (data.fatal) toast('⚠️ ' + data.fatal, 'err');
@@ -277,8 +288,17 @@ document.querySelectorAll('.stepper').forEach(st => st.addEventListener('click',
   const v = Math.round((settings[k] + step * +b.dataset.d) * 100) / 100;
   settings[k] = Math.min(+st.dataset.max, Math.max(+st.dataset.min, v)); persist(); renderSettings();
 }));
-$('#resetBtn').addEventListener('click', () => {
-  if (!confirm('ترجع كل الإعدادات وأحكام يقين للافتراضي؟')) return;
+// تأكيد داخل الصفحة بضغطتين (نوافذ confirm() لا تظهر في كل البيئات)
+let resetArmed = null;
+$('#resetBtn').addEventListener('click', e => {
+  const btn = e.currentTarget;
+  if (!resetArmed) {
+    btn.textContent = 'اضغط مرة ثانية للتأكيد — تُمسح أحكام يقين أيضًا'; btn.classList.add('armed');
+    resetArmed = setTimeout(() => { resetArmed = null; btn.textContent = 'استرجاع الإعدادات الافتراضية'; btn.classList.remove('armed'); }, 4000);
+    return;
+  }
+  clearTimeout(resetArmed); resetArmed = null;
+  btn.textContent = 'استرجاع الإعدادات الافتراضية'; btn.classList.remove('armed');
   settings = structuredClone(DEFAULTS); persist(); renderSettings(); renderYaqeen(); toast('تم الاسترجاع.', 'ok');
 });
 
@@ -288,8 +308,11 @@ function setMode(demo) {
   b.className = 'pill ' + (demo ? 'demo' : 'live');
   b.textContent = demo ? 'وضع تجريبي' : 'Alpha Vantage';
 }
-fetch('api/health').then(r => r.json()).then(d => setMode(d.demo)).catch(() => { $('#modeBadge').textContent = 'غير متصل'; });
+if (LOCAL) setMode(true);
+else fetch('api/health').then(r => r.json()).then(d => setMode(d.demo)).catch(() => { $('#modeBadge').textContent = 'غير متصل'; });
 
 /* ---------- boot ---------- */
 renderHome(); renderList(); renderYaqeen(); renderSettings();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// النسخة المستقلة التجريبية تفتح على نتيجة جاهزة بدل شاشة فاضية
+if (LOCAL && !lastScan) $('#scanBtn').click();
+if (!LOCAL && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

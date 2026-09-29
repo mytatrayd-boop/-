@@ -58,3 +58,10 @@ export function demoEarnings(symbols) {
   }
   return map;
 }
+
+export const demoProviders = {
+  demo: true,
+  bars: async sym => ({ bars: demoBars(sym), cached: false }),
+  news: async sym => ({ news: demoNews(sym) }),
+  earnings: async syms => ({ calendar: demoEarnings(syms) }),
+};
