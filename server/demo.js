@@ -59,8 +59,18 @@ export function demoEarnings(symbols) {
   return map;
 }
 
+// عيّنة من أسهم أمريكية عادية معروفة — بديل تجريبي عن «السوق كامل» (الحقيقي يأتي من Massive)
+const DEMO_UNIVERSE = ('AAPL MSFT NVDA AMZN GOOGL META TSLA AVGO AMD NFLX JPM XOM BA COST WMT HD PG KO PEP MRK ABBV LLY UNH JNJ PFE '
+  + 'CVX COP SLB ORCL CRM ADBE INTC QCOM TXN MU AMAT LRCX KLAC PANW CRWD SNOW PLTR UBER ABNB SHOP PYPL SQ COIN V MA AXP GS MS BAC '
+  + 'C WFC SCHW BLK DIS CMCSA T VZ TMUS NKE SBUX MCD CMG LOW TGT CAT DE GE HON LMT RTX NOC UPS FDX DAL UAL CCL F GM RIVN LCID '
+  + 'NIO SOFI HOOD RBLX DKNG ROKU ZM DOCU TWLO NET DDOG MDB OKTA ZS SMCI ARM DELL HPQ IBM CSCO ANET MRVL ON').split(' ');
+
 export const demoProviders = {
   demo: true,
+  universe: async ({ minPrice }) => {
+    const last = new Date().toISOString().slice(0, 10);
+    return { tickers: DEMO_UNIVERSE.filter(s => { const b = demoBars(s); return b.c[b.c.length - 1] >= minPrice; }), lastDay: last };
+  },
   bars: async sym => ({ bars: demoBars(sym), cached: false }),
   news: async sym => ({ news: demoNews(sym) }),
   earnings: async syms => ({ calendar: demoEarnings(syms) }),

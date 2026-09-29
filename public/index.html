@@ -67,7 +67,20 @@
     <h2 class="view-title">الإعدادات</h2>
 
     <div class="card">
-      <div class="card-title">قائمة المسح</div>
+      <div class="card-title">نطاق المسح</div>
+      <div class="seg" id="scopeSeg" role="tablist">
+        <button class="seg-btn" data-scope="market">السوق الأمريكي كامل</button>
+        <button class="seg-btn" data-scope="list">قائمتي</button>
+      </div>
+      <div id="marketCard">
+        <div class="stepper-row"><span>أقل سعر ($)</span><div class="stepper" data-key="minPrice" data-step="1" data-min="1" data-max="100"></div></div>
+        <div class="stepper-row"><span>أقل قيمة تداول يومية (مليون $)</span><div class="stepper" data-key="minDollarVolM" data-step="5" data-min="1" data-max="500"></div></div>
+        <div class="hint">أسهم عادية فقط (بدون صناديق ولا وارنتات). الفلتر يستبعد الأسهم الرخيصة والخاملة، لأن قفزة حجم في سهم خامل ما تعني سيولة حقيقية.</div>
+      </div>
+    </div>
+
+    <div class="card" id="listCard">
+      <div class="card-title">قائمتي</div>
       <div id="chips" class="chips"></div>
       <form id="addTicker" class="add-row">
         <input id="newTicker" type="text" inputmode="latin" autocapitalize="characters" autocomplete="off" placeholder="COST" aria-label="أضف رمز سهم" maxlength="10">

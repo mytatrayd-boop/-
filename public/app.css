@@ -158,6 +158,8 @@ main{max-width:560px;margin:0 auto;padding:14px 16px calc(var(--tabbar-h) + var(
 .stepper button{width:34px;height:34px;border:0;border-radius:9px;background:var(--panel);font-size:18px;}
 .stepper output{min-width:48px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:600;}
 .btn-ghost{width:100%;border:1px solid var(--border);background:none;border-radius:14px;padding:12px;color:var(--muted);}
+#listCard.dim .chips,#listCard.dim .add-row{opacity:.5;}
+#marketCard{margin-top:6px;}
 .btn-ghost.armed{border-color:rgba(240,96,90,.6);color:var(--sell);background:rgba(240,96,90,.08);}
 
 /* ---------- FAB + tabbar ---------- */

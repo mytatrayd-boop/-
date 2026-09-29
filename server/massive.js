@@ -1,0 +1,194 @@
+// Massive (Polygon سابقًا) — أسعار السوق الأمريكي كامل.
+// طلب «Grouped Daily» واحد يرجع شمعة يوم واحد لكل الأسهم، فنبني تاريخًا محليًا (يوم = ملف)
+// ونحسب منه نفس مؤشرات scoreTicker لكل السوق بدون أي طلب إضافي وقت المسح.
+//
+// ⚠️ شكل الرد مبني على توثيق Massive/Polygon — لم يُلاحظ رد حي بعد (الشبكة هنا تحجب النطاق).
+// شغّل `npm run check:massive` مرة بمفتاحك قبل الاعتماد عليه. المحلل دفاعي: أي صف ناقص يُتجاهل.
+import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
+import path from 'node:path';
+
+const BASE = (process.env.MASSIVE_API_BASE || 'https://api.polygon.io').replace(/\/+$/, '');
+const FREE_GAP_MS = Number(process.env.MASSIVE_GAP_MS) || 12500; // الخطة المجانية: 5 طلبات/دقيقة
+export const HISTORY_DAYS = 60;     // أيام تداول تكفي RSI(14) و ATR(14) ومتوسط حجم حتى 60 يوم
+const KEEP_DAYS = HISTORY_DAYS + 10;
+const TICKERS_TTL_MS = 7 * 86400000; // قائمة الأسهم العادية تتحدث أسبوعيًا
+
+export class MassiveError extends Error {
+  constructor(code, message) { super(message); this.code = code; }
+}
+
+/* ---------- تحليل الردود (دوال صافية — مُختبرة) ---------- */
+
+// Grouped Daily → [[ticker, o, h, l, c, v], ...]
+export function parseGroupedDaily(payload) {
+  if (!payload || typeof payload !== 'object') throw new MassiveError('bad_shape', 'رد Massive غير متوقع.');
+  if (payload.status === 'ERROR' || payload.status === 'NOT_AUTHORIZED') {
+    throw new MassiveError(/exceeded|maximum requests/i.test(payload.error || payload.message || '') ? 'rate_limited' : 'not_authorized',
+      'Massive: ' + String(payload.error || payload.message || payload.status).slice(0, 200));
+  }
+  if (!('results' in payload) && !('resultsCount' in payload)) throw new MassiveError('bad_shape', 'رد Massive بدون results. بداية الرد: ' + JSON.stringify(payload).slice(0, 200));
+  const rows = [];
+  for (const r of Array.isArray(payload.results) ? payload.results : []) {
+    const t = typeof r.T === 'string' ? r.T : null;
+    const vals = [r.o, r.h, r.l, r.c, r.v].map(Number);
+    if (!t || vals.some(x => !Number.isFinite(x)) || vals[3] <= 0) continue;
+    rows.push([t, ...vals]);
+  }
+  return rows; // فاضي = عطلة/نهاية أسبوع أو اليوم لم يُنشر بعد
+}
+
+// /v3/reference/tickers → {tickers:[...], next}
+export function parseTickersPage(payload) {
+  if (!payload || !Array.isArray(payload.results)) throw new MassiveError('bad_shape', 'رد قائمة الأسهم غير متوقع: ' + JSON.stringify(payload).slice(0, 200));
+  return { tickers: payload.results.map(r => r && r.ticker).filter(t => typeof t === 'string'), next: payload.next_url || null };
+}
+
+// أيام العمل (الإثنين–الجمعة) من الأحدث للأقدم، ابتداءً من «اليوم» بتوقيت UTC
+export function weekdaysBack(fromMs, count) {
+  const out = [];
+  let d = new Date(fromMs - (fromMs % 86400000));
+  while (out.length < count) {
+    const wd = d.getUTCDay();
+    if (wd !== 0 && wd !== 6) out.push(d.toISOString().slice(0, 10));
+    d = new Date(d.getTime() - 86400000);
+  }
+  return out;
+}
+
+// أيام مخزّنة [{date, rows}] (تصاعديًا) → bars لكل سهم بنفس صيغة المحرك
+export function buildBars(days) {
+  const map = new Map();
+  days.forEach(({ date, rows }, di) => {
+    const t = Date.parse(date + 'T00:00:00Z');
+    for (const [sym, o, h, l, c, v] of rows) {
+      let b = map.get(sym);
+      if (!b) { b = { t: [], o: [], h: [], l: [], c: [], v: [], lastDay: -1 }; map.set(sym, b); }
+      b.t.push(t); b.o.push(o); b.h.push(h); b.l.push(l); b.c.push(c); b.v.push(v); b.lastDay = di;
+    }
+  });
+  return map;
+}
+
+/* ---------- العميل + المخزن المحلي ---------- */
+
+export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
+  const daysDir = path.join(dataDir, 'days');
+  let days = [];          // [{date, rows}] تصاعديًا
+  let bars = new Map();
+  let commonStocks = null; // Set
+  let lastCallAt = 0;
+  const state = { ready: false, syncing: false, lastDay: null, days: 0, tickers: 0, commonStocks: 0, error: null, progress: null };
+
+  async function call(url) {
+    const wait = lastCallAt + FREE_GAP_MS - Date.now();
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    lastCallAt = Date.now();
+    const u = new URL(url); u.searchParams.set('apiKey', apiKey);
+    let res;
+    try { res = await fetch(u, { signal: AbortSignal.timeout(60000) }); }
+    catch { throw new MassiveError('unavailable', 'تعذّر الوصول لـ Massive.'); }
+    let payload = null;
+    try { payload = await res.json(); } catch { /* يُعالج تحت */ }
+    if (res.status === 429) throw new MassiveError('rate_limited', 'Massive: تجاوزت حد الطلبات بالدقيقة.');
+    if (res.status === 401 || res.status === 403) throw new MassiveError('not_authorized', 'Massive: المفتاح غير صالح أو الخطة لا تشمل هذا الطلب' + (payload && payload.message ? ` (${payload.message})` : '') + '.');
+    if (!payload) throw new MassiveError('bad_shape', `Massive رد بالحالة ${res.status} بدون JSON.`);
+    return payload;
+  }
+
+  async function loadFromDisk() {
+    await mkdir(daysDir, { recursive: true });
+    const files = (await readdir(daysDir)).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
+    days = [];
+    for (const f of files.slice(-KEEP_DAYS)) {
+      try { days.push({ date: f.slice(0, 10), rows: JSON.parse(await readFile(path.join(daysDir, f), 'utf8')) }); }
+      catch { log(`تجاهل ملف تالف: ${f}`); }
+    }
+    for (const f of files.slice(0, -KEEP_DAYS)) await rm(path.join(daysDir, f), { force: true });
+    try {
+      const saved = JSON.parse(await readFile(path.join(dataDir, 'tickers.json'), 'utf8'));
+      if (Date.now() - saved.at < TICKERS_TTL_MS) commonStocks = new Set(saved.tickers);
+    } catch { /* لا يوجد بعد */ }
+    rebuild();
+  }
+
+  function rebuild() {
+    bars = buildBars(days);
+    state.days = days.length;
+    state.lastDay = days.length ? days[days.length - 1].date : null;
+    state.tickers = bars.size;
+    state.commonStocks = commonStocks ? commonStocks.size : 0;
+    state.ready = days.length >= 30;
+  }
+
+  async function refreshCommonStocks() {
+    const list = [];
+    let url = `${BASE}/v3/reference/tickers?market=stocks&type=CS&active=true&limit=1000`;
+    while (url) {
+      const { tickers, next } = parseTickersPage(await call(url));
+      list.push(...tickers); url = next;
+    }
+    if (list.length < 1000) throw new MassiveError('bad_shape', `قائمة الأسهم العادية ناقصة (${list.length}).`);
+    commonStocks = new Set(list);
+    await writeFile(path.join(dataDir, 'tickers.json'), JSON.stringify({ at: Date.now(), tickers: list }));
+  }
+
+  // يجلب الأيام الناقصة (تعبئة أولى ~60 يوم تداول ≈ 15 دقيقة بالخطة المجانية، بعدها طلب واحد يوميًا)
+  async function sync() {
+    if (state.syncing) return;
+    state.syncing = true; state.error = null;
+    try {
+      if (!commonStocks) await refreshCommonStocks();
+      const have = new Set(days.map(d => d.date));
+      // نطلب أيام عمل أكثر من المطلوب لتعويض العطل الرسمية (ترجع فاضية)
+      const wanted = weekdaysBack(Date.now(), Math.ceil(HISTORY_DAYS * 1.1)).filter(d => !have.has(d));
+      const newest = wanted.filter(d => !state.lastDay || d > state.lastDay);
+      const backfill = days.length >= HISTORY_DAYS ? [] : wanted.filter(d => state.lastDay && d < state.lastDay);
+      const todo = [...newest, ...backfill];
+      const todayStr = new Date().toISOString().slice(0, 10);
+      let i = 0;
+      for (const date of todo) {
+        state.progress = { done: i++, total: todo.length, date };
+        let rows;
+        try { rows = parseGroupedDaily(await call(`${BASE}/v2/aggs/grouped/locale/us/market/stocks/${date}?adjusted=true&include_otc=false`)); }
+        catch (e) {
+          // الخطة المجانية ترفض يوم اليوم قبل نشر بيانات نهاية اليوم — نتخطاه ونعيد المحاولة لاحقًا
+          if (e.code === 'not_authorized' && date === todayStr) continue;
+          throw e;
+        }
+        if (rows.length < 1000) continue; // عطلة، أو يوم لم يُنشر بعد (لا نخزّنه حتى يُعاد طلبه لاحقًا)
+        await writeFile(path.join(daysDir, `${date}.json`), JSON.stringify(rows));
+        days.push({ date, rows });
+        days.sort((a, b) => a.date.localeCompare(b.date));
+        if (days.length > KEEP_DAYS) days = days.slice(-KEEP_DAYS);
+        rebuild();
+      }
+      log(`Massive: ${state.days} يوم، ${state.tickers} رمز، آخر يوم ${state.lastDay}`);
+    } catch (e) {
+      state.error = e.message; log('Massive sync: ' + e.message);
+    } finally {
+      state.syncing = false; state.progress = null;
+    }
+  }
+
+  // الكون القابل للمسح: أسهم عادية فقط (بدون صناديق/وارنتات)، تداولت في آخر يوم، سعر ≥ minPrice،
+  // ومتوسط قيمة التداول اليومية ≥ minDollarVol — وإلا تسيطر الأسهم الخاملة على «السيولة غير الطبيعية».
+  function universe({ minPrice, minDollarVol, avgDays }) {
+    const last = days.length - 1, out = [];
+    for (const [sym, b] of bars) {
+      if (commonStocks && !commonStocks.has(sym)) continue;
+      if (b.lastDay !== last || b.c.length < 40) continue;
+      const n = b.c.length;
+      if (b.c[n - 1] < minPrice) continue;
+      let dv = 0; const k = Math.min(avgDays, n - 1);
+      for (let i = n - 1 - k; i < n - 1; i++) dv += b.c[i] * b.v[i];
+      if (dv / k < minDollarVol) continue;
+      out.push(sym);
+    }
+    return out;
+  }
+
+  return {
+    state, loadFromDisk, sync, universe,
+    bars: sym => { const b = bars.get(sym); if (!b) throw new MassiveError('no_data', 'لا توجد بيانات لهذا الرمز في Massive.'); return b; },
+  };
+}

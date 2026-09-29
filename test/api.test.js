@@ -1,7 +1,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 
-delete process.env.ALPHA_VANTAGE_KEY; // يضمن الوضع التجريبي بدون استهلاك حصة
+// يضمن الوضع التجريبي بدون استهلاك حصة
+for (const k of ['ALPHA_VANTAGE_KEY', 'MASSIVE_API_KEY', 'POLYGON_API_KEY']) delete process.env[k];
+process.env.RASED_NO_ENV_FILE = '1';
 const { server } = await import('../server/index.js');
 let base;
 before(() => new Promise(r => server.listen(0, () => { base = `http://127.0.0.1:${server.address().port}`; r(); })));
@@ -36,6 +38,15 @@ test('news gate never lets a strongly opposed pick through, and newsMax=0 skips 
   assert.ok(!d.picks.some(p => p.sources.news.gated));
   const none = await (await scan({ tickers, volMult: 0.5, newsMax: 0 })).json();
   assert.ok(none.all.filter(r => r.ok && r.passesGate).every(r => r.news.status === 'capped' && r.score === r.baseScore));
+});
+
+test('market mode scans the whole (demo) universe with no 25-ticker cap and truncates the list', async () => {
+  const d = await (await scan({ mode: 'market', volMult: 0.5, minPrice: 1 })).json();
+  assert.equal(d.mode, 'market');
+  assert.ok(d.counts.requested > 25);
+  assert.ok(d.all.length <= 60);
+  assert.ok(d.marketLastDay);
+  assert.ok(d.picks.length > 0 && d.picks.length <= 2);
 });
 
 test('rejects empty and oversized lists', async () => {

@@ -7,21 +7,54 @@ import { fileURLToPath } from 'node:url';
 import { runScan } from './scan.js';
 import { fetchDailyBars, fetchNews, fetchEarningsCalendar } from './alphavantage.js';
 import { demoProviders } from './demo.js';
+import { createMassiveStore, HISTORY_DAYS } from './massive.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, '..', 'public');
 const envFile = path.join(ROOT, '..', '.env');
-if (existsSync(envFile) && typeof process.loadEnvFile === 'function') process.loadEnvFile(envFile);
+if (!process.env.RASED_NO_ENV_FILE && existsSync(envFile) && typeof process.loadEnvFile === 'function') process.loadEnvFile(envFile);
 
 const API_KEY = process.env.ALPHA_VANTAGE_KEY || '';
+const MASSIVE_KEY = process.env.MASSIVE_API_KEY || process.env.POLYGON_API_KEY || '';
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, '..', 'data'));
 const PORT = Number(process.env.PORT) || 3000;
-// بدون مفتاح: وضع تجريبي ببيانات مصطنعة موسومة بوضوح في الواجهة.
-const providers = API_KEY ? {
-  demo: false,
-  bars: sym => fetchDailyBars(sym, API_KEY),
-  news: (sym, newsP) => fetchNews(sym, API_KEY, newsP),
-  earnings: () => fetchEarningsCalendar(API_KEY),
-} : demoProviders;
+const SYNC_EVERY_MS = 60 * 60 * 1000;
+
+// Massive: أسعار السوق كامل من مخزن محلي (بدون طلبات وقت المسح).
+// Alpha Vantage: الأخبار وتقويم الأرباح (وأسعار «قائمتي» إذا ما فيه Massive).
+// بدون أي مفتاح: وضع تجريبي ببيانات مصطنعة موسومة بوضوح في الواجهة.
+const store = MASSIVE_KEY ? createMassiveStore({ apiKey: MASSIVE_KEY, dataDir: DATA_DIR }) : null;
+const DEMO = !MASSIVE_KEY && !API_KEY;
+
+function buildProviders() {
+  if (DEMO) return demoProviders;
+  const pv = { demo: false };
+  if (store) {
+    pv.bars = async sym => ({ bars: store.bars(sym), cached: true });
+    pv.universe = async opts => {
+      if (!store.state.ready) {
+        const pr = store.state.progress;
+        throw new Error(`بيانات السوق تتجهز (${store.state.days} يوم من ${HISTORY_DAYS}${pr ? `، يجلب ${pr.date}` : ''}) — حاول بعد دقائق.`);
+      }
+      return { tickers: store.universe(opts), lastDay: store.state.lastDay };
+    };
+  } else {
+    pv.bars = sym => fetchDailyBars(sym, API_KEY);
+  }
+  if (API_KEY) {
+    pv.news = (sym, newsP) => fetchNews(sym, API_KEY, newsP);
+    pv.earnings = () => fetchEarningsCalendar(API_KEY);
+  }
+  return pv;
+}
+const providers = buildProviders();
+
+function health() {
+  return {
+    ok: true, demo: DEMO, news: !!API_KEY || DEMO,
+    market: DEMO ? { ready: true, demo: true } : store ? { ...store.state } : null,
+  };
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -61,7 +94,7 @@ async function serveStatic(req, res) {
 export const server = http.createServer(async (req, res) => {
   try {
     if (req.url.startsWith('/api/')) {
-      if (req.url === '/api/health' && req.method === 'GET') return sendJson(res, 200, { ok: true, demo: !API_KEY });
+      if (req.url === '/api/health' && req.method === 'GET') return sendJson(res, 200, health());
       if (req.url === '/api/scan' && req.method === 'POST') return await handleScan(req, res);
       return sendJson(res, 404, { error: 'مسار غير معروف.' });
     }
@@ -74,5 +107,11 @@ export const server = http.createServer(async (req, res) => {
 });
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  server.listen(PORT, () => console.log(`راصد يعمل على http://localhost:${PORT} ${API_KEY ? '(Alpha Vantage)' : '(وضع تجريبي — لا يوجد ALPHA_VANTAGE_KEY)'}`));
+  const src = DEMO ? 'وضع تجريبي — لا يوجد مفتاح' : [MASSIVE_KEY && 'Massive: السوق كامل', API_KEY && 'Alpha Vantage: أخبار وأرباح'].filter(Boolean).join(' + ');
+  server.listen(PORT, () => console.log(`راصد يعمل على http://localhost:${PORT} (${src})`));
+  if (store) {
+    // تحميل المخزن ثم مزامنة الأيام الناقصة، وبعدها كل ساعة (يلتقط يوم التداول الجديد بعد نشره)
+    store.loadFromDisk().then(() => store.sync());
+    setInterval(() => store.sync(), SYNC_EVERY_MS).unref();
+  }
 }

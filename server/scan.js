@@ -8,14 +8,28 @@ const EARNINGS_HORIZON_DAYS = 7; // أفق الصفقة أسبوع
 const FATAL = new Set(['rate_limited']);
 const num = (v, def, min, max) => { const x = Number(v); return Number.isFinite(x) ? Math.min(max, Math.max(min, x)) : def; };
 
-// providers: { demo, bars(sym) → {bars, cached}, news(sym, newsP) → {news}, earnings(syms) → {calendar} }
-export async function runScan(body, providers) {
-  const tickers = [...new Set((Array.isArray(body.tickers) ? body.tickers : [])
-    .map(s => String(s).trim().toUpperCase()).filter(s => /^[A-Z][A-Z0-9.\-]{0,9}$/.test(s)))];
-  if (tickers.length === 0) return { status: 400, body: { error: 'القائمة فاضية.' } };
-  if (tickers.length > MAX_TICKERS) return { status: 400, body: { error: `الحد الأقصى ${MAX_TICKERS} سهم لكل مسح.` } };
+const MARKET_LIST_LIMIT = 60; // في مسح السوق كامل نرجع أعلى 60 فقط لقائمة «كل الأسهم»
 
+// providers: { demo, bars(sym) → {bars, cached}, news?(sym, newsP) → {news}, earnings?(syms) → {calendar},
+//              universe?({minPrice, minDollarVol, avgDays}) → {tickers, lastDay} }  — universe موجود فقط لمزوّد السوق كامل
+export async function runScan(body, providers) {
+  const market = body.mode === 'market';
   const p = { volAvgDays: num(body.volAvgDays, 20, 5, 60), volMult: num(body.volMult, 1.5, 0.5, 10) };
+  const marketP = { minPrice: num(body.minPrice, 5, 1, 1000), minDollarVol: num(body.minDollarVol, 20e6, 1e6, 1e10) };
+  let tickers, marketInfo = null;
+  if (market) {
+    if (!providers.universe) return { status: 400, body: { error: 'مسح السوق كامل غير متاح — الخادم يحتاج مفتاح Massive.' } };
+    try { marketInfo = await providers.universe({ ...marketP, avgDays: p.volAvgDays }); }
+    catch (err) { return { status: 503, body: { error: err.message || 'بيانات السوق غير جاهزة.' } }; }
+    tickers = marketInfo.tickers;
+    if (tickers.length === 0) return { status: 400, body: { error: 'لا يوجد سهم يطابق فلتر السعر والسيولة.' } };
+  } else {
+    tickers = [...new Set((Array.isArray(body.tickers) ? body.tickers : [])
+      .map(s => String(s).trim().toUpperCase()).filter(s => /^[A-Z][A-Z0-9.\-]{0,9}$/.test(s)))];
+    if (tickers.length === 0) return { status: 400, body: { error: 'القائمة فاضية.' } };
+    if (tickers.length > MAX_TICKERS) return { status: 400, body: { error: `الحد الأقصى ${MAX_TICKERS} سهم لكل مسح.` } };
+  }
+
   const tradeP = { slAtr: num(body.slAtr, 1.5, 0.2, 10), rr: num(body.rr, 1.5, 0.2, 10) };
   const yaqeen = body.yaqeen && typeof body.yaqeen === 'object' ? body.yaqeen : {};
   const { kept, excluded } = applyYaqeen(tickers, yaqeen, { excludeHaram: body.excludeHaram !== false, excludeMashbooh: !!body.excludeMashbooh });
@@ -47,6 +61,7 @@ export async function runScan(body, providers) {
     if (i >= newsP.newsMax) d.news = { status: 'capped' };
   });
   for (const [sym, d] of gatePassed.slice(0, newsP.newsMax)) {
+    if (!providers.news) { d.news = { status: 'off' }; continue; }
     if (newsFatal) { d.news = { status: 'error', error: newsFatal }; continue; }
     try {
       const { news } = await providers.news(sym, newsP);
@@ -64,7 +79,8 @@ export async function runScan(body, providers) {
   // 3) تقويم الأرباح — طلب واحد للسوق كله، تنبيه مخاطرة فقط لا يغيّر النتيجة.
   let earningsError = null, calendar = null;
   if (gatePassed.length) {
-    if (newsFatal && !demo) earningsError = newsFatal;
+    if (!providers.earnings) earningsError = 'غير مفعّل (لا يوجد مفتاح Alpha Vantage)';
+    else if (newsFatal && !demo) earningsError = newsFatal;
     else {
       try { calendar = (await providers.earnings(kept)).calendar; }
       catch (err) { earningsError = err.message || 'خطأ غير معروف'; }
@@ -81,7 +97,9 @@ export async function runScan(body, providers) {
     : { sym, ok: false, error: d.error };
 
   return { status: 200, body: {
-    demo, fatal: newsFatal, scannedAt: new Date().toISOString(), params: { ...p, ...tradeP, ...newsP, earningsHorizonDays: EARNINGS_HORIZON_DAYS },
+    demo, fatal: newsFatal, scannedAt: new Date().toISOString(),
+    mode: market ? 'market' : 'list', marketLastDay: marketInfo ? marketInfo.lastDay : null,
+    params: { ...p, ...tradeP, ...newsP, ...(market ? marketP : {}), earningsHorizonDays: EARNINGS_HORIZON_DAYS },
     counts: { requested: tickers.length, yaqeenExcluded: Object.keys(excluded).length, passed: passed.length, gateRejected: gateRejected.length, newsRejected: newsRejected.length, failed: failed.length },
     yaqeenExcluded: excluded,
     earnings: { ok: !!calendar, error: earningsError },
@@ -102,6 +120,10 @@ export async function runScan(body, providers) {
         bars: { t: cut('t'), o: cut('o'), h: cut('h'), l: cut('l'), c: cut('c') },
       };
     }),
-    all: Object.entries(perTicker).map(slim).sort((a, b) => (b.score || 0) - (a.score || 0)),
+    all: (() => {
+      const sorted = Object.entries(perTicker).map(slim).sort((a, b) => (b.score || 0) - (a.score || 0) || (b.ok ? b.liqRatio : 0) - (a.ok ? a.liqRatio : 0));
+      return market ? sorted.slice(0, MARKET_LIST_LIMIT) : sorted;
+    })(),
+    allTruncated: market && Object.keys(perTicker).length > MARKET_LIST_LIMIT,
   } };
 }

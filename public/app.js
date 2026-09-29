@@ -1,6 +1,8 @@
 'use strict';
 
 const DEFAULTS = {
+  scope: 'market', // 'market' = السوق الأمريكي كامل (Massive) | 'list' = قائمتي
+  minPrice: 5, minDollarVolM: 20, // فلتر كون السوق: أقل سعر ($) وأقل متوسط قيمة تداول يومية (مليون $)
   tickers: ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'META', 'AMD', 'NFLX', 'JPM', 'XOM', 'BA'],
   volAvgDays: 20, volMult: 1.5, slAtr: 1.5, rr: 1.5,
   newsDays: 3, newsBoost: 0.5, newsGate: 0.35, newsMax: 5,
@@ -65,20 +67,21 @@ $('#scanBtn').addEventListener('click', async () => {
   show('home');
   try {
     const req = {
+        mode: settings.scope, minPrice: settings.minPrice, minDollarVol: settings.minDollarVolM * 1e6,
         tickers: settings.tickers, volAvgDays: settings.volAvgDays, volMult: settings.volMult, slAtr: settings.slAtr, rr: settings.rr,
         newsDays: settings.newsDays, newsBoost: settings.newsBoost, newsGate: settings.newsGate, newsMax: settings.newsMax,
         yaqeen: settings.yaqeen, excludeHaram: settings.excludeHaram, excludeMashbooh: settings.excludeMashbooh,
     };
     const data = await scanRequest(req);
     lastScan = data; save('rased.lastScan', data);
-    setMode(data.demo);
+    refreshHealth();
     if (data.fatal) toast('⚠️ ' + data.fatal, 'err');
     else toast(`تم المسح: ${data.counts.passed} مؤهّل من ${data.counts.requested}${data.counts.newsRejected ? ` (${data.counts.newsRejected} استُبعد بخبر معاكس)` : ''}.`, 'ok');
   } catch (e) {
     toast('❌ ' + (e.message === 'Failed to fetch' ? 'ما قدرنا نوصل للخادم — تأكد من الاتصال.' : e.message), 'err');
   } finally {
     btn.disabled = false; btn.classList.remove('busy'); btn.querySelector('.fab-label').textContent = 'امسح السوق';
-    renderHome(); renderList();
+    renderHome(); renderList(); renderYaqeen();
   }
 });
 
@@ -119,7 +122,10 @@ function renderHome() {
     return;
   }
   const d = new Date(lastScan.scannedAt);
-  $('#lastScanLine').innerHTML = `آخر مسح: <span class="mono">${d.toLocaleDateString('en-CA')} ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>${lastScan.demo ? ' · <b style="color:var(--news)">بيانات تجريبية</b>' : ''}`;
+  const scope = lastScan.mode === 'market'
+    ? `السوق كامل · <span class="mono">${lastScan.counts.requested.toLocaleString('en-US')}</span> سهم · آخر تداول <span class="mono">${esc(lastScan.marketLastDay || '')}</span>`
+    : `قائمتي · <span class="mono">${lastScan.counts.requested}</span> سهم`;
+  $('#lastScanLine').innerHTML = `${scope}<br>آخر مسح: <span class="mono">${d.toLocaleDateString('en-CA')} ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>${lastScan.demo ? ' · <b style="color:var(--news)">بيانات تجريبية</b>' : ''}`;
 
   if (!lastScan.picks.length) {
     picks.innerHTML = `<div class="placeholder"><div class="big">🔍</div>ما فيه أي سهم اجتاز بوابة السيولة اليوم.<br><span class="hint">جرّب تقلل "أقل مضاعف للدخول" أو توسّع القائمة.</span></div>`;
@@ -227,7 +233,9 @@ function renderList() {
     ...Object.entries(lastScan.yaqeenExcluded).map(([sym, v]) => ({ sym, kind: 'yq', verdict: v })),
   ].filter(r => listFilter === 'all' || (listFilter === 'passed' ? r.kind === 'pass' : r.kind !== 'pass'));
   if (!rows.length) { el.innerHTML = '<div class="empty">لا يوجد.</div>'; return; }
-  el.innerHTML = rows.map(r => {
+  const note = lastScan.allTruncated
+    ? `<p class="hint">مسح السوق كامل: نعرض أعلى ${lastScan.all.length} سهم من <span class="mono">${lastScan.counts.requested.toLocaleString('en-US')}</span> — مؤهّل ${lastScan.counts.passed}، سيولة ضعيفة ${lastScan.counts.gateRejected.toLocaleString('en-US')}.</p>` : '';
+  el.innerHTML = note + rows.map(r => {
     if (r.kind === 'err') return `<div class="row"><span class="sym">${esc(r.sym)}</span><div class="mid">${esc(r.error)}</div><span class="tag err">فشل</span></div>`;
     if (r.kind === 'yq') return `<div class="row"><span class="sym">${esc(r.sym)}</span><div class="mid">مستبعد بفلتر يقين: <b>${esc(r.verdict)}</b></div><span class="tag yq">يقين</span></div>`;
     const fill = Math.min(100, r.liqRatio / (mult * 2) * 100);
@@ -243,7 +251,9 @@ function renderList() {
 function renderYaqeen() {
   $('#excludeHaram').checked = settings.excludeHaram;
   $('#excludeMashbooh').checked = settings.excludeMashbooh;
-  $('#yaqeenRows').innerHTML = settings.tickers.map(sym => `
+  // الترشيحات أولاً (في مسح السوق كامل غالبًا أسهم خارج قائمتك)، ثم قائمتك، ثم أي سهم سبق وحكمت عليه
+  const syms = [...new Set([...(lastScan ? lastScan.picks.map(p => p.sym) : []), ...settings.tickers, ...Object.keys(settings.yaqeen)])];
+  $('#yaqeenRows').innerHTML = syms.map(sym => `
     <div class="yrow" data-sym="${esc(sym)}">
       <span class="sym">${esc(sym)}</span>
       <div class="vseg">${VERDICTS.map(v => `<button data-v="${v}" class="${settings.yaqeen[sym] === v ? 'on' : ''}">${v}</button>`).join('')}</div>
@@ -262,14 +272,25 @@ $('#excludeMashbooh').addEventListener('change', e => { settings.excludeMashbooh
 /* ---------- settings ---------- */
 function renderSettings() {
   $('#chips').innerHTML = settings.tickers.map(s => `<span class="chip">${esc(s)}<button data-rm="${esc(s)}" aria-label="احذف ${esc(s)}">×</button></span>`).join('');
+  const market = settings.scope === 'market';
+  document.querySelectorAll('#scopeSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.scope === settings.scope));
+  $('#marketCard').hidden = !market;
+  $('#listCard').classList.toggle('dim', market);
   const n = settings.tickers.length;
-  const worst = n + Math.min(settings.newsMax, n) + 1;
-  $('#quotaHint').innerHTML = `⚠️ حصتك المجانية ~${QUOTA} طلب/يوم. أسوأ حالة لكل مسح: <b class="mono">${n}</b> سعر + <b class="mono">${Math.min(settings.newsMax, n)}</b> خبر + <b class="mono">1</b> تقويم أرباح = <b class="mono" style="color:${worst > QUOTA ? 'var(--sell)' : 'inherit'}">${worst}</b>. الخادم يخزّن النتائج مؤقتًا فتكرار المسح بنفس اليوم ما يستهلك.`;
+  const news = Math.min(settings.newsMax, market ? settings.newsMax : n);
+  const worst = (market ? 0 : n) + news + 1;
+  $('#quotaHint').innerHTML = market
+    ? `في مسح السوق كامل الأسعار تجي من مخزن Massive (بدون استهلاك وقت المسح). من حصة Alpha Vantage (~${QUOTA}/يوم): حتى <b class="mono">${news}</b> خبر + <b class="mono">1</b> تقويم أرباح = <b class="mono">${worst}</b> لكل مسح. هذه القائمة تُستخدم فقط في وضع «قائمتي».`
+    : `⚠️ حصتك المجانية ~${QUOTA} طلب/يوم. أسوأ حالة لكل مسح: <b class="mono">${n}</b> سعر + <b class="mono">${news}</b> خبر + <b class="mono">1</b> تقويم أرباح = <b class="mono" style="color:${worst > QUOTA ? 'var(--sell)' : 'inherit'}">${worst}</b>. الخادم يخزّن النتائج مؤقتًا فتكرار المسح بنفس اليوم ما يستهلك.`;
   document.querySelectorAll('.stepper').forEach(st => {
     const k = st.dataset.key, dec = (st.dataset.step.split('.')[1] || '').length;
     st.innerHTML = `<button data-d="-1" aria-label="إنقاص">−</button><output class="mono">${settings[k].toFixed(dec)}</output><button data-d="1" aria-label="زيادة">+</button>`;
   });
 }
+$('#scopeSeg').addEventListener('click', e => {
+  const b = e.target.closest('[data-scope]'); if (!b) return;
+  settings.scope = b.dataset.scope; persist(); renderSettings();
+});
 $('#chips').addEventListener('click', e => {
   const s = e.target.dataset.rm; if (!s) return;
   settings.tickers = settings.tickers.filter(t => t !== s); persist(); renderSettings(); renderYaqeen();
@@ -303,13 +324,21 @@ $('#resetBtn').addEventListener('click', e => {
 });
 
 /* ---------- mode badge ---------- */
-function setMode(demo) {
-  const b = $('#modeBadge');
-  b.className = 'pill ' + (demo ? 'demo' : 'live');
-  b.textContent = demo ? 'وضع تجريبي' : 'Alpha Vantage';
+function setMode(h) {
+  const b = $('#modeBadge'), m = h.market;
+  if (h.demo) { b.className = 'pill demo'; b.textContent = 'وضع تجريبي'; return; }
+  if (m && m.ready) { b.className = 'pill live'; b.textContent = `السوق · ${m.lastDay}`; b.title = `${m.tickers} رمز، ${m.days} يوم تداول`; return; }
+  if (m) { b.className = 'pill demo'; b.textContent = `يتجهز ${m.days}/60 يوم`; b.title = m.error || ''; return; }
+  b.className = 'pill live'; b.textContent = 'Alpha Vantage';
 }
-if (LOCAL) setMode(true);
-else fetch('api/health').then(r => r.json()).then(d => setMode(d.demo)).catch(() => { $('#modeBadge').textContent = 'غير متصل'; });
+function refreshHealth() {
+  if (LOCAL) return setMode({ demo: true });
+  fetch('api/health').then(r => r.json()).then(h => {
+    setMode(h);
+    if (h.market && !h.market.ready && !h.market.error) setTimeout(refreshHealth, 30000); // تحديث تقدّم التعبئة الأولى
+  }).catch(() => { $('#modeBadge').textContent = 'غير متصل'; });
+}
+refreshHealth();
 
 /* ---------- boot ---------- */
 renderHome(); renderList(); renderYaqeen(); renderSettings();
