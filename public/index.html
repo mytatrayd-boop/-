@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="راصد">
+<title>راصد</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="mark"></span>راصد</div>
+  <span id="modeBadge" class="pill muted">…</span>
+</header>
+
+<main id="views">
+  <!-- ===== الترشيحات ===== -->
+  <section class="view active" id="view-home" aria-label="الترشيحات">
+    <div class="hero">
+      <div class="hero-sub">أقوى سهمين هذا الأسبوع</div>
+      <div id="lastScanLine" class="hero-meta">لم يتم أي مسح بعد</div>
+    </div>
+
+    <div id="picks"></div>
+
+    <div id="summary" class="summary" hidden></div>
+
+    <details class="disclaimer">
+      <summary><b>مو توصية مالية</b> — اضغط للتفاصيل</summary>
+      <p>السيولة هنا = حجم تداول غير طبيعي (تقريب، مو تدفق خيارات حقيقي بعد). الأخبار غير مفعّلة. الإشارة الفنية RSI(14) فقط. المنطق لم يُختبر تاريخيًا بعد. القرار والمخاطرة عليك بالكامل.</p>
+    </details>
+  </section>
+
+  <!-- ===== كل الأسهم ===== -->
+  <section class="view" id="view-list" aria-label="كل الأسهم">
+    <h2 class="view-title">نتيجة كل سهم</h2>
+    <div class="seg" role="tablist">
+      <button class="seg-btn active" data-filter="all">الكل</button>
+      <button class="seg-btn" data-filter="passed">اجتاز</button>
+      <button class="seg-btn" data-filter="rejected">مستبعد</button>
+    </div>
+    <div id="allList" class="list"><div class="empty">امسح السوق أولاً.</div></div>
+  </section>
+
+  <!-- ===== يقين ===== -->
+  <section class="view" id="view-yaqeen" aria-label="فلتر يقين">
+    <h2 class="view-title">فلتر يقين الشرعي</h2>
+    <p class="hint">لا يوجد API لموقع يقين — الأحكام تُدخل يدويًا. سهم بلا حكم = "غير معروف" ولا يُستبعد تلقائيًا.</p>
+    <div class="card">
+      <label class="toggle"><span>استبعد "غير شرعي"</span><input type="checkbox" id="excludeHaram" checked><i></i></label>
+      <label class="toggle"><span>استبعد "محل نظر"</span><input type="checkbox" id="excludeMashbooh"><i></i></label>
+    </div>
+    <div id="yaqeenRows" class="list"></div>
+  </section>
+
+  <!-- ===== الإعدادات ===== -->
+  <section class="view" id="view-settings" aria-label="الإعدادات">
+    <h2 class="view-title">الإعدادات</h2>
+
+    <div class="card">
+      <div class="card-title">قائمة المسح</div>
+      <div id="chips" class="chips"></div>
+      <form id="addTicker" class="add-row">
+        <input id="newTicker" type="text" inputmode="latin" autocapitalize="characters" autocomplete="off" placeholder="COST" aria-label="أضف رمز سهم" maxlength="10">
+        <button type="submit" class="btn-sm">إضافة</button>
+      </form>
+      <div class="hint" id="quotaHint"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">بوابة السيولة (شرط إلزامي)</div>
+      <div class="stepper-row"><span>متوسط الحجم (يوم)</span><div class="stepper" data-key="volAvgDays" data-step="1" data-min="5" data-max="60"></div></div>
+      <div class="stepper-row"><span>أقل مضاعف للدخول</span><div class="stepper" data-key="volMult" data-step="0.1" data-min="0.5" data-max="10"></div></div>
+      <div class="hint">سهم حجمه اليوم أقل من هذا المضاعف عن متوسطه يُستبعد فورًا، بغض النظر عن قوته الفنية.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">الصفقة (أسبوعية)</div>
+      <div class="stepper-row"><span>وقف الخسارة (×ATR)</span><div class="stepper" data-key="slAtr" data-step="0.1" data-min="0.2" data-max="10"></div></div>
+      <div class="stepper-row"><span>الهدف (×وقف الخسارة)</span><div class="stepper" data-key="rr" data-step="0.1" data-min="0.2" data-max="10"></div></div>
+    </div>
+
+    <button id="resetBtn" class="btn-ghost">استرجاع الإعدادات الافتراضية</button>
+  </section>
+</main>
+
+<button id="scanBtn" class="fab" aria-label="امسح السوق الآن">
+  <span class="fab-icon">📡</span><span class="fab-label">امسح السوق</span>
+</button>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<nav class="tabbar">
+  <button class="tab active" data-view="home"><span class="ti">🎯</span><span>الترشيحات</span></button>
+  <button class="tab" data-view="list"><span class="ti">📋</span><span>كل الأسهم</span></button>
+  <button class="tab" data-view="yaqeen"><span class="ti">☪︎</span><span>يقين</span></button>
+  <button class="tab" data-view="settings"><span class="ti">⚙️</span><span>الإعدادات</span></button>
+</nav>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
