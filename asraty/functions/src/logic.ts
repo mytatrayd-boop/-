@@ -113,3 +113,26 @@ export function cleanPerms(v: unknown): Record<PermKey, boolean> {
   for (const k of PERM_KEYS) out[k] = src[k] === true;
   return out;
 }
+
+/** Android notification channel created by the app (heads-up + sound). Keep in sync with app/lib/backend/push.dart. */
+export const PUSH_CHANNEL = "asraty_alerts";
+
+/**
+ * FCM message body for a WhatsApp-style alert: a pop-up banner with the default
+ * sound on Android (high-importance channel, high priority) and iOS (sound + banner).
+ */
+export function pushPayload(title: string, body: string, familyId: string) {
+  const text = body.length > 180 ? body.slice(0, 177) + "…" : body;
+  return {
+    notification: { title, body: text },
+    data: { familyId },
+    android: {
+      priority: "high" as const,
+      notification: { channelId: PUSH_CHANNEL, sound: "default", priority: "max" as const, defaultVibrateTimings: true, icon: "ic_notification", color: "#2F6158" },
+    },
+    apns: {
+      headers: { "apns-priority": "10", "apns-push-type": "alert" },
+      payload: { aps: { sound: "default", "interruption-level": "active" as const } },
+    },
+  };
+}

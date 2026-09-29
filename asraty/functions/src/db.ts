@@ -5,7 +5,7 @@ import { getStorage } from "firebase-admin/storage";
 import { getMessaging } from "firebase-admin/messaging";
 import { HttpsError } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
-import { Perms, Role } from "./logic";
+import { Perms, Role, pushPayload } from "./logic";
 
 if (!getApps().length) initializeApp();
 
@@ -44,13 +44,7 @@ export async function push(fid: string, targets: Person[], title: string, body: 
   const tokens = targets.flatMap((p) => p.fcmTokens ?? []);
   if (!tokens.length) return;
   try {
-    const res = await getMessaging().sendEachForMulticast({
-      tokens,
-      notification: { title, body: body.length > 180 ? body.slice(0, 177) + "…" : body },
-      data: { familyId: fid },
-      apns: { payload: { aps: { sound: "default" } } },
-      android: { priority: "high", notification: { sound: "default" } },
-    });
+    const res = await getMessaging().sendEachForMulticast({ tokens, ...pushPayload(title, body, fid) });
     // Drop tokens that are no longer valid.
     const dead: string[] = [];
     res.responses.forEach((r, i) => {

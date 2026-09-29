@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { can, competitionPoints, dayKey, periodKey, reportText, tierOf, weekKey, cleanPerms, Tier } from "../src/logic";
+import { can, competitionPoints, dayKey, periodKey, reportText, tierOf, weekKey, cleanPerms, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
 
 const riyadh = (iso: string) => Date.parse(iso + "+03:00");
 
@@ -54,4 +54,15 @@ test("reportText ranks members", () => {
   assert.match(t, /الثلاثاء، 29 سبتمبر/);
   assert.ok(t.indexOf("🥇 لمى") < t.indexOf("🥈 أصيل"));
   assert.match(t, /مجموع الأسرة: 35 نقطة/);
+});
+
+test("push payload pops up with sound on Android and iOS", () => {
+  const p = pushPayload("مهمة بانتظار موافقتك", "أصيل: ترتيب السرير", "fam1");
+  assert.equal(p.notification.title, "مهمة بانتظار موافقتك");
+  assert.equal(p.android.priority, "high");
+  assert.equal(p.android.notification.channelId, PUSH_CHANNEL);
+  assert.equal(p.android.notification.sound, "default");
+  assert.equal(p.apns.payload.aps.sound, "default");
+  assert.equal(p.apns.headers["apns-push-type"], "alert");
+  assert.ok(pushPayload("t", "x".repeat(500), "f").notification.body.length <= 178);
 });

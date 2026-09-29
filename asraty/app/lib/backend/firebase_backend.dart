@@ -12,6 +12,7 @@ import '../config.dart';
 import '../core/logic.dart';
 import '../core/models.dart';
 import 'backend.dart';
+import 'push.dart';
 
 DateTime _ts(Object? v) => v is Timestamp ? v.toDate() : DateTime.now();
 int _int(Object? v) => v is num ? v.toInt() : 0;
@@ -208,6 +209,7 @@ class FirebaseBackend extends Backend {
       final m = FirebaseMessaging.instance;
       final perm = await m.requestPermission();
       if (perm.authorizationStatus == AuthorizationStatus.denied) return;
+      await Push.init();
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         // APNs token must exist before an FCM token can be fetched on iOS.
         for (var i = 0; i < 10 && await m.getAPNSToken() == null; i++) {

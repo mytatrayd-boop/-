@@ -139,30 +139,52 @@ class EditableAvatar extends StatelessWidget {
   }
 }
 
-/// Gold ring with the avatar inside and the name written along the top arc.
+/// Family member in the header: the avatar fills the whole circle, faded like a
+/// watermark, with the name written straight across it in a contrasting colour.
+/// Invited (not yet linked) members get a dashed border and are dimmed.
 class NameRing extends StatelessWidget {
   const NameRing({super.key, required this.person, this.size = 80});
   final Person person;
   final double size;
+
   @override
   Widget build(BuildContext context) {
     final inv = !person.active;
     return Tooltip(
       message: inv ? '${person.name} (${context.t.pendingVerification})' : person.name,
       child: Opacity(
-        opacity: inv ? .55 : 1,
+        opacity: inv ? .6 : 1,
         child: SizedBox.square(
           dimension: size,
           child: CustomPaint(
-            painter: _RingPainter(person.name, inv, Directionality.of(context)),
-            child: Center(
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2))],
+            foregroundPainter: _BorderPainter(dashed: inv),
+            child: ClipOval(
+              child: Stack(fit: StackFit.expand, children: [
+                const ColoredBox(color: Colors.white),
+                // Watermark: the avatar, faded.
+                Opacity(opacity: .32, child: SvgPicture.string(avatarSvg(person.avatar), fit: BoxFit.cover)),
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: size * .1),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        person.name,
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: bodyFont,
+                          fontSize: size * .2,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                          color: Palette.brand,
+                          shadows: const [Shadow(color: Colors.white, blurRadius: 4)],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: AvatarView(person.avatar, size: size * .57),
-              ),
+              ]),
             ),
           ),
         ),
@@ -171,66 +193,30 @@ class NameRing extends StatelessWidget {
   }
 }
 
-class _RingPainter extends CustomPainter {
-  _RingPainter(this.name, this.dashed, this.dir);
-  final String name;
+class _BorderPainter extends CustomPainter {
+  _BorderPainter({required this.dashed});
   final bool dashed;
-  final TextDirection dir;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final k = size.width / 100; // painter works in the prototype's 100x100 viewBox
-    final c = Offset(50 * k, 50 * k);
-    canvas.drawCircle(c, 48 * k, Paint()..color = const Color(0x21FFFFFF));
+    final r = size.width / 2 - 1.5;
+    final c = size.center(Offset.zero);
     final stroke = Paint()
       ..color = Palette.sun
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6 * k;
-    if (dashed) {
-      const dash = 4.0, gap = 3.0, r = 48.0;
-      final step = (dash + gap) / r;
-      for (var a = 0.0; a < 2 * math.pi; a += step) {
-        canvas.drawArc(Rect.fromCircle(center: c, radius: r * k), a, dash / r, false, stroke);
-      }
-    } else {
-      canvas.drawCircle(c, 48 * k, stroke);
+      ..strokeWidth = 3;
+    if (!dashed) {
+      canvas.drawCircle(c, r, stroke);
+      return;
     }
-
-    // Name on the arc: lay the text out once (so Arabic letters stay joined),
-    // then draw it in thin vertical slices rotated along the circle.
-    final fs = math.min(11.5, 108 / math.max(1, name.length * .62)) * k;
-    final tp = TextPainter(
-      text: TextSpan(text: name, style: TextStyle(fontFamily: bodyFont, fontSize: fs, fontWeight: FontWeight.w700, color: Colors.white)),
-      textDirection: dir,
-    )..layout();
-    const r = 39.0;
-    final radius = r * k;
-    final w = tp.width, h = tp.height;
-    const slice = 1.0;
-    for (var x = 0.0; x < w; x += slice) {
-      final theta = (x + slice / 2 - w / 2) / radius;
-      final p = c + Offset(math.sin(theta), -math.cos(theta)) * radius;
-      canvas.save();
-      canvas.translate(p.dx, p.dy);
-      canvas.rotate(theta);
-      canvas.clipRect(Rect.fromLTWH(-slice / 2 - .3, -h, slice + .6, h * 2));
-      tp.paint(canvas, Offset(-x - slice / 2, -h / 2));
-      canvas.restore();
+    const dash = 6.0, gap = 4.0;
+    for (var a = 0.0; a < 2 * math.pi; a += (dash + gap) / r) {
+      canvas.drawArc(Rect.fromCircle(center: c, radius: r), a, dash / r, false, stroke);
     }
-
-    // ★ under the ring (drawn as a path so it never depends on a symbol font).
-    final star = Path();
-    for (var i = 0; i < 10; i++) {
-      final rr = (i.isEven ? 4.2 : 1.8) * k;
-      final a = -math.pi / 2 + i * math.pi / 5;
-      final pt = Offset(50 * k + rr * math.cos(a), 92 * k + rr * math.sin(a));
-      i == 0 ? star.moveTo(pt.dx, pt.dy) : star.lineTo(pt.dx, pt.dy);
-    }
-    canvas.drawPath(star..close(), Paint()..color = Palette.sun);
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.name != name || old.dashed != dashed;
+  bool shouldRepaint(_BorderPainter old) => old.dashed != dashed;
 }
 
 // ------------------------------------------------------------------ building blocks
