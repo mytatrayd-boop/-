@@ -140,7 +140,7 @@ class EditableAvatar extends StatelessWidget {
 }
 
 /// Family member in the header: the avatar fills the whole circle, faded like a
-/// watermark, with the name written straight across it in a contrasting colour.
+/// watermark. No name on it; the name is in the tooltip and screen-reader label.
 /// Invited (not yet linked) members get a dashed border and are dimmed.
 class NameRing extends StatelessWidget {
   const NameRing({super.key, required this.person, this.size = 80});
@@ -150,9 +150,14 @@ class NameRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inv = !person.active;
+    final label = inv ? '${person.name} (${context.t.pendingVerification})' : person.name;
     return Tooltip(
-      message: inv ? '${person.name} (${context.t.pendingVerification})' : person.name,
-      child: Opacity(
+      message: label,
+      excludeFromSemantics: true,
+      child: Semantics(
+        label: label,
+        image: true,
+        child: Opacity(
         opacity: inv ? .6 : 1,
         child: SizedBox.square(
           dimension: size,
@@ -163,31 +168,11 @@ class NameRing extends StatelessWidget {
                 const ColoredBox(color: Colors.white),
                 // Watermark: the avatar, faded.
                 Opacity(opacity: .32, child: SvgPicture.string(avatarSvg(person.avatar), fit: BoxFit.cover)),
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: size * .1),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        person.name,
-                        maxLines: 1,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: bodyFont,
-                          fontSize: size * .2,
-                          fontWeight: FontWeight.w700,
-                          height: 1.1,
-                          color: Palette.brand,
-                          shadows: const [Shadow(color: Colors.white, blurRadius: 4)],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ]),
             ),
           ),
         ),
+      ),
       ),
     );
   }
