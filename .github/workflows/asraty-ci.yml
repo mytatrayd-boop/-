@@ -1,0 +1,34 @@
+name: Asraty — tests
+
+on:
+  push:
+    paths: ["asraty/**", ".github/workflows/asraty-*.yml"]
+  pull_request:
+    paths: ["asraty/**", ".github/workflows/asraty-*.yml"]
+  workflow_dispatch:
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: asraty/app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  functions:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: asraty/functions } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: asraty/functions/package-lock.json }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:rules
+      - run: npm run test:api

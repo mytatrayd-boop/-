@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// All writes go through Cloud Functions (Admin SDK bypasses these rules).
+// Clients may only read their own family's data.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // The token claim says which family; the people doc must still exist,
+    // so a removed person loses access immediately.
+    function inFamily(fid) {
+      return signedIn()
+        && request.auth.token.familyId == fid
+        && exists(/databases/$(database)/documents/families/$(fid)/people/$(request.auth.uid));
+    }
+
+    function isMember() {
+      return request.auth.token.role == 'member';
+    }
+
+    match /families/{fid} {
+      allow read: if inFamily(fid);
+      allow write: if false;
+
+      // Members only see notifications addressed to them or to everyone.
+      match /notifications/{id} {
+        allow read: if inFamily(fid)
+          && (!isMember() || resource.data.to == 'all' || resource.data.to == request.auth.uid);
+        allow write: if false;
+      }
+
+      match /{coll}/{id} {
+        allow read: if inFamily(fid) && coll != 'notifications';
+        allow write: if false;
+      }
+    }
+
+    // emailIndex, authCodes, feedback, feedbackRate: server only.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
