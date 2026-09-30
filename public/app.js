@@ -42,6 +42,14 @@ function toast(msg, kind = '') {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
 }
 
+// اسم الشركة الكامل + البورصة: الرمز وحده قد يلتبس (رموز متشابهة في أسواق ثانية)
+function companyLine(p) {
+  if (!p.name && !p.exchange) return '';
+  return `<div class="pick-co">${esc(p.name || '')}${p.exchange ? ` <span class="exch">${esc(p.exchange)}</span>` : ''}</div>`;
+}
+// صفحة السهم في Yahoo Finance بنفس الرمز الأمريكي (فئات الأسهم: BRK.B → BRK-B)
+const quoteUrl = sym => `https://finance.yahoo.com/quote/${encodeURIComponent(String(sym).replace(/\./g, '-'))}`;
+
 /* ---------- scan ---------- */
 // النسخة المستقلة (بدون خادم) تعرّف window.RASED_LOCAL وتشغّل نفس منطق المسح محليًا ببيانات تجريبية.
 const LOCAL = window.RASED_LOCAL || null;
@@ -137,10 +145,12 @@ function renderHome() {
         <div class="pick-head">
           <div>
             <div class="pick-sym"><span class="sym">${esc(p.sym)}</span><span class="rank">#${p.rank}</span></div>
+            ${companyLine(p)}
             <div class="pick-price">آخر إغلاق <span class="mono">${fmt(t.entry)}</span> · <span class="mono">${new Date(p.lastDate).toISOString().slice(0, 10)}</span></div>
           </div>
           <span class="dir ${buy ? 'buy' : 'sell'}">${buy ? '▲ شراء' : '▼ بيع'}</span>
         </div>
+        ${lastScan.demo ? '<div class="demo-warn">⚠️ السعر والأرقام هنا <b>مصطنعة للتجربة</b> ولا تطابق سعر السهم الحقيقي. الاسم والرمز حقيقيين.</div>' : ''}
         <div class="sources" aria-label="مصدر الترشيح">
           <div class="src liq"><div class="k"><i></i>سيولة</div><div class="v mono">×${fmt(p.liqRatio, 1)}</div></div>
           <div class="src tech"><div class="k"><i></i>فني RSI</div><div class="v mono">${fmt(p.rsi, 1)}</div></div>
@@ -156,6 +166,7 @@ function renderHome() {
         <canvas class="chart" data-sym="${esc(p.sym)}"></canvas>
         <div class="pick-foot">
           <span class="yq ${yqClass(p.yaqeen)}">يقين: ${esc(p.yaqeen)}</span>
+          <a class="link" href="${quoteUrl(p.sym)}" target="_blank" rel="noopener">📈 السعر الحقيقي</a>
           <a class="link" href="https://yaaqen.com/stocks/${encodeURIComponent(p.sym)}" target="_blank" rel="noopener">🔍 تحقق في يقين</a>
         </div>
         <p class="hint">${buy ? 'زخم صاعد' : 'زخم هابط'}، قوة الإشارة ${Math.round(p.momentum * 100)}% · حجم اليوم ${fmt(p.liqRatio, 1)}× متوسط ${lastScan.params.volAvgDays} يوم${p.sources.news.status === 'ok' && p.sources.news.count ? ` · أثر الخبر ×${fmt(p.sources.news.multiplier, 2)} على النتيجة` : ''}.</p>
@@ -240,7 +251,7 @@ function renderList() {
     if (r.kind === 'yq') return `<div class="row"><span class="sym">${esc(r.sym)}</span><div class="mid">مستبعد بفلتر يقين: <b>${esc(r.verdict)}</b></div><span class="tag yq">يقين</span></div>`;
     const fill = Math.min(100, r.liqRatio / (mult * 2) * 100);
     return `<div class="row">
-      <span class="sym">${esc(r.sym)}</span>
+      <span class="sym">${esc(r.sym)}${r.name ? `<small class="co" title="${esc(r.name)}">${esc(r.name)}</small>` : ''}</span>
       <div class="mid">سيولة <b class="mono">×${fmt(r.liqRatio, 2)}</b> · RSI <b class="mono">${fmt(r.rsi, 1)}</b> ${r.direction === 1 ? '▲' : '▼'}${r.news && r.news.status === 'ok' ? ` · خبر: <b>${esc(r.news.label)}</b>${r.news.count ? ` <span class="mono">×${fmt(r.news.multiplier, 2)}</span>` : ''}` : ''}
         <div class="bar"><i class="${r.passesGate ? '' : 'under'}" style="width:${fill}%"></i></div></div>
       <span class="tag ${r.kind}">${{ pass: 'مؤهّل', rej: 'سيولة ضعيفة', newsrej: 'خبر معاكس' }[r.kind]}</span></div>`;

@@ -31,6 +31,7 @@ function buildProviders() {
   const pv = { demo: false };
   if (store) {
     pv.bars = async sym => ({ bars: store.bars(sym), cached: true });
+    pv.profile = store.profile;
     pv.universe = async opts => {
       if (!store.state.ready) {
         const pr = store.state.progress;

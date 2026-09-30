@@ -11,7 +11,8 @@ const num = (v, def, min, max) => { const x = Number(v); return Number.isFinite(
 const MARKET_LIST_LIMIT = 60; // في مسح السوق كامل نرجع أعلى 60 فقط لقائمة «كل الأسهم»
 
 // providers: { demo, bars(sym) → {bars, cached}, news?(sym, newsP) → {news}, earnings?(syms) → {calendar},
-//              universe?({minPrice, minDollarVol, avgDays}) → {tickers, lastDay} }  — universe موجود فقط لمزوّد السوق كامل
+//              universe?({minPrice, minDollarVol, avgDays}) → {tickers, lastDay}, profile?(sym) → {name, exchange} | null }
+//              — universe موجود فقط لمزوّد السوق كامل، و profile (اسم الشركة الكامل + البورصة) حيث يتوفر بدون طلبات إضافية
 export async function runScan(body, providers) {
   const market = body.mode === 'market';
   const p = { volAvgDays: num(body.volAvgDays, 20, 5, 60), volMult: num(body.volMult, 1.5, 0.5, 10) };
@@ -89,11 +90,13 @@ export async function runScan(body, providers) {
   const earningsFor = d => calendar ? upcomingEarnings(calendar, d.sym, d.lastDate, EARNINGS_HORIZON_DAYS) : undefined;
 
   const { top, passed, gateRejected, newsRejected, failed } = rankResults(perTicker);
+  // اسم الشركة والبورصة: عشان المستخدم يلقى نفس السهم بالضبط في منصته (الرمز وحده قد يلتبس)
+  const who = sym => { const pr = providers.profile ? providers.profile(sym) : null; return { name: (pr && pr.name) || null, exchange: (pr && pr.exchange) || null }; };
   const newsSummary = n => n.status === 'ok'
     ? { status: 'ok', count: n.count, sentiment: n.sentiment, label: n.label, aligned: n.aligned, multiplier: n.multiplier, gated: n.gated }
     : { status: n.status, error: n.error };
   const slim = ([sym, d]) => d.ok
-    ? { sym, ok: true, passesGate: d.passesGate, newsGated: !!d.newsGated, liqRatio: d.liqRatio, rsi: d.rsiVal, direction: d.direction, baseScore: d.baseScore, score: d.score, lastClose: d.lastClose, yaqeen: d.yaqeen, cached: d.cached, news: newsSummary(d.news) }
+    ? { sym, ...who(sym), ok: true, passesGate: d.passesGate, newsGated: !!d.newsGated, liqRatio: d.liqRatio, rsi: d.rsiVal, direction: d.direction, baseScore: d.baseScore, score: d.score, lastClose: d.lastClose, yaqeen: d.yaqeen, cached: d.cached, news: newsSummary(d.news) }
     : { sym, ok: false, error: d.error };
 
   return { status: 200, body: {
@@ -107,7 +110,7 @@ export async function runScan(body, providers) {
       const n = d.bars.c.length, from = Math.max(0, n - CHART_BARS);
       const cut = k => d.bars[k].slice(from);
       return {
-        rank: rank + 1, sym, yaqeen: d.yaqeen, lastDate: d.lastDate, direction: d.direction,
+        rank: rank + 1, sym, ...who(sym), yaqeen: d.yaqeen, lastDate: d.lastDate, direction: d.direction,
         liqRatio: d.liqRatio, rsi: d.rsiVal, momentum: d.momentumStrength, atr: d.atr, baseScore: d.baseScore, score: d.score,
         trade: buildTrade(d, tradeP),
         // مصدر الترشيح — شرط أساسي: كل مصدر ظاهر بوضوح، وما لم يُفحص يُعلن أنه لم يُفحص.
