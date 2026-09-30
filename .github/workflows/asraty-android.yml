@@ -17,6 +17,9 @@ on:
         type: choice
         options: [completed, draft]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,6 +56,16 @@ jobs:
         with:
           name: asraty-aab-${{ github.run_number }}
           path: asraty/app/build/app/outputs/bundle/release/app-release.aab
+
+      - name: Publish on the Releases page (direct download link)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          tag="asraty-android-${{ github.run_number }}"
+          cp build/app/outputs/bundle/release/app-release.aab "asraty-${{ github.run_number }}.aab"
+          gh release create "$tag" "asraty-${{ github.run_number }}.aab" --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" --title "أسرتي — Android build ${{ github.run_number }}" \
+            --notes "ملف التطبيق للرفع على Google Play (Internal testing)." --prerelease
+          echo "Download: https://github.com/${{ github.repository }}/releases/download/$tag/asraty-${{ github.run_number }}.aab"
 
       - name: Upload to Google Play
         if: env.HAS_PLAY == 'true'
