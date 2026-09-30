@@ -59,11 +59,39 @@ export function demoEarnings(symbols) {
   return map;
 }
 
-// عيّنة من أسهم أمريكية عادية معروفة — بديل تجريبي عن «السوق كامل» (الحقيقي يأتي من Massive)
-const DEMO_UNIVERSE = ('AAPL MSFT NVDA AMZN GOOGL META TSLA AVGO AMD NFLX JPM XOM BA COST WMT HD PG KO PEP MRK ABBV LLY UNH JNJ PFE '
-  + 'CVX COP SLB ORCL CRM ADBE INTC QCOM TXN MU AMAT LRCX KLAC PANW CRWD SNOW PLTR UBER ABNB SHOP PYPL SQ COIN V MA AXP GS MS BAC '
-  + 'C WFC SCHW BLK DIS CMCSA T VZ TMUS NKE SBUX MCD CMG LOW TGT CAT DE GE HON LMT RTX NOC UPS FDX DAL UAL CCL F GM RIVN LCID '
-  + 'NIO SOFI HOOD RBLX DKNG ROKU ZM DOCU TWLO NET DDOG MDB OKTA ZS SMCI ARM DELL HPQ IBM CSCO ANET MRVL ON').split(' ');
+// عيّنة من أسهم أمريكية عادية معروفة — بديل تجريبي عن «السوق كامل» (الحقيقي يأتي من Massive).
+// الأسماء والبورصات حقيقية عشان تتعرف على السهم، أما الأسعار فمصطنعة ولا تطابق السوق.
+const N = 'NASDAQ', Y = 'NYSE';
+const DEMO_COMPANIES = {
+  AAPL: ['Apple Inc.', N], MSFT: ['Microsoft Corp.', N], NVDA: ['NVIDIA Corp.', N], AMZN: ['Amazon.com Inc.', N],
+  GOOGL: ['Alphabet Inc. (Class A)', N], META: ['Meta Platforms Inc.', N], TSLA: ['Tesla Inc.', N], AVGO: ['Broadcom Inc.', N],
+  AMD: ['Advanced Micro Devices Inc.', N], NFLX: ['Netflix Inc.', N], JPM: ['JPMorgan Chase & Co.', Y], XOM: ['Exxon Mobil Corp.', Y],
+  BA: ['Boeing Co.', Y], COST: ['Costco Wholesale Corp.', N], WMT: ['Walmart Inc.', N], HD: ['Home Depot Inc.', Y],
+  PG: ['Procter & Gamble Co.', Y], KO: ['Coca-Cola Co.', Y], PEP: ['PepsiCo Inc.', N], MRK: ['Merck & Co. Inc.', Y],
+  ABBV: ['AbbVie Inc.', Y], LLY: ['Eli Lilly and Co.', Y], UNH: ['UnitedHealth Group Inc.', Y], JNJ: ['Johnson & Johnson', Y],
+  PFE: ['Pfizer Inc.', Y], CVX: ['Chevron Corp.', Y], COP: ['ConocoPhillips', Y], SLB: ['SLB N.V.', Y], ORCL: ['Oracle Corp.', Y],
+  CRM: ['Salesforce Inc.', Y], ADBE: ['Adobe Inc.', N], INTC: ['Intel Corp.', N], QCOM: ['Qualcomm Inc.', N],
+  TXN: ['Texas Instruments Inc.', N], MU: ['Micron Technology Inc.', N], AMAT: ['Applied Materials Inc.', N],
+  LRCX: ['Lam Research Corp.', N], KLAC: ['KLA Corp.', N], PANW: ['Palo Alto Networks Inc.', N], CRWD: ['CrowdStrike Holdings Inc.', N],
+  SNOW: ['Snowflake Inc.', Y], PLTR: ['Palantir Technologies Inc.', N], UBER: ['Uber Technologies Inc.', Y], ABNB: ['Airbnb Inc.', N],
+  SHOP: ['Shopify Inc.', N], PYPL: ['PayPal Holdings Inc.', N], XYZ: ['Block Inc.', Y], COIN: ['Coinbase Global Inc.', N],
+  V: ['Visa Inc.', Y], MA: ['Mastercard Inc.', Y], AXP: ['American Express Co.', Y], GS: ['Goldman Sachs Group Inc.', Y],
+  MS: ['Morgan Stanley', Y], BAC: ['Bank of America Corp.', Y], C: ['Citigroup Inc.', Y], WFC: ['Wells Fargo & Co.', Y],
+  SCHW: ['Charles Schwab Corp.', Y], BLK: ['BlackRock Inc.', Y], DIS: ['Walt Disney Co.', Y], CMCSA: ['Comcast Corp.', N],
+  T: ['AT&T Inc.', Y], VZ: ['Verizon Communications Inc.', Y], TMUS: ['T-Mobile US Inc.', N], NKE: ['Nike Inc.', Y],
+  SBUX: ['Starbucks Corp.', N], MCD: ["McDonald's Corp.", Y], CMG: ['Chipotle Mexican Grill Inc.', Y], LOW: ["Lowe's Companies Inc.", Y],
+  TGT: ['Target Corp.', Y], CAT: ['Caterpillar Inc.', Y], DE: ['Deere & Co.', Y], GE: ['GE Aerospace', Y],
+  HON: ['Honeywell International Inc.', N], LMT: ['Lockheed Martin Corp.', Y], RTX: ['RTX Corp.', Y], NOC: ['Northrop Grumman Corp.', Y],
+  UPS: ['United Parcel Service Inc.', Y], FDX: ['FedEx Corp.', Y], DAL: ['Delta Air Lines Inc.', Y], UAL: ['United Airlines Holdings Inc.', N],
+  CCL: ['Carnival Corp.', Y], F: ['Ford Motor Co.', Y], GM: ['General Motors Co.', Y], RIVN: ['Rivian Automotive Inc.', N],
+  LCID: ['Lucid Group Inc.', N], NIO: ['NIO Inc.', Y], SOFI: ['SoFi Technologies Inc.', N], HOOD: ['Robinhood Markets Inc.', N],
+  RBLX: ['Roblox Corp.', Y], DKNG: ['DraftKings Inc.', N], ROKU: ['Roku Inc.', N], ZM: ['Zoom Communications Inc.', N],
+  DOCU: ['DocuSign Inc.', N], TWLO: ['Twilio Inc.', Y], NET: ['Cloudflare Inc.', Y], DDOG: ['Datadog Inc.', N],
+  MDB: ['MongoDB Inc.', N], OKTA: ['Okta Inc.', N], ZS: ['Zscaler Inc.', N], SMCI: ['Super Micro Computer Inc.', N],
+  ARM: ['Arm Holdings plc', N], DELL: ['Dell Technologies Inc.', Y], HPQ: ['HP Inc.', Y], IBM: ['International Business Machines Corp.', Y],
+  CSCO: ['Cisco Systems Inc.', N], ANET: ['Arista Networks Inc.', Y], MRVL: ['Marvell Technology Inc.', N], ON: ['ON Semiconductor Corp.', N],
+};
+const DEMO_UNIVERSE = Object.keys(DEMO_COMPANIES);
 
 export const demoProviders = {
   demo: true,
@@ -72,6 +100,7 @@ export const demoProviders = {
     return { tickers: DEMO_UNIVERSE.filter(s => { const b = demoBars(s); return b.c[b.c.length - 1] >= minPrice; }), lastDay: last };
   },
   bars: async sym => ({ bars: demoBars(sym), cached: false }),
+  profile: sym => DEMO_COMPANIES[sym] ? { name: DEMO_COMPANIES[sym][0], exchange: DEMO_COMPANIES[sym][1] } : null,
   news: async sym => ({ news: demoNews(sym) }),
   earnings: async syms => ({ calendar: demoEarnings(syms) }),
 };

@@ -37,10 +37,20 @@ export function parseGroupedDaily(payload) {
   return rows; // فاضي = عطلة/نهاية أسبوع أو اليوم لم يُنشر بعد
 }
 
-// /v3/reference/tickers → {tickers:[...], next}
+// رمز البورصة (MIC) → اسم يعرفه المستخدم، عشان يفرّق بين الرموز المتشابهة
+const EXCHANGES = { XNAS: 'NASDAQ', XNYS: 'NYSE', XASE: 'NYSE American', ARCX: 'NYSE Arca', BATS: 'Cboe BZX', IEXG: 'IEX' };
+export const exchangeName = mic => (mic && (EXCHANGES[mic] || mic)) || null;
+
+// /v3/reference/tickers → {tickers:[...], info:{sym:{name, exchange}}, next}
 export function parseTickersPage(payload) {
   if (!payload || !Array.isArray(payload.results)) throw new MassiveError('bad_shape', 'رد قائمة الأسهم غير متوقع: ' + JSON.stringify(payload).slice(0, 200));
-  return { tickers: payload.results.map(r => r && r.ticker).filter(t => typeof t === 'string'), next: payload.next_url || null };
+  const tickers = [], info = {};
+  for (const r of payload.results) {
+    if (!r || typeof r.ticker !== 'string') continue;
+    tickers.push(r.ticker);
+    info[r.ticker] = { name: typeof r.name === 'string' ? r.name : null, exchange: exchangeName(r.primary_exchange) };
+  }
+  return { tickers, info, next: payload.next_url || null };
 }
 
 // أيام العمل (الإثنين–الجمعة) من الأحدث للأقدم، ابتداءً من «اليوم» بتوقيت UTC
@@ -76,6 +86,7 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
   let days = [];          // [{date, rows}] تصاعديًا
   let bars = new Map();
   let commonStocks = null; // Set
+  let tickerInfo = {};     // sym → {name, exchange}
   let lastCallAt = 0;
   const state = { ready: false, syncing: false, lastDay: null, days: 0, tickers: 0, commonStocks: 0, error: null, progress: null };
 
@@ -106,7 +117,8 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
     for (const f of files.slice(0, -KEEP_DAYS)) await rm(path.join(daysDir, f), { force: true });
     try {
       const saved = JSON.parse(await readFile(path.join(dataDir, 'tickers.json'), 'utf8'));
-      if (Date.now() - saved.at < TICKERS_TTL_MS) commonStocks = new Set(saved.tickers);
+      // ملف قديم بدون أسماء الشركات → نعيد جلبه (طلبات قليلة) عشان يظهر الاسم الكامل
+      if (Date.now() - saved.at < TICKERS_TTL_MS && saved.info) { commonStocks = new Set(saved.tickers); tickerInfo = saved.info; }
     } catch { /* لا يوجد بعد */ }
     rebuild();
   }
@@ -121,15 +133,15 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
   }
 
   async function refreshCommonStocks() {
-    const list = [];
+    const list = [], info = {};
     let url = `${BASE}/v3/reference/tickers?market=stocks&type=CS&active=true&limit=1000`;
     while (url) {
-      const { tickers, next } = parseTickersPage(await call(url));
-      list.push(...tickers); url = next;
+      const page = parseTickersPage(await call(url));
+      list.push(...page.tickers); Object.assign(info, page.info); url = page.next;
     }
     if (list.length < 1000) throw new MassiveError('bad_shape', `قائمة الأسهم العادية ناقصة (${list.length}).`);
-    commonStocks = new Set(list);
-    await writeFile(path.join(dataDir, 'tickers.json'), JSON.stringify({ at: Date.now(), tickers: list }));
+    commonStocks = new Set(list); tickerInfo = info;
+    await writeFile(path.join(dataDir, 'tickers.json'), JSON.stringify({ at: Date.now(), tickers: list, info }));
   }
 
   // يجلب الأيام الناقصة (تعبئة أولى ~60 يوم تداول ≈ 15 دقيقة بالخطة المجانية، بعدها طلب واحد يوميًا)
@@ -189,6 +201,7 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
 
   return {
     state, loadFromDisk, sync, universe,
+    profile: sym => tickerInfo[sym] || null,
     bars: sym => { const b = bars.get(sym); if (!b) throw new MassiveError('no_data', 'لا توجد بيانات لهذا الرمز في Massive.'); return b; },
   };
 }

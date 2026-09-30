@@ -27,7 +27,8 @@ test('parseGroupedDaily maps error payloads to clear codes', () => {
 });
 
 test('parseTickersPage returns tickers and next page', () => {
-  assert.deepEqual(parseTickersPage({ results: [{ ticker: 'AAPL' }, { name: 'x' }], next_url: 'https://n' }), { tickers: ['AAPL'], next: 'https://n' });
+  assert.deepEqual(parseTickersPage({ results: [{ ticker: 'AAPL', name: 'Apple Inc.', primary_exchange: 'XNAS' }, { name: 'x' }, { ticker: 'ZZ' }], next_url: 'https://n' }),
+    { tickers: ['AAPL', 'ZZ'], info: { AAPL: { name: 'Apple Inc.', exchange: 'NASDAQ' }, ZZ: { name: null, exchange: null } }, next: 'https://n' });
   assert.throws(() => parseTickersPage({ status: 'ERROR' }));
 });
 
@@ -61,16 +62,19 @@ test('store universe filters by price, dollar volume, type and freshness; runSca
       ];
       await writeFile(path.join(dir, 'days', `${date}.json`), JSON.stringify(rows));
     }
-    await writeFile(path.join(dir, 'tickers.json'), JSON.stringify({ at: Date.now(), tickers: ['GOOD', 'CHEAP', 'THIN', 'STALE'] }));
+    await writeFile(path.join(dir, 'tickers.json'), JSON.stringify({ at: Date.now(), tickers: ['GOOD', 'CHEAP', 'THIN', 'STALE'], info: { GOOD: { name: 'Good Corp.', exchange: 'NYSE' } } }));
     const store = createMassiveStore({ apiKey: 'x', dataDir: dir, log: () => {} });
     await store.loadFromDisk();
     assert.equal(store.state.ready, true);
     assert.deepEqual(store.universe({ minPrice: 5, minDollarVol: 20e6, avgDays: 20 }), ['GOOD']);
 
-    const providers = { demo: false, bars: async s => ({ bars: store.bars(s), cached: true }), universe: async o => ({ tickers: store.universe(o), lastDay: store.state.lastDay }) };
+    const providers = { demo: false, bars: async s => ({ bars: store.bars(s), cached: true }), universe: async o => ({ tickers: store.universe(o), lastDay: store.state.lastDay }), profile: store.profile };
     const { status, body } = await runScan({ mode: 'market', volMult: 1.5 }, providers);
     assert.equal(status, 200);
     assert.deepEqual(body.picks.map(p => p.sym), ['GOOD']);
+    assert.equal(body.picks[0].name, 'Good Corp.');                   // الاسم الكامل والبورصة يميّزون السهم
+    assert.equal(body.picks[0].exchange, 'NYSE');
+    assert.equal(body.all[0].name, 'Good Corp.');
     assert.equal(body.picks[0].sources.news.status, 'off');           // لا يوجد مزوّد أخبار
     assert.match(body.picks[0].sources.earnings.error, /غير مفعّل/);
     assert.equal(body.marketLastDay, dates[dates.length - 1]);
