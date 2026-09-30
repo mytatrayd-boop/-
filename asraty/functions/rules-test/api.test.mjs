@@ -120,6 +120,10 @@ test("delegated admin only gets granted permissions", async () => {
   const me = await db.doc(`families/${fid}/people/${admin.personId}`).get();
   assert.deepEqual(Object.keys(me.data().perms).filter((k) => me.data().perms[k]), ["tasks"]);
   await call("api", { op: "addTask", title: "مراجعة", personId: "all", points: 3 }, admin.idToken);
+  // The Android SDK wraps whole numbers the way the callable protocol encodes longs.
+  await call("api", { op: "addTask", title: "رقم أندرويد", personId: "all", points: { "@type": "type.googleapis.com/google.protobuf.Int64Value", value: "7" } }, admin.idToken);
+  const wrapped = (await db.collection(`families/${fid}/tasks`).where("title", "==", "رقم أندرويد").get()).docs;
+  assert.ok(wrapped.length > 0 && wrapped.every((d) => d.data().points === 7));
   await rejects(call("api", { op: "addTier", name: "x", threshold: 5 }, admin.idToken), "no-permission");
   await rejects(call("api", { op: "addPerson", role: "member", name: "y", email: "y@test.sa" }, admin.idToken), "no-permission");
 });
