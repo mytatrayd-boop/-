@@ -129,4 +129,11 @@ jobs:
       - name: Server logs (on failure)
         if: failure() && env.USE_VERCEL == 'true'
         env: { VERCEL_TOKEN: "${{ secrets.VERCEL_TOKEN }}" }
-        run: timeout 60 npx -y vercel@latest logs "$SERVER_URL" --token "$VERCEL_TOKEN" || true
+        run: |
+          H="Authorization: Bearer $VERCEL_TOKEN"
+          curl -sS -o /dev/null -w "GET /privacy -> %{http_code}\n" "$SERVER_URL/privacy" || true
+          dep=$(curl -sS -H "$H" "https://api.vercel.com/v13/deployments/${SERVER_URL#https://}" | jq -r '.id // empty')
+          proj=$(curl -sS -H "$H" "https://api.vercel.com/v9/projects/$SITE_NAME" | jq -r '.id // empty')
+          echo "deployment=$dep project=$proj"
+          sleep 15
+          curl -sS --max-time 25 -H "$H" "https://api.vercel.com/v1/projects/$proj/deployments/$dep/runtime-logs" | tail -c 6000 || true
