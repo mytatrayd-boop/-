@@ -334,20 +334,26 @@ $('#resetBtn').addEventListener('click', e => {
   settings = structuredClone(DEFAULTS); persist(); renderSettings(); renderYaqeen(); toast('تم الاسترجاع.', 'ok');
 });
 
-/* ---------- mode badge ---------- */
-function setMode(h) {
-  const b = $('#modeBadge'), m = h.market;
-  if (h.demo) { b.className = 'pill demo'; b.textContent = 'وضع تجريبي'; return; }
-  if (m && m.ready) { b.className = 'pill live'; b.textContent = `السوق · ${m.lastDay}`; b.title = `${m.tickers} رمز، ${m.days} يوم تداول`; return; }
-  if (m) { b.className = 'pill demo'; b.textContent = `يتجهز ${m.days}/60 يوم`; b.title = m.error || ''; return; }
-  b.className = 'pill live'; b.textContent = 'Alpha Vantage';
+/* ---------- mode badge: إشارة أحمر / أصفر / أخضر ---------- */
+// الخادم يحسب الإشارات (server/status.js). النسخة المستقلة دائمًا تجريبية.
+const LOCAL_STATUS = { level: 'red', badge: 'تجريبي', lights: [
+  { level: 'red', label: 'هذي نسخة التجربة — الأسعار مصطنعة دائمًا', fix: 'الأسعار الحقيقية في رابط تطبيقك على Railway (…up.railway.app)، مو هذا الرابط.' },
+] };
+function setStatus(st) {
+  const b = $('#modeBadge');
+  b.className = 'pill ' + st.level; b.querySelector('span').textContent = st.badge;
+  $('#statusPanel').innerHTML = `<div class="st-title">حالة التطبيق</div>` + st.lights.map(l => `
+    <div class="st-row"><i class="dot ${l.level}"></i><div><div class="st-label">${esc(l.label)}</div>${l.fix ? `<div class="st-fix">${esc(l.fix)}</div>` : ''}</div></div>`).join('');
 }
+$('#modeBadge').addEventListener('click', () => {
+  const p = $('#statusPanel'); p.hidden = !p.hidden; $('#modeBadge').setAttribute('aria-expanded', String(!p.hidden));
+});
 function refreshHealth() {
-  if (LOCAL) return setMode({ demo: true });
+  if (LOCAL) return setStatus(LOCAL_STATUS);
   fetch('api/health').then(r => r.json()).then(h => {
-    setMode(h);
-    if (h.market && !h.market.ready && !h.market.error) setTimeout(refreshHealth, 30000); // تحديث تقدّم التعبئة الأولى
-  }).catch(() => { $('#modeBadge').textContent = 'غير متصل'; });
+    setStatus(h.status || { level: h.demo ? 'red' : 'green', badge: h.demo ? 'تجريبي' : 'حقيقي', lights: [] });
+  }).catch(() => setStatus({ level: 'red', badge: 'غير متصل', lights: [{ level: 'red', label: 'ما قدرت أوصل للخادم', fix: 'تأكد إن خدمة Railway شغالة وإن الإنترنت عندك شغال.' }] }))
+    .finally(() => setTimeout(refreshHealth, 60000)); // الإشارة تتحدث كل دقيقة (تقدّم التعبئة، يوم جديد، أخطاء)
 }
 refreshHealth();
 

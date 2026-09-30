@@ -8,14 +8,20 @@ import { runScan } from './scan.js';
 import { fetchDailyBars, fetchNews, fetchEarningsCalendar } from './alphavantage.js';
 import { demoProviders } from './demo.js';
 import { createMassiveStore, HISTORY_DAYS } from './massive.js';
+import { statusLights } from './status.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, '..', 'public');
 const envFile = path.join(ROOT, '..', '.env');
 if (!process.env.RASED_NO_ENV_FILE && existsSync(envFile) && typeof process.loadEnvFile === 'function') process.loadEnvFile(envFile);
 
-const API_KEY = process.env.ALPHA_VANTAGE_KEY || '';
-const MASSIVE_KEY = process.env.MASSIVE_API_KEY || process.env.POLYGON_API_KEY || '';
+// المفتاح الملصوق أحيانًا يجي معه مسافات أو علامات تنصيص — ننظفه
+const cleanKey = v => String(v || '').trim().replace(/^["']+|["']+$/g, '').trim();
+const API_KEY = cleanKey(process.env.ALPHA_VANTAGE_KEY);
+const MASSIVE_KEY = cleanKey(process.env.MASSIVE_API_KEY) || cleanKey(process.env.POLYGON_API_KEY);
+// متغيرات بأسماء قريبة من أسماء المفاتيح (خطأ إملائي، حروف صغيرة، مسافة) — نعرض الاسم فقط، أبدًا القيمة
+const KNOWN_VARS = new Set(['MASSIVE_API_KEY', 'POLYGON_API_KEY', 'ALPHA_VANTAGE_KEY', 'MASSIVE_API_BASE', 'MASSIVE_GAP_MS']);
+const LOOKALIKES = Object.keys(process.env).filter(k => /massive|polygon|alpha|vantage/i.test(k) && !KNOWN_VARS.has(k)).map(k => JSON.stringify(k));
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, '..', 'data'));
 const PORT = Number(process.env.PORT) || 3000;
 const SYNC_EVERY_MS = 60 * 60 * 1000;
@@ -51,9 +57,10 @@ function buildProviders() {
 const providers = buildProviders();
 
 function health() {
+  const market = DEMO ? { ready: true, demo: true } : store ? { ...store.state } : null;
   return {
-    ok: true, demo: DEMO, news: !!API_KEY || DEMO,
-    market: DEMO ? { ready: true, demo: true } : store ? { ...store.state } : null,
+    ok: true, demo: DEMO, news: !!API_KEY || DEMO, market,
+    status: statusLights({ massiveKey: !!MASSIVE_KEY, alphaKey: !!API_KEY, persistentData: !!process.env.DATA_DIR, lookalikes: LOOKALIKES, market: store ? market : null }),
   };
 }
 

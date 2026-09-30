@@ -60,3 +60,9 @@ test('static files served; path traversal blocked', async () => {
   const r = await fetch(base + '/..%2Fserver%2Fengine.js');
   assert.notEqual(r.status, 200);
 });
+
+test('health reports a red demo status when the server has no keys', async () => {
+  const h = await (await fetch(base + '/api/health')).json();
+  assert.equal(h.status.level, 'red');
+  assert.equal(h.status.badge, 'تجريبي');
+});
