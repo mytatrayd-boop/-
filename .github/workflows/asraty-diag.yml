@@ -1,6 +1,10 @@
 name: Asraty — diagnose addTask
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches: [ccr-c755e616-4x68g8]
+    paths: [asraty/functions/scripts/diag-addtask.mjs, .github/workflows/asraty-diag.yml]
 
 jobs:
   diag:
