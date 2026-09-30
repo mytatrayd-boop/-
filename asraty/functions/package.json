@@ -23,5 +23,8 @@
     "@types/nodemailer": "^8.0.2",
     "firebase": "^12.19.0",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "jwks-rsa": "^3.2.2"
   }
 }
