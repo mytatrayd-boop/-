@@ -3,5 +3,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": "public",
   "cleanUrls": true,
-  "functions": { "api/[name].ts": { "maxDuration": 30 } }
+  "functions": {
+    "api/[name].js": {
+      "maxDuration": 30,
+      "includeFiles": "build/src/**"
+    }
+  }
 }
