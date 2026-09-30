@@ -125,3 +125,8 @@ jobs:
           echo "$out" | grep -q '"not-invited"' || { echo "::error::API could not read Firestore (service account?)"; exit 1; }
           curl -sS -o /dev/null -w "privacy page: %{http_code}\n" "$URL/privacy"
           echo "SERVER_URL=$URL"
+
+      - name: Server logs (on failure)
+        if: failure() && env.USE_VERCEL == 'true'
+        env: { VERCEL_TOKEN: "${{ secrets.VERCEL_TOKEN }}" }
+        run: timeout 60 npx -y vercel@latest logs "$SERVER_URL" --token "$VERCEL_TOKEN" || true
