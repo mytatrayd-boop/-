@@ -209,3 +209,11 @@ main{max-width:560px;margin:0 auto;padding:14px 16px calc(var(--tabbar-h) + var(
 .toast.ok{border-color:rgba(45,212,191,.5);color:var(--liq);}
 
 @media (max-width:360px){ .summary{grid-template-columns:repeat(3,1fr);} .pick-sym .sym{font-size:24px;} }
+
+/* ---------- المفاتيح (تطبيق الأندرويد) ---------- */
+#keysCard{display:grid;gap:12px;}
+#keysCard[hidden]{display:none;}
+.key-row{display:grid;gap:6px;font-size:13px;}
+.key-row b{font-weight:500;color:var(--muted);}
+.key-row input{width:100%;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;}
+#keysCard .btn-sm,#syncNowBtn{height:42px;justify-self:start;min-width:120px;}

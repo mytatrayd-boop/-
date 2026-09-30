@@ -3,3 +3,7 @@ node_modules/
 .DS_Store
 dist/
 data/
+android/app/src/main/assets/
+android/.gradle/
+android/build/
+android/app/build/

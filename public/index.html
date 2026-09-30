@@ -67,6 +67,17 @@
   <section class="view" id="view-settings" aria-label="الإعدادات">
     <h2 class="view-title">الإعدادات</h2>
 
+    <!-- تطبيق الأندرويد فقط: المفاتيح تنحفظ على الجوال، والتطبيق يجلب الأسعار مباشرة -->
+    <form class="card" id="keysCard" hidden>
+      <div class="card-title">المفاتيح</div>
+      <label class="key-row" for="massiveKey"><span>مفتاح Massive <b id="massiveKeyState"></b></span>
+        <input id="massiveKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="الصق المفتاح هنا" dir="ltr"></label>
+      <label class="key-row" for="alphaKey"><span>مفتاح Alpha Vantage (اختياري) <b id="alphaKeyState"></b></span>
+        <input id="alphaKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="الصق المفتاح هنا" dir="ltr"></label>
+      <button type="submit" class="btn-sm">حفظ</button>
+      <div class="hint">Massive (massive.com) للأسعار، و Alpha Vantage للأخبار والأرباح. خانة فاضية = يبقى المفتاح المحفوظ. المفاتيح تبقى على جوالك بس.</div>
+    </form>
+
     <div class="card">
       <div class="card-title">نطاق المسح</div>
       <div class="seg" id="scopeSeg" role="tablist">

@@ -4,11 +4,11 @@
 //
 // ⚠️ شكل الرد مبني على توثيق Massive/Polygon — لم يُلاحظ رد حي بعد (الشبكة هنا تحجب النطاق).
 // شغّل `npm run check:massive` مرة بمفتاحك قبل الاعتماد عليه. المحلل دفاعي: أي صف ناقص يُتجاهل.
-import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
-import path from 'node:path';
+// بدون أي اعتماد على Node: التخزين يُمرَّر كمحوّل (قرص في الخادم، IndexedDB في تطبيق الأندرويد).
 
-const BASE = (process.env.MASSIVE_API_BASE || 'https://api.polygon.io').replace(/\/+$/, '');
-const FREE_GAP_MS = Number(process.env.MASSIVE_GAP_MS) || 12500; // الخطة المجانية: 5 طلبات/دقيقة
+const ENV = typeof process !== 'undefined' && process.env ? process.env : {}; // غير موجود داخل تطبيق الأندرويد
+const BASE = (ENV.MASSIVE_API_BASE || 'https://api.polygon.io').replace(/\/+$/, '');
+const FREE_GAP_MS = Number(ENV.MASSIVE_GAP_MS) || 12500; // الخطة المجانية: 5 طلبات/دقيقة
 export const HISTORY_DAYS = 60;     // أيام تداول تكفي RSI(14) و ATR(14) ومتوسط حجم حتى 60 يوم
 const KEEP_DAYS = HISTORY_DAYS + 10;
 const TICKERS_TTL_MS = 7 * 86400000; // قائمة الأسهم العادية تتحدث أسبوعيًا
@@ -81,8 +81,8 @@ export function buildBars(days) {
 
 /* ---------- العميل + المخزن المحلي ---------- */
 
-export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
-  const daysDir = path.join(dataDir, 'days');
+// storage: { listDays() → ['YYYY-MM-DD'…], readDay(d) → rows, writeDay(d, rows), removeDay(d), readMeta(k), writeMeta(k, v) }
+export function createMassiveStore({ apiKey, storage, log = console.log }) {
   let days = [];          // [{date, rows}] تصاعديًا
   let bars = new Map();
   let commonStocks = null; // Set
@@ -96,8 +96,8 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
     lastCallAt = Date.now();
     const u = new URL(url); u.searchParams.set('apiKey', apiKey);
     let res;
-    try { res = await fetch(u, { signal: AbortSignal.timeout(60000) }); }
-    catch { throw new MassiveError('unavailable', 'تعذّر الوصول لـ Massive.'); }
+    try { res = await fetch(u.toString(), { signal: AbortSignal.timeout(60000) }); }
+    catch { throw new MassiveError('unavailable', 'تعذّر الوصول لـ Massive. تأكد من الإنترنت.'); }
     let payload = null;
     try { payload = await res.json(); } catch { /* يُعالج تحت */ }
     if (res.status === 429) throw new MassiveError('rate_limited', 'Massive: تجاوزت حد الطلبات بالدقيقة.');
@@ -107,18 +107,17 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
   }
 
   async function loadFromDisk() {
-    await mkdir(daysDir, { recursive: true });
-    const files = (await readdir(daysDir)).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
+    const all = (await storage.listDays()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
     days = [];
-    for (const f of files.slice(-KEEP_DAYS)) {
-      try { days.push({ date: f.slice(0, 10), rows: JSON.parse(await readFile(path.join(daysDir, f), 'utf8')) }); }
-      catch { log(`تجاهل ملف تالف: ${f}`); }
+    for (const d of all.slice(-KEEP_DAYS)) {
+      try { const rows = await storage.readDay(d); if (Array.isArray(rows)) days.push({ date: d, rows }); }
+      catch { log(`تجاهل يوم تالف: ${d}`); }
     }
-    for (const f of files.slice(0, -KEEP_DAYS)) await rm(path.join(daysDir, f), { force: true });
+    for (const d of all.slice(0, -KEEP_DAYS)) await storage.removeDay(d);
     try {
-      const saved = JSON.parse(await readFile(path.join(dataDir, 'tickers.json'), 'utf8'));
+      const saved = await storage.readMeta('tickers');
       // ملف قديم بدون أسماء الشركات → نعيد جلبه (طلبات قليلة) عشان يظهر الاسم الكامل
-      if (Date.now() - saved.at < TICKERS_TTL_MS && saved.info) { commonStocks = new Set(saved.tickers); tickerInfo = saved.info; }
+      if (saved && Date.now() - saved.at < TICKERS_TTL_MS && saved.info) { commonStocks = new Set(saved.tickers); tickerInfo = saved.info; }
     } catch { /* لا يوجد بعد */ }
     rebuild();
   }
@@ -141,7 +140,7 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
     }
     if (list.length < 1000) throw new MassiveError('bad_shape', `قائمة الأسهم العادية ناقصة (${list.length}).`);
     commonStocks = new Set(list); tickerInfo = info;
-    await writeFile(path.join(dataDir, 'tickers.json'), JSON.stringify({ at: Date.now(), tickers: list, info }));
+    await storage.writeMeta('tickers', { at: Date.now(), tickers: list, info });
   }
 
   // يجلب الأيام الناقصة (تعبئة أولى ~60 يوم تداول ≈ 15 دقيقة بالخطة المجانية، بعدها طلب واحد يوميًا)
@@ -168,7 +167,7 @@ export function createMassiveStore({ apiKey, dataDir, log = console.log }) {
           throw e;
         }
         if (rows.length < 1000) continue; // عطلة، أو يوم لم يُنشر بعد (لا نخزّنه حتى يُعاد طلبه لاحقًا)
-        await writeFile(path.join(daysDir, `${date}.json`), JSON.stringify(rows));
+        await storage.writeDay(date, rows);
         days.push({ date, rows });
         days.sort((a, b) => a.date.localeCompare(b.date));
         if (days.length > KEEP_DAYS) days = days.slice(-KEEP_DAYS);

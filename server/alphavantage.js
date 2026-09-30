@@ -2,7 +2,8 @@
 import { barsFromAlphaVantage, parseNewsFeed, parseEarningsCalendar, toAvTime } from './engine.js';
 
 const BASE = 'https://www.alphavantage.co/query';
-const CACHE_TTL_MS = (Number(process.env.CACHE_TTL_MIN) || 240) * 60 * 1000;
+const ENV = typeof process !== 'undefined' && process.env ? process.env : {}; // غير موجود داخل تطبيق الأندرويد
+const CACHE_TTL_MS = (Number(ENV.CACHE_TTL_MIN) || 240) * 60 * 1000;
 const EARNINGS_TTL_MS = 24 * 60 * 60 * 1000;
 const MIN_GAP_MS = 1100; // الخطة المجانية: طلب واحد بالثانية كحد أقصى (مُلاحظ فعليًا)
 const cache = new Map(); // key -> {at, value}

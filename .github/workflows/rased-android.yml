@@ -1,0 +1,42 @@
+name: Rased — Android APK
+
+# يبني ملف APK جاهز للتثبيت المباشر على الأندرويد. على الفرع الأساسي ينشره كـ Release
+# (رابط تحميل ثابت: releases/latest)، وعلى باقي الفروع يرفعه كـ artifact للتجربة.
+on:
+  push:
+    paths: ['public/**', 'server/**', 'scripts/**', 'android/**', 'test/**', '.github/workflows/rased-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm test
+      - run: node scripts/build-android.mjs
+
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.14.3' }
+      - name: Build APK
+        env: { VERSION_CODE: "${{ github.run_number }}" }
+        run: gradle -p android assembleRelease --no-daemon
+      - run: cp android/app/build/outputs/apk/release/app-release.apk rased.apk
+
+      - uses: actions/upload-artifact@v4
+        with: { name: "rased-apk-${{ github.run_number }}", path: rased.apk }
+
+      - name: Publish release
+        if: github.ref_name == github.event.repository.default_branch
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release create "rased-v${{ github.run_number }}" rased.apk \
+            --target "$GITHUB_SHA" --latest \
+            --title "راصد — نسخة ${{ github.run_number }}" \
+            --notes "حمّل rased.apk من تحت وثبّته على الأندرويد. بعد التثبيت: الإعدادات ← المفاتيح ← الصق مفتاح Massive ← حفظ، وانتظر الإشارة تصير خضراء."

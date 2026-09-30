@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.rased.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.rased.app'
+        minSdk 26
+        targetSdk 35
+        versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
+        versionName "1.${System.getenv('VERSION_CODE') ?: '0'}"
+    }
+
+    // مفتاح توقيع ثابت للتثبيت المباشر (بدون متجر) — عشان التحديثات تنثبت فوق النسخة القديمة.
+    signingConfigs {
+        sideload {
+            storeFile file('../rased-sideload.p12')
+            storePassword 'rased-sideload'
+            keyAlias 'rased'
+            keyPassword 'rased-sideload'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.sideload
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
