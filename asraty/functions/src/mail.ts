@@ -1,7 +1,7 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import nodemailer from "nodemailer";
 
-// Configuration comes from environment variables (Vercel project env, or
+// Configuration comes from environment variables (Vercel / Netlify env, or
 // functions/.env + secrets when running as Cloud Functions):
 //   GMAIL_USER + GMAIL_APP_PASSWORD  → send through Gmail (no domain needed)
 //   RESEND_API_KEY + MAIL_FROM       → send through Resend (needs a verified domain)

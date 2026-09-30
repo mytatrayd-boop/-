@@ -10,7 +10,7 @@ Family chores & rewards app for Saudi families. Parents/admins assign tasks, mem
 ## Stack (decided)
 - **Flutter** (latest stable), single codebase for iOS + Android. State: Riverpod. Routing: go_router.
 - **Firebase (free Spark plan)**: Auth (custom token), Cloud Firestore (`me-central2`), Cloud Messaging (push). No Cloud Storage / Cloud Functions: Blaze billing in Saudi Arabia goes through CNTXT, which requires a commercial registration.
-- **API server**: TypeScript in `functions/`, deployed to **Vercel** (`api/[name].ts`) speaking the Firebase callable protocol; the app calls it with `httpsCallableFromUri(SERVER_URL/api/<name>)`. `functions/src/index.ts` can still deploy the same handlers as Cloud Functions if the project moves to Blaze.
+- **API server**: TypeScript in `functions/`, deployed to **Vercel** (`api/[name].ts`) or **Netlify** (`netlify/functions/api.mts`) — route `/api/:name` — speaking the Firebase callable protocol; the app calls it with `httpsCallableFromUri(SERVER_URL/api/<name>)`. `functions/src/index.ts` can still deploy the same handlers as Cloud Functions if the project moves to Blaze.
 - Email: Gmail SMTP with an app password (`GMAIL_USER`, `GMAIL_APP_PASSWORD`), or Resend (`RESEND_API_KEY`, `MAIL_FROM`). Server env vars only, never in the app.
 - Fonts: Tajawal (body), Baloo Bhaijaan 2 (headings), bundled in `app/assets/fonts` (no runtime download).
 - SVG avatars via `flutter_svg`; port the 12 avatars from `avatarSVG()` in the prototype as SVG strings.
@@ -29,7 +29,7 @@ Family chores & rewards app for Saudi families. Parents/admins assign tasks, mem
 brand `#2F6158`, gold `#D9B26A`, gold-deep `#B8893A`, background `#F6F2E8`, card `#FFFFFF`, ink `#1E302C`, muted `#66736F`, mint `#2E9E78`, red `#C8424A`. Dark mode tokens are in the prototype CSS.
 
 ## Layout
-- `app/` Flutter app · `functions/` API server (TypeScript; `src/` shared handlers, `api/` Vercel entry, `public/` privacy & account-deletion pages) · `firestore.rules`, `firebase.json` · `docs/RELEASE.md` store release guide.
+- `app/` Flutter app · `functions/` API server (TypeScript; `src/` shared handlers, `api/` Vercel entry, `netlify/functions/` Netlify entry, `public/` privacy & account-deletion pages) · `firestore.rules`, `firebase.json` · `docs/RELEASE.md` store release guide.
 - `app/env.prod.json` holds the Firebase client config and `SERVER_URL` (public values, committed); the store build workflows use it.
 - `app/lib/backend/backend.dart` is the single interface the UI uses; `FirebaseBackend` (real) and `DemoBackend` (on-device quick trial, mirrors the server rules — keep the two in sync with `functions/src/api.ts`).
 - Build config comes from `--dart-define-from-file=env.json` (see `app/env.example.json`); without Firebase values the app runs demo-only.

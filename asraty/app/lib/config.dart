@@ -17,7 +17,7 @@ class AppConfig {
   /// Must match REGION in functions/src/config.ts.
   static const functionsRegion = String.fromEnvironment('FUNCTIONS_REGION', defaultValue: 'me-central2');
 
-  /// Base URL of the API server (Vercel), e.g. https://asraty-server.vercel.app.
+  /// Base URL of the API server (Netlify), e.g. https://asraty-mytatrayd-boop.netlify.app.
   /// With EMULATOR_HOST it defaults to the local dev server (functions: npm run dev).
   static String get serverUrl {
     const url = String.fromEnvironment('SERVER_URL');

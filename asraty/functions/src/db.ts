@@ -4,11 +4,16 @@ import { getAuth } from "firebase-admin/auth";
 import { getMessaging } from "firebase-admin/messaging";
 import { Perms, Role, pushPayload } from "./logic";
 
-// Outside Google Cloud (e.g. Vercel) the service account comes from an env var
-// (base64 of the JSON key). Inside Cloud Functions / emulators, defaults apply.
+// Outside Google Cloud (Netlify) the service account comes from env vars:
+// FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY (kept small
+// for the 4 KB function env limit), or FIREBASE_SERVICE_ACCOUNT_B64 (whole JSON).
+// Inside Cloud Functions / emulators, defaults apply.
 if (!getApps().length) {
   const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-  if (b64) {
+  const { FIREBASE_PROJECT_ID: projectId, FIREBASE_CLIENT_EMAIL: clientEmail, FIREBASE_PRIVATE_KEY: key } = process.env;
+  if (projectId && clientEmail && key) {
+    initializeApp({ credential: cert({ projectId, clientEmail, privateKey: key.replace(/\\n/g, "\n") }) });
+  } else if (b64) {
     initializeApp({ credential: cert(JSON.parse(Buffer.from(b64, "base64").toString("utf8"))) });
   } else {
     initializeApp(process.env.GCLOUD_PROJECT ? { projectId: process.env.GCLOUD_PROJECT } : undefined);

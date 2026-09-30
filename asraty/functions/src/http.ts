@@ -1,5 +1,5 @@
 // Firebase "callable" protocol over plain HTTP, so the same handlers can run on
-// any Node host (Vercel) and the Flutter app can call them with
+// any Node host (Netlify) and the Flutter app can call them with
 // FirebaseFunctions.httpsCallableFromUri. Request: POST {data}, optional
 // "Authorization: Bearer <Firebase ID token>". Response: {result} or {error}.
 import { auth, ApiError, CallContext } from "./db";
