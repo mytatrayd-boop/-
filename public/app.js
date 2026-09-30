@@ -334,6 +334,24 @@ $('#resetBtn').addEventListener('click', e => {
   settings = structuredClone(DEFAULTS); persist(); renderSettings(); renderYaqeen(); toast('تم الاسترجاع.', 'ok');
 });
 
+/* ---------- keys (تطبيق الأندرويد) ---------- */
+function renderKeys() {
+  if (!LOCAL || !LOCAL.setKeys) return;
+  const k = LOCAL.keys();
+  $('#keysCard').hidden = false;
+  $('#massiveKeyState').textContent = k.massive ? '· محفوظ ✓' : '· غير موجود';
+  $('#alphaKeyState').textContent = k.alpha ? '· محفوظ ✓' : '· غير موجود';
+}
+$('#keysCard').addEventListener('submit', e => {
+  e.preventDefault();
+  const m = $('#massiveKey').value.trim(), a = $('#alphaKey').value.trim();
+  if (!m && !a) return toast('الصق مفتاح واحد على الأقل.', 'err');
+  LOCAL.setKeys({ massive: m || LOCAL.rawKeys().massive, alpha: a || LOCAL.rawKeys().alpha });
+  $('#massiveKey').value = ''; $('#alphaKey').value = '';
+  renderKeys(); refreshStatusOnce(); toast('انحفظت المفاتيح. المزامنة بدأت — شوف الإشارة فوق.', 'ok');
+});
+renderKeys();
+
 /* ---------- mode badge: إشارة أحمر / أصفر / أخضر ---------- */
 // الخادم يحسب الإشارات (server/status.js). النسخة المستقلة دائمًا تجريبية.
 const LOCAL_STATUS = { level: 'red', badge: 'تجريبي', lights: [
@@ -342,13 +360,21 @@ const LOCAL_STATUS = { level: 'red', badge: 'تجريبي', lights: [
 function setStatus(st) {
   const b = $('#modeBadge');
   b.className = 'pill ' + st.level; b.querySelector('span').textContent = st.badge;
+  const canSync = LOCAL && LOCAL.syncNow && LOCAL.keys().massive;
   $('#statusPanel').innerHTML = `<div class="st-title">حالة التطبيق</div>` + st.lights.map(l => `
-    <div class="st-row"><i class="dot ${l.level}"></i><div><div class="st-label">${esc(l.label)}</div>${l.fix ? `<div class="st-fix">${esc(l.fix)}</div>` : ''}</div></div>`).join('');
+    <div class="st-row"><i class="dot ${l.level}"></i><div><div class="st-label">${esc(l.label)}</div>${l.fix ? `<div class="st-fix">${esc(l.fix)}</div>` : ''}</div></div>`).join('')
+    + (canSync ? '<button type="button" class="btn-sm" id="syncNowBtn">مزامنة الآن</button>' : '');
 }
+$('#statusPanel').addEventListener('click', e => {
+  if (e.target.id !== 'syncNowBtn') return;
+  LOCAL.syncNow(); toast('بدأت المزامنة…'); setTimeout(refreshStatusOnce, 300);
+});
+const refreshStatusOnce = () => LOCAL && LOCAL.status && setStatus(LOCAL.status());
 $('#modeBadge').addEventListener('click', () => {
   const p = $('#statusPanel'); p.hidden = !p.hidden; $('#modeBadge').setAttribute('aria-expanded', String(!p.hidden));
 });
 function refreshHealth() {
+  if (LOCAL && LOCAL.status) { setStatus(LOCAL.status()); return setTimeout(refreshHealth, 2000); } // تطبيق الأندرويد
   if (LOCAL) return setStatus(LOCAL_STATUS);
   fetch('api/health').then(r => r.json()).then(h => {
     setStatus(h.status || { level: h.demo ? 'red' : 'green', badge: h.demo ? 'تجريبي' : 'حقيقي', lights: [] });
@@ -360,5 +386,5 @@ refreshHealth();
 /* ---------- boot ---------- */
 renderHome(); renderList(); renderYaqeen(); renderSettings();
 // النسخة المستقلة التجريبية تفتح على نتيجة جاهزة بدل شاشة فاضية
-if (LOCAL && !lastScan) $('#scanBtn').click();
+if (LOCAL && !LOCAL.status && !lastScan) $('#scanBtn').click();
 if (!LOCAL && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

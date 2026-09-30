@@ -5,9 +5,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runScan } from './scan.js';
-import { fetchDailyBars, fetchNews, fetchEarningsCalendar } from './alphavantage.js';
-import { demoProviders } from './demo.js';
-import { createMassiveStore, HISTORY_DAYS } from './massive.js';
+import { createMassiveStore } from './massive.js';
+import { diskStorage } from './disk-storage.js';
+import { buildProviders } from './providers.js';
 import { statusLights } from './status.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -26,35 +26,9 @@ const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, '..', 'dat
 const PORT = Number(process.env.PORT) || 3000;
 const SYNC_EVERY_MS = 60 * 60 * 1000;
 
-// Massive: أسعار السوق كامل من مخزن محلي (بدون طلبات وقت المسح).
-// Alpha Vantage: الأخبار وتقويم الأرباح (وأسعار «قائمتي» إذا ما فيه Massive).
-// بدون أي مفتاح: وضع تجريبي ببيانات مصطنعة موسومة بوضوح في الواجهة.
-const store = MASSIVE_KEY ? createMassiveStore({ apiKey: MASSIVE_KEY, dataDir: DATA_DIR }) : null;
+const store = MASSIVE_KEY ? createMassiveStore({ apiKey: MASSIVE_KEY, storage: diskStorage(DATA_DIR) }) : null;
 const DEMO = !MASSIVE_KEY && !API_KEY;
-
-function buildProviders() {
-  if (DEMO) return demoProviders;
-  const pv = { demo: false };
-  if (store) {
-    pv.bars = async sym => ({ bars: store.bars(sym), cached: true });
-    pv.profile = store.profile;
-    pv.universe = async opts => {
-      if (!store.state.ready) {
-        const pr = store.state.progress;
-        throw new Error(`بيانات السوق تتجهز (${store.state.days} يوم من ${HISTORY_DAYS}${pr ? `، يجلب ${pr.date}` : ''}) — حاول بعد دقائق.`);
-      }
-      return { tickers: store.universe(opts), lastDay: store.state.lastDay };
-    };
-  } else {
-    pv.bars = sym => fetchDailyBars(sym, API_KEY);
-  }
-  if (API_KEY) {
-    pv.news = (sym, newsP) => fetchNews(sym, API_KEY, newsP);
-    pv.earnings = () => fetchEarningsCalendar(API_KEY);
-  }
-  return pv;
-}
-const providers = buildProviders();
+const providers = buildProviders({ massiveKey: MASSIVE_KEY, alphaKey: API_KEY, store });
 
 function health() {
   const market = DEMO ? { ready: true, demo: true } : store ? { ...store.state } : null;

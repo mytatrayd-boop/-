@@ -15,15 +15,17 @@ function weekdaysSince(day, now) {
   return n;
 }
 
-export function statusLights({ massiveKey, alphaKey, persistentData, lookalikes = [], market = null, now = Date.now() }) {
+// app=true: تطبيق الأندرويد (المفاتيح تُدخل من الإعدادات، والتخزين على الجوال دائم)
+export function statusLights({ massiveKey, alphaKey, persistentData, lookalikes = [], market = null, now = Date.now(), app = false }) {
   const lights = [];
 
   // 1) مصدر الأسعار
   if (massiveKey) lights.push({ key: 'prices', level: 'green', label: 'مفتاح Massive موجود — السوق الأمريكي كامل' });
-  else if (alphaKey) lights.push({ key: 'prices', level: 'yellow', label: 'أسعار حقيقية لـ«قائمتي» فقط (Alpha Vantage، حد 25 سهم)', fix: 'مسح السوق كامل يحتاج المتغير MASSIVE_API_KEY.' });
+  else if (alphaKey) lights.push({ key: 'prices', level: 'yellow', label: 'أسعار حقيقية لـ«قائمتي» فقط (Alpha Vantage، حد 25 سهم)', fix: app ? 'مسح السوق كامل يحتاج مفتاح Massive (الإعدادات ← المفاتيح).' : 'مسح السوق كامل يحتاج المتغير MASSIVE_API_KEY.' });
   else lights.push({
     key: 'prices', level: 'red', label: 'وضع تجريبي — الأسعار مصطنعة',
-    fix: lookalikes.length
+    fix: app ? 'افتح الإعدادات ← المفاتيح، والصق مفتاح Massive واضغط حفظ.'
+      : lookalikes.length
       ? `لقيت متغير باسم قريب: ${lookalikes.join('، ')}. لازم يكون الاسم MASSIVE_API_KEY بالضبط (حروف كبيرة، بدون مسافات).`
       : 'الخادم ما شاف أي مفتاح. أضف MASSIVE_API_KEY في Variables بـ Railway — الخدمة تعيد التشغيل لحالها.',
   });
@@ -32,7 +34,7 @@ export function statusLights({ massiveKey, alphaKey, persistentData, lookalikes 
   if (massiveKey && market) {
     const pr = market.progress;
     if (!market.ready && market.error) lights.push({ key: 'sync', level: 'red', label: 'المزامنة متوقفة', fix: market.error });
-    else if (!market.ready) lights.push({ key: 'sync', level: 'yellow', label: `المزامنة تتجهز ${market.days}/${HISTORY_DAYS} يوم${pr ? ` (يجلب ${pr.date})` : ''}`, fix: 'أول مرة تاخذ تقريبًا 15 دقيقة. خلّ الصفحة وارجع بعدين.' });
+    else if (!market.ready) lights.push({ key: 'sync', level: 'yellow', label: `المزامنة تتجهز ${market.days}/${HISTORY_DAYS} يوم${pr ? ` (يجلب ${pr.date})` : ''}`, fix: app ? 'أول مرة تاخذ تقريبًا 15 دقيقة. خلّ التطبيق مفتوح والشاشة شغالة لين تخلص.' : 'أول مرة تاخذ تقريبًا 15 دقيقة. خلّ الصفحة وارجع بعدين.' });
     else if (weekdaysSince(market.lastDay, now) > 3) lights.push({ key: 'sync', level: 'yellow', label: `آخر يوم تداول ${market.lastDay} — قديم`, fix: market.error || 'المزامنة ما جابت أيام جديدة. تأكد إن الخدمة شغالة.' });
     else if (market.error) lights.push({ key: 'sync', level: 'yellow', label: `آخر يوم تداول ${market.lastDay}`, fix: 'آخر محاولة مزامنة فشلت: ' + market.error });
     else lights.push({ key: 'sync', level: 'green', label: `المزامنة شغالة — آخر يوم تداول ${market.lastDay}` });
@@ -41,10 +43,10 @@ export function statusLights({ massiveKey, alphaKey, persistentData, lookalikes 
   // 3) الأخبار والأرباح (اختياري)
   lights.push(alphaKey
     ? { key: 'news', level: 'green', label: 'الأخبار وتقويم الأرباح شغالة (Alpha Vantage)' }
-    : { key: 'news', level: 'yellow', label: 'الأخبار وتقويم الأرباح متوقفة', fix: 'اختياري: أضف ALPHA_VANTAGE_KEY.' });
+    : { key: 'news', level: 'yellow', label: 'الأخبار وتقويم الأرباح متوقفة', fix: app ? 'اختياري: الصق مفتاح Alpha Vantage في الإعدادات ← المفاتيح.' : 'اختياري: أضف ALPHA_VANTAGE_KEY.' });
 
   // 4) التخزين (مع Massive: بدون قرص دائم تنعاد التعبئة بعد كل إعادة تشغيل)
-  if (massiveKey) lights.push(persistentData
+  if (massiveKey && !app) lights.push(persistentData
     ? { key: 'storage', level: 'green', label: 'تخزين الأسعار على قرص دائم' }
     : { key: 'storage', level: 'yellow', label: 'التخزين مؤقت', fix: 'اربط Volume على /data وأضف DATA_DIR=/data، وإلا تنعاد التعبئة (15 دقيقة) بعد كل إعادة تشغيل.' });
 

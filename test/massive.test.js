@@ -4,6 +4,7 @@ import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { parseGroupedDaily, parseTickersPage, weekdaysBack, buildBars, createMassiveStore } from '../server/massive.js';
+import { diskStorage } from '../server/disk-storage.js';
 import { runScan } from '../server/scan.js';
 
 // شكل الرد حسب توثيق Massive/Polygon (لم يُلاحظ رد حي بعد)
@@ -63,7 +64,7 @@ test('store universe filters by price, dollar volume, type and freshness; runSca
       await writeFile(path.join(dir, 'days', `${date}.json`), JSON.stringify(rows));
     }
     await writeFile(path.join(dir, 'tickers.json'), JSON.stringify({ at: Date.now(), tickers: ['GOOD', 'CHEAP', 'THIN', 'STALE'], info: { GOOD: { name: 'Good Corp.', exchange: 'NYSE' } } }));
-    const store = createMassiveStore({ apiKey: 'x', dataDir: dir, log: () => {} });
+    const store = createMassiveStore({ apiKey: 'x', storage: diskStorage(dir), log: () => {} });
     await store.loadFromDisk();
     assert.equal(store.state.ready, true);
     assert.deepEqual(store.universe({ minPrice: 5, minDollarVol: 20e6, avgDays: 20 }), ['GOOD']);
