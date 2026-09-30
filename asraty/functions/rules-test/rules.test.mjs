@@ -3,7 +3,6 @@ import { test, before, after, beforeEach } from "node:test";
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where } from "firebase/firestore";
-import { ref, uploadBytes, getBytes } from "firebase/storage";
 
 let env;
 const FID = "fam1";
@@ -12,7 +11,6 @@ before(async () => {
   env = await initializeTestEnvironment({
     projectId: "demo-asraty",
     firestore: { rules: readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8") },
-    storage: { rules: readFileSync(new URL("../../storage.rules", import.meta.url), "utf8") },
   });
 });
 after(() => env.cleanup());
@@ -71,14 +69,9 @@ test("members only see their own notifications", async () => {
   await assertSucceeds(getDoc(doc(as("owner1", FID, "owner"), `families/${FID}/notifications/n2`)));
 });
 
-test("proof photos: member uploads to own folder, family reads", async () => {
-  const kidStorage = env.authenticatedContext("kid1", { familyId: FID, role: "member" }).storage();
-  const img = new Uint8Array([1, 2, 3]);
-  await assertSucceeds(uploadBytes(ref(kidStorage, `proofs/${FID}/kid1/a.jpg`), img, { contentType: "image/jpeg" }));
-  await assertFails(uploadBytes(ref(kidStorage, `proofs/${FID}/kid2/a.jpg`), img, { contentType: "image/jpeg" }));
-  await assertFails(uploadBytes(ref(kidStorage, `proofs/${FID}/kid1/b.txt`), img, { contentType: "text/plain" }));
-  const ownerStorage = env.authenticatedContext("owner1", { familyId: FID, role: "owner" }).storage();
-  await assertSucceeds(getBytes(ref(ownerStorage, `proofs/${FID}/kid1/a.jpg`)));
-  const other = env.authenticatedContext("x", { familyId: "fam2", role: "owner" }).storage();
-  await assertFails(getBytes(ref(other, `proofs/${FID}/kid1/a.jpg`)));
+test("proof photos are readable by the family only, never writable", async () => {
+  await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), `families/${FID}/proofs/c1`), { data: "abc" }));
+  await assertSucceeds(getDoc(doc(as("owner1", FID, "owner"), `families/${FID}/proofs/c1`)));
+  await assertFails(getDoc(doc(as("x", "fam2", "owner"), `families/${FID}/proofs/c1`)));
+  await assertFails(setDoc(doc(as("kid1", FID, "member"), `families/${FID}/proofs/c2`), { data: "x" }));
 });

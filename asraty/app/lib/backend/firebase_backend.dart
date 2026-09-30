@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
@@ -33,7 +33,6 @@ class FirebaseBackend extends Backend {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
   final _fn = FirebaseFunctions.instanceFor(region: AppConfig.functionsRegion);
-  final _storage = FirebaseStorage.instance;
 
   StreamSubscription<User?>? _authSub;
   Timer? _dayTimer;
@@ -58,7 +57,11 @@ class FirebaseBackend extends Backend {
 
   Future<Map<String, dynamic>> _call(String name, [Map<String, dynamic> data = const {}]) async {
     try {
-      final r = await _fn.httpsCallable(name).call<dynamic>(data);
+      // The API runs on SERVER_URL (Vercel) when set, else as Cloud Functions.
+      final callable = AppConfig.serverUrl.isNotEmpty
+          ? _fn.httpsCallableFromUri(Uri.parse('${AppConfig.serverUrl}/api/$name'))
+          : _fn.httpsCallable(name);
+      final r = await callable.call<dynamic>(data);
       final d = r.data;
       return d is Map ? Map<String, dynamic>.from(d) : {};
     } on FirebaseFunctionsException catch (e) {
@@ -142,7 +145,7 @@ class FirebaseBackend extends Backend {
         return Completion(
           id: d.id, taskId: x['taskId'] ?? '', personId: x['personId'] ?? '', title: x['title'] ?? '',
           points: _int(x['points']), periodKey: x['periodKey'] ?? '', status: statusFrom(x['status']),
-          createdAt: _ts(x['createdAt']), photoPath: x['photoPath'] as String?);
+          createdAt: _ts(x['createdAt']), photoPath: x['hasPhoto'] == true ? d.id : null);
       }).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     });
@@ -167,15 +170,19 @@ class FirebaseBackend extends Backend {
     on(f.collection('deliveries').where('periodKey', whereIn: [_dayKey, wk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _deliveries = q.docs.map((d) => d.id).toSet();
     });
-    Query<Map<String, dynamic>> nq = f.collection('notifications');
-    if (s.role == Role.member) nq = nq.where('to', whereIn: ['all', s.personId]);
-    on(nq.orderBy('createdAt', descending: true).limit(50).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+    // Members filter by recipient (no ordering, so no composite index is needed;
+    // the server keeps only the last 60 days). Sorted newest first below.
+    final Query<Map<String, dynamic>> nq = s.role == Role.member
+        ? f.collection('notifications').where('to', whereIn: ['all', s.personId])
+        : f.collection('notifications').orderBy('createdAt', descending: true).limit(50);
+    on(nq.snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _notices = q.docs.map((d) {
         final x = d.data();
         return Notice(
           id: d.id, to: x['to'] ?? 'all', title: x['title'] ?? '', body: x['body'] ?? '', from: x['from'] ?? '',
           createdAt: _ts(x['createdAt']), readBy: List<String>.from(x['readBy'] ?? const []));
-      }).toList();
+      }).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
     on(f.collection('summaries').where('periodKey', whereIn: [_dayKey, wk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _daily = {};
@@ -284,19 +291,10 @@ class FirebaseBackend extends Backend {
   Future<void> deleteTask(String taskId) => _op('deleteTask', {'taskId': taskId});
 
   @override
-  Future<void> completeTask(String taskId, {Uint8List? photo}) async {
-    String? path;
-    final s = _session!;
-    if (photo != null) {
-      path = 'proofs/${s.familyId}/${s.personId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      try {
-        await _storage.ref(path).putData(photo, SettableMetadata(contentType: 'image/jpeg'));
-      } catch (_) {
-        throw AppError('upload-failed');
-      }
-    }
-    await _op('completeTask', {'taskId': taskId, 'photoPath': ?path});
-  }
+  Future<void> completeTask(String taskId, {Uint8List? photo}) =>
+      // The photo (already resized to 720px on the device) travels with the request
+      // and is stored by the server until the task is approved or rejected.
+      _op('completeTask', {'taskId': taskId, if (photo != null) 'photo': base64Encode(photo)});
 
   @override
   Future<void> decideCompletion(String completionId, bool approve) => _op('decideCompletion', {'completionId': completionId, 'approve': approve});
@@ -305,13 +303,15 @@ class FirebaseBackend extends Backend {
 
   @override
   Future<ImageProvider?> proofImage(Completion c) {
-    final path = c.photoPath;
-    if (path == null) return Future.value();
-    return _proofCache.putIfAbsent(path, () async {
+    final s = _session;
+    if (c.photoPath == null || s == null) return Future.value();
+    return _proofCache.putIfAbsent(c.id, () async {
       try {
-        return NetworkImage(await _storage.ref(path).getDownloadURL());
+        final d = await _db.collection('families').doc(s.familyId).collection('proofs').doc(c.id).get();
+        final b64 = d.data()?['data'];
+        return b64 is String ? MemoryImage(base64Decode(b64)) : null;
       } catch (_) {
-        _proofCache.remove(path);
+        _proofCache.remove(c.id);
         return null;
       }
     });

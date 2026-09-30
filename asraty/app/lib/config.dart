@@ -17,6 +17,14 @@ class AppConfig {
   /// Must match REGION in functions/src/config.ts.
   static const functionsRegion = String.fromEnvironment('FUNCTIONS_REGION', defaultValue: 'me-central2');
 
+  /// Base URL of the API server (Vercel), e.g. https://asraty-server.vercel.app.
+  /// With EMULATOR_HOST it defaults to the local dev server (functions: npm run dev).
+  static String get serverUrl {
+    const url = String.fromEnvironment('SERVER_URL');
+    if (url.isNotEmpty) return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+    return emulatorHost.isEmpty ? '' : 'http://$emulatorHost:5055';
+  }
+
   /// Host of the Firebase Emulator Suite (e.g. 10.0.2.2 for the Android emulator). Empty = production.
   static const emulatorHost = String.fromEnvironment('EMULATOR_HOST');
 

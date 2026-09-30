@@ -1,8 +1,7 @@
 import { createHash, randomInt } from "node:crypto";
-import { onCall } from "firebase-functions/https";
-import { db, fam, people, auth, fail, FieldValue, Timestamp } from "./db";
+import { db, fam, people, auth, fail, FieldValue, Timestamp, CallContext } from "./db";
 import { AVATAR_KEYS, EMAIL_RE, cleanText, normalizeEmail } from "./logic";
-import { RESEND_API_KEY, codeMailText, sendMail } from "./mail";
+import { codeMailText, sendMail } from "./mail";
 
 export const CODE_TTL_MS = 30 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
@@ -58,8 +57,8 @@ interface RequestCodeData {
   resend?: boolean;
 }
 
-export const requestCode = onCall({ secrets: [RESEND_API_KEY] }, async (req) => {
-  const d = (req.data ?? {}) as RequestCodeData;
+export async function requestCode(data: unknown, _ctx: CallContext) {
+  const d = (data ?? {}) as RequestCodeData;
   const email = normalizeEmail(d.email);
   if (!EMAIL_RE.test(email)) fail("bad-email", {}, "invalid-argument");
   const role = d.role === "admin" ? "admin" : "member";
@@ -94,11 +93,12 @@ export const requestCode = onCall({ secrets: [RESEND_API_KEY] }, async (req) => 
     intro: d.resend ? "كود تحقق جديد لتسجيل الدخول إلى تطبيق أسرتي." : "هذا كود التحقق لتسجيل الدخول إلى تطبيق أسرتي.",
   }, setup);
   return { sent: true };
-});
+}
 
-export const verifyCode = onCall(async (req) => {
-  const email = normalizeEmail(req.data?.email);
-  const code = String(req.data?.code ?? "").trim();
+export async function verifyCode(data: unknown, _ctx: CallContext) {
+  const d = (data ?? {}) as { email?: string; code?: string };
+  const email = normalizeEmail(d.email);
+  const code = String(d.code ?? "").trim();
   if (!EMAIL_RE.test(email) || !/^\d{6}$/.test(code)) fail("bad-code", {}, "invalid-argument");
 
   const ref = db.collection("authCodes").doc(codeDocId(email));
@@ -154,4 +154,4 @@ export const verifyCode = onCall(async (req) => {
   const famName = ((await fam(familyId).get()).data()?.name as string) ?? "";
   const token = await auth.createCustomToken(personId, { familyId, role });
   return { token, familyId, personId, role, familyName: famName, first };
-});
+}

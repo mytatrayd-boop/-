@@ -92,7 +92,8 @@ authCodes/{sha256(email)}                codeHash, expiresAt, attempts, sentCoun
 feedback/{id}                            type, text, email?, familyId?, personId?, role?, platform, createdAt
 ```
 - معرّف مستخدم Firebase Auth = `personId`، والـ custom claims تحوي `familyId` و`role`.
-- العميل يقرأ فقط (قواعد Firestore)، وكل كتابة عبر الدالة `api` (callable) التي تتحقق من الصلاحيات.
+- العميل يقرأ فقط (قواعد Firestore)، وكل كتابة عبر الخادم (`api` على Vercel) الذي يتحقق من الصلاحيات.
+- صور الإثبات: `families/{fid}/proofs/{completionId}` ← data (base64 مصغّرة)، تُحذف بعد الموافقة أو الرفض. (بدل Cloud Storage لأن المشروع على خطة Firebase المجانية.)
 - المشاركات في المسابقة محفوظة داخل وثيقة المسابقة (بدل subcollection) ليُقرأ كل شيء بمستمع واحد، مع بقاء الترتيب آمناً داخل transaction.
 - `periodKey`: يومي `2026-09-29`، أسبوعي `w2026-09-27` (تاريخ الأحد)، بتوقيت الرياض.
 
