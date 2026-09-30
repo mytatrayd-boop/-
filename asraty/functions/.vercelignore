@@ -4,3 +4,5 @@ test
 rules-test
 *.log
 .env*
+netlify
+netlify.toml

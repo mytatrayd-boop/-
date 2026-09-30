@@ -57,7 +57,7 @@ class FirebaseBackend extends Backend {
 
   Future<Map<String, dynamic>> _call(String name, [Map<String, dynamic> data = const {}]) async {
     try {
-      // The API runs on SERVER_URL (Vercel) when set, else as Cloud Functions.
+      // The API runs on SERVER_URL (Netlify) when set, else as Cloud Functions.
       final callable = AppConfig.serverUrl.isNotEmpty
           ? _fn.httpsCallableFromUri(Uri.parse('${AppConfig.serverUrl}/api/$name'))
           : _fn.httpsCallable(name);

@@ -1,17 +1,24 @@
 name: Asraty — deploy backend
 
 # Deploys the Firestore security rules to Firebase (free Spark plan is enough)
-# and the API server to Vercel (free). Secrets — see asraty/docs/RELEASE.md:
+# and the API server + privacy pages to Vercel or Netlify (both free; Vercel is
+# used when VERCEL_TOKEN is set). Secrets — see asraty/docs/RELEASE.md:
 #   FIREBASE_SERVICE_ACCOUNT_JSON  Firebase → Project settings → Service accounts → Generate new private key
-#   VERCEL_TOKEN                   vercel.com → Account settings → Tokens
+#   VERCEL_TOKEN                   vercel.com → Account settings → Tokens            (or)
+#   NETLIFY_AUTH_TOKEN             app.netlify.com → User settings → Applications → Personal access tokens
 #   GMAIL_USER, GMAIL_APP_PASSWORD Gmail address + app password used to send login codes
 on:
   workflow_dispatch:
+
+env:
+  SITE_NAME: asraty-${{ github.repository_owner }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: asraty/functions } }
+    env:
+      USE_VERCEL: ${{ secrets.VERCEL_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,14 +27,15 @@ jobs:
       - name: Check secrets
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          HOST_TOKEN: ${{ secrets.VERCEL_TOKEN || secrets.NETLIFY_AUTH_TOKEN }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: |
           missing=0
-          for v in FIREBASE_SERVICE_ACCOUNT_JSON VERCEL_TOKEN GMAIL_USER GMAIL_APP_PASSWORD; do
+          for v in FIREBASE_SERVICE_ACCOUNT_JSON GMAIL_USER GMAIL_APP_PASSWORD; do
             [ -n "${!v}" ] || { echo "::error::Missing secret $v (see asraty/docs/RELEASE.md)"; missing=1; }
           done
+          [ -n "$HOST_TOKEN" ] || { echo "::error::Missing secret VERCEL_TOKEN (or NETLIFY_AUTH_TOKEN)"; missing=1; }
           exit $missing
 
       - run: npm ci
@@ -37,34 +45,84 @@ jobs:
         env: { SA: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" }
         run: |
           printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          jq -e .private_key "$RUNNER_TEMP/sa.json" >/dev/null || { echo "::error::FIREBASE_SERVICE_ACCOUNT_JSON is not a service account JSON key"; exit 1; }
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
           echo "PROJECT_ID=$(jq -r .project_id "$RUNNER_TEMP/sa.json")" >> "$GITHUB_ENV"
-          echo "SA_B64=$(base64 -w0 "$RUNNER_TEMP/sa.json")" >> "$GITHUB_ENV"
-          echo "::add-mask::$(base64 -w0 "$RUNNER_TEMP/sa.json")"
+          echo "CLIENT_EMAIL=$(jq -r .client_email "$RUNNER_TEMP/sa.json")" >> "$GITHUB_ENV"
+          # Private key with literal \n so it fits in one env var (decoded in src/db.ts).
+          key=$(jq -r .private_key "$RUNNER_TEMP/sa.json" | awk 'BEGIN{ORS="\\n"}1')
+          echo "::add-mask::$key"
+          echo "PRIVATE_KEY=$key" >> "$GITHUB_ENV"
 
       - name: Deploy Firestore rules
         working-directory: asraty
         run: npx -y firebase-tools@15 deploy --only firestore --project "$PROJECT_ID" --non-interactive
 
-      - name: Deploy API to Vercel
+      - name: Deploy to Vercel
+        if: env.USE_VERCEL == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: |
-          npx -y vercel@latest link --yes --project asraty-server --token "$VERCEL_TOKEN"
-          URL=$(npx -y vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" \
-            -e FIREBASE_SERVICE_ACCOUNT_B64="$SA_B64" \
+          VC="npx -y vercel@latest"
+          $VC link --yes --project "$SITE_NAME" --token "$VERCEL_TOKEN"
+          $VC deploy --prod --yes --token "$VERCEL_TOKEN" \
+            -e FIREBASE_PROJECT_ID="$PROJECT_ID" \
+            -e FIREBASE_CLIENT_EMAIL="$CLIENT_EMAIL" \
+            -e FIREBASE_PRIVATE_KEY="$PRIVATE_KEY" \
             -e GMAIL_USER="$GMAIL_USER" \
             -e GMAIL_APP_PASSWORD="$GMAIL_APP_PASSWORD" \
-            -e SUPPORT_EMAIL="asraty200@gmail.com")
-          echo "Deployment: $URL"
-          echo "DEPLOY_URL=$URL" >> "$GITHUB_ENV"
-          npx -y vercel@latest project inspect asraty-server --token "$VERCEL_TOKEN" || true
+            -e SUPPORT_EMAIL="asraty200@gmail.com" > "$RUNNER_TEMP/url.txt"
+          echo "Deployment: $(cat "$RUNNER_TEMP/url.txt")"
+          # Stable production domain of the project (e.g. https://asraty-owner.vercel.app).
+          domain=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$SITE_NAME/domains" | jq -r '.domains[0].name // empty')
+          [ -n "$domain" ] && echo "SERVER_URL=https://$domain" >> "$GITHUB_ENV" || echo "SERVER_URL=$(cat "$RUNNER_TEMP/url.txt")" >> "$GITHUB_ENV"
+
+      - name: Netlify site
+        if: env.USE_VERCEL != 'true'
+        env: { NETLIFY_AUTH_TOKEN: "${{ secrets.NETLIFY_AUTH_TOKEN }}" }
+        run: |
+          NL="npx -y netlify-cli@latest"
+          id=$($NL api listSites --data "{\"name\":\"$SITE_NAME\",\"filter\":\"all\"}" | jq -r --arg n "$SITE_NAME" '.[] | select(.name==$n) | .id' | head -1)
+          if [ -z "$id" ]; then
+            id=$($NL api createSite --data "{\"body\":{\"name\":\"$SITE_NAME\"}}" | jq -r .id)
+          fi
+          [ -n "$id" ] && [ "$id" != null ] || { echo "::error::Could not find or create the Netlify site $SITE_NAME"; exit 1; }
+          echo "NETLIFY_SITE_ID=$id" >> "$GITHUB_ENV"
+          echo "Site: https://$SITE_NAME.netlify.app ($id)"
+
+      - name: Server settings (Netlify)
+        if: env.USE_VERCEL != 'true'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          NL="npx -y netlify-cli@latest"
+          $NL env:set FIREBASE_PROJECT_ID "$PROJECT_ID" --force >/dev/null
+          $NL env:set FIREBASE_CLIENT_EMAIL "$CLIENT_EMAIL" --force >/dev/null
+          $NL env:set FIREBASE_PRIVATE_KEY "$PRIVATE_KEY" --force >/dev/null
+          $NL env:set GMAIL_USER "$GMAIL_USER" --force >/dev/null
+          $NL env:set GMAIL_APP_PASSWORD "$GMAIL_APP_PASSWORD" --force >/dev/null
+          $NL env:set SUPPORT_EMAIL "asraty200@gmail.com" --force >/dev/null
+          echo "settings saved"
+
+      - name: Deploy to Netlify
+        if: env.USE_VERCEL != 'true'
+        env: { NETLIFY_AUTH_TOKEN: "${{ secrets.NETLIFY_AUTH_TOKEN }}" }
+        run: |
+          npx -y netlify-cli@latest deploy --prod --dir public --functions netlify/functions --site "$NETLIFY_SITE_ID" --message "run ${{ github.run_number }}"
+          echo "SERVER_URL=https://$SITE_NAME.netlify.app" >> "$GITHUB_ENV"
 
       - name: Smoke test
         run: |
-          out=$(curl -sS -X POST "$DEPLOY_URL/api/requestCode" -H 'Content-Type: application/json' -d '{"data":{"email":"not-an-email","role":"member"}}')
+          URL="$SERVER_URL"
+          out=$(curl -sS -X POST "$URL/api/requestCode" -H 'Content-Type: application/json' -d '{"data":{"email":"not-an-email","role":"member"}}')
           echo "$out"
           echo "$out" | grep -q '"bad-email"' || { echo "::error::API did not answer as expected"; exit 1; }
-          curl -sS -o /dev/null -w "privacy page: %{http_code}\n" "$DEPLOY_URL/privacy"
+          out=$(curl -sS -X POST "$URL/api/requestCode" -H 'Content-Type: application/json' -d '{"data":{"email":"nobody@example.com","role":"member"}}')
+          echo "$out"
+          echo "$out" | grep -q '"not-invited"' || { echo "::error::API could not read Firestore (service account?)"; exit 1; }
+          curl -sS -o /dev/null -w "privacy page: %{http_code}\n" "$URL/privacy"
+          echo "SERVER_URL=$URL"

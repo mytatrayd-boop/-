@@ -1,5 +1,5 @@
 // Entry point when deployed as Firebase Cloud Functions (needs the Blaze plan).
-// The default deployment is Vercel (api/[name].ts), which uses the same handlers.
+// The default deployment is Netlify (netlify/functions/api.mts), which uses the same handlers.
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onCall, HttpsError } from "firebase-functions/https";
 import { REGION } from "./config";

@@ -9,12 +9,12 @@
 | الحساب | التكلفة | لماذا |
 |---|---|---|
 | Google Firebase (الخطة المجانية Spark) | مجاني، بدون بطاقة | قاعدة البيانات وتسجيل الدخول والإشعارات |
-| Vercel (الخطة المجانية Hobby) | مجاني، بدون بطاقة | الخادم وصفحة الخصوصية |
+| Netlify (الخطة المجانية) | مجاني، بدون بطاقة | الخادم وصفحة الخصوصية |
 | Gmail (بريدك) | مجاني (حتى ~500 رسالة/يوم) | إرسال أكواد الدخول |
 | Google Play Console | 25$ مرة واحدة | نشر Android |
 | Apple Developer Program | 99$ سنوياً | نشر iPhone |
 
-> لماذا ليس خطة Firebase المدفوعة (Blaze)؟ حساب الدفع في السعودية يمر عبر CNTXT ويطلب سجلاً تجارياً ورقماً ضريبياً. لذلك يعمل الخادم على Vercel. إن حصلت لاحقاً على سجل تجاري يمكن نقله إلى Cloud Functions بدون تغيير في الكود.
+> لماذا ليس خطة Firebase المدفوعة (Blaze)؟ حساب الدفع في السعودية يمر عبر CNTXT ويطلب سجلاً تجارياً ورقماً ضريبياً. لذلك يعمل الخادم على Netlify. إن حصلت لاحقاً على سجل تجاري يمكن نقله إلى Cloud Functions بدون تغيير في الكود.
 
 المفاتيح السرية تُحفظ في **GitHub → المستودع → Settings → Secrets and variables → Actions → New repository secret**. لا تضعها في الكود ولا ترسلها في المحادثة.
 
@@ -37,13 +37,17 @@
    - `GMAIL_USER` = عنوان البريد.
    - `GMAIL_APP_PASSWORD` = كلمة مرور التطبيق (16 حرفاً).
 
-## 3) الخادم (Vercel)
+## 3) الخادم (Vercel أو Netlify)
 
-1. [vercel.com/signup](https://vercel.com/signup) ← **Continue with GitHub** ← الخطة **Hobby**.
-2. [vercel.com/account/tokens](https://vercel.com/account/tokens) ← Create ← الاسم `github` ← Scope حسابك ← Expiration «No expiration» ← انسخ الرمز.
-3. سر GitHub: `VERCEL_TOKEN`.
-4. **Actions ← «Asraty — deploy backend» ← Run workflow.** ينشر قواعد الأمان إلى Firebase والخادم إلى Vercel، ثم يختبر أن الخادم يرد.
-5. ضع رابط الخادم (مثل `https://asraty-server.vercel.app`) في `SERVER_URL`، ورابط الخصوصية (`…/privacy`) في `PRIVACY_URL` داخل `app/env.prod.json`.
+**Vercel:** [vercel.com/signup](https://vercel.com/signup) ← Continue with GitHub ← Hobby، ثم [vercel.com/account/settings/tokens](https://vercel.com/account/settings/tokens) ← Create (No expiration) ← سر GitHub باسم `VERCEL_TOKEN`. إن طلب Vercel توثيق الجوال ولم تصل الرسالة، استخدم Netlify:
+
+**Netlify:**
+
+1. [app.netlify.com/signup](https://app.netlify.com/signup) ← **Sign up with GitHub**.
+2. [app.netlify.com/user/applications#personal-access-tokens](https://app.netlify.com/user/applications#personal-access-tokens) ← **New access token** ← الاسم `github` ← Expiration «No expiration» ← Generate ← انسخ الرمز.
+3. سر GitHub: `NETLIFY_AUTH_TOKEN`.
+4. **Actions ← «Asraty — deploy backend» ← Run workflow.** ينشر قواعد الأمان إلى Firebase والخادم إلى Netlify على `https://asraty-<اسم حساب GitHub>.netlify.app`، ثم يختبر أن الخادم يرد ويقرأ قاعدة البيانات.
+5. هذا الرابط هو `SERVER_URL` في `app/env.prod.json`.
 
 صفحة سياسة الخصوصية: `https://<رابط الخادم>/privacy` — وصفحة حذف الحساب: `…/delete-account`. ستحتاجهما في المتجرين.
 
@@ -111,7 +115,7 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
 |---|---|
 | «تعذّر الاتصال» عند طلب الكود | تأكد أن الخادم منشور (الخطوة 3) وأن `SERVER_URL` صحيح في `app/env.prod.json`. |
 | يصل الكود لكن التحقق يفشل بخطأ عام | تأكد أن `FIREBASE_SERVICE_ACCOUNT_JSON` من نفس مشروع Firebase، ثم أعد تشغيل «deploy backend». |
-| لا يصل البريد | تحقق من كلمة مرور التطبيق في Gmail (`GMAIL_APP_PASSWORD`) وأن التحقق بخطوتين مفعّل. راجع Vercel ← Project ← Logs. |
+| لا يصل البريد | تحقق من كلمة مرور التطبيق في Gmail (`GMAIL_APP_PASSWORD`) وأن التحقق بخطوتين مفعّل. راجع Netlify ← الموقع ← Logs ← Functions. |
 | لا تصل الإشعارات على iPhone | مفتاح APNs في Firebase (الخطوة 5.2). |
 | يصل الإشعار بدون نغمة أو نافذة منبثقة على Android | إعدادات الجوال ← التطبيقات ← أسرتي ← الإشعارات ← «تنبيهات أسرتي»: تأكد أنها مفعّلة بصوت وبنافذة منبثقة (وضع «عدم الإزعاج» يكتمها). |
 | فشل بناء iOS في خطوة Archive | تأكد أن مفتاح API بدور Admin وأن App ID موجود بتفعيل Push. |

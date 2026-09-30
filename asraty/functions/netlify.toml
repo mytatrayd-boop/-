@@ -1,0 +1,9 @@
+# Deployed by .github/workflows/asraty-backend-deploy.yml (Netlify, free plan).
+[build]
+  command = "npm run build"
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["firebase-admin", "nodemailer"]
