@@ -20,7 +20,7 @@ void toast(BuildContext context, String msg) {
 }
 
 String errorText(L10n t, Object e) {
-  if (e is! AppError) return t.errGeneric;
+  if (e is! AppError) return t.errGenericCode(e.runtimeType.toString());
   return switch (e.code) {
     'bad-email' => t.errBadEmail,
     'setup-needed' => t.errSetupNeeded,
@@ -46,7 +46,9 @@ String errorText(L10n t, Object e) {
     'removed' => t.errRemoved,
     'bad-name-email' => t.errNameEmail,
     'too-short' => t.errFbShort,
-    _ => t.errGeneric,
+    'bad-title' || 'bad-number' => t.errTaskInput,
+    // Unknown codes show the code (and the server's reason for internal errors) so a screenshot is enough to diagnose.
+    _ => t.errGenericCode([e.code, if (e.details['reason'] is String) e.details['reason'] as String].join(' · ')),
   };
 }
 

@@ -58,6 +58,8 @@ export async function handleCall(name: string, method: string, headers: Record<s
   } catch (e) {
     if (e instanceof ApiError) return error(e.kind, e.code, e.details);
     console.error(`call ${name} failed`, e);
-    return error("internal", "internal");
+    // A short reason lets the app show what went wrong (the family sees it in the error toast).
+    const reason = String((e as Error)?.message ?? e).slice(0, 120);
+    return error("internal", "internal", { code: "internal", op: String((payload as { op?: unknown })?.op ?? name), reason });
   }
 }
