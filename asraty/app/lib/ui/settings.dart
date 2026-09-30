@@ -45,8 +45,14 @@ class SettingsPage extends ConsumerWidget {
       ),
       if (AppConfig.privacyUrl.isNotEmpty) ...[
         RowCard(children: [
-          Expanded(child: Text(t.privacyPolicy, style: const TextStyle(fontWeight: FontWeight.w700))),
-          SelectableText(AppConfig.privacyUrl, textDirection: TextDirection.ltr, style: TextStyle(color: context.pal.muted, fontSize: 13)),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text(t.privacyPolicy, style: const TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              SelectableText(AppConfig.privacyUrl,
+                  textDirection: TextDirection.ltr, textAlign: TextAlign.right, style: TextStyle(color: context.pal.muted, fontSize: 13)),
+            ]),
+          ),
         ]),
       ],
       const SizedBox(height: 8),

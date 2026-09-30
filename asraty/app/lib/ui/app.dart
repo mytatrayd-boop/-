@@ -77,6 +77,12 @@ class AsratyApp extends ConsumerWidget {
         darkTheme: buildTheme(Brightness.dark),
         themeMode: ref.watch(themeModeProvider),
         routerConfig: ref.watch(_routerProvider),
-        builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+        // Cap very large system font sizes (common on Honor/Huawei) so rows keep room for their text.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2),
+          ),
+          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+        ),
       );
 }
