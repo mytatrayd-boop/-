@@ -1,12 +1,13 @@
 // One-off diagnostic: signs in as each family owner and calls addTask on the
 // deployed server, printing only status codes and error codes (no personal data).
 // Any task it manages to create is deleted right away.
-import { initializeApp } from "firebase-admin/app";
+import { initializeApp, cert } from "firebase-admin/app";
+import { readFileSync } from "node:fs";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
 const { SERVER_URL, API_KEY } = process.env;
-initializeApp();
+initializeApp({ credential: cert(JSON.parse(readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, "utf8"))) });
 const db = getFirestore();
 const TITLE = "__diag__";
 
