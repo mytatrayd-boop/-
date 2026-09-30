@@ -129,4 +129,15 @@ jobs:
       - name: Server logs (on failure)
         if: failure() && env.USE_VERCEL == 'true'
         env: { VERCEL_TOKEN: "${{ secrets.VERCEL_TOKEN }}" }
-        run: timeout 60 npx -y vercel@latest logs "$SERVER_URL" --token "$VERCEL_TOKEN" || true
+        run: |
+          H="Authorization: Bearer $VERCEL_TOKEN"
+          echo "ping: $(curl -sS "$SERVER_URL/api/ping")"
+          dep=$(curl -sS -H "$H" "https://api.vercel.com/v13/deployments/${SERVER_URL#https://}" | jq -r '.id // empty')
+          proj=$(curl -sS -H "$H" "https://api.vercel.com/v9/projects/$SITE_NAME" | jq -r '.id // empty')
+          # Stream runtime logs while calling the API once more.
+          curl -sS -N --max-time 30 -H "$H" "https://api.vercel.com/v1/projects/$proj/deployments/$dep/runtime-logs" > "$RUNNER_TEMP/logs.txt" 2>&1 &
+          sleep 5
+          curl -sS -X POST "$SERVER_URL/api/requestCode" -H 'Content-Type: application/json' -d '{"data":{"email":"x","role":"member"}}' || true
+          wait || true
+          echo "---- runtime logs ----"
+          tail -c 8000 "$RUNNER_TEMP/logs.txt" || true

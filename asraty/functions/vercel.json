@@ -7,6 +7,9 @@
     "api/[name].js": {
       "maxDuration": 30,
       "includeFiles": "build/src/**"
+    },
+    "api/ping.js": {
+      "maxDuration": 5
     }
   }
 }
