@@ -1,10 +1,12 @@
-import { defineSecret, defineString } from "firebase-functions/params";
-import * as logger from "firebase-functions/logger";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import nodemailer from "nodemailer";
 
-export const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
-export const MAIL_FROM = defineString("MAIL_FROM", { default: "أسرتي <onboarding@resend.dev>" });
-export const SUPPORT_EMAIL = defineString("SUPPORT_EMAIL", { default: "asraty200@gmail.com" });
+// Configuration comes from environment variables (Vercel project env, or
+// functions/.env + secrets when running as Cloud Functions):
+//   GMAIL_USER + GMAIL_APP_PASSWORD  → send through Gmail (no domain needed)
+//   RESEND_API_KEY + MAIL_FROM       → send through Resend (needs a verified domain)
+//   SUPPORT_EMAIL                    → where feedback goes
+export const supportEmail = () => process.env.SUPPORT_EMAIL || "asraty200@gmail.com";
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -24,33 +26,46 @@ export interface Mail {
   replyTo?: string;
 }
 
+let transport: nodemailer.Transporter | undefined;
+
 /**
- * Sends a transactional email through Resend. Without an API key (local
- * emulator), the message is logged instead so codes can be read from the
- * emulator logs.
+ * Sends a transactional email. With the Firestore emulator (local dev and
+ * tests) the message is stored in `devMail` instead of being sent.
  */
 export async function sendMail(mail: Mail): Promise<void> {
-  let key = "";
-  try {
-    key = RESEND_API_KEY.value();
-  } catch {
-    key = "";
-  }
-  if (process.env.FUNCTIONS_EMULATOR === "true") {
-    // Local development: keep a readable copy (visible in the Emulator UI and used by tests).
-    logger.info(`[mail:dev] to=${mail.to} subject=${mail.subject}\n${mail.text}`);
+  if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FUNCTIONS_EMULATOR === "true") {
+    console.info(`[mail:dev] to=${mail.to} subject=${mail.subject}\n${mail.text}`);
     await getFirestore().collection("devMail").add({ to: mail.to, subject: mail.subject, text: mail.text, createdAt: FieldValue.serverTimestamp() });
     return;
   }
+
+  const gmailUser = process.env.GMAIL_USER, gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (gmailUser && gmailPass) {
+    transport ??= nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: gmailUser, pass: gmailPass.replace(/\s+/g, "") },
+    });
+    await transport.sendMail({
+      from: { name: "أسرتي", address: gmailUser },
+      to: mail.to,
+      subject: mail.subject,
+      text: mail.text,
+      html: html(mail.text),
+      ...(mail.replyTo ? { replyTo: mail.replyTo } : {}),
+    });
+    return;
+  }
+
+  const key = process.env.RESEND_API_KEY;
   if (!key) {
-    logger.error("RESEND_API_KEY is not set; email not sent", mail.to, mail.subject);
+    console.error("No mail provider configured (GMAIL_USER/GMAIL_APP_PASSWORD or RESEND_API_KEY)", mail.to, mail.subject);
     throw new Error("mail-not-configured");
   }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: MAIL_FROM.value(),
+      from: process.env.MAIL_FROM || "أسرتي <onboarding@resend.dev>",
       to: [mail.to],
       subject: mail.subject,
       text: mail.text,
@@ -59,7 +74,7 @@ export async function sendMail(mail: Mail): Promise<void> {
     }),
   });
   if (!res.ok) {
-    logger.error("Resend error", res.status, await res.text());
+    console.error("Resend error", res.status, await res.text());
     throw new Error("mail-failed");
   }
 }

@@ -2,75 +2,50 @@
 
 هذا الدليل يوصلك من الكود إلى نسخة تجريبية على جوالات أسرتك. **لا تحتاج جهاز Mac**: البناء يتم على GitHub Actions (خوادم Linux و macOS مجانية للمستودعات العامة، ومحدودة الدقائق للخاصة).
 
-> يمكنك رفع نسخة Android تجريبية **قبل** إعداد Firebase: التطبيق يعمل حينها بـ«التجربة السريعة» فقط (بيانات على الجهاز). لتسجيل الدخول الحقيقي بالبريد أكمل الخطوات 1–3.
+> يمكنك رفع نسخة Android تجريبية **قبل** إعداد الخادم: التطبيق يعمل حينها بـ«التجربة السريعة» فقط (بيانات على الجهاز). لتسجيل الدخول الحقيقي بالبريد أكمل الخطوات 1–3.
 
 ## ما ستحتاجه
 
 | الحساب | التكلفة | لماذا |
 |---|---|---|
-| Google Firebase (خطة Blaze) | شبه مجاني لعدد قليل من الأسر | الخادم وقاعدة البيانات |
-| Resend.com | مجاني حتى 3000 رسالة/شهر | إرسال أكواد الدخول |
+| Google Firebase (الخطة المجانية Spark) | مجاني، بدون بطاقة | قاعدة البيانات وتسجيل الدخول والإشعارات |
+| Vercel (الخطة المجانية Hobby) | مجاني، بدون بطاقة | الخادم وصفحة الخصوصية |
+| Gmail (بريدك) | مجاني (حتى ~500 رسالة/يوم) | إرسال أكواد الدخول |
 | Google Play Console | 25$ مرة واحدة | نشر Android |
 | Apple Developer Program | 99$ سنوياً | نشر iPhone |
 
-كل المفاتيح تُحفظ في **GitHub → المستودع → Settings → Secrets and variables → Actions → New repository secret**. لا تضعها في الكود أبداً.
+> لماذا ليس خطة Firebase المدفوعة (Blaze)؟ حساب الدفع في السعودية يمر عبر CNTXT ويطلب سجلاً تجارياً ورقماً ضريبياً. لذلك يعمل الخادم على Vercel. إن حصلت لاحقاً على سجل تجاري يمكن نقله إلى Cloud Functions بدون تغيير في الكود.
+
+المفاتيح السرية تُحفظ في **GitHub → المستودع → Settings → Secrets and variables → Actions → New repository secret**. لا تضعها في الكود ولا ترسلها في المحادثة.
 
 ---
 
-## 1) Firebase
+## 1) Firebase (مجاني)
 
-1. من [console.firebase.google.com](https://console.firebase.google.com) أنشئ مشروعاً (مثلاً `asraty-app`)، ثم فعّل خطة **Blaze** (مطلوبة لـ Cloud Functions).
-2. **Firestore Database** ← Create database ← Production mode ← الموقع `me-central2 (Dammam)`.
-3. **Storage** ← Get started ← نفس الموقع.
-4. **Authentication** ← Get started (لا تحتاج تفعيل أي مزوّد — الدخول بكود البريد يتم عبر الخادم).
-5. **Project settings ← General ← Your apps**:
-   - أضف تطبيق **Android** بالمعرّف `sa.asraty.app`.
-   - أضف تطبيق **iOS** بالمعرّف `sa.asraty.app`.
-   - لا تحتاج تنزيل `google-services.json` ولا `GoogleService-Info.plist`؛ انسخ فقط القيم التالية.
-6. أنشئ سر GitHub باسم **`ASRATY_ENV_JSON`** بهذا الشكل (القيم من صفحة إعدادات المشروع):
+1. [console.firebase.google.com](https://console.firebase.google.com) ← أنشئ مشروعاً (أوقف Google Analytics). **لا تحتاج الترقية إلى Blaze.**
+2. **Firestore Database** ← Create database ← Standard ← الموقع `me-central2 (Dammam)` ← Production mode.
+3. **Authentication** ← Get started (لا تفعّل أي مزوّد).
+4. **Project settings ← General ← Your apps**: أضف تطبيق **Android** بالمعرّف `sa.asraty.app` وتطبيق **iOS** بنفس المعرّف (تجاوز تنزيل الملفات بـ Next).
+5. أرسل قيم صفحة Project settings (Project ID، Project number، Web API key، App ID لكل تطبيق) — هذه ليست أسراراً، وتوضع في `app/env.prod.json`.
+6. **Project settings ← Service accounts ← Generate new private key** ← ينزل ملف JSON. افتحه وانسخ محتواه كاملاً إلى سر GitHub باسم **`FIREBASE_SERVICE_ACCOUNT_JSON`**. ⚠️ هذا الملف سرّي: لا ترسله لأحد واحذفه من جهازك بعد النسخ.
 
-```json
-{
-  "FIREBASE_API_KEY": "AIza...",
-  "FIREBASE_PROJECT_ID": "asraty-app",
-  "FIREBASE_MESSAGING_SENDER_ID": "1234567890",
-  "FIREBASE_STORAGE_BUCKET": "asraty-app.firebasestorage.app",
-  "FIREBASE_ANDROID_APP_ID": "1:1234567890:android:abc...",
-  "FIREBASE_IOS_APP_ID": "1:1234567890:ios:def...",
-  "IOS_BUNDLE_ID": "sa.asraty.app",
-  "FUNCTIONS_REGION": "me-central2",
-  "PRIVACY_URL": "https://asraty-app.web.app/privacy"
-}
-```
+## 2) البريد (Gmail)
 
-7. **صلاحية توقيع رموز الدخول** (مهمة، وإلا يفشل التحقق من الكود): في [Google Cloud Console ← IAM](https://console.cloud.google.com/iam-admin/iam) اختر مشروعك، وابحث عن الحساب `...-compute@developer.gserviceaccount.com`، واضغط ✎ وأضف الدور **Service Account Token Creator**.
-
-## 2) البريد (Resend)
-
-1. سجّل في [resend.com](https://resend.com)، ثم **Domains ← Add domain** وأضف نطاقاً تملكه (مثل `asraty.app`) وأكمل سجلات DNS. بدون نطاق موثّق لا يرسل Resend إلا لبريدك أنت.
-2. **API Keys ← Create** وانسخ المفتاح.
+1. في حساب Google لبريد الإرسال (مثل `asraty200@gmail.com`) فعّل **التحقق بخطوتين**: [myaccount.google.com/security](https://myaccount.google.com/security).
+2. افتح [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) ← اكتب اسماً مثل `asraty` ← Create ← تظهر كلمة مرور من 16 حرفاً.
 3. أسرار GitHub:
-   - `RESEND_API_KEY` = المفتاح.
-   - `MAIL_FROM` = مثلاً `أسرتي <no-reply@asraty.app>`.
+   - `GMAIL_USER` = عنوان البريد.
+   - `GMAIL_APP_PASSWORD` = كلمة مرور التطبيق (16 حرفاً).
 
-## 3) نشر الخادم (Cloud Functions + قواعد الأمان + صفحة الخصوصية)
+## 3) الخادم (Vercel)
 
-**الطريقة الأسهل (من GitHub):**
-1. في Google Cloud Console ← IAM ← Service Accounts أنشئ حساباً باسم `github-deploy` وامنحه الأدوار: **Firebase Admin**، **Cloud Functions Admin**، **Service Account User**، **Secret Manager Admin**، **Cloud Build Editor**، **Artifact Registry Administrator**. ثم Keys ← Add key ← JSON.
-2. أسرار GitHub: `FIREBASE_SERVICE_ACCOUNT_JSON` (محتوى ملف JSON كاملاً) و `FIREBASE_PROJECT_ID`.
-3. **Actions ← «Asraty — deploy Firebase backend» ← Run workflow.**
+1. [vercel.com/signup](https://vercel.com/signup) ← **Continue with GitHub** ← الخطة **Hobby**.
+2. [vercel.com/account/tokens](https://vercel.com/account/tokens) ← Create ← الاسم `github` ← Scope حسابك ← Expiration «No expiration» ← انسخ الرمز.
+3. سر GitHub: `VERCEL_TOKEN`.
+4. **Actions ← «Asraty — deploy backend» ← Run workflow.** ينشر قواعد الأمان إلى Firebase والخادم إلى Vercel، ثم يختبر أن الخادم يرد.
+5. ضع رابط الخادم (مثل `https://asraty-server.vercel.app`) في `SERVER_URL`، ورابط الخصوصية (`…/privacy`) في `PRIVACY_URL` داخل `app/env.prod.json`.
 
-**أو من جهازك:** `npm i -g firebase-tools && firebase login`، ثم داخل مجلد `asraty/`:
-```bash
-firebase use --add            # اختر مشروعك
-firebase functions:secrets:set RESEND_API_KEY
-echo 'MAIL_FROM=أسرتي <no-reply@asraty.app>' > functions/.env
-firebase deploy
-```
-
-بعد النشر تظهر سياسة الخصوصية على `https://<project>.web.app/privacy` وصفحة حذف الحساب على `https://<project>.web.app/delete-account` — ستحتاجهما في المتجرين.
-
-> إذا ظهر خطأ أن المنطقة `me-central2` غير متاحة للـ Functions، غيّرها إلى `europe-west1` في `functions/src/config.ts` وفي `FUNCTIONS_REGION` داخل `ASRATY_ENV_JSON`.
+صفحة سياسة الخصوصية: `https://<رابط الخادم>/privacy` — وصفحة حذف الحساب: `…/delete-account`. ستحتاجهما في المتجرين.
 
 ---
 
@@ -134,9 +109,9 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
 ## مشاكل شائعة
 | المشكلة | الحل |
 |---|---|
-| «تعذّر الاتصال» عند طلب الكود | تأكد أن الخادم منشور (الخطوة 3) وأن `FUNCTIONS_REGION` مطابق. |
-| يصل الكود لكن التحقق يفشل بخطأ عام | صلاحية **Service Account Token Creator** (الخطوة 1.7). |
-| لا يصل البريد | نطاق Resend غير موثّق أو `MAIL_FROM` لا يطابق النطاق. راجع Firebase ← Functions ← Logs. |
+| «تعذّر الاتصال» عند طلب الكود | تأكد أن الخادم منشور (الخطوة 3) وأن `SERVER_URL` صحيح في `app/env.prod.json`. |
+| يصل الكود لكن التحقق يفشل بخطأ عام | تأكد أن `FIREBASE_SERVICE_ACCOUNT_JSON` من نفس مشروع Firebase، ثم أعد تشغيل «deploy backend». |
+| لا يصل البريد | تحقق من كلمة مرور التطبيق في Gmail (`GMAIL_APP_PASSWORD`) وأن التحقق بخطوتين مفعّل. راجع Vercel ← Project ← Logs. |
 | لا تصل الإشعارات على iPhone | مفتاح APNs في Firebase (الخطوة 5.2). |
 | يصل الإشعار بدون نغمة أو نافذة منبثقة على Android | إعدادات الجوال ← التطبيقات ← أسرتي ← الإشعارات ← «تنبيهات أسرتي»: تأكد أنها مفعّلة بصوت وبنافذة منبثقة (وضع «عدم الإزعاج» يكتمها). |
 | فشل بناء iOS في خطوة Archive | تأكد أن مفتاح API بدور Admin وأن App ID موجود بتفعيل Push. |

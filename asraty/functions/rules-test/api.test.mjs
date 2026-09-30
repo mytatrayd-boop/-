@@ -6,8 +6,7 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
 const PROJECT = "demo-asraty";
-const REGION = "me-central2";
-const FN = `http://127.0.0.1:5001/${PROJECT}/${REGION}`;
+const FN = process.env.API_BASE ?? "http://127.0.0.1:5055/api";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1";
 
 initializeApp({ projectId: PROJECT });
@@ -94,12 +93,17 @@ test("task → completion → approval → points in summaries", async () => {
 
   await call("api", { op: "addTask", title: "ترتيب السرير", personId: "all", points: 5, repeat: "daily" }, owner.idToken);
   const task = (await db.collection(`families/${fid}/tasks`).get()).docs[0];
-  await call("api", { op: "completeTask", taskId: task.id }, kid.idToken);
+  await rejects(call("api", { op: "completeTask", taskId: task.id, photo: "bm90LWFuLWltYWdl" }, kid.idToken), "bad-photo");
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).toString("base64");
+  await call("api", { op: "completeTask", taskId: task.id, photo: jpeg }, kid.idToken);
   await rejects(call("api", { op: "completeTask", taskId: task.id }, kid.idToken), "already-done");
 
   const comp = (await db.collection(`families/${fid}/completions`).get()).docs[0];
+  assert.equal(comp.data().hasPhoto, true);
+  assert.equal((await db.doc(`families/${fid}/proofs/${comp.id}`).get()).data().data, jpeg);
   await call("api", { op: "decideCompletion", completionId: comp.id, approve: true }, owner.idToken);
   await rejects(call("api", { op: "decideCompletion", completionId: comp.id, approve: true }, owner.idToken), "already-decided");
+  assert.equal((await db.doc(`families/${fid}/proofs/${comp.id}`).get()).exists, false, "proof deleted after decision");
 
   const sums = (await db.collection(`families/${fid}/summaries`).where("personId", "==", kid.personId).get()).docs.map((d) => d.data());
   assert.equal(sums.length, 2); // today + this week
@@ -143,7 +147,8 @@ test("removed member loses access; account deletion", async () => {
   await clearRate();
   const kid = await login("kid3@test.sa", "member");
   await call("api", { op: "removePerson", personId: kid.personId }, owner.idToken);
-  await rejects(call("api", { op: "markRead" }, kid.idToken), "removed");
+  // Rejected either at token verification (auth user deleted) or by the people-doc check.
+  await assert.rejects(call("api", { op: "markRead" }, kid.idToken), (e) => ["removed", "unauthenticated"].includes(e.code));
   assert.equal((await db.doc("emailIndex/kid3@test.sa").get()).exists, false);
 
   await clearRate();

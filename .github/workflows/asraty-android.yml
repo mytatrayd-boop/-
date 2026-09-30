@@ -33,7 +33,7 @@ jobs:
       - name: Write build config
         env: { ASRATY_ENV_JSON: "${{ secrets.ASRATY_ENV_JSON }}" }
         run: |
-          if [ -z "$ASRATY_ENV_JSON" ]; then echo "::warning::ASRATY_ENV_JSON is not set — building a demo-only app"; echo '{}' > env.json; else printf '%s' "$ASRATY_ENV_JSON" > env.json; fi
+          if [ -n "$ASRATY_ENV_JSON" ]; then printf '%s' "$ASRATY_ENV_JSON" > env.json; else cp env.prod.json env.json; fi
 
       - name: Upload key
         env: { ANDROID_KEYSTORE_BASE64: "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" }

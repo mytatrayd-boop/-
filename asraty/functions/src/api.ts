@@ -1,14 +1,12 @@
-import { onCall, CallableRequest } from "firebase-functions/https";
 import {
-  db, fam, people, auth, storage, fail, push, deleteProof, deleteTree, getPeople,
-  FieldValue, Timestamp, Person,
+  db, fam, people, auth, fail, push, deleteTree, getPeople, proofRef,
+  FieldValue, Timestamp, Person, CallContext,
 } from "./db";
 import {
   AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope,
   can, cleanPerms, cleanText, competitionPoints, dayKey, normalizeEmail, periodKey, reportText, weekKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
-import { RESEND_API_KEY } from "./mail";
 
 interface Ctx {
   fid: string;
@@ -25,6 +23,15 @@ const int = (v: unknown, min: number, max: number) => {
   if (!Number.isFinite(n) || n < min || n > max) fail("bad-number", { min, max }, "invalid-argument");
   return n;
 };
+/** Optional proof photo: base64 JPEG/PNG, resized on the device (~720px). */
+function checkPhoto(v: unknown): string {
+  const b64 = String(v);
+  if (b64.length > 900_000 || !/^[A-Za-z0-9+/=]+$/.test(b64)) fail("bad-photo", {}, "invalid-argument");
+  const head = Buffer.from(b64.slice(0, 16), "base64");
+  const jpeg = head[0] === 0xff && head[1] === 0xd8, png = head[0] === 0x89 && head[1] === 0x50;
+  if (!jpeg && !png) fail("bad-photo", {}, "invalid-argument");
+  return b64;
+}
 const period = (v: unknown): Period => (v === "weekly" ? "weekly" : "daily");
 const scope = (v: unknown): Scope => (v === "family" ? "family" : "each");
 const avatar = (v: unknown) => ((AVATAR_KEYS as readonly string[]).includes(String(v)) ? String(v) : null);
@@ -43,6 +50,13 @@ async function notify(fid: string, to: string, title: string, body: string, from
   await fam(fid).collection("notifications").add({
     to, title, body, from, createdAt: FieldValue.serverTimestamp(), readBy: [],
   });
+  // Keep the list small (members load it without ordering): drop notices older than 60 days.
+  const old = await fam(fid).collection("notifications").where("createdAt", "<", Timestamp.fromMillis(Date.now() - 60 * 86400e3)).limit(100).get();
+  if (!old.empty) {
+    const b = db.batch();
+    old.docs.forEach((d) => b.delete(d.ref));
+    await b.commit();
+  }
   const all = await getPeople(fid);
   const targets = all.filter((p) => p.role === "member" && (to === "all" || p.id === to));
   await push(fid, targets, title, body);
@@ -80,7 +94,7 @@ async function removePersonData(fid: string, p: Person) {
   tasks.docs.forEach((d) => batch.delete(d.ref));
   await batch.commit();
   const comps = await f.collection("completions").where("personId", "==", p.id).get();
-  await Promise.all(comps.docs.map((d) => deleteProof(d.data().photoPath)));
+  await Promise.all(comps.docs.filter((d) => d.data().hasPhoto).map((d) => proofRef(fid, d.id).delete()));
   await auth.revokeRefreshTokens(p.id).catch(() => undefined);
   await auth.deleteUser(p.id).catch(() => undefined);
 }
@@ -201,8 +215,7 @@ const ops: Record<string, Handler> = {
   async completeTask(c) {
     if (c.me.role !== "member") fail("members-only", {}, "permission-denied");
     const tRef = fam(c.fid).collection("tasks").doc(String(c.data.taskId ?? ""));
-    const photoPath = c.data.photoPath ? str(c.data.photoPath, 300) : null;
-    if (photoPath && !photoPath.startsWith(`proofs/${c.fid}/${c.me.id}/`)) fail("bad-photo", {}, "invalid-argument");
+    const photo = c.data.photo ? checkPhoto(c.data.photo) : null;
     const created = await db.runTransaction(async (tx) => {
       const t = (await tx.get(tRef)).data();
       if (!t || t.personId !== c.me.id) fail("task-not-found", {}, "not-found");
@@ -213,8 +226,11 @@ const ops: Record<string, Handler> = {
       if (prev && prev.status !== "rejected") fail("already-done");
       tx.set(cRef, {
         taskId: tRef.id, personId: c.me.id, title: t.title, points: t.points, periodKey: pk,
-        status: "pending", photoPath, createdAt: FieldValue.serverTimestamp(), decidedBy: null,
+        status: "pending", hasPhoto: !!photo, createdAt: FieldValue.serverTimestamp(), decidedBy: null,
       });
+      const proof = proofRef(c.fid, cRef.id);
+      if (photo) tx.set(proof, { data: photo, personId: c.me.id, createdAt: FieldValue.serverTimestamp() });
+      else if (prev?.hasPhoto) tx.delete(proof);
       return t.title as string;
     });
     const all = await getPeople(c.fid);
@@ -230,11 +246,11 @@ const ops: Record<string, Handler> = {
       const d = (await tx.get(ref)).data();
       if (!d) fail("not-found", {}, "not-found");
       if (d.status !== "pending") fail("already-decided");
-      tx.update(ref, { status: approve ? "approved" : "rejected", decidedBy: c.me.id, decidedAt: FieldValue.serverTimestamp(), photoPath: null });
+      tx.update(ref, { status: approve ? "approved" : "rejected", decidedBy: c.me.id, decidedAt: FieldValue.serverTimestamp(), hasPhoto: false });
+      if (d.hasPhoto) tx.delete(proofRef(c.fid, ref.id));
       if (approve) addPoints(tx, c.fid, d.personId, d.points, `إنجاز: ${d.title}`, d.taskId);
       return d;
     });
-    await deleteProof(done.photoPath);
     const kid = (await people(c.fid).doc(done.personId).get()).data() as Person | undefined;
     if (kid) {
       await push(c.fid, [kid], approve ? "تمت الموافقة 🎉" : "أُعيدت المهمة",
@@ -383,7 +399,6 @@ const ops: Record<string, Handler> = {
   async deleteFamily(c) {
     need(c, "owner");
     const all = await getPeople(c.fid);
-    await storage.bucket().deleteFiles({ prefix: `proofs/${c.fid}/` }).catch(() => undefined);
     await Promise.all(all.map((p) => db.collection("emailIndex").doc(p.email).delete()));
     await deleteTree(fam(c.fid));
     await Promise.all(all.map(async (p) => {
@@ -394,16 +409,17 @@ const ops: Record<string, Handler> = {
   },
 };
 
-export const api = onCall({ secrets: [RESEND_API_KEY] }, async (req: CallableRequest) => {
-  const fid = req.auth?.token?.familyId as string | undefined;
-  const uid = req.auth?.uid;
+export async function api(data: unknown, ctx: CallContext) {
+  const fid = ctx.familyId;
+  const uid = ctx.uid;
   if (!fid || !uid) fail("unauthenticated", {}, "unauthenticated");
-  const op = String(req.data?.op ?? "");
+  const d = (data ?? {}) as Record<string, unknown>;
+  const op = String(d.op ?? "");
   const handler = Object.prototype.hasOwnProperty.call(ops, op) ? ops[op] : undefined;
   if (!handler) fail("unknown-op", { op }, "invalid-argument");
   const [meSnap, famSnap] = await Promise.all([people(fid).doc(uid).get(), fam(fid).get()]);
   // A removed person keeps a valid token until it expires; the people doc is the source of truth.
   if (!meSnap.exists || !famSnap.exists) fail("removed", {}, "permission-denied");
   const me = { id: meSnap.id, ...(meSnap.data() as Omit<Person, "id">) };
-  return handler({ fid, me, famName: famSnap.data()!.name, data: (req.data ?? {}) as Record<string, unknown> });
-});
+  return handler({ fid, me, famName: famSnap.data()!.name, data: d });
+}
