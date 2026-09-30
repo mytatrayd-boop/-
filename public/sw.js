@@ -1,5 +1,5 @@
 // غلاف التطبيق يشتغل بدون اتصال؛ طلبات /api لا تُخزّن أبدًا (بيانات السوق لازم تكون حية).
-const CACHE = 'rased-v3';
+const CACHE = 'rased-v4';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest', 'icons/icon.svg'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
