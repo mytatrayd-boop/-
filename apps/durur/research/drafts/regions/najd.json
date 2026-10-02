@@ -1,7 +1,7 @@
 {
  "regionId": "najd",
  "durur": [],
- "_durur_gap": "لم نجد مصدراً منشوراً لحساب درور خاص بنجد؛ المعروف في نجد هو المواسم والطوالع. انظر GAPS.md",
+ "_durur_gap": "لا يوجد حساب درور سعودي منشور. بحث موسّع (المسند، الزعاق، صحف سعودية، الأحساء، القطيف، عسير، الحجاز) لم يُظهر أي استخدام لعدّ الدرور في السعودية؛ المصادر السعودية كلها تستخدم المواسم والطوالع (السنة السهيلية). قرار المالك: يُعرض للمستخدم السعودي جدول درور خليجي موثق (uae_oman) مع توضيح أنه ليس سعودياً. انظر research/SAUDI.md",
  "majorSeasons": [
   {
    "itemId": "safari",
@@ -90,7 +90,8 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "_note": "المسند يعدّ منازل سهيل الأربع: الطرف، الجبهة، الزبرة، الصرفة (S20، S45). التاريخ من S30"
   },
   {
    "itemId": "jabha",
@@ -107,7 +108,8 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "_note": "المسند يعدّ منازل سهيل الأربع: الطرف، الجبهة، الزبرة، الصرفة (S20، S45). التاريخ من S30"
   },
   {
    "itemId": "zubra",
@@ -124,7 +126,8 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "_note": "المسند يعدّ منازل سهيل الأربع: الطرف، الجبهة، الزبرة، الصرفة (S20، S45). التاريخ من S30"
   },
   {
    "itemId": "sarfa",
@@ -141,75 +144,112 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "_note": "المسند يعدّ منازل سهيل الأربع: الطرف، الجبهة، الزبرة، الصرفة (S20، S45). التاريخ من S30"
   },
   {
    "itemId": "awwa",
    "start": "10-16",
    "source": {
-    "ref": "S29",
-    "title": "16 أكتوبر موعد دخول موسم الوسمي",
-    "author": "مركز أخبار ARN",
+    "ref": "S47",
+    "title": "الوسم بداية التحول والاعتدال واخضرار الأرض (16 أكتوبر، 52 يوماً، العواء 16/10، السماك 29/10، الغفر 11/11، الزبانا 24/11، ينتهي 6/12)",
+    "author": "جريدة الوطن السعودية / المواطن",
     "year": null,
-    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    "page": "https://www.alwatan.com.sa/article/1171812"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S29",
+     "title": "16 أكتوبر موعد دخول موسم الوسمي",
+     "author": "مركز أخبار ARN",
+     "year": null,
+     "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    }
+   ]
   },
   {
    "itemId": "simak",
    "start": "10-29",
    "source": {
-    "ref": "S29",
-    "title": "16 أكتوبر موعد دخول موسم الوسمي",
-    "author": "مركز أخبار ARN",
+    "ref": "S47",
+    "title": "الوسم بداية التحول والاعتدال واخضرار الأرض (16 أكتوبر، 52 يوماً، العواء 16/10، السماك 29/10، الغفر 11/11، الزبانا 24/11، ينتهي 6/12)",
+    "author": "جريدة الوطن السعودية / المواطن",
     "year": null,
-    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    "page": "https://www.alwatan.com.sa/article/1171812"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S29",
+     "title": "16 أكتوبر موعد دخول موسم الوسمي",
+     "author": "مركز أخبار ARN",
+     "year": null,
+     "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    }
+   ]
   },
   {
    "itemId": "ghafr",
    "start": "11-11",
    "source": {
-    "ref": "S29",
-    "title": "16 أكتوبر موعد دخول موسم الوسمي",
-    "author": "مركز أخبار ARN",
+    "ref": "S47",
+    "title": "الوسم بداية التحول والاعتدال واخضرار الأرض (16 أكتوبر، 52 يوماً، العواء 16/10، السماك 29/10، الغفر 11/11، الزبانا 24/11، ينتهي 6/12)",
+    "author": "جريدة الوطن السعودية / المواطن",
     "year": null,
-    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    "page": "https://www.alwatan.com.sa/article/1171812"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S29",
+     "title": "16 أكتوبر موعد دخول موسم الوسمي",
+     "author": "مركز أخبار ARN",
+     "year": null,
+     "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    }
+   ]
   },
   {
    "itemId": "zubana",
    "start": "11-24",
    "source": {
-    "ref": "S29",
-    "title": "16 أكتوبر موعد دخول موسم الوسمي",
-    "author": "مركز أخبار ARN",
+    "ref": "S47",
+    "title": "الوسم بداية التحول والاعتدال واخضرار الأرض (16 أكتوبر، 52 يوماً، العواء 16/10، السماك 29/10، الغفر 11/11، الزبانا 24/11، ينتهي 6/12)",
+    "author": "جريدة الوطن السعودية / المواطن",
     "year": null,
-    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    "page": "https://www.alwatan.com.sa/article/1171812"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S29",
+     "title": "16 أكتوبر موعد دخول موسم الوسمي",
+     "author": "مركز أخبار ARN",
+     "year": null,
+     "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    }
+   ]
   },
   {
    "itemId": "iklil",
@@ -226,7 +266,16 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S48",
+     "title": "المربعانية من 7 ديسمبر إلى 14 يناير",
+     "author": "صحيفة عاجل / صدى (ملخص بحث)",
+     "year": 2024,
+     "page": "https://ajel.sa/local/jccvnk"
+    }
+   ]
   },
   {
    "itemId": "qalb",
@@ -266,35 +315,54 @@
    "itemId": "naaim",
    "start": "01-15",
    "source": {
-    "ref": "S39",
-    "title": "مسميات الفصول عند البدو (الصيف، القيظ، الصفري، الشتاء)",
-    "author": "صحيفة البيان",
-    "year": 2010,
-    "page": "https://www.albayan.ae/five-senses/2010-05-21-1.247245"
+    "ref": "S49",
+    "title": "الشبط من 15 يناير، 26 يوماً، النعائم والبلدة؛ صقيع وضباب ورياح شمالية باردة وبداية طلع النخيل",
+    "author": "جريدة الوطن السعودية / صدى",
+    "year": null,
+    "page": "https://www.alwatan.com.sa/article/1033969"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S39",
+     "title": "مسميات الفصول عند البدو (الصيف، القيظ، الصفري، الشتاء)",
+     "author": "صحيفة البيان",
+     "year": 2010,
+     "page": "https://www.albayan.ae/five-senses/2010-05-21-1.247245"
+    }
+   ]
   },
   {
    "itemId": "balda",
    "start": "01-28",
    "source": {
-    "ref": "S39",
-    "title": "مسميات الفصول عند البدو (الصيف، القيظ، الصفري، الشتاء)",
-    "author": "صحيفة البيان",
-    "year": 2010,
-    "page": "https://www.albayan.ae/five-senses/2010-05-21-1.247245"
+    "ref": "S49",
+    "title": "الشبط من 15 يناير، 26 يوماً، النعائم والبلدة؛ صقيع وضباب ورياح شمالية باردة وبداية طلع النخيل",
+    "author": "جريدة الوطن السعودية / صدى",
+    "year": null,
+    "page": "https://www.alwatan.com.sa/article/1033969",
+    "derived": "البلدة = 15/1 + 13 يوماً"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S39",
+     "title": "مسميات الفصول عند البدو (الصيف، القيظ، الصفري، الشتاء)",
+     "author": "صحيفة البيان",
+     "year": 2010,
+     "page": "https://www.albayan.ae/five-senses/2010-05-21-1.247245"
+    }
+   ]
   },
   {
    "itemId": "saad_dhabih",
@@ -311,7 +379,16 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S50",
+     "title": "«الزعاق»: اليوم آخر الشبط وبداية نجم العقارب «سم ودَم ودسم» (39 يوماً، 3 نجوم × 13)",
+     "author": "صحيفة سبق عن د. خالد الزعاق",
+     "year": null,
+     "page": "https://sabq.org/saudia/gs9vpm"
+    }
+   ]
   },
   {
    "itemId": "saad_bula",
@@ -328,7 +405,16 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S50",
+     "title": "«الزعاق»: اليوم آخر الشبط وبداية نجم العقارب «سم ودَم ودسم» (39 يوماً، 3 نجوم × 13)",
+     "author": "صحيفة سبق عن د. خالد الزعاق",
+     "year": null,
+     "page": "https://sabq.org/saudia/gs9vpm"
+    }
+   ]
   },
   {
    "itemId": "saad_suud",
@@ -345,7 +431,16 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S50",
+     "title": "«الزعاق»: اليوم آخر الشبط وبداية نجم العقارب «سم ودَم ودسم» (39 يوماً، 3 نجوم × 13)",
+     "author": "صحيفة سبق عن د. خالد الزعاق",
+     "year": null,
+     "page": "https://sabq.org/saudia/gs9vpm"
+    }
+   ]
   },
   {
    "itemId": "saad_akhbiya",
@@ -456,18 +551,27 @@
    "itemId": "thurayya",
    "start": "06-07",
    "source": {
-    "ref": "S09",
-    "title": "طلوع الثريا في سماء الدولة 7 يونيو لمدة 13 يوماً",
-    "author": "وام / جمعية الإمارات للفلك",
-    "year": 2026,
-    "page": "https://www.wam.ae/ar/article/c0k0obw"
+    "ref": "S54",
+    "title": "«المسند»: طلوع الثريا يعلن دخول مربعانية الصيف (7–19 يونيو، 13 يوماً)",
+    "author": "صحيفة سبق عن أ.د. عبدالله المسند",
+    "year": null,
+    "page": "https://sabq.org/article/43lwpDH"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S09",
+     "title": "طلوع الثريا في سماء الدولة 7 يونيو لمدة 13 يوماً",
+     "author": "وام / جمعية الإمارات للفلك",
+     "year": 2026,
+     "page": "https://www.wam.ae/ar/article/c0k0obw"
+    }
+   ]
   },
   {
    "itemId": "dabaran",
@@ -535,7 +639,16 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S56",
+     "title": "المسند: «المرزم» (الذراع) ألمع نجوم السماء يبدأ طالعه 13 يومًا، آخر نجوم جمرة القيظ",
+     "author": "صحيفة سبق عن أ.د. عبدالله المسند",
+     "year": null,
+     "page": "https://sabq.org/article/zwB3Imy"
+    }
+   ]
   },
   {
    "itemId": "nathra",
@@ -552,7 +665,16 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S57",
+     "title": "موسم «الكليبين» يبدأ اليوم ويستمر 13 يوماً (حتى 23 أغسطس) متزامناً مع نضج التمور؛ الزعاق: «مرخيات القلايد»",
+     "author": "صحيفة سبق",
+     "year": null,
+     "page": "https://sabq.org/article/ghxrxbj"
+    }
+   ]
   }
  ],
  "weatherSeasons": [
@@ -561,72 +683,143 @@
    "start": "08-24",
    "end": "10-15",
    "source": {
-    "ref": "S19",
-    "title": "«العجيري»: انكسار الحر مع طلوع سهيل 24 أغسطس (52 يوماً)، الوسم 16 أكتوبر، المربعانية 7 ديسمبر",
-    "author": "سرمد / الجريدة",
-    "year": null,
-    "page": "https://sarmad.com/289112/"
+    "ref": "S45",
+    "title": "المسند: اليوم بدء موسم سهيل وعدد أيامه 53 يوماً",
+    "author": "صحيفة صدى (slaati) عن أ.د. عبدالله المسند",
+    "year": 2021,
+    "page": "https://slaati.com/2021/08/24/p1898452.html",
+    "conflict": "53 يوماً (S45) ⇒ النهاية 15/10؛ 52 يوماً (S46، العجيري) ⇒ 14/10. أبقينا 15/10 لأن الوسم 16/10"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S19",
+     "title": "«العجيري»: انكسار الحر مع طلوع سهيل 24 أغسطس (52 يوماً)، الوسم 16 أكتوبر، المربعانية 7 ديسمبر",
+     "author": "سرمد / الجريدة",
+     "year": null,
+     "page": "https://sarmad.com/289112/"
+    }
+   ],
+   "weather": [
+    "hot"
+   ],
+   "weatherNote": {
+    "ar": "بداية انكسار الحر تدريجياً"
+   },
+   "weatherSource": "S46"
   },
   {
    "itemId": "wasm",
    "start": "10-16",
    "end": "12-06",
    "source": {
-    "ref": "S29",
-    "title": "16 أكتوبر موعد دخول موسم الوسمي",
-    "author": "مركز أخبار ARN",
+    "ref": "S47",
+    "title": "الوسم بداية التحول والاعتدال واخضرار الأرض (16 أكتوبر، 52 يوماً، العواء 16/10، السماك 29/10، الغفر 11/11، الزبانا 24/11، ينتهي 6/12)",
+    "author": "جريدة الوطن السعودية / المواطن",
     "year": null,
-    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    "page": "https://www.alwatan.com.sa/article/1171812"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S29",
+     "title": "16 أكتوبر موعد دخول موسم الوسمي",
+     "author": "مركز أخبار ARN",
+     "year": null,
+     "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    }
+   ],
+   "weather": [
+    "mild",
+    "rain"
+   ],
+   "weatherNote": {
+    "ar": "أمطاره «تسم» الأرض بالاخضرار، وينبت فيه الفقع والشيح"
+   },
+   "weatherSource": "S47"
   },
   {
    "itemId": "murabbaniya",
    "start": "12-07",
    "end": "01-14",
    "source": {
-    "ref": "S16",
-    "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
-    "author": "الراي / مركز العجيري العلمي",
-    "year": null,
-    "page": "https://www.alraimedia.com/article/1710247"
+    "ref": "S48",
+    "title": "المربعانية من 7 ديسمبر إلى 14 يناير",
+    "author": "صحيفة عاجل / صدى (ملخص بحث)",
+    "year": 2024,
+    "page": "https://ajel.sa/local/jccvnk"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S16",
+     "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
+     "author": "الراي / مركز العجيري العلمي",
+     "year": null,
+     "page": "https://www.alraimedia.com/article/1710247"
+    }
+   ],
+   "weather": [
+    "cold",
+    "wind",
+    "rain"
+   ],
+   "weatherNote": {
+    "ar": "البداية الفعلية للشتاء: برد ورياح شمالية باردة وأمطار"
+   },
+   "weatherSource": "S48"
   },
   {
    "itemId": "shabt",
    "start": "01-15",
    "end": "02-09",
    "source": {
-    "ref": "S41",
-    "title": "موسم الشبط يبدأ 15 يناير ومدته 26 يوماً (التقويم القطري)",
-    "author": "دار التقويم القطري",
+    "ref": "S49",
+    "title": "الشبط من 15 يناير، 26 يوماً، النعائم والبلدة؛ صقيع وضباب ورياح شمالية باردة وبداية طلع النخيل",
+    "author": "جريدة الوطن السعودية / صدى",
     "year": null,
-    "page": "https://www.qatarch.com/cal"
+    "page": "https://www.alwatan.com.sa/article/1033969",
+    "conflict": "S49 يذكر النهاية 10 فبراير؛ 26 يوماً من 15 يناير تنتهي 9 فبراير"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S41",
+     "title": "موسم الشبط يبدأ 15 يناير ومدته 26 يوماً (التقويم القطري)",
+     "author": "دار التقويم القطري",
+     "year": null,
+     "page": "https://www.qatarch.com/cal"
+    }
+   ],
+   "weather": [
+    "very_cold",
+    "fog",
+    "wind"
+   ],
+   "weatherNote": {
+    "ar": "صقيع وضباب صباحاً، رياح شمالية باردة؛ بداية طلع النخيل المبكر"
+   },
+   "weatherSource": "S49"
   },
   {
    "itemId": "bard_ajayiz",
@@ -663,7 +856,24 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "conflict": "نجد: المسند (S20) يجعل الذراعين 26 يوماً ⇒ الكنة 12/5. الزعاق (S53): الكنة تنتهي بدخول مربعانية القيظ 3/6. الخليج (S08، S15): كنة الثريا 29/4، 39 يوماً.",
+   "altSources": [
+    {
+     "ref": "S53",
+     "title": "«الزعاق»: نعيش آخر أيام «الكنة».. و«مربعانية القيظ» 3 يونيو؛ الكنة: تقلبات، لسع الشمس ظهراً، بداية الحصاد جنوباً، الربيع الصيفي على نجد",
+     "author": "صحيفة سبق / صدى عن د. خالد الزعاق",
+     "year": null,
+     "page": "https://sabq.org/article/9zsQ37_"
+    }
+   ],
+   "weather": [
+    "hot"
+   ],
+   "weatherNote": {
+    "ar": "تقلبات جوية متدرجة، ولسع الشمس وقت الظهيرة؛ بداية الحصاد في الجنوب وربيع الصيف في نجد"
+   },
+   "weatherSource": "S53"
   },
   {
    "itemId": "jamrat_qaiz",
@@ -681,7 +891,16 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S55",
+     "title": "الجوزاء (جمرة القيظ) تبدأ 3 يوليو: الجوزاء الأولى والثانية 26 يوماً ثم المرزم",
+     "author": "صحيفة صدى (ملخص بحث)",
+     "year": 2025,
+     "page": "https://slaati.com/2025/07/11/p2717753.html"
+    }
+   ]
   }
  ],
  "_seasons14_proposed": [
@@ -689,120 +908,235 @@
    "itemId": "suhail_season",
    "start": "08-24",
    "source": {
-    "ref": "S19",
-    "title": "«العجيري»: انكسار الحر مع طلوع سهيل 24 أغسطس (52 يوماً)، الوسم 16 أكتوبر، المربعانية 7 ديسمبر",
-    "author": "سرمد / الجريدة",
-    "year": null,
-    "page": "https://sarmad.com/289112/"
+    "ref": "S45",
+    "title": "المسند: اليوم بدء موسم سهيل وعدد أيامه 53 يوماً",
+    "author": "صحيفة صدى (slaati) عن أ.د. عبدالله المسند",
+    "year": 2021,
+    "page": "https://slaati.com/2021/08/24/p1898452.html",
+    "conflict": "المسند نفسه: 53 يوماً (S45، S20) و52 يوماً (S46)"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S19",
+     "title": "«العجيري»: انكسار الحر مع طلوع سهيل 24 أغسطس (52 يوماً)، الوسم 16 أكتوبر، المربعانية 7 ديسمبر",
+     "author": "سرمد / الجريدة",
+     "year": null,
+     "page": "https://sarmad.com/289112/"
+    }
+   ],
+   "weather": [
+    "hot"
+   ],
+   "weatherNote": {
+    "ar": "بداية انكسار الحر تدريجياً"
+   },
+   "weatherSource": "S46"
   },
   {
    "itemId": "wasm",
    "start": "10-16",
    "source": {
-    "ref": "S29",
-    "title": "16 أكتوبر موعد دخول موسم الوسمي",
-    "author": "مركز أخبار ARN",
+    "ref": "S47",
+    "title": "الوسم بداية التحول والاعتدال واخضرار الأرض (16 أكتوبر، 52 يوماً، العواء 16/10، السماك 29/10، الغفر 11/11، الزبانا 24/11، ينتهي 6/12)",
+    "author": "جريدة الوطن السعودية / المواطن",
     "year": null,
-    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    "page": "https://www.alwatan.com.sa/article/1171812"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S29",
+     "title": "16 أكتوبر موعد دخول موسم الوسمي",
+     "author": "مركز أخبار ARN",
+     "year": null,
+     "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+    }
+   ],
+   "weather": [
+    "mild",
+    "rain"
+   ],
+   "weatherNote": {
+    "ar": "أمطاره «تسم» الأرض بالاخضرار، وينبت فيه الفقع والشيح"
+   },
+   "weatherSource": "S47"
   },
   {
    "itemId": "murabbaniya",
    "start": "12-07",
    "source": {
-    "ref": "S16",
-    "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
-    "author": "الراي / مركز العجيري العلمي",
-    "year": null,
-    "page": "https://www.alraimedia.com/article/1710247"
+    "ref": "S48",
+    "title": "المربعانية من 7 ديسمبر إلى 14 يناير",
+    "author": "صحيفة عاجل / صدى (ملخص بحث)",
+    "year": 2024,
+    "page": "https://ajel.sa/local/jccvnk"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S16",
+     "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
+     "author": "الراي / مركز العجيري العلمي",
+     "year": null,
+     "page": "https://www.alraimedia.com/article/1710247"
+    }
+   ],
+   "weather": [
+    "cold",
+    "wind",
+    "rain"
+   ],
+   "weatherNote": {
+    "ar": "البداية الفعلية للشتاء: برد ورياح شمالية باردة وأمطار"
+   },
+   "weatherSource": "S48"
   },
   {
    "itemId": "shabt",
    "start": "01-15",
    "source": {
-    "ref": "S41",
-    "title": "موسم الشبط يبدأ 15 يناير ومدته 26 يوماً (التقويم القطري)",
-    "author": "دار التقويم القطري",
+    "ref": "S49",
+    "title": "الشبط من 15 يناير، 26 يوماً، النعائم والبلدة؛ صقيع وضباب ورياح شمالية باردة وبداية طلع النخيل",
+    "author": "جريدة الوطن السعودية / صدى",
     "year": null,
-    "page": "https://www.qatarch.com/cal"
+    "page": "https://www.alwatan.com.sa/article/1033969",
+    "conflict": "S49 يذكر النهاية 10 فبراير؛ 26 يوماً من 15 يناير تنتهي 9 فبراير"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S41",
+     "title": "موسم الشبط يبدأ 15 يناير ومدته 26 يوماً (التقويم القطري)",
+     "author": "دار التقويم القطري",
+     "year": null,
+     "page": "https://www.qatarch.com/cal"
+    }
+   ],
+   "weather": [
+    "very_cold",
+    "fog",
+    "wind"
+   ],
+   "weatherNote": {
+    "ar": "صقيع وضباب صباحاً، رياح شمالية باردة؛ بداية طلع النخيل المبكر"
+   },
+   "weatherSource": "S49"
   },
   {
    "itemId": "aqarib",
    "start": "02-10",
    "source": {
-    "ref": "S07",
-    "title": "الإمارات للفلك: موسم العقارب من 10 فبراير إلى 20 مارس",
-    "author": "الإمارات اليوم / جمعية الإمارات للفلك",
-    "year": 2023,
-    "page": "https://www.emaratalyoum.com/local-section/other/2023-02-03-1.1714637"
+    "ref": "S50",
+    "title": "«الزعاق»: اليوم آخر الشبط وبداية نجم العقارب «سم ودَم ودسم» (39 يوماً، 3 نجوم × 13)",
+    "author": "صحيفة سبق عن د. خالد الزعاق",
+    "year": null,
+    "page": "https://sabq.org/saudia/gs9vpm",
+    "derived": "البداية 10/2 مشتقة: نهاية الشبط (15/1 + 26 يوماً). الزعاق: 39 يوماً، سم ثم دم ثم دسم (13 يوماً لكل)"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S07",
+     "title": "الإمارات للفلك: موسم العقارب من 10 فبراير إلى 20 مارس",
+     "author": "الإمارات اليوم / جمعية الإمارات للفلك",
+     "year": 2023,
+     "page": "https://www.emaratalyoum.com/local-section/other/2023-02-03-1.1714637"
+    }
+   ],
+   "weather": [
+    "cold"
+   ],
+   "weatherNote": {
+    "ar": "برد يلسع على غفلة كلسع العقرب؛ «الدسم» آخرها يوافق الربيع"
+   },
+   "weatherSource": "S50"
   },
   {
    "itemId": "hamimain",
    "start": "03-21",
    "source": {
-    "ref": "S21",
-    "title": "بداية ونهاية مواسم السنة بالتاريخ الهجري والميلادي",
-    "author": "hijridates.com (موقع تجميعي)",
-    "year": null,
-    "page": "https://hijridates.com/moasem.html"
+    "ref": "S51",
+    "title": "المسند: عدّ تنازلي للحميمين (22 يوماً متبقية في 27 فبراير 2025)",
+    "author": "صحيفة صدى (slaati) عن أ.د. عبدالله المسند",
+    "year": 2025,
+    "page": "https://slaati.com/2025/02/27/p2644218.html",
+    "derived": "مشتق من عدّ المسند التنازلي: 27/2/2025 + 22 يوماً = 21/3"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S21",
+     "title": "بداية ونهاية مواسم السنة بالتاريخ الهجري والميلادي",
+     "author": "hijridates.com (موقع تجميعي)",
+     "year": null,
+     "page": "https://hijridates.com/moasem.html"
+    }
+   ]
   },
   {
    "itemId": "dhiraain",
    "start": "04-16",
    "source": {
-    "ref": "S21",
-    "title": "بداية ونهاية مواسم السنة بالتاريخ الهجري والميلادي",
-    "author": "hijridates.com (موقع تجميعي)",
-    "year": null,
-    "page": "https://hijridates.com/moasem.html"
+    "ref": "S52",
+    "title": "الذراعين يبدأ اليوم (16 أبريل): اعتدال ليلي وارتفاع الحرارة نهاراً، 26 يوماً (المؤخر والرشا)",
+    "author": "صحيفة المواطن",
+    "year": 2026,
+    "page": "https://www.almowaten.net/2026/04/%d8%a7%d9%84%d8%b0%d8%b1%d8%a7%d8%b9%d9%8a%d9%86-%d9%8a%d8%a8%d8%af%d8%a3-%d8%a7%d9%84%d9%8a%d9%88%d9%85-%d8%a7%d8%b9%d8%aa%d8%af%d8%a7%d9%84-%d9%84%d9%8a%d9%84%d9%8a-%d9%88%d8%a7%d8%b1%d8%aa/"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S21",
+     "title": "بداية ونهاية مواسم السنة بالتاريخ الهجري والميلادي",
+     "author": "hijridates.com (موقع تجميعي)",
+     "year": null,
+     "page": "https://hijridates.com/moasem.html"
+    }
+   ],
+   "weather": [
+    "mild",
+    "rain"
+   ],
+   "weatherNote": {
+    "ar": "اعتدال ليلي وارتفاع الحرارة نهاراً، ومن مواسم المطر"
+   },
+   "weatherSource": "S52"
   },
   {
    "itemId": "kanna",
@@ -820,24 +1154,57 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "conflict": "نجد: المسند (S20) يجعل الذراعين 26 يوماً ⇒ الكنة 12/5. الزعاق (S53): الكنة تنتهي بدخول مربعانية القيظ 3/6. الخليج (S08، S15): كنة الثريا 29/4، 39 يوماً.",
+   "altSources": [
+    {
+     "ref": "S53",
+     "title": "«الزعاق»: نعيش آخر أيام «الكنة».. و«مربعانية القيظ» 3 يونيو؛ الكنة: تقلبات، لسع الشمس ظهراً، بداية الحصاد جنوباً، الربيع الصيفي على نجد",
+     "author": "صحيفة سبق / صدى عن د. خالد الزعاق",
+     "year": null,
+     "page": "https://sabq.org/article/9zsQ37_"
+    }
+   ],
+   "weather": [
+    "hot"
+   ],
+   "weatherNote": {
+    "ar": "تقلبات جوية متدرجة، ولسع الشمس وقت الظهيرة؛ بداية الحصاد في الجنوب وربيع الصيف في نجد"
+   },
+   "weatherSource": "S53"
   },
   {
    "itemId": "thurayya_season",
    "start": "06-07",
    "source": {
-    "ref": "S09",
-    "title": "طلوع الثريا في سماء الدولة 7 يونيو لمدة 13 يوماً",
-    "author": "وام / جمعية الإمارات للفلك",
-    "year": 2026,
-    "page": "https://www.wam.ae/ar/article/c0k0obw"
+    "ref": "S54",
+    "title": "«المسند»: طلوع الثريا يعلن دخول مربعانية الصيف (7–19 يونيو، 13 يوماً)",
+    "author": "صحيفة سبق عن أ.د. عبدالله المسند",
+    "year": null,
+    "page": "https://sabq.org/article/43lwpDH"
    },
    "approval": {
     "status": "draft",
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S09",
+     "title": "طلوع الثريا في سماء الدولة 7 يونيو لمدة 13 يوماً",
+     "author": "وام / جمعية الإمارات للفلك",
+     "year": 2026,
+     "page": "https://www.wam.ae/ar/article/c0k0obw"
+    }
+   ],
+   "weather": [
+    "hot"
+   ],
+   "weatherNote": {
+    "ar": "دخول مربعانية الصيف وارتفاع الحرارة تدريجياً"
+   },
+   "weatherSource": "S54"
   },
   {
    "itemId": "tuwaibi_season",
@@ -871,7 +1238,23 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S55",
+     "title": "الجوزاء (جمرة القيظ) تبدأ 3 يوليو: الجوزاء الأولى والثانية 26 يوماً ثم المرزم",
+     "author": "صحيفة صدى (ملخص بحث)",
+     "year": 2025,
+     "page": "https://slaati.com/2025/07/11/p2717753.html"
+    }
+   ],
+   "weather": [
+    "very_hot"
+   ],
+   "weatherNote": {
+    "ar": "جمرة القيظ: أشد فترات الحر"
+   },
+   "weatherSource": "S55"
   },
   {
    "itemId": "jawza2",
@@ -888,7 +1271,23 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S55",
+     "title": "الجوزاء (جمرة القيظ) تبدأ 3 يوليو: الجوزاء الأولى والثانية 26 يوماً ثم المرزم",
+     "author": "صحيفة صدى (ملخص بحث)",
+     "year": 2025,
+     "page": "https://slaati.com/2025/07/11/p2717753.html"
+    }
+   ],
+   "weather": [
+    "very_hot"
+   ],
+   "weatherNote": {
+    "ar": "جمرة القيظ: أشد فترات الحر"
+   },
+   "weatherSource": "S55"
   },
   {
    "itemId": "mirzam",
@@ -905,7 +1304,23 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
-   }
+   },
+   "altSources": [
+    {
+     "ref": "S56",
+     "title": "المسند: «المرزم» (الذراع) ألمع نجوم السماء يبدأ طالعه 13 يومًا، آخر نجوم جمرة القيظ",
+     "author": "صحيفة سبق عن أ.د. عبدالله المسند",
+     "year": null,
+     "page": "https://sabq.org/article/zwB3Imy"
+    }
+   ],
+   "weather": [
+    "very_hot"
+   ],
+   "weatherNote": {
+    "ar": "آخر جمرة القيظ، ووفرة الرطب"
+   },
+   "weatherSource": "S56"
   },
   {
    "itemId": "kulaibain",
@@ -922,7 +1337,236 @@
     "reviewer": null,
     "date": null,
     "note": "بانتظار اعتماد المراجع"
+   },
+   "altSources": [
+    {
+     "ref": "S57",
+     "title": "موسم «الكليبين» يبدأ اليوم ويستمر 13 يوماً (حتى 23 أغسطس) متزامناً مع نضج التمور؛ الزعاق: «مرخيات القلايد»",
+     "author": "صحيفة سبق",
+     "year": null,
+     "page": "https://sabq.org/article/ghxrxbj"
+    }
+   ],
+   "weather": [
+    "very_hot",
+    "humidity"
+   ],
+   "weatherNote": {
+    "ar": "حر شديد مع تراجع تدريجي ليلاً آخره، ورطوبة على السواحل والجبال؛ نضج التمور"
+   },
+   "weatherSource": "S57"
+  }
+ ],
+ "_durur_display": {
+  "borrowFromRegionId": "uae_oman",
+  "label": {
+   "ar": "الدرور حساب خليجي ساحلي (موثّق في الإمارات وعُمان)، وليس من التقويم النجدي. التقويم السعودي المتوارث هو المواسم والطوالع."
+  },
+  "source": {
+   "ref": "S01",
+   "note": "الجدول نفسه بمصادره في uae_oman.json"
+  },
+  "approval": {
+   "status": "draft",
+   "reviewer": null,
+   "date": null,
+   "note": "بانتظار اعتماد المراجع"
+  }
+ },
+ "_proposed_extra_weatherSeasons": [
+  {
+   "itemId": "murabbaniyat_qaiz",
+   "name": {
+    "ar": "مربعانية القيظ"
+   },
+   "start": "06-03",
+   "end": "07-12",
+   "source": {
+    "ref": "S64",
+    "title": "الزعاق: مربعانية القيظ تبدأ 3 يونيو، 40 يوماً (الثريا والدبران والهقعة)",
+    "author": "صحيفة المواطن / سبق عن د. خالد الزعاق",
+    "year": 2017,
+    "page": "https://www.almowaten.net/2017/06/الزعاق-اليوم-أول-مربعانية-القيظ-مرحلة/"
+   },
+   "altSources": [
+    {
+     "ref": "S53",
+     "title": "«الزعاق»: نعيش آخر أيام «الكنة».. و«مربعانية القيظ» 3 يونيو؛ الكنة: تقلبات، لسع الشمس ظهراً، بداية الحصاد جنوباً، الربيع الصيفي على نجد",
+     "author": "صحيفة سبق / صدى عن د. خالد الزعاق",
+     "year": null,
+     "page": "https://sabq.org/article/9zsQ37_"
+    }
+   ],
+   "weather": [
+    "hot"
+   ],
+   "weatherNote": {
+    "ar": "بداية الصيف المناخية الفعلية؛ ليست ذروة الحر"
+   },
+   "conflict": "تتداخل مع الكنة (حتى 6/6) ومع جمرة القيظ (من 3/7)، ولا يسمح المخطط بالتداخل. وبعض المصادر (S54) تجعل مربعانية الصيف تبدأ بطلوع الثريا 7/6. يحتاج قرار المعماري.",
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
    }
+  }
+ ],
+ "_proverbs_sa": [
+  {
+   "itemId": "suhail",
+   "text": {
+    "ar": "إذا طلع سهيل طاب الليل وامتنع القيل ولام الفصيل الويل ورفع الكيل"
+   },
+   "source": {
+    "ref": "S58",
+    "title": "«المسند» يكشف سر احتفاء العرب بنجم «سهيل» وأثره في حياتهم",
+    "author": "صحيفة سبق",
+    "year": null,
+    "page": "https://sabq.org/article/nx9gwzs"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "suhail",
+   "text": {
+    "ar": "إذا طلع سهيل تلمّس التمر بالليل"
+   },
+   "source": {
+    "ref": "S58",
+    "title": "«المسند» يكشف سر احتفاء العرب بنجم «سهيل» وأثره في حياتهم",
+    "author": "صحيفة سبق",
+    "year": null,
+    "page": "https://sabq.org/article/nx9gwzs"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "note": "ورد في الملخص بصيغتين: «بالليل» و«في الليل»"
+  },
+  {
+   "itemId": "suhail",
+   "text": {
+    "ar": "جاء سهيل لا تأمن السيل"
+   },
+   "source": {
+    "ref": "S59",
+    "title": "أمثال نجدية عن النجوم (ملخص بحث لعدة صفحات تراثية)",
+    "author": "متعدد: الجزيرة 2017 (الخلاوي يحصر أنجم القيظ)، ihijri.net",
+    "year": null,
+    "page": "https://www.al-jazirah.com/2017/20170605/pp2.htm"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "note": "موثوقية منخفضة؛ صيغة أخرى للمثل المعروف «إذا طلع سهيل لا تأمن السيل» (S27، S28)"
+  },
+  {
+   "itemId": "shabt",
+   "text": {
+    "ar": "الشبط مقرقع البيبان"
+   },
+   "source": {
+    "ref": "S31"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "aqarib",
+   "text": {
+    "ar": "سم ودم ودسم"
+   },
+   "source": {
+    "ref": "S50",
+    "title": "«الزعاق»: اليوم آخر الشبط وبداية نجم العقارب «سم ودَم ودسم» (39 يوماً، 3 نجوم × 13)",
+    "author": "صحيفة سبق عن د. خالد الزعاق",
+    "year": null,
+    "page": "https://sabq.org/saudia/gs9vpm"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "note": "أسماء شعبية لنجوم العقارب الثلاثة (الذابح، بلع، السعود)"
+  },
+  {
+   "itemId": "jawza1",
+   "text": {
+    "ar": "حر الجوزاء نار، ما ينفع فيها لا ظل ولا دار"
+   },
+   "source": {
+    "ref": "S59",
+    "title": "أمثال نجدية عن النجوم (ملخص بحث لعدة صفحات تراثية)",
+    "author": "متعدد: الجزيرة 2017 (الخلاوي يحصر أنجم القيظ)، ihijri.net",
+    "year": null,
+    "page": "https://www.al-jazirah.com/2017/20170605/pp2.htm"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "note": "موثوقية منخفضة"
+  },
+  {
+   "itemId": "jawza1",
+   "text": {
+    "ar": "إذا طلعت الجوزاء توقدت المعزاء وكنست الظباء وعرقت العلباء وطاب الخباء"
+   },
+   "source": {
+    "ref": "S59",
+    "title": "أمثال نجدية عن النجوم (ملخص بحث لعدة صفحات تراثية)",
+    "author": "متعدد: الجزيرة 2017 (الخلاوي يحصر أنجم القيظ)، ihijri.net",
+    "year": null,
+    "page": "https://www.al-jazirah.com/2017/20170605/pp2.htm"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "note": "سجع عربي قديم، ليس نجدياً خاصاً"
+  },
+  {
+   "itemId": "mirzam",
+   "text": null,
+   "meaning": {
+    "ar": "إذا طلع المرزم كثر الرطب"
+   },
+   "source": {
+    "ref": "S56",
+    "title": "المسند: «المرزم» (الذراع) ألمع نجوم السماء يبدأ طالعه 13 يومًا، آخر نجوم جمرة القيظ",
+    "author": "صحيفة سبق عن أ.د. عبدالله المسند",
+    "year": null,
+    "page": "https://sabq.org/article/zwB3Imy"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "note": "وصلنا المعنى مترجماً فقط؛ النص العربي الحرفي غير متاح، فلا يُعرض كمثل حتى يُقرأ المصدر"
   }
  ]
 }
