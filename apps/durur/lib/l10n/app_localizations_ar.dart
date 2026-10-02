@@ -617,7 +617,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get originDururBody =>
-      'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي. معروض هنا للمقارنة.';
+      'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي.';
+
+  @override
+  String get originDururComparison => 'معروض هنا للمقارنة.';
 
   @override
   String get settingsSectionHelp => 'البيانات والمساعدة';
@@ -655,4 +658,111 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get linkOpenError => 'تعذّر فتح الرابط.';
+
+  @override
+  String get commonNotNow => 'ليس الآن';
+
+  @override
+  String get onboardingNotificationsTitle => 'لا يفوتك الوسم';
+
+  @override
+  String get onboardingNotificationsBody =>
+      'نذكّرك الساعة ٨ صباحاً عند دخول المواسم المهمة: سهيل، والوسم، والمربعانية، وبرد العجايز، والثريا، وجمرة القيظ.';
+
+  @override
+  String get onboardingNotificationsAllow => 'فعّل التنبيهات';
+
+  @override
+  String get settingsSectionNotifications => 'التنبيهات';
+
+  @override
+  String get settingsNotifImportant => 'المواسم المهمة';
+
+  @override
+  String get settingsNotifImportantDesc =>
+      'سهيل، الوسم، المربعانية، برد العجايز، الثريا، جمرة القيظ.';
+
+  @override
+  String get settingsNotifDar => 'بداية كل دَرّ';
+
+  @override
+  String get settingsNotifDarDesc =>
+      'تنبيه كل عشرة أيام تقريباً عند بداية دَرّ جديد.';
+
+  @override
+  String get settingsNotifTimeNote =>
+      'تصل التنبيهات الساعة ٨:٠٠ صباحاً بتوقيت جهازك.';
+
+  @override
+  String get settingsNotifDenied => 'التنبيهات متوقفة من إعدادات جهازك.';
+
+  @override
+  String get settingsNotifOpenDeviceSettings => 'فتح إعدادات الجهاز';
+
+  @override
+  String get settingsNotifScheduleError =>
+      'تعذّر ضبط التنبيهات. أعد فتح التطبيق وحاول مرة أخرى.';
+
+  @override
+  String get settingsSectionAppearance => 'المظهر';
+
+  @override
+  String get settingsTheme => 'السمة';
+
+  @override
+  String get settingsThemeSystem => 'تلقائي (حسب الجهاز)';
+
+  @override
+  String get settingsThemeLight => 'فاتح';
+
+  @override
+  String get settingsThemeDark => 'داكن';
+
+  @override
+  String get settingsDigits => 'الأرقام';
+
+  @override
+  String get settingsDigitsArabic => '١٢٣';
+
+  @override
+  String get settingsDigitsLatin => '123';
+
+  @override
+  String notifSeasonTitle(String season, String region) {
+    return 'دخل $season اليوم في $region';
+  }
+
+  @override
+  String notifSeasonBody(String season) {
+    return 'اضغط لتعرف عن $season ومثله الشعبي.';
+  }
+
+  @override
+  String notifStarTitle(String star, String city) {
+    return 'طلع $star اليوم في $city';
+  }
+
+  @override
+  String get notifStarBody => 'أول ظهوره قبل الفجر. اضغط لتعرف عنه.';
+
+  @override
+  String notifDarTitle(String dar, String season) {
+    return 'بدأ دَرّ $dar من $season';
+  }
+
+  @override
+  String notifDarTitleBorrowed(String dar, String season, String region) {
+    return 'بدأ دَرّ $dar من $season حسب حساب $region';
+  }
+
+  @override
+  String notifDarBody(String weather) {
+    return 'الجو المعتاد: $weather';
+  }
+
+  @override
+  String get notifChannelImportant => 'المواسم المهمة';
+
+  @override
+  String get notifChannelDar => 'بداية كل دَرّ';
 }

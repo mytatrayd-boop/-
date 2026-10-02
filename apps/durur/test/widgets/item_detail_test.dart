@@ -16,7 +16,6 @@ import 'package:durur/src/features/settings/sources_screen.dart';
 import 'package:durur/src/formatting/date_labels.dart';
 import 'package:durur/src/formatting/digits.dart';
 import 'package:durur/src/providers.dart';
-import 'package:durur/src/repository/settings_repository.dart';
 import 'package:durur/src/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,7 +60,7 @@ Future<void> main() async {
           ),
         ),
       ),
-      prefs: await fakePrefs({SettingsRepository.cityIdKey: city}),
+      prefs: await fakePrefs(savedCity(city)),
       tables: tables,
       textScale: textScale,
       extra: [fixedClock(now), ...extra],
@@ -315,7 +314,7 @@ Future<void> main() async {
     Future<ProviderContainer> openApp(WidgetTester tester) async {
       await pumpDururApp(
         tester,
-        prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+        prefs: await fakePrefs(savedCity('riyadh')),
         tables: tables,
         extra: [fixedClock(now)],
       );
@@ -387,7 +386,7 @@ Future<void> main() async {
       // الكويت: الشريحة بجانب اسم الدَّرّ في البطاقة.
       await pumpDururApp(
         tester,
-        prefs: await fakePrefs({SettingsRepository.cityIdKey: 'kuwait_city'}),
+        prefs: await fakePrefs(savedCity('kuwait_city')),
         tables: tables,
         extra: [fixedClock(now)],
       );
@@ -447,7 +446,8 @@ Future<void> main() async {
         l10n.originTawaliTitle,
         l10n.originTawaliBody,
         l10n.originDururTitle,
-        l10n.originDururBody,
+        // المنطقة مستعيرة (نجد): عبارة المقارنة تُلحق (DESIGN 8.10).
+        '${l10n.originDururBody} ${l10n.originDururComparison}',
       ]) {
         expect(find.text(text), findsOneWidget, reason: text);
       }
@@ -474,7 +474,7 @@ Future<void> main() async {
       final opened = <Uri>[];
       await pumpDururApp(
         tester,
-        prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+        prefs: await fakePrefs(savedCity('riyadh')),
         tables: tables,
         extra: [
           fixedClock(now),
@@ -573,7 +573,7 @@ Future<void> main() async {
         await pumpScreen(
           tester,
           screen,
-          prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+          prefs: await fakePrefs(savedCity('riyadh')),
           tables: tables,
           textScale: 2,
           // عدد الاستبدالات نفسه في كل ProviderScope.

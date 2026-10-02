@@ -85,7 +85,8 @@ class SourcesScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(e.source.title, style: theme.textTheme.bodyMedium),
-                  if (_byline(e, l10n) case final byline?)
+                  if (_byline(e, l10n, ref.watch(digitStyleProvider))
+                      case final byline?)
                     Text(byline, style: theme.textTheme.bodySmall),
                   if (!e.approved)
                     const PendingApprovalText()
@@ -113,10 +114,14 @@ class SourcesScreen extends ConsumerWidget {
   }
 
   /// «المؤلف، السنة» إن وُجدا.
-  static String? _byline(SourceEntry e, AppLocalizations l10n) {
+  static String? _byline(
+    SourceEntry e,
+    AppLocalizations l10n,
+    DigitStyle digits,
+  ) {
     final parts = [
       if ((e.source.author ?? '').trim().isNotEmpty) e.source.author!.trim(),
-      if (e.source.year case final year? when year > 0) formatInteger(year),
+      if (e.source.year case final year? when year > 0) formatInteger(year, digits),
     ];
     return parts.isEmpty ? null : parts.join(l10n.listSeparator);
   }

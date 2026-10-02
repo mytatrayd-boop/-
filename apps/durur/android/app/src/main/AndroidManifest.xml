@@ -7,6 +7,13 @@
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
         tools:node="remove"/>
+    <!-- الميزة 8 (ARCHITECTURE §9، §13، D13): التنبيهات المحلية المجدولة.
+         POST_NOTIFICATIONS يُطلب وقت التشغيل على أندرويد 13+ (شرح التنبيهات).
+         RECEIVE_BOOT_COMPLETED لإعادة الجدولة بعد إعادة تشغيل الجهاز.
+         لا SCHEDULE_EXACT_ALARM ولا USE_EXACT_ALARM: الجدولة غير دقيقة
+         (inexactAllowWhileIdle)، والتأخير دقائق لا يهم لتنبيه موسمي. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="durur"
         android:name="${applicationName}"
@@ -33,6 +40,21 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- flutter_local_notifications: إظهار التنبيه المجدول وإعادة جدولته
+             بعد إعادة التشغيل أو تحديث التطبيق. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

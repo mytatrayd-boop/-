@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers.dart';
-import '../../routing/app_router.dart';
+import '../../routing/app_routes.dart';
+import '../common/load_error.dart';
 import 'detail_data.dart';
 import 'item_detail_view.dart';
 
@@ -14,6 +15,7 @@ class ItemDetailPage extends ConsumerStatefulWidget {
   const ItemDetailPage({super.key, required this.target, this.from});
 
   static const pageKey = Key('itemDetailPage');
+  static const loadErrorKey = Key('itemDetailLoadError');
 
   /// null لمسار غير صالح.
   final DetailTarget? target;
@@ -31,7 +33,19 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage> {
   @override
   Widget build(BuildContext context) {
     final target = widget.target;
-    final tablesReady = ref.watch(tablesProvider).hasValue;
+    final tables = ref.watch(tablesProvider);
+    final tablesReady = tables.hasValue;
+    // فشل تحميل الجداول: رسالة و«إعادة المحاولة» كالرئيسية (DESIGN 8.1).
+    if (tables.hasError && !tables.isLoading) {
+      return Scaffold(
+        key: ItemDetailPage.pageKey,
+        appBar: AppBar(),
+        body: DataLoadError(
+          key: ItemDetailPage.loadErrorKey,
+          onRetry: () => ref.invalidate(tablesProvider),
+        ),
+      );
+    }
     final DateTime from = widget.from ?? ref.watch(selectedDateProvider);
     final DetailRequest? request = target == null
         ? null

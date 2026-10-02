@@ -6,6 +6,7 @@ import '../../domain/tables.dart';
 import '../../theme/app_theme.dart';
 import '../common/chips.dart';
 import '../common/weather_icon.dart';
+import '../../formatting/digits.dart';
 import 'day_text.dart';
 import 'dial/day_dial.dart';
 import 'dial/dial_model.dart';
@@ -20,6 +21,7 @@ class DayCard extends StatelessWidget {
     required this.tables,
     required this.onOpen,
     required this.onOpenOrigin,
+    this.digits = DigitStyle.arabicIndic,
   });
 
   static const cardKey = Key('dayCard');
@@ -32,6 +34,9 @@ class DayCard extends StatelessWidget {
 
   /// رابط «أصل التقويم» في قسم الدَّرّ المستعار (D24).
   final VoidCallback onOpenOrigin;
+
+  /// شكل الأرقام (DESIGN 8.7).
+  final DigitStyle digits;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +89,7 @@ class DayCard extends StatelessWidget {
       child: _DarProgress(
         info: info,
         color: colors.season(info.dar.record.seasonId),
-        label: dayOfDarLabel(l10n, info),
+        label: dayOfDarLabel(l10n, info, digits: digits),
       ),
     );
 

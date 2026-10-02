@@ -4,6 +4,7 @@ import 'package:durur/src/features/city_picker/city_picker_screen.dart';
 import 'package:durur/src/features/home/city_chip.dart';
 import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/onboarding/location_screen.dart';
+import 'package:durur/src/features/onboarding/notifications_intro_screen.dart';
 import 'package:durur/src/features/onboarding/welcome_screen.dart';
 import 'package:durur/src/location/location_service.dart';
 import 'package:durur/src/providers.dart';
@@ -45,6 +46,13 @@ Future<void> main() async {
     await tester.pumpAndSettle();
   }
 
+  /// شرح التنبيهات بعد اختيار المدينة (الميزة 8) ← «ليس الآن» ← الرئيسية.
+  Future<void> finishIntro(WidgetTester tester) async {
+    expect(find.byType(NotificationsIntroScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+    await tapKey(tester, NotificationsIntroScreen.notNowKey);
+  }
+
   Future<void> toLocationScreen(WidgetTester tester) =>
       tapKey(tester, WelcomeScreen.startKey);
 
@@ -64,15 +72,25 @@ Future<void> main() async {
     return f.evaluate().isEmpty ? null : tester.widget<Text>(f).data;
   }
 
-  /// يتأكد أن التخزين فيه معرّف المدينة فقط، ولا أي إحداثيات.
+  /// يتأكد أن التخزين فيه معرّف المدينة فقط (ومعه علامة انتهاء الإعداد
+  /// الأولي إن انتهى)، ولا أي إحداثيات.
   void expectOnlyCityIdStored(SharedPreferences prefs, String? cityId) {
-    expect(
-      prefs.getKeys(),
-      cityId == null ? isEmpty : {SettingsRepository.cityIdKey},
-    );
+    final keys = prefs.getKeys();
+    if (cityId == null) {
+      expect(keys, isEmpty);
+    } else {
+      expect(
+        keys.difference({SettingsRepository.onboardingDoneKey}),
+        {SettingsRepository.cityIdKey},
+      );
+    }
     expect(prefs.getString(SettingsRepository.cityIdKey), cityId);
-    for (final key in prefs.getKeys()) {
+    for (final key in keys) {
       final value = prefs.get(key);
+      if (key == SettingsRepository.onboardingDoneKey) {
+        expect(value, isTrue);
+        continue;
+      }
       expect(value, isA<String>(), reason: key);
       expect(value, isNot(contains('24.7')), reason: key);
       expect(value, isNot(contains('46.7')), reason: key);
@@ -135,6 +153,7 @@ Future<void> main() async {
         expectOnlyCityIdStored(prefs, 'riyadh');
 
         await tapKey(tester, LocationScreen.continueKey);
+        await finishIntro(tester);
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(chipText(tester), 'الرياض · نجد');
         // لا قراءة أخرى بعد الوصول للرئيسية (لا تتبع).
@@ -163,6 +182,7 @@ Future<void> main() async {
         await tester.pumpAndSettle();
         await tester.tap(tile('muscat'));
         await tester.pumpAndSettle();
+        await finishIntro(tester);
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(chipText(tester), 'مسقط · الإمارات وعُمان');
         expectOnlyCityIdStored(prefs, 'muscat');
@@ -184,6 +204,7 @@ Future<void> main() async {
 
       await tester.tap(tile('riyadh'));
       await tester.pumpAndSettle();
+      await finishIntro(tester);
       expect(find.byType(HomeScreen), findsOneWidget);
       expectOnlyCityIdStored(prefs, 'riyadh');
     });
@@ -232,6 +253,7 @@ Future<void> main() async {
 
         await tester.tap(tile('riyadh'));
         await tester.pumpAndSettle();
+        await finishIntro(tester);
         expect(find.byType(HomeScreen), findsOneWidget);
         expectOnlyCityIdStored(prefs, 'riyadh');
       });
@@ -351,7 +373,7 @@ Future<void> main() async {
       final prefs = await openApp(
         tester,
         FakeLocationService(),
-        saved: {SettingsRepository.cityIdKey: 'removed_city'},
+        saved: savedCity('removed_city'),
       );
       expect(find.byType(CityPickerScreen), findsOneWidget);
       expect(find.byType(HomeScreen), findsNothing);
@@ -371,7 +393,7 @@ Future<void> main() async {
       await openApp(
         tester,
         location,
-        saved: {SettingsRepository.cityIdKey: 'riyadh'},
+        saved: savedCity('riyadh'),
       );
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(location.totalCalls, 0);

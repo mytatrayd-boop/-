@@ -43,7 +43,7 @@ apps/durur/
 │  ├─ l10n/                      # app_ar.arb + الملفات المولّدة (gen-l10n)
 │  └─ src/
 │     ├─ app.dart                # MaterialApp.router، اللغة، الاتجاه، الثيم
-│     ├─ routing/                # go_router: / ، /item/:id ، /dar/:regionId/:start ، /about/origin ، /settings ، /settings/sources ، /city ، /onboarding
+│     ├─ routing/                # go_router: / ، /item/:id ، /dar/:regionId/:start ، /about/origin ، /settings ، /settings/sources ، /city ، /onboarding (+ /location ، /city ، /notifications)؛ `app_routes.dart` = بناء المسارات (حمولات التنبيه)
 │     ├─ domain/                 # [Dart صافٍ] النماذج: Region, City, Item, Period, DayInfo, WeatherSymbol, Approval, Source
 │     ├─ engine/                 # [Dart صافٍ] CalendarEngine, YearIndex, TableValidator
 │     ├─ astronomy/              # [Dart صافٍ] angles.dart, time.dart, sun.dart, stars.dart, sidereal.dart, precession.dart, horizon.dart (الارتفاع والانكسار), heliacal_params.dart, heliacal.dart
@@ -75,15 +75,16 @@ apps/durur/
 
 مزوّدات يدوية (بلا توليد كود) في `lib/src/providers.dart`:
 
-**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6، 7):**
+**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6، 7، 8):**
 
 | المزوّد | النوع | الوظيفة |
 |---|---|---|
 | `sharedPreferencesProvider` | `Provider<SharedPreferences>` | يرمي `UnimplementedError` افتراضياً؛ يُستبدل في `main()` بنسخة محمّلة مسبقاً (`SharedPreferences.getInstance()` قبل `runApp`)، وفي الاختبارات بنسخة وهمية |
-| `settingsRepositoryProvider` | `Provider<SettingsRepository>` | غلاف المفاتيح المحفوظة (حالياً `cityId` فقط)؛ الحفظ الفاشل يرمي `SettingsSaveException` |
+| `settingsRepositoryProvider` | `Provider<SettingsRepository>` | غلاف المفاتيح المحفوظة: `cityId`، `onboardingDone`، `notifyImportant` (افتراضي true)، `notifyDar` (افتراضي false)، `theme` (`ThemeChoice`)، `digits` (`DigitStyle`)؛ القيم الافتراضية لا تُكتب؛ الحفظ الفاشل يرمي `SettingsSaveException` |
 | `tablesProvider` | `FutureProvider<Tables>` | يحمّل كل JSON مرة واحدة عند الفتح، بلا إعادة محاولة تلقائية (`retry: null`)؛ إعادة المحاولة بزر في الواجهة |
 | `hijriCalendarProvider` | `Provider<UmmAlQuraCalendar?>` | جدول أم القرى من `tablesProvider` (D22)، `null` قبل اكتمال التحميل؛ يتحدث مع أي إعادة تحميل للجداول (§16.5) |
-| `settingsProvider` | `NotifierProvider<SettingsController, Settings>` | حالياً المدينة فقط (`selectCity` يحفظ أولاً ثم يغيّر الحالة)؛ مفتاحا التنبيهات وانتهاء الإعداد الأولي تُضاف مع ميزاتها |
+| `settingsProvider` | `NotifierProvider<SettingsController, Settings>` | المدينة، انتهاء الإعداد الأولي، مفتاحا التنبيهات، السمة، الأرقام (الميزة 8)؛ كل دالة (`selectCity`، `completeOnboarding`، `setNotifyImportant`، `setNotifyDar`، `setTheme`، `setDigits`) تحفظ أولاً ثم تغيّر الحالة |
+| `digitStyleProvider` | `Provider<DigitStyle>` | شكل الأرقام (١٢٣/123، DESIGN 8.7)؛ يُمرَّر إلى `formatInteger`/`localizeDigits` ودوال التواريخ ونصوص الدائرة (الميزة 8) |
 | `currentCityProvider` | `Provider<City?>` | المدينة المختارة، أو `null` إن لم تُختر أو لم تعد في القائمة أو لم تُحمَّل الجداول |
 | `currentRegionProvider` | `Provider<Region?>` | منطقة المدينة المختارة (`city.regionId`) |
 | `engineProvider` | `Provider<CalendarEngine?>` | محرك جدول منطقة المدينة الحالية (`CalendarEngine.fromTables`، ومعه جدول المُعيرة عند الاستعارة، D24) |
@@ -97,15 +98,14 @@ apps/durur/
 | `cityLocatorProvider` | `Provider<CityLocator>` | يقرأ الموقع مرة واحدة ويعيد أقرب مدينة أو سبب الفشل (Denied / Unavailable / Timeout / OutOfRange > 250 كم)؛ لا يعيد الإحداثيات ولا يحفظها (D11) |
 | `heliacalProvider` | `Provider.family<HeliacalDates?, (String cityId, int year)>` | طلوع سهيل والثريا بإحداثيات المدينة (مخزّن لكل مدينة وسنة)؛ `null` قبل تحميل الجداول أو لمدينة غير موجودة؛ يُعاد مع إعادة تحميل الجداول (الميزة 5، D28) |
 | `currentHeliacalProvider` | `Provider.family<HeliacalDates?, int year>` | طلوع سهيل والثريا للمدينة المختارة، أو `null` بلا مدينة (الميزة 5)؛ تقرؤه صفحة سهيل/الثريا (الميزة 7) |
-| `urlOpenerProvider` | `Provider<Future<bool> Function(Uri)>` | يفتح رابطاً عاماً في المتصفح (`url_launcher`، رابطا صفحة المصادر، D27)؛ يُستبدل في الاختبارات (الميزة 7) |
+| `urlOpenerProvider` | `Provider<Future<bool> Function(Uri)>` | يفتح رابطاً عاماً في المتصفح (`url_launcher`، رابطا صفحة المصادر، D27)؛ **يرفض أي رابط ليس https بنطاق** (`isOpenableUrl`) ويعيد false بلا محاولة؛ يُستبدل في الاختبارات (الميزة 7، الإصلاح مع 8) |
+| `notificationSchedulerProvider` | `Provider<NotificationScheduler>` | `LocalNotificationScheduler` (البلجن)؛ يُستبدل بـ `FakeNotificationScheduler` في الاختبارات (`appOverrides` يضعه افتراضياً) (الميزة 8) |
+| `notificationPermissionProvider` | `AsyncNotifierProvider<…, bool>` | هل إذن التنبيهات ممنوح؛ `refresh()` عند العودة للواجهة، `request()` من شرح التنبيهات ومن تشغيل مفتاح والإذن غير ممنوح (الميزة 8) |
+| `notificationInputsProvider` | `Provider<NotificationInputs>` | (المدينة، المفتاحان، الجداول، اليوم): تغيّر أيٍّ منها يعيد الجدولة (الميزة 8) |
+| `notificationSyncProvider` | `NotifierProvider<NotificationSyncController, NotificationSyncStatus>` | يعيد الجدولة عند الفتح وتغيّر المدخلات وعند العودة للواجهة (`sync()`؛ تُقرأ المنطقة الزمنية من جديد)؛ لا يعيد إن تطابقت بصمة الخطة والمنطقة الزمنية مع آخر جدولة ناجحة؛ الحالة `failed` تُظهر رسالة في الإعدادات (الميزة 8) |
 
 **توصية ملزمة للميزات القادمة:** مفتاح `dayInfoProvider` يُمرَّر **مقرّباً لمنتصف الليل** (`DateTime(d.year, d.month, d.day)`)، لا `DateTime.now()` مباشرة؛ وإلا يُنشأ مدخل family جديد في كل إعادة بناء (ذاكرة وحساب بلا فائدة). المحرك نفسه يأخذ التاريخ فقط، فالتقريب لا يغيّر النتيجة. `todayProvider` و`selectedDateProvider` يخزّنان القيمة مقرّبة أصلاً.
 
-**مخطط (يُبنى مع ميزاته):**
-
-| المزوّد | النوع | الوظيفة | الميزة |
-|---|---|---|---|
-| `notificationSyncProvider` | مستمع | يعيد جدولة التنبيهات عند تغيّر المدينة/الإعدادات/الجداول وعند الفتح | 8 |
 
 الاختبارات تستبدل المزوّدات بـ `overrides` (جداول تجريبية، `SharedPreferences` وهمية، تاريخ ثابت) بلا مكتبات محاكاة (`test/helpers/app_harness.dart`).
 
@@ -268,6 +268,19 @@ apps/durur/
 - الإذن يُطلب بعد اختيار المنطقة (أندرويد 13+ و آيفون). إن رُفض تظهر ملاحظة في الإعدادات.
 - اختبار الوحدة يغطي المخطِّط بالكامل؛ «تغيير تاريخ الجهاز» اختبار يدوي في TESTERS.md.
 
+**مبنيّ (الميزة 8)، `lib/src/notifications/`:**
+- `notification_planner.dart` (Dart صافٍ): `NotificationPlanner.plan(now, engine, items, heliacal(year), important, dar)` ← `PlannedNotification(id, date, kind, subject)` و`fireAt` = 08:00 محلياً. الأيام `[اليوم، اليوم+364]` وما لم تفت ساعته (يوم البداية بعد 8:00 لا يُجدول). `ItemSubject(item, heliacal)` / `DarSubject(record, dururRegionId, borrowed)`. العناصر `heliacal` (سهيل والثريا) من `heliacal(year)` لسنتي الأفق، **وإن كان الحساب null لسنة يُستعمل تاريخ بدايتها في جدول المنطقة** (مثل صفحة العنصر). الترتيب: التاريخ ← المهمة قبل الدَّرّ ← المعرّف، ثم القص إلى 60، ثم `slot` داخل اليوم. لا نصوص فيه.
+- `notification_content.dart`: `buildScheduledNotification` ← العنوان/النص من ARB (`notifSeasonTitle` بمنطقة المستخدم، `notifStarTitle` بالمدينة لما تاريخه فلكي، `notifDarTitle`، و`notifDarTitleBorrowed` «… حسب حساب {المُعيرة}» للمستعيرة D24 — مفتاح جديد غير موجود في DESIGN §13، و`notifDarBody` بأسماء رموز الجو). **الحمولة** `AppRoutes.item(id, from: يوم التنبيه)` أو `AppRoutes.dar(regionId, MM-DD, from: …)` (تفتح الفترة التي بدأت يوم التنبيه حتى لو ضُغط لاحقاً)؛ `isNotificationPayload` يقبل `/item/<id>` و`/dar/<r>/<MM-DD>` فقط.
+- `notification_scheduler.dart` (واجهة) و`local_notification_scheduler.dart`: تهيئة **بلا طلب إذن** (`DarwinInitializationSettings(request…: false)`)، `getNotificationAppLaunchDetails`، `FlutterTimezone` + `timezone/latest_all` (منطقة غير معروفة ← اللحظة نفسها بـ UTC)، `pendingNotificationRequests` ثم `cancelAllPendingNotifications` (لا `cancelAll`: المعروضة تبقى، D29) ثم `zonedSchedule(inexactAllowWhileIdle)` بقناتين `important`/`dar` (أسماؤهما من ARB)، وأيقونة `ic_stat_durur` (نجمة رباعية). `openAppNotificationSettings` لزر «فتح إعدادات الجهاز».
+- `DururApp` (`app.dart`): يهيّئ المُجدوِل، ويفتح حمولة الضغط (والتشغيل من تنبيه) بـ `openNotificationPayload`: `backToToday` ← `go('/')` ← إطار ← `push(payload)` فيرجع زر الرجوع إلى الرئيسية على اليوم (DESIGN 8.9). `AppLifecycleListener.onResume` ← `refresh` للإذن و`sync()`. `themeMode` من الإعدادات.
+- **بلا إذن:** آيفون يرفض إضافة التنبيه؛ الخطأ حينها لا يُحسب فشلاً (الحالة `idle`، ورسالة الفشل لا تظهر إلا والإذن ممنوح)، و`NotificationSyncController` يستمع لـ `notificationPermissionProvider` فيعيد الجدولة عند تحوّله إلى ممنوح.
+- **هامش التأخر:** تنبيه اليوم يبقى في الخطة حتى 09:00 (`lateMargin`)؛ المُجدوِل يعيده بعد 10 ثوانٍ من لحظة الجدولة (ساعته لا بداية المزامنة) فقط إن كان ما يزال في `pendingNotificationRequests` (لم يصل بعد)، وإلا لا يُعاد (معيار 7)؛ السباق النادر في D29.
+- **الحمولة:** `isNotificationPayload` يشترط مساراً مطلقاً، وتُهمل أثناء الإعداد الأولي (`onboardingDone = false`).
+- **إعادة الجدولة:** فتح التطبيق، منح الإذن، تغيير المدينة، المفتاحين، اليوم، المنطقة الزمنية (عند العودة)، وإعادة تحميل الجداول (`tablesProvider` ضمن المدخلات، جاهز للميزة 11). الجدولة تتم حتى بلا إذن (يُطبَّق الاختيار عند منحه).
+- **الإذن:** شاشة `/onboarding/notifications` (`NotificationsIntroScreen`، DESIGN 8.2 د) بعد اختيار المدينة: «فعّل التنبيهات» يطلب الإذن ثم الرئيسية (قبول أو رفض)، «ليس الآن» بلا طلب. أندرويد 13+ `POST_NOTIFICATIONS`. **لا `SCHEDULE_EXACT_ALARM`** (D13: الوضع غير الدقيق يكفي ولا يحتاج إذناً يقيّده متجر Google).
+- **انتهاء الإعداد الأولي:** `onboardingDone` يُحفظ عند الخروج من شرح التنبيهات. التوجيه: لا مدينة ← `/onboarding`؛ مدينة محذوفة ← `/onboarding/city`؛ مدينة بلا `onboardingDone` (أُغلق التطبيق قبل الشرح) ← `/onboarding/notifications`.
+- **الإعدادات (DESIGN 8.7):** قسم «التنبيهات» (بطاقة «التنبيهات متوقفة من إعدادات جهازك.» + «فتح إعدادات الجهاز» إن لم يُمنح الإذن، رسالة فشل الجدولة، مفتاحان `SwitchListTile` 64dp، سطر الساعة)، وقسم «المظهر» (شرائح السمة والأرقام). تشغيل مفتاح والإذن مرفوض يطلبه مرة.
+
 ## 10. زر «أبلغ عن خطأ» بلا خادم (الميزة 9) (D14)
 
 `ReportService.report(itemName, regionName, date, appVersion)`:
@@ -290,7 +303,8 @@ apps/durur/
   - `item_detail_view.dart`: شريط السدو (CustomPainter، مخفي عن القارئ) ← النوع ← الاسم (`header`) مع شريحة الموسم ← بطاقة التواريخ («من … إلى … في جدول {المنطقة}»، المدة، الحالة نسبةً إلى اليوم الحقيقي، ولسهيل/الثريا «يطلع في {المدينة} يوم …»/«طلع … قبل …» من `currentHeliacalProvider(سنة بداية الفترة)` مع «محسوب فلكياً لموقع مدينتك.» أو «تاريخ تقريبي من جدول المنطقة.» إن تعذّر، ثم «انتقل إلى بدايته») ← التعريف ← المثل (Amiri، علامة اقتباس مخفية عن القارئ) ← الجو المعتاد ← المصدر لكل معلومة: «مصدر التعريف والمثل» (`items.json`) و«مصدر التواريخ» (سجل الجدول)، وللدَّرّ «المصدر» من سجله؛ تحت كل مصدر سجله مسودة «بانتظار الاعتماد» (Amiri مائل). صفحة الدَّرّ بلا تعريف ولا مثل (D26).
   - `item_detail_sheet.dart`: `DraggableScrollableSheet` (نصف الشاشة ← كاملة)، ومكدّس داخلي: شريحة الموسم تفتح صفحته داخل الورقة مع زر رجوع (ورجوع النظام يعود داخلها أولاً). «انتقل إلى بدايته» يغلق الورقة و`select(start)`.
   - `item_detail_page.dart`: الصفحة الكاملة للمسارين؛ الشريحة `push` لمسار جديد، و«انتقل إلى بدايته» `select` ثم `go('/')`. مسار لا يجد سجله (أو `MM-DD` غير صالح) ← `go('/')` بلا رسالة.
-  - `about/origin_screen.dart`: قسمان (الطوالع والمواسم، الدرور) نصوصهما في ARB من research/SAUDI.md §3 (بانتظار المراجع).
+  - `about/origin_screen.dart`: قسمان (الطوالع والمواسم، الدرور) نصوصهما في ARB من research/SAUDI.md §3 (بانتظار المراجع). عبارة «معروض هنا للمقارنة.» مفتاح مستقل `originDururComparison` تُلحق فقط إن كانت منطقة المستخدم الحالية تستعير الدرور (DESIGN 8.10، مع الميزة 8).
+  - `item_detail_page.dart`: فشل تحميل الجداول ← `DataLoadError` (`features/common/load_error.dart`، المشتركة مع الرئيسية) برسالة و«إعادة المحاولة» (`invalidate(tablesProvider)`) (إصلاح مع الميزة 8).
   - صفحة المصادر: `domain/source_catalog.dart` (`collectSources`: مفتاح التكرار العنوان والمؤلف والسنة، فيظهر GeoNames مرة واحدة؛ «بانتظار الاعتماد» إن كان أي سجل يستشهد بالمصدر مسودة، وإلا «اعتمده: {المراجعون}»)، ثم «رخص البيانات» (نص GeoNames ورابطاه ثوابت في الكود عبر `urlOpenerProvider`، ورسالة إن تعذّر الفتح)، ثم «التقويم الهجري». صف «المصادر» في قسم «البيانات والمساعدة» بالإعدادات. أندرويد: `<queries>` لنيّة VIEW بمخطط https.
   - `features/common/chips.dart`: `SeasonChip` و`WeatherChip` (نُقلتا من `day_card.dart` لتستخدمهما الصفحة).
   - **لم يُبنَ مع الميزة 7:** زر «أبلغ عن خطأ» (الميزة 9، SPEC 7 معيار 4).
@@ -301,14 +315,14 @@ apps/durur/
   - `dial/day_dial.dart`: الدوران `ValueNotifier<double>` (فهرس يوم كسري)؛ السحب يغيّره فيعيد رسم القرص داخل `RepaintBoundary` فقط، ويُستدعى `select` عند عبور يوم كامل (والواجهة تُبنى مرة لكل يوم). التدوير من أحداث اللمس الخام (`Listener`)، وإيماءة `ScaleGestureRecognizer` تكسب الساحة فور الضغط فلا تتمرّر الصفحة من فوق الدائرة؛ الضغطة/الضغطتان تُميَّزان يدوياً بمهلة `kDoubleTapTimeout`. التكبير 1×–3× (ضغطتان أو إصبعان)، والسحب في التكبير يحرّك. القفز للعودة بحركة 400ms إلا مع «تقليل الحركة». `Semantics` واحد: `label` البادئة فقط («اليوم»/«التاريخ المعروض»)، و`value` من `dialSemanticsValue` (التاريخ المسموع بلا «م»/«هـ»، ثم الجمل بترتيب DESIGN 7.7، والدَّرّ بطوله الفعلي)، و`increasedValue`/`decreasedValue` قيمة اليوم التالي/السابق تحسبها الرئيسية من `dayInfoProvider` (عبر نهاية السنة؛ null مع إزالة الإجراء عند حدّي 2025/2040)، `onTap` ما يعرضه المحور، وإجراءات مخصصة. المحور للمنطقة المستعيرة (7.8): موسم الجو أو الموسم الكبير و«طالع {النجم}»، ويفتح الموسم.
   - `home_screen.dart` (سطر التاريخين بارتفاع ثابت للصيغتين، الدائرة، صف التنقل، `DayCard`، العبارة الثابتة، المصدر)، والتحميل (هيكل رمادي بعد 300ms) والخطأ (إعادة المحاولة بـ `ref.invalidate(tablesProvider)`). أفقي/تابلت ≥600: الدائرة بجانب البطاقة.
   - من الدائرة ← `showItemDetailSheet` (ورقة)، ومن البطاقة ← `context.push` لمسار الصفحة الكاملة (الميزة 7). سطر الإيضاح (48dp) ورابط «أصل التقويم» في البطاقة يفتحان `/about/origin`.
-  - الثيم `lib/src/theme/app_theme.dart`: `DururColors` (ThemeExtension بألوان DESIGN §2 للوضعين وألوان المواسم بمعرّفات عناصرها) و`buildDururTheme`؛ الوضع حسب الجهاز (اختياره من الإعدادات مع ميزتها).
+  - الثيم `lib/src/theme/app_theme.dart`: `DururColors` (ThemeExtension بألوان DESIGN §2 للوضعين وألوان المواسم بمعرّفات عناصرها) و`buildDururTheme`؛ الوضع حسب الجهاز افتراضياً، واختياره (تلقائي/فاتح/داكن) من الإعدادات منذ الميزة 8 (`themeMode` في `app.dart`).
 - كل معلومة مهمة تُعرض أيضاً كنص عادي تحت الدائرة (يتكبّر مع خط الجهاز)، وللدائرة `Semantics` لقارئ الشاشة.
 - خط عربي مضمّن (لا تحميل وقت التشغيل). الألوان والرموز من DESIGN.md، ومن صنعنا بالكامل.
 
 ## 12. الأمان والخصوصية
 
 - لا مفاتيح ولا أسرار في التطبيق أصلاً (لا خادم). أي ملف `.env` مستثنى من git.
-- البيانات المحفوظة على الجهاز فقط: معرّف المدينة، مفتاحا التنبيهات، انتهاء الإعداد الأولي، ومفتاح «تحديث البيانات تلقائياً» وحالة التحديث (رقم الحزمة، وقت آخر تحقق) وحزمة البيانات المنزّلة (§16.4).
+- البيانات المحفوظة على الجهاز فقط: معرّف المدينة، مفتاحا التنبيهات (`notifyImportant`، `notifyDar`)، انتهاء الإعداد الأولي (`onboardingDone`)، السمة والأرقام (`theme`، `digits`)، ومفتاح «تحديث البيانات تلقائياً» وحالة التحديث (رقم الحزمة، وقت آخر تحقق) وحزمة البيانات المنزّلة (§16.4).
 - لا تحليلات ولا تقارير أعطال ولا إعلانات (D15).
 - الشبكة: طلب GET واحد أسبوعياً لملف ثابت عام، بلا معرّفات ولا معاملات ولا كوكيز (§16.2). المفتاح العام للتوقيع مضمّن في الكود (ليس سراً)؛ المفتاح الخاص لا يدخل المستودع ولا التطبيق أبداً (§16.3).
 - أندرويد الإصدار: إذن `INTERNET` فقط لتحديث البيانات (D21). لا `ACCESS_NETWORK_STATE` ولا أي إذن شبكة آخر.
@@ -317,15 +331,15 @@ apps/durur/
 ## 13. إعدادات المنصات (تُنفّذ مع ميزاتها؛ لم تُختبر هنا لعدم وجود Android SDK وXcode)
 
 أندرويد (`AndroidManifest.xml`، `build.gradle.kts`):
-- `ACCESS_COARSE_LOCATION`، `POST_NOTIFICATIONS`، `RECEIVE_BOOT_COMPLETED` + مستقبلات flutter_local_notifications (لإعادة الجدولة بعد إعادة التشغيل).
+- `ACCESS_COARSE_LOCATION`، `POST_NOTIFICATIONS`، `RECEIVE_BOOT_COMPLETED` + مستقبلا flutter_local_notifications `ScheduledNotificationReceiver` و`ScheduledNotificationBootReceiver` (لإعادة الجدولة بعد إعادة التشغيل) — **مُضافة مع الميزة 8**، ومعها `res/drawable/ic_stat_durur.xml` و`res/raw/keep.xml` (حماية الأيقونة من R8). لا `SCHEDULE_EXACT_ALARM` (D13).
 - `<queries>` لنيّات `mailto` و`https` (url_launcher على أندرويد 11+).
-- `coreLibraryDesugaring` (مطلوب لـ flutter_local_notifications).
+- `coreLibraryDesugaring` (مطلوب لـ flutter_local_notifications) — مُضاف مع الميزة 8 (`desugar_jdk_libs:2.1.4`).
 - `INTERNET` في `src/main/AndroidManifest.xml` (مع الميزة 11، D21). `usesCleartextTraffic=false` (HTTPS فقط).
 
 آيفون (`Info.plist`، `AppDelegate.swift`):
 - `NSLocationWhenInUseUsageDescription` (بالعربية)، `NSLocationDefaultAccuracyReduced = true`.
 - `CFBundleDevelopmentRegion = ar`، `CFBundleLocalizations = [ar]`.
-- مندوب `UNUserNotificationCenter` حسب توثيق flutter_local_notifications.
+- مندوب `UNUserNotificationCenter` حسب توثيق flutter_local_notifications — مُضاف مع الميزة 8 في `AppDelegate.swift`.
 
 ## 14. المكتبات (الإصدارات المثبّتة فعلاً في pubspec.lock)
 
@@ -354,7 +368,7 @@ apps/durur/
 
 | المستوى | ماذا | أين |
 |---|---|---|
-**الموجود فعلاً (450 اختباراً بعد الميزة 7 حسب STATUS.md):**
+**الموجود فعلاً (520 اختباراً بعد الميزة 8 حسب STATUS.md):**
 
 | المستوى | ماذا | الملف |
 |---|---|---|
@@ -381,8 +395,12 @@ apps/durur/
 | وحدة | محتوى الصفحة، `detailRequestFor`، حذف `ItemKind.dar`، والمعيار 3 على البيانات المضمّنة (كل عنصر في الدائرة له تعريف ≤ سطرين ومثل ومصدر وصفحة، وكل دَرّ له صفحة) | `test/features/detail_data_test.dart` |
 | وحدة | مصادر الجداول بلا تكرار وحالة اعتمادها (D27) | `test/domain/source_catalog_test.dart` |
 | واجهة | الميزة 7: الورقة والصفحة الكاملة بمساراتها، سهيل/الثريا من الحساب الفلكي، الحالات، الدَّرّ (D26)، المسار المفقود ← الرئيسية، «أصل التقويم»، المصادر وروابطها، خط 200% على 320dp، أهداف 48dp | `test/widgets/item_detail_test.dart` |
+| وحدة | المخطِّط: المواسم الستة وتواريخها (الجدول/الفلك/البديل)، 08:00، يوم البداية قبل/بعد 8، الأفق، المفتاحان، الدرور والمستعيرة، حد 60 بجدول كثيف، الترتيب والمعرّفات، التكرار، كل المناطق 2025–2040 | `test/notifications/notification_planner_test.dart` |
+| مزوّدات | النص والحمولة (D24)، `isNotificationPayload`، المزامنة (الفتح، المفتاحان، المدينة، الجداول، المنطقة الزمنية، اليوم، الفشل)، الإذن | `test/notifications/notification_sync_test.dart` (+ `test/helpers/fake_notification_scheduler.dart`) |
+| بلجن (محاكاة القناة) | المُجدوِل الفعلي على أندرويد: المسح قبل الجدولة، 08:00 Asia/Riyadh، UTC لمنطقة مجهولة، الوضع غير الدقيق، القناة، الأيقونة، المتأخر المعلق | `test/notifications/local_notification_scheduler_test.dart` |
+| واجهة | شرح التنبيهات وإذنه ورفضه، مفاتيح الإعدادات وملاحظة الإذن وخطأ الجدولة، السمة والأرقام، الضغط على التنبيه والتشغيل منه، الإصلاحات المؤجلة، عبارة «للمقارنة» في أصل التقويم، 200% و48dp وقارئ الشاشة | `test/widgets/notifications_settings_test.dart` |
 
-**مخطط مع ميزاته:** الفلك (Meeus + مرجعي ±2 + ترتيب المدن) `test/astronomy/`؛ أقرب مدينة `test/location/`؛ المخطِّط (حد 60، التكرار، المفاتيح) `test/notifications/`؛ التحديث الموقّع `test/updates/` (§16.9). يدوي: وضع الطيران، تغيير تاريخ الجهاز للتنبيه، رفض الأذونات (TESTERS.md).
+**مخطط مع ميزاته:** الفلك (Meeus + مرجعي ±2 + ترتيب المدن) `test/astronomy/`؛ أقرب مدينة `test/location/`؛ التحديث الموقّع `test/updates/` (§16.9). يدوي: وضع الطيران، تغيير تاريخ الجهاز للتنبيه، رفض الأذونات (TESTERS.md).
 
 الأوامر في CLAUDE.md.
 

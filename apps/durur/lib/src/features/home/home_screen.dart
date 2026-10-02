@@ -17,6 +17,7 @@ import '../../routing/app_router.dart';
 import '../../theme/app_theme.dart';
 import 'city_chip.dart';
 import 'day_card.dart';
+import '../common/load_error.dart';
 import 'day_text.dart';
 import 'dial/day_dial.dart';
 import 'dial/dial_model.dart';
@@ -78,7 +79,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: switch (tables) {
         AsyncData(:final value) => _content(context, value),
-        AsyncError() => _LoadError(
+        AsyncError() => DataLoadError(
+          key: HomeScreen.loadErrorKey,
           onRetry: () => ref.invalidate(tablesProvider),
         ),
         _ => const _DelayedSkeleton(),
@@ -96,6 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final index = ref.watch(yearIndexProvider(selected.year));
     final region = ref.watch(currentRegionProvider);
     final isToday = selected == today;
+    final digits = ref.watch(digitStyleProvider);
 
     if (info == null || index == null) {
       return _CalcError(message: l10n.homeCalcError);
@@ -131,12 +134,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               maintainAnimation: true,
               maintainState: true,
               child: _DatesLineText(
-                lines: datesLines(l10n, selected, tables.hijri, isToday: false),
+                lines: datesLines(
+                  l10n,
+                  selected,
+                  tables.hijri,
+                  isToday: false,
+                  digits: digits,
+                ),
                 style: theme.textTheme.bodyMedium!,
               ),
             ),
             _DatesLineText(
-              lines: datesLines(l10n, selected, tables.hijri, isToday: isToday),
+              lines: datesLines(
+                l10n,
+                selected,
+                tables.hijri,
+                isToday: isToday,
+                digits: digits,
+              ),
               style: theme.textTheme.bodyMedium!.copyWith(
                 color: isToday ? colors.inkSoft : colors.goldText,
               ),
@@ -154,18 +169,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return null;
       }
       final other = ref.watch(dayInfoProvider(day));
-      return other == null ? null : dialSemanticsValue(l10n, other, tables);
+      return other == null ? null : dialSemanticsValue(l10n, other, tables, digits: digits);
     }
 
     Widget dialFor(double diameter, DialDensity density) => DayDial(
       diameter: diameter,
+      digits: digits,
       density: density,
       model: model,
       tables: tables,
       selected: selected,
       today: today,
       semanticsLabel: dialSemanticsPrefix(l10n, isToday: isToday),
-      semanticsValue: dialSemanticsValue(l10n, info, tables),
+      semanticsValue: dialSemanticsValue(
+        l10n,
+        info,
+        tables,
+        digits: digits,
+      ),
       increasedValue: neighbourValue(1),
       decreasedValue: neighbourValue(-1),
       onSelect: controller.select,
@@ -245,6 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final card = DayCard(
       info: info,
+      digits: digits,
       tables: tables,
       onOpen: openPage,
       onOpenOrigin: openOrigin,
@@ -573,36 +595,6 @@ class _SkeletonPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SkeletonPainter old) => old.color != color;
-}
-
-/// تعذّر قراءة البيانات المضمّنة، مع إعادة المحاولة (DESIGN 8.1).
-class _LoadError extends StatelessWidget {
-  const _LoadError({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      key: HomeScreen.loadErrorKey,
-      padding: const EdgeInsetsDirectional.all(24),
-      child: Column(
-        children: [
-          Text(
-            l10n.dataLoadErrorTitle,
-            style: theme.textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(l10n.dataLoadErrorBody, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: onRetry, child: Text(l10n.commonRetry)),
-        ],
-      ),
-    );
-  }
 }
 
 /// المحرك لم يجد نتيجة (يجب ألا يحدث بعد الاختبار، DESIGN 8.4).

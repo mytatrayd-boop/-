@@ -202,18 +202,19 @@ class _DatesCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final colors = DururColors.of(context);
     final length = data.period.length;
+    final digits = ref.watch(digitStyleProvider);
 
     final String status;
     if (today.isBefore(start)) {
       final days = daysBetween(today, start);
-      status = l10n.detailStatusUpcoming(days, formatInteger(days));
+      status = l10n.detailStatusUpcoming(days, formatInteger(days, digits));
     } else if (today.isAfter(end)) {
       final days = daysBetween(end, today);
-      status = l10n.detailStatusPast(days, formatInteger(days));
+      status = l10n.detailStatusPast(days, formatInteger(days, digits));
     } else {
       status = l10n.detailStatusNow(
-        formatInteger(daysBetween(start, today) + 1),
-        formatInteger(length),
+        formatInteger(daysBetween(start, today) + 1, digits),
+        formatInteger(length, digits),
       );
     }
 
@@ -225,8 +226,8 @@ class _DatesCard extends ConsumerWidget {
           children: [
             Text(
               l10n.detailRange(
-                gregorianDateLabel(l10n, start),
-                gregorianDateLabel(l10n, end),
+                gregorianDateLabel(l10n, start, digits: digits),
+                gregorianDateLabel(l10n, end, digits: digits),
                 data.regionName,
               ),
               key: ItemDetailView.rangeKey,
@@ -234,7 +235,7 @@ class _DatesCard extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              l10n.detailDuration(length, formatInteger(length)),
+              l10n.detailDuration(length, formatInteger(length, digits)),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colors.inkSoft,
               ),
@@ -286,6 +287,7 @@ class _AstroLines extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colors = DururColors.of(context);
+    final digits = ref.watch(digitStyleProvider);
     final city = ref.watch(currentCityProvider);
     final today = ref.watch(todayProvider);
     final utc = risingOf(itemId, ref.watch(currentHeliacalProvider(year)));
@@ -302,12 +304,12 @@ class _AstroLines extends ConsumerWidget {
     final cityName = city.name.ar;
     final String line;
     if (rising.isAfter(today)) {
-      line = l10n.detailStarRisesOn(cityName, gregorianDateLabel(l10n, rising));
+      line = l10n.detailStarRisesOn(cityName, gregorianDateLabel(l10n, rising, digits: digits));
     } else if (rising == today) {
       line = l10n.detailStarRisesToday(cityName);
     } else {
       final days = daysBetween(rising, today);
-      line = l10n.detailStarRisenAgo(days, cityName, formatInteger(days));
+      line = l10n.detailStarRisenAgo(days, cityName, formatInteger(days, digits));
     }
     return Column(
       key: ItemDetailView.astroKey,

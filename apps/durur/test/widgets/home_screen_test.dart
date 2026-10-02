@@ -9,7 +9,6 @@ import 'package:durur/src/features/home/dial/day_dial.dart';
 import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/item_detail/item_detail_sheet.dart';
 import 'package:durur/src/providers.dart';
-import 'package:durur/src/repository/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,7 +37,7 @@ Future<void> main() async {
     await pumpScreen(
       tester,
       const HomeScreen(),
-      prefs: await fakePrefs({SettingsRepository.cityIdKey: city}),
+      prefs: await fakePrefs(savedCity(city)),
       tables: withTables ?? tables,
       textScale: textScale,
       extra: [fixedClock(now ?? DateTime(2026, 10, 2, 9, 30))],
@@ -617,7 +616,7 @@ Future<void> main() async {
       await pumpScreen(
         tester,
         const HomeScreen(),
-        prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+        prefs: await fakePrefs(savedCity('riyadh')),
         tables: null,
         extra: [tablesProvider.overrideWith((ref) => pending.future)],
       );
@@ -637,7 +636,7 @@ Future<void> main() async {
       await pumpScreen(
         tester,
         const HomeScreen(),
-        prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+        prefs: await fakePrefs(savedCity('riyadh')),
         tables: null,
         extra: [
           fixedClock(DateTime(2026, 10, 2, 9)),
@@ -665,7 +664,7 @@ Future<void> main() async {
     await pumpScreen(
       tester,
       const HomeScreen(),
-      prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+      prefs: await fakePrefs(savedCity('riyadh')),
       tables: tables,
       extra: [clockProvider.overrideWithValue(() => now)],
     );

@@ -807,11 +807,17 @@ abstract class AppLocalizations {
   /// **'الدرور'**
   String get originDururTitle;
 
-  /// أصل الدرور (research/SAUDI.md §3، بانتظار المراجع)
+  /// أصل الدرور (research/SAUDI.md §3، بانتظار المراجع)، بلا عبارة المقارنة (DESIGN 8.10)
   ///
   /// In ar, this message translates to:
-  /// **'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي. معروض هنا للمقارنة.'**
+  /// **'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي.'**
   String get originDururBody;
+
+  /// تُلحق بمسافة بعد originDururBody فقط إن كانت منطقة المستخدم تستعير الدرور (DESIGN origin.durur_comparison، 8.10)
+  ///
+  /// In ar, this message translates to:
+  /// **'معروض هنا للمقارنة.'**
+  String get originDururComparison;
 
   /// قسم في الإعدادات (DESIGN settings.section.help)
   ///
@@ -878,6 +884,186 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر فتح الرابط.'**
   String get linkOpenError;
+
+  /// زر نصي للتأجيل (DESIGN common.not_now)
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس الآن'**
+  String get commonNotNow;
+
+  /// عنوان شرح التنبيهات في البداية (DESIGN onboarding.notifications.title، 8.2 د)
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يفوتك الوسم'**
+  String get onboardingNotificationsTitle;
+
+  /// سطر شرح سبب إذن التنبيهات (DESIGN onboarding.notifications.body، SPEC 8 معيار 8). الأرقام تتبع إعداد «الأرقام»
+  ///
+  /// In ar, this message translates to:
+  /// **'نذكّرك الساعة ٨ صباحاً عند دخول المواسم المهمة: سهيل، والوسم، والمربعانية، وبرد العجايز، والثريا، وجمرة القيظ.'**
+  String get onboardingNotificationsBody;
+
+  /// زر طلب إذن التنبيهات (DESIGN onboarding.notifications.allow)
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل التنبيهات'**
+  String get onboardingNotificationsAllow;
+
+  /// قسم في الإعدادات (DESIGN settings.section.notifications)
+  ///
+  /// In ar, this message translates to:
+  /// **'التنبيهات'**
+  String get settingsSectionNotifications;
+
+  /// مفتاح تنبيهات المواسم المهمة (DESIGN settings.notif.important)
+  ///
+  /// In ar, this message translates to:
+  /// **'المواسم المهمة'**
+  String get settingsNotifImportant;
+
+  /// وصف مفتاح المواسم المهمة (DESIGN settings.notif.important_desc)
+  ///
+  /// In ar, this message translates to:
+  /// **'سهيل، الوسم، المربعانية، برد العجايز، الثريا، جمرة القيظ.'**
+  String get settingsNotifImportantDesc;
+
+  /// مفتاح تنبيه بداية الدَّرّ (DESIGN settings.notif.dar)
+  ///
+  /// In ar, this message translates to:
+  /// **'بداية كل دَرّ'**
+  String get settingsNotifDar;
+
+  /// وصف مفتاح بداية الدَّرّ (DESIGN settings.notif.dar_desc)
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه كل عشرة أيام تقريباً عند بداية دَرّ جديد.'**
+  String get settingsNotifDarDesc;
+
+  /// سطر ثابت تحت مفاتيح التنبيهات (DESIGN settings.notif.time_note). الأرقام تتبع إعداد «الأرقام»
+  ///
+  /// In ar, this message translates to:
+  /// **'تصل التنبيهات الساعة ٨:٠٠ صباحاً بتوقيت جهازك.'**
+  String get settingsNotifTimeNote;
+
+  /// ملاحظة عند عدم منح إذن التنبيهات (DESIGN settings.notif.denied)
+  ///
+  /// In ar, this message translates to:
+  /// **'التنبيهات متوقفة من إعدادات جهازك.'**
+  String get settingsNotifDenied;
+
+  /// زر نصي يفتح إعدادات تنبيهات التطبيق في النظام (DESIGN settings.notif.open_device_settings)
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح إعدادات الجهاز'**
+  String get settingsNotifOpenDeviceSettings;
+
+  /// فشل جدولة التنبيهات (DESIGN settings.notif.schedule_error)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر ضبط التنبيهات. أعد فتح التطبيق وحاول مرة أخرى.'**
+  String get settingsNotifScheduleError;
+
+  /// قسم في الإعدادات (DESIGN settings.section.appearance)
+  ///
+  /// In ar, this message translates to:
+  /// **'المظهر'**
+  String get settingsSectionAppearance;
+
+  /// عنوان اختيار السمة (DESIGN settings.theme)
+  ///
+  /// In ar, this message translates to:
+  /// **'السمة'**
+  String get settingsTheme;
+
+  /// شريحة السمة حسب الجهاز (DESIGN settings.theme.system)
+  ///
+  /// In ar, this message translates to:
+  /// **'تلقائي (حسب الجهاز)'**
+  String get settingsThemeSystem;
+
+  /// شريحة السمة الفاتحة (DESIGN settings.theme.light)
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتح'**
+  String get settingsThemeLight;
+
+  /// شريحة السمة الداكنة (DESIGN settings.theme.dark)
+  ///
+  /// In ar, this message translates to:
+  /// **'داكن'**
+  String get settingsThemeDark;
+
+  /// عنوان اختيار شكل الأرقام (DESIGN settings.digits)
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام'**
+  String get settingsDigits;
+
+  /// شريحة الأرقام العربية الهندية (DESIGN 8.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'١٢٣'**
+  String get settingsDigitsArabic;
+
+  /// شريحة الأرقام اللاتينية (DESIGN 8.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'123'**
+  String get settingsDigitsLatin;
+
+  /// عنوان تنبيه موسم مهم (DESIGN notif.season.title، SPEC 8 معيار 4). region = منطقة المستخدم
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل {season} اليوم في {region}'**
+  String notifSeasonTitle(String season, String region);
+
+  /// نص تنبيه موسم مهم (DESIGN notif.season.body)
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط لتعرف عن {season} ومثله الشعبي.'**
+  String notifSeasonBody(String season);
+
+  /// عنوان تنبيه سهيل والثريا بالتاريخ المحسوب لمدينة المستخدم (DESIGN notif.star.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'طلع {star} اليوم في {city}'**
+  String notifStarTitle(String star, String city);
+
+  /// نص تنبيه سهيل والثريا (DESIGN notif.star.body)
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ظهوره قبل الفجر. اضغط لتعرف عنه.'**
+  String get notifStarBody;
+
+  /// عنوان تنبيه بداية الدَّرّ (DESIGN notif.dar.title). season = مئة الدَّرّ (D25)
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأ دَرّ {dar} من {season}'**
+  String notifDarTitle(String dar, String season);
+
+  /// عنوان تنبيه بداية الدَّرّ لمنطقة تستعير الدرور (D24): region = المنطقة المُعيرة لا منطقة المستخدم
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأ دَرّ {dar} من {season} حسب حساب {region}'**
+  String notifDarTitleBorrowed(String dar, String season, String region);
+
+  /// نص تنبيه بداية الدَّرّ (DESIGN notif.dar.body). weather = أسماء رموز الجو بالفاصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'الجو المعتاد: {weather}'**
+  String notifDarBody(String weather);
+
+  /// اسم قناة تنبيهات المواسم المهمة في إعدادات أندرويد (DESIGN notif.channel.important)
+  ///
+  /// In ar, this message translates to:
+  /// **'المواسم المهمة'**
+  String get notifChannelImportant;
+
+  /// اسم قناة تنبيهات بداية الدَّرّ في إعدادات أندرويد (DESIGN notif.channel.dar)
+  ///
+  /// In ar, this message translates to:
+  /// **'بداية كل دَرّ'**
+  String get notifChannelDar;
 }
 
 class _AppLocalizationsDelegate

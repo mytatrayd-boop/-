@@ -3,19 +3,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../formatting/digits.dart';
 import '../../location/city_locator.dart';
 import '../../providers.dart';
-import '../../routing/app_router.dart';
+import '../../repository/settings_repository.dart';
+import '../../routing/app_routes.dart';
 
-/// الإعدادات (DESIGN 8.7). الآن قسم «المنطقة»: صف المدينة (SPEC الميزة 3،
-/// بند 5) وصف «تحديد موقعي مرة أخرى» (الميزة 4، بند 6)، وقسم «البيانات
-/// والمساعدة» فيه صف «المصادر» (الميزة 7، D27)؛ بقية الأقسام تُضاف مع ميزاتها.
+/// الإعدادات (DESIGN 8.7): «المنطقة» (صف المدينة، الميزة 3؛ و«تحديد موقعي
+/// مرة أخرى»، الميزة 4)، و«التنبيهات» (مفتاحان مستقلان وملاحظة الإذن وخطأ
+/// الجدولة، الميزة 8)، و«المظهر» (السمة والأرقام)، و«البيانات والمساعدة»
+/// (المصادر، D27). البلاغ وعن التطبيق مع الميزة 9.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   static const cityRowKey = Key('settingsCityRow');
   static const relocateRowKey = Key('settingsRelocateRow');
   static const sourcesRowKey = Key('settingsSourcesRow');
+  static const importantSwitchKey = Key('settingsNotifyImportant');
+  static const darSwitchKey = Key('settingsNotifyDar');
+  static const permissionNoteKey = Key('settingsNotifPermissionNote');
+  static const openDeviceSettingsKey = Key('settingsOpenDeviceSettings');
+  static const scheduleErrorKey = Key('settingsNotifScheduleError');
+  static Key themeChipKey(ThemeChoice t) => Key('settingsTheme_${t.code}');
+  static Key digitsChipKey(DigitStyle d) => Key('settingsDigits_${d.code}');
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -30,20 +40,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final theme = Theme.of(context);
     final city = ref.watch(currentCityProvider);
     final region = ref.watch(currentRegionProvider);
+    final settings = ref.watch(settingsProvider);
+    final digits = settings.digits;
+    // الملاحظة تظهر فقط إن عُرف أن الإذن غير ممنوح.
+    final permitted = ref.watch(notificationPermissionProvider).value ?? true;
+    // فشل الجدولة يُعرض فقط والإذن ممنوح (بلا إذن تكفي ملاحظة الإذن).
+    final syncFailed =
+        ref.watch(notificationPermissionProvider).value == true &&
+        ref.watch(notificationSyncProvider) == NotificationSyncStatus.failed;
+    Widget header(String text) => Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 24, 16, 8),
+      child: Semantics(
+        header: true,
+        child: Text(text, style: theme.textTheme.titleLarge),
+      ),
+    );
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         children: [
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 24, 16, 8),
-            child: Semantics(
-              header: true,
-              child: Text(
-                l10n.settingsSectionRegion,
-                style: theme.textTheme.titleLarge,
-              ),
-            ),
-          ),
+          header(l10n.settingsSectionRegion),
           ListTile(
             key: SettingsScreen.cityRowKey,
             minTileHeight: 56,
@@ -76,16 +92,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 : null,
             onTap: _locating ? null : _relocate,
           ),
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 24, 16, 8),
-            child: Semantics(
-              header: true,
-              child: Text(
-                l10n.settingsSectionHelp,
-                style: theme.textTheme.titleLarge,
+          header(l10n.settingsSectionNotifications),
+          if (!permitted)
+            _NoteCard(
+              key: SettingsScreen.permissionNoteKey,
+              text: l10n.settingsNotifDenied,
+              action: TextButton(
+                key: SettingsScreen.openDeviceSettingsKey,
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                onPressed: _openDeviceSettings,
+                child: Text(l10n.settingsNotifOpenDeviceSettings),
               ),
             ),
+          if (syncFailed)
+            _NoteCard(
+              key: SettingsScreen.scheduleErrorKey,
+              text: l10n.settingsNotifScheduleError,
+              live: true,
+            ),
+          SwitchListTile(
+            key: SettingsScreen.importantSwitchKey,
+            minTileHeight: 64,
+            title: Text(l10n.settingsNotifImportant),
+            subtitle: Text(l10n.settingsNotifImportantDesc),
+            value: settings.notifyImportant,
+            onChanged: (on) => _setNotify(on, important: true),
           ),
+          SwitchListTile(
+            key: SettingsScreen.darSwitchKey,
+            minTileHeight: 64,
+            title: Text(l10n.settingsNotifDar),
+            subtitle: Text(l10n.settingsNotifDarDesc),
+            value: settings.notifyDar,
+            onChanged: (on) => _setNotify(on, important: false),
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 0),
+            child: Text(
+              localizeDigits(l10n.settingsNotifTimeNote, digits),
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+          header(l10n.settingsSectionAppearance),
+          _ChoiceRow<ThemeChoice>(
+            title: l10n.settingsTheme,
+            values: ThemeChoice.values,
+            selected: settings.theme,
+            keyOf: SettingsScreen.themeChipKey,
+            labelOf: (t) => switch (t) {
+              ThemeChoice.system => l10n.settingsThemeSystem,
+              ThemeChoice.light => l10n.settingsThemeLight,
+              ThemeChoice.dark => l10n.settingsThemeDark,
+            },
+            onSelected: (t) =>
+                _save(() => ref.read(settingsProvider.notifier).setTheme(t)),
+          ),
+          _ChoiceRow<DigitStyle>(
+            title: l10n.settingsDigits,
+            values: DigitStyle.values,
+            selected: digits,
+            keyOf: SettingsScreen.digitsChipKey,
+            labelOf: (d) => switch (d) {
+              DigitStyle.arabicIndic => l10n.settingsDigitsArabic,
+              DigitStyle.latin => l10n.settingsDigitsLatin,
+            },
+            onSelected: (d) =>
+                _save(() => ref.read(settingsProvider.notifier).setDigits(d)),
+          ),
+          header(l10n.settingsSectionHelp),
           ListTile(
             key: SettingsScreen.sourcesRowKey,
             minTileHeight: 56,
@@ -99,10 +173,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// يحفظ اختياراً؛ عند الفشل رسالة والقيمة لا تتغير.
+  Future<void> _save(Future<void> Function() save) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await save();
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.citySaveError),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    }
+  }
+
+  /// يحفظ المفتاح (ويُطبَّق عند منح الإذن)؛ تشغيله والإذن غير ممنوح يطلب
+  /// الإذن مرة، وإن رُفض تبقى الملاحظة (DESIGN 8.7).
+  Future<void> _setNotify(bool on, {required bool important}) async {
+    final controller = ref.read(settingsProvider.notifier);
+    await _save(
+      () => important
+          ? controller.setNotifyImportant(on)
+          : controller.setNotifyDar(on),
+    );
+    if (!on || !mounted) return;
+    final permission = ref.read(notificationPermissionProvider);
+    if (permission.value == false) {
+      await ref.read(notificationPermissionProvider.notifier).request();
+    }
+  }
+
+  Future<void> _openDeviceSettings() async {
+    try {
+      await ref.read(notificationSchedulerProvider).openSystemSettings();
+    } on Object {
+      // لا شيء: الملاحظة باقية.
+    }
+  }
+
   /// قراءة واحدة ثم أقرب مدينة (DESIGN 8.7).
   Future<void> _relocate() async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    // يؤخذ الموجّه قبل أي انتظار: سياق الصفحة قد يزول قبل ضغط زر الرسالة.
+    final router = GoRouter.of(context);
     final previousId = ref.read(settingsProvider).cityId;
     setState(() => _locating = true);
 
@@ -127,8 +243,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           message = l10n.locationFailedSettings;
           offerPicker = true;
       }
-    } on Exception {
-      // فشل حفظ المدينة أو قراءة البيانات.
+    } on Object {
+      // فشل حفظ المدينة أو قراءة البيانات أو أي خطأ غير متوقع.
       message = l10n.citySaveError;
     }
 
@@ -141,9 +257,102 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         action: offerPicker
             ? SnackBarAction(
                 label: l10n.locationChooseCity,
-                onPressed: () => context.push(AppRoutes.city),
+                onPressed: () => router.push(AppRoutes.city),
               )
             : null,
+      ),
+    );
+  }
+}
+
+/// بطاقة ملاحظة (DESIGN 5.2): `surface-alt`، أيقونة معلومات، نص، وزر اختياري.
+class _NoteCard extends StatelessWidget {
+  const _NoteCard({super.key, required this.text, this.action, this.live = false});
+
+  final String text;
+  final Widget? action;
+  final bool live;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+      child: Card(
+        margin: EdgeInsetsDirectional.zero,
+        color: theme.colorScheme.surfaceContainerHighest,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ExcludeSemantics(child: Icon(Icons.info_outline)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Semantics(
+                      liveRegion: live,
+                      child: Text(text, style: theme.textTheme.bodyMedium),
+                    ),
+                  ),
+                ],
+              ),
+              ?action,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// صف اختيار بشرائح (DESIGN 8.7، 5.3): المختارة بتعبئة وعلامة صح.
+class _ChoiceRow<T> extends StatelessWidget {
+  const _ChoiceRow({
+    required this.title,
+    required this.values,
+    required this.selected,
+    required this.keyOf,
+    required this.labelOf,
+    required this.onSelected,
+  });
+
+  final String title;
+  final List<T> values;
+  final T selected;
+  final Key Function(T) keyOf;
+  final String Function(T) labelOf;
+  final void Function(T) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final v in values)
+                ChoiceChip(
+                  key: keyOf(v),
+                  label: Text(labelOf(v)),
+                  selected: v == selected,
+                  materialTapTargetSize: MaterialTapTargetSize.padded,
+                  onSelected: (_) {
+                    if (v != selected) onSelected(v);
+                  },
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

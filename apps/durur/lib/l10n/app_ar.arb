@@ -799,9 +799,13 @@
   "@originDururTitle": {
     "description": "قسم في صفحة أصل التقويم"
   },
-  "originDururBody": "حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي. معروض هنا للمقارنة.",
+  "originDururBody": "حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي.",
   "@originDururBody": {
-    "description": "أصل الدرور (research/SAUDI.md §3، بانتظار المراجع)"
+    "description": "أصل الدرور (research/SAUDI.md §3، بانتظار المراجع)، بلا عبارة المقارنة (DESIGN 8.10)"
+  },
+  "originDururComparison": "معروض هنا للمقارنة.",
+  "@originDururComparison": {
+    "description": "تُلحق بمسافة بعد originDururBody فقط إن كانت منطقة المستخدم تستعير الدرور (DESIGN origin.durur_comparison، 8.10)"
   },
   "settingsSectionHelp": "البيانات والمساعدة",
   "@settingsSectionHelp": {
@@ -851,5 +855,170 @@
   "linkOpenError": "تعذّر فتح الرابط.",
   "@linkOpenError": {
     "description": "فشل فتح رابط خارجي في المتصفح"
+  },
+  "commonNotNow": "ليس الآن",
+  "@commonNotNow": {
+    "description": "زر نصي للتأجيل (DESIGN common.not_now)"
+  },
+  "onboardingNotificationsTitle": "لا يفوتك الوسم",
+  "@onboardingNotificationsTitle": {
+    "description": "عنوان شرح التنبيهات في البداية (DESIGN onboarding.notifications.title، 8.2 د)"
+  },
+  "onboardingNotificationsBody": "نذكّرك الساعة ٨ صباحاً عند دخول المواسم المهمة: سهيل، والوسم، والمربعانية، وبرد العجايز، والثريا، وجمرة القيظ.",
+  "@onboardingNotificationsBody": {
+    "description": "سطر شرح سبب إذن التنبيهات (DESIGN onboarding.notifications.body، SPEC 8 معيار 8). الأرقام تتبع إعداد «الأرقام»"
+  },
+  "onboardingNotificationsAllow": "فعّل التنبيهات",
+  "@onboardingNotificationsAllow": {
+    "description": "زر طلب إذن التنبيهات (DESIGN onboarding.notifications.allow)"
+  },
+  "settingsSectionNotifications": "التنبيهات",
+  "@settingsSectionNotifications": {
+    "description": "قسم في الإعدادات (DESIGN settings.section.notifications)"
+  },
+  "settingsNotifImportant": "المواسم المهمة",
+  "@settingsNotifImportant": {
+    "description": "مفتاح تنبيهات المواسم المهمة (DESIGN settings.notif.important)"
+  },
+  "settingsNotifImportantDesc": "سهيل، الوسم، المربعانية، برد العجايز، الثريا، جمرة القيظ.",
+  "@settingsNotifImportantDesc": {
+    "description": "وصف مفتاح المواسم المهمة (DESIGN settings.notif.important_desc)"
+  },
+  "settingsNotifDar": "بداية كل دَرّ",
+  "@settingsNotifDar": {
+    "description": "مفتاح تنبيه بداية الدَّرّ (DESIGN settings.notif.dar)"
+  },
+  "settingsNotifDarDesc": "تنبيه كل عشرة أيام تقريباً عند بداية دَرّ جديد.",
+  "@settingsNotifDarDesc": {
+    "description": "وصف مفتاح بداية الدَّرّ (DESIGN settings.notif.dar_desc)"
+  },
+  "settingsNotifTimeNote": "تصل التنبيهات الساعة ٨:٠٠ صباحاً بتوقيت جهازك.",
+  "@settingsNotifTimeNote": {
+    "description": "سطر ثابت تحت مفاتيح التنبيهات (DESIGN settings.notif.time_note). الأرقام تتبع إعداد «الأرقام»"
+  },
+  "settingsNotifDenied": "التنبيهات متوقفة من إعدادات جهازك.",
+  "@settingsNotifDenied": {
+    "description": "ملاحظة عند عدم منح إذن التنبيهات (DESIGN settings.notif.denied)"
+  },
+  "settingsNotifOpenDeviceSettings": "فتح إعدادات الجهاز",
+  "@settingsNotifOpenDeviceSettings": {
+    "description": "زر نصي يفتح إعدادات تنبيهات التطبيق في النظام (DESIGN settings.notif.open_device_settings)"
+  },
+  "settingsNotifScheduleError": "تعذّر ضبط التنبيهات. أعد فتح التطبيق وحاول مرة أخرى.",
+  "@settingsNotifScheduleError": {
+    "description": "فشل جدولة التنبيهات (DESIGN settings.notif.schedule_error)"
+  },
+  "settingsSectionAppearance": "المظهر",
+  "@settingsSectionAppearance": {
+    "description": "قسم في الإعدادات (DESIGN settings.section.appearance)"
+  },
+  "settingsTheme": "السمة",
+  "@settingsTheme": {
+    "description": "عنوان اختيار السمة (DESIGN settings.theme)"
+  },
+  "settingsThemeSystem": "تلقائي (حسب الجهاز)",
+  "@settingsThemeSystem": {
+    "description": "شريحة السمة حسب الجهاز (DESIGN settings.theme.system)"
+  },
+  "settingsThemeLight": "فاتح",
+  "@settingsThemeLight": {
+    "description": "شريحة السمة الفاتحة (DESIGN settings.theme.light)"
+  },
+  "settingsThemeDark": "داكن",
+  "@settingsThemeDark": {
+    "description": "شريحة السمة الداكنة (DESIGN settings.theme.dark)"
+  },
+  "settingsDigits": "الأرقام",
+  "@settingsDigits": {
+    "description": "عنوان اختيار شكل الأرقام (DESIGN settings.digits)"
+  },
+  "settingsDigitsArabic": "١٢٣",
+  "@settingsDigitsArabic": {
+    "description": "شريحة الأرقام العربية الهندية (DESIGN 8.7)"
+  },
+  "settingsDigitsLatin": "123",
+  "@settingsDigitsLatin": {
+    "description": "شريحة الأرقام اللاتينية (DESIGN 8.7)"
+  },
+  "notifSeasonTitle": "دخل {season} اليوم في {region}",
+  "@notifSeasonTitle": {
+    "description": "عنوان تنبيه موسم مهم (DESIGN notif.season.title، SPEC 8 معيار 4). region = منطقة المستخدم",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "notifSeasonBody": "اضغط لتعرف عن {season} ومثله الشعبي.",
+  "@notifSeasonBody": {
+    "description": "نص تنبيه موسم مهم (DESIGN notif.season.body)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "notifStarTitle": "طلع {star} اليوم في {city}",
+  "@notifStarTitle": {
+    "description": "عنوان تنبيه سهيل والثريا بالتاريخ المحسوب لمدينة المستخدم (DESIGN notif.star.title)",
+    "placeholders": {
+      "star": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "notifStarBody": "أول ظهوره قبل الفجر. اضغط لتعرف عنه.",
+  "@notifStarBody": {
+    "description": "نص تنبيه سهيل والثريا (DESIGN notif.star.body)"
+  },
+  "notifDarTitle": "بدأ دَرّ {dar} من {season}",
+  "@notifDarTitle": {
+    "description": "عنوان تنبيه بداية الدَّرّ (DESIGN notif.dar.title). season = مئة الدَّرّ (D25)",
+    "placeholders": {
+      "dar": {
+        "type": "String"
+      },
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "notifDarTitleBorrowed": "بدأ دَرّ {dar} من {season} حسب حساب {region}",
+  "@notifDarTitleBorrowed": {
+    "description": "عنوان تنبيه بداية الدَّرّ لمنطقة تستعير الدرور (D24): region = المنطقة المُعيرة لا منطقة المستخدم",
+    "placeholders": {
+      "dar": {
+        "type": "String"
+      },
+      "season": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "notifDarBody": "الجو المعتاد: {weather}",
+  "@notifDarBody": {
+    "description": "نص تنبيه بداية الدَّرّ (DESIGN notif.dar.body). weather = أسماء رموز الجو بالفاصلة",
+    "placeholders": {
+      "weather": {
+        "type": "String"
+      }
+    }
+  },
+  "notifChannelImportant": "المواسم المهمة",
+  "@notifChannelImportant": {
+    "description": "اسم قناة تنبيهات المواسم المهمة في إعدادات أندرويد (DESIGN notif.channel.important)"
+  },
+  "notifChannelDar": "بداية كل دَرّ",
+  "@notifChannelDar": {
+    "description": "اسم قناة تنبيهات بداية الدَّرّ في إعدادات أندرويد (DESIGN notif.channel.dar)"
   }
 }

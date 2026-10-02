@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/app_localizations.dart';
 import 'astronomy/heliacal.dart';
 import 'domain/city.dart';
 import 'domain/day_info.dart';
@@ -12,10 +14,15 @@ import 'domain/region.dart';
 import 'domain/tables.dart';
 import 'engine/calendar_engine.dart';
 import 'engine/year_index.dart';
+import 'formatting/digits.dart';
 import 'hijri/umm_al_qura_calendar.dart';
 import 'location/city_locator.dart';
 import 'location/geolocator_location_service.dart';
 import 'location/location_service.dart';
+import 'notifications/local_notification_scheduler.dart';
+import 'notifications/notification_content.dart';
+import 'notifications/notification_planner.dart';
+import 'notifications/notification_scheduler.dart';
 import 'repository/settings_repository.dart';
 import 'repository/table_repository.dart';
 
@@ -45,29 +52,103 @@ final hijriCalendarProvider = Provider<UmmAlQuraCalendar?>(
   (ref) => ref.watch(tablesProvider).value?.hijri,
 );
 
-/// الإعدادات المحفوظة. حالياً المدينة فقط؛ تُضاف مفاتيح التنبيهات
-/// وانتهاء الإعداد الأولي مع ميزاتها.
+/// الإعدادات المحفوظة (ARCHITECTURE §12): المدينة، وانتهاء الإعداد الأولي،
+/// ومفتاحا التنبيهات (الميزة 8)، والسمة والأرقام (DESIGN 8.7).
 class Settings {
-  const Settings({this.cityId});
+  const Settings({
+    this.cityId,
+    this.onboardingDone = false,
+    this.notifyImportant = true,
+    this.notifyDar = false,
+    this.theme = ThemeChoice.system,
+    this.digits = DigitStyle.arabicIndic,
+  });
 
   final String? cityId;
+
+  /// انتهى الإعداد الأولي (بعد شرح التنبيهات، DESIGN 8.2 د).
+  final bool onboardingDone;
+
+  /// «المواسم المهمة» (مفعّل افتراضياً) و«بداية كل دَرّ» (مطفأ افتراضياً).
+  final bool notifyImportant;
+  final bool notifyDar;
+
+  final ThemeChoice theme;
+  final DigitStyle digits;
+
+  Settings copyWith({
+    String? cityId,
+    bool? onboardingDone,
+    bool? notifyImportant,
+    bool? notifyDar,
+    ThemeChoice? theme,
+    DigitStyle? digits,
+  }) => Settings(
+    cityId: cityId ?? this.cityId,
+    onboardingDone: onboardingDone ?? this.onboardingDone,
+    notifyImportant: notifyImportant ?? this.notifyImportant,
+    notifyDar: notifyDar ?? this.notifyDar,
+    theme: theme ?? this.theme,
+    digits: digits ?? this.digits,
+  );
 }
 
+/// كل تغيير يُحفظ على الجهاز أولاً ثم تتغير الحالة، فيتحدث كل ما يعتمد عليها
+/// فوراً. الحفظ الفاشل يرمي [SettingsSaveException] والحالة لا تتغير.
 class SettingsController extends Notifier<Settings> {
-  @override
-  Settings build() =>
-      Settings(cityId: ref.watch(settingsRepositoryProvider).cityId);
+  SettingsRepository get _repo => ref.read(settingsRepositoryProvider);
 
-  /// يحفظ المدينة على الجهاز ثم يحدّث الحالة، فيتحدث كل ما يعتمد عليها فوراً.
-  /// يرمي [SettingsSaveException] إن فشل الحفظ، والحالة لا تتغير.
+  @override
+  Settings build() {
+    final repo = ref.watch(settingsRepositoryProvider);
+    return Settings(
+      cityId: repo.cityId,
+      onboardingDone: repo.onboardingDone,
+      notifyImportant: repo.notifyImportant,
+      notifyDar: repo.notifyDar,
+      theme: repo.theme,
+      digits: repo.digits,
+    );
+  }
+
   Future<void> selectCity(String cityId) async {
-    await ref.read(settingsRepositoryProvider).saveCityId(cityId);
-    state = Settings(cityId: cityId);
+    await _repo.saveCityId(cityId);
+    state = state.copyWith(cityId: cityId);
+  }
+
+  Future<void> completeOnboarding() async {
+    await _repo.saveOnboardingDone();
+    state = state.copyWith(onboardingDone: true);
+  }
+
+  Future<void> setNotifyImportant(bool on) async {
+    await _repo.saveNotifyImportant(on);
+    state = state.copyWith(notifyImportant: on);
+  }
+
+  Future<void> setNotifyDar(bool on) async {
+    await _repo.saveNotifyDar(on);
+    state = state.copyWith(notifyDar: on);
+  }
+
+  Future<void> setTheme(ThemeChoice theme) async {
+    await _repo.saveTheme(theme);
+    state = state.copyWith(theme: theme);
+  }
+
+  Future<void> setDigits(DigitStyle digits) async {
+    await _repo.saveDigits(digits);
+    state = state.copyWith(digits: digits);
   }
 }
 
 final settingsProvider = NotifierProvider<SettingsController, Settings>(
   SettingsController.new,
+);
+
+/// شكل الأرقام المختار (DESIGN 8.7).
+final digitStyleProvider = Provider<DigitStyle>(
+  (ref) => ref.watch(settingsProvider.select((s) => s.digits)),
 );
 
 /// المدينة المختارة، أو null إن لم تُختر بعد أو لم تعد في القائمة
@@ -221,8 +302,211 @@ final currentHeliacalProvider = Provider.family<HeliacalDates?, int>((
 });
 
 /// يفتح رابطاً عاماً في المتصفح (روابط صفحة المصادر، D27)؛ false إن فشل.
-/// لا طلب شبكة من التطبيق نفسه. يُستبدل في الاختبارات.
+/// لا طلب شبكة من التطبيق نفسه. **يرفض أي رابط ليس https** (لا http ولا
+/// مخططات أخرى) بلا محاولة فتح. يُستبدل في الاختبارات.
 final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
-  (ref) =>
-      (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+  (ref) => (uri) async {
+    if (!isOpenableUrl(uri)) return false;
+    return launchUrl(uri, mode: LaunchMode.externalApplication);
+  },
 );
+
+/// رابط يُسمح بفتحه: https مع نطاق.
+bool isOpenableUrl(Uri uri) => uri.scheme == 'https' && uri.host.isNotEmpty;
+
+// ───────────────────────── التنبيهات (الميزة 8) ─────────────────────────
+
+/// المُجدوِل على الجهاز؛ يُستبدل في الاختبارات بنسخة وهمية.
+final notificationSchedulerProvider = Provider<NotificationScheduler>(
+  (ref) => LocalNotificationScheduler(),
+);
+
+/// هل إذن التنبيهات ممنوح؟ يُقرأ عند الفتح ويُحدَّث عند العودة للواجهة
+/// (قد يغيّره المستخدم من إعدادات الجهاز) وبعد كل طلب.
+class NotificationPermissionController extends AsyncNotifier<bool> {
+  @override
+  Future<bool> build() =>
+      ref.watch(notificationSchedulerProvider).isPermitted();
+
+  /// يعيد القراءة بلا طلب.
+  Future<void> refresh() async {
+    final permitted = await AsyncValue.guard(
+      () => ref.read(notificationSchedulerProvider).isPermitted(),
+    );
+    if (ref.mounted) state = permitted;
+  }
+
+  /// يطلب الإذن من النظام؛ النتيجة (false عند أي خطأ).
+  Future<bool> request() async {
+    bool granted;
+    try {
+      granted = await ref.read(notificationSchedulerProvider).requestPermission();
+    } on Object {
+      granted = false;
+    }
+    if (ref.mounted) state = AsyncData(granted);
+    return granted;
+  }
+}
+
+final notificationPermissionProvider =
+    AsyncNotifierProvider<NotificationPermissionController, bool>(
+      NotificationPermissionController.new,
+      retry: (_, _) => null,
+    );
+
+/// ما تعتمد عليه خطة التنبيهات: تغيّر أيٍّ منه يعيد الجدولة (§9، §16.5).
+typedef NotificationInputs = ({
+  String? cityId,
+  bool important,
+  bool dar,
+  Tables? tables,
+  DateTime today,
+});
+
+final notificationInputsProvider = Provider<NotificationInputs>((ref) {
+  final s = ref.watch(settingsProvider);
+  return (
+    cityId: s.cityId,
+    important: s.notifyImportant,
+    dar: s.notifyDar,
+    tables: ref.watch(tablesProvider).value,
+    today: ref.watch(todayProvider),
+  );
+});
+
+/// حالة آخر مزامنة للتنبيهات (لرسالة الخطأ في الإعدادات، DESIGN 8.7).
+enum NotificationSyncStatus { idle, scheduled, failed }
+
+/// يعيد جدولة التنبيهات (ARCHITECTURE §9، D13): عند فتح التطبيق، وعند تغيّر
+/// المدينة أو المفتاحين أو الجداول (إعادة تحميلها بعد تحديث بيانات، §16.5)
+/// أو اليوم، وعند العودة للواجهة ([sync]) فتُكتشف المنطقة الزمنية الجديدة.
+/// كل جدولة = `cancelAll` ثم الخطة كاملة، فلا تكرار. إن لم يتغير شيء منذ
+/// آخر جدولة ناجحة (الخطة والمنطقة الزمنية) لا يُعاد شيء.
+class NotificationSyncController extends Notifier<NotificationSyncStatus> {
+  String? _lastSignature;
+  Future<void>? _running;
+  bool _again = false;
+
+  @override
+  NotificationSyncStatus build() {
+    ref.listen(notificationInputsProvider, (_, _) => sync());
+    // منح الإذن (من الشرح أو الإعدادات أو إعدادات الجهاز) ← جدولة من جديد.
+    ref.listen(notificationPermissionProvider, (previous, next) {
+      if (next.value == true && previous?.value != true) {
+        _lastSignature = null;
+        sync();
+      }
+    });
+    // أول قراءة (فتح التطبيق) بعد بناء المزوّد.
+    Future.microtask(sync);
+    return NotificationSyncStatus.idle;
+  }
+
+  /// يجدول إن تغيّرت الخطة أو المنطقة الزمنية. الطلبات المتزامنة تُدمج
+  /// (جولة واحدة بعد الجارية).
+  Future<void> sync() {
+    if (_running != null) {
+      _again = true;
+      return _running!;
+    }
+    final run = _loop();
+    _running = run;
+    return run.whenComplete(() => _running = null);
+  }
+
+  Future<void> _loop() async {
+    do {
+      _again = false;
+      await _syncOnce();
+    } while (_again && ref.mounted);
+  }
+
+  Future<void> _syncOnce() async {
+    if (!ref.mounted) return;
+    final tables = ref.read(tablesProvider).value;
+    if (tables == null) return; // تُعاد عند اكتمال التحميل.
+    final settings = ref.read(settingsProvider);
+    final city = ref.read(currentCityProvider);
+    final region = ref.read(currentRegionProvider);
+    final engine = ref.read(engineProvider);
+    final scheduler = ref.read(notificationSchedulerProvider);
+    final now = ref.read(clockProvider)();
+    try {
+      final timezone = await scheduler.localTimezone();
+      if (!ref.mounted) return;
+      final notifications = <ScheduledNotification>[];
+      if (city != null && region != null && engine != null) {
+        final l10n = lookupAppLocalizations(const Locale('ar'));
+        final plan = const NotificationPlanner().plan(
+          now: now,
+          engine: engine,
+          items: tables.items,
+          heliacal: (year) => _heliacal(city.id, year),
+          important: settings.notifyImportant,
+          dar: settings.notifyDar,
+        );
+        for (final p in plan) {
+          notifications.add(
+            buildScheduledNotification(
+              p,
+              l10n: l10n,
+              tables: tables,
+              city: city,
+              region: region,
+            ),
+          );
+        }
+      }
+      final signature = [
+        timezone,
+        for (final n in notifications) n.fingerprint,
+      ].join('\n');
+      if (signature == _lastSignature) return;
+      final l10n = lookupAppLocalizations(const Locale('ar'));
+      await scheduler.replaceAll(
+        notifications,
+        now: now,
+        timezone: timezone,
+        channels: (
+          important: l10n.notifChannelImportant,
+          dar: l10n.notifChannelDar,
+        ),
+      );
+      _lastSignature = signature;
+      if (ref.mounted) state = NotificationSyncStatus.scheduled;
+    } on Object {
+      _lastSignature = null;
+      if (!ref.mounted) return;
+      // بلا إذن يرفض النظام (آيفون) إضافة التنبيهات: ليس فشلاً، والملاحظة
+      // في الإعدادات هي «التنبيهات متوقفة»؛ تُعاد الجدولة عند منح الإذن.
+      final permitted = await _isPermitted();
+      if (ref.mounted) {
+        state = permitted
+            ? NotificationSyncStatus.failed
+            : NotificationSyncStatus.idle;
+      }
+    }
+  }
+
+  Future<bool> _isPermitted() async {
+    try {
+      return await ref.read(notificationPermissionProvider.future);
+    } on Object {
+      return false;
+    }
+  }
+
+  HeliacalDates? _heliacal(String cityId, int year) {
+    try {
+      return ref.read(heliacalProvider((cityId, year)));
+    } on Object {
+      return null; // خارج مدى الحساب ← تاريخ الجدول.
+    }
+  }
+}
+
+final notificationSyncProvider =
+    NotifierProvider<NotificationSyncController, NotificationSyncStatus>(
+      NotificationSyncController.new,
+    );

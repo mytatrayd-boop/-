@@ -21,7 +21,7 @@ Future<void> main() async {
     FakeLocationService location, {
     String cityId = 'riyadh',
   }) async {
-    final prefs = await fakePrefs({SettingsRepository.cityIdKey: cityId});
+    final prefs = await fakePrefs(savedCity(cityId));
     await pumpDururApp(
       tester,
       prefs: prefs,
@@ -67,7 +67,10 @@ Future<void> main() async {
       findsOneWidget,
     );
     expect(find.text('مسقط — جدول الإمارات وعُمان'), findsOneWidget);
-    expect(prefs.getKeys(), {SettingsRepository.cityIdKey});
+    expect(prefs.getKeys(), {
+      SettingsRepository.cityIdKey,
+      SettingsRepository.onboardingDoneKey,
+    });
     expect(prefs.getString(SettingsRepository.cityIdKey), 'muscat');
   });
 

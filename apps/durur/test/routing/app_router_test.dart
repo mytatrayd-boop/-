@@ -9,7 +9,13 @@ void main() {
     String? cityId,
     bool ready = true,
     bool resolved = false,
-  }) => (savedCityId: cityId, tablesReady: ready, cityResolved: resolved);
+    bool done = true,
+  }) => (
+    savedCityId: cityId,
+    onboardingDone: done,
+    tablesReady: ready,
+    cityResolved: resolved,
+  );
 
   group('appRedirect', () {
     test('لا مدينة محفوظة ← شاشات البداية (حتى قبل تحميل الجداول)', () {
@@ -30,11 +36,33 @@ void main() {
       expect(appRedirect('/', state(cityId: 'riyadh', ready: false)), isNull);
     });
 
+    test('الميزة 8: مدينة محفوظة والإعداد الأولي لم ينتهِ ← شرح التنبيهات', () {
+      for (final loc in ['/', '/settings', '/item/wasm']) {
+        expect(
+          appRedirect(loc, state(cityId: 'riyadh', resolved: true, done: false)),
+          AppRoutes.onboardingNotifications,
+          reason: loc,
+        );
+      }
+      // قبل تحميل الجداول أيضاً، ولا مدينة ← البداية من أولها.
+      expect(
+        appRedirect('/', state(cityId: 'riyadh', ready: false, done: false)),
+        AppRoutes.onboardingNotifications,
+      );
+      expect(appRedirect('/', state(done: false)), AppRoutes.onboarding);
+      // مدينة لم تعد موجودة تُختار أولاً.
+      expect(
+        appRedirect('/', state(cityId: 'gone', done: false)),
+        AppRoutes.onboardingCity,
+      );
+    });
+
     test('شاشات البداية لا يُعاد توجيهها', () {
       for (final loc in [
         AppRoutes.onboarding,
         AppRoutes.onboardingLocation,
         AppRoutes.onboardingCity,
+        AppRoutes.onboardingNotifications,
       ]) {
         expect(appRedirect(loc, state()), isNull, reason: loc);
         expect(appRedirect(loc, state(cityId: 'gone')), isNull, reason: loc);

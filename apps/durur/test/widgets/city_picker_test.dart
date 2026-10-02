@@ -224,7 +224,7 @@ Future<void> main() async {
         'ويبقى بعد إعادة الفتح', (tester) async {
       // بلا مدينة محفوظة تظهر شاشات البداية (الميزة 4، test/widgets/onboarding_test.dart).
       final prefs =
-          await fakePrefs({SettingsRepository.cityIdKey: 'kuwait_city'});
+          await fakePrefs(savedCity('kuwait_city'));
       await pumpDururApp(tester, prefs: prefs, tables: tables);
       expect(chipText(tester), 'مدينة الكويت · الكويت');
 
@@ -248,7 +248,7 @@ Future<void> main() async {
 
     testWidgets('معيار 5: التغيير من الإعدادات يحدّث العرض فوراً',
         (tester) async {
-      final prefs = await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'});
+      final prefs = await fakePrefs(savedCity('riyadh'));
       late ProviderContainer container;
       await pumpDururApp(tester, prefs: prefs, tables: tables);
       container = ProviderScope.containerOf(

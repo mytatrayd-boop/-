@@ -1,5 +1,4 @@
 import 'package:durur/src/features/home/home_screen.dart';
-import 'package:durur/src/repository/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,7 +11,7 @@ Future<void> main() async {
   testWidgets('التطبيق يفتح بالعربية ومن اليمين لليسار', (tester) async {
     await pumpDururApp(
       tester,
-      prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+      prefs: await fakePrefs(savedCity('riyadh')),
       tables: tables,
     );
 
@@ -38,7 +37,7 @@ Future<void> main() async {
     await pumpScreen(
       tester,
       const HomeScreen(),
-      prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+      prefs: await fakePrefs(savedCity('riyadh')),
       tables: tables,
       extra: [fixedClock(DateTime(2026, 10, 2, 9, 30))],
     );

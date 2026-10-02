@@ -45,6 +45,7 @@ class DayDial extends StatefulWidget {
     required this.onShift,
     required this.onOpen,
     required this.onBackToToday,
+    this.digits = DigitStyle.arabicIndic,
   });
 
   static const dialKey = Key('dayDial');
@@ -76,6 +77,9 @@ class DayDial extends StatefulWidget {
   final ValueChanged<int> onShift;
   final DialOpen onOpen;
   final VoidCallback onBackToToday;
+
+  /// شكل الأرقام (DESIGN 8.7) في المحور وحلقتي الأشهر والدرور.
+  final DigitStyle digits;
 
   /// هامش أعلى الدائرة وأسفلها للمؤشر.
   static const double margin = 16;
@@ -162,7 +166,13 @@ class _DayDialState extends State<DayDial> with SingleTickerProviderStateMixin {
 
   DialLabels _labelsFor(BuildContext context, DururColors colors) {
     final scaler = MediaQuery.textScalerOf(context);
-    final key = (widget.model, colors, scaler.scale(100), widget.density);
+    final key = (
+      widget.model,
+      colors,
+      scaler.scale(100),
+      widget.density,
+      widget.digits,
+    );
     if (_labels == null || _labelsKey != key) {
       _labels?.dispose();
       _labels = DialLabels.build(
@@ -172,6 +182,7 @@ class _DayDialState extends State<DayDial> with SingleTickerProviderStateMixin {
         colors: colors,
         textScaler: scaler,
         density: widget.density,
+        digits: widget.digits,
       );
       _labelsKey = key;
     }
@@ -435,8 +446,8 @@ class _DayDialState extends State<DayDial> with SingleTickerProviderStateMixin {
         : (
             info.dar.name.ar,
             l10n.homeDayOfDar(
-              formatInteger(info.dar.dayNumber),
-              formatInteger(info.dar.length),
+              formatInteger(info.dar.dayNumber, widget.digits),
+              formatInteger(info.dar.length, widget.digits),
             ),
           );
     final hubSize =

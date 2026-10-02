@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import '../l10n/app_localizations.dart';
 import 'features/common/draft_banner.dart';
+import 'notifications/notification_content.dart';
 import 'providers.dart';
+import 'repository/settings_repository.dart';
 import 'routing/app_router.dart';
 import 'theme/app_theme.dart';
 
@@ -36,10 +38,20 @@ class _DururAppState extends ConsumerState<DururApp> {
     final tables = ref.read(tablesProvider).value;
     return (
       savedCityId: cityId,
+      onboardingDone: ref.read(settingsProvider).onboardingDone,
       tablesReady: tables != null,
       cityResolved: cityId != null && tables?.city(cityId) != null,
     );
   }
+
+  // العودة للواجهة: إعادة قراءة إذن التنبيهات ومزامنتها (منطقة زمنية أو يوم
+  // جديد، ARCHITECTURE §9).
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onResume: () {
+      ref.read(notificationPermissionProvider.notifier).refresh();
+      ref.read(notificationSyncProvider.notifier).sync();
+    },
+  );
 
   @override
   void initState() {
@@ -47,15 +59,51 @@ class _DururAppState extends ConsumerState<DururApp> {
     _lastKey = _redirectKey();
     ref.listenManual(settingsProvider, (_, _) => _maybeRefresh());
     ref.listenManual(tablesProvider, (_, _) => _maybeRefresh());
+    // المزامنة تبدأ مع فتح التطبيق وتبقى ما دام مفتوحاً.
+    ref.listenManual(notificationSyncProvider, (_, _) {});
+    _lifecycle;
+    _initNotifications();
+  }
+
+  /// تهيئة البلجن والضغط على التنبيه (من الخلفية أو من حالة الإغلاق).
+  Future<void> _initNotifications() async {
+    final scheduler = ref.read(notificationSchedulerProvider);
+    try {
+      await scheduler.initialize(onTap: openNotificationPayload);
+      final payload = await scheduler.launchPayload();
+      if (mounted && payload != null) await openNotificationPayload(payload);
+    } on Object {
+      // بلا تنبيهات يعمل التطبيق طبيعياً؛ فشل الجدولة يظهر في الإعدادات.
+    }
+  }
+
+  /// يفتح صفحة العنصر/الدَّرّ من حمولة تنبيه فوق الرئيسية على اليوم، فيرجع
+  /// زر الرجوع إلى الرئيسية (DESIGN 8.9). حمولة غير صالحة تُهمل.
+  @visibleForTesting
+  Future<void> openNotificationPayload(String payload) async {
+    if (!mounted || !isNotificationPayload(payload)) return;
+    // أثناء الإعداد الأولي تُهمل الحمولة (لا قفز فوق شاشات البداية).
+    if (!ref.read(settingsProvider).onboardingDone) return;
+    ref.read(todayProvider.notifier).refresh();
+    ref.read(selectedDateProvider.notifier).backToToday();
+    _router.go(AppRoutes.home);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    _router.push(payload);
   }
 
   // يُعاد تقييم التوجيه فقط عند تغيّر ما يؤثر فيه، لا عند كل تغيير مدينة
   // (إعادة التقييم أثناء رجوع شاشة مدفوعة تُربك مكدّس الصفحات).
-  late (bool, bool, bool) _lastKey;
+  late (bool, bool, bool, bool) _lastKey;
 
-  (bool, bool, bool) _redirectKey() {
+  (bool, bool, bool, bool) _redirectKey() {
     final s = _redirectState();
-    return (s.savedCityId == null, s.tablesReady, s.cityResolved);
+    return (
+      s.savedCityId == null,
+      s.onboardingDone,
+      s.tablesReady,
+      s.cityResolved,
+    );
   }
 
   void _maybeRefresh() {
@@ -67,6 +115,7 @@ class _DururAppState extends ConsumerState<DururApp> {
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _router.dispose();
     _refresh.dispose();
     super.dispose();
@@ -85,7 +134,12 @@ class _DururAppState extends ConsumerState<DururApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      // الوضعان حسب الجهاز؛ اختيار السمة في الإعدادات يُضاف مع ميزتها.
+      // السمة من الإعدادات (DESIGN 8.7)؛ الافتراضي حسب الجهاز.
+      themeMode: switch (ref.watch(settingsProvider.select((s) => s.theme))) {
+        ThemeChoice.system => ThemeMode.system,
+        ThemeChoice.light => ThemeMode.light,
+        ThemeChoice.dark => ThemeMode.dark,
+      },
       theme: buildDururTheme(Brightness.light),
       darkTheme: buildDururTheme(Brightness.dark),
       builder: (context, child) => DraftBannerFrame(child: child!),

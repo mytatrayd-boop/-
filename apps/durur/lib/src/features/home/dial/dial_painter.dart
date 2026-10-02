@@ -41,6 +41,7 @@ class DialLabels {
     required DururColors colors,
     required TextScaler textScaler,
     required DialDensity density,
+    DigitStyle digits = DigitStyle.arabicIndic,
   }) {
     // نصوص الدائرة تتكبّر حتى 1.3× فقط (DESIGN 7.6)؛ التكبير بالإصبع بديل.
     final scaler = textScaler.clamp(maxScaleFactor: 1.3);
@@ -67,7 +68,7 @@ class DialLabels {
         for (final m in model.months)
           label(
             density == DialDensity.compact
-                ? formatInteger(m.month!)
+                ? formatInteger(m.month!, digits)
                 : l10n.gregorianMonthName('g${m.month}'),
             13,
             colors.ink,
@@ -79,7 +80,7 @@ class DialLabels {
       ],
       [
         for (final s in model.segments(DialRing.durur))
-          label(formatInteger(s.dar!.number * 10), 11, colors.ink),
+          label(formatInteger(s.dar!.number * 10, digits), 11, colors.ink),
       ],
       [
         for (final s in model.segments(DialRing.stars))
