@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'astronomy/heliacal.dart';
 import 'domain/city.dart';
 import 'domain/day_info.dart';
 import 'domain/region.dart';
@@ -104,3 +105,31 @@ final locationServiceProvider = Provider<LocationService>(
 final cityLocatorProvider = Provider<CityLocator>(
   (ref) => CityLocator(ref.watch(locationServiceProvider)),
 );
+
+/// طلوع سهيل والثريا (الميزة 5) لمدينة وسنة، بإحداثيات المدينة في cities.json.
+/// null إن لم تُحمَّل الجداول أو لم تكن المدينة في القائمة.
+/// النتيجة مخزّنة لكل (مدينة، سنة)، وتُعاد مع أي إعادة تحميل للجداول
+/// (قد تتغير الإحداثيات، §16.5). لا تغيّر جدول المنطقة (D10).
+final heliacalProvider = Provider.family<HeliacalDates?, (String, int)>((
+  ref,
+  args,
+) {
+  final (cityId, year) = args;
+  final city = ref.watch(tablesProvider).value?.city(cityId);
+  if (city == null) return null;
+  return const HeliacalCalculator().compute(
+    lat: city.lat,
+    lon: city.lon,
+    year: year,
+  );
+});
+
+/// طلوع سهيل والثريا للمدينة المختارة في [year]، أو null بلا مدينة.
+final currentHeliacalProvider = Provider.family<HeliacalDates?, int>((
+  ref,
+  year,
+) {
+  final cityId = ref.watch(currentCityProvider.select((c) => c?.id));
+  if (cityId == null) return null;
+  return ref.watch(heliacalProvider((cityId, year)));
+});

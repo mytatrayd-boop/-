@@ -46,7 +46,7 @@ apps/durur/
 │     ├─ routing/                # go_router: / ، /item/:id ، /settings ، /city ، /onboarding
 │     ├─ domain/                 # [Dart صافٍ] النماذج: Region, City, Item, Period, DayInfo, WeatherSymbol, Approval, Source
 │     ├─ engine/                 # [Dart صافٍ] CalendarEngine, YearIndex, TableValidator
-│     ├─ astronomy/              # [Dart صافٍ] sun.dart, stars.dart, sidereal.dart, precession.dart, heliacal.dart
+│     ├─ astronomy/              # [Dart صافٍ] angles.dart, time.dart, sun.dart, stars.dart, sidereal.dart, precession.dart, horizon.dart (الارتفاع والانكسار), heliacal_params.dart, heliacal.dart
 │     ├─ hijri/                  # HijriDate، UmmAlQuraCalendar (جدول بيانات، D22)، HijriTableValidator
 │     ├─ updates/                # DataUpdater، SignedManifest، UpdateStore (§16، D21)
 │     ├─ repository/             # TableRepository (تحميل JSON)، SettingsRepository (shared_preferences)
@@ -74,7 +74,7 @@ apps/durur/
 
 مزوّدات يدوية (بلا توليد كود) في `lib/src/providers.dart`:
 
-**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4):**
+**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5):**
 
 | المزوّد | النوع | الوظيفة |
 |---|---|---|
@@ -89,6 +89,8 @@ apps/durur/
 | `dayInfoProvider` | `Provider.family<DayInfo?, DateTime>` | نتيجة المحرك ليوم، أو `null` بلا مدينة/جداول |
 | `locationServiceProvider` | `Provider<LocationService>` | غلاف geolocator (قراءة واحدة بدقة low ومهلة 10 ثوانٍ، بلا بث)؛ يُستبدل بنسخة وهمية في الاختبارات (الميزة 4) |
 | `cityLocatorProvider` | `Provider<CityLocator>` | يقرأ الموقع مرة واحدة ويعيد أقرب مدينة أو سبب الفشل (Denied / Unavailable / Timeout / OutOfRange > 250 كم)؛ لا يعيد الإحداثيات ولا يحفظها (D11) |
+| `heliacalProvider` | `Provider.family<HeliacalDates?, (String cityId, int year)>` | طلوع سهيل والثريا بإحداثيات المدينة (مخزّن لكل مدينة وسنة)؛ `null` قبل تحميل الجداول أو لمدينة غير موجودة؛ يُعاد مع إعادة تحميل الجداول (الميزة 5، D28) |
+| `currentHeliacalProvider` | `Provider.family<HeliacalDates?, int year>` | طلوع سهيل والثريا للمدينة المختارة، أو `null` بلا مدينة (الميزة 5) |
 
 **توصية ملزمة للميزات القادمة:** مفتاح `dayInfoProvider` يُمرَّر **مقرّباً لمنتصف الليل** (`DateTime(d.year, d.month, d.day)`)، لا `DateTime.now()` مباشرة؛ وإلا يُنشأ مدخل family جديد في كل إعادة بناء (ذاكرة وحساب بلا فائدة). المحرك نفسه يأخذ التاريخ فقط، فالتقريب لا يغيّر النتيجة. `todayProvider` و`selectedDateProvider` يخزّنان القيمة مقرّبة أصلاً.
 
@@ -98,7 +100,6 @@ apps/durur/
 |---|---|---|---|
 | `todayProvider` | `NotifierProvider<…, DateTime>` | تاريخ اليوم المحلي (مقرّب لمنتصف الليل)؛ يُحدَّث عند عودة التطبيق للواجهة وعند منتصف الليل | 6 |
 | `selectedDateProvider` | `NotifierProvider<…, DateTime>` | التاريخ المعروض في الدائرة؛ زر «اليوم» يعيده لـ today | 6 |
-| `heliacalProvider` | `Provider.family<HeliacalDates, (String cityId, int year)>` | طلوع سهيل والثريا (مخزّن مؤقتاً) | 5 |
 | `notificationSyncProvider` | مستمع | يعيد جدولة التنبيهات عند تغيّر المدينة/الإعدادات/الجداول وعند الفتح | 8 |
 
 الاختبارات تستبدل المزوّدات بـ `overrides` (جداول تجريبية، `SharedPreferences` وهمية، تاريخ ثابت) بلا مكتبات محاكاة (`test/helpers/app_harness.dart`).
@@ -218,7 +219,7 @@ apps/durur/
 3. النجم مرئي في D إذا كان ارتفاع الشمس ≤ `−AV`.
 4. تاريخ الطلوع = أول يوم مرئي بعد أيام غير مرئية.
 
-المعاملات الأولية (تُعاير على القيم المرجعية): سهيل `h_star = 1°`، `AV ≈ 10.5°`؛ الثريا `h_star = 1°`، `AV ≈ 15°`. تُحفظ ثوابت في `astronomy/heliacal_params.dart` مع مصدر قيمها. المعايرة: نضبط `AV` لكل نجم حتى تكون كل القيم المرجعية (5 مدن على الأقل من المراجع، الحقل `referenceRisings`) ضمن ±يومين، ويبقى ذلك اختباراً دائماً.
+المعيار **الرؤية بالعين المجردة** (قرار المدير، D28). المعاملات الحالية: سهيل `h_star = 1°`، `AV = 13.5°` (معايَر مؤقتاً على مراجع العين المجردة غير المعتمدة: الكويت ≈ 7/9 وأقصى الشمال ≈ 8/9؛ كانت القيمة الأولية 10.5° وتطابق رؤية المنظار)؛ الثريا `h_star = 1°`، `AV = 15°` (أولية، بلا معايرة لعدم وجود رصد بالعين المجردة). تُحفظ ثوابت في `astronomy/heliacal_params.dart` مع مصدر قيمها. المعايرة: نضبط `AV` لكل نجم حتى تكون كل القيم المرجعية (5 مدن على الأقل من المراجع، الحقل `referenceRisings`) ضمن ±يومين، ويبقى ذلك اختباراً دائماً.
 
 الأداء: ~80 يوماً × ~40 خطوة تنصيف لكل نجم ← أجزاء من الثانية؛ تُخزَّن النتيجة لكل (مدينة، سنة).
 
