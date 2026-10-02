@@ -21,8 +21,11 @@ flutter gen-l10n                     # بعد تعديل lib/l10n/app_ar.arb (ي
 flutter analyze                      # يجب: No issues found
 flutter test                         # يجب: All tests passed
 flutter run --dart-define-from-file=config/app_config.json
-dart run tool/validate_tables.dart --release   # قبل أي بناء إصدار (يُضاف مع الميزة 1)
+dart run tool/validate_tables.dart             # تطوير: المسودات تحذير
+dart run tool/validate_tables.dart --release   # قبل أي بناء إصدار: أي سجل غير معتمد فشل
+dart run tool/gen_hijri_table.dart             # التوليد الأول فقط لـ assets/tables/hijri_umm_al_qura.json (D22)
 ```
+**تنبيه `gen_hijri_table`:** الملف مولّد مرة واحدة، وبعدها **الحقيقة هي الملف لا مكتبة hijri**. الأمر يرفض الكتابة فوق ملف موجود؛ `--force` يعيد التوليد ويمحو أي تصحيح أو اعتماد من المراجع، فلا يُستخدم إلا بطلب صريح. للمعاينة بلا كتابة: `--stdout`. تصحيح بداية شهر يكون بتعديل الملف نفسه (ومراجعته)، لا بإعادة التوليد.
 `config/app_config.json` يُنسخ من `config/app_config.example.json` ولا يُرفع إلى git.
 
 ## قواعد الكود
