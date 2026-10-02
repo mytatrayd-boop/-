@@ -38,10 +38,12 @@ Future<void> main() async {
   final opened = <Uri>[];
   final copied = <String>[];
   var opens = true;
+  var copies = true;
   setUp(() {
     opened.clear();
     copied.clear();
     opens = true;
+    copies = true;
   });
 
   List<Override> reportOverrides({
@@ -57,7 +59,10 @@ Future<void> main() async {
       opened.add(uri);
       return opens;
     }),
-    clipboardWriterProvider.overrideWithValue((text) async => copied.add(text)),
+    clipboardWriterProvider.overrideWithValue((text) async {
+      if (!copies) throw PlatformException(code: 'clipboard');
+      copied.add(text);
+    }),
   ];
 
   const openKey = Key('openSheet');
@@ -281,6 +286,59 @@ Future<void> main() async {
       await tester.pumpAndSettle();
       expect(copied.single, contains(l10n.reportItem(item('suhail'))));
       expect(find.text(l10n.reportDetailsCopied), findsOneWidget);
+    });
+
+    testWidgets('فشل النسخ قبل فتح النموذج: رسالة فشل النسخ لا «تعذّر فتح '
+        'النموذج»، ولا يُفتح', (tester) async {
+      phone(tester);
+      copies = false;
+      await openReportFromDetail(
+        tester,
+        (target: const ItemTarget('suhail'), from: today),
+        formUrl: form,
+      );
+      expect(find.text(l10n.reportIntroFormPaste), findsOneWidget);
+      await tester.tap(find.byKey(ReportSheet.openFormKey));
+      await tester.pumpAndSettle();
+      expect(opened, isEmpty);
+      expect(
+        tester.widget<Text>(find.byKey(ReportSheet.messageKey)).data,
+        l10n.reportCopyError,
+      );
+      expect(find.text(l10n.reportFormOpenError), findsNothing);
+      expect(find.text(l10n.reportPasteHint), findsNothing);
+      // تبقى الورقة مع زر النسخ لإعادة المحاولة.
+      expect(find.byKey(ReportSheet.copyKey), findsOneWidget);
+      copies = true;
+      await tester.tap(find.byKey(ReportSheet.copyKey));
+      await tester.pumpAndSettle();
+      expect(copied.single, contains(l10n.reportItem(item('suhail'))));
+      expect(find.text(l10n.reportDetailsCopied), findsOneWidget);
+      expect(find.text(l10n.reportCopyError), findsNothing);
+      expect(find.byKey(ReportSheet.openFormKey), findsOneWidget);
+    });
+
+    testWidgets('فشل «نسخ تفاصيل البلاغ» (_copy): رسالة قصيرة بلا تأكيد', (
+      tester,
+    ) async {
+      phone(tester);
+      copies = false;
+      await openReportFromDetail(
+        tester,
+        (target: const ItemTarget('suhail'), from: today),
+      );
+      await tester.tap(find.byKey(ReportSheet.copyKey));
+      await tester.pumpAndSettle();
+      expect(copied, isEmpty);
+      expect(find.byKey(ReportSheet.copyErrorKey), findsOneWidget);
+      expect(find.text(l10n.reportCopyError), findsOneWidget);
+      expect(find.text(l10n.reportDetailsCopied), findsNothing);
+      // إعادة المحاولة بنجاح ← التأكيد بدل رسالة الفشل.
+      copies = true;
+      await tester.tap(find.byKey(ReportSheet.copyKey));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.reportDetailsCopied), findsOneWidget);
+      expect(find.byKey(ReportSheet.copyErrorKey), findsNothing);
     });
 
     testWidgets('رابط نموذج ليس https: يُعامل كغير مضبوط («نسخ» فقط)', (

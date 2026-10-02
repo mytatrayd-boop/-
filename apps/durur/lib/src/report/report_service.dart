@@ -125,6 +125,10 @@ enum ReportOutcome {
 
   /// لم يُضبط نموذج، أو تعذّر فتحه: نافذة النسخ.
   copy,
+
+  /// تعذّر النسخ للحافظة قبل فتح النموذج (بلا تعبئة مسبقة)، فلم يُفتح:
+  /// رسالة فشل النسخ لا «تعذّر فتح النموذج».
+  copyFailed,
 }
 
 /// يفتح رابطاً (https فقط، `urlOpenerProvider`)؛ false عند الفشل.
@@ -145,14 +149,19 @@ class ReportService {
   final TextCopier copyText;
 
   /// نموذج ← نسخ. بلا تعبئة مسبقة يُنسخ النص للحافظة قبل فتح النموذج.
-  /// أي فشل (فتح أو نسخ) ← [ReportOutcome.copy]، ولا يرمي.
+  /// فشل النسخ ← [ReportOutcome.copyFailed] بلا فتح؛ فشل الفتح ←
+  /// [ReportOutcome.copy]. لا يرمي.
   Future<ReportOutcome> report(ReportMessage message) async {
     final form = config.formUri;
     if (form == null) return ReportOutcome.copy;
     final fields = config.fields;
     try {
       if (fields.isEmpty) {
-        await copyText(message.text);
+        try {
+          await copyText(message.text);
+        } on Object {
+          return ReportOutcome.copyFailed;
+        }
         if (await openUrl(form)) return ReportOutcome.formWithCopiedText;
       } else {
         if (await openUrl(buildFormUri(form, fields, message))) {

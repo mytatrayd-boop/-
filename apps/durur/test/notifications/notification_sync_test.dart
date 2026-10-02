@@ -1,7 +1,9 @@
 import 'package:durur/l10n/app_localizations.dart';
+import 'package:durur/src/domain/item.dart';
 import 'package:durur/src/domain/month_day.dart';
 import 'package:durur/src/domain/tables.dart';
 import 'package:durur/src/engine/calendar_engine.dart';
+import 'package:durur/src/formatting/digits.dart';
 import 'package:durur/src/notifications/notification_content.dart';
 import 'package:durur/src/notifications/notification_planner.dart';
 import 'package:durur/src/providers.dart';
@@ -81,6 +83,26 @@ Future<void> main() async {
       expect(n.payload, startsWith('/item/suhail?from='));
     });
 
+    test('الثريا بالمؤنث (§13 «جنس النجم»): «طلعت الثريا اليوم في الرياض»',
+        () {
+      final thurayya = tables.items['thurayya']!;
+      expect(thurayya.gender, StarGender.feminine);
+      final p = find('najd', (p) => isItem(p, 'thurayya'));
+      final n = build(
+        PlannedNotification(
+          id: p.id,
+          date: p.date,
+          kind: p.kind,
+          subject: ItemSubject(thurayya, heliacal: true),
+        ),
+        'riyadh',
+      );
+      expect(n.title, 'طلعت الثريا اليوم في الرياض');
+      expect(n.body, 'أول ظهورها قبل الفجر. اضغط لتعرف عنها.');
+      expect(n.title, l10n.notifStarTitle('f', 'الثريا', 'الرياض'));
+      expect(n.body, l10n.notifStarBody('f'));
+    });
+
     test('بداية دَرّ: العنوان من سجله ومئته، والحمولة /dar/<المنطقة>/<MM-DD>',
         () {
       final p = find('kuwait', (_) => true, dar: true);
@@ -97,9 +119,23 @@ Future<void> main() async {
       expect(n.kind, NotificationKind.dar);
     });
 
-    test('الدَّرّ المستعار (D24): يذكر المُعيرة لا «في نجد»', () {
+    test('الدَّرّ المستعار (D24): notifDarTitleBorrowed باسم المُعيرة لا «في نجد»',
+        () {
       final p = find('najd', (_) => true, dar: true);
+      final s = p.subject as DarSubject;
+      expect(s.borrowed, isTrue);
+      expect(s.dururRegionId, 'uae_oman');
       final n = build(p, 'riyadh');
+      final lender = tables.region('uae_oman')!.name.ar;
+      expect(lender, 'الإمارات وعُمان');
+      expect(
+        n.title,
+        l10n.notifDarTitleBorrowed(
+          s.record.name.ar,
+          tables.items[s.record.seasonId]!.name.ar,
+          lender,
+        ),
+      );
       expect(n.title, endsWith('حسب حساب الإمارات وعُمان'));
       expect(n.title, isNot(contains('نجد')));
       expect(n.payload, startsWith('/dar/uae_oman/'));
@@ -187,6 +223,41 @@ Future<void> main() async {
         suhail.fireAt,
         DateTime(h2027.suhail!.year, h2027.suhail!.month, h2027.suhail!.day, 8),
       );
+    });
+
+    test('المنطقة المستعيرة: كل تنبيهات الدرور المجدولة بعنوان المُعيرة',
+        () async {
+      final c = await start(savedCity('riyadh'));
+      await c.read(settingsProvider.notifier).setNotifyDar(true);
+      await settle();
+      final dar =
+          scheduler.pending.where((n) => n.kind == NotificationKind.dar);
+      expect(dar, isNotEmpty);
+      for (final n in dar) {
+        expect(n.title, endsWith('حسب حساب الإمارات وعُمان'), reason: n.title);
+        expect(n.title, isNot(contains('نجد')));
+        expect(n.payload, startsWith('/dar/uae_oman/'));
+      }
+    });
+
+    test('DESIGN 8.7: تغيير «الأرقام» يعيد الجدولة بصمت', () async {
+      final c = await start(savedCity('kuwait_city'));
+      expect(scheduler.replaceCalls, 1);
+      final before = scheduler.pending.map((n) => n.fingerprint).toList();
+      await c.read(settingsProvider.notifier).setDigits(DigitStyle.latin);
+      await settle();
+      expect(scheduler.replaceCalls, 2);
+      // بصمت: لا حالة فشل ولا طلب إذن، والخطة نفسها كاملة.
+      expect(c.read(notificationSyncProvider), NotificationSyncStatus.scheduled);
+      expect(scheduler.permissionRequests, 0);
+      expect(scheduler.pending.map((n) => n.fingerprint), before);
+      // الرجوع للإعداد الأول يعيدها مرة أخرى، وتكرار القيمة نفسها لا.
+      await c.read(settingsProvider.notifier).setDigits(DigitStyle.arabicIndic);
+      await settle();
+      expect(scheduler.replaceCalls, 3);
+      await c.read(settingsProvider.notifier).setDigits(DigitStyle.arabicIndic);
+      await settle();
+      expect(scheduler.replaceCalls, 3);
     });
 
     test('تغيير المفتاحين يعيد الجدولة، وكل مفتاح مستقل', () async {

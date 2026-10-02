@@ -38,6 +38,23 @@ enum DateMethod {
   }
 }
 
+/// جنس النجم لغوياً، لاختيار الفعل والضمير في النصوص (DESIGN §13 «جنس النجم»).
+/// [code] هو قيمة `gender` في items.json وقيمة `{gender}` في ملف الترجمة.
+enum StarGender {
+  masculine('m'),
+  feminine('f');
+
+  const StarGender(this.code);
+  final String code;
+
+  static StarGender parse(String code, String where) {
+    for (final g in values) {
+      if (g.code == code) return g;
+    }
+    throw FormatException('$where: جنس غير معروف "$code" (المسموح "m" أو "f").');
+  }
+}
+
 /// عنصر له صفحة: نجم، موسم كبير، موسم جو.
 class Item implements Sourced {
   const Item({
@@ -52,6 +69,7 @@ class Item implements Sourced {
     required this.weatherNote,
     required this.sources,
     required this.approval,
+    this.gender = StarGender.masculine,
   });
 
   factory Item.fromJson(Object? json, String where) {
@@ -59,15 +77,26 @@ class Item implements Sourced {
     final id = readField<String>(map, 'id', where);
     final w = '$where[$id]';
     final note = map['weatherNote'];
+    final dateMethod = DateMethod.parse(
+      readOptional<String>(map, 'dateMethod', w) ?? 'table',
+      w,
+    );
+    final genderCode = readOptional<String>(map, 'gender', w);
+    // إلزامي للنجوم المحسوبة فلكياً (سهيل m، الثريا f)، والافتراضي m لغيرها.
+    if (genderCode == null && dateMethod == DateMethod.heliacal) {
+      throw FormatException(
+        '$w: الحقل "gender" إلزامي للعنصر المحسوب فلكياً ("m" أو "f").',
+      );
+    }
     return Item(
       id: id,
       kind: ItemKind.parse(readField<String>(map, 'kind', w), w),
       name: LocalizedText.fromJson(map['name'], '$w.name'),
       important: readOptional<bool>(map, 'important', w) ?? false,
-      dateMethod: DateMethod.parse(
-        readOptional<String>(map, 'dateMethod', w) ?? 'table',
-        w,
-      ),
+      dateMethod: dateMethod,
+      gender: genderCode == null
+          ? StarGender.masculine
+          : StarGender.parse(genderCode, w),
       definition: LocalizedText.fromJson(map['definition'], '$w.definition'),
       proverb: LocalizedText.fromJson(map['proverb'], '$w.proverb'),
       weather: WeatherSymbol.parseList(map['weather'], w),
@@ -87,6 +116,9 @@ class Item implements Sourced {
   final LocalizedText name;
   final bool important;
   final DateMethod dateMethod;
+
+  /// جنس النجم لغوياً؛ الافتراضي مذكر. لا معنى له لغير النجوم.
+  final StarGender gender;
   final LocalizedText definition;
   final LocalizedText proverb;
   final List<WeatherSymbol> weather;

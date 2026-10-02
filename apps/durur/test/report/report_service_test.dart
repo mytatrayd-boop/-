@@ -98,7 +98,8 @@ void main() {
       }
     });
 
-    test('فشل النسخ قبل فتح النموذج ← نافذة النسخ بلا فتح', () async {
+    test('فشل النسخ قبل فتح النموذج ← copyFailed (لا «تعذّر فتح النموذج») '
+        'بلا فتح', () async {
       final log = <String>[];
       final s = ReportService(
         config: const ReportConfig(formUrl: form),
@@ -108,7 +109,7 @@ void main() {
         },
         copyText: (_) async => throw StateError('clipboard'),
       );
-      expect(await s.report(message), ReportOutcome.copy);
+      expect(await s.report(message), ReportOutcome.copyFailed);
       expect(log, isEmpty);
     });
   });

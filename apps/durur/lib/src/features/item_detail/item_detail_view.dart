@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../astronomy/heliacal.dart';
+import '../../domain/item.dart';
 import '../../domain/local_date.dart';
 import '../../domain/record_meta.dart';
 import '../../formatting/date_labels.dart';
@@ -264,7 +265,7 @@ class _DatesCard extends ConsumerWidget {
             ),
             if (data.isHeliacal) ...[
               const SizedBox(height: 12),
-              _AstroLines(itemId: data.item!.id, year: start.year),
+              _AstroLines(item: data.item!, year: start.year),
             ],
             Align(
               alignment: AlignmentDirectional.centerStart,
@@ -285,9 +286,10 @@ class _DatesCard extends ConsumerWidget {
 /// لسهيل والثريا: «يطلع في {مدينتك} يوم …» من الحساب الفلكي لمدينة
 /// المستخدم (الميزة 5 معيار 4)، أو ملاحظة التاريخ التقريبي إن تعذّر.
 class _AstroLines extends ConsumerWidget {
-  const _AstroLines({required this.itemId, required this.year});
+  const _AstroLines({required this.item, required this.year});
 
-  final String itemId;
+  /// النجم؛ جنسه يحدد الفعل («يطلع/تطلع»، §13 «جنس النجم»).
+  final Item item;
   final int year;
 
   /// تاريخ الطلوع المحسوب لعنصر، أو null إن لم يكن سهيل أو الثريا.
@@ -306,7 +308,7 @@ class _AstroLines extends ConsumerWidget {
     final digits = ref.watch(digitStyleProvider);
     final city = ref.watch(currentCityProvider);
     final today = ref.watch(todayProvider);
-    final utc = risingOf(itemId, ref.watch(currentHeliacalProvider(year)));
+    final utc = risingOf(item.id, ref.watch(currentHeliacalProvider(year)));
     final caption = theme.textTheme.bodySmall?.copyWith(color: colors.inkSoft);
 
     if (city == null || utc == null) {
@@ -318,14 +320,24 @@ class _AstroLines extends ConsumerWidget {
     }
     final rising = _local(utc);
     final cityName = city.name.ar;
+    final gender = item.gender.code;
     final String line;
     if (rising.isAfter(today)) {
-      line = l10n.detailStarRisesOn(cityName, gregorianDateLabel(l10n, rising, digits: digits));
+      line = l10n.detailStarRisesOn(
+        gender,
+        cityName,
+        gregorianDateLabel(l10n, rising, digits: digits),
+      );
     } else if (rising == today) {
-      line = l10n.detailStarRisesToday(cityName);
+      line = l10n.detailStarRisesToday(gender, cityName);
     } else {
       final days = daysBetween(rising, today);
-      line = l10n.detailStarRisenAgo(days, cityName, formatInteger(days, digits));
+      line = l10n.detailStarRisenAgo(
+        gender,
+        days,
+        cityName,
+        formatInteger(days, digits),
+      );
     }
     return Column(
       key: ItemDetailView.astroKey,

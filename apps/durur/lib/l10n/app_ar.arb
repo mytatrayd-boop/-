@@ -700,10 +700,13 @@
       }
     }
   },
-  "detailStarRisesOn": "يطلع في {city} يوم {date}",
+  "detailStarRisesOn": "{gender, select, f{تطلع في {city} يوم {date}} other{يطلع في {city} يوم {date}}}",
   "@detailStarRisesOn": {
-    "description": "لسهيل والثريا: تاريخ الطلوع المحسوب لمدينة المستخدم (DESIGN home.star_rises_on، الميزة 5 معيار 4)",
+    "description": "لسهيل والثريا: تاريخ الطلوع المحسوب لمدينة المستخدم (DESIGN home.star_rises_on، الميزة 5 معيار 4). gender = جنس النجم من items.json: \"f\" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)",
     "placeholders": {
+      "gender": {
+        "type": "String"
+      },
       "city": {
         "type": "String"
       },
@@ -712,10 +715,13 @@
       }
     }
   },
-  "detailStarRisenAgo": "{count, plural, =1{طلع في {city} قبل يوم واحد} =2{طلع في {city} قبل يومين} few{طلع في {city} قبل {days} أيام} other{طلع في {city} قبل {days} يوماً}}",
+  "detailStarRisenAgo": "{gender, select, f{{count, plural, =1{طلعت في {city} قبل يوم واحد} =2{طلعت في {city} قبل يومين} few{طلعت في {city} قبل {days} أيام} other{طلعت في {city} قبل {days} يوماً}}} other{{count, plural, =1{طلع في {city} قبل يوم واحد} =2{طلع في {city} قبل يومين} few{طلع في {city} قبل {days} أيام} other{طلع في {city} قبل {days} يوماً}}}}",
   "@detailStarRisenAgo": {
-    "description": "لسهيل والثريا: مضى على الطلوع المحسوب (DESIGN home.star_risen_ago)",
+    "description": "لسهيل والثريا: مضى على الطلوع المحسوب (DESIGN home.star_risen_ago). gender = جنس النجم من items.json: \"f\" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)",
     "placeholders": {
+      "gender": {
+        "type": "String"
+      },
       "count": {
         "type": "int"
       },
@@ -727,10 +733,13 @@
       }
     }
   },
-  "detailStarRisesToday": "يطلع في {city} اليوم",
+  "detailStarRisesToday": "{gender, select, f{تطلع في {city} اليوم} other{يطلع في {city} اليوم}}",
   "@detailStarRisesToday": {
-    "description": "لسهيل والثريا: الطلوع المحسوب هو اليوم",
+    "description": "لسهيل والثريا: الطلوع المحسوب هو اليوم. gender = جنس النجم من items.json: \"f\" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)",
     "placeholders": {
+      "gender": {
+        "type": "String"
+      },
       "city": {
         "type": "String"
       }
@@ -961,10 +970,13 @@
       }
     }
   },
-  "notifStarTitle": "طلع {star} اليوم في {city}",
+  "notifStarTitle": "{gender, select, f{طلعت {star} اليوم في {city}} other{طلع {star} اليوم في {city}}}",
   "@notifStarTitle": {
-    "description": "عنوان تنبيه سهيل والثريا بالتاريخ المحسوب لمدينة المستخدم (DESIGN notif.star.title)",
+    "description": "عنوان تنبيه سهيل والثريا بالتاريخ المحسوب لمدينة المستخدم (DESIGN notif.star.title). gender = جنس النجم من items.json: \"f\" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)",
     "placeholders": {
+      "gender": {
+        "type": "String"
+      },
       "star": {
         "type": "String"
       },
@@ -973,9 +985,14 @@
       }
     }
   },
-  "notifStarBody": "أول ظهوره قبل الفجر. اضغط لتعرف عنه.",
+  "notifStarBody": "{gender, select, f{أول ظهورها قبل الفجر. اضغط لتعرف عنها.} other{أول ظهوره قبل الفجر. اضغط لتعرف عنه.}}",
   "@notifStarBody": {
-    "description": "نص تنبيه سهيل والثريا (DESIGN notif.star.body)"
+    "description": "نص تنبيه سهيل والثريا (DESIGN notif.star.body). gender = جنس النجم من items.json: \"f\" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)",
+    "placeholders": {
+      "gender": {
+        "type": "String"
+      }
+    }
   },
   "notifDarTitle": "بدأ دَرّ {dar} من {season}",
   "@notifDarTitle": {
@@ -1116,5 +1133,9 @@
   "reportFormOpenError": "تعذّر فتح النموذج. انسخ تفاصيل البلاغ وأرسلها لاحقاً.",
   "@reportFormOpenError": {
     "description": "فشل فتح النموذج (لا متصفح) فتبقى نافذة النسخ (ليس في DESIGN بعد)"
+  },
+  "reportCopyError": "تعذّر نسخ تفاصيل البلاغ. حاول مرة أخرى.",
+  "@reportCopyError": {
+    "description": "فشل النسخ للحافظة: بزر «نسخ تفاصيل البلاغ»، أو قبل فتح النموذج بلا تعبئة مسبقة فلا يُفتح (ليس في DESIGN بعد)"
   }
 }

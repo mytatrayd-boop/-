@@ -550,13 +550,30 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String detailStarRisesOn(String city, String date) {
-    return 'يطلع في $city يوم $date';
+  String detailStarRisesOn(String gender, String city, String date) {
+    String _temp0 = intl.Intl.selectLogic(gender, {
+      'f': 'تطلع في $city يوم $date',
+      'other': 'يطلع في $city يوم $date',
+    });
+    return '$_temp0';
   }
 
   @override
-  String detailStarRisenAgo(int count, String city, String days) {
+  String detailStarRisenAgo(
+    String gender,
+    int count,
+    String city,
+    String days,
+  ) {
     String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'طلعت في $city قبل $days يوماً',
+      few: 'طلعت في $city قبل $days أيام',
+      two: 'طلعت في $city قبل يومين',
+      one: 'طلعت في $city قبل يوم واحد',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
       other: 'طلع في $city قبل $days يوماً',
@@ -564,12 +581,20 @@ class AppLocalizationsAr extends AppLocalizations {
       two: 'طلع في $city قبل يومين',
       one: 'طلع في $city قبل يوم واحد',
     );
-    return '$_temp0';
+    String _temp2 = intl.Intl.selectLogic(gender, {
+      'f': '$_temp0',
+      'other': '$_temp1',
+    });
+    return '$_temp2';
   }
 
   @override
-  String detailStarRisesToday(String city) {
-    return 'يطلع في $city اليوم';
+  String detailStarRisesToday(String gender, String city) {
+    String _temp0 = intl.Intl.selectLogic(gender, {
+      'f': 'تطلع في $city اليوم',
+      'other': 'يطلع في $city اليوم',
+    });
+    return '$_temp0';
   }
 
   @override
@@ -738,12 +763,22 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String notifStarTitle(String star, String city) {
-    return 'طلع $star اليوم في $city';
+  String notifStarTitle(String gender, String star, String city) {
+    String _temp0 = intl.Intl.selectLogic(gender, {
+      'f': 'طلعت $star اليوم في $city',
+      'other': 'طلع $star اليوم في $city',
+    });
+    return '$_temp0';
   }
 
   @override
-  String get notifStarBody => 'أول ظهوره قبل الفجر. اضغط لتعرف عنه.';
+  String notifStarBody(String gender) {
+    String _temp0 = intl.Intl.selectLogic(gender, {
+      'f': 'أول ظهورها قبل الفجر. اضغط لتعرف عنها.',
+      'other': 'أول ظهوره قبل الفجر. اضغط لتعرف عنه.',
+    });
+    return '$_temp0';
+  }
 
   @override
   String notifDarTitle(String dar, String season) {
@@ -831,4 +866,7 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get reportFormOpenError =>
       'تعذّر فتح النموذج. انسخ تفاصيل البلاغ وأرسلها لاحقاً.';
+
+  @override
+  String get reportCopyError => 'تعذّر نسخ تفاصيل البلاغ. حاول مرة أخرى.';
 }

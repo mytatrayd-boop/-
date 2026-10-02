@@ -391,10 +391,12 @@ final notificationPermissionProvider =
     );
 
 /// ما تعتمد عليه خطة التنبيهات: تغيّر أيٍّ منه يعيد الجدولة (§9، §16.5).
+/// ومنها «الأرقام» (DESIGN 8.7): تغييرها يعيد الجدولة بصمت.
 typedef NotificationInputs = ({
   String? cityId,
   bool important,
   bool dar,
+  DigitStyle digits,
   Tables? tables,
   DateTime today,
 });
@@ -405,6 +407,7 @@ final notificationInputsProvider = Provider<NotificationInputs>((ref) {
     cityId: s.cityId,
     important: s.notifyImportant,
     dar: s.notifyDar,
+    digits: s.digits,
     tables: ref.watch(tablesProvider).value,
     today: ref.watch(todayProvider),
   );
@@ -493,8 +496,11 @@ class NotificationSyncController extends Notifier<NotificationSyncStatus> {
           );
         }
       }
+      // «الأرقام» في البصمة: تغييرها يعيد الجدولة بصمت (DESIGN 8.7) حتى إن
+      // لم يتغير نص، فكل نص فيه رقم يتبع الإعداد عند جدولته.
       final signature = [
         timezone,
+        settings.digits.name,
         for (final n in notifications) n.fingerprint,
       ].join('\n');
       if (signature == _lastSignature) return;

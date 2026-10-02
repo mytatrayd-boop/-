@@ -135,7 +135,9 @@ Future<void> main() async {
       );
       expect(days, greaterThan(0));
       expect(
-        find.text(l10n.detailStarRisenAgo(days, 'الرياض', formatInteger(days))),
+        find.text(
+          l10n.detailStarRisenAgo('m', days, 'الرياض', formatInteger(days)),
+        ),
         findsOneWidget,
       );
       expect(find.text(l10n.detailAstroNote), findsOneWidget);
@@ -242,6 +244,7 @@ Future<void> main() async {
       expect(
         find.text(
           l10n.detailStarRisesOn(
+            'm',
             'الرياض',
             gregorianDateLabel(
               l10n,
@@ -251,6 +254,71 @@ Future<void> main() async {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('الثريا بالمؤنث (§13): «تطلع… يوم» و«طلعت… قبل»', (
+      tester,
+    ) async {
+      phone(tester);
+      var container = await openSheet(tester, (
+        target: const ItemTarget('thurayya'),
+        from: DateTime(2027, 5, 1),
+      ));
+      final r2027 = container.read(currentHeliacalProvider(2027))!.thurayya!;
+      final date = gregorianDateLabel(
+        l10n,
+        DateTime(r2027.year, r2027.month, r2027.day),
+      );
+      expect(
+        find.text(l10n.detailStarRisesOn('f', 'الرياض', date)),
+        findsOneWidget,
+      );
+      expect(find.text('تطلع في الرياض يوم $date'), findsOneWidget);
+      expect(find.textContaining('يطلع في'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+
+      // اليوم 2 أكتوبر 2026: طلعت الثريا في يونيو.
+      container = await openSheet(tester, (
+        target: const ItemTarget('thurayya'),
+        from: DateTime(2026, 6, 1),
+      ));
+      final r2026 = container.read(currentHeliacalProvider(2026))!.thurayya!;
+      final days = daysBetween(
+        DateTime(r2026.year, r2026.month, r2026.day),
+        today,
+      );
+      final ago = find.text(
+        l10n.detailStarRisenAgo('f', days, 'الرياض', formatInteger(days)),
+      );
+      expect(ago, findsOneWidget);
+      expect(
+        tester.widget<Text>(ago).data,
+        startsWith('طلعت في الرياض قبل '),
+      );
+    });
+
+    test('detailStarRisesToday وصيغ الجمع داخل الاختيار حسب الجنس', () {
+      expect(l10n.detailStarRisesToday('m', 'الرياض'), 'يطلع في الرياض اليوم');
+      expect(l10n.detailStarRisesToday('f', 'الرياض'), 'تطلع في الرياض اليوم');
+      expect(l10n.detailStarRisenAgo('f', 1, 'الرياض', '١'),
+          'طلعت في الرياض قبل يوم واحد');
+      expect(l10n.detailStarRisenAgo('f', 2, 'الرياض', '٢'),
+          'طلعت في الرياض قبل يومين');
+      expect(l10n.detailStarRisenAgo('f', 3, 'الرياض', '٣'),
+          'طلعت في الرياض قبل ٣ أيام');
+      expect(l10n.detailStarRisenAgo('f', 12, 'الرياض', '١٢'),
+          'طلعت في الرياض قبل ١٢ يوماً');
+      expect(l10n.detailStarRisenAgo('m', 1, 'الرياض', '١'),
+          'طلع في الرياض قبل يوم واحد');
+      expect(l10n.detailStarRisenAgo('m', 2, 'الرياض', '٢'),
+          'طلع في الرياض قبل يومين');
+      expect(l10n.detailStarRisenAgo('m', 103, 'الرياض', '١٠٣'),
+          'طلع في الرياض قبل ١٠٣ أيام');
+      expect(l10n.detailStarRisenAgo('m', 12, 'الرياض', '١٢'),
+          'طلع في الرياض قبل ١٢ يوماً');
+      expect(l10n.notifStarTitle('m', 'سهيل', 'الرياض'),
+          'طلع سهيل اليوم في الرياض');
+      expect(l10n.notifStarBody('m'), 'أول ظهوره قبل الفجر. اضغط لتعرف عنه.');
     });
 
     testWidgets('تعذّر الحساب الفلكي: «تاريخ تقريبي من جدول المنطقة»', (

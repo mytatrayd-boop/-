@@ -36,7 +36,8 @@ class ScheduledNotification {
 }
 
 /// يبني نص التنبيه وحمولته (DESIGN 8.9، §13 «التنبيهات»):
-/// - سهيل والثريا بتاريخهما المحسوب: «طلع {النجم} اليوم في {المدينة}».
+/// - سهيل والثريا بتاريخهما المحسوب: «طلع {النجم} اليوم في {المدينة}»،
+///   والفعل والضمير حسب `item.gender` («طلعت الثريا…»، §13 «جنس النجم»).
 /// - بقية المواسم المهمة: «دخل {الموسم} اليوم في {المنطقة}».
 /// - بداية الدَّرّ: «بدأ دَرّ {الدَّرّ} من {المئة}»، وللمستعيرة «… حسب حساب
 ///   {المُعيرة}» (D24)، والنص «الجو المعتاد: …».
@@ -56,8 +57,9 @@ ScheduledNotification buildScheduledNotification(
     case ItemSubject(:final item, :final heliacal):
       final name = item.name.ar;
       if (heliacal) {
-        title = l10n.notifStarTitle(name, city.name.ar);
-        body = l10n.notifStarBody;
+        final gender = item.gender.code;
+        title = l10n.notifStarTitle(gender, name, city.name.ar);
+        body = l10n.notifStarBody(gender);
       } else {
         title = l10n.notifSeasonTitle(name, region.name.ar);
         body = l10n.notifSeasonBody(name);

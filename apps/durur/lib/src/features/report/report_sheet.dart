@@ -80,6 +80,9 @@ enum _Phase {
 
   /// تعذّر فتح النموذج: نافذة النسخ.
   failed,
+
+  /// تعذّر النسخ قبل فتح النموذج فلم يُفتح: رسالة فشل النسخ وزر النسخ.
+  copyFailed,
 }
 
 class ReportSheet extends ConsumerStatefulWidget {
@@ -95,6 +98,7 @@ class ReportSheet extends ConsumerStatefulWidget {
   static const openFormKey = Key('reportOpenForm');
   static const copyKey = Key('reportCopy');
   static const copiedKey = Key('reportCopied');
+  static const copyErrorKey = Key('reportCopyError');
   static const messageKey = Key('reportMessage');
   static const closeKey = Key('reportClose');
 
@@ -109,6 +113,9 @@ class ReportSheet extends ConsumerStatefulWidget {
 class _ReportSheetState extends ConsumerState<ReportSheet> {
   _Phase _phase = _Phase.ready;
   bool _copied = false;
+
+  /// فشل آخر نسخ بزر «نسخ تفاصيل البلاغ».
+  bool _copyFailed = false;
   bool _busy = false;
 
   @override
@@ -144,6 +151,9 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
         live = true;
       case _Phase.failed:
         intro = l10n.reportFormOpenError;
+        live = true;
+      case _Phase.copyFailed:
+        intro = l10n.reportCopyError;
         live = true;
     }
     // «نسخ» وحده إن لم يُضبط نموذج (ARCHITECTURE §10)؛ وبعد فتح النموذج أو
@@ -239,6 +249,18 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
                 style: theme.textTheme.bodyMedium,
               ),
             ),
+          ] else if (_copyFailed) ...[
+            const SizedBox(height: 8),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                l10n.reportCopyError,
+                key: ReportSheet.copyErrorKey,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
           ],
           const SizedBox(height: 16),
           Text(
@@ -265,6 +287,8 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
         setState(() => _phase = _Phase.pasted);
       case ReportOutcome.copy:
         setState(() => _phase = _Phase.failed);
+      case ReportOutcome.copyFailed:
+        setState(() => _phase = _Phase.copyFailed);
     }
   }
 
@@ -272,8 +296,22 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
     try {
       await ref.read(clipboardWriterProvider)(message.text);
     } on Object {
-      return; // لا تأكيد إن لم يُنسخ.
+      // لا تأكيد إن لم يُنسخ، بل رسالة قصيرة بفشل النسخ.
+      if (mounted) {
+        setState(() {
+          _copied = false;
+          _copyFailed = true;
+        });
+      }
+      return;
     }
-    if (mounted) setState(() => _copied = true);
+    if (mounted) {
+      setState(() {
+        _copied = true;
+        _copyFailed = false;
+        // نجح النسخ بعد فشله قبل الفتح: تزول رسالة الفشل ويعود زر النموذج.
+        if (_phase == _Phase.copyFailed) _phase = _Phase.ready;
+      });
+    }
   }
 }

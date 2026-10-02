@@ -717,23 +717,23 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{انتهى قبل يوم واحد} =2{انتهى قبل يومين} few{انتهى قبل {days} أيام} other{انتهى قبل {days} يوماً}}'**
   String detailStatusPast(int count, String days);
 
-  /// لسهيل والثريا: تاريخ الطلوع المحسوب لمدينة المستخدم (DESIGN home.star_rises_on، الميزة 5 معيار 4)
+  /// لسهيل والثريا: تاريخ الطلوع المحسوب لمدينة المستخدم (DESIGN home.star_rises_on، الميزة 5 معيار 4). gender = جنس النجم من items.json: "f" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)
   ///
   /// In ar, this message translates to:
-  /// **'يطلع في {city} يوم {date}'**
-  String detailStarRisesOn(String city, String date);
+  /// **'{gender, select, f{تطلع في {city} يوم {date}} other{يطلع في {city} يوم {date}}}'**
+  String detailStarRisesOn(String gender, String city, String date);
 
-  /// لسهيل والثريا: مضى على الطلوع المحسوب (DESIGN home.star_risen_ago)
+  /// لسهيل والثريا: مضى على الطلوع المحسوب (DESIGN home.star_risen_ago). gender = جنس النجم من items.json: "f" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{طلع في {city} قبل يوم واحد} =2{طلع في {city} قبل يومين} few{طلع في {city} قبل {days} أيام} other{طلع في {city} قبل {days} يوماً}}'**
-  String detailStarRisenAgo(int count, String city, String days);
+  /// **'{gender, select, f{{count, plural, =1{طلعت في {city} قبل يوم واحد} =2{طلعت في {city} قبل يومين} few{طلعت في {city} قبل {days} أيام} other{طلعت في {city} قبل {days} يوماً}}} other{{count, plural, =1{طلع في {city} قبل يوم واحد} =2{طلع في {city} قبل يومين} few{طلع في {city} قبل {days} أيام} other{طلع في {city} قبل {days} يوماً}}}}'**
+  String detailStarRisenAgo(String gender, int count, String city, String days);
 
-  /// لسهيل والثريا: الطلوع المحسوب هو اليوم
+  /// لسهيل والثريا: الطلوع المحسوب هو اليوم. gender = جنس النجم من items.json: "f" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)
   ///
   /// In ar, this message translates to:
-  /// **'يطلع في {city} اليوم'**
-  String detailStarRisesToday(String city);
+  /// **'{gender, select, f{تطلع في {city} اليوم} other{يطلع في {city} اليوم}}'**
+  String detailStarRisesToday(String gender, String city);
 
   /// تحت تاريخ طلوع سهيل/الثريا (DESIGN detail.astro_note)
   ///
@@ -1023,17 +1023,17 @@ abstract class AppLocalizations {
   /// **'اضغط لتعرف عن {season} ومثله الشعبي.'**
   String notifSeasonBody(String season);
 
-  /// عنوان تنبيه سهيل والثريا بالتاريخ المحسوب لمدينة المستخدم (DESIGN notif.star.title)
+  /// عنوان تنبيه سهيل والثريا بالتاريخ المحسوب لمدينة المستخدم (DESIGN notif.star.title). gender = جنس النجم من items.json: "f" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)
   ///
   /// In ar, this message translates to:
-  /// **'طلع {star} اليوم في {city}'**
-  String notifStarTitle(String star, String city);
+  /// **'{gender, select, f{طلعت {star} اليوم في {city}} other{طلع {star} اليوم في {city}}}'**
+  String notifStarTitle(String gender, String star, String city);
 
-  /// نص تنبيه سهيل والثريا (DESIGN notif.star.body)
+  /// نص تنبيه سهيل والثريا (DESIGN notif.star.body). gender = جنس النجم من items.json: "f" مؤنث، وغيره مذكر (DESIGN §13 «جنس النجم»)
   ///
   /// In ar, this message translates to:
-  /// **'أول ظهوره قبل الفجر. اضغط لتعرف عنه.'**
-  String get notifStarBody;
+  /// **'{gender, select, f{أول ظهورها قبل الفجر. اضغط لتعرف عنها.} other{أول ظهوره قبل الفجر. اضغط لتعرف عنه.}}'**
+  String notifStarBody(String gender);
 
   /// عنوان تنبيه بداية الدَّرّ (DESIGN notif.dar.title). season = مئة الدَّرّ (D25)
   ///
@@ -1166,6 +1166,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر فتح النموذج. انسخ تفاصيل البلاغ وأرسلها لاحقاً.'**
   String get reportFormOpenError;
+
+  /// فشل النسخ للحافظة: بزر «نسخ تفاصيل البلاغ»، أو قبل فتح النموذج بلا تعبئة مسبقة فلا يُفتح (ليس في DESIGN بعد)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر نسخ تفاصيل البلاغ. حاول مرة أخرى.'**
+  String get reportCopyError;
 }
 
 class _AppLocalizationsDelegate

@@ -150,13 +150,14 @@ apps/durur/
 `items.json` (كتالوج كل ما له صفحة)
 ```json
 [{ "id": "suhail", "kind": "star", "name": {"ar": "سهيل"},
-   "important": true, "dateMethod": "heliacal",
+   "important": true, "dateMethod": "heliacal", "gender": "m",
    "definition": {"ar": "سطر أول\nسطر ثانٍ"}, "proverb": {"ar": "..."},
    "weather": ["hot", "humidity"], "weatherNote": {"ar": "..."},
    "referenceRisings": [{"cityId": "kuwait", "year": 2026, "date": "2026-08-24", "source": {...}}],
    "sources": [{...}], "approval": {...} }]
 ```
 `kind`: `star` | `majorSeason` | `weatherSeason` (حُذف `dar` مع الميزة 7، D26: المحلل يرفضه). `dateMethod`: `table` | `heliacal`.
+`gender` (D30، DESIGN §13 «جنس النجم»): `"m"` | `"f"` (`StarGender`)، جنس النجم لغوياً لاختيار الفعل والضمير في النصوص («طلعت الثريا…»، «تطلع…»). **إلزامي** حين `dateMethod: heliacal` (سهيل `m`، الثريا `f`): غيابه أو قيمة غيرهما ← **خطأ تحليل** يرفض الملف (فيفشل `validate_tables` أيضاً)؛ واختياري لغيرها وافتراضه `m`. يُمرَّر `item.gender.code` إلى مفاتيح ARB بصيغة `{gender, select, f{…} other{…}}` (والجمع متداخل داخل الاختيار في `detailStarRisenAgo`): `notifStarTitle`، `notifStarBody`، `detailStarRisesOn`، `detailStarRisesToday`، `detailStarRisenAgo`. المخطط نفسه في `research/drafts/items.json`.
 
 `regions/najd.json`
 ```json
@@ -275,13 +276,13 @@ apps/durur/
 
 **مبنيّ (الميزة 8)، `lib/src/notifications/`:**
 - `notification_planner.dart` (Dart صافٍ): `NotificationPlanner.plan(now, engine, items, heliacal(year), important, dar)` ← `PlannedNotification(id, date, kind, subject)` و`fireAt` = 08:00 محلياً. الأيام `[اليوم، اليوم+364]` وما لم تفت ساعته (يوم البداية بعد 8:00 لا يُجدول). `ItemSubject(item, heliacal)` / `DarSubject(record, dururRegionId, borrowed)`. العناصر `heliacal` (سهيل والثريا) من `heliacal(year)` لسنتي الأفق، **وإن كان الحساب null لسنة يُستعمل تاريخ بدايتها في جدول المنطقة** (مثل صفحة العنصر). الترتيب: التاريخ ← المهمة قبل الدَّرّ ← المعرّف، ثم القص إلى 60، ثم `slot` داخل اليوم. لا نصوص فيه.
-- `notification_content.dart`: `buildScheduledNotification` ← العنوان/النص من ARB (`notifSeasonTitle` بمنطقة المستخدم، `notifStarTitle` بالمدينة لما تاريخه فلكي، `notifDarTitle`، و`notifDarTitleBorrowed` «… حسب حساب {المُعيرة}» للمستعيرة D24 — مفتاح جديد غير موجود في DESIGN §13، و`notifDarBody` بأسماء رموز الجو). **الحمولة** `AppRoutes.item(id, from: يوم التنبيه)` أو `AppRoutes.dar(regionId, MM-DD, from: …)` (تفتح الفترة التي بدأت يوم التنبيه حتى لو ضُغط لاحقاً)؛ `isNotificationPayload` يقبل `/item/<id>` و`/dar/<r>/<MM-DD>` فقط.
+- `notification_content.dart`: `buildScheduledNotification` ← العنوان/النص من ARB (`notifSeasonTitle` بمنطقة المستخدم، `notifStarTitle`/`notifStarBody` بالمدينة لما تاريخه فلكي وبجنس النجم `item.gender` («طلعت الثريا…»، D30)، `notifDarTitle`، و`notifDarTitleBorrowed` «… حسب حساب {المُعيرة}» للمستعيرة D24 — مفتاح جديد غير موجود في DESIGN §13، و`notifDarBody` بأسماء رموز الجو). **الحمولة** `AppRoutes.item(id, from: يوم التنبيه)` أو `AppRoutes.dar(regionId, MM-DD, from: …)` (تفتح الفترة التي بدأت يوم التنبيه حتى لو ضُغط لاحقاً)؛ `isNotificationPayload` يقبل `/item/<id>` و`/dar/<r>/<MM-DD>` فقط.
 - `notification_scheduler.dart` (واجهة) و`local_notification_scheduler.dart`: تهيئة **بلا طلب إذن** (`DarwinInitializationSettings(request…: false)`)، `getNotificationAppLaunchDetails`، `FlutterTimezone` + `timezone/latest_all` (منطقة غير معروفة ← اللحظة نفسها بـ UTC)، `pendingNotificationRequests` ثم `cancelAllPendingNotifications` (لا `cancelAll`: المعروضة تبقى، D29) ثم `zonedSchedule(inexactAllowWhileIdle)` بقناتين `important`/`dar` (أسماؤهما من ARB)، وأيقونة `ic_stat_durur` (نجمة رباعية). `openAppNotificationSettings` لزر «فتح إعدادات الجهاز».
 - `DururApp` (`app.dart`): يهيّئ المُجدوِل، ويفتح حمولة الضغط (والتشغيل من تنبيه) بـ `openNotificationPayload`: `backToToday` ← `go('/')` ← إطار ← `push(payload)` فيرجع زر الرجوع إلى الرئيسية على اليوم (DESIGN 8.9). `AppLifecycleListener.onResume` ← `refresh` للإذن و`sync()`. `themeMode` من الإعدادات.
 - **بلا إذن:** آيفون يرفض إضافة التنبيه؛ الخطأ حينها لا يُحسب فشلاً (الحالة `idle`، ورسالة الفشل لا تظهر إلا والإذن ممنوح)، و`NotificationSyncController` يستمع لـ `notificationPermissionProvider` فيعيد الجدولة عند تحوّله إلى ممنوح.
 - **هامش التأخر:** تنبيه اليوم يبقى في الخطة حتى 09:00 (`lateMargin`)؛ المُجدوِل يعيده بعد 10 ثوانٍ من لحظة الجدولة (ساعته لا بداية المزامنة) فقط إن كان ما يزال في `pendingNotificationRequests` (لم يصل بعد)، وإلا لا يُعاد (معيار 7)؛ السباق النادر في D29.
 - **الحمولة:** `isNotificationPayload` يشترط مساراً مطلقاً، وتُهمل أثناء الإعداد الأولي (`onboardingDone = false`).
-- **إعادة الجدولة:** فتح التطبيق، منح الإذن، تغيير المدينة، المفتاحين، اليوم، المنطقة الزمنية (عند العودة)، وإعادة تحميل الجداول (`tablesProvider` ضمن المدخلات، جاهز للميزة 11). الجدولة تتم حتى بلا إذن (يُطبَّق الاختيار عند منحه).
+- **إعادة الجدولة:** فتح التطبيق، منح الإذن، تغيير المدينة، المفتاحين، «الأرقام» (DESIGN 8.7، بصمت: `digits` ضمن `NotificationInputs` وفي بصمة الخطة، فتُعاد حتى لو لم يتغير نص؛ لا نص تنبيه فيه رقم حالياً)، اليوم، المنطقة الزمنية (عند العودة)، وإعادة تحميل الجداول (`tablesProvider` ضمن المدخلات، جاهز للميزة 11). الجدولة تتم حتى بلا إذن (يُطبَّق الاختيار عند منحه).
 - **الإذن:** شاشة `/onboarding/notifications` (`NotificationsIntroScreen`، DESIGN 8.2 د) بعد اختيار المدينة: «فعّل التنبيهات» يطلب الإذن ثم الرئيسية (قبول أو رفض)، «ليس الآن» بلا طلب. أندرويد 13+ `POST_NOTIFICATIONS`. **لا `SCHEDULE_EXACT_ALARM`** (D13: الوضع غير الدقيق يكفي ولا يحتاج إذناً يقيّده متجر Google).
 - **انتهاء الإعداد الأولي:** `onboardingDone` يُحفظ عند الخروج من شرح التنبيهات. التوجيه: لا مدينة ← `/onboarding`؛ مدينة محذوفة ← `/onboarding/city`؛ مدينة بلا `onboardingDone` (أُغلق التطبيق قبل الشرح) ← `/onboarding/notifications`.
 - **الإعدادات (DESIGN 8.7):** قسم «التنبيهات» (بطاقة «التنبيهات متوقفة من إعدادات جهازك.» + «فتح إعدادات الجهاز» إن لم يُمنح الإذن، رسالة فشل الجدولة، مفتاحان `SwitchListTile` 64dp، سطر الساعة)، وقسم «المظهر» (شرائح السمة والأرقام). تشغيل مفتاح والإذن مرفوض يطلبه مرة.
@@ -299,14 +300,15 @@ apps/durur/
   1. لا نموذج صالح ← `copy` بلا أي محاولة فتح.
   2. نموذج **بحقول** ← يُفتح الرابط معبأً (القيم مرمّزة UTF-8، ومعاملات الرابط الأصلية تبقى) عبر `urlOpenerProvider` ← `formPrefilled`.
   3. نموذج **بلا حقول** ← يُنسخ نص البلاغ للحافظة **أولاً** ثم يُفتح النموذج كما هو ← `formWithCopiedText`.
-  4. أي فشل (الفتح يعيد false أو يرمي، أو فشل النسخ) ← `copy`. لا يرمي.
+  4. فشل الفتح (يعيد false أو يرمي) ← `copy`.
+  5. فشل النسخ قبل الفتح (الحالة 3) ← `copyFailed` **بلا فتح**، فتعرض الورقة «تعذّر نسخ تفاصيل البلاغ…» (`reportCopyError`) لا «تعذّر فتح النموذج». لا يرمي.
 - `ReportMessage`: `lines` (كل معلومة في سطر، من ARB) و`values` (قيم الحقول) و`text` (الأسطر بفاصل سطر؛ هو ما يُنسخ وقيمة `details`).
 
 **المحتوى (`buildReportMessage` في `features/report/report_sheet.dart`):** العنصر (إن وُجد)، منطقة الجدول، التاريخ المعروض، نسخة التطبيق (`appVersionProvider` من `package_info_plus`: `version+buildNumber`)، نسخة البيانات (`meta.dataVersion` و`dataSeq`). **لا شيء غيرها:** لا مدينة ولا إحداثيات ولا معرّف جهاز أو عنصر. الأرقام حسب إعداد «الأرقام» في الأسطر، ولاتينية في قيم الحقول.
 
 **الواجهة (`features/report/report_sheet.dart`، DESIGN 8.8):** ورقة سفلية `showReportSheet(context, itemName?, regionName?, date)`: العنوان (`header`) و«إغلاق»، سطر الشرح، بطاقة الملخص، ثم:
-- لا نموذج: «نسخ تفاصيل البلاغ» وحده (زر أساسي) ← «تم نسخ تفاصيل البلاغ» (`liveRegion`).
-- نموذج: «متابعة إلى النموذج» ← معبأ: تُغلق الورقة؛ بلا تعبئة: تبقى الورقة برسالة «نسخنا تفاصيل البلاغ. الصقها في النموذج…» (`liveRegion`) مع زر النسخ؛ فشل: «تعذّر فتح النموذج…» مع زر النسخ.
+- لا نموذج: «نسخ تفاصيل البلاغ» وحده (زر أساسي) ← «تم نسخ تفاصيل البلاغ» (`liveRegion`)؛ وفشل النسخ (`_copy`) ← «تعذّر نسخ تفاصيل البلاغ. حاول مرة أخرى.» (`reportCopyError`، `ReportSheet.copyErrorKey`، بلون الخطأ) بلا تأكيد.
+- نموذج: «متابعة إلى النموذج» ← معبأ: تُغلق الورقة؛ بلا تعبئة: تبقى الورقة برسالة «نسخنا تفاصيل البلاغ. الصقها في النموذج…» (`liveRegion`) مع زر النسخ؛ فشل الفتح: «تعذّر فتح النموذج…» مع زر النسخ؛ فشل النسخ قبل الفتح: «تعذّر نسخ تفاصيل البلاغ…» مع زر النسخ، ونجاح النسخ بعده يعيد زر النموذج.
 - «لن يُرسل شيء حتى تضغط إرسال بنفسك.» دائماً. لا نعرض «تم الإرسال».
 - التمرير `SingleChildScrollView` (تكبير 200%)، والأزرار 52dp.
 
