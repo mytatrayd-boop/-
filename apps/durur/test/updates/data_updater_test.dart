@@ -71,6 +71,7 @@ void main() {
     ),
     Tables? embeddedTables,
     UpdateFetcher? using,
+    UpdateStore? customStore,
   }) async {
     scheduler = FakeNotificationScheduler(permitted: true);
     final c = ProviderContainer(
@@ -79,7 +80,7 @@ void main() {
         embeddedTablesLoaderProvider.overrideWithValue(
           () async => embeddedTables ?? embedded,
         ),
-        updateStoreProvider.overrideWithValue(store()),
+        updateStoreProvider.overrideWithValue(customStore ?? store()),
         updateFetcherProvider.overrideWithValue(using ?? fetcher),
         trustedKeysProvider.overrideWithValue(keys ?? signer.trustedKeys),
         updateConfigProvider.overrideWithValue(config),
@@ -137,7 +138,8 @@ void main() {
       expect(state().lastCheckOk, now);
       expect(state().lastAttempt, now);
       expect(await store().read(), isNotNull);
-      expect(c.read(dataUpdateProvider), UpdateOutcome.updated);
+      expect(c.read(dataUpdateProvider).outcome, UpdateOutcome.updated);
+      expect(c.read(dataUpdateProvider).acceptedCount, 1);
     });
 
     test('الفتح التالي يحمّل الحزمة المثبّتة بلا شبكة', () async {
@@ -175,7 +177,7 @@ void main() {
       );
       final c = await open(
         config: UpdateConfig.unchecked(root),
-        using: HttpUpdateFetcher(),
+        using: HttpUpdateFetcher.allowingHttpForTesting(),
       );
       expect(await check(c), UpdateOutcome.updated);
       expect(paths, [
@@ -331,6 +333,172 @@ void main() {
     });
   });
 
+  group('الحد الأدنى يُسجَّل قبل التثبيت', () {
+    test('توقف التطبيق بعد التثبيت مباشرة ← لا تُقبل حزمة أقدم من المثبّتة',
+        () async {
+      // التثبيت ينجح ثم «يتوقف التطبيق» قبل أي خطوة بعده.
+      final crashing = _CrashAfterInstallStore(() async => dir, prefs);
+      fetcher.publish(await buildRelease(signer, 3), 3);
+      final c = await open(customStore: crashing);
+      expect(await check(c), UpdateOutcome.failed);
+      // الحد كان قد سُجّل عند لحظة التثبيت.
+      expect(crashing.highestSeqAtInstall, 3);
+      expect(state().highestSeq, 3);
+      expect(await store().read(), isNotNull);
+
+      // الفتح التالي: الحزمة 3 مثبّتة ومستخدمة.
+      final c2 = await open();
+      expect(c2.read(tablesProvider).value!.meta.dataSeq, 3);
+
+      // حزمة موقّعة أقدم (2) لا تحل محلها.
+      fetcher
+        ..files.clear()
+        ..requests.clear()
+        ..publish(await buildRelease(signer, 2), 2);
+      now = now.add(const Duration(days: 1));
+      expect(await check(c2), UpdateOutcome.upToDate);
+      expect(fetcher.requests, [base.resolve('manifest.json')]);
+      expect(c2.read(tablesProvider).value!.meta.dataSeq, 3);
+      expect(state().highestSeq, 3);
+    });
+
+    test('فشل التثبيت ← البيانات الحالية باقية والحد مرفوع (اتجاه الأمان)',
+        () async {
+      fetcher.publish(fixedWasm, 1);
+      final c = await open(customStore: _FailingInstallStore(() async => dir));
+      expect(await check(c), UpdateOutcome.failed);
+      expect(c.read(tablesProvider).value, same(embedded));
+      expect(state().highestSeq, 1);
+      expect(state().lastCheckOk, isNull);
+    });
+  });
+
+  group('مفتاح «تحديث البيانات تلقائياً»', () {
+    test('مطفأ ← لا طلب شبكة إطلاقاً من التحقق التلقائي ولا كتابة', () async {
+      await prefs.setBool(SettingsRepository.autoUpdateKey, false);
+      fetcher.publish(fixedWasm, 1);
+      final c = await open();
+      expect(await check(c), UpdateOutcome.notDue);
+      now = now.add(const Duration(days: 60));
+      expect(await check(c), UpdateOutcome.notDue);
+      expect(fetcher.requests, isEmpty);
+      expect(state().lastAttempt, isNull);
+      expect(c.read(tablesProvider).value, same(embedded));
+    });
+
+    test('مطفأ ← «تحقق الآن» طلب صريح يعمل (DESIGN 8.7)', () async {
+      await prefs.setBool(SettingsRepository.autoUpdateKey, false);
+      fetcher.publish(fixedWasm, 1);
+      final c = await open();
+      expect(
+        await c.read(dataUpdateProvider.notifier).checkNow(),
+        UpdateOutcome.updated,
+      );
+      expect(fetcher.requests, hasLength(2));
+    });
+
+    test('مفعّل افتراضياً', () async {
+      final c = await open();
+      expect(c.read(settingsProvider).autoUpdate, isTrue);
+      await c.read(settingsProvider.notifier).setAutoUpdate(false);
+      expect(prefs.getBool(SettingsRepository.autoUpdateKey), isFalse);
+      expect(c.read(settingsProvider).autoUpdate, isFalse);
+    });
+  });
+
+  group('«تحقق الآن»', () {
+    test('يتجاهل مهلة الأسبوع', () async {
+      fetcher.publish(fixedWasm, 1);
+      final c = await open();
+      expect(await check(c), UpdateOutcome.updated);
+      fetcher.requests.clear();
+      now = now.add(const Duration(minutes: 1));
+      final n = c.read(dataUpdateProvider.notifier);
+      expect(await n.checkNow(), UpdateOutcome.upToDate);
+      expect(fetcher.requests, [base.resolve('manifest.json')]);
+      expect(state().lastCheckOk, now);
+    });
+
+    test('أثناء تحقق تلقائي جارٍ ← ينتظر نتيجته بلا طلب ثانٍ', () async {
+      fetcher.publish(fixedWasm, 1);
+      final c = await open();
+      final n = c.read(dataUpdateProvider.notifier);
+      final auto = n.maybeCheck();
+      final manual = n.checkNow();
+      expect(await manual, UpdateOutcome.updated);
+      expect(await auto, UpdateOutcome.updated);
+      expect(fetcher.requests, hasLength(2));
+      expect(c.read(dataUpdateProvider).acceptedCount, 1);
+    });
+
+    test('نوع الفشل: الشبكة أو التحقق', () async {
+      fetcher.failure = FetchFailure.timeout;
+      final c = await open();
+      final n = c.read(dataUpdateProvider.notifier);
+      expect(await n.checkNow(), UpdateOutcome.failed);
+      expect(c.read(dataUpdateProvider).failure, UpdateFailure.network);
+
+      fetcher.failure = null;
+      final other = await TestSigner.generate();
+      fetcher.publish(await buildRelease(other, 1), 1);
+      expect(await n.checkNow(), UpdateOutcome.failed);
+      expect(c.read(dataUpdateProvider).failure, UpdateFailure.verify);
+
+      fetcher.publish(fixedWasm, 1);
+      expect(await n.checkNow(), UpdateOutcome.updated);
+      expect(c.read(dataUpdateProvider).failure, isNull);
+    });
+  });
+
+  test('ساعة الجهاز رجعت للخلف ← لا تحقق في كل عودة، ثم بعد المهلة من الآن',
+      () async {
+    fetcher.failure = FetchFailure.network;
+    final c = await open();
+    expect(await check(c), UpdateOutcome.failed);
+    expect(fetcher.requests, hasLength(1));
+
+    // رجعت الساعة 3 أيام: الوقت المسجّل صار في المستقبل.
+    now = now.subtract(const Duration(days: 3));
+    expect(await check(c), UpdateOutcome.notDue);
+    expect(await check(c), UpdateOutcome.notDue);
+    expect(fetcher.requests, hasLength(1));
+    expect(state().lastAttempt, now); // أعيد إلى الآن.
+
+    now = now.add(const Duration(hours: 24));
+    expect(await check(c), UpdateOutcome.failed);
+    expect(fetcher.requests, hasLength(2));
+  });
+
+  group('مصدر البيانات لصفحة المصادر', () {
+    test('المضمّنة ← ثم المنزّلة بتاريخ نشرها', () async {
+      fetcher.publish(fixedWasm, 1);
+      final c = await open();
+      expect(await c.read(dataOriginProvider.future), isA<BundledData>());
+      await check(c);
+      final origin = await c.read(dataOriginProvider.future);
+      expect(
+        origin,
+        isA<DownloadedData>().having(
+          (d) => d.publishedAt,
+          'publishedAt',
+          DateTime(2026, 10, 2),
+        ),
+      );
+    });
+
+    test('تعذّر قراءة المجلد ← غير معروف', () async {
+      final c = ProviderContainer(
+        overrides: appOverrides(prefs, embedded, [
+          updateStoreProvider.overrideWithValue(
+            UpdateStore(() async => throw const FileSystemException('x')),
+          ),
+        ]),
+      );
+      addTearDown(c.dispose);
+      expect(await c.read(dataOriginProvider.future), isA<UnknownDataOrigin>());
+    });
+  });
+
   group('معطّل ← لا طلب أبداً', () {
     test('بلا رابط (المثال الفارغ)', () async {
       fetcher.publish(fixedWasm, 1);
@@ -473,4 +641,29 @@ Future<void> settle() async {
   for (var i = 0; i < 20; i++) {
     await Future<void>.delayed(Duration.zero);
   }
+}
+
+/// يثبّت ثم «يتوقف التطبيق» (استثناء) قبل أي خطوة بعد التثبيت، ويسجّل الحد
+/// الأدنى المحفوظ لحظة التثبيت.
+class _CrashAfterInstallStore extends UpdateStore {
+  _CrashAfterInstallStore(super.baseDir, this._prefs);
+
+  final SharedPreferences _prefs;
+  int? highestSeqAtInstall;
+
+  @override
+  Future<void> install(int seq, List<int> manifest, List<int> bundle) async {
+    highestSeqAtInstall = UpdateState(_prefs).highestSeq;
+    await super.install(seq, manifest, bundle);
+    throw StateError('توقف التطبيق');
+  }
+}
+
+/// التثبيت نفسه يفشل (قرص ممتلئ مثلاً).
+class _FailingInstallStore extends UpdateStore {
+  _FailingInstallStore(super.baseDir);
+
+  @override
+  Future<void> install(int seq, List<int> manifest, List<int> bundle) =>
+      throw const FileSystemException('قرص ممتلئ');
 }

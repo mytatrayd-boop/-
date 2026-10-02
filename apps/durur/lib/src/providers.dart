@@ -31,6 +31,7 @@ import 'repository/settings_repository.dart';
 import 'repository/table_repository.dart';
 import 'updates/bundle_verifier.dart';
 import 'updates/data_updater.dart';
+import 'updates/signed_manifest.dart';
 import 'updates/trusted_keys.dart';
 import 'updates/update_config.dart';
 import 'updates/update_fetcher.dart';
@@ -89,6 +90,7 @@ class Settings {
     this.notifyDar = false,
     this.theme = ThemeChoice.system,
     this.digits = DigitStyle.arabicIndic,
+    this.autoUpdate = true,
   });
 
   final String? cityId;
@@ -103,6 +105,10 @@ class Settings {
   final ThemeChoice theme;
   final DigitStyle digits;
 
+  /// «تحديث البيانات تلقائياً» (مفعّل افتراضياً، D21). مطفأ ← لا تحقق تلقائي
+  /// أبداً؛ «تحقق الآن» يبقى طلباً صريحاً (DESIGN 8.7).
+  final bool autoUpdate;
+
   Settings copyWith({
     String? cityId,
     bool? onboardingDone,
@@ -110,6 +116,7 @@ class Settings {
     bool? notifyDar,
     ThemeChoice? theme,
     DigitStyle? digits,
+    bool? autoUpdate,
   }) => Settings(
     cityId: cityId ?? this.cityId,
     onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -117,6 +124,7 @@ class Settings {
     notifyDar: notifyDar ?? this.notifyDar,
     theme: theme ?? this.theme,
     digits: digits ?? this.digits,
+    autoUpdate: autoUpdate ?? this.autoUpdate,
   );
 }
 
@@ -135,6 +143,7 @@ class SettingsController extends Notifier<Settings> {
       notifyDar: repo.notifyDar,
       theme: repo.theme,
       digits: repo.digits,
+      autoUpdate: repo.autoUpdate,
     );
   }
 
@@ -166,6 +175,11 @@ class SettingsController extends Notifier<Settings> {
   Future<void> setDigits(DigitStyle digits) async {
     await _repo.saveDigits(digits);
     state = state.copyWith(digits: digits);
+  }
+
+  Future<void> setAutoUpdate(bool on) async {
+    await _repo.saveAutoUpdate(on);
+    state = state.copyWith(autoUpdate: on);
   }
 }
 
@@ -617,44 +631,96 @@ final dataUpdaterProvider = Provider<DataUpdater>(
   ),
 );
 
+/// هل تحديث البيانات متاح في هذه النسخة (رابط صالح ومفتاح موثوق)؟ لا ←
+/// يُخفى قسم «تحديث البيانات» في الإعدادات كاملاً (DESIGN 8.7 البند 5).
+final dataUpdateAvailableProvider = Provider<bool>(
+  (ref) => ref.watch(dataUpdaterProvider).isEnabled,
+);
+
+/// حالة تحديث البيانات للواجهة.
+class DataUpdateStatus {
+  const DataUpdateStatus({
+    this.outcome,
+    this.failure,
+    this.acceptedCount = 0,
+  });
+
+  /// نتيجة آخر محاولة (null قبلها).
+  final UpdateOutcome? outcome;
+
+  /// نوع الفشل إن كانت [outcome] = failed.
+  final UpdateFailure? failure;
+
+  /// عدد الحزم المقبولة منذ فتح التطبيق: زيادته = رسالة «حُدّثت البيانات»
+  /// مرة واحدة (DESIGN 8.7).
+  final int acceptedCount;
+}
+
 /// يتحقق من تحديث البيانات عند الفتح والعودة للواجهة إن حان الموعد (7 أيام
-/// بعد نجاح، 24 ساعة بعد فشل؛ لا أثناء الإعداد الأولي)، بلا مهام خلفية ولا
-/// رسالة للمستخدم (§16.2). بعد قبول حزمة: `invalidate(tablesProvider)` فتُعاد
-/// الجداول والهجري وكل ما يتبعها، وتُعاد جدولة التنبيهات (§16.5).
-/// الحالة = نتيجة آخر محاولة (null قبلها).
-class DataUpdateController extends Notifier<UpdateOutcome?> {
+/// بعد نجاح، 24 ساعة بعد فشل؛ لا أثناء الإعداد الأولي؛ ولا أبداً إن أُطفئ
+/// «تحديث البيانات تلقائياً»)، بلا مهام خلفية ولا رسالة خطأ (§16.2). وزر
+/// «تحقق الآن» ([checkNow]) يتجاهل الموعد والمفتاح لأنه طلب صريح (DESIGN 8.7).
+/// بعد قبول حزمة: `invalidate(tablesProvider)` فتُعاد الجداول والهجري وكل ما
+/// يتبعها، وتُعاد جدولة التنبيهات (§16.5).
+class DataUpdateController extends Notifier<DataUpdateStatus> {
   Future<UpdateOutcome>? _running;
 
   @override
-  UpdateOutcome? build() => null;
+  DataUpdateStatus build() => const DataUpdateStatus();
 
-  /// محاولة واحدة متزامنة كحد أقصى؛ لا ترمي.
-  Future<UpdateOutcome> maybeCheck() {
+  /// التحقق التلقائي (الفتح والعودة للواجهة). محاولة واحدة متزامنة كحد
+  /// أقصى؛ لا ترمي.
+  Future<UpdateOutcome> maybeCheck() => _run(manual: false);
+
+  /// «تحقق الآن»: إن كان تحقق جارياً ينتظر نتيجته نفسها بلا طلب ثانٍ، وإلا
+  /// يتحقق فوراً. لا ترمي.
+  Future<UpdateOutcome> checkNow() async {
+    final running = _running;
+    if (running != null) {
+      final outcome = await running;
+      // التلقائي الجاري لم يرسل طلباً (لم يحن موعده) ← نتحقق الآن.
+      if (outcome != UpdateOutcome.notDue) return outcome;
+    }
+    return _run(manual: true);
+  }
+
+  Future<UpdateOutcome> _run({required bool manual}) {
     final running = _running;
     if (running != null) return running;
-    final run = _maybeCheck();
+    final run = _check(manual: manual);
     _running = run;
     return run.whenComplete(() => _running = null);
   }
 
-  Future<UpdateOutcome> _maybeCheck() async {
+  Future<UpdateOutcome> _check({required bool manual}) async {
     final updater = ref.read(dataUpdaterProvider);
-    if (!updater.isEnabled) return _finish(UpdateOutcome.disabled);
+    if (!updater.isEnabled) return _finish(UpdateOutcome.disabled, null);
     final now = ref.read(clockProvider)();
-    final due = isCheckDue(
-      now: now,
-      lastCheckOk: updater.state.lastCheckOk,
-      lastAttempt: updater.state.lastAttempt,
-      onboardingDone: ref.read(settingsProvider).onboardingDone,
-    );
-    if (!due) return _finish(UpdateOutcome.notDue);
+    if (!manual) {
+      final settings = ref.read(settingsProvider);
+      // ساعة رجعت للخلف ← تبدأ المهلة من الآن (update_schedule.dart).
+      try {
+        await updater.state.clampFuture(now);
+      } on Object {
+        // isCheckDue يعامل الوقت المستقبلي كأنه الآن على أي حال.
+      }
+      if (!ref.mounted) return UpdateOutcome.notDue;
+      final due = isCheckDue(
+        now: now,
+        lastCheckOk: updater.state.lastCheckOk,
+        lastAttempt: updater.state.lastAttempt,
+        onboardingDone: settings.onboardingDone,
+        autoUpdate: settings.autoUpdate,
+      );
+      if (!due) return _finish(UpdateOutcome.notDue, null);
+    }
     final Tables embedded;
     final int appBuild;
     try {
       embedded = await ref.read(embeddedTablesLoaderProvider)();
       appBuild = await ref.read(appBuildProvider.future);
     } on Object {
-      return _finish(UpdateOutcome.failed);
+      return _finish(UpdateOutcome.failed, UpdateFailure.verify);
     }
     if (!ref.mounted) return UpdateOutcome.failed;
     final outcome = await updater.check(
@@ -664,15 +730,77 @@ class DataUpdateController extends Notifier<UpdateOutcome?> {
     );
     if (!ref.mounted) return outcome;
     if (outcome == UpdateOutcome.updated) ref.invalidate(tablesProvider);
-    return _finish(outcome);
+    return _finish(outcome, updater.lastFailure);
   }
 
-  UpdateOutcome _finish(UpdateOutcome outcome) {
-    if (ref.mounted) state = outcome;
+  UpdateOutcome _finish(UpdateOutcome outcome, UpdateFailure? failure) {
+    if (ref.mounted) {
+      state = DataUpdateStatus(
+        outcome: outcome,
+        failure: outcome == UpdateOutcome.failed ? failure : null,
+        acceptedCount:
+            state.acceptedCount + (outcome == UpdateOutcome.updated ? 1 : 0),
+      );
+    }
     return outcome;
   }
 }
 
-final dataUpdateProvider = NotifierProvider<DataUpdateController, UpdateOutcome?>(
-  DataUpdateController.new,
-);
+final dataUpdateProvider =
+    NotifierProvider<DataUpdateController, DataUpdateStatus>(
+      DataUpdateController.new,
+    );
+
+/// وقت آخر تحقق ناجح (`data.lastCheckOk`، ويشمل «لا جديد») لسطر الحالة في
+/// الإعدادات (DESIGN 8.7)؛ يُقرأ من جديد بعد كل محاولة.
+final lastDataCheckOkProvider = Provider<DateTime?>((ref) {
+  ref.watch(dataUpdateProvider);
+  return UpdateState(ref.watch(sharedPreferencesProvider)).lastCheckOk;
+});
+
+/// مصدر البيانات المستخدمة لصفحة المصادر (DESIGN 8.11).
+sealed class DataOrigin {
+  const DataOrigin();
+}
+
+/// البيانات المضمّنة مع نسخة التطبيق.
+class BundledData extends DataOrigin {
+  const BundledData();
+}
+
+/// حزمة منزّلة؛ [publishedAt] من بيانها الموقّع المحفوظ (`YYYY-MM-DD`).
+class DownloadedData extends DataOrigin {
+  const DownloadedData(this.publishedAt);
+
+  final DateTime publishedAt;
+}
+
+/// تعذّر تحديد المصدر أو قراءة `publishedAt` ← سطر النسخة وحده.
+class UnknownDataOrigin extends DataOrigin {
+  const UnknownDataOrigin();
+}
+
+/// يتبع [tablesProvider]: إن طابق البيان المحفوظ (`tables/s<seq>/manifest.json`)
+/// رقم الجداول المستخدمة ونسختها فهي المنزّلة (وقد اجتاز البيان نفسه التحقق
+/// الكامل عند تحميلها)، وإن لم توجد حزمة منزّلة فهي المضمّنة.
+final dataOriginProvider = FutureProvider<DataOrigin>((ref) async {
+  final tables = await ref.watch(tablesProvider.future);
+  try {
+    final stored = await ref.watch(updateStoreProvider).read();
+    if (stored == null) return const BundledData();
+    final payload = SignedManifest.parse(stored.manifest).decodePayload();
+    if (tables.meta.dataSeq < 1 ||
+        payload.dataSeq != tables.meta.dataSeq ||
+        payload.dataVersion != tables.meta.dataVersion) {
+      return const UnknownDataOrigin();
+    }
+    final published = DateTime.tryParse(payload.publishedAt);
+    if (published == null ||
+        !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(payload.publishedAt)) {
+      return const UnknownDataOrigin();
+    }
+    return DownloadedData(published);
+  } on Object {
+    return const UnknownDataOrigin();
+  }
+}, retry: (_, _) => null);

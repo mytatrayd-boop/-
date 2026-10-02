@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,6 +9,7 @@ import 'package:durur/src/repository/tables_loader.dart';
 import 'package:durur/src/updates/data_bundle.dart';
 import 'package:durur/src/updates/signed_manifest.dart';
 import 'package:durur/src/updates/update_fetcher.dart';
+import 'package:durur/src/updates/update_store.dart';
 
 /// أدوات اختبار التحديث الموقّع (ARCHITECTURE §16.9). زوج المفاتيح يُولَّد
 /// أثناء التشغيل؛ لا مفاتيح اختبار محفوظة في المستودع.
@@ -151,4 +153,39 @@ List<Object?> hijriStarts(Map<String, Object?> files) =>
 String isoPlusDays(String iso, int days) {
   final d = DateTime.parse('${iso}T00:00:00Z').add(Duration(days: days));
   return d.toIso8601String().substring(0, 10);
+}
+
+/// مخزن في الذاكرة لاختبارات الواجهة (لا قرص داخل FakeAsync).
+class MemoryUpdateStore extends UpdateStore {
+  MemoryUpdateStore() : super(() async => throw UnimplementedError());
+
+  StoredBundle? stored;
+
+  @override
+  Future<StoredBundle?> read() async => stored;
+
+  @override
+  Future<void> install(int seq, List<int> manifest, List<int> bundle) async {
+    stored = (
+      manifest: Uint8List.fromList(manifest),
+      bundle: Uint8List.fromList(bundle),
+    );
+  }
+
+  @override
+  Future<void> clear() async => stored = null;
+}
+
+/// جلب يتوقف حتى يُفتح [gate] (لاختبار حالة «جارٍ التحقق»).
+class GatedFetcher implements UpdateFetcher {
+  GatedFetcher(this.inner);
+
+  final FakeFetcher inner;
+  Completer<void> gate = Completer<void>();
+
+  @override
+  Future<Uint8List> get(Uri uri, {required int maxBytes}) async {
+    await gate.future;
+    return inner.get(uri, maxBytes: maxBytes);
+  }
 }

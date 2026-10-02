@@ -9,10 +9,12 @@ import '../../providers.dart';
 import '../../repository/settings_repository.dart';
 import '../../routing/app_routes.dart';
 import '../report/report_sheet.dart';
+import 'data_update_section.dart';
 
 /// الإعدادات (DESIGN 8.7): «المنطقة» (صف المدينة، الميزة 3؛ و«تحديد موقعي
 /// مرة أخرى»، الميزة 4)، و«التنبيهات» (مفتاحان مستقلان وملاحظة الإذن وخطأ
-/// الجدولة، الميزة 8)، و«المظهر» (السمة والأرقام)، و«البيانات والمساعدة»
+/// الجدولة، الميزة 8)، و«المظهر» (السمة والأرقام)، و«تحديث البيانات» (الميزة
+/// 11ب، [DataUpdateSection])، و«البيانات والمساعدة»
 /// (المصادر، D27؛ وأبلغ عن خطأ، الميزة 9). «عن التطبيق» لم يُبنَ بعد.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -161,6 +163,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onSelected: (d) =>
                 _save(() => ref.read(settingsProvider.notifier).setDigits(d)),
           ),
+          // «تحديث البيانات» بين «المظهر» و«البيانات والمساعدة»؛ يُخفى إن لم
+          // يكن متاحاً (DESIGN 8.7).
+          DataUpdateSection(header: header),
           header(l10n.settingsSectionHelp),
           ListTile(
             key: SettingsScreen.sourcesRowKey,

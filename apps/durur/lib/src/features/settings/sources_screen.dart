@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../domain/source_catalog.dart';
+import '../../domain/tables.dart';
 import '../../formatting/digits.dart';
 import '../../providers.dart';
 import '../../theme/app_theme.dart';
 import '../item_detail/item_detail_view.dart' show PendingApprovalText;
 
-/// صفحة المصادر (DESIGN 8.7، D27): مصادر كل الجداول بلا تكرار مع مرجع
+/// صفحة المصادر (DESIGN 8.7، 8.11، D27): بطاقة نسخة البيانات (آخر تحديث أو
+/// «المرفقة مع نسخة التطبيق»، ثم النسخة ورقمها)، ثم مصادر كل الجداول بلا تكرار مع مرجع
 /// اعتمادها، وقسم ثابت «رخص البيانات» فيه إشارة GeoNames (CC BY 4.0)
 /// ورابطاها، ومصدر تقويم أم القرى.
 class SourcesScreen extends ConsumerWidget {
@@ -17,6 +19,7 @@ class SourcesScreen extends ConsumerWidget {
   static const screenKey = Key('sourcesScreen');
   static const geoNamesLinkKey = Key('sourcesGeoNamesLink');
   static const licenseLinkKey = Key('sourcesLicenseLink');
+  static const dataCardKey = Key('sourcesDataCard');
 
   /// عناوين ثابتة عامة (ليست أسراراً، D27).
   static final geoNamesUrl = Uri.parse('https://www.geonames.org/');
@@ -77,6 +80,10 @@ class SourcesScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
         children: [
+          if (tables != null) ...[
+            const SizedBox(height: 16),
+            _DataVersionCard(meta: tables.meta),
+          ],
           heading(l10n.sourcesTablesTitle),
           for (final e in entries)
             Padding(
@@ -124,5 +131,71 @@ class SourcesScreen extends ConsumerWidget {
       if (e.source.year case final year? when year > 0) formatInteger(year, digits),
     ];
     return parts.isEmpty ? null : parts.join(l10n.listSeparator);
+  }
+}
+
+/// بطاقة نسخة البيانات (DESIGN 8.11): عنصر واحد لقارئ الشاشة يُقرأ سطراه معاً.
+class _DataVersionCard extends ConsumerWidget {
+  const _DataVersionCard({required this.meta});
+
+  final TablesMeta meta;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colors = DururColors.of(context);
+    final digits = ref.watch(digitStyleProvider);
+    final origin = ref.watch(dataOriginProvider).value;
+    final appVersion = ref.watch(appVersionProvider).value;
+    final first = switch (origin) {
+      DownloadedData(:final publishedAt) => l10n.sourcesDataUpdated(
+        l10n.gregorianDateSpoken(
+          formatInteger(publishedAt.day, digits),
+          'g${publishedAt.month}',
+          formatInteger(publishedAt.year, digits),
+        ),
+      ),
+      BundledData() when appVersion != null => l10n.sourcesDataBundled(
+        localizeDigits(appVersion, digits),
+      ),
+      _ => null,
+    };
+    final second = l10n.sourcesDataVersion(
+      localizeDigits(meta.dataVersion, digits),
+      formatInteger(meta.dataSeq, digits),
+    );
+    return Card(
+      key: SourcesScreen.dataCardKey,
+      margin: EdgeInsetsDirectional.zero,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: MergeSemantics(
+        child: Padding(
+          padding: const EdgeInsetsDirectional.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ExcludeSemantics(child: Icon(Icons.info_outline)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (first != null)
+                      Text(first, style: theme.textTheme.bodyMedium),
+                    Text(
+                      second,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.inkSoft,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

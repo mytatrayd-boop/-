@@ -1172,6 +1172,102 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر نسخ تفاصيل البلاغ. حاول مرة أخرى.'**
   String get reportCopyError;
+
+  /// عنوان قسم تحديث البيانات بين «المظهر» و«البيانات والمساعدة» (DESIGN settings.section.update)
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث البيانات'**
+  String get settingsSectionUpdate;
+
+  /// مفتاح التحقق التلقائي، مفعّل افتراضياً (DESIGN settings.update.auto)
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث البيانات تلقائياً'**
+  String get settingsUpdateAuto;
+
+  /// وصف المفتاح (DESIGN settings.update.auto_desc)
+  ///
+  /// In ar, this message translates to:
+  /// **'نتحقق مرة في الأسبوع عند فتح التطبيق، بلا أي معلومة عنك.'**
+  String get settingsUpdateAutoDesc;
+
+  /// سطر الحالة؛ مسافة غير قابلة للكسر قبل «—» (DESIGN settings.update.status)
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة البيانات: {version} — آخر تحقق: {date}'**
+  String settingsUpdateStatus(String version, String date);
+
+  /// سطر الحالة قبل أول تحقق ناجح (DESIGN settings.update.status_never)
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة البيانات: {version} — لم نتحقق بعد'**
+  String settingsUpdateStatusNever(String version);
+
+  /// {date} في سطر الحالة (DESIGN settings.update.date_today)
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get settingsUpdateDateToday;
+
+  /// {date} في سطر الحالة (DESIGN settings.update.date_yesterday)
+  ///
+  /// In ar, this message translates to:
+  /// **'أمس'**
+  String get settingsUpdateDateYesterday;
+
+  /// زر التحقق اليدوي (DESIGN settings.update.check_now)
+  ///
+  /// In ar, this message translates to:
+  /// **'تحقق الآن'**
+  String get settingsUpdateCheckNow;
+
+  /// نص الزر أثناء التحقق (DESIGN settings.update.checking)
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحقق…'**
+  String get settingsUpdateChecking;
+
+  /// سطر النتيجة: لا جديد (DESIGN settings.update.up_to_date)
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك محدّثة.'**
+  String get settingsUpdateUpToDate;
+
+  /// سطر النتيجة: فشل الشبكة (DESIGN settings.update.network_error)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.'**
+  String get settingsUpdateNetworkError;
+
+  /// سطر النتيجة: حزمة مرفوضة (DESIGN settings.update.verify_error)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من التحديث. بياناتك الحالية تعمل كما هي.'**
+  String get settingsUpdateVerifyError;
+
+  /// رسالة أسفل الشاشة عند قبول حزمة، على أي شاشة (DESIGN settings.update.updated)
+  ///
+  /// In ar, this message translates to:
+  /// **'حُدّثت البيانات'**
+  String get settingsUpdateUpdated;
+
+  /// بطاقة نسخة البيانات: publishedAt من البيان الموقّع (DESIGN sources.data_updated)
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تحديث للبيانات: {date}'**
+  String sourcesDataUpdated(String date);
+
+  /// بطاقة نسخة البيانات حين تكون المضمّنة (DESIGN sources.data_bundled)
+  ///
+  /// In ar, this message translates to:
+  /// **'البيانات المرفقة مع نسخة التطبيق {appVersion}'**
+  String sourcesDataBundled(String appVersion);
+
+  /// السطر الثاني في بطاقة نسخة البيانات (DESIGN sources.data_version)
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة البيانات: {version} ({seq})'**
+  String sourcesDataVersion(String version, String seq);
 }
 
 class _AppLocalizationsDelegate

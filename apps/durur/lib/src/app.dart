@@ -9,6 +9,7 @@ import 'notifications/notification_content.dart';
 import 'providers.dart';
 import 'repository/settings_repository.dart';
 import 'routing/app_router.dart';
+import 'routing/popup_tracker.dart';
 import 'theme/app_theme.dart';
 
 /// جذر التطبيق: العربية فقط في النسخة الأولى، واتجاه من اليمين لليسار.
@@ -25,10 +26,16 @@ class _DururAppState extends ConsumerState<DururApp> {
   // يُعيد تقييم التوجيه التلقائي عند تغيّر المدينة أو اكتمال تحميل الجداول.
   final _refresh = ValueNotifier<int>(0);
 
+  // رسالة «حُدّثت البيانات» على أي شاشة (DESIGN 8.7).
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+  late final _popups = PopupRouteTracker(onAllClosed: _showPendingUpdated);
+  bool _updatedPending = false;
+
   // موجّه لكل نسخة من التطبيق (لا حالة مشتركة بين الاختبارات).
   late final GoRouter _router = createAppRouter(
     refreshListenable: _refresh,
     readState: _redirectState,
+    observers: [_popups],
   );
 
   // يُقرأ من المصدرين مباشرة (لا من currentCityProvider) لأن المستمعين
@@ -62,6 +69,12 @@ class _DururAppState extends ConsumerState<DururApp> {
     ref.listenManual(tablesProvider, (_, _) => _maybeRefresh());
     // المزامنة تبدأ مع فتح التطبيق وتبقى ما دام مفتوحاً.
     ref.listenManual(notificationSyncProvider, (_, _) {});
+    ref.listenManual(
+      dataUpdateProvider.select((s) => s.acceptedCount),
+      (previous, next) {
+        if (next > (previous ?? 0)) _onDataUpdated();
+      },
+    );
     _lifecycle;
     _initNotifications();
     // تحديث البيانات الموقّع بعد رسم أول إطار، غير متزامن ولا يؤخر الواجهة
@@ -69,6 +82,33 @@ class _DururAppState extends ConsumerState<DururApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(dataUpdateProvider.notifier).maybeCheck();
     });
+  }
+
+  /// قُبلت حزمة بيانات (تلقائياً أو بـ «تحقق الآن»): رسالة واحدة أسفل
+  /// الشاشة. التطبيق في الخلفية ← لا تظهر لاحقاً (سطر الحالة يكفي)؛ أثناء
+  /// شاشات البداية ← لا؛ ورقة أو حوار مفتوح ← تنتظر إغلاقه.
+  void _onDataUpdated() {
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) return;
+    if (!ref.read(settingsProvider).onboardingDone) return;
+    _updatedPending = true;
+    if (!_popups.hasPopup) _showPendingUpdated();
+  }
+
+  void _showPendingUpdated() {
+    if (!_updatedPending || !mounted) return;
+    _updatedPending = false;
+    final messenger = _messengerKey.currentState;
+    if (messenger == null) return;
+    final screenReader =
+        MediaQuery.maybeOf(messenger.context)?.accessibleNavigation ?? false;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(lookupAppLocalizations(DururApp.arabic).settingsUpdateUpdated),
+        // 6 ثوانٍ على الأقل، وأطول مع قارئ الشاشة (DESIGN 11).
+        duration: Duration(seconds: screenReader ? 10 : 6),
+      ),
+    );
   }
 
   /// تهيئة البلجن والضغط على التنبيه (من الخلفية أو من حالة الإغلاق).
@@ -130,6 +170,7 @@ class _DururAppState extends ConsumerState<DururApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      scaffoldMessengerKey: _messengerKey,
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       locale: DururApp.arabic,

@@ -87,20 +87,53 @@ String _expandHome(String path) {
   return path;
 }
 
-/// هل [path] داخل مجلد المشروع أو مستودع git الذي يحتويه؟
+/// المسار الحقيقي بعد تتبّع الروابط الرمزية، ولو لم يوجد الملف بعد: أقرب
+/// أصل موجود يُحلّ بـ `resolveSymbolicLinksSync` ثم يُلحق به الباقي.
+String _realPath(String path) {
+  final sep = Platform.pathSeparator;
+  var current = File(path).absolute.path;
+  final rest = <String>[];
+  while (FileSystemEntity.typeSync(current, followLinks: false) ==
+      FileSystemEntityType.notFound) {
+    final parent = File(current).parent.path;
+    if (parent == current) break;
+    rest.insert(0, current.substring(current.lastIndexOf(sep) + 1));
+    current = parent;
+  }
+  final parts = File(current)
+      .resolveSymbolicLinksSync()
+      .split(sep)
+      .where((p) => p.isNotEmpty)
+      .toList();
+  for (final segment in rest) {
+    if (segment.isEmpty || segment == '.') continue;
+    if (segment == '..') {
+      if (parts.isNotEmpty) parts.removeLast();
+    } else {
+      parts.add(segment);
+    }
+  }
+  return '$sep${parts.join(sep)}';
+}
+
+/// هل [path] داخل مجلد المشروع أو مستودع git الذي يحتويه؟ المساران يُقارنان
+/// بعد تتبّع الروابط الرمزية (رابط خارج المستودع يشير إلى داخله ← داخل).
 bool _insideRepository(String path) {
-  final target = File(path).absolute.path;
-  var dir = Directory.current.absolute;
+  final target = _realPath(path);
+  final cwd = _realPath(Directory.current.path);
+  bool under(String dir) =>
+      target == dir || target.startsWith('$dir${Platform.pathSeparator}');
+  var dir = Directory(cwd);
   while (true) {
     if (Directory('${dir.path}/.git').existsSync() ||
         File('${dir.path}/.git').existsSync()) {
-      return target.startsWith('${dir.path}/');
+      return under(dir.path);
     }
     final parent = dir.parent;
     if (parent.path == dir.path) break;
     dir = parent;
   }
-  return target.startsWith('${Directory.current.absolute.path}/');
+  return under(cwd);
 }
 
 Future<void> _keygen(Map<String, String> options) async {
@@ -237,7 +270,20 @@ Future<void> _sign(Map<String, String> options) async {
     throw const _ToolError('البيان أكبر من 4 كيلوبايت.');
   }
 
-  // 4. تحقق ذاتي بالمفتاح العام المقابل (كما سيتحقق التطبيق).
+  // 4. تحقق ذاتي بالمفتاح العام المقابل (كما سيتحقق التطبيق)، والهجري وعدم
+  // الحذف مقابل assets/tables الحقيقية في المشروع (المضمّنة في التطبيق) لا
+  // مقابل الجداول المُوقَّعة نفسها.
+  final Tables embedded;
+  try {
+    embedded = await TablesLoader((path) => File(path).readAsString()).load();
+  } on Object catch (e) {
+    throw _ToolError('تعذّر قراءة ${TablesLoader.root} الحقيقية للمقارنة '
+        '(شغّل الأداة من مجلد المشروع): $e');
+  }
+  if (seq <= embedded.meta.dataSeq) {
+    stderr.writeln('تنبيه: dataSeq ($seq) ليس أكبر من المضمّن في التطبيق '
+        '(${embedded.meta.dataSeq})؛ لن تصل الحزمة إلا لنسخ أقدم.');
+  }
   final publicKey = base64.encode(
     (await keyPair.extractPublicKey() as SimplePublicKey).bytes,
   );
@@ -245,7 +291,7 @@ Future<void> _sign(Map<String, String> options) async {
     await BundleVerifier({keyId: publicKey}).verify(
       manifestBytes,
       bundleBytes,
-      embedded: tables,
+      embedded: embedded,
       appBuild: minAppBuild,
       minSeqExclusive: seq - 1,
     );

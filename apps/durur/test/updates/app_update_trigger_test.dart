@@ -47,7 +47,7 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(Directionality).first),
     );
-    expect(container.read(dataUpdateProvider), UpdateOutcome.failed);
+    expect(container.read(dataUpdateProvider).outcome, UpdateOutcome.failed);
     expect(tester.takeException(), isNull);
 
     Future<void> resume() async {

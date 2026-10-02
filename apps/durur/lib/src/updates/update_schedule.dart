@@ -10,25 +10,31 @@ const checkIntervalAfterFailure = Duration(hours: 24);
 /// هل يحين التحقق الآن؟ يُسأل عند فتح التطبيق والعودة للواجهة فقط (لا مهام
 /// خلفية).
 ///
+/// - مفتاح «تحديث البيانات تلقائياً» مطفأ ([autoUpdate] = false) ← لا أبداً
+///   (زر «تحقق الآن» طلب صريح لا يمر من هنا، DESIGN 8.7).
 /// - لا تحقق أثناء الإعداد الأولي ([onboardingDone] = false).
 /// - لم يُحاوَل قط ← نعم.
 /// - آخر محاولة فاشلة (أحدث من آخر نجاح) ← بعد 24 ساعة منها.
 /// - وإلا ← بعد 7 أيام من آخر نجاح.
-/// - ساعة الجهاز رجعت قبل آخر وقت مسجّل ← نعم (وإلا يتوقف التحقق حتى تلحق).
+/// - وقت مسجّل في المستقبل (ساعة الجهاز رجعت للخلف) يُعامل كأنه الآن، فلا
+///   يصير التحقق مستحقاً في كل عودة للواجهة. ومعه `UpdateState.clampFuture` يُعيد
+///   المستدعي كتابة الوقت المسجّل إلى الآن، فتبدأ المهلة من جديد ولا يتوقف
+///   التحقق حتى تلحق الساعة.
 bool isCheckDue({
   required DateTime now,
   required DateTime? lastCheckOk,
   required DateTime? lastAttempt,
   required bool onboardingDone,
+  bool autoUpdate = true,
 }) {
-  if (!onboardingDone) return false;
+  if (!autoUpdate || !onboardingDone) return false;
   if (lastAttempt == null && lastCheckOk == null) return true;
   final failedLast =
       lastAttempt != null &&
       (lastCheckOk == null || lastAttempt.isAfter(lastCheckOk));
-  final since = failedLast ? lastAttempt : lastCheckOk!;
+  final recorded = failedLast ? lastAttempt : lastCheckOk!;
+  final since = recorded.isAfter(now) ? now : recorded;
   final elapsed = now.difference(since);
-  if (elapsed.isNegative) return true;
   return elapsed >=
       (failedLast ? checkIntervalAfterFailure : checkIntervalAfterSuccess);
 }

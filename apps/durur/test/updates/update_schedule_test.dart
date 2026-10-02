@@ -6,13 +6,19 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final t0 = DateTime(2026, 10, 2, 9);
 
-  bool due(DateTime now, {DateTime? ok, DateTime? attempt, bool done = true}) =>
-      isCheckDue(
-        now: now,
-        lastCheckOk: ok,
-        lastAttempt: attempt,
-        onboardingDone: done,
-      );
+  bool due(
+    DateTime now, {
+    DateTime? ok,
+    DateTime? attempt,
+    bool done = true,
+    bool auto = true,
+  }) => isCheckDue(
+    now: now,
+    lastCheckOk: ok,
+    lastAttempt: attempt,
+    onboardingDone: done,
+    autoUpdate: auto,
+  );
 
   test('لم يُحاوَل قط ← نعم', () => expect(due(t0), isTrue));
 
@@ -49,8 +55,30 @@ void main() {
     expect(due(t0.add(const Duration(hours: 25)), ok: ok, attempt: t0), isTrue);
   });
 
-  test('ساعة الجهاز رجعت قبل آخر محاولة ← نعم (لا يتوقف التحقق)', () {
-    expect(due(t0.subtract(const Duration(days: 2)), ok: t0, attempt: t0), isTrue);
+  test('المفتاح مطفأ ← لا أبداً (ولو لم يُحاوَل قط أو مرّت سنة)', () {
+    expect(due(t0, auto: false), isFalse);
+    expect(
+      due(t0.add(const Duration(days: 365)), ok: t0, attempt: t0, auto: false),
+      isFalse,
+    );
+    expect(
+      due(t0.add(const Duration(days: 365)), attempt: t0, auto: false),
+      isFalse,
+    );
+  });
+
+  test('ساعة الجهاز رجعت للخلف ← الوقت المسجّل كأنه الآن (لا تحقق في كل عودة)',
+      () {
+    final back = t0.subtract(const Duration(days: 2));
+    // بعد نجاح: لا، ولا بعد ساعات من الوقت الراجع.
+    expect(due(back, ok: t0, attempt: t0), isFalse);
+    expect(due(back.add(const Duration(hours: 5)), ok: t0, attempt: t0), isFalse);
+    // بعد فشل: لا أيضاً.
+    expect(due(back, attempt: t0), isFalse);
+    expect(
+      due(back, ok: t0.subtract(const Duration(days: 9)), attempt: t0),
+      isFalse,
+    );
   });
 
   test('الثابتان كما في D21', () {

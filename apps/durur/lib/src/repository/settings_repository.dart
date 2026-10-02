@@ -33,7 +33,8 @@ enum ThemeChoice {
 /// إعدادات المستخدم المحفوظة على الجهاز فقط (ARCHITECTURE §12).
 ///
 /// يُحفظ **معرّف المدينة فقط**، ولا تُحفظ أي إحداثيات (D11)؛ ومعه مفتاحا
-/// التنبيهات وانتهاء الإعداد الأولي والسمة والأرقام (الميزة 8). القيم
+/// التنبيهات وانتهاء الإعداد الأولي والسمة والأرقام (الميزة 8)، ومفتاح تحديث
+/// البيانات (الميزة 11ب). القيم
 /// الافتراضية لا تُكتب على الجهاز؛ يُحفظ ما يغيّره المستخدم فقط.
 class SettingsRepository {
   const SettingsRepository(this._prefs);
@@ -49,6 +50,9 @@ class SettingsRepository {
   /// مفتاح «بداية كل دَرّ» (مطفأ افتراضياً).
   static const notifyDarKey = 'notifyDar';
 
+  /// مفتاح «تحديث البيانات تلقائياً» (مفعّل افتراضياً، D21، ARCHITECTURE §16.4).
+  static const autoUpdateKey = 'data.autoUpdate';
+
   static const themeKey = 'theme';
   static const digitsKey = 'digits';
 
@@ -58,6 +62,7 @@ class SettingsRepository {
   bool get onboardingDone => _prefs.getBool(onboardingDoneKey) ?? false;
   bool get notifyImportant => _prefs.getBool(notifyImportantKey) ?? true;
   bool get notifyDar => _prefs.getBool(notifyDarKey) ?? false;
+  bool get autoUpdate => _prefs.getBool(autoUpdateKey) ?? true;
   ThemeChoice get theme => ThemeChoice.parse(_prefs.getString(themeKey));
   DigitStyle get digits => DigitStyle.parse(_prefs.getString(digitsKey));
 
@@ -68,6 +73,8 @@ class SettingsRepository {
   Future<void> saveNotifyImportant(bool on) => _setBool(notifyImportantKey, on);
 
   Future<void> saveNotifyDar(bool on) => _setBool(notifyDarKey, on);
+
+  Future<void> saveAutoUpdate(bool on) => _setBool(autoUpdateKey, on);
 
   Future<void> saveTheme(ThemeChoice theme) => _setString(themeKey, theme.code);
 

@@ -29,6 +29,15 @@ enum UpdateOutcome {
   failed,
 }
 
+/// نوع الفشل لسطر النتيجة في الإعدادات (DESIGN 8.7)؛ لا يُعرض السبب التقني.
+enum UpdateFailure {
+  /// لا إنترنت، مهلة، رد غير 200 (ومنه 304)، حجم زائد، تحويل مرفوض.
+  network,
+
+  /// بيان أو حزمة مرفوضة (توقيع، رقم، بصمة، مدقق، توافق) أو تعذّر التثبيت.
+  verify,
+}
+
 /// حدّا الحجم (§16.2).
 const maxManifestBytes = 4 * 1024;
 const maxBundleBytes = 2 * 1024 * 1024;
@@ -50,6 +59,13 @@ class DataUpdater {
 
   /// آخر سبب فشل (للاختبارات والتشخيص فقط).
   Object? lastError;
+
+  /// نوع آخر فشل، أو null إن لم تفشل آخر محاولة.
+  UpdateFailure? get lastFailure => switch (lastError) {
+    null => null,
+    FetchException() => UpdateFailure.network,
+    _ => UpdateFailure.verify,
+  };
 
   bool get isEnabled => config.isEnabled && verifier.trustedKeys.isNotEmpty;
 
@@ -96,8 +112,12 @@ class DataUpdater {
         bundleBytes,
         embedded: embedded,
       );
-      await store.install(verified.manifest.dataSeq, manifestBytes, bundleBytes);
+      // الحد الأدنى يُرفع **قبل** التثبيت: إن توقف التطبيق بين الخطوتين لا
+      // تُقبل لاحقاً حزمة أقدم من المثبّتة (رقمها بين القديم والجديد). وإن
+      // فشل التثبيت نفسه تبقى البيانات الحالية، والحزمة نفسها لا تُعاد حتى
+      // رقم أحدث (اتجاه الأمان).
       await state.recordAccepted(verified.manifest.dataSeq);
+      await store.install(verified.manifest.dataSeq, manifestBytes, bundleBytes);
       await state.recordSuccess(now);
       return UpdateOutcome.updated;
     } on Object catch (e) {

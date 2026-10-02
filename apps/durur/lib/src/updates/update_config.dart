@@ -1,6 +1,8 @@
 /// إعدادات تحديث البيانات الموقّع (ARCHITECTURE §16.1، D21). Dart صافٍ.
 library;
 
+import 'package:meta/meta.dart';
+
 import '../domain/tables.dart';
 
 /// رابط مصدر التحديث من `--dart-define-from-file=config/app_config.json`
@@ -11,6 +13,9 @@ class UpdateConfig {
   const UpdateConfig({this.baseUrl = ''}) : _root = null;
 
   /// للاختبارات فقط: جذر مجلد المخطط كما هو بلا فحص https (خادم محلي http).
+  /// والجلب الفعلي يرفض http أيضاً إلا بـ
+  /// `HttpUpdateFetcher.allowingHttpForTesting`.
+  @visibleForTesting
   const UpdateConfig.unchecked(Uri root) : baseUrl = '', _root = root;
 
   factory UpdateConfig.fromEnvironment() =>

@@ -1137,5 +1137,100 @@
   "reportCopyError": "تعذّر نسخ تفاصيل البلاغ. حاول مرة أخرى.",
   "@reportCopyError": {
     "description": "فشل النسخ للحافظة: بزر «نسخ تفاصيل البلاغ»، أو قبل فتح النموذج بلا تعبئة مسبقة فلا يُفتح (ليس في DESIGN بعد)"
+  },
+  "settingsSectionUpdate": "تحديث البيانات",
+  "@settingsSectionUpdate": {
+    "description": "عنوان قسم تحديث البيانات بين «المظهر» و«البيانات والمساعدة» (DESIGN settings.section.update)"
+  },
+  "settingsUpdateAuto": "تحديث البيانات تلقائياً",
+  "@settingsUpdateAuto": {
+    "description": "مفتاح التحقق التلقائي، مفعّل افتراضياً (DESIGN settings.update.auto)"
+  },
+  "settingsUpdateAutoDesc": "نتحقق مرة في الأسبوع عند فتح التطبيق، بلا أي معلومة عنك.",
+  "@settingsUpdateAutoDesc": {
+    "description": "وصف المفتاح (DESIGN settings.update.auto_desc)"
+  },
+  "settingsUpdateStatus": "نسخة البيانات: {version} — آخر تحقق: {date}",
+  "@settingsUpdateStatus": {
+    "description": "سطر الحالة؛ مسافة غير قابلة للكسر قبل «—» (DESIGN settings.update.status)",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsUpdateStatusNever": "نسخة البيانات: {version} — لم نتحقق بعد",
+  "@settingsUpdateStatusNever": {
+    "description": "سطر الحالة قبل أول تحقق ناجح (DESIGN settings.update.status_never)",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsUpdateDateToday": "اليوم",
+  "@settingsUpdateDateToday": {
+    "description": "{date} في سطر الحالة (DESIGN settings.update.date_today)"
+  },
+  "settingsUpdateDateYesterday": "أمس",
+  "@settingsUpdateDateYesterday": {
+    "description": "{date} في سطر الحالة (DESIGN settings.update.date_yesterday)"
+  },
+  "settingsUpdateCheckNow": "تحقق الآن",
+  "@settingsUpdateCheckNow": {
+    "description": "زر التحقق اليدوي (DESIGN settings.update.check_now)"
+  },
+  "settingsUpdateChecking": "جارٍ التحقق…",
+  "@settingsUpdateChecking": {
+    "description": "نص الزر أثناء التحقق (DESIGN settings.update.checking)"
+  },
+  "settingsUpdateUpToDate": "بياناتك محدّثة.",
+  "@settingsUpdateUpToDate": {
+    "description": "سطر النتيجة: لا جديد (DESIGN settings.update.up_to_date)"
+  },
+  "settingsUpdateNetworkError": "تعذّر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.",
+  "@settingsUpdateNetworkError": {
+    "description": "سطر النتيجة: فشل الشبكة (DESIGN settings.update.network_error)"
+  },
+  "settingsUpdateVerifyError": "تعذّر التحقق من التحديث. بياناتك الحالية تعمل كما هي.",
+  "@settingsUpdateVerifyError": {
+    "description": "سطر النتيجة: حزمة مرفوضة (DESIGN settings.update.verify_error)"
+  },
+  "settingsUpdateUpdated": "حُدّثت البيانات",
+  "@settingsUpdateUpdated": {
+    "description": "رسالة أسفل الشاشة عند قبول حزمة، على أي شاشة (DESIGN settings.update.updated)"
+  },
+  "sourcesDataUpdated": "آخر تحديث للبيانات: {date}",
+  "@sourcesDataUpdated": {
+    "description": "بطاقة نسخة البيانات: publishedAt من البيان الموقّع (DESIGN sources.data_updated)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sourcesDataBundled": "البيانات المرفقة مع نسخة التطبيق {appVersion}",
+  "@sourcesDataBundled": {
+    "description": "بطاقة نسخة البيانات حين تكون المضمّنة (DESIGN sources.data_bundled)",
+    "placeholders": {
+      "appVersion": {
+        "type": "String"
+      }
+    }
+  },
+  "sourcesDataVersion": "نسخة البيانات: {version} ({seq})",
+  "@sourcesDataVersion": {
+    "description": "السطر الثاني في بطاقة نسخة البيانات (DESIGN sources.data_version)",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "seq": {
+        "type": "String"
+      }
+    }
   }
 }

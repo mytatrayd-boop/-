@@ -101,7 +101,23 @@ class UpdateState {
   Future<void> recordSuccess(DateTime now) =>
       _prefs.setInt(lastCheckOkKey, now.millisecondsSinceEpoch);
 
+  /// يُسجَّل **قبل** التثبيت (`DataUpdater.check`): توقف التطبيق بين
+  /// التثبيت والتسجيل لا يترك حداً أدنى أقدم من الحزمة المثبّتة.
   Future<void> recordAccepted(int seq) async {
-    if (seq > highestSeq) await _prefs.setInt(highestSeqKey, seq);
+    if (seq > highestSeq) {
+      final ok = await _prefs.setInt(highestSeqKey, seq);
+      if (!ok) throw StateError('تعذّر حفظ $highestSeqKey.');
+    }
+  }
+
+  /// ساعة الجهاز رجعت للخلف: أي وقت مسجّل بعد [now] يُكتب [now]، فتبدأ مهلة
+  /// التحقق من الآن (لا تحقق في كل عودة، ولا توقف حتى تلحق الساعة).
+  Future<void> clampFuture(DateTime now) async {
+    for (final key in [lastAttemptKey, lastCheckOkKey]) {
+      final t = _time(key);
+      if (t != null && t.isAfter(now)) {
+        await _prefs.setInt(key, now.millisecondsSinceEpoch);
+      }
+    }
   }
 }

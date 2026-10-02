@@ -869,4 +869,65 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reportCopyError => 'تعذّر نسخ تفاصيل البلاغ. حاول مرة أخرى.';
+
+  @override
+  String get settingsSectionUpdate => 'تحديث البيانات';
+
+  @override
+  String get settingsUpdateAuto => 'تحديث البيانات تلقائياً';
+
+  @override
+  String get settingsUpdateAutoDesc =>
+      'نتحقق مرة في الأسبوع عند فتح التطبيق، بلا أي معلومة عنك.';
+
+  @override
+  String settingsUpdateStatus(String version, String date) {
+    return 'نسخة البيانات: $version — آخر تحقق: $date';
+  }
+
+  @override
+  String settingsUpdateStatusNever(String version) {
+    return 'نسخة البيانات: $version — لم نتحقق بعد';
+  }
+
+  @override
+  String get settingsUpdateDateToday => 'اليوم';
+
+  @override
+  String get settingsUpdateDateYesterday => 'أمس';
+
+  @override
+  String get settingsUpdateCheckNow => 'تحقق الآن';
+
+  @override
+  String get settingsUpdateChecking => 'جارٍ التحقق…';
+
+  @override
+  String get settingsUpdateUpToDate => 'بياناتك محدّثة.';
+
+  @override
+  String get settingsUpdateNetworkError =>
+      'تعذّر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get settingsUpdateVerifyError =>
+      'تعذّر التحقق من التحديث. بياناتك الحالية تعمل كما هي.';
+
+  @override
+  String get settingsUpdateUpdated => 'حُدّثت البيانات';
+
+  @override
+  String sourcesDataUpdated(String date) {
+    return 'آخر تحديث للبيانات: $date';
+  }
+
+  @override
+  String sourcesDataBundled(String appVersion) {
+    return 'البيانات المرفقة مع نسخة التطبيق $appVersion';
+  }
+
+  @override
+  String sourcesDataVersion(String version, String seq) {
+    return 'نسخة البيانات: $version ($seq)';
+  }
 }

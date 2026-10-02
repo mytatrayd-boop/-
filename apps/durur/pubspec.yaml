@@ -48,6 +48,8 @@ dependencies:
     sdk: flutter
   cryptography: ^2.9.0
   path_provider: ^2.1.6
+  # @visibleForTesting في طبقة التحديث (Dart صافٍ بلا Flutter)، D31.
+  meta: ^1.17.0
 
 dev_dependencies:
   flutter_test:

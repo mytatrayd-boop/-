@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../domain/month_day.dart';
@@ -41,8 +41,10 @@ String? appRedirect(String location, RedirectState s) {
 GoRouter createAppRouter({
   required RedirectState Function() readState,
   Listenable? refreshListenable,
+  List<NavigatorObserver>? observers,
 }) => GoRouter(
   refreshListenable: refreshListenable,
+  observers: observers,
   redirect: (context, state) => appRedirect(state.matchedLocation, readState()),
   routes: [
     GoRoute(

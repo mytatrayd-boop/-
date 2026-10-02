@@ -9,6 +9,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
+
 /// سبب فشل الطلب (لا يُعرض للمستخدم).
 enum FetchFailure { network, timeout, httpStatus, tooLarge, redirect }
 
@@ -32,7 +34,18 @@ class HttpUpdateFetcher implements UpdateFetcher {
     HttpClient Function()? clientFactory,
     this.timeout = const Duration(seconds: 15),
     this.maxRedirects = 3,
-  }) : _clientFactory = clientFactory ?? HttpClient.new;
+  }) : _clientFactory = clientFactory ?? HttpClient.new,
+       _allowHttp = false;
+
+  /// للاختبارات فقط: يقبل `http` أيضاً (خادم محلي بلا شهادة TLS). التطبيق
+  /// يستخدم المنشئ الافتراضي الذي يرفض كل مخطط غير `https` قبل أي اتصال.
+  @visibleForTesting
+  HttpUpdateFetcher.allowingHttpForTesting({
+    HttpClient Function()? clientFactory,
+    this.timeout = const Duration(seconds: 15),
+    this.maxRedirects = 3,
+  }) : _clientFactory = clientFactory ?? HttpClient.new,
+       _allowHttp = true;
 
   /// ثابت لكل المستخدمين (لا نسخة تطبيق ولا نظام ولا لغة).
   static const userAgent = 'durur';
@@ -40,9 +53,16 @@ class HttpUpdateFetcher implements UpdateFetcher {
   final HttpClient Function() _clientFactory;
   final Duration timeout;
   final int maxRedirects;
+  final bool _allowHttp;
 
   @override
   Future<Uint8List> get(Uri uri, {required int maxBytes}) async {
+    final schemeOk =
+        uri.scheme == 'https' || (_allowHttp && uri.scheme == 'http');
+    if (!schemeOk || uri.host.isEmpty) {
+      // لا اتصال أصلاً: HTTPS فقط (§16.2).
+      throw FetchException(FetchFailure.network, 'مخطط غير مسموح: $uri');
+    }
     if (uri.hasQuery || uri.hasFragment || uri.userInfo.isNotEmpty) {
       throw FetchException(FetchFailure.network, 'رابط غير مسموح: $uri');
     }

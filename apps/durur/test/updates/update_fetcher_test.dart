@@ -5,8 +5,9 @@ import 'package:durur/src/updates/update_fetcher.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// الطلب الفعلي عبر dart:io على خادم HTTP محلي (ARCHITECTURE §16.2، §16.9).
-/// الخادم المحلي http (لا شهادة TLS في الاختبار)؛ فرض https في UpdateConfig
-/// ويُختبر في data_updater_test.
+/// الخادم المحلي http (لا شهادة TLS في الاختبار) عبر المنشئ الصريح
+/// `allowingHttpForTesting`؛ المنشئ الافتراضي يرفض كل مخطط غير https قبل أي
+/// اتصال (اختبار أدناه)، وفرض https في UpdateConfig في data_updater_test.
 void main() {
   late HttpServer server;
   late Uri base;
@@ -31,7 +32,7 @@ void main() {
   tearDown(() => server.close(force: true));
 
   HttpUpdateFetcher fetcher({Duration timeout = const Duration(seconds: 5)}) =>
-      HttpUpdateFetcher(timeout: timeout);
+      HttpUpdateFetcher.allowingHttpForTesting(timeout: timeout);
 
   Matcher failsWith(FetchFailure f) => throwsA(
     isA<FetchException>().having((e) => e.failure, 'failure', f),
@@ -179,5 +180,43 @@ void main() {
       fetcher().get(Uri.parse('http://127.0.0.1:$port/x'), maxBytes: 10),
       failsWith(FetchFailure.network),
     );
+  });
+
+  test('المنشئ الافتراضي (التطبيق) يرفض http وأي مخطط غير https بلا اتصال', () async {
+    handler = (r) async {
+      r.response.write('{}');
+      await r.response.close();
+    };
+    for (final uri in [
+      base.resolve('v1/manifest.json'), // http على خادم يعمل فعلاً
+      Uri.parse('ftp://127.0.0.1:${server.port}/v1/manifest.json'),
+      Uri.parse('file:///etc/hosts'),
+      Uri.parse('https:///v1/manifest.json'), // بلا نطاق
+    ]) {
+      await expectLater(
+        HttpUpdateFetcher().get(uri, maxBytes: 4096),
+        failsWith(FetchFailure.network),
+        reason: '$uri',
+      );
+    }
+    expect(requests, isEmpty);
+  });
+
+  test('التحويل إلى مخطط آخر (http ← https) مرفوض حتى مع خيار الاختبار', () async {
+    // خيار الاختبار يسمح ببدء http فقط؛ التحويل يجب أن يبقى على المخطط نفسه.
+    handler = (r) async {
+      r.response
+        ..statusCode = HttpStatus.found
+        ..headers.set(
+          HttpHeaders.locationHeader,
+          'https://127.0.0.1:${server.port}/y',
+        );
+      await r.response.close();
+    };
+    await expectLater(
+      fetcher().get(base.resolve('x'), maxBytes: 10),
+      failsWith(FetchFailure.redirect),
+    );
+    expect(requests.map((r) => r.uri.path), ['/x']);
   });
 }
