@@ -18,6 +18,7 @@ class TablesLoader {
   static const metaPath = '$root/meta.json';
   static const regionsPath = '$root/regions.json';
   static const itemsPath = '$root/items.json';
+  static const citiesPath = '$root/cities.json';
   static String regionTablePath(String regionId) =>
       '$root/regions/$regionId.json';
 
@@ -36,6 +37,7 @@ class TablesLoader {
       regionsJson: regionsJson,
       itemsJson: await _readJson(itemsPath),
       regionTablesJson: regionTables,
+      citiesJson: await _readJson(citiesPath),
     );
   }
 

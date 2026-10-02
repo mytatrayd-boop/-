@@ -123,6 +123,114 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{day} {month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}} {year}م'**
   String gregorianDate(String day, String month, String year);
+
+  /// زر إعادة المحاولة بعد خطأ (DESIGN common.retry)
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get commonRetry;
+
+  /// عنوان شاشة اختيار المدينة، ونص شريحة/صف المدينة قبل الاختيار (DESIGN city.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مدينتك'**
+  String get cityPickerTitle;
+
+  /// تلميح حقل البحث في قائمة المدن (DESIGN city.search_hint)
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث باسم المدينة'**
+  String get citySearchHint;
+
+  /// شريحة تصفية: كل الدول (DESIGN city.filter_all)
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get cityFilterAll;
+
+  /// اسم الدولة لشرائح التصفية وعناوين المجموعات. country رمز ISO مثل SA
+  ///
+  /// In ar, this message translates to:
+  /// **'{country, select, SA{السعودية} KW{الكويت} AE{الإمارات} OM{عُمان} QA{قطر} BH{البحرين} other{}}'**
+  String countryName(String country);
+
+  /// سطر تحت اسم المدينة في القائمة (DESIGN city.region_label)
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول: {region}'**
+  String cityRegionLabel(String region);
+
+  /// رسالة قصيرة بعد اختيار مدينة (DESIGN city.selected)
+  ///
+  /// In ar, this message translates to:
+  /// **'تم اختيار {city} — جدول {region}'**
+  String citySelected(String city, String region);
+
+  /// عنوان حالة لا نتائج للبحث (DESIGN city.empty.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مدينة بهذا الاسم.'**
+  String get cityEmptyTitle;
+
+  /// نص حالة لا نتائج للبحث (DESIGN city.empty.body)
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب اسماً آخر أو اختر أقرب مدينة لك.'**
+  String get cityEmptyBody;
+
+  /// زر مسح البحث في حالة لا نتائج (DESIGN city.empty.clear)
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح البحث'**
+  String get cityEmptyClear;
+
+  /// فشل حفظ المدينة (DESIGN city.save_error)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ اختيارك. حاول مرة أخرى.'**
+  String get citySaveError;
+
+  /// شريحة المدينة أعلى الرئيسية، مثل: الرياض · نجد (DESIGN 5.3)
+  ///
+  /// In ar, this message translates to:
+  /// **'{city} · {region}'**
+  String cityChipLabel(String city, String region);
+
+  /// عنوان شاشة الإعدادات وتلميح زرها (DESIGN settings.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settingsTitle;
+
+  /// عنوان قسم المنطقة في الإعدادات (DESIGN settings.section.region)
+  ///
+  /// In ar, this message translates to:
+  /// **'المنطقة'**
+  String get settingsSectionRegion;
+
+  /// صف المدينة في الإعدادات (DESIGN settings.city)
+  ///
+  /// In ar, this message translates to:
+  /// **'المدينة'**
+  String get settingsCity;
+
+  /// قيمة صف المدينة في الإعدادات (DESIGN settings.city_value)
+  ///
+  /// In ar, this message translates to:
+  /// **'{city} — جدول {region}'**
+  String settingsCityValue(String city, String region);
+
+  /// خطأ قراءة البيانات المضمّنة (DESIGN error.data_load.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح بيانات الدرور'**
+  String get dataLoadErrorTitle;
+
+  /// نص خطأ قراءة البيانات (DESIGN error.data_load.body)
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد تشغيل التطبيق. إذا تكرر ذلك، حدّث التطبيق من المتجر.'**
+  String get dataLoadErrorBody;
 }
 
 class _AppLocalizationsDelegate

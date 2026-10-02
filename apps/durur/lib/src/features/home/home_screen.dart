@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../formatting/date_labels.dart';
 import '../../hijri/hijri_date.dart';
+import '../../routing/app_router.dart';
+import 'city_chip.dart';
 
 /// شاشة مؤقتة لهيكل المشروع. الدائرة التفاعلية تأتي في الميزة 6.
 class HomeScreen extends StatelessWidget {
@@ -18,7 +21,17 @@ class HomeScreen extends StatelessWidget {
     final hijri = HijriDate.fromGregorian(now);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.appTitle)),
+      appBar: AppBar(
+        // DESIGN 8.4: شريحة المدينة في البداية (يمين)، والإعدادات في النهاية.
+        title: const CityChip(),
+        actions: [
+          IconButton(
+            tooltip: l10n.settingsTitle,
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push(AppRoutes.settings),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsetsDirectional.all(16),
         child: Column(

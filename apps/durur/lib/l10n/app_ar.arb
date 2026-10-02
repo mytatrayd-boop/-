@@ -41,5 +41,111 @@
         "type": "String"
       }
     }
+  },
+  "commonRetry": "إعادة المحاولة",
+  "@commonRetry": {
+    "description": "زر إعادة المحاولة بعد خطأ (DESIGN common.retry)"
+  },
+  "cityPickerTitle": "اختر مدينتك",
+  "@cityPickerTitle": {
+    "description": "عنوان شاشة اختيار المدينة، ونص شريحة/صف المدينة قبل الاختيار (DESIGN city.title)"
+  },
+  "citySearchHint": "ابحث باسم المدينة",
+  "@citySearchHint": {
+    "description": "تلميح حقل البحث في قائمة المدن (DESIGN city.search_hint)"
+  },
+  "cityFilterAll": "الكل",
+  "@cityFilterAll": {
+    "description": "شريحة تصفية: كل الدول (DESIGN city.filter_all)"
+  },
+  "countryName": "{country, select, SA{السعودية} KW{الكويت} AE{الإمارات} OM{عُمان} QA{قطر} BH{البحرين} other{}}",
+  "@countryName": {
+    "description": "اسم الدولة لشرائح التصفية وعناوين المجموعات. country رمز ISO مثل SA",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "cityRegionLabel": "جدول: {region}",
+  "@cityRegionLabel": {
+    "description": "سطر تحت اسم المدينة في القائمة (DESIGN city.region_label)",
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "citySelected": "تم اختيار {city} — جدول {region}",
+  "@citySelected": {
+    "description": "رسالة قصيرة بعد اختيار مدينة (DESIGN city.selected)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "cityEmptyTitle": "لا توجد مدينة بهذا الاسم.",
+  "@cityEmptyTitle": {
+    "description": "عنوان حالة لا نتائج للبحث (DESIGN city.empty.title)"
+  },
+  "cityEmptyBody": "جرّب اسماً آخر أو اختر أقرب مدينة لك.",
+  "@cityEmptyBody": {
+    "description": "نص حالة لا نتائج للبحث (DESIGN city.empty.body)"
+  },
+  "cityEmptyClear": "مسح البحث",
+  "@cityEmptyClear": {
+    "description": "زر مسح البحث في حالة لا نتائج (DESIGN city.empty.clear)"
+  },
+  "citySaveError": "تعذّر حفظ اختيارك. حاول مرة أخرى.",
+  "@citySaveError": {
+    "description": "فشل حفظ المدينة (DESIGN city.save_error)"
+  },
+  "cityChipLabel": "{city} · {region}",
+  "@cityChipLabel": {
+    "description": "شريحة المدينة أعلى الرئيسية، مثل: الرياض · نجد (DESIGN 5.3)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTitle": "الإعدادات",
+  "@settingsTitle": {
+    "description": "عنوان شاشة الإعدادات وتلميح زرها (DESIGN settings.title)"
+  },
+  "settingsSectionRegion": "المنطقة",
+  "@settingsSectionRegion": {
+    "description": "عنوان قسم المنطقة في الإعدادات (DESIGN settings.section.region)"
+  },
+  "settingsCity": "المدينة",
+  "@settingsCity": {
+    "description": "صف المدينة في الإعدادات (DESIGN settings.city)"
+  },
+  "settingsCityValue": "{city} — جدول {region}",
+  "@settingsCityValue": {
+    "description": "قيمة صف المدينة في الإعدادات (DESIGN settings.city_value)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "dataLoadErrorTitle": "تعذّر فتح بيانات الدرور",
+  "@dataLoadErrorTitle": {
+    "description": "خطأ قراءة البيانات المضمّنة (DESIGN error.data_load.title)"
+  },
+  "dataLoadErrorBody": "أعد تشغيل التطبيق. إذا تكرر ذلك، حدّث التطبيق من المتجر.",
+  "@dataLoadErrorBody": {
+    "description": "نص خطأ قراءة البيانات (DESIGN error.data_load.body)"
   }
 }

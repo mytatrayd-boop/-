@@ -33,6 +33,7 @@ class TableValidator {
 
     _checkRegions(tables, errors);
     _checkItems(tables, errors);
+    _checkCities(tables, errors);
     for (final table in tables.regionTables.values) {
       _checkRegionTable(table, tables, errors);
     }
@@ -90,6 +91,27 @@ class TableValidator {
     for (final id in tables.regionTables.keys) {
       if (!ids.contains(id)) {
         errors.add('regions/$id.json: منطقة غير موجودة في regions.json.');
+      }
+    }
+  }
+
+  /// كل مدينة: معرّف فريد، منطقة موجودة، إحداثيات صالحة (ARCHITECTURE §4).
+  void _checkCities(Tables tables, List<String> errors) {
+    _checkUnique(
+      tables.cities.map((c) => c.id).toList(),
+      'cities.json: معرّف مدينة مكرر',
+      errors,
+    );
+    final regionIds = tables.regions.map((r) => r.id).toSet();
+    for (final city in tables.cities) {
+      if (!regionIds.contains(city.regionId)) {
+        errors.add(
+          '${city.recordPath}: المنطقة "${city.regionId}" غير موجودة '
+          'في regions.json.',
+        );
+      }
+      if (city.lat < -90 || city.lat > 90 || city.lon < -180 || city.lon > 180) {
+        errors.add('${city.recordPath}: إحداثيات خارج النطاق.');
       }
     }
   }

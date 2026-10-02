@@ -58,4 +58,78 @@ class AppLocalizationsAr extends AppLocalizations {
     });
     return '$day $_temp0 $yearم';
   }
+
+  @override
+  String get commonRetry => 'إعادة المحاولة';
+
+  @override
+  String get cityPickerTitle => 'اختر مدينتك';
+
+  @override
+  String get citySearchHint => 'ابحث باسم المدينة';
+
+  @override
+  String get cityFilterAll => 'الكل';
+
+  @override
+  String countryName(String country) {
+    String _temp0 = intl.Intl.selectLogic(country, {
+      'SA': 'السعودية',
+      'KW': 'الكويت',
+      'AE': 'الإمارات',
+      'OM': 'عُمان',
+      'QA': 'قطر',
+      'BH': 'البحرين',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String cityRegionLabel(String region) {
+    return 'جدول: $region';
+  }
+
+  @override
+  String citySelected(String city, String region) {
+    return 'تم اختيار $city — جدول $region';
+  }
+
+  @override
+  String get cityEmptyTitle => 'لا توجد مدينة بهذا الاسم.';
+
+  @override
+  String get cityEmptyBody => 'جرّب اسماً آخر أو اختر أقرب مدينة لك.';
+
+  @override
+  String get cityEmptyClear => 'مسح البحث';
+
+  @override
+  String get citySaveError => 'تعذّر حفظ اختيارك. حاول مرة أخرى.';
+
+  @override
+  String cityChipLabel(String city, String region) {
+    return '$city · $region';
+  }
+
+  @override
+  String get settingsTitle => 'الإعدادات';
+
+  @override
+  String get settingsSectionRegion => 'المنطقة';
+
+  @override
+  String get settingsCity => 'المدينة';
+
+  @override
+  String settingsCityValue(String city, String region) {
+    return '$city — جدول $region';
+  }
+
+  @override
+  String get dataLoadErrorTitle => 'تعذّر فتح بيانات الدرور';
+
+  @override
+  String get dataLoadErrorBody =>
+      'أعد تشغيل التطبيق. إذا تكرر ذلك، حدّث التطبيق من المتجر.';
 }

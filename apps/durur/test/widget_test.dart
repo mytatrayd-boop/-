@@ -1,16 +1,17 @@
-import 'package:durur/l10n/app_localizations.dart';
-import 'package:durur/src/app.dart';
 import 'package:durur/src/features/home/home_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-void main() {
-  testWidgets('التطبيق يفتح بالعربية ومن اليمين لليسار', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: DururApp()));
-    await tester.pumpAndSettle();
+import 'helpers/app_harness.dart';
 
-    expect(find.text('ديرة الدرور'), findsWidgets);
+Future<void> main() async {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final tables = await loadAssetTables();
+
+  testWidgets('التطبيق يفتح بالعربية ومن اليمين لليسار', (tester) async {
+    await pumpDururApp(tester, prefs: await fakePrefs(), tables: tables);
+
+    expect(tester.widget<Title>(find.byType(Title)).title, 'ديرة الدرور');
     final direction = Directionality.of(tester.element(find.byType(HomeScreen)));
     expect(direction, TextDirection.rtl);
     expect(find.text('الجو المعتاد حسب التراث، وليس توقعاً للطقس'),
@@ -19,15 +20,12 @@ void main() {
 
   testWidgets('الشاشة تعرض التاريخين الهجري والميلادي بالعربية (الميزة 2)',
       (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: DururApp.arabic,
-        supportedLocales: const [DururApp.arabic],
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: HomeScreen(today: DateTime(2026, 10, 2, 9, 30)),
-      ),
+    await pumpScreen(
+      tester,
+      HomeScreen(today: DateTime(2026, 10, 2, 9, 30)),
+      prefs: await fakePrefs(),
+      tables: tables,
     );
-    await tester.pumpAndSettle();
 
     final hijri = find.byKey(const Key('hijriDate'));
     final gregorian = find.byKey(const Key('gregorianDate'));

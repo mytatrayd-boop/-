@@ -1,3 +1,4 @@
+import 'city.dart';
 import 'item.dart';
 import 'json_utils.dart';
 import 'record_meta.dart';
@@ -30,15 +31,18 @@ class Tables {
     required this.regions,
     required this.itemList,
     required this.regionTables,
+    this.cities = const [],
   }) : items = {for (final item in itemList) item.id: item};
 
   /// يبني الجداول من JSON محلَّل (بلا Flutter، يستخدمه التطبيق والأداة والاختبارات).
   /// [regionTablesJson]: معرّف المنطقة ← محتوى `regions/<id>.json`.
+  /// [citiesJson]: محتوى `cities.json` (اختياري لاختبارات المحرك).
   factory Tables.fromJson({
     required Object? metaJson,
     required Object? regionsJson,
     required Object? itemsJson,
     required Map<String, Object?> regionTablesJson,
+    Object? citiesJson,
   }) {
     final meta = TablesMeta.fromJson(metaJson);
     if (meta.schemaVersion != TablesMeta.supportedSchemaVersion) {
@@ -62,11 +66,18 @@ class Tables {
       }
       tables[id] = table;
     });
+    final cities = citiesJson == null
+        ? const <City>[]
+        : [
+            for (final (i, c) in asList(citiesJson, 'cities.json').indexed)
+              City.fromJson(c, 'cities.json[$i]'),
+          ];
     return Tables(
       meta: meta,
       regions: regions,
       itemList: items,
       regionTables: tables,
+      cities: cities,
     );
   }
 
@@ -79,6 +90,16 @@ class Tables {
   /// القائمة الأصلية بترتيب الملف (لاكتشاف المعرّفات المكررة في المدقق).
   final List<Item> itemList;
 
+  /// المدن بترتيب الملف (SPEC الميزة 3).
+  final List<City> cities;
+
+  City? city(String id) {
+    for (final c in cities) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+
   Region? region(String id) {
     for (final r in regions) {
       if (r.id == id) return r;
@@ -89,6 +110,7 @@ class Tables {
   Iterable<Sourced> get allRecords => [
         ...regions,
         ...itemList,
+        ...cities,
         for (final t in regionTables.values) ...t.allRecords,
       ];
 
