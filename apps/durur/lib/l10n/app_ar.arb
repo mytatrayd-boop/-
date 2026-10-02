@@ -12,24 +12,9 @@
   "@traditionDisclaimer": {
     "description": "عبارة ثابتة في الشاشة الرئيسية (SPEC الميزة 6)"
   },
-  "hijriDate": "{day} {month, select, m1{محرم} m2{صفر} m3{ربيع الأول} m4{ربيع الآخر} m5{جمادى الأولى} m6{جمادى الآخرة} m7{رجب} m8{شعبان} m9{رمضان} m10{شوال} m11{ذو القعدة} m12{ذو الحجة} other{}} {year}هـ",
+  "hijriDate": "{day} {month, select, m1{محرم} m2{صفر} m3{ربيع الأول} m4{ربيع الآخر} m5{جمادى الأولى} m6{جمادى الآخرة} m7{رجب} m8{شعبان} m9{رمضان} m10{شوال} m11{ذو القعدة} m12{ذو الحجة} other{}} {year} هـ",
   "@hijriDate": {
-    "description": "التاريخ الهجري حسب أم القرى، مثل: ٢١ ربيع الآخر ١٤٤٨هـ. day وyear أرقام منسقة مسبقاً، وmonth بالصيغة m1..m12 (SPEC الميزة 2)",
-    "placeholders": {
-      "day": {
-        "type": "String"
-      },
-      "month": {
-        "type": "String"
-      },
-      "year": {
-        "type": "String"
-      }
-    }
-  },
-  "gregorianDate": "{day} {month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}} {year}م",
-  "@gregorianDate": {
-    "description": "التاريخ الميلادي، مثل: ٢ أكتوبر ٢٠٢٦م. day وyear أرقام منسقة مسبقاً، وmonth بالصيغة g1..g12 (SPEC الميزة 2)",
+    "description": "التاريخ الهجري (أم القرى). month بالصيغة m1..m12",
     "placeholders": {
       "day": {
         "type": "String"
