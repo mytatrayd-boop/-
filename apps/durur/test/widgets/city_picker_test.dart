@@ -222,9 +222,11 @@ Future<void> main() async {
     testWidgets(
         'معيار 3 و4: الرئيسية ← اختيار الرياض ← رجوع والعرض «الرياض · نجد»، '
         'ويبقى بعد إعادة الفتح', (tester) async {
-      final prefs = await fakePrefs();
+      // بلا مدينة محفوظة تظهر شاشات البداية (الميزة 4، test/widgets/onboarding_test.dart).
+      final prefs =
+          await fakePrefs({SettingsRepository.cityIdKey: 'kuwait_city'});
       await pumpDururApp(tester, prefs: prefs, tables: tables);
-      expect(chipText(tester), 'اختر مدينتك');
+      expect(chipText(tester), 'مدينة الكويت · الكويت');
 
       await tester.tap(find.byType(CityChip));
       await tester.pumpAndSettle();

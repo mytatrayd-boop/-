@@ -1,4 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- الميزة 4 (ARCHITECTURE §7، D11): الموقع التقريبي فقط، قراءة واحدة. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- geolocator_android يضيف هذا الإذن لخدمة التتبع في المقدمة؛ لا نتتبع،
+         فنحذفه من الملف المدمج. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
+        tools:node="remove"/>
     <application
         android:label="durur"
         android:name="${applicationName}"

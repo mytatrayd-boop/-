@@ -1,4 +1,5 @@
 import 'package:durur/src/features/home/home_screen.dart';
+import 'package:durur/src/repository/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +10,9 @@ Future<void> main() async {
   final tables = await loadAssetTables();
 
   testWidgets('التطبيق يفتح بالعربية ومن اليمين لليسار', (tester) async {
-    await pumpDururApp(tester, prefs: await fakePrefs(), tables: tables);
+    await pumpDururApp(tester,
+        prefs: await fakePrefs({SettingsRepository.cityIdKey: 'riyadh'}),
+        tables: tables);
 
     expect(tester.widget<Title>(find.byType(Title)).title, 'ديرة الدرور');
     final direction = Directionality.of(tester.element(find.byType(HomeScreen)));

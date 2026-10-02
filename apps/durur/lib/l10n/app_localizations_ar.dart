@@ -132,4 +132,83 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dataLoadErrorBody =>
       'أعد تشغيل التطبيق. إذا تكرر ذلك، حدّث التطبيق من المتجر.';
+
+  @override
+  String get commonContinue => 'متابعة';
+
+  @override
+  String get onboardingWelcomeTitle => 'أهلاً بك في ديرة الدرور';
+
+  @override
+  String get onboardingWelcomeBody =>
+      'تعرف الدَّرّ والموسم والنجم اليوم في منطقتك، وما الجو المعتاد فيه. يعمل بلا إنترنت.';
+
+  @override
+  String get onboardingWelcomeStart => 'ابدأ';
+
+  @override
+  String get onboardingLocationTitle => 'في أي منطقة أنت؟';
+
+  @override
+  String get onboardingLocationBody =>
+      'نستخدم موقعك التقريبي مرة واحدة لنعرف جدول درور منطقتك. لا نتتبعك ولا نرسل موقعك لأي جهة.';
+
+  @override
+  String get onboardingLocationAllow => 'حدّد موقعي';
+
+  @override
+  String get onboardingLocationManual => 'اختر مدينتك يدوياً';
+
+  @override
+  String get onboardingLocationManualShort => 'اختر يدوياً';
+
+  @override
+  String get onboardingLocationLoading => 'نحدد مدينتك…';
+
+  @override
+  String onboardingLocationFound(String city) {
+    return 'وجدنا أقرب مدينة لك: $city';
+  }
+
+  @override
+  String onboardingLocationRegion(String region) {
+    return 'جدول المنطقة: $region';
+  }
+
+  @override
+  String get onboardingLocationNotMyCity => 'ليست مدينتي';
+
+  @override
+  String get locationDenied => 'لا بأس، اختر مدينتك من القائمة.';
+
+  @override
+  String get locationUnavailable =>
+      'خدمة الموقع غير متاحة. اختر مدينتك من القائمة.';
+
+  @override
+  String get locationTimeout => 'تأخر تحديد الموقع. اختر مدينتك من القائمة.';
+
+  @override
+  String get locationOutOfRange =>
+      'منطقتك خارج نطاق الجداول المتاحة. اختر أقرب مدينة خليجية إليك.';
+
+  @override
+  String get locationFailedSettings =>
+      'لم نتمكن من الوصول لموقعك. يمكنك اختيار مدينتك يدوياً.';
+
+  @override
+  String locationUpdated(String city, String region) {
+    return 'تم تحديث مدينتك إلى $city — جدول $region';
+  }
+
+  @override
+  String locationUnchanged(String city) {
+    return 'مدينتك كما هي: $city';
+  }
+
+  @override
+  String get locationChooseCity => 'اختيار المدينة';
+
+  @override
+  String get settingsRelocate => 'تحديد موقعي مرة أخرى';
 }

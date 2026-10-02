@@ -74,7 +74,7 @@ apps/durur/
 
 مزوّدات يدوية (بلا توليد كود) في `lib/src/providers.dart`:
 
-**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3):**
+**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4):**
 
 | المزوّد | النوع | الوظيفة |
 |---|---|---|
@@ -87,6 +87,8 @@ apps/durur/
 | `currentRegionProvider` | `Provider<Region?>` | منطقة المدينة المختارة (`city.regionId`) |
 | `engineProvider` | `Provider<CalendarEngine?>` | محرك جدول منطقة المدينة الحالية |
 | `dayInfoProvider` | `Provider.family<DayInfo?, DateTime>` | نتيجة المحرك ليوم، أو `null` بلا مدينة/جداول |
+| `locationServiceProvider` | `Provider<LocationService>` | غلاف geolocator (قراءة واحدة بدقة low ومهلة 10 ثوانٍ، بلا بث)؛ يُستبدل بنسخة وهمية في الاختبارات (الميزة 4) |
+| `cityLocatorProvider` | `Provider<CityLocator>` | يقرأ الموقع مرة واحدة ويعيد أقرب مدينة أو سبب الفشل (Denied / Unavailable / Timeout / OutOfRange > 250 كم)؛ لا يعيد الإحداثيات ولا يحفظها (D11) |
 
 **توصية ملزمة للميزات القادمة:** مفتاح `dayInfoProvider` يُمرَّر **مقرّباً لمنتصف الليل** (`DateTime(d.year, d.month, d.day)`)، لا `DateTime.now()` مباشرة؛ وإلا يُنشأ مدخل family جديد في كل إعادة بناء (ذاكرة وحساب بلا فائدة). المحرك نفسه يأخذ التاريخ فقط، فالتقريب لا يغيّر النتيجة. `todayProvider` و`selectedDateProvider` يخزّنان القيمة مقرّبة أصلاً.
 

@@ -7,6 +7,9 @@ import 'domain/region.dart';
 import 'domain/tables.dart';
 import 'engine/calendar_engine.dart';
 import 'hijri/umm_al_qura_calendar.dart';
+import 'location/city_locator.dart';
+import 'location/geolocator_location_service.dart';
+import 'location/location_service.dart';
 import 'repository/settings_repository.dart';
 import 'repository/table_repository.dart';
 
@@ -91,3 +94,13 @@ final engineProvider = Provider<CalendarEngine?>((ref) {
 final dayInfoProvider = Provider.family<DayInfo?, DateTime>((ref, date) {
   return ref.watch(engineProvider)?.resolve(date);
 });
+
+/// قراءة الموقع (geolocator)؛ تُستبدل في الاختبارات بنسخة وهمية.
+final locationServiceProvider = Provider<LocationService>(
+  (ref) => const GeolocatorLocationService(),
+);
+
+/// أقرب مدينة بقراءة موقع واحدة (الميزة 4).
+final cityLocatorProvider = Provider<CityLocator>(
+  (ref) => CityLocator(ref.watch(locationServiceProvider)),
+);

@@ -147,5 +147,116 @@
   "dataLoadErrorBody": "أعد تشغيل التطبيق. إذا تكرر ذلك، حدّث التطبيق من المتجر.",
   "@dataLoadErrorBody": {
     "description": "نص خطأ قراءة البيانات (DESIGN error.data_load.body)"
+  },
+  "commonContinue": "متابعة",
+  "@commonContinue": {
+    "description": "زر المتابعة (DESIGN common.continue)"
+  },
+  "onboardingWelcomeTitle": "أهلاً بك في ديرة الدرور",
+  "@onboardingWelcomeTitle": {
+    "description": "عنوان شاشة الترحيب (DESIGN onboarding.welcome.title)"
+  },
+  "onboardingWelcomeBody": "تعرف الدَّرّ والموسم والنجم اليوم في منطقتك، وما الجو المعتاد فيه. يعمل بلا إنترنت.",
+  "@onboardingWelcomeBody": {
+    "description": "نص شاشة الترحيب (DESIGN onboarding.welcome.body)"
+  },
+  "onboardingWelcomeStart": "ابدأ",
+  "@onboardingWelcomeStart": {
+    "description": "زر شاشة الترحيب (DESIGN onboarding.welcome.start)"
+  },
+  "onboardingLocationTitle": "في أي منطقة أنت؟",
+  "@onboardingLocationTitle": {
+    "description": "عنوان شرح الموقع (DESIGN onboarding.location.title)"
+  },
+  "onboardingLocationBody": "نستخدم موقعك التقريبي مرة واحدة لنعرف جدول درور منطقتك. لا نتتبعك ولا نرسل موقعك لأي جهة.",
+  "@onboardingLocationBody": {
+    "description": "سطر شرح سبب طلب الموقع (SPEC الميزة 4 بند 1، DESIGN onboarding.location.body)"
+  },
+  "onboardingLocationAllow": "حدّد موقعي",
+  "@onboardingLocationAllow": {
+    "description": "زر طلب الموقع التقريبي (DESIGN onboarding.location.allow)"
+  },
+  "onboardingLocationManual": "اختر مدينتك يدوياً",
+  "@onboardingLocationManual": {
+    "description": "زر الاختيار اليدوي بلا طلب إذن (DESIGN onboarding.location.manual)"
+  },
+  "onboardingLocationManualShort": "اختر يدوياً",
+  "@onboardingLocationManualShort": {
+    "description": "زر نصي ظاهر أثناء تحديد الموقع (DESIGN 8.2 ج)"
+  },
+  "onboardingLocationLoading": "نحدد مدينتك…",
+  "@onboardingLocationLoading": {
+    "description": "أثناء قراءة الموقع (DESIGN onboarding.location.loading)"
+  },
+  "onboardingLocationFound": "وجدنا أقرب مدينة لك: {city}",
+  "@onboardingLocationFound": {
+    "description": "نتيجة تحديد الموقع (DESIGN onboarding.location.found)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingLocationRegion": "جدول المنطقة: {region}",
+  "@onboardingLocationRegion": {
+    "description": "منطقة المدينة الموجودة (DESIGN onboarding.location.region)",
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingLocationNotMyCity": "ليست مدينتي",
+  "@onboardingLocationNotMyCity": {
+    "description": "يفتح القائمة لتغيير المدينة الموجودة (DESIGN onboarding.location.not_my_city)"
+  },
+  "locationDenied": "لا بأس، اختر مدينتك من القائمة.",
+  "@locationDenied": {
+    "description": "أعلى القائمة بعد رفض الإذن (DESIGN location.denied)"
+  },
+  "locationUnavailable": "خدمة الموقع غير متاحة. اختر مدينتك من القائمة.",
+  "@locationUnavailable": {
+    "description": "رفض دائم سابق أو خدمة الموقع مطفأة أو خطأ من النظام (DESIGN location.unavailable)"
+  },
+  "locationTimeout": "تأخر تحديد الموقع. اختر مدينتك من القائمة.",
+  "@locationTimeout": {
+    "description": "لم تصل قراءة خلال 10 ثوانٍ (DESIGN location.timeout)"
+  },
+  "locationOutOfRange": "منطقتك خارج نطاق الجداول المتاحة. اختر أقرب مدينة خليجية إليك.",
+  "@locationOutOfRange": {
+    "description": "أقرب مدينة أبعد من 250 كم (DESIGN location.out_of_range)"
+  },
+  "locationFailedSettings": "لم نتمكن من الوصول لموقعك. يمكنك اختيار مدينتك يدوياً.",
+  "@locationFailedSettings": {
+    "description": "فشل «تحديد موقعي مرة أخرى» في الإعدادات (DESIGN location.failed_settings)"
+  },
+  "locationUpdated": "تم تحديث مدينتك إلى {city} — جدول {region}",
+  "@locationUpdated": {
+    "description": "نجاح «تحديد موقعي مرة أخرى» بمدينة جديدة (DESIGN location.updated)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "locationUnchanged": "مدينتك كما هي: {city}",
+  "@locationUnchanged": {
+    "description": "نجاح «تحديد موقعي مرة أخرى» بالمدينة نفسها (DESIGN location.unchanged)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "locationChooseCity": "اختيار المدينة",
+  "@locationChooseCity": {
+    "description": "زر في رسالة فشل تحديد الموقع يفتح القائمة (DESIGN 8.7)"
+  },
+  "settingsRelocate": "تحديد موقعي مرة أخرى",
+  "@settingsRelocate": {
+    "description": "صف في الإعدادات (SPEC الميزة 4 بند 6، DESIGN settings.relocate)"
   }
 }

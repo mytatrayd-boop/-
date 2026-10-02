@@ -7,12 +7,49 @@ import '../../domain/city_search.dart';
 import '../../domain/tables.dart';
 import '../../providers.dart';
 
+/// سبب فتح القائمة بعد محاولة تحديد الموقع (DESIGN 8.2 ج)، يُعرض سطراً أعلاها.
+enum CityPickerNotice {
+  denied,
+  unavailable,
+  timeout,
+  outOfRange;
+
+  static CityPickerNotice? parse(String? name) {
+    for (final n in values) {
+      if (n.name == name) return n;
+    }
+    return null;
+  }
+
+  String text(AppLocalizations l10n) => switch (this) {
+        denied => l10n.locationDenied,
+        unavailable => l10n.locationUnavailable,
+        timeout => l10n.locationTimeout,
+        outOfRange => l10n.locationOutOfRange,
+      };
+}
+
 /// اختيار المدينة يدوياً (SPEC الميزة 3، DESIGN 8.3): بحث بالاسم العربي،
 /// شرائح تصفية بالدولة، وقائمة مجمّعة حسب الدولة بعناوين لاصقة.
 class CityPickerScreen extends ConsumerStatefulWidget {
-  const CityPickerScreen({super.key});
+  const CityPickerScreen({
+    super.key,
+    this.firstRun = false,
+    this.notice,
+    this.onSaved,
+  });
+
+  /// أول تشغيل (أو مدينة محفوظة لم تعد موجودة): بلا زر رجوع (DESIGN 8.3).
+  final bool firstRun;
+
+  /// سطر أعلى القائمة بعد فشل تحديد الموقع.
+  final CityPickerNotice? notice;
+
+  /// بعد الحفظ؛ إن كان null يرجع للشاشة السابقة.
+  final VoidCallback? onSaved;
 
   static const searchFieldKey = Key('citySearchField');
+  static const noticeKey = Key('cityPickerNotice');
   static Key cityTileKey(String cityId) => Key('city-$cityId');
   static Key countryChipKey(Country? country) =>
       Key('countryChip-${country?.code ?? 'all'}');
@@ -37,7 +74,10 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
     final l10n = AppLocalizations.of(context);
     final tables = ref.watch(tablesProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.cityPickerTitle)),
+      appBar: AppBar(
+        title: Text(l10n.cityPickerTitle),
+        automaticallyImplyLeading: !widget.firstRun,
+      ),
       body: switch (tables) {
         AsyncData(:final value) => _content(context, l10n, value),
         AsyncError() => _DataLoadError(
@@ -55,6 +95,8 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.notice case final notice?)
+          _Notice(text: notice.text(l10n)),
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
           child: TextField(
@@ -197,7 +239,44 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
         duration: const Duration(seconds: 6),
       ),
     );
-    await navigator.maybePop();
+    final onSaved = widget.onSaved;
+    if (onSaved != null) {
+      onSaved();
+    } else {
+      await navigator.maybePop();
+    }
+  }
+}
+
+class _Notice extends StatelessWidget {
+  const _Notice({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: CityPickerScreen.noticeKey,
+      margin: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+      padding: const EdgeInsetsDirectional.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const ExcludeSemantics(child: Icon(Icons.info_outline)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Semantics(
+              liveRegion: true,
+              child: Text(text, style: theme.textTheme.bodyMedium),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

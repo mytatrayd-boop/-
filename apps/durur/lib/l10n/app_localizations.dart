@@ -231,6 +231,138 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أعد تشغيل التطبيق. إذا تكرر ذلك، حدّث التطبيق من المتجر.'**
   String get dataLoadErrorBody;
+
+  /// زر المتابعة (DESIGN common.continue)
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get commonContinue;
+
+  /// عنوان شاشة الترحيب (DESIGN onboarding.welcome.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بك في ديرة الدرور'**
+  String get onboardingWelcomeTitle;
+
+  /// نص شاشة الترحيب (DESIGN onboarding.welcome.body)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعرف الدَّرّ والموسم والنجم اليوم في منطقتك، وما الجو المعتاد فيه. يعمل بلا إنترنت.'**
+  String get onboardingWelcomeBody;
+
+  /// زر شاشة الترحيب (DESIGN onboarding.welcome.start)
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ'**
+  String get onboardingWelcomeStart;
+
+  /// عنوان شرح الموقع (DESIGN onboarding.location.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'في أي منطقة أنت؟'**
+  String get onboardingLocationTitle;
+
+  /// سطر شرح سبب طلب الموقع (SPEC الميزة 4 بند 1، DESIGN onboarding.location.body)
+  ///
+  /// In ar, this message translates to:
+  /// **'نستخدم موقعك التقريبي مرة واحدة لنعرف جدول درور منطقتك. لا نتتبعك ولا نرسل موقعك لأي جهة.'**
+  String get onboardingLocationBody;
+
+  /// زر طلب الموقع التقريبي (DESIGN onboarding.location.allow)
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد موقعي'**
+  String get onboardingLocationAllow;
+
+  /// زر الاختيار اليدوي بلا طلب إذن (DESIGN onboarding.location.manual)
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مدينتك يدوياً'**
+  String get onboardingLocationManual;
+
+  /// زر نصي ظاهر أثناء تحديد الموقع (DESIGN 8.2 ج)
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر يدوياً'**
+  String get onboardingLocationManualShort;
+
+  /// أثناء قراءة الموقع (DESIGN onboarding.location.loading)
+  ///
+  /// In ar, this message translates to:
+  /// **'نحدد مدينتك…'**
+  String get onboardingLocationLoading;
+
+  /// نتيجة تحديد الموقع (DESIGN onboarding.location.found)
+  ///
+  /// In ar, this message translates to:
+  /// **'وجدنا أقرب مدينة لك: {city}'**
+  String onboardingLocationFound(String city);
+
+  /// منطقة المدينة الموجودة (DESIGN onboarding.location.region)
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول المنطقة: {region}'**
+  String onboardingLocationRegion(String region);
+
+  /// يفتح القائمة لتغيير المدينة الموجودة (DESIGN onboarding.location.not_my_city)
+  ///
+  /// In ar, this message translates to:
+  /// **'ليست مدينتي'**
+  String get onboardingLocationNotMyCity;
+
+  /// أعلى القائمة بعد رفض الإذن (DESIGN location.denied)
+  ///
+  /// In ar, this message translates to:
+  /// **'لا بأس، اختر مدينتك من القائمة.'**
+  String get locationDenied;
+
+  /// رفض دائم سابق أو خدمة الموقع مطفأة أو خطأ من النظام (DESIGN location.unavailable)
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة الموقع غير متاحة. اختر مدينتك من القائمة.'**
+  String get locationUnavailable;
+
+  /// لم تصل قراءة خلال 10 ثوانٍ (DESIGN location.timeout)
+  ///
+  /// In ar, this message translates to:
+  /// **'تأخر تحديد الموقع. اختر مدينتك من القائمة.'**
+  String get locationTimeout;
+
+  /// أقرب مدينة أبعد من 250 كم (DESIGN location.out_of_range)
+  ///
+  /// In ar, this message translates to:
+  /// **'منطقتك خارج نطاق الجداول المتاحة. اختر أقرب مدينة خليجية إليك.'**
+  String get locationOutOfRange;
+
+  /// فشل «تحديد موقعي مرة أخرى» في الإعدادات (DESIGN location.failed_settings)
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نتمكن من الوصول لموقعك. يمكنك اختيار مدينتك يدوياً.'**
+  String get locationFailedSettings;
+
+  /// نجاح «تحديد موقعي مرة أخرى» بمدينة جديدة (DESIGN location.updated)
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث مدينتك إلى {city} — جدول {region}'**
+  String locationUpdated(String city, String region);
+
+  /// نجاح «تحديد موقعي مرة أخرى» بالمدينة نفسها (DESIGN location.unchanged)
+  ///
+  /// In ar, this message translates to:
+  /// **'مدينتك كما هي: {city}'**
+  String locationUnchanged(String city);
+
+  /// زر في رسالة فشل تحديد الموقع يفتح القائمة (DESIGN 8.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار المدينة'**
+  String get locationChooseCity;
+
+  /// صف في الإعدادات (SPEC الميزة 4 بند 6، DESIGN settings.relocate)
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد موقعي مرة أخرى'**
+  String get settingsRelocate;
 }
 
 class _AppLocalizationsDelegate
