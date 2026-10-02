@@ -12,6 +12,7 @@ import '../../domain/tables.dart';
 import '../../engine/year_index.dart';
 import '../item_detail/detail_data.dart';
 import '../item_detail/item_detail_sheet.dart';
+import '../report/report_sheet.dart';
 import '../../providers.dart';
 import '../../routing/app_router.dart';
 import '../../theme/app_theme.dart';
@@ -36,6 +37,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   static const skeletonKey = Key('homeSkeleton');
   static const loadErrorKey = Key('homeLoadError');
   static const calcErrorKey = Key('homeCalcError');
+  static const calcErrorReportKey = Key('homeCalcErrorReport');
   static const legendKey = Key('dialDururLegend');
 
   @override
@@ -101,7 +103,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final digits = ref.watch(digitStyleProvider);
 
     if (info == null || index == null) {
-      return _CalcError(message: l10n.homeCalcError);
+      return _CalcError(
+        message: l10n.homeCalcError,
+        onReport: () => showReportSheet(
+          context,
+          regionName: region?.name.ar,
+          date: selected,
+        ),
+      );
     }
 
     final model = _modelFor(index);
@@ -598,17 +607,28 @@ class _SkeletonPainter extends CustomPainter {
 }
 
 /// المحرك لم يجد نتيجة (يجب ألا يحدث بعد الاختبار، DESIGN 8.4).
+/// «تعذّر حساب هذا اليوم.» + زر «أبلغ عن خطأ» (DESIGN 8.4، الخطأ).
 class _CalcError extends StatelessWidget {
-  const _CalcError({required this.message});
+  const _CalcError({required this.message, required this.onReport});
 
   final String message;
+  final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return ListView(
       key: HomeScreen.calcErrorKey,
       padding: const EdgeInsetsDirectional.all(24),
-      child: Text(message, textAlign: TextAlign.center),
+      children: [
+        Text(message, textAlign: TextAlign.center),
+        const SizedBox(height: 16),
+        OutlinedButton(
+          key: HomeScreen.calcErrorReportKey,
+          style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+          onPressed: onReport,
+          child: Text(AppLocalizations.of(context).reportTitle),
+        ),
+      ],
     );
   }
 }

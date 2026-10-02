@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -23,8 +25,11 @@ import 'notifications/local_notification_scheduler.dart';
 import 'notifications/notification_content.dart';
 import 'notifications/notification_planner.dart';
 import 'notifications/notification_scheduler.dart';
+import 'report/report_service.dart';
 import 'repository/settings_repository.dart';
 import 'repository/table_repository.dart';
+
+export 'report/report_service.dart' show isOpenableUrl;
 
 /// كل مزوّدات Riverpod في مكان واحد (ARCHITECTURE §3).
 
@@ -311,8 +316,38 @@ final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
   },
 );
 
-/// رابط يُسمح بفتحه: https مع نطاق.
-bool isOpenableUrl(Uri uri) => uri.scheme == 'https' && uri.host.isNotEmpty;
+// ───────────────────────── البلاغ (الميزة 9) ─────────────────────────
+
+/// إعدادات البلاغ من `--dart-define-from-file` (ARCHITECTURE §10)؛ تُستبدل
+/// في الاختبارات.
+final reportConfigProvider = Provider<ReportConfig>(
+  (ref) => ReportConfig.fromEnvironment(),
+);
+
+/// ينسخ نصاً للحافظة؛ يُستبدل في الاختبارات.
+final clipboardWriterProvider = Provider<TextCopier>(
+  (ref) =>
+      (text) => Clipboard.setData(ClipboardData(text: text)),
+);
+
+/// نموذج ← نسخ (ARCHITECTURE §10). يفتح الروابط عبر [urlOpenerProvider]
+/// (https فقط).
+final reportServiceProvider = Provider<ReportService>(
+  (ref) => ReportService(
+    config: ref.watch(reportConfigProvider),
+    openUrl: ref.watch(urlOpenerProvider),
+    copyText: ref.watch(clipboardWriterProvider),
+  ),
+);
+
+/// نسخة التطبيق للبلاغ (`package_info_plus`)، مثل `1.0.0+1`؛ تُستبدل في
+/// الاختبارات.
+final appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return info.buildNumber.isEmpty
+      ? info.version
+      : '${info.version}+${info.buildNumber}';
+}, retry: (_, _) => null);
 
 // ───────────────────────── التنبيهات (الميزة 8) ─────────────────────────
 

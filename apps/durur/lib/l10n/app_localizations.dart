@@ -1064,6 +1064,108 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'بداية كل دَرّ'**
   String get notifChannelDar;
+
+  /// زر ثانوي أسفل صفحة النجم/الموسم/الدَّرّ يفتح ورقة البلاغ (DESIGN detail.report)
+  ///
+  /// In ar, this message translates to:
+  /// **'أبلغ عن خطأ'**
+  String get detailReport;
+
+  /// صف في قسم البيانات والمساعدة يفتح ورقة بلاغ عام (DESIGN settings.report)
+  ///
+  /// In ar, this message translates to:
+  /// **'أبلغ عن خطأ'**
+  String get settingsReport;
+
+  /// عنوان ورقة البلاغ وزر البلاغ في خطأ الحساب بالرئيسية (DESIGN report.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'أبلغ عن خطأ'**
+  String get reportTitle;
+
+  /// سطر الورقة حين يُعبأ النموذج مسبقاً (DESIGN report.intro_form)
+  ///
+  /// In ar, this message translates to:
+  /// **'سنفتح لك النموذج وفيه هذه المعلومات. أكمل وصف الخطأ ثم اضغط إرسال بنفسك.'**
+  String get reportIntroForm;
+
+  /// سطر الورقة حين يُفتح النموذج بلا تعبئة مسبقة (قرار المالك النهائي، ليس في DESIGN بعد)
+  ///
+  /// In ar, this message translates to:
+  /// **'سننسخ لك هذه المعلومات ونفتح النموذج. الصقها فيه وأكمل وصف الخطأ ثم اضغط إرسال بنفسك.'**
+  String get reportIntroFormPaste;
+
+  /// سطر الورقة حين لا يوجد نموذج مضبوط فيظهر «نسخ» فقط (ليس في DESIGN بعد)
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ هذه المعلومات وأرفقها بوصف الخطأ في بلاغك.'**
+  String get reportIntroCopy;
+
+  /// سطر في ملخص البلاغ (DESIGN report.item)
+  ///
+  /// In ar, this message translates to:
+  /// **'العنصر: {item}'**
+  String reportItem(String item);
+
+  /// سطر في ملخص البلاغ: منطقة الجدول (DESIGN report.region)
+  ///
+  /// In ar, this message translates to:
+  /// **'المنطقة: {region}'**
+  String reportRegion(String region);
+
+  /// سطر في ملخص البلاغ (DESIGN report.date)
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ المعروض: {date}'**
+  String reportDate(String date);
+
+  /// سطر في ملخص البلاغ (DESIGN report.version)
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة التطبيق: {version}'**
+  String reportVersion(String version);
+
+  /// سطر في ملخص البلاغ: dataVersion ثم dataSeq من meta.json (ليس في DESIGN بعد)
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة البيانات: {version} ({seq})'**
+  String reportDataVersion(String version, String seq);
+
+  /// الزر الأساسي في ورقة البلاغ (DESIGN report.open_form)
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة إلى النموذج'**
+  String get reportOpenForm;
+
+  /// سطر caption أسفل ورقة البلاغ (DESIGN report.nothing_sent)
+  ///
+  /// In ar, this message translates to:
+  /// **'لن يُرسل شيء حتى تضغط إرسال بنفسك.'**
+  String get reportNothingSent;
+
+  /// زر ينسخ ملخص البلاغ نصاً (DESIGN report.copy_details)
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ تفاصيل البلاغ'**
+  String get reportCopyDetails;
+
+  /// تأكيد بعد النسخ (ليس في DESIGN بعد؛ report.copied خاص بالعنوان)
+  ///
+  /// In ar, this message translates to:
+  /// **'تم نسخ تفاصيل البلاغ'**
+  String get reportDetailsCopied;
+
+  /// رسالة بعد فتح النموذج بلا تعبئة مسبقة (قرار المالك النهائي، ليس في DESIGN بعد)
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخنا تفاصيل البلاغ. الصقها في النموذج ثم أكمل وصف الخطأ.'**
+  String get reportPasteHint;
+
+  /// فشل فتح النموذج (لا متصفح) فتبقى نافذة النسخ (ليس في DESIGN بعد)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح النموذج. انسخ تفاصيل البلاغ وأرسلها لاحقاً.'**
+  String get reportFormOpenError;
 }
 
 class _AppLocalizationsDelegate

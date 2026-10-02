@@ -141,8 +141,11 @@ Future<void> main() async {
       expect(find.text(l10n.detailAstroNote), findsOneWidget);
 
       final item = tables.items['suhail']!;
-      await scrollTo(tester, find.byKey(ItemDetailView.proverbKey));
+      // التعريف أولاً: زر البلاغ أسفل الصفحة (الميزة 9) يطيلها، فالتمرير
+      // إلى المثل قد يُخرج التعريف من القائمة الكسولة.
+      await scrollTo(tester, find.byKey(ItemDetailView.definitionKey));
       expect(find.text(item.definition.ar), findsOneWidget);
+      await scrollTo(tester, find.byKey(ItemDetailView.proverbKey));
       final proverb = tester.widget<Text>(find.text(item.proverb.ar));
       expect(proverb.style!.fontFamily, DururFonts.proverb);
       expect(find.text(l10n.detailProverb), findsOneWidget);

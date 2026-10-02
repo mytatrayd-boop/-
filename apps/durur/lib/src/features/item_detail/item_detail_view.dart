@@ -10,6 +10,7 @@ import '../../formatting/digits.dart';
 import '../../providers.dart';
 import '../../theme/app_theme.dart';
 import '../common/chips.dart';
+import '../report/report_sheet.dart';
 import 'detail_data.dart';
 
 /// محتوى صفحة النجم/الموسم/الدَّرّ (SPEC الميزة 7، DESIGN 8.6)، نفسه في
@@ -35,6 +36,7 @@ class ItemDetailView extends ConsumerWidget {
   static const contentSourceKey = Key('detailContentSource');
   static const datesSourceKey = Key('detailDatesSource');
   static const pendingKey = Key('detailPending');
+  static const reportKey = Key('detailReport');
 
   final DetailRequest request;
 
@@ -155,6 +157,20 @@ class ItemDetailView extends ConsumerWidget {
               : l10n.detailDatesSource(_titles(record.sources, l10n)),
           approved: record.approval.isApproved,
         ),
+      // DESIGN 8.6 بند 9: زر ثانوي بعرض كامل أسفل المحتوى (الميزة 9).
+      const SizedBox(height: 16),
+      OutlinedButton.icon(
+        key: reportKey,
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+        onPressed: () => showReportSheet(
+          context,
+          itemName: data.name,
+          regionName: data.regionName,
+          date: request.from,
+        ),
+        icon: const Icon(Icons.flag_outlined, size: 20),
+        label: Text(l10n.detailReport),
+      ),
       const SizedBox(height: 24),
     ];
 

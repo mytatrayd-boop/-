@@ -37,7 +37,7 @@ apps/durur/
 │  │     └─ <الرابعة>.json      # بانتظار قرار المالك
 │  └─ fonts/                     # خط عربي مضمّن برخصة OFL (يحدده DESIGN.md)
 ├─ config/
-│  └─ app_config.example.json    # إعدادات البناء (رابط البلاغ/البريد). ليست أسراراً
+│  └─ app_config.example.json    # إعدادات البناء (رابط نموذج البلاغ وحقوله). ليست أسراراً
 ├─ lib/
 │  ├─ main.dart                  # ProviderScope + DururApp
 │  ├─ l10n/                      # app_ar.arb + الملفات المولّدة (gen-l10n)
@@ -52,13 +52,14 @@ apps/durur/
 │     ├─ repository/             # TableRepository (تحميل JSON)، SettingsRepository (shared_preferences)
 │     ├─ location/               # LocationService (geolocator)، NearestCity [Dart صافٍ]
 │     ├─ notifications/          # NotificationPlanner [Dart صافٍ]، NotificationScheduler (البلجن)
-│     ├─ report/                 # ReportService: نموذج ← بريد ← نسخ
+│     ├─ report/                 # ReportService: نموذج ← نسخ (Dart صافٍ، §10)
 │     ├─ providers.dart          # كل مزوّدات Riverpod في مكان واحد
 │     └─ features/
 │        ├─ onboarding/          # شرح الموقع ← الإذن ← المدينة ← إذن التنبيهات
 │        ├─ home/                # الشاشة الرئيسية + dial/ (CustomPainter + اختبار اللمس)
 │        ├─ item_detail/         # صفحة النجم/الموسم/الدَّرّ: ورقة سفلية وصفحة كاملة (الميزة 7)
 │        ├─ about/               # صفحة «أصل التقويم» (D24)
+│        ├─ report/              # ورقة البلاغ ومحتواه (§10، الميزة 9)
 │        ├─ city_picker/         # قائمة المدن مع البحث
 │        └─ settings/
 ├─ test/                         # نفس تقسيم lib/src
@@ -75,7 +76,7 @@ apps/durur/
 
 مزوّدات يدوية (بلا توليد كود) في `lib/src/providers.dart`:
 
-**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6، 7، 8):**
+**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6، 7، 8، 9):**
 
 | المزوّد | النوع | الوظيفة |
 |---|---|---|
@@ -98,7 +99,11 @@ apps/durur/
 | `cityLocatorProvider` | `Provider<CityLocator>` | يقرأ الموقع مرة واحدة ويعيد أقرب مدينة أو سبب الفشل (Denied / Unavailable / Timeout / OutOfRange > 250 كم)؛ لا يعيد الإحداثيات ولا يحفظها (D11) |
 | `heliacalProvider` | `Provider.family<HeliacalDates?, (String cityId, int year)>` | طلوع سهيل والثريا بإحداثيات المدينة (مخزّن لكل مدينة وسنة)؛ `null` قبل تحميل الجداول أو لمدينة غير موجودة؛ يُعاد مع إعادة تحميل الجداول (الميزة 5، D28) |
 | `currentHeliacalProvider` | `Provider.family<HeliacalDates?, int year>` | طلوع سهيل والثريا للمدينة المختارة، أو `null` بلا مدينة (الميزة 5)؛ تقرؤه صفحة سهيل/الثريا (الميزة 7) |
-| `urlOpenerProvider` | `Provider<Future<bool> Function(Uri)>` | يفتح رابطاً عاماً في المتصفح (`url_launcher`، رابطا صفحة المصادر، D27)؛ **يرفض أي رابط ليس https بنطاق** (`isOpenableUrl`) ويعيد false بلا محاولة؛ يُستبدل في الاختبارات (الميزة 7، الإصلاح مع 8) |
+| `urlOpenerProvider` | `Provider<Future<bool> Function(Uri)>` | يفتح رابطاً عاماً في المتصفح (`url_launcher`، رابطا صفحة المصادر، D27)؛ **يرفض أي رابط ليس https بنطاق** (`isOpenableUrl`) ويعيد false بلا محاولة؛ يُستبدل في الاختبارات (الميزة 7، الإصلاح مع 8)؛ ويفتح نموذج البلاغ أيضاً (الميزة 9) |
+| `reportConfigProvider` | `Provider<ReportConfig>` | `REPORT_FORM_URL` و`REPORT_FORM_FIELDS` من `--dart-define-from-file` (§10) (الميزة 9) |
+| `clipboardWriterProvider` | `Provider<Future<void> Function(String)>` | ينسخ نص البلاغ للحافظة (الميزة 9) |
+| `reportServiceProvider` | `Provider<ReportService>` | نموذج ← نسخ، يفتح عبر `urlOpenerProvider` فقط (§10) (الميزة 9) |
+| `appVersionProvider` | `FutureProvider<String>` | نسخة التطبيق للبلاغ (`package_info_plus`، `version+buildNumber`) (الميزة 9) |
 | `notificationSchedulerProvider` | `Provider<NotificationScheduler>` | `LocalNotificationScheduler` (البلجن)؛ يُستبدل بـ `FakeNotificationScheduler` في الاختبارات (`appOverrides` يضعه افتراضياً) (الميزة 8) |
 | `notificationPermissionProvider` | `AsyncNotifierProvider<…, bool>` | هل إذن التنبيهات ممنوح؛ `refresh()` عند العودة للواجهة، `request()` من شرح التنبيهات ومن تشغيل مفتاح والإذن غير ممنوح (الميزة 8) |
 | `notificationInputsProvider` | `Provider<NotificationInputs>` | (المدينة، المفتاحان، الجداول، اليوم): تغيّر أيٍّ منها يعيد الجدولة (الميزة 8) |
@@ -281,15 +286,33 @@ apps/durur/
 - **انتهاء الإعداد الأولي:** `onboardingDone` يُحفظ عند الخروج من شرح التنبيهات. التوجيه: لا مدينة ← `/onboarding`؛ مدينة محذوفة ← `/onboarding/city`؛ مدينة بلا `onboardingDone` (أُغلق التطبيق قبل الشرح) ← `/onboarding/notifications`.
 - **الإعدادات (DESIGN 8.7):** قسم «التنبيهات» (بطاقة «التنبيهات متوقفة من إعدادات جهازك.» + «فتح إعدادات الجهاز» إن لم يُمنح الإذن، رسالة فشل الجدولة، مفتاحان `SwitchListTile` 64dp، سطر الساعة)، وقسم «المظهر» (شرائح السمة والأرقام). تشغيل مفتاح والإذن مرفوض يطلبه مرة.
 
-## 10. زر «أبلغ عن خطأ» بلا خادم (الميزة 9) (D14)
+## 10. زر «أبلغ عن خطأ» بلا خادم (الميزة 9) (D14، قرار المالك النهائي: نموذج Google بلا بريد) — **مبنيّ**
 
-`ReportService.report(itemName, regionName, date, appVersion)`:
-1. إن وُجد `REPORT_FORM_URL` (نموذج خارجي مع حقول معبأة مسبقاً) ← يُفتح في المتصفح.
-2. وإلا/أو عند الفشل: `mailto:REPORT_EMAIL` بعنوان ونص معبأين.
-3. إن لم يُفتح شيء: نافذة فيها نص البلاغ والعنوان مع زر «نسخ».
+**المسار: نموذج ← نسخ.** حذف بديل البريد (`mailto`) بقرار المالك النهائي (DECISIONS، آخر الملف): لا يظهر بريد المالك للمستخدمين، فلا `REPORT_EMAIL` ولا مسار `mailto` في الكود ولا `<queries>` له.
 
-- القيم من `--dart-define-from-file=config/app_config.json` (ليست أسراراً؛ لكن لا تُكتب في الكود). `config/app_config.example.json` في git، و`config/app_config.json` مستثنى منه. إن كانت القيمتان فارغتين يظهر خيار «نسخ» فقط.
-- لا يُرسل شيء تلقائياً؛ لا مدينة ولا إحداثيات ولا معرّف جهاز. نسخة التطبيق من `package_info_plus`.
+`lib/src/report/report_service.dart` (Dart صافٍ):
+- `ReportConfig` من `--dart-define-from-file=config/app_config.json`:
+  - `REPORT_FORM_URL`: رابط النموذج. يُقبل فقط إن كان **https بنطاق** (`isOpenableUrl`، نُقلت هنا وتُصدَّر من `providers.dart`)؛ أي قيمة أخرى (فارغة، http، mailto، javascript، file …) = لا نموذج.
+  - `REPORT_FORM_FIELDS` (اختياري): تعبئة حقول نموذج Google مسبقاً، أزواج `اسم=entry.<رقم>` مفصولة بفواصل، مثل `item=entry.111,region=entry.222,date=entry.333,appVersion=entry.444,dataVersion=entry.555,details=entry.666`. الأسماء المسموحة فقط: `item` (اسم العنصر)، `region` (منطقة الجدول)، `date` (التاريخ المعروض `YYYY-MM-DD`)، `appVersion`، `dataVersion` (`dataVersion (dataSeq)`)، `details` (نص البلاغ كاملاً). أي زوج غير صالح (اسم آخر، أو معرّف ليس `entry.<رقم>`) يُهمل. نصّ واحد لا خريطة JSON لأن `--dart-define-from-file` يمرّر قيماً نصية فقط. المعرّفات تُؤخذ من «الحصول على رابط معبأ مسبقاً» في نموذج Google.
+  - `config/app_config.example.json` في git بقيم فارغة، و`config/app_config.json` مستثنى منه. لا رابط ولا بريد في الكود.
+- `ReportService.report(ReportMessage)`:
+  1. لا نموذج صالح ← `copy` بلا أي محاولة فتح.
+  2. نموذج **بحقول** ← يُفتح الرابط معبأً (القيم مرمّزة UTF-8، ومعاملات الرابط الأصلية تبقى) عبر `urlOpenerProvider` ← `formPrefilled`.
+  3. نموذج **بلا حقول** ← يُنسخ نص البلاغ للحافظة **أولاً** ثم يُفتح النموذج كما هو ← `formWithCopiedText`.
+  4. أي فشل (الفتح يعيد false أو يرمي، أو فشل النسخ) ← `copy`. لا يرمي.
+- `ReportMessage`: `lines` (كل معلومة في سطر، من ARB) و`values` (قيم الحقول) و`text` (الأسطر بفاصل سطر؛ هو ما يُنسخ وقيمة `details`).
+
+**المحتوى (`buildReportMessage` في `features/report/report_sheet.dart`):** العنصر (إن وُجد)، منطقة الجدول، التاريخ المعروض، نسخة التطبيق (`appVersionProvider` من `package_info_plus`: `version+buildNumber`)، نسخة البيانات (`meta.dataVersion` و`dataSeq`). **لا شيء غيرها:** لا مدينة ولا إحداثيات ولا معرّف جهاز أو عنصر. الأرقام حسب إعداد «الأرقام» في الأسطر، ولاتينية في قيم الحقول.
+
+**الواجهة (`features/report/report_sheet.dart`، DESIGN 8.8):** ورقة سفلية `showReportSheet(context, itemName?, regionName?, date)`: العنوان (`header`) و«إغلاق»، سطر الشرح، بطاقة الملخص، ثم:
+- لا نموذج: «نسخ تفاصيل البلاغ» وحده (زر أساسي) ← «تم نسخ تفاصيل البلاغ» (`liveRegion`).
+- نموذج: «متابعة إلى النموذج» ← معبأ: تُغلق الورقة؛ بلا تعبئة: تبقى الورقة برسالة «نسخنا تفاصيل البلاغ. الصقها في النموذج…» (`liveRegion`) مع زر النسخ؛ فشل: «تعذّر فتح النموذج…» مع زر النسخ.
+- «لن يُرسل شيء حتى تضغط إرسال بنفسك.» دائماً. لا نعرض «تم الإرسال».
+- التمرير `SingleChildScrollView` (تكبير 200%)، والأزرار 52dp.
+
+**أماكن الزر:** أسفل صفحة النجم/الموسم/الدَّرّ (`ItemDetailView.reportKey`، زر ثانوي بعرض كامل؛ العنصر = الاسم، المنطقة = منطقة جدول التواريخ، التاريخ = التاريخ المرجعي للصفحة)، وصف «أبلغ عن خطأ» في «البيانات والمساعدة» بالإعدادات (بلاغ عام: منطقة المستخدم والتاريخ المعروض في الرئيسية)، وزر تحت «تعذّر حساب هذا اليوم.» في الرئيسية (DESIGN 8.4).
+
+**المزوّدات:** `reportConfigProvider` (`ReportConfig.fromEnvironment()`)، `clipboardWriterProvider` (`Clipboard.setData`)، `reportServiceProvider`، `appVersionProvider`؛ كلها تُستبدل في الاختبارات.
 
 ## 11. الواجهة
 
@@ -307,7 +330,7 @@ apps/durur/
   - `item_detail_page.dart`: فشل تحميل الجداول ← `DataLoadError` (`features/common/load_error.dart`، المشتركة مع الرئيسية) برسالة و«إعادة المحاولة» (`invalidate(tablesProvider)`) (إصلاح مع الميزة 8).
   - صفحة المصادر: `domain/source_catalog.dart` (`collectSources`: مفتاح التكرار العنوان والمؤلف والسنة، فيظهر GeoNames مرة واحدة؛ «بانتظار الاعتماد» إن كان أي سجل يستشهد بالمصدر مسودة، وإلا «اعتمده: {المراجعون}»)، ثم «رخص البيانات» (نص GeoNames ورابطاه ثوابت في الكود عبر `urlOpenerProvider`، ورسالة إن تعذّر الفتح)، ثم «التقويم الهجري». صف «المصادر» في قسم «البيانات والمساعدة» بالإعدادات. أندرويد: `<queries>` لنيّة VIEW بمخطط https.
   - `features/common/chips.dart`: `SeasonChip` و`WeatherChip` (نُقلتا من `day_card.dart` لتستخدمهما الصفحة).
-  - **لم يُبنَ مع الميزة 7:** زر «أبلغ عن خطأ» (الميزة 9، SPEC 7 معيار 4).
+  - زر «أبلغ عن خطأ» أسفل الصفحة **بُني مع الميزة 9** (SPEC 7 معيار 4، §10).
 - الدائرة: `CustomPainter` بحلقات (الأشهر، الدرور، المواسم، النجوم، مواسم الجو)، والزاوية من رقم اليوم في السنة. اللمس: تحويل الإحداثيات القطبية إلى (حلقة، يوم) ← عنصر. التدوير بالسحب يغيّر `selectedDateProvider`.
 - **مبنيّ (الميزة 6)، `features/home/`:**
   - `dial/dial_model.dart` (بلا Flutter): `DialModel.fromYearIndex` يجمع أيام السنة في قطع لكل حلقة (الفترة العابرة لنهاية السنة قطعتان)؛ الدرور بلون مئتها `seasonId` (D25)، ومواسم الجو بلون الموسم الكبير في منتصفها. `DialGeometry`: أنصاف الأقطار المرجعية (170/146/130/102/78/60، المحور 58)، `angleOf`، و`hitTest(dx, dy, rotation)` ← `HubHit` أو `RingHit(ring, day)`.
@@ -332,7 +355,7 @@ apps/durur/
 
 أندرويد (`AndroidManifest.xml`، `build.gradle.kts`):
 - `ACCESS_COARSE_LOCATION`، `POST_NOTIFICATIONS`، `RECEIVE_BOOT_COMPLETED` + مستقبلا flutter_local_notifications `ScheduledNotificationReceiver` و`ScheduledNotificationBootReceiver` (لإعادة الجدولة بعد إعادة التشغيل) — **مُضافة مع الميزة 8**، ومعها `res/drawable/ic_stat_durur.xml` و`res/raw/keep.xml` (حماية الأيقونة من R8). لا `SCHEDULE_EXACT_ALARM` (D13).
-- `<queries>` لنيّات `mailto` و`https` (url_launcher على أندرويد 11+).
+- `<queries>` لنيّة VIEW بمخطط `https` (url_launcher على أندرويد 11+؛ روابط المصادر ونموذج البلاغ). لا `mailto` (البلاغ بلا بريد، §10). آيفون: لا `LSApplicationQueriesSchemes` (لا نستخدم `canLaunchUrl`، و`https` لا يحتاجه).
 - `coreLibraryDesugaring` (مطلوب لـ flutter_local_notifications) — مُضاف مع الميزة 8 (`desugar_jdk_libs:2.1.4`).
 - `INTERNET` في `src/main/AndroidManifest.xml` (مع الميزة 11، D21). `usesCleartextTraffic=false` (HTTPS فقط).
 
@@ -356,7 +379,7 @@ apps/durur/
 | timezone | 0.11.1 | الجدولة بالتوقيت المحلي |
 | flutter_timezone | 5.1.0 | اسم المنطقة الزمنية للجهاز |
 | shared_preferences | 2.5.5 | حفظ الإعدادات |
-| url_launcher | 6.3.2 | فتح النموذج/البريد |
+| url_launcher | 6.3.2 | فتح روابط https فقط (المصادر ونموذج البلاغ) |
 | package_info_plus | 10.2.2 | نسخة التطبيق في البلاغ |
 | cryptography | 2.9.x (يُثبَّت مع الميزة 11) | التحقق من توقيع Ed25519 وSHA-256 بـ Dart صافٍ (D21) |
 | path_provider | 2.1.x (يُثبَّت مع الميزة 11) | مجلد دعم التطبيق لحفظ الحزمة المنزّلة |
@@ -368,7 +391,7 @@ apps/durur/
 
 | المستوى | ماذا | أين |
 |---|---|---|
-**الموجود فعلاً (520 اختباراً بعد الميزة 8 حسب STATUS.md):**
+**الموجود فعلاً (543 اختباراً بعد الميزة 9 حسب STATUS.md):**
 
 | المستوى | ماذا | الملف |
 |---|---|---|
@@ -399,6 +422,8 @@ apps/durur/
 | مزوّدات | النص والحمولة (D24)، `isNotificationPayload`، المزامنة (الفتح، المفتاحان، المدينة، الجداول، المنطقة الزمنية، اليوم، الفشل)، الإذن | `test/notifications/notification_sync_test.dart` (+ `test/helpers/fake_notification_scheduler.dart`) |
 | بلجن (محاكاة القناة) | المُجدوِل الفعلي على أندرويد: المسح قبل الجدولة، 08:00 Asia/Riyadh، UTC لمنطقة مجهولة، الوضع غير الدقيق، القناة، الأيقونة، المتأخر المعلق | `test/notifications/local_notification_scheduler_test.dart` |
 | واجهة | شرح التنبيهات وإذنه ورفضه، مفاتيح الإعدادات وملاحظة الإذن وخطأ الجدولة، السمة والأرقام، الضغط على التنبيه والتشغيل منه، الإصلاحات المؤجلة، عبارة «للمقارنة» في أصل التقويم، 200% و48dp وقارئ الشاشة | `test/widgets/notifications_settings_test.dart` |
+| وحدة | الميزة 9: ترتيب البلاغ (نموذج ← نسخ)، القيم الفارغة، النموذج المعبأ وغير المعبأ، الفشل، رفض المخططات غير https، `REPORT_FORM_FIELDS` | `test/report/report_service_test.dart` |
+| واجهة | الميزة 9: محتوى البلاغ بلا بيانات شخصية، الزر في صفحة النجم والدَّرّ والإعدادات وخطأ الحساب، «نسخ» فقط بلا إعدادات، النسخ للحافظة، 200% على 320dp وقارئ الشاشة | `test/widgets/report_test.dart` |
 
 **مخطط مع ميزاته:** الفلك (Meeus + مرجعي ±2 + ترتيب المدن) `test/astronomy/`؛ أقرب مدينة `test/location/`؛ التحديث الموقّع `test/updates/` (§16.9). يدوي: وضع الطيران، تغيير تاريخ الجهاز للتنبيه، رفض الأذونات (TESTERS.md).
 

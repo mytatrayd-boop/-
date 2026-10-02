@@ -765,4 +765,70 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notifChannelDar => 'بداية كل دَرّ';
+
+  @override
+  String get detailReport => 'أبلغ عن خطأ';
+
+  @override
+  String get settingsReport => 'أبلغ عن خطأ';
+
+  @override
+  String get reportTitle => 'أبلغ عن خطأ';
+
+  @override
+  String get reportIntroForm =>
+      'سنفتح لك النموذج وفيه هذه المعلومات. أكمل وصف الخطأ ثم اضغط إرسال بنفسك.';
+
+  @override
+  String get reportIntroFormPaste =>
+      'سننسخ لك هذه المعلومات ونفتح النموذج. الصقها فيه وأكمل وصف الخطأ ثم اضغط إرسال بنفسك.';
+
+  @override
+  String get reportIntroCopy =>
+      'انسخ هذه المعلومات وأرفقها بوصف الخطأ في بلاغك.';
+
+  @override
+  String reportItem(String item) {
+    return 'العنصر: $item';
+  }
+
+  @override
+  String reportRegion(String region) {
+    return 'المنطقة: $region';
+  }
+
+  @override
+  String reportDate(String date) {
+    return 'التاريخ المعروض: $date';
+  }
+
+  @override
+  String reportVersion(String version) {
+    return 'نسخة التطبيق: $version';
+  }
+
+  @override
+  String reportDataVersion(String version, String seq) {
+    return 'نسخة البيانات: $version ($seq)';
+  }
+
+  @override
+  String get reportOpenForm => 'متابعة إلى النموذج';
+
+  @override
+  String get reportNothingSent => 'لن يُرسل شيء حتى تضغط إرسال بنفسك.';
+
+  @override
+  String get reportCopyDetails => 'نسخ تفاصيل البلاغ';
+
+  @override
+  String get reportDetailsCopied => 'تم نسخ تفاصيل البلاغ';
+
+  @override
+  String get reportPasteHint =>
+      'نسخنا تفاصيل البلاغ. الصقها في النموذج ثم أكمل وصف الخطأ.';
+
+  @override
+  String get reportFormOpenError =>
+      'تعذّر فتح النموذج. انسخ تفاصيل البلاغ وأرسلها لاحقاً.';
 }

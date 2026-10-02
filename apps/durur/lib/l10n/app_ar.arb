@@ -1020,5 +1020,101 @@
   "notifChannelDar": "بداية كل دَرّ",
   "@notifChannelDar": {
     "description": "اسم قناة تنبيهات بداية الدَّرّ في إعدادات أندرويد (DESIGN notif.channel.dar)"
+  },
+  "detailReport": "أبلغ عن خطأ",
+  "@detailReport": {
+    "description": "زر ثانوي أسفل صفحة النجم/الموسم/الدَّرّ يفتح ورقة البلاغ (DESIGN detail.report)"
+  },
+  "settingsReport": "أبلغ عن خطأ",
+  "@settingsReport": {
+    "description": "صف في قسم البيانات والمساعدة يفتح ورقة بلاغ عام (DESIGN settings.report)"
+  },
+  "reportTitle": "أبلغ عن خطأ",
+  "@reportTitle": {
+    "description": "عنوان ورقة البلاغ وزر البلاغ في خطأ الحساب بالرئيسية (DESIGN report.title)"
+  },
+  "reportIntroForm": "سنفتح لك النموذج وفيه هذه المعلومات. أكمل وصف الخطأ ثم اضغط إرسال بنفسك.",
+  "@reportIntroForm": {
+    "description": "سطر الورقة حين يُعبأ النموذج مسبقاً (DESIGN report.intro_form)"
+  },
+  "reportIntroFormPaste": "سننسخ لك هذه المعلومات ونفتح النموذج. الصقها فيه وأكمل وصف الخطأ ثم اضغط إرسال بنفسك.",
+  "@reportIntroFormPaste": {
+    "description": "سطر الورقة حين يُفتح النموذج بلا تعبئة مسبقة (قرار المالك النهائي، ليس في DESIGN بعد)"
+  },
+  "reportIntroCopy": "انسخ هذه المعلومات وأرفقها بوصف الخطأ في بلاغك.",
+  "@reportIntroCopy": {
+    "description": "سطر الورقة حين لا يوجد نموذج مضبوط فيظهر «نسخ» فقط (ليس في DESIGN بعد)"
+  },
+  "reportItem": "العنصر: {item}",
+  "@reportItem": {
+    "description": "سطر في ملخص البلاغ (DESIGN report.item)",
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "reportRegion": "المنطقة: {region}",
+  "@reportRegion": {
+    "description": "سطر في ملخص البلاغ: منطقة الجدول (DESIGN report.region)",
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDate": "التاريخ المعروض: {date}",
+  "@reportDate": {
+    "description": "سطر في ملخص البلاغ (DESIGN report.date)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportVersion": "نسخة التطبيق: {version}",
+  "@reportVersion": {
+    "description": "سطر في ملخص البلاغ (DESIGN report.version)",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDataVersion": "نسخة البيانات: {version} ({seq})",
+  "@reportDataVersion": {
+    "description": "سطر في ملخص البلاغ: dataVersion ثم dataSeq من meta.json (ليس في DESIGN بعد)",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "seq": {
+        "type": "String"
+      }
+    }
+  },
+  "reportOpenForm": "متابعة إلى النموذج",
+  "@reportOpenForm": {
+    "description": "الزر الأساسي في ورقة البلاغ (DESIGN report.open_form)"
+  },
+  "reportNothingSent": "لن يُرسل شيء حتى تضغط إرسال بنفسك.",
+  "@reportNothingSent": {
+    "description": "سطر caption أسفل ورقة البلاغ (DESIGN report.nothing_sent)"
+  },
+  "reportCopyDetails": "نسخ تفاصيل البلاغ",
+  "@reportCopyDetails": {
+    "description": "زر ينسخ ملخص البلاغ نصاً (DESIGN report.copy_details)"
+  },
+  "reportDetailsCopied": "تم نسخ تفاصيل البلاغ",
+  "@reportDetailsCopied": {
+    "description": "تأكيد بعد النسخ (ليس في DESIGN بعد؛ report.copied خاص بالعنوان)"
+  },
+  "reportPasteHint": "نسخنا تفاصيل البلاغ. الصقها في النموذج ثم أكمل وصف الخطأ.",
+  "@reportPasteHint": {
+    "description": "رسالة بعد فتح النموذج بلا تعبئة مسبقة (قرار المالك النهائي، ليس في DESIGN بعد)"
+  },
+  "reportFormOpenError": "تعذّر فتح النموذج. انسخ تفاصيل البلاغ وأرسلها لاحقاً.",
+  "@reportFormOpenError": {
+    "description": "فشل فتح النموذج (لا متصفح) فتبقى نافذة النسخ (ليس في DESIGN بعد)"
   }
 }

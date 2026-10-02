@@ -8,17 +8,19 @@ import '../../location/city_locator.dart';
 import '../../providers.dart';
 import '../../repository/settings_repository.dart';
 import '../../routing/app_routes.dart';
+import '../report/report_sheet.dart';
 
 /// الإعدادات (DESIGN 8.7): «المنطقة» (صف المدينة، الميزة 3؛ و«تحديد موقعي
 /// مرة أخرى»، الميزة 4)، و«التنبيهات» (مفتاحان مستقلان وملاحظة الإذن وخطأ
 /// الجدولة، الميزة 8)، و«المظهر» (السمة والأرقام)، و«البيانات والمساعدة»
-/// (المصادر، D27). البلاغ وعن التطبيق مع الميزة 9.
+/// (المصادر، D27؛ وأبلغ عن خطأ، الميزة 9). «عن التطبيق» لم يُبنَ بعد.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   static const cityRowKey = Key('settingsCityRow');
   static const relocateRowKey = Key('settingsRelocateRow');
   static const sourcesRowKey = Key('settingsSourcesRow');
+  static const reportRowKey = Key('settingsReportRow');
   static const importantSwitchKey = Key('settingsNotifyImportant');
   static const darSwitchKey = Key('settingsNotifyDar');
   static const permissionNoteKey = Key('settingsNotifPermissionNote');
@@ -167,6 +169,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.settingsSources),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AppRoutes.sources),
+          ),
+          // بلاغ عام غير مرتبط بعنصر (DESIGN 8.7، الميزة 9).
+          ListTile(
+            key: SettingsScreen.reportRowKey,
+            minTileHeight: 56,
+            leading: const Icon(Icons.flag_outlined),
+            title: Text(l10n.settingsReport),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showReportSheet(
+              context,
+              regionName: region?.name.ar,
+              date: ref.read(selectedDateProvider),
+            ),
           ),
         ],
       ),
