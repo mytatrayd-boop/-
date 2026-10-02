@@ -1,0 +1,30 @@
+{
+  "@@locale": "ar",
+  "appTitle": "ديرة الدرور",
+  "@appTitle": {
+    "description": "اسم التطبيق"
+  },
+  "todayLabel": "اليوم",
+  "@todayLabel": {
+    "description": "عنوان قسم تاريخ اليوم في الشاشة الرئيسية"
+  },
+  "traditionDisclaimer": "الجو المعتاد حسب التراث، وليس توقعاً للطقس",
+  "@traditionDisclaimer": {
+    "description": "عبارة ثابتة في الشاشة الرئيسية (SPEC الميزة 6)"
+  },
+  "hijriDate": "{day} {month, select, m1{محرم} m2{صفر} m3{ربيع الأول} m4{ربيع الآخر} m5{جمادى الأولى} m6{جمادى الآخرة} m7{رجب} m8{شعبان} m9{رمضان} m10{شوال} m11{ذو القعدة} m12{ذو الحجة} other{}} {year} هـ",
+  "@hijriDate": {
+    "description": "التاريخ الهجري (أم القرى). month بالصيغة m1..m12",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  }
+}
