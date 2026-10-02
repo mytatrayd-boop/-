@@ -45,11 +45,12 @@ class _DururAppState extends ConsumerState<DururApp> {
   }
 
   // العودة للواجهة: إعادة قراءة إذن التنبيهات ومزامنتها (منطقة زمنية أو يوم
-  // جديد، ARCHITECTURE §9).
+  // جديد، ARCHITECTURE §9)، والتحقق من تحديث البيانات إن حان موعده (§16.2).
   late final AppLifecycleListener _lifecycle = AppLifecycleListener(
     onResume: () {
       ref.read(notificationPermissionProvider.notifier).refresh();
       ref.read(notificationSyncProvider.notifier).sync();
+      ref.read(dataUpdateProvider.notifier).maybeCheck();
     },
   );
 
@@ -63,6 +64,11 @@ class _DururAppState extends ConsumerState<DururApp> {
     ref.listenManual(notificationSyncProvider, (_, _) {});
     _lifecycle;
     _initNotifications();
+    // تحديث البيانات الموقّع بعد رسم أول إطار، غير متزامن ولا يؤخر الواجهة
+    // (ARCHITECTURE §16.2).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(dataUpdateProvider.notifier).maybeCheck();
+    });
   }
 
   /// تهيئة البلجن والضغط على التنبيه (من الخلفية أو من حالة الإغلاق).

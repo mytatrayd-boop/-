@@ -79,7 +79,9 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
         automaticallyImplyLeading: !widget.firstRun,
       ),
       body: switch (tables) {
-        AsyncData(:final value) => _content(context, l10n, value),
+        // السابقة تبقى أثناء إعادة التحميل بعد تحديث البيانات (§16.5).
+        AsyncValue(hasError: false, :final value?) =>
+          _content(context, l10n, value),
         AsyncError() => _DataLoadError(
             onRetry: () => ref.invalidate(tablesProvider),
           ),

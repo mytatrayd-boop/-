@@ -30,15 +30,26 @@ void main() {
       );
     });
 
-    test('لا أذونات أخرى (INTERNET يخص الميزة 11)', () {
+    test('لا أذونات أخرى', () {
       expect(permissions, [
         'android.permission.ACCESS_COARSE_LOCATION',
         'android.permission.FOREGROUND_SERVICE_LOCATION', // للحذف فقط
         // الميزة 8: التنبيهات المحلية.
         'android.permission.POST_NOTIFICATIONS',
         'android.permission.RECEIVE_BOOT_COMPLETED',
+        // الميزة 11 (D21): تحديث البيانات الموقّع فقط.
+        'android.permission.INTERNET',
       ]);
-      expect(manifest, isNot(contains('android.permission.INTERNET')));
+      // القائمة كاملة تثبت غياب ACCESS_NETWORK_STATE وأي إذن شبكة آخر.
+    });
+
+    test('الميزة 11: INTERNET مرة واحدة، وHTTPS فقط (بلا نص صريح)', () {
+      expect(
+        permissions.where((p) => p == 'android.permission.INTERNET'),
+        hasLength(1),
+      );
+      expect(manifest, contains('android:usesCleartextTraffic="false"'));
+      expect(manifest, isNot(contains('networkSecurityConfig')));
     });
 
     test('الميزة 8: مستقبلا الجدولة، بلا إذن المنبهات الدقيقة (D13)', () {

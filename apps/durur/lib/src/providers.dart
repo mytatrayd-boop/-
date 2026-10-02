@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,6 +29,13 @@ import 'notifications/notification_scheduler.dart';
 import 'report/report_service.dart';
 import 'repository/settings_repository.dart';
 import 'repository/table_repository.dart';
+import 'updates/bundle_verifier.dart';
+import 'updates/data_updater.dart';
+import 'updates/trusted_keys.dart';
+import 'updates/update_config.dart';
+import 'updates/update_fetcher.dart';
+import 'updates/update_schedule.dart';
+import 'updates/update_store.dart';
 
 export 'report/report_service.dart' show isOpenableUrl;
 
@@ -44,12 +52,26 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
   (ref) => SettingsRepository(ref.watch(sharedPreferencesProvider)),
 );
 
-/// كل الجداول المضمّنة، تُحمَّل مرة واحدة. بلا إعادة محاولة تلقائية:
-/// الأصول المضمّنة لا تتغير، وإعادة المحاولة بزر في الواجهة.
-final tablesProvider = FutureProvider<Tables>(
-  (ref) => TableRepository().load(),
-  retry: (_, _) => null,
+/// يحمّل الجداول المضمّنة في التطبيق (الملاذ الأخير دائماً، §16.4)؛
+/// يُستبدل في الاختبارات.
+final embeddedTablesLoaderProvider = Provider<Future<Tables> Function()>(
+  (ref) => TableRepository().load,
 );
+
+/// الجداول المستخدمة: حزمة التحديث المثبّتة إن اجتازت التحقق من جديد
+/// (التوقيع والبصمة والمدقق، ورقمها أكبر من المضمّن)، وإلا المضمّنة (§16.4).
+/// تُحمَّل مرة عند الفتح، وتُعاد بعد قبول حزمة (`invalidate`، §16.5). بلا
+/// إعادة محاولة تلقائية؛ إعادة المحاولة بزر في الواجهة.
+final tablesProvider = FutureProvider<Tables>((ref) async {
+  final embedded = await ref.watch(embeddedTablesLoaderProvider)();
+  final installed = await loadInstalledTables(
+    embedded: embedded,
+    store: ref.watch(updateStoreProvider),
+    verifier: ref.watch(bundleVerifierProvider),
+    appBuild: () => ref.read(appBuildProvider.future),
+  );
+  return installed ?? embedded;
+}, retry: (_, _) => null);
 
 /// تقويم أم القرى من الجداول المحمّلة (D22)، أو null قبل اكتمال التحميل.
 /// يتبع tablesProvider، فيتحدث مع أي إعادة تحميل للجداول (§16.5).
@@ -551,3 +573,106 @@ final notificationSyncProvider =
     NotifierProvider<NotificationSyncController, NotificationSyncStatus>(
       NotificationSyncController.new,
     );
+
+// ─────────────────────── تحديث البيانات الموقّع (الميزة 11) ───────────────────────
+
+/// `UPDATE_BASE_URL` من `--dart-define-from-file` (§16.1)؛ فارغ = لا تحديث.
+final updateConfigProvider = Provider<UpdateConfig>(
+  (ref) => UpdateConfig.fromEnvironment(),
+);
+
+/// المفاتيح العامة الموثوقة (§16.3)؛ فارغة حتى يولّد المالك مفتاح الإنتاج.
+/// تُستبدل في الاختبارات بمفتاح مولّد أثناء التشغيل.
+final trustedKeysProvider = Provider<Map<String, String>>(
+  (ref) => trustedDataKeys,
+);
+
+final bundleVerifierProvider = Provider<BundleVerifier>(
+  (ref) => BundleVerifier(ref.watch(trustedKeysProvider)),
+);
+
+/// مجلد دعم التطبيق (`path_provider`)؛ يُستبدل في الاختبارات بمجلد مؤقت.
+final updateStoreProvider = Provider<UpdateStore>(
+  (ref) => UpdateStore(getApplicationSupportDirectory),
+);
+
+/// طلب HTTPS لملف ثابت (`dart:io`)؛ يُستبدل في الاختبارات.
+final updateFetcherProvider = Provider<UpdateFetcher>(
+  (ref) => HttpUpdateFetcher(),
+);
+
+/// رقم بناء التطبيق (لـ `minAppBuild` في البيان)؛ يُستبدل في الاختبارات.
+final appBuildProvider = FutureProvider<int>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return int.tryParse(info.buildNumber) ?? 0;
+}, retry: (_, _) => null);
+
+final dataUpdaterProvider = Provider<DataUpdater>(
+  (ref) => DataUpdater(
+    config: ref.watch(updateConfigProvider),
+    verifier: ref.watch(bundleVerifierProvider),
+    fetcher: ref.watch(updateFetcherProvider),
+    store: ref.watch(updateStoreProvider),
+    state: UpdateState(ref.watch(sharedPreferencesProvider)),
+  ),
+);
+
+/// يتحقق من تحديث البيانات عند الفتح والعودة للواجهة إن حان الموعد (7 أيام
+/// بعد نجاح، 24 ساعة بعد فشل؛ لا أثناء الإعداد الأولي)، بلا مهام خلفية ولا
+/// رسالة للمستخدم (§16.2). بعد قبول حزمة: `invalidate(tablesProvider)` فتُعاد
+/// الجداول والهجري وكل ما يتبعها، وتُعاد جدولة التنبيهات (§16.5).
+/// الحالة = نتيجة آخر محاولة (null قبلها).
+class DataUpdateController extends Notifier<UpdateOutcome?> {
+  Future<UpdateOutcome>? _running;
+
+  @override
+  UpdateOutcome? build() => null;
+
+  /// محاولة واحدة متزامنة كحد أقصى؛ لا ترمي.
+  Future<UpdateOutcome> maybeCheck() {
+    final running = _running;
+    if (running != null) return running;
+    final run = _maybeCheck();
+    _running = run;
+    return run.whenComplete(() => _running = null);
+  }
+
+  Future<UpdateOutcome> _maybeCheck() async {
+    final updater = ref.read(dataUpdaterProvider);
+    if (!updater.isEnabled) return _finish(UpdateOutcome.disabled);
+    final now = ref.read(clockProvider)();
+    final due = isCheckDue(
+      now: now,
+      lastCheckOk: updater.state.lastCheckOk,
+      lastAttempt: updater.state.lastAttempt,
+      onboardingDone: ref.read(settingsProvider).onboardingDone,
+    );
+    if (!due) return _finish(UpdateOutcome.notDue);
+    final Tables embedded;
+    final int appBuild;
+    try {
+      embedded = await ref.read(embeddedTablesLoaderProvider)();
+      appBuild = await ref.read(appBuildProvider.future);
+    } on Object {
+      return _finish(UpdateOutcome.failed);
+    }
+    if (!ref.mounted) return UpdateOutcome.failed;
+    final outcome = await updater.check(
+      embedded: embedded,
+      appBuild: appBuild,
+      now: now,
+    );
+    if (!ref.mounted) return outcome;
+    if (outcome == UpdateOutcome.updated) ref.invalidate(tablesProvider);
+    return _finish(outcome);
+  }
+
+  UpdateOutcome _finish(UpdateOutcome outcome) {
+    if (ref.mounted) state = outcome;
+    return outcome;
+  }
+}
+
+final dataUpdateProvider = NotifierProvider<DataUpdateController, UpdateOutcome?>(
+  DataUpdateController.new,
+);

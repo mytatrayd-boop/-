@@ -80,7 +80,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: switch (tables) {
-        AsyncData(:final value) => _content(context, value),
+        // أثناء إعادة التحميل بعد تحديث البيانات (§16.5) تبقى الجداول السابقة
+        // معروضة حتى تكتمل الجديدة، بلا وميض.
+        AsyncValue(hasError: false, :final value?) => _content(context, value),
         AsyncError() => DataLoadError(
           key: HomeScreen.loadErrorKey,
           onRetry: () => ref.invalidate(tablesProvider),

@@ -14,10 +14,15 @@
          (inexactAllowWhileIdle)، والتأخير دقائق لا يهم لتنبيه موسمي. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- الميزة 11 (ARCHITECTURE §16، D21، بموافقة المالك): لهذا الغرض فقط —
+         طلب GET أسبوعي لملف بيانات موقّع ثابت عبر HTTPS، بلا معرّفات ولا
+         معاملات. لا ACCESS_NETWORK_STATE ولا أي إذن شبكة آخر. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="durur"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

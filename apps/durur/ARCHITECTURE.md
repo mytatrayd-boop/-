@@ -48,7 +48,7 @@ apps/durur/
 │     ├─ engine/                 # [Dart صافٍ] CalendarEngine, YearIndex, TableValidator
 │     ├─ astronomy/              # [Dart صافٍ] angles.dart, time.dart, sun.dart, stars.dart, sidereal.dart, precession.dart, horizon.dart (الارتفاع والانكسار), heliacal_params.dart, heliacal.dart
 │     ├─ hijri/                  # HijriDate، UmmAlQuraCalendar (جدول بيانات، D22)، HijriTableValidator
-│     ├─ updates/                # DataUpdater، SignedManifest، UpdateStore (§16، D21)
+│     ├─ updates/                # DataUpdater، BundleVerifier، SignedManifest، UpdateStore، UpdateFetcher، isCheckDue، trusted_keys (§16، D21)
 │     ├─ repository/             # TableRepository (تحميل JSON)، SettingsRepository (shared_preferences)
 │     ├─ location/               # LocationService (geolocator)، NearestCity [Dart صافٍ]
 │     ├─ notifications/          # NotificationPlanner [Dart صافٍ]، NotificationScheduler (البلجن)
@@ -68,21 +68,21 @@ apps/durur/
 └─ tool/
    ├─ validate_tables.dart       # يتحقق من الجداول؛ مع --release يفشل إن وُجد سجل غير معتمد (D16)
    ├─ gen_hijri_table.dart       # يولّد hijri_umm_al_qura.json مرة واحدة من مكتبة hijri (D22)
-   ├─ build_bundle.dart          # يحزم assets/tables في bundle.json + manifest (بلا توقيع)
-   └─ sign_bundle.dart           # يوقّع manifest بالمفتاح الخاص من مسار خارج المستودع (§16.3)
+   └─ sign_bundle.dart           # keygen: زوج مفاتيح Ed25519 (الخاص في ملف خارج المستودع)؛ sign: يبني bundle-<seq>.json ويوقّع manifest.json (§16.3، الميزة 11)
 ```
 
 ## 3. إدارة الحالة — Riverpod (D3)
 
 مزوّدات يدوية (بلا توليد كود) في `lib/src/providers.dart`:
 
-**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6، 7، 8، 9):**
+**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6، 7، 8، 9، 11):**
 
 | المزوّد | النوع | الوظيفة |
 |---|---|---|
 | `sharedPreferencesProvider` | `Provider<SharedPreferences>` | يرمي `UnimplementedError` افتراضياً؛ يُستبدل في `main()` بنسخة محمّلة مسبقاً (`SharedPreferences.getInstance()` قبل `runApp`)، وفي الاختبارات بنسخة وهمية |
 | `settingsRepositoryProvider` | `Provider<SettingsRepository>` | غلاف المفاتيح المحفوظة: `cityId`، `onboardingDone`، `notifyImportant` (افتراضي true)، `notifyDar` (افتراضي false)، `theme` (`ThemeChoice`)، `digits` (`DigitStyle`)؛ القيم الافتراضية لا تُكتب؛ الحفظ الفاشل يرمي `SettingsSaveException` |
-| `tablesProvider` | `FutureProvider<Tables>` | يحمّل كل JSON مرة واحدة عند الفتح، بلا إعادة محاولة تلقائية (`retry: null`)؛ إعادة المحاولة بزر في الواجهة |
+| `embeddedTablesLoaderProvider` | `Provider<Future<Tables> Function()>` | يحمّل الجداول المضمّنة (`TableRepository().load`)؛ الملاذ الأخير دائماً (الميزة 11) |
+| `tablesProvider` | `FutureProvider<Tables>` | المضمّنة، ثم الحزمة المثبّتة فوقها إن اجتازت التحقق من جديد (`loadInstalledTables`، §16.4)؛ مرة عند الفتح، وتُعاد بـ `invalidate` بعد قبول حزمة (§16.5)؛ بلا إعادة محاولة تلقائية (`retry: null`)؛ إعادة المحاولة بزر في الواجهة. أثناء إعادة التحميل تبقى الجداول السابقة معروضة في الرئيسية وقائمة المدن (بلا وميض) |
 | `hijriCalendarProvider` | `Provider<UmmAlQuraCalendar?>` | جدول أم القرى من `tablesProvider` (D22)، `null` قبل اكتمال التحميل؛ يتحدث مع أي إعادة تحميل للجداول (§16.5) |
 | `settingsProvider` | `NotifierProvider<SettingsController, Settings>` | المدينة، انتهاء الإعداد الأولي، مفتاحا التنبيهات، السمة، الأرقام (الميزة 8)؛ كل دالة (`selectCity`، `completeOnboarding`، `setNotifyImportant`، `setNotifyDar`، `setTheme`، `setDigits`) تحفظ أولاً ثم تغيّر الحالة |
 | `digitStyleProvider` | `Provider<DigitStyle>` | شكل الأرقام (١٢٣/123، DESIGN 8.7)؛ يُمرَّر إلى `formatInteger`/`localizeDigits` ودوال التواريخ ونصوص الدائرة (الميزة 8) |
@@ -108,6 +108,15 @@ apps/durur/
 | `notificationPermissionProvider` | `AsyncNotifierProvider<…, bool>` | هل إذن التنبيهات ممنوح؛ `refresh()` عند العودة للواجهة، `request()` من شرح التنبيهات ومن تشغيل مفتاح والإذن غير ممنوح (الميزة 8) |
 | `notificationInputsProvider` | `Provider<NotificationInputs>` | (المدينة، المفتاحان، الجداول، اليوم): تغيّر أيٍّ منها يعيد الجدولة (الميزة 8) |
 | `notificationSyncProvider` | `NotifierProvider<NotificationSyncController, NotificationSyncStatus>` | يعيد الجدولة عند الفتح وتغيّر المدخلات وعند العودة للواجهة (`sync()`؛ تُقرأ المنطقة الزمنية من جديد)؛ لا يعيد إن تطابقت بصمة الخطة والمنطقة الزمنية مع آخر جدولة ناجحة؛ الحالة `failed` تُظهر رسالة في الإعدادات (الميزة 8) |
+
+| `updateConfigProvider` | `Provider<UpdateConfig>` | `UPDATE_BASE_URL` من `--dart-define-from-file`؛ فارغ أو ليس https ← معطّل (الميزة 11) |
+| `trustedKeysProvider` | `Provider<Map<String, String>>` | المفاتيح العامة الموثوقة (`trusted_keys.dart`، فارغة حتى يولّد المالك المفتاح)؛ مفتاح مؤقت في الاختبارات (الميزة 11) |
+| `bundleVerifierProvider` | `Provider<BundleVerifier>` | فحوص القبول §16.3/16.6/16.7 (الميزة 11) |
+| `updateStoreProvider` | `Provider<UpdateStore>` | الحزمة المثبّتة في `getApplicationSupportDirectory()/tables/` (الميزة 11) |
+| `updateFetcherProvider` | `Provider<UpdateFetcher>` | `HttpUpdateFetcher` (`dart:io`)؛ وهمي في الاختبارات (الميزة 11) |
+| `appBuildProvider` | `FutureProvider<int>` | رقم البناء (`package_info_plus`) لـ `minAppBuild` (الميزة 11) |
+| `dataUpdaterProvider` | `Provider<DataUpdater>` | محاولة تحقق واحدة: البيان ← الحزمة ← التحقق ← التثبيت (الميزة 11) |
+| `dataUpdateProvider` | `NotifierProvider<DataUpdateController, UpdateOutcome?>` | `maybeCheck()` بعد أول إطار وعند العودة للواجهة (`app.dart`) إن حان الموعد؛ بعد القبول `invalidate(tablesProvider)`؛ الحالة نتيجة آخر محاولة (الميزة 11) |
 
 **توصية ملزمة للميزات القادمة:** مفتاح `dayInfoProvider` يُمرَّر **مقرّباً لمنتصف الليل** (`DateTime(d.year, d.month, d.day)`)، لا `DateTime.now()` مباشرة؛ وإلا يُنشأ مدخل family جديد في كل إعادة بناء (ذاكرة وحساب بلا فائدة). المحرك نفسه يأخذ التاريخ فقط، فالتقريب لا يغيّر النتيجة. `todayProvider` و`selectedDateProvider` يخزّنان القيمة مقرّبة أصلاً.
 
@@ -347,9 +356,9 @@ apps/durur/
 ## 12. الأمان والخصوصية
 
 - لا مفاتيح ولا أسرار في التطبيق أصلاً (لا خادم). أي ملف `.env` مستثنى من git.
-- البيانات المحفوظة على الجهاز فقط: معرّف المدينة، مفتاحا التنبيهات (`notifyImportant`، `notifyDar`)، انتهاء الإعداد الأولي (`onboardingDone`)، السمة والأرقام (`theme`، `digits`)، ومفتاح «تحديث البيانات تلقائياً» وحالة التحديث (رقم الحزمة، وقت آخر تحقق) وحزمة البيانات المنزّلة (§16.4).
+- البيانات المحفوظة على الجهاز فقط: معرّف المدينة، مفتاحا التنبيهات (`notifyImportant`، `notifyDar`)، انتهاء الإعداد الأولي (`onboardingDone`)، السمة والأرقام (`theme`، `digits`)، وحالة التحديث (`data.highestSeq`، `data.lastCheckOk`، `data.lastAttempt`) وحزمة البيانات المنزّلة (§16.4). (مفتاح «تحديث البيانات تلقائياً» في D21 لم يُبنَ بعد، §16.11.)
 - لا تحليلات ولا تقارير أعطال ولا إعلانات (D15).
-- الشبكة: طلب GET واحد أسبوعياً لملف ثابت عام، بلا معرّفات ولا معاملات ولا كوكيز (§16.2). المفتاح العام للتوقيع مضمّن في الكود (ليس سراً)؛ المفتاح الخاص لا يدخل المستودع ولا التطبيق أبداً (§16.3).
+- الشبكة: طلب GET واحد أسبوعياً لملف ثابت عام، بلا معرّفات ولا معاملات ولا كوكيز ولا `If-None-Match` (§16.2)، و`User-Agent` ثابت `durur`. المفتاح العام للتوقيع مضمّن في الكود (ليس سراً)؛ المفتاح الخاص لا يدخل المستودع ولا التطبيق أبداً (§16.3).
 - أندرويد الإصدار: إذن `INTERNET` فقط لتحديث البيانات (D21). لا `ACCESS_NETWORK_STATE` ولا أي إذن شبكة آخر.
 - قواعد أمان Firebase: لا تنطبق (لا Firebase في النسخة الأولى).
 
@@ -359,7 +368,7 @@ apps/durur/
 - `ACCESS_COARSE_LOCATION`، `POST_NOTIFICATIONS`، `RECEIVE_BOOT_COMPLETED` + مستقبلا flutter_local_notifications `ScheduledNotificationReceiver` و`ScheduledNotificationBootReceiver` (لإعادة الجدولة بعد إعادة التشغيل) — **مُضافة مع الميزة 8**، ومعها `res/drawable/ic_stat_durur.xml` و`res/raw/keep.xml` (حماية الأيقونة من R8). لا `SCHEDULE_EXACT_ALARM` (D13).
 - `<queries>` لنيّة VIEW بمخطط `https` (url_launcher على أندرويد 11+؛ روابط المصادر ونموذج البلاغ). لا `mailto` (البلاغ بلا بريد، §10). آيفون: لا `LSApplicationQueriesSchemes` (لا نستخدم `canLaunchUrl`، و`https` لا يحتاجه).
 - `coreLibraryDesugaring` (مطلوب لـ flutter_local_notifications) — مُضاف مع الميزة 8 (`desugar_jdk_libs:2.1.4`).
-- `INTERNET` في `src/main/AndroidManifest.xml` (مع الميزة 11، D21). `usesCleartextTraffic=false` (HTTPS فقط).
+- `INTERNET` في `src/main/AndroidManifest.xml` و`android:usesCleartextTraffic="false"` (HTTPS فقط) — **مُضافان مع الميزة 11** (D21)، ويثبتهما `test/platform/location_permissions_test.dart`. لا `networkSecurityConfig` ولا `ACCESS_NETWORK_STATE`.
 
 آيفون (`Info.plist`، `AppDelegate.swift`):
 - `NSLocationWhenInUseUsageDescription` (بالعربية)، `NSLocationDefaultAccuracyReduced = true`.
@@ -383,8 +392,8 @@ apps/durur/
 | shared_preferences | 2.5.5 | حفظ الإعدادات |
 | url_launcher | 6.3.2 | فتح روابط https فقط (المصادر ونموذج البلاغ) |
 | package_info_plus | 10.2.2 | نسخة التطبيق في البلاغ |
-| cryptography | 2.9.x (يُثبَّت مع الميزة 11) | التحقق من توقيع Ed25519 وSHA-256 بـ Dart صافٍ (D21) |
-| path_provider | 2.1.x (يُثبَّت مع الميزة 11) | مجلد دعم التطبيق لحفظ الحزمة المنزّلة |
+| cryptography | 2.9.0 | التحقق من توقيع Ed25519 وSHA-256 بـ Dart صافٍ (`DartEd25519`، `DartSha256`) (D21)؛ والتوقيع في الأداة |
+| path_provider | 2.1.6 | مجلد دعم التطبيق لحفظ الحزمة المنزّلة |
 | flutter_lints (تطوير) | 6.0.0 | قواعد التحليل |
 
 الشبكة عبر `dart:io HttpClient` بلا مكتبة إضافية. غير مستخدم عمداً: Firebase وRemote Config، workmanager (مهام خلفية)، connectivity_plus، google_fonts (يحمّل من الإنترنت)، أي مكتبة تحليلات، permission_handler (البلجنات تطلب أذوناتها)، مكتبات توليد الكود.
@@ -427,7 +436,13 @@ apps/durur/
 | وحدة | الميزة 9: ترتيب البلاغ (نموذج ← نسخ)، القيم الفارغة، النموذج المعبأ وغير المعبأ، الفشل، رفض المخططات غير https، `REPORT_FORM_FIELDS` | `test/report/report_service_test.dart` |
 | واجهة | الميزة 9: محتوى البلاغ بلا بيانات شخصية، الزر في صفحة النجم والدَّرّ والإعدادات وخطأ الحساب، «نسخ» فقط بلا إعدادات، النسخ للحافظة، 200% على 320dp وقارئ الشاشة | `test/widgets/report_test.dart` |
 
-**مخطط مع ميزاته:** الفلك (Meeus + مرجعي ±2 + ترتيب المدن) `test/astronomy/`؛ أقرب مدينة `test/location/`؛ التحديث الموقّع `test/updates/` (§16.9). يدوي: وضع الطيران، تغيير تاريخ الجهاز للتنبيه، رفض الأذونات (TESTERS.md).
+| وحدة | الميزة 11: القبول والرفض (توقيع، keyId، تطبيق، مخطط، minAppBuild، seq، حجم، بصمة، JSON، ملف ناقص، مسودة، بدايات مكررة، شهر هجري 31، إزاحة يومين، تصحيح يوم واحد مقبول، حذف مدينة) | `test/updates/bundle_verifier_test.dart` (+ `update_test_kit.dart`: مفتاح مؤقت وحزم من الجداول الفعلية بعد اعتمادها في الذاكرة) |
+| وحدة | الميزة 11: الموعد (7 أيام/24 ساعة/الإعداد الأولي/رجوع الساعة) | `test/updates/update_schedule_test.dart` |
+| شبكة (خادم HTTP محلي) | الميزة 11: الترويسات (لا كوكيز ولا معاملات، `User-Agent` ثابت)، 404، 304، مهلة، حجم زائد بطريقتين، تحويل لنفس النطاق/لنطاق آخر، بلا خادم | `test/updates/update_fetcher_test.dart` |
+| مزوّدات | الميزة 11: القبول ← إعادة الجداول والهجري والتنبيهات، الفتح التالي من المثبّت، خادم محلي من البداية للنهاية، الرفض والبقاء، التوقيت، معطّل، الرجوع للمضمّن (تالف، مؤشر تالف، مضمّن أحدث، مفتاح أُزيل، بلا مجلد)، المخزن | `test/updates/data_updater_test.dart` |
+| واجهة | الميزة 11: التحقق بعد أول إطار وعند العودة حسب الموعد، ولا طلب في البناء الافتراضي | `test/updates/app_update_trigger_test.dart` |
+
+**مخطط مع ميزاته:** الفلك (Meeus + مرجعي ±2 + ترتيب المدن) `test/astronomy/`؛ أقرب مدينة `test/location/`. يدوي: وضع الطيران، تغيير تاريخ الجهاز للتنبيه، رفض الأذونات (TESTERS.md).
 
 الأوامر في CLAUDE.md.
 
@@ -442,14 +457,14 @@ apps/durur/
   https://<الحساب>.github.io/durur-data/v1/bundle-<dataSeq>.json  # كل الجداول في ملف واحد (~100–300 كيلوبايت)
   ```
 - **لماذا Pages لا Releases:** رابط ثابت بلا تحويلات لنطاقات أخرى، شبكة توزيع (CDN) مجانية، يدعم `ETag/If-None-Match` فيكون التحقق الأسبوعي غالباً رد 304 بلا محتوى، ويمكن ربط نطاق خاص لاحقاً دون تغيير التطبيق إن كان الرابط الأساسي نطاقاً خاصاً. Releases تبقى أرشيفاً لكل حزمة منشورة (للتدقيق والتراجع).
-- الرابط الأساسي `DATA_UPDATE_BASE_URL` من `--dart-define-from-file` (ليس سراً، لا يُكتب في الكود). إن كان فارغاً تُعطَّل الميزة كلياً ولا يُرسل أي طلب.
+- الرابط الأساسي `UPDATE_BASE_URL` من `--dart-define-from-file` (ليس سراً، لا يُكتب في الكود؛ مثل `https://<الحساب>.github.io/durur-data`، والتطبيق يضيف `v1/`). إن كان فارغاً أو ليس https بنطاق (أو فيه معاملات/جزء/بيانات دخول) تُعطَّل الميزة كلياً ولا يُرسل أي طلب. وتُعطَّل أيضاً إن لم يكن في التطبيق مفتاح عام موثوق.
 - **الأمان لا يعتمد على الاستضافة:** حتى لو اختُرق المستودع أو الاستضافة أو الشبكة، لا يقبل التطبيق إلا ملفاً موقّعاً بمفتاحنا (16.3).
 
 ### 16.2 متى يتحقق، وماذا يرسل
 - **عند الفتح أو العودة للواجهة** فقط (لا مهام خلفية): إن مرّ ≥ 7 أيام على آخر تحقق ناجح، أو ≥ 24 ساعة على آخر محاولة فاشلة. يبدأ بعد رسم أول إطار، غير متزامن، ولا يؤخر الدائرة ولا يظهر للمستخدم أي خطأ شبكة.
 - لا يتحقق أثناء الإعداد الأولي، ولا إن أطفأ المستخدم «تحديث البيانات تلقائياً» في الإعدادات (مفعّل افتراضياً، D21). في الإعدادات زر «تحقق الآن» وسطر «نسخة البيانات: N، آخر تحقق: …».
 - لا فحص لحالة الشبكة (لا `connectivity_plus`): المحاولة نفسها هي الفحص؛ الفشل يسجَّل وقته فقط.
-- **الطلب:** `GET <base>/v1/manifest.json` عبر `dart:io HttpClient`، HTTPS فقط، بلا معاملات استعلام، بلا كوكيز، بلا معرّف جهاز أو مدينة أو لغة أو نسخة تطبيق؛ `User-Agent` ثابت `durur` لكل المستخدمين؛ `If-None-Match` بآخر ETag. مهلة 15 ث، حد حجم 4 كيلوبايت للبيان و2 ميغابايت للحزمة (يُقطع الاتصال عند التجاوز)، لا تحويلات إلا إلى HTTPS على نفس النطاق.
+- **الطلب:** `GET <base>/v1/manifest.json` عبر `dart:io HttpClient`، HTTPS فقط، بلا معاملات استعلام، بلا كوكيز، بلا معرّف جهاز أو مدينة أو لغة أو نسخة تطبيق؛ `User-Agent` ثابت `durur` لكل المستخدمين؛ **بلا `If-None-Match`** (§16.11). مهلة 15 ث، حد حجم 4 كيلوبايت للبيان و2 ميغابايت للحزمة (يُقطع الاتصال عند التجاوز)، لا تحويلات إلا إلى HTTPS على نفس النطاق.
 - ما يراه المستضيف (GitHub) حتماً: عنوان IP ووقت الطلب، كأي فتح لصفحة ويب. لا نملك هذه السجلات ولا نطلبها. يُذكر في سياسة الخصوصية.
 - الحزمة تُنزَّل فقط إن كان `dataSeq` في البيان الموقّع أكبر من المثبّت.
 
@@ -471,14 +486,14 @@ apps/durur/
   4. بعد التنزيل: الحجم وSHA-256 يطابقان البيان.
   5. تحليل الحزمة بنفس `Tables.fromJson`، ثم **`TableValidator` بوضع release** (كل سجل `approved`) + مدقق الهجري (16.6) + قواعد التوافق (16.7).
 - `dataSeq` عدد صحيح يزيد مع كل نشر، ويُضاف إلى `meta.json` المضمّن؛ كل إصدار متجر يضمّن آخر حزمة منشورة برقمها.
-- **المفتاح الخاص:** يُولَّد مرة واحدة خارج المستودع وخارج بيئة الوكلاء. لا يُكتب في أي ملف داخل المستودع، ولا في `config/`، ولا في التطبيق. `tool/sign_bundle.dart` يقرؤه من مسار في متغير البيئة `DURUR_SIGNING_KEY_FILE`، و`.gitignore` يستثني `*.key` و`*.pem` احتياطاً. نسخة احتياطية غير متصلة لدى المالك؛ فقدانه يعني أن التصحيحات تحتاج تحديث متجر يضمّن مفتاحاً جديداً، وتسريبه يعالج بإزالة `keyId` من التطبيق في التحديث التالي.
+- **المفتاح الخاص:** يُولَّد مرة واحدة خارج المستودع وخارج بيئة الوكلاء. لا يُكتب في أي ملف داخل المستودع، ولا في `config/`، ولا في التطبيق. `tool/sign_bundle.dart` يقرؤه من مسار في متغير البيئة `DURUR_SIGNING_KEY_FILE` أو من `DURUR_SIGNING_KEY` (base64، لسر GitHub Actions) ولا يطبعه أبداً، و`keygen` يرفض الكتابة داخل المستودع؛ و`.gitignore` يستثني `*.key` و`*.pem` و`*.ed25519` احتياطاً. نسخة احتياطية غير متصلة لدى المالك؛ فقدانه يعني أن التصحيحات تحتاج تحديث متجر يضمّن مفتاحاً جديداً، وتسريبه يعالج بإزالة `keyId` من التطبيق في التحديث التالي.
 - المفتاح العام ليس سراً، ووجوده في الكود لا يخالف قاعدة «لا مفاتيح في الكود» (القاعدة عن الأسرار).
 - الاختبارات تولّد زوج مفاتيح مؤقتاً أثناء التشغيل؛ لا مفاتيح اختبار محفوظة في المستودع.
 
 ### 16.4 التخزين والتحميل عند الفتح
 - مجلد `getApplicationSupportDirectory()/tables/` (خاص بالتطبيق، لا يحتاج إذن تخزين):
   - التنزيل إلى `incoming.tmp` ← التحقق الكامل ← إعادة تسمية ذرّية إلى `bundle.json` + `manifest.json` بجانبه.
-  - `shared_preferences`: `data.highestSeq`، `data.lastCheckOk`، `data.lastAttempt`، `data.etag`، `data.autoUpdate`.
+  - `shared_preferences`: `data.highestSeq`، `data.lastCheckOk`، `data.lastAttempt` (المبنيّ؛ لا `data.etag`، و`data.autoUpdate` لم يُبنَ، §16.11).
 - `TableRepository.load()` يصبح: إن وُجدت حزمة منزّلة ← تحقق التوقيع والـ SHA-256 من الملفين المحفوظين ← تحليل ← المدقق بوضع release ← استخدامها؛ **أي فشل أو `dataSeq` ≤ المضمّن (بعد تحديث متجر) ← البيانات المضمّنة وحذف الحزمة المنزّلة.** التحقق عند كل فتح رخيص (ملف واحد، أجزاء من الثانية) ويحمي من تلف الملف على الجهاز.
 - `TablesLoader` الحالي يُعاد استخدامه كما هو: مصدر القراءة إما `AssetBundle` أو قارئ من الحزمة الموحّدة (خريطة مسار ← نص)، فلا يتغير المحلل ولا المدقق.
 - حزمة واحدة منزّلة فقط (لا سجل نسخ)؛ الرجوع دائماً إلى المضمّن.
@@ -533,3 +548,15 @@ apps/durur/
 - **الميزة 2ب (بعد قبول الميزة 2 مباشرة):** الهجري كبيانات (16.6). بلا شبكة، صغيرة، وتمنع إعادة العمل لاحقاً.
 - **الميزة 11 (بعد الميزة 9 وقبل الإطلاق):** التحديث الموقّع (16.1–16.5، 16.7). تحتاج الإعدادات (الميزة 3) والتنبيهات (الميزة 8). يمكن بناؤها واختبارها كاملاً بمفاتيح مؤقتة وخادم محلي قبل قرار المالك؛ الربط بالاستضافة الحقيقية يحتاج المالك.
 - `dataSeq` **أُضيف** إلى `meta.json` مع الميزة 2ب (قيمته الحالية 0، اختياري وافتراضيه 0، والسالب خطأ تحليل)؛ `schemaVersion` بقي 1 لأنه لم يُنشر بعد.
+
+### 16.11 المبنيّ (الميزة 11) والفروق عن التصميم أعلاه
+- **الملفات:** `lib/src/updates/`: `update_config.dart` (`UPDATE_BASE_URL`)، `trusted_keys.dart` (`trustedDataKeys`، **فارغ** حتى يولّد المالك المفتاح؛ بلا مفتاح ← لا طلب ويُرفض أي مثبّت)، `signed_manifest.dart` (الغلاف والمحتوى و`sha256Hex` و`signManifest`)، `data_bundle.dart` (`{"format":1,"files":{"meta.json":{…},"regions/najd.json":{…}}}` تمرّ بـ `TablesLoader` نفسه)، `bundle_verifier.dart` (`RejectReason` لكل فحص)، `update_fetcher.dart`، `update_store.dart`، `update_schedule.dart` (`isCheckDue`)، `data_updater.dart` (`DataUpdater.check`، `loadInstalledTables`). كلها Dart صافٍ عدا المخزن (shared_preferences) والجلب (`dart:io`).
+- **ترتيب القبول:** الغلاف ← `keyId` موثوق ← التوقيع ← المحتوى (المسار يجب أن يكون `bundle-<dataSeq>.json` بالضبط) ← `app` ← `schemaVersion` ← `minAppBuild` ≤ رقم البناء ← `dataSeq` > max(المضمّن، `data.highestSeq`) ← تنزيل بحد = الحجم المعلن (≤ 2 ميغابايت) ← الحجم ← SHA-256 ← التحليل ← `meta.json` في الحزمة يطابق البيان (الرقم والنسخة والمخطط) ← `TableValidator(release)` ← `HijriTableValidator(embedded: المضمّن)` ← لا حذف لمنطقة/مدينة/عنصر.
+- **بيان صحيح بلا جديد** (`dataSeq` ≤ الحالي) = نجاح (`upToDate`) بلا تنزيل، والتالي بعد 7 أيام. أي فشل آخر (شبكة، توقيع، رفض) = فشل، والتالي بعد 24 ساعة. وقت المحاولة يُسجَّل **قبل** الطلب.
+- **التخزين:** بدل `incoming.tmp` و`bundle.json` بجانب `manifest.json`: مجلد `tables/s<seq>/` فيه الملفان، ثم مؤشر `tables/current` يُكتب مؤقتاً ويُعاد تسميته (لحظة الالتزام)، ثم حذف القديم. التحقق الكامل قبل الكتابة، ومن جديد عند كل فتح. أي رفض عند الفتح (تلف، مؤشر تالف، مضمّن أحدث أو مساوٍ، مفتاح أُزيل) ← المضمّن وحذف المنزّلة؛ تعذّر الوصول للمجلد ← المضمّن بلا حذف. `data.highestSeq` يبقى بعد الحذف (فالحزمة نفسها لا تُعاد حتى رقم أحدث).
+- **التحويلات:** مسموحة فقط لنفس المخطط والنطاق والمنفذ (حتى 3)، بلا معاملات.
+- **فروق مقصودة عن §16.2–16.4 (للمراجعة):**
+  1. اسم الإعداد `UPDATE_BASE_URL` (بطلب المدير) لا `DATA_UPDATE_BASE_URL`.
+  2. **لا `ETag`/`If-None-Match`**: قيمة يحددها الخادم ويعيدها الجهاز، فيمكن لمستضيف مخترق أن يجعلها معرّفاً لكل جهاز؛ والبيان أقل من كيلوبايت فلا فائدة تُذكر. 304 يُعامل فشلاً.
+  3. أداة واحدة `tool/sign_bundle.dart` (`keygen` و`sign` الذي يبني الحزمة أيضاً، ويرفض ما لا يجتاز `--release`، ويتحقق ذاتياً بالمفتاح العام المقابل) بدل `build_bundle.dart` + `sign_bundle.dart`. رقم الحزمة ونسختها من `meta.json` (`dataSeq` ≥ 1).
+  4. **لم يُبنَ (خارج نطاق المهمة، وبلا نصوص في DESIGN):** مفتاح «تحديث البيانات تلقائياً» وزر «تحقق الآن» وسطر «نسخة البيانات/آخر تحقق/حُدّثت البيانات» في الإعدادات (D21 بند 4، §16.2، §16.5). الميزة تعمل الآن مفعّلة دائماً متى ضُبط الرابط والمفتاح. نسخة البيانات المستخدمة تظهر في ورقة البلاغ («نسخة البيانات: {version} ({seq})»).
