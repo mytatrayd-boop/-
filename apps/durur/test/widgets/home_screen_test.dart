@@ -7,7 +7,7 @@ import 'package:durur/src/features/common/draft_banner.dart';
 import 'package:durur/src/features/home/day_card.dart';
 import 'package:durur/src/features/home/dial/day_dial.dart';
 import 'package:durur/src/features/home/home_screen.dart';
-import 'package:durur/src/features/home/item_sheet.dart';
+import 'package:durur/src/features/item_detail/item_detail_sheet.dart';
 import 'package:durur/src/providers.dart';
 import 'package:durur/src/repository/settings_repository.dart';
 import 'package:flutter/material.dart';
@@ -411,13 +411,13 @@ Future<void> main() async {
     });
   });
 
-  group('المعيار 4: الضغط على جزء يفتح ورقته (عنصر نائب حتى الميزة 7)', () {
+  group('المعيار 4: الضغط على جزء في الدائرة يفتح ورقته (الميزة 7)', () {
     testWidgets('النجم، والموسم، والمحور (الدَّرّ)', (tester) async {
       phone(tester);
       await openHome(tester, city: 'kuwait_city');
       final info = containerOf(tester)
           .read(dayInfoProvider(DateTime(2026, 10, 2)))!;
-      final sheet = find.byKey(ItemSheet.sheetKey);
+      final sheet = find.byKey(ItemDetailSheet.sheetKey);
 
       await tapDial(tester, dialPoint(tester, 90, 0));
       expect(
@@ -466,21 +466,14 @@ Future<void> main() async {
       await tapDial(tester, dialPoint(tester, 116, 0));
       expect(
         find.descendant(
-          of: find.byKey(ItemSheet.sheetKey),
+          of: find.byKey(ItemDetailSheet.sheetKey),
           matching: find.textContaining('في جدول الإمارات وعُمان'),
         ),
         findsOneWidget,
       );
     });
 
-    testWidgets('صف النجم في البطاقة يفتح الورقة نفسها', (tester) async {
-      phone(tester);
-      await openHome(tester);
-      await scrollHomeTo(tester, find.text('النجم'));
-      await tester.tap(find.text('النجم'));
-      await tester.pumpAndSettle();
-      expect(find.byKey(ItemSheet.sheetKey), findsOneWidget);
-    });
+    // صفوف البطاقة تفتح صفحة كاملة بمسار: test/widgets/item_detail_test.dart.
   });
 
   testWidgets('التكبير: ضغطتان ← زر «إعادة الحجم»، والزر يعيد 1×', (
@@ -547,7 +540,7 @@ Future<void> main() async {
         findsNothing,
       );
       await tapDial(tester, dialPoint(tester, 0, 0));
-      final sheet = find.byKey(ItemSheet.sheetKey);
+      final sheet = find.byKey(ItemDetailSheet.sheetKey);
       expect(
         find.descendant(of: sheet, matching: find.text('موسم جو')),
         findsOneWidget,
@@ -556,7 +549,7 @@ Future<void> main() async {
       await tester.pumpAndSettle();
 
       // البطاقة: الموسم أولاً، وصف موسم الجو محذوف لأنه في السطر الأول،
-      // ثم قسم الدَّرّ مع السطر الثابت ورابط «أصل التقويم» (نائب).
+      // ثم قسم الدَّرّ مع السطر الثابت ورابط «أصل التقويم».
       expect(find.text('موسم الجو'), findsNothing);
       await scrollHomeTo(tester, find.byKey(DayCard.originLinkKey));
       expect(find.text('أصل التقويم'), findsOneWidget);
@@ -590,7 +583,7 @@ Future<void> main() async {
       await tapDial(tester, dialPoint(tester, 0, 0));
       expect(
         find.descendant(
-          of: find.byKey(ItemSheet.sheetKey),
+          of: find.byKey(ItemDetailSheet.sheetKey),
           matching: find.text('موسم'),
         ),
         findsOneWidget,

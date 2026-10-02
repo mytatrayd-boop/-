@@ -496,4 +496,163 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get wheelA11yHintSeason =>
       'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.';
+
+  @override
+  String wheelA11yDateValueNoHijri(String weekday, String gregorian) {
+    return '$weekday، $gregorian.';
+  }
+
+  @override
+  String get commonBack => 'رجوع';
+
+  @override
+  String detailDuration(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$days يوماً',
+      few: '$days أيام',
+      two: 'يومان',
+      one: 'يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String detailStatusNow(String day, String total) {
+    return 'جارٍ الآن — اليوم $day من $total';
+  }
+
+  @override
+  String detailStatusUpcoming(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يبدأ بعد $days يوماً',
+      few: 'يبدأ بعد $days أيام',
+      two: 'يبدأ بعد يومين',
+      one: 'يبدأ بعد يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String detailStatusPast(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'انتهى قبل $days يوماً',
+      few: 'انتهى قبل $days أيام',
+      two: 'انتهى قبل يومين',
+      one: 'انتهى قبل يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String detailStarRisesOn(String city, String date) {
+    return 'يطلع في $city يوم $date';
+  }
+
+  @override
+  String detailStarRisenAgo(int count, String city, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'طلع في $city قبل $days يوماً',
+      few: 'طلع في $city قبل $days أيام',
+      two: 'طلع في $city قبل يومين',
+      one: 'طلع في $city قبل يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String detailStarRisesToday(String city) {
+    return 'يطلع في $city اليوم';
+  }
+
+  @override
+  String get detailAstroNote => 'محسوب فلكياً لموقع مدينتك.';
+
+  @override
+  String get detailAstroFallback => 'تاريخ تقريبي من جدول المنطقة.';
+
+  @override
+  String get detailProverb => 'مثل شعبي';
+
+  @override
+  String get detailGoToStart => 'انتقل إلى بدايته';
+
+  @override
+  String detailDarHundred(String season) {
+    return 'من $season';
+  }
+
+  @override
+  String detailContentSource(String source) {
+    return 'مصدر التعريف والمثل: $source';
+  }
+
+  @override
+  String detailDatesSource(String source) {
+    return 'مصدر التواريخ: $source';
+  }
+
+  @override
+  String get approvalPending => 'بانتظار الاعتماد';
+
+  @override
+  String get originTitle => 'أصل التقويم';
+
+  @override
+  String get originTawaliTitle => 'الطوالع والمواسم';
+
+  @override
+  String get originTawaliBody =>
+      'ميراث أهل نجد والجزيرة، يبدأ بسهيل. المصادر: المسند والزعاق وغيرهما.';
+
+  @override
+  String get originDururTitle => 'الدرور';
+
+  @override
+  String get originDururBody =>
+      'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي. معروض هنا للمقارنة.';
+
+  @override
+  String get settingsSectionHelp => 'البيانات والمساعدة';
+
+  @override
+  String get settingsSources => 'المصادر';
+
+  @override
+  String get sourcesTablesTitle => 'مصادر الجداول';
+
+  @override
+  String sourcesApprovedBy(String reviewers) {
+    return 'اعتمده: $reviewers';
+  }
+
+  @override
+  String get sourcesLicensesTitle => 'رخص البيانات';
+
+  @override
+  String get sourcesGeoNames =>
+      'إحداثيات المدن من GeoNames (geonames.org)، برخصة المشاع الإبداعي نَسب المُصنَّف 4.0 (CC BY 4.0). عُدّلت: اختيار المدن وربطها بالمناطق.';
+
+  @override
+  String get sourcesGeoNamesLink => 'موقع GeoNames';
+
+  @override
+  String get sourcesLicenseLink => 'نص رخصة CC BY 4.0';
+
+  @override
+  String get sourcesHijriTitle => 'التقويم الهجري';
+
+  @override
+  String get sourcesHijri =>
+      'تقويم أم القرى: بدايات الأشهر من جداول R. H. van Gent.';
+
+  @override
+  String get linkOpenError => 'تعذّر فتح الرابط.';
 }

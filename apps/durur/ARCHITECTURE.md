@@ -43,7 +43,7 @@ apps/durur/
 │  ├─ l10n/                      # app_ar.arb + الملفات المولّدة (gen-l10n)
 │  └─ src/
 │     ├─ app.dart                # MaterialApp.router، اللغة، الاتجاه، الثيم
-│     ├─ routing/                # go_router: / ، /item/:id ، /settings ، /city ، /onboarding
+│     ├─ routing/                # go_router: / ، /item/:id ، /dar/:regionId/:start ، /about/origin ، /settings ، /settings/sources ، /city ، /onboarding
 │     ├─ domain/                 # [Dart صافٍ] النماذج: Region, City, Item, Period, DayInfo, WeatherSymbol, Approval, Source
 │     ├─ engine/                 # [Dart صافٍ] CalendarEngine, YearIndex, TableValidator
 │     ├─ astronomy/              # [Dart صافٍ] angles.dart, time.dart, sun.dart, stars.dart, sidereal.dart, precession.dart, horizon.dart (الارتفاع والانكسار), heliacal_params.dart, heliacal.dart
@@ -57,7 +57,8 @@ apps/durur/
 │     └─ features/
 │        ├─ onboarding/          # شرح الموقع ← الإذن ← المدينة ← إذن التنبيهات
 │        ├─ home/                # الشاشة الرئيسية + dial/ (CustomPainter + اختبار اللمس)
-│        ├─ item_detail/         # صفحة النجم/الموسم
+│        ├─ item_detail/         # صفحة النجم/الموسم/الدَّرّ: ورقة سفلية وصفحة كاملة (الميزة 7)
+│        ├─ about/               # صفحة «أصل التقويم» (D24)
 │        ├─ city_picker/         # قائمة المدن مع البحث
 │        └─ settings/
 ├─ test/                         # نفس تقسيم lib/src
@@ -74,7 +75,7 @@ apps/durur/
 
 مزوّدات يدوية (بلا توليد كود) في `lib/src/providers.dart`:
 
-**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6):**
+**المبنيّ فعلاً (الميزات 1، 2، 2ب، 3، 4، 5، 6، 7):**
 
 | المزوّد | النوع | الوظيفة |
 |---|---|---|
@@ -95,7 +96,8 @@ apps/durur/
 | `locationServiceProvider` | `Provider<LocationService>` | غلاف geolocator (قراءة واحدة بدقة low ومهلة 10 ثوانٍ، بلا بث)؛ يُستبدل بنسخة وهمية في الاختبارات (الميزة 4) |
 | `cityLocatorProvider` | `Provider<CityLocator>` | يقرأ الموقع مرة واحدة ويعيد أقرب مدينة أو سبب الفشل (Denied / Unavailable / Timeout / OutOfRange > 250 كم)؛ لا يعيد الإحداثيات ولا يحفظها (D11) |
 | `heliacalProvider` | `Provider.family<HeliacalDates?, (String cityId, int year)>` | طلوع سهيل والثريا بإحداثيات المدينة (مخزّن لكل مدينة وسنة)؛ `null` قبل تحميل الجداول أو لمدينة غير موجودة؛ يُعاد مع إعادة تحميل الجداول (الميزة 5، D28) |
-| `currentHeliacalProvider` | `Provider.family<HeliacalDates?, int year>` | طلوع سهيل والثريا للمدينة المختارة، أو `null` بلا مدينة (الميزة 5) |
+| `currentHeliacalProvider` | `Provider.family<HeliacalDates?, int year>` | طلوع سهيل والثريا للمدينة المختارة، أو `null` بلا مدينة (الميزة 5)؛ تقرؤه صفحة سهيل/الثريا (الميزة 7) |
+| `urlOpenerProvider` | `Provider<Future<bool> Function(Uri)>` | يفتح رابطاً عاماً في المتصفح (`url_launcher`، رابطا صفحة المصادر، D27)؛ يُستبدل في الاختبارات (الميزة 7) |
 
 **توصية ملزمة للميزات القادمة:** مفتاح `dayInfoProvider` يُمرَّر **مقرّباً لمنتصف الليل** (`DateTime(d.year, d.month, d.day)`)، لا `DateTime.now()` مباشرة؛ وإلا يُنشأ مدخل family جديد في كل إعادة بناء (ذاكرة وحساب بلا فائدة). المحرك نفسه يأخذ التاريخ فقط، فالتقريب لا يغيّر النتيجة. `todayProvider` و`selectedDateProvider` يخزّنان القيمة مقرّبة أصلاً.
 
@@ -149,7 +151,7 @@ apps/durur/
    "referenceRisings": [{"cityId": "kuwait", "year": 2026, "date": "2026-08-24", "source": {...}}],
    "sources": [{...}], "approval": {...} }]
 ```
-`kind`: `star` | `majorSeason` | `weatherSeason` | `dar`. `dateMethod`: `table` | `heliacal`.
+`kind`: `star` | `majorSeason` | `weatherSeason` (حُذف `dar` مع الميزة 7، D26: المحلل يرفضه). `dateMethod`: `table` | `heliacal`.
 
 `regions/najd.json`
 ```json
@@ -281,13 +283,24 @@ apps/durur/
 - **عرض السعودية (D24، قرار المالك):** المواسم والطوالع أولاً؛ تحتها الدَّرّ مع السطر الثابت (`dururBorrow.note`) ورابط «أصل التقويم» (صفحة ثابتة `/about/origin`، نصوصها في ARB). في الدائرة تبقى حلقة الدرور، ويوضع اسم المُعيرة في وسيلة الإيضاح.
 - **صفحة الدَّرّ (D26):** المسار `/dar/:regionId/:start` (`start` بصيغة `MM-DD`، و`regionId` جدول الدرور الفعلي، أي المُعيرة عند الاستعارة). تُبنى من سجل الدَّرّ نفسه: الاسم، «من {المئة}»، التواريخ، الجو ووصفه، المصدر، وزر البلاغ، ورابط لصفحة المئة (`/item/<seasonId>`). لا عنصر في `items.json` للدرور.
 - **صفحة المصادر (D27):** مصادر كل الجداول مجمّعة من حقول `source`/`sources` بلا تكرار، وقسم ثابت «رخص البيانات» فيه إشارة GeoNames (CC BY 4.0) مع الرابطين.
+- **مبنيّ (الميزة 7)، `features/item_detail/` و`features/about/` و`features/settings/sources_screen.dart`:**
+  - `detail_data.dart` (بلا Flutter): `DetailTarget` = `ItemTarget(itemId)` أو `DarTarget(regionId, MonthDay start)`، و`DetailRequest = (target, from)`، و`detailRequestFor(DialRing, DayInfo)` (الدَّرّ بمعرّف جدول الدرور الفعلي `dururRegionId`)، و`resolveDetail` ← `DetailData` (النوع، الاسم، الفترة، اسم منطقة الجدول، سجل التواريخ، الجو، العنصر أو سجل الدَّرّ، وشريحة الموسم: الموسم الكبير في بداية الفترة للنجم وموسم الجو، ومئة الدَّرّ D25 للدَّرّ) أو null (عنصر/سجل غير موجود، أو `regionId` منطقة مستعيرة).
+  - `engine/period_finder.dart` (Dart صافٍ): `findItemPeriod`/`findDarPeriod` = الفترة التي تحتوي التاريخ المرجعي، وإلا التالية خلال 370 يوماً (القفز بنهاية كل فترة). `ItemPeriod.record` (جديد) = سجل الجدول (`Sourced`) لمصدر التواريخ واعتمادها.
+  - التاريخ المرجعي: من الدائرة اليوم المضغوط؛ في المسار `?from=YYYY-MM-DD` (البطاقة تمرّر التاريخ المعروض)، وبدونه التاريخ المعروض في الرئيسية (حمولة التنبيه).
+  - `item_detail_view.dart`: شريط السدو (CustomPainter، مخفي عن القارئ) ← النوع ← الاسم (`header`) مع شريحة الموسم ← بطاقة التواريخ («من … إلى … في جدول {المنطقة}»، المدة، الحالة نسبةً إلى اليوم الحقيقي، ولسهيل/الثريا «يطلع في {المدينة} يوم …»/«طلع … قبل …» من `currentHeliacalProvider(سنة بداية الفترة)` مع «محسوب فلكياً لموقع مدينتك.» أو «تاريخ تقريبي من جدول المنطقة.» إن تعذّر، ثم «انتقل إلى بدايته») ← التعريف ← المثل (Amiri، علامة اقتباس مخفية عن القارئ) ← الجو المعتاد ← المصدر لكل معلومة: «مصدر التعريف والمثل» (`items.json`) و«مصدر التواريخ» (سجل الجدول)، وللدَّرّ «المصدر» من سجله؛ تحت كل مصدر سجله مسودة «بانتظار الاعتماد» (Amiri مائل). صفحة الدَّرّ بلا تعريف ولا مثل (D26).
+  - `item_detail_sheet.dart`: `DraggableScrollableSheet` (نصف الشاشة ← كاملة)، ومكدّس داخلي: شريحة الموسم تفتح صفحته داخل الورقة مع زر رجوع (ورجوع النظام يعود داخلها أولاً). «انتقل إلى بدايته» يغلق الورقة و`select(start)`.
+  - `item_detail_page.dart`: الصفحة الكاملة للمسارين؛ الشريحة `push` لمسار جديد، و«انتقل إلى بدايته» `select` ثم `go('/')`. مسار لا يجد سجله (أو `MM-DD` غير صالح) ← `go('/')` بلا رسالة.
+  - `about/origin_screen.dart`: قسمان (الطوالع والمواسم، الدرور) نصوصهما في ARB من research/SAUDI.md §3 (بانتظار المراجع).
+  - صفحة المصادر: `domain/source_catalog.dart` (`collectSources`: مفتاح التكرار العنوان والمؤلف والسنة، فيظهر GeoNames مرة واحدة؛ «بانتظار الاعتماد» إن كان أي سجل يستشهد بالمصدر مسودة، وإلا «اعتمده: {المراجعون}»)، ثم «رخص البيانات» (نص GeoNames ورابطاه ثوابت في الكود عبر `urlOpenerProvider`، ورسالة إن تعذّر الفتح)، ثم «التقويم الهجري». صف «المصادر» في قسم «البيانات والمساعدة» بالإعدادات. أندرويد: `<queries>` لنيّة VIEW بمخطط https.
+  - `features/common/chips.dart`: `SeasonChip` و`WeatherChip` (نُقلتا من `day_card.dart` لتستخدمهما الصفحة).
+  - **لم يُبنَ مع الميزة 7:** زر «أبلغ عن خطأ» (الميزة 9، SPEC 7 معيار 4).
 - الدائرة: `CustomPainter` بحلقات (الأشهر، الدرور، المواسم، النجوم، مواسم الجو)، والزاوية من رقم اليوم في السنة. اللمس: تحويل الإحداثيات القطبية إلى (حلقة، يوم) ← عنصر. التدوير بالسحب يغيّر `selectedDateProvider`.
 - **مبنيّ (الميزة 6)، `features/home/`:**
   - `dial/dial_model.dart` (بلا Flutter): `DialModel.fromYearIndex` يجمع أيام السنة في قطع لكل حلقة (الفترة العابرة لنهاية السنة قطعتان)؛ الدرور بلون مئتها `seasonId` (D25)، ومواسم الجو بلون الموسم الكبير في منتصفها. `DialGeometry`: أنصاف الأقطار المرجعية (170/146/130/102/78/60، المحور 58)، `angleOf`، و`hitTest(dx, dy, rotation)` ← `HubHit` أو `RingHit(ring, day)`.
   - `dial/dial_painter.dart`: `DialPainter(repaint: rotation)` يرسم القرص والإبرة وشريحة اليوم وتمييز القطع تحت الإبرة وعلامة اليوم الحقيقي. النصوص `TextPainter` مُعدّة مسبقاً في `DialLabels` (مرة لكل سنة/سمة/حجم خط/كثافة، وتكبيرها محصور 1.3×). الكثافة حسب العرض: ≥400 كل الأسماء، 360–399 أول كلمة من اسم النجم، <360 لا أسماء نجوم والأشهر بأرقامها.
   - `dial/day_dial.dart`: الدوران `ValueNotifier<double>` (فهرس يوم كسري)؛ السحب يغيّره فيعيد رسم القرص داخل `RepaintBoundary` فقط، ويُستدعى `select` عند عبور يوم كامل (والواجهة تُبنى مرة لكل يوم). التدوير من أحداث اللمس الخام (`Listener`)، وإيماءة `ScaleGestureRecognizer` تكسب الساحة فور الضغط فلا تتمرّر الصفحة من فوق الدائرة؛ الضغطة/الضغطتان تُميَّزان يدوياً بمهلة `kDoubleTapTimeout`. التكبير 1×–3× (ضغطتان أو إصبعان)، والسحب في التكبير يحرّك. القفز للعودة بحركة 400ms إلا مع «تقليل الحركة». `Semantics` واحد: `label` البادئة فقط («اليوم»/«التاريخ المعروض»)، و`value` من `dialSemanticsValue` (التاريخ المسموع بلا «م»/«هـ»، ثم الجمل بترتيب DESIGN 7.7، والدَّرّ بطوله الفعلي)، و`increasedValue`/`decreasedValue` قيمة اليوم التالي/السابق تحسبها الرئيسية من `dayInfoProvider` (عبر نهاية السنة؛ null مع إزالة الإجراء عند حدّي 2025/2040)، `onTap` ما يعرضه المحور، وإجراءات مخصصة. المحور للمنطقة المستعيرة (7.8): موسم الجو أو الموسم الكبير و«طالع {النجم}»، ويفتح الموسم.
   - `home_screen.dart` (سطر التاريخين بارتفاع ثابت للصيغتين، الدائرة، صف التنقل، `DayCard`، العبارة الثابتة، المصدر)، والتحميل (هيكل رمادي بعد 300ms) والخطأ (إعادة المحاولة بـ `ref.invalidate(tablesProvider)`). أفقي/تابلت ≥600: الدائرة بجانب البطاقة.
-  - `item_sheet.dart`: **عنصر نائب حتى الميزة 7** (النوع، الاسم، «من … إلى … في جدول …»).
+  - من الدائرة ← `showItemDetailSheet` (ورقة)، ومن البطاقة ← `context.push` لمسار الصفحة الكاملة (الميزة 7). سطر الإيضاح (48dp) ورابط «أصل التقويم» في البطاقة يفتحان `/about/origin`.
   - الثيم `lib/src/theme/app_theme.dart`: `DururColors` (ThemeExtension بألوان DESIGN §2 للوضعين وألوان المواسم بمعرّفات عناصرها) و`buildDururTheme`؛ الوضع حسب الجهاز (اختياره من الإعدادات مع ميزتها).
 - كل معلومة مهمة تُعرض أيضاً كنص عادي تحت الدائرة (يتكبّر مع خط الجهاز)، وللدائرة `Semantics` لقارئ الشاشة.
 - خط عربي مضمّن (لا تحميل وقت التشغيل). الألوان والرموز من DESIGN.md، ومن صنعنا بالكامل.
@@ -324,7 +337,7 @@ apps/durur/
 | go_router | 18.0.2 | التنقل وفتح الصفحات من التنبيه |
 | hijri (تطوير فقط) | 3.0.1 | في `dev_dependencies`: توليد `hijri_umm_al_qura.json` واختبار التطابق (D22)؛ لا تدخل التطبيق |
 | geolocator | 14.1.1 | قراءة الموقع التقريبي مرة واحدة |
-| خطوط مضمّنة (ليست مكتبات) | — | Reem Kufi (متغيّر، محور wght) وIBM Plex Sans Arabic (400/500/600) في `assets/fonts/` مع رخص OFL؛ Amiri يُضاف مع الميزة 7 |
+| خطوط مضمّنة (ليست مكتبات) | — | Reem Kufi (متغيّر، محور wght) وIBM Plex Sans Arabic (400/500/600) وAmiri (400 عادي ومائل، للمثل الشعبي و«بانتظار الاعتماد») في `assets/fonts/` مع رخص OFL مسجّلة في `LicenseRegistry` (`main.dart`) |
 | flutter_local_notifications | 22.3.1 | التنبيهات المجدولة على الجهاز |
 | timezone | 0.11.1 | الجدولة بالتوقيت المحلي |
 | flutter_timezone | 5.1.0 | اسم المنطقة الزمنية للجهاز |
@@ -341,7 +354,7 @@ apps/durur/
 
 | المستوى | ماذا | أين |
 |---|---|---|
-**الموجود فعلاً (253 اختباراً بعد الميزة 2ب حسب STATUS.md):**
+**الموجود فعلاً (450 اختباراً بعد الميزة 7 حسب STATUS.md):**
 
 | المستوى | ماذا | الملف |
 |---|---|---|
@@ -364,8 +377,12 @@ apps/durur/
 | مزوّدات | اليوم ومنتصف الليل، التاريخ المعروض والحصر، المفتاح المقرّب، فهرس السنة، شريط المسودة | `test/features/today_providers_test.dart` |
 | وحدة | نموذج الدائرة (حلقات بلا فجوات لكل منطقة) والهندسة واللمس وزمن البناء | `test/features/dial_model_test.dart` |
 | واجهة | الرئيسية: المعايير 1–8، قارئ الشاشة، 320dp وخط 200%، السحب والضغط والتكبير، D24، التحميل والخطأ، منتصف الليل | `test/widgets/home_screen_test.dart` |
+| وحدة | فترة العنصر/الدَّرّ حول تاريخ (تحتويه أو التالية، الالتفاف، 29 فبراير، غير موجود) | `test/engine/period_finder_test.dart` |
+| وحدة | محتوى الصفحة، `detailRequestFor`، حذف `ItemKind.dar`، والمعيار 3 على البيانات المضمّنة (كل عنصر في الدائرة له تعريف ≤ سطرين ومثل ومصدر وصفحة، وكل دَرّ له صفحة) | `test/features/detail_data_test.dart` |
+| وحدة | مصادر الجداول بلا تكرار وحالة اعتمادها (D27) | `test/domain/source_catalog_test.dart` |
+| واجهة | الميزة 7: الورقة والصفحة الكاملة بمساراتها، سهيل/الثريا من الحساب الفلكي، الحالات، الدَّرّ (D26)، المسار المفقود ← الرئيسية، «أصل التقويم»، المصادر وروابطها، خط 200% على 320dp، أهداف 48dp | `test/widgets/item_detail_test.dart` |
 
-**مخطط مع ميزاته:** الفلك (Meeus + مرجعي ±2 + ترتيب المدن) `test/astronomy/`؛ أقرب مدينة `test/location/`؛ المخطِّط (حد 60، التكرار، المفاتيح) `test/notifications/`؛ صفحة العنصر `test/widgets/`؛ التحديث الموقّع `test/updates/` (§16.9). يدوي: وضع الطيران، تغيير تاريخ الجهاز للتنبيه، رفض الأذونات (TESTERS.md).
+**مخطط مع ميزاته:** الفلك (Meeus + مرجعي ±2 + ترتيب المدن) `test/astronomy/`؛ أقرب مدينة `test/location/`؛ المخطِّط (حد 60، التكرار، المفاتيح) `test/notifications/`؛ التحديث الموقّع `test/updates/` (§16.9). يدوي: وضع الطيران، تغيير تاريخ الجهاز للتنبيه، رفض الأذونات (TESTERS.md).
 
 الأوامر في CLAUDE.md.
 

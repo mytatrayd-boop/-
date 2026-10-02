@@ -24,6 +24,7 @@ Stream<LicenseEntry> fontLicenses() async* {
   for (final (family, file) in const [
     ('Reem Kufi', 'assets/fonts/ReemKufi-OFL.txt'),
     ('IBM Plex Sans Arabic', 'assets/fonts/IBMPlexSansArabic-OFL.txt'),
+    ('Amiri', 'assets/fonts/Amiri-OFL.txt'),
   ]) {
     yield LicenseEntryWithLineBreaks([
       family,

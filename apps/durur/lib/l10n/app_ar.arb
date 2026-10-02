@@ -635,5 +635,221 @@
   "wheelA11yHintSeason": "اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.",
   "@wheelA11yHintSeason": {
     "description": "تلميح قارئ الشاشة للدائرة في المنطقة المستعيرة، المحور يفتح الموسم (DESIGN wheel.a11y.hint_season)"
+  },
+  "wheelA11yDateValueNoHijri": "{weekday}، {gregorian}.",
+  "@wheelA11yDateValueNoHijri": {
+    "description": "جملة التاريخ في قيمة الدائرة لقارئ الشاشة حين لا يوجد تاريخ هجري (خارج مدى جدول أم القرى): بلا كلمة «هجري»",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "gregorian": {
+        "type": "String"
+      }
+    }
+  },
+  "commonBack": "رجوع",
+  "@commonBack": {
+    "description": "زر الرجوع (DESIGN common.back)، ومنه الرجوع الداخلي في ورقة العنصر"
+  },
+  "detailDuration": "{count, plural, =1{يوم واحد} =2{يومان} few{{days} أيام} other{{days} يوماً}}",
+  "@detailDuration": {
+    "description": "مدة الفترة في صفحة العنصر (DESIGN detail.duration). count العدد، days العدد منسّقاً بأرقام الإعداد",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "detailStatusNow": "جارٍ الآن — اليوم {day} من {total}",
+  "@detailStatusNow": {
+    "description": "حالة العنصر اليوم: داخله (DESIGN detail.status.now)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "detailStatusUpcoming": "{count, plural, =1{يبدأ بعد يوم واحد} =2{يبدأ بعد يومين} few{يبدأ بعد {days} أيام} other{يبدأ بعد {days} يوماً}}",
+  "@detailStatusUpcoming": {
+    "description": "حالة العنصر: لم يبدأ بعد (DESIGN detail.status.upcoming)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "detailStatusPast": "{count, plural, =1{انتهى قبل يوم واحد} =2{انتهى قبل يومين} few{انتهى قبل {days} أيام} other{انتهى قبل {days} يوماً}}",
+  "@detailStatusPast": {
+    "description": "حالة العنصر: انتهى (DESIGN detail.status.past)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "detailStarRisesOn": "يطلع في {city} يوم {date}",
+  "@detailStarRisesOn": {
+    "description": "لسهيل والثريا: تاريخ الطلوع المحسوب لمدينة المستخدم (DESIGN home.star_rises_on، الميزة 5 معيار 4)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "detailStarRisenAgo": "{count, plural, =1{طلع في {city} قبل يوم واحد} =2{طلع في {city} قبل يومين} few{طلع في {city} قبل {days} أيام} other{طلع في {city} قبل {days} يوماً}}",
+  "@detailStarRisenAgo": {
+    "description": "لسهيل والثريا: مضى على الطلوع المحسوب (DESIGN home.star_risen_ago)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "city": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "detailStarRisesToday": "يطلع في {city} اليوم",
+  "@detailStarRisesToday": {
+    "description": "لسهيل والثريا: الطلوع المحسوب هو اليوم",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "detailAstroNote": "محسوب فلكياً لموقع مدينتك.",
+  "@detailAstroNote": {
+    "description": "تحت تاريخ طلوع سهيل/الثريا (DESIGN detail.astro_note)"
+  },
+  "detailAstroFallback": "تاريخ تقريبي من جدول المنطقة.",
+  "@detailAstroFallback": {
+    "description": "تعذّر حساب طلوع سهيل/الثريا (DESIGN detail.astro_fallback)"
+  },
+  "detailProverb": "مثل شعبي",
+  "@detailProverb": {
+    "description": "عنوان بطاقة المثل (DESIGN detail.proverb)"
+  },
+  "detailGoToStart": "انتقل إلى بدايته",
+  "@detailGoToStart": {
+    "description": "زر نصي في بطاقة التواريخ يدير الدائرة إلى أول يوم في العنصر (DESIGN detail.go_to_start)"
+  },
+  "detailDarHundred": "من {season}",
+  "@detailDarHundred": {
+    "description": "شريحة مئة الدَّرّ في صفحة الدَّرّ (D26): «من الصفري»، والضغط يفتح صفحة المئة",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "detailContentSource": "مصدر التعريف والمثل: {source}",
+  "@detailContentSource": {
+    "description": "مصدر نص العنصر في items.json",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "detailDatesSource": "مصدر التواريخ: {source}",
+  "@detailDatesSource": {
+    "description": "مصدر سجل الفترة في جدول المنطقة",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalPending": "بانتظار الاعتماد",
+  "@approvalPending": {
+    "description": "سجل لم يعتمده المراجع بعد (صفحة العنصر وصفحة المصادر)"
+  },
+  "originTitle": "أصل التقويم",
+  "@originTitle": {
+    "description": "عنوان صفحة أصل التقويم (/about/origin، D24)"
+  },
+  "originTawaliTitle": "الطوالع والمواسم",
+  "@originTawaliTitle": {
+    "description": "قسم في صفحة أصل التقويم"
+  },
+  "originTawaliBody": "ميراث أهل نجد والجزيرة، يبدأ بسهيل. المصادر: المسند والزعاق وغيرهما.",
+  "@originTawaliBody": {
+    "description": "أصل الطوالع والمواسم (research/SAUDI.md §3، بانتظار المراجع)"
+  },
+  "originDururTitle": "الدرور",
+  "@originDururTitle": {
+    "description": "قسم في صفحة أصل التقويم"
+  },
+  "originDururBody": "حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي. معروض هنا للمقارنة.",
+  "@originDururBody": {
+    "description": "أصل الدرور (research/SAUDI.md §3، بانتظار المراجع)"
+  },
+  "settingsSectionHelp": "البيانات والمساعدة",
+  "@settingsSectionHelp": {
+    "description": "قسم في الإعدادات (DESIGN settings.section.help)"
+  },
+  "settingsSources": "المصادر",
+  "@settingsSources": {
+    "description": "صف المصادر في الإعدادات وعنوان صفحتها (DESIGN settings.sources)"
+  },
+  "sourcesTablesTitle": "مصادر الجداول",
+  "@sourcesTablesTitle": {
+    "description": "قسم في صفحة المصادر: مصادر كل السجلات بلا تكرار (D27)"
+  },
+  "sourcesApprovedBy": "اعتمده: {reviewers}",
+  "@sourcesApprovedBy": {
+    "description": "مرجع الاعتماد لمصدر في صفحة المصادر",
+    "placeholders": {
+      "reviewers": {
+        "type": "String"
+      }
+    }
+  },
+  "sourcesLicensesTitle": "رخص البيانات",
+  "@sourcesLicensesTitle": {
+    "description": "قسم ثابت في صفحة المصادر (D27)"
+  },
+  "sourcesGeoNames": "إحداثيات المدن من GeoNames (geonames.org)، برخصة المشاع الإبداعي نَسب المُصنَّف 4.0 (CC BY 4.0). عُدّلت: اختيار المدن وربطها بالمناطق.",
+  "@sourcesGeoNames": {
+    "description": "إشارة GeoNames المطلوبة برخصة CC BY 4.0 (D27)"
+  },
+  "sourcesGeoNamesLink": "موقع GeoNames",
+  "@sourcesGeoNamesLink": {
+    "description": "رابط يفتح https://www.geonames.org/ في المتصفح"
+  },
+  "sourcesLicenseLink": "نص رخصة CC BY 4.0",
+  "@sourcesLicenseLink": {
+    "description": "رابط يفتح https://creativecommons.org/licenses/by/4.0/ في المتصفح"
+  },
+  "sourcesHijriTitle": "التقويم الهجري",
+  "@sourcesHijriTitle": {
+    "description": "قسم في صفحة المصادر (D27 بند 3)"
+  },
+  "sourcesHijri": "تقويم أم القرى: بدايات الأشهر من جداول R. H. van Gent.",
+  "@sourcesHijri": {
+    "description": "مصدر التقويم الهجري (D27 بند 3)"
+  },
+  "linkOpenError": "تعذّر فتح الرابط.",
+  "@linkOpenError": {
+    "description": "فشل فتح رابط خارجي في المتصفح"
   }
 }

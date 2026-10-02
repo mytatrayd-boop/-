@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'astronomy/heliacal.dart';
 import 'domain/city.dart';
@@ -218,3 +219,10 @@ final currentHeliacalProvider = Provider.family<HeliacalDates?, int>((
   if (cityId == null) return null;
   return ref.watch(heliacalProvider((cityId, year)));
 });
+
+/// يفتح رابطاً عاماً في المتصفح (روابط صفحة المصادر، D27)؛ false إن فشل.
+/// لا طلب شبكة من التطبيق نفسه. يُستبدل في الاختبارات.
+final urlOpenerProvider = Provider<Future<bool> Function(Uri)>(
+  (ref) =>
+      (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+);

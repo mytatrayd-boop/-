@@ -8,13 +8,14 @@ import '../../providers.dart';
 import '../../routing/app_router.dart';
 
 /// الإعدادات (DESIGN 8.7). الآن قسم «المنطقة»: صف المدينة (SPEC الميزة 3،
-/// بند 5) وصف «تحديد موقعي مرة أخرى» (الميزة 4، بند 6)؛ بقية الأقسام
-/// تُضاف مع ميزاتها.
+/// بند 5) وصف «تحديد موقعي مرة أخرى» (الميزة 4، بند 6)، وقسم «البيانات
+/// والمساعدة» فيه صف «المصادر» (الميزة 7، D27)؛ بقية الأقسام تُضاف مع ميزاتها.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   static const cityRowKey = Key('settingsCityRow');
   static const relocateRowKey = Key('settingsRelocateRow');
+  static const sourcesRowKey = Key('settingsSourcesRow');
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -75,6 +76,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 : null,
             onTap: _locating ? null : _relocate,
           ),
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 24, 16, 8),
+            child: Semantics(
+              header: true,
+              child: Text(
+                l10n.settingsSectionHelp,
+                style: theme.textTheme.titleLarge,
+              ),
+            ),
+          ),
+          ListTile(
+            key: SettingsScreen.sourcesRowKey,
+            minTileHeight: 56,
+            leading: const Icon(Icons.menu_book_outlined),
+            title: Text(l10n.settingsSources),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.sources),
+          ),
         ],
       ),
     );
@@ -129,4 +148,3 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 }
-

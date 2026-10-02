@@ -1,4 +1,5 @@
 import 'localized_text.dart';
+import 'record_meta.dart';
 import 'region_table.dart';
 import 'weather_symbol.dart';
 
@@ -45,9 +46,13 @@ class ItemPeriod extends ActivePeriod {
     required super.start,
     required super.end,
     required super.dayNumber,
+    this.record,
   });
 
   final String itemId;
+
+  /// سجل الجدول الذي جاءت منه الفترة (لمصدر التواريخ واعتمادها، الميزة 7).
+  final Sourced? record;
 }
 
 /// نتيجة محرك الحساب ليوم في منطقة (الميزة 1).

@@ -99,11 +99,33 @@ Future<void> main() async {
     );
   });
 
+  test('بلا تاريخ هجري (خارج مدى الجدول) لا تُقال كلمة «هجري»', () {
+    final fixture = fixtureTables();
+    expect(fixture.hijri, isNull);
+    final info = CalendarEngine.fromTables(
+      fixture,
+      'a',
+    ).resolve(DateTime(2026, 10, 2));
+    final value = dialSemanticsValue(l10n, info, fixture);
+    expect(value, startsWith('الجمعة، ٢ أكتوبر ٢٠٢٦. '));
+    expect(value, isNot(contains('هجري')));
+    // ومع الجدول تبقى كما هي.
+    final withHijri = dialSemanticsValue(
+      l10n,
+      CalendarEngine.fromTables(
+        tables,
+        'kuwait',
+      ).resolve(DateTime(2026, 10, 2)),
+      tables,
+    );
+    expect(withHijri, contains('١٤٤٨ هجري.'));
+  });
+
   test('رخص الخطوط OFL مسجّلة', () async {
     final entries = await fontLicenses().toList();
     expect(
       entries.expand((e) => e.packages),
-      containsAll(['Reem Kufi', 'IBM Plex Sans Arabic']),
+      containsAll(['Reem Kufi', 'IBM Plex Sans Arabic', 'Amiri']),
     );
     for (final e in entries) {
       expect(

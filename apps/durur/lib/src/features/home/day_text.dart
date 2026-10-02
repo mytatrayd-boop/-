@@ -69,21 +69,24 @@ String dialSemanticsValue(AppLocalizations l10n, DayInfo info, Tables tables) {
   String name(String? id) => tables.items[id]?.name.ar ?? '';
   final date = info.date;
   final h = tables.hijri?.tryConvert(date);
-  final dateSentence = l10n.wheelA11yDateValue(
-    weekdayLabel(l10n, date),
-    l10n.gregorianDateSpoken(
-      formatInteger(date.day),
-      'g${date.month}',
-      formatInteger(date.year),
-    ),
-    h == null
-        ? ''
-        : l10n.hijriDateSpoken(
+  final weekday = weekdayLabel(l10n, date);
+  final gregorian = l10n.gregorianDateSpoken(
+    formatInteger(date.day),
+    'g${date.month}',
+    formatInteger(date.year),
+  );
+  // بلا تاريخ هجري (خارج مدى الجدول) لا تُقال كلمة «هجري».
+  final dateSentence = h == null
+      ? l10n.wheelA11yDateValueNoHijri(weekday, gregorian)
+      : l10n.wheelA11yDateValue(
+          weekday,
+          gregorian,
+          l10n.hijriDateSpoken(
             formatInteger(h.day),
             'm${h.month}',
             formatInteger(h.year),
           ),
-  );
+        );
   final day = formatInteger(info.dar.dayNumber);
   final total = formatInteger(info.dar.length);
   final star = l10n.wheelA11yStar(name(info.star.itemId));

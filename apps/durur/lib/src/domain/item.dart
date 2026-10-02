@@ -3,11 +3,11 @@ import 'localized_text.dart';
 import 'record_meta.dart';
 import 'weather_symbol.dart';
 
+/// نوع العنصر في items.json. لا نوع للدرور: صفحاتها من سجلاتها (D26).
 enum ItemKind {
   star('star'),
   majorSeason('majorSeason'),
-  weatherSeason('weatherSeason'),
-  dar('dar');
+  weatherSeason('weatherSeason');
 
   const ItemKind(this.code);
   final String code;
@@ -65,12 +65,15 @@ class Item implements Sourced {
       name: LocalizedText.fromJson(map['name'], '$w.name'),
       important: readOptional<bool>(map, 'important', w) ?? false,
       dateMethod: DateMethod.parse(
-          readOptional<String>(map, 'dateMethod', w) ?? 'table', w),
+        readOptional<String>(map, 'dateMethod', w) ?? 'table',
+        w,
+      ),
       definition: LocalizedText.fromJson(map['definition'], '$w.definition'),
       proverb: LocalizedText.fromJson(map['proverb'], '$w.proverb'),
       weather: WeatherSymbol.parseList(map['weather'], w),
-      weatherNote:
-          note == null ? null : LocalizedText.fromJson(note, '$w.weatherNote'),
+      weatherNote: note == null
+          ? null
+          : LocalizedText.fromJson(note, '$w.weatherNote'),
       sources: [
         for (final (i, s) in asList(map['sources'], '$w.sources').indexed)
           Source.fromJson(s, '$w.sources[$i]'),

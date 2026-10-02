@@ -680,6 +680,204 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.'**
   String get wheelA11yHintSeason;
+
+  /// جملة التاريخ في قيمة الدائرة لقارئ الشاشة حين لا يوجد تاريخ هجري (خارج مدى جدول أم القرى): بلا كلمة «هجري»
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday}، {gregorian}.'**
+  String wheelA11yDateValueNoHijri(String weekday, String gregorian);
+
+  /// زر الرجوع (DESIGN common.back)، ومنه الرجوع الداخلي في ورقة العنصر
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get commonBack;
+
+  /// مدة الفترة في صفحة العنصر (DESIGN detail.duration). count العدد، days العدد منسّقاً بأرقام الإعداد
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{يوم واحد} =2{يومان} few{{days} أيام} other{{days} يوماً}}'**
+  String detailDuration(int count, String days);
+
+  /// حالة العنصر اليوم: داخله (DESIGN detail.status.now)
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الآن — اليوم {day} من {total}'**
+  String detailStatusNow(String day, String total);
+
+  /// حالة العنصر: لم يبدأ بعد (DESIGN detail.status.upcoming)
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{يبدأ بعد يوم واحد} =2{يبدأ بعد يومين} few{يبدأ بعد {days} أيام} other{يبدأ بعد {days} يوماً}}'**
+  String detailStatusUpcoming(int count, String days);
+
+  /// حالة العنصر: انتهى (DESIGN detail.status.past)
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{انتهى قبل يوم واحد} =2{انتهى قبل يومين} few{انتهى قبل {days} أيام} other{انتهى قبل {days} يوماً}}'**
+  String detailStatusPast(int count, String days);
+
+  /// لسهيل والثريا: تاريخ الطلوع المحسوب لمدينة المستخدم (DESIGN home.star_rises_on، الميزة 5 معيار 4)
+  ///
+  /// In ar, this message translates to:
+  /// **'يطلع في {city} يوم {date}'**
+  String detailStarRisesOn(String city, String date);
+
+  /// لسهيل والثريا: مضى على الطلوع المحسوب (DESIGN home.star_risen_ago)
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{طلع في {city} قبل يوم واحد} =2{طلع في {city} قبل يومين} few{طلع في {city} قبل {days} أيام} other{طلع في {city} قبل {days} يوماً}}'**
+  String detailStarRisenAgo(int count, String city, String days);
+
+  /// لسهيل والثريا: الطلوع المحسوب هو اليوم
+  ///
+  /// In ar, this message translates to:
+  /// **'يطلع في {city} اليوم'**
+  String detailStarRisesToday(String city);
+
+  /// تحت تاريخ طلوع سهيل/الثريا (DESIGN detail.astro_note)
+  ///
+  /// In ar, this message translates to:
+  /// **'محسوب فلكياً لموقع مدينتك.'**
+  String get detailAstroNote;
+
+  /// تعذّر حساب طلوع سهيل/الثريا (DESIGN detail.astro_fallback)
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ تقريبي من جدول المنطقة.'**
+  String get detailAstroFallback;
+
+  /// عنوان بطاقة المثل (DESIGN detail.proverb)
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل شعبي'**
+  String get detailProverb;
+
+  /// زر نصي في بطاقة التواريخ يدير الدائرة إلى أول يوم في العنصر (DESIGN detail.go_to_start)
+  ///
+  /// In ar, this message translates to:
+  /// **'انتقل إلى بدايته'**
+  String get detailGoToStart;
+
+  /// شريحة مئة الدَّرّ في صفحة الدَّرّ (D26): «من الصفري»، والضغط يفتح صفحة المئة
+  ///
+  /// In ar, this message translates to:
+  /// **'من {season}'**
+  String detailDarHundred(String season);
+
+  /// مصدر نص العنصر في items.json
+  ///
+  /// In ar, this message translates to:
+  /// **'مصدر التعريف والمثل: {source}'**
+  String detailContentSource(String source);
+
+  /// مصدر سجل الفترة في جدول المنطقة
+  ///
+  /// In ar, this message translates to:
+  /// **'مصدر التواريخ: {source}'**
+  String detailDatesSource(String source);
+
+  /// سجل لم يعتمده المراجع بعد (صفحة العنصر وصفحة المصادر)
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار الاعتماد'**
+  String get approvalPending;
+
+  /// عنوان صفحة أصل التقويم (/about/origin، D24)
+  ///
+  /// In ar, this message translates to:
+  /// **'أصل التقويم'**
+  String get originTitle;
+
+  /// قسم في صفحة أصل التقويم
+  ///
+  /// In ar, this message translates to:
+  /// **'الطوالع والمواسم'**
+  String get originTawaliTitle;
+
+  /// أصل الطوالع والمواسم (research/SAUDI.md §3، بانتظار المراجع)
+  ///
+  /// In ar, this message translates to:
+  /// **'ميراث أهل نجد والجزيرة، يبدأ بسهيل. المصادر: المسند والزعاق وغيرهما.'**
+  String get originTawaliBody;
+
+  /// قسم في صفحة أصل التقويم
+  ///
+  /// In ar, this message translates to:
+  /// **'الدرور'**
+  String get originDururTitle;
+
+  /// أصل الدرور (research/SAUDI.md §3، بانتظار المراجع)
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي. معروض هنا للمقارنة.'**
+  String get originDururBody;
+
+  /// قسم في الإعدادات (DESIGN settings.section.help)
+  ///
+  /// In ar, this message translates to:
+  /// **'البيانات والمساعدة'**
+  String get settingsSectionHelp;
+
+  /// صف المصادر في الإعدادات وعنوان صفحتها (DESIGN settings.sources)
+  ///
+  /// In ar, this message translates to:
+  /// **'المصادر'**
+  String get settingsSources;
+
+  /// قسم في صفحة المصادر: مصادر كل السجلات بلا تكرار (D27)
+  ///
+  /// In ar, this message translates to:
+  /// **'مصادر الجداول'**
+  String get sourcesTablesTitle;
+
+  /// مرجع الاعتماد لمصدر في صفحة المصادر
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتمده: {reviewers}'**
+  String sourcesApprovedBy(String reviewers);
+
+  /// قسم ثابت في صفحة المصادر (D27)
+  ///
+  /// In ar, this message translates to:
+  /// **'رخص البيانات'**
+  String get sourcesLicensesTitle;
+
+  /// إشارة GeoNames المطلوبة برخصة CC BY 4.0 (D27)
+  ///
+  /// In ar, this message translates to:
+  /// **'إحداثيات المدن من GeoNames (geonames.org)، برخصة المشاع الإبداعي نَسب المُصنَّف 4.0 (CC BY 4.0). عُدّلت: اختيار المدن وربطها بالمناطق.'**
+  String get sourcesGeoNames;
+
+  /// رابط يفتح https://www.geonames.org/ في المتصفح
+  ///
+  /// In ar, this message translates to:
+  /// **'موقع GeoNames'**
+  String get sourcesGeoNamesLink;
+
+  /// رابط يفتح https://creativecommons.org/licenses/by/4.0/ في المتصفح
+  ///
+  /// In ar, this message translates to:
+  /// **'نص رخصة CC BY 4.0'**
+  String get sourcesLicenseLink;
+
+  /// قسم في صفحة المصادر (D27 بند 3)
+  ///
+  /// In ar, this message translates to:
+  /// **'التقويم الهجري'**
+  String get sourcesHijriTitle;
+
+  /// مصدر التقويم الهجري (D27 بند 3)
+  ///
+  /// In ar, this message translates to:
+  /// **'تقويم أم القرى: بدايات الأشهر من جداول R. H. van Gent.'**
+  String get sourcesHijri;
+
+  /// فشل فتح رابط خارجي في المتصفح
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح الرابط.'**
+  String get linkOpenError;
 }
 
 class _AppLocalizationsDelegate

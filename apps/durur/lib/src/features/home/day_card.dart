@@ -4,8 +4,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../domain/day_info.dart';
 import '../../domain/tables.dart';
 import '../../theme/app_theme.dart';
+import '../common/chips.dart';
 import '../common/weather_icon.dart';
-import '../../domain/weather_symbol.dart';
 import 'day_text.dart';
 import 'dial/day_dial.dart';
 import 'dial/dial_model.dart';
@@ -19,6 +19,7 @@ class DayCard extends StatelessWidget {
     required this.info,
     required this.tables,
     required this.onOpen,
+    required this.onOpenOrigin,
   });
 
   static const cardKey = Key('dayCard');
@@ -29,6 +30,9 @@ class DayCard extends StatelessWidget {
   final Tables tables;
   final DialOpen onOpen;
 
+  /// رابط «أصل التقويم» في قسم الدَّرّ المستعار (D24).
+  final VoidCallback onOpenOrigin;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -36,7 +40,7 @@ class DayCard extends StatelessWidget {
     final colors = DururColors.of(context);
     String name(String? id) => tables.items[id]?.name.ar ?? '';
 
-    final seasonChip = _SeasonChip(
+    final seasonChip = SeasonChip(
       label: name(info.majorSeason.itemId),
       color: colors.season(info.majorSeason.itemId),
       onTap: () => onOpen(DialRing.seasons, info),
@@ -92,7 +96,7 @@ class DayCard extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: [for (final s in info.weather) _WeatherChip(symbol: s)],
+          children: [for (final s in info.weather) WeatherChip(symbol: s)],
         ),
         if (info.weatherNote != null) ...[
           const SizedBox(height: 8),
@@ -146,10 +150,10 @@ class DayCard extends StatelessWidget {
           ),
         Align(
           alignment: AlignmentDirectional.centerStart,
-          // صفحة «أصل التقويم» (/about/origin) لم تُبنَ بعد: الزر نائب معطّل.
           child: TextButton(
             key: originLinkKey,
-            onPressed: null,
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: onOpenOrigin,
             child: Text(l10n.homeOriginLink),
           ),
         ),
@@ -187,71 +191,6 @@ class DayCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: children,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// شريحة موسم: نقطة بلونه + اسمه، قابلة للضغط (DESIGN 5.3).
-class _SeasonChip extends StatelessWidget {
-  const _SeasonChip({
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      materialTapTargetSize: MaterialTapTargetSize.padded,
-      backgroundColor: color.withValues(alpha: 0.12),
-      side: BorderSide.none,
-      avatar: Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-      label: Text(label),
-      onPressed: onTap,
-    );
-  }
-}
-
-/// شريحة جو للعرض فقط: أيقونة + كلمة (DESIGN 5.3).
-class _WeatherChip extends StatelessWidget {
-  const _WeatherChip({required this.symbol});
-
-  final WeatherSymbol symbol;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DururColors.of(context);
-    return Container(
-      constraints: const BoxConstraints(minHeight: 36),
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
-      decoration: BoxDecoration(
-        border: Border.all(color: colors.outline),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          WeatherIcon(symbol, color: colors.ink),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              weatherSymbolLabel(AppLocalizations.of(context), symbol),
-              style: Theme.of(context).textTheme.labelLarge,
             ),
           ),
         ],

@@ -120,6 +120,7 @@ class CalendarEngine {
         start: season.start,
         end: season.end,
         dayNumber: season.dayNumber,
+        record: season.record,
       ),
       weatherSeason: _resolveWeatherSeason(date, key),
       star: ItemPeriod(
@@ -127,6 +128,7 @@ class CalendarEngine {
         start: star.start,
         end: star.end,
         dayNumber: star.dayNumber,
+        record: star.record,
       ),
     );
   }
@@ -192,6 +194,7 @@ class CalendarEngine {
         start: start,
         end: end,
         dayNumber: date.difference(start).inDays + 1,
+        record: season,
       );
     }
     return null;

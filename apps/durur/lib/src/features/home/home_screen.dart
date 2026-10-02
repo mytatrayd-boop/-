@@ -10,6 +10,8 @@ import '../../domain/day_info.dart';
 import '../../domain/local_date.dart';
 import '../../domain/tables.dart';
 import '../../engine/year_index.dart';
+import '../item_detail/detail_data.dart';
+import '../item_detail/item_detail_sheet.dart';
 import '../../providers.dart';
 import '../../routing/app_router.dart';
 import '../../theme/app_theme.dart';
@@ -19,7 +21,6 @@ import 'day_text.dart';
 import 'dial/day_dial.dart';
 import 'dial/dial_model.dart';
 import 'dial/dial_painter.dart';
-import 'item_sheet.dart';
 
 /// الشاشة الرئيسية (SPEC الميزة 6، DESIGN 8.4): سطر التاريخين، الدائرة،
 /// صف التنقل، بطاقة اليوم، العبارة الثابتة، والمصدر.
@@ -102,8 +103,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final model = _modelFor(index);
 
+    // من الدائرة: ورقة سفلية؛ من البطاقة: صفحة كاملة (DESIGN 8.4 و8.6).
     void open(DialRing ring, DayInfo day) =>
-        showItemSheet(context, ring: ring, day: day, tables: tables);
+        showItemDetailSheet(context, detailRequestFor(ring, day));
+    void openPage(DialRing ring, DayInfo day) {
+      final r = detailRequestFor(ring, day);
+      context.push(AppRoutes.detail(r.target, from: r.from));
+    }
+
+    void openOrigin() => context.push(AppRoutes.origin);
     final controller = ref.read(selectedDateProvider.notifier);
 
     final dates = InkWell(
@@ -166,29 +174,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onBackToToday: controller.backToToday,
     );
 
-    // سطر الإيضاح للمنطقة المستعيرة (DESIGN 7.8). الضغط عليه يفتح «أصل
-    // التقويم» حين تُبنى الصفحة؛ الآن نص بلا ضغط.
+    // سطر الإيضاح للمنطقة المستعيرة (DESIGN 7.8): الضغط عليه (منطقة لمس
+    // 48dp) يفتح صفحة «أصل التقويم».
     final legend = info.borrowsDurur
-        ? Padding(
+        ? InkWell(
             key: HomeScreen.legendKey,
-            padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.info_outline, size: 16, color: colors.inkSoft),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    l10n.dialDururLegend(
-                      tables.region(info.dururRegionId)?.name.ar ?? '',
+            onTap: openOrigin,
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: colors.inkSoft),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        l10n.dialDururLegend(
+                          tables.region(info.dururRegionId)?.name.ar ?? '',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.inkSoft,
+                        ),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colors.inkSoft,
-                    ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           )
         : null;
@@ -228,7 +243,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       const SizedBox(height: 24),
     ];
 
-    final card = DayCard(info: info, tables: tables, onOpen: open);
+    final card = DayCard(
+      info: info,
+      tables: tables,
+      onOpen: openPage,
+      onOpenOrigin: openOrigin,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {

@@ -128,6 +128,9 @@ class DururColors extends ThemeExtension<DururColors> {
 abstract final class DururFonts {
   static const display = 'ReemKufi';
   static const body = 'IBMPlexSansArabic';
+
+  /// المثل الشعبي (DESIGN §3، `proverb`)، والمائل العربي الوحيد المسموح.
+  static const proverb = 'Amiri';
 }
 
 /// ثيم التطبيق (DESIGN §2–§5): ألوان الوضعين، والخطوط، وسلّم الأحجام.
