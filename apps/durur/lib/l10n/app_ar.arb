@@ -4,10 +4,6 @@
   "@appTitle": {
     "description": "اسم التطبيق"
   },
-  "todayLabel": "اليوم",
-  "@todayLabel": {
-    "description": "عنوان قسم تاريخ اليوم في الشاشة الرئيسية"
-  },
   "traditionDisclaimer": "الجو المعتاد حسب التراث، وليس توقعاً للطقس",
   "@traditionDisclaimer": {
     "description": "عبارة ثابتة في الشاشة الرئيسية (SPEC الميزة 6)"

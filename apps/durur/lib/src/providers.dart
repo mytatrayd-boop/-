@@ -673,7 +673,7 @@ class DataUpdateController extends Notifier<DataUpdateStatus> {
   Future<UpdateOutcome> maybeCheck() => _run(manual: false);
 
   /// «تحقق الآن»: إن كان تحقق جارياً ينتظر نتيجته نفسها بلا طلب ثانٍ، وإلا
-  /// يتحقق فوراً. لا ترمي.
+  /// يتحقق فوراً. لا ترمي. أثناء الإعداد الأولي ← notDue بلا طلب.
   Future<UpdateOutcome> checkNow() async {
     final running = _running;
     if (running != null) {
@@ -696,8 +696,10 @@ class DataUpdateController extends Notifier<DataUpdateStatus> {
     final updater = ref.read(dataUpdaterProvider);
     if (!updater.isEnabled) return _finish(UpdateOutcome.disabled, null);
     final now = ref.read(clockProvider)();
+    final settings = ref.read(settingsProvider);
+    // لا طلب أثناء الإعداد الأولي، ولا حتى «تحقق الآن» (§16.2).
+    if (!settings.onboardingDone) return _finish(UpdateOutcome.notDue, null);
     if (!manual) {
-      final settings = ref.read(settingsProvider);
       // ساعة رجعت للخلف ← تبدأ المهلة من الآن (update_schedule.dart).
       try {
         await updater.state.clampFuture(now);

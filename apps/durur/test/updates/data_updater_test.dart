@@ -431,6 +431,18 @@ void main() {
       expect(c.read(dataUpdateProvider).acceptedCount, 1);
     });
 
+    test('أثناء الإعداد الأولي ← لا طلب ولا كتابة', () async {
+      await prefs.setBool(SettingsRepository.onboardingDoneKey, false);
+      fetcher.publish(fixedWasm, 1);
+      final c = await open();
+      expect(
+        await c.read(dataUpdateProvider.notifier).checkNow(),
+        UpdateOutcome.notDue,
+      );
+      expect(fetcher.requests, isEmpty);
+      expect(state().lastAttempt, isNull);
+    });
+
     test('نوع الفشل: الشبكة أو التحقق', () async {
       fetcher.failure = FetchFailure.timeout;
       final c = await open();
@@ -467,6 +479,41 @@ void main() {
     now = now.add(const Duration(hours: 24));
     expect(await check(c), UpdateOutcome.failed);
     expect(fetcher.requests, hasLength(2));
+  });
+
+  test('ساعة رجعت بعد نجاح ثم فشل (الوقتان في المستقبل) ← يبقى فشلاً: 24 ساعة',
+      () async {
+    // نجاح ثم فشل بعده بساعة، ثم رجعت الساعة 3 أيام: القص يساوي الوقتين.
+    final c = await open();
+    await state().recordAttempt(now);
+    await state().recordSuccess(now);
+    await state().recordAttempt(now.add(const Duration(hours: 1)));
+    now = now.subtract(const Duration(days: 3));
+    fetcher.failure = FetchFailure.network;
+    expect(await check(c), UpdateOutcome.notDue);
+    expect(fetcher.requests, isEmpty);
+    expect(state().lastAttempt, now);
+    expect(state().lastCheckOk!.isBefore(state().lastAttempt!), isTrue);
+
+    // 24 ساعة (لا 7 أيام) من الآن.
+    now = now.add(const Duration(hours: 23));
+    expect(await check(c), UpdateOutcome.notDue);
+    now = now.add(const Duration(hours: 1));
+    expect(await check(c), UpdateOutcome.failed);
+    expect(fetcher.requests, hasLength(1));
+  });
+
+  test('ساعة رجعت بعد نجاح فقط (الوقتان في المستقبل) ← نجاح: 7 أيام', () async {
+    final c = await open();
+    await state().recordAttempt(now);
+    await state().recordSuccess(now);
+    now = now.subtract(const Duration(days: 3));
+    expect(await check(c), UpdateOutcome.notDue);
+    expect(state().lastCheckOk, now);
+    expect(state().lastAttempt, now);
+    now = now.add(const Duration(days: 6));
+    expect(await check(c), UpdateOutcome.notDue);
+    expect(fetcher.requests, isEmpty);
   });
 
   group('مصدر البيانات لصفحة المصادر', () {

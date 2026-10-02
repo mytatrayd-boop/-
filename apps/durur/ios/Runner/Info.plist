@@ -5,9 +5,13 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>ar</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ar</string>
+	</array>
 	<key>CFBundleDisplayName</key>
-	<string>Durur</string>
+	<string>ديرة الدرور</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +19,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>durur</string>
+	<string>ديرة الدرور</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

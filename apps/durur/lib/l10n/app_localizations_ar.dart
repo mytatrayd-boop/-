@@ -13,9 +13,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appTitle => 'ديرة الدرور';
 
   @override
-  String get todayLabel => 'اليوم';
-
-  @override
   String get traditionDisclaimer =>
       'الجو المعتاد حسب التراث، وليس توقعاً للطقس';
 

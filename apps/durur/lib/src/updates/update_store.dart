@@ -112,12 +112,25 @@ class UpdateState {
 
   /// ساعة الجهاز رجعت للخلف: أي وقت مسجّل بعد [now] يُكتب [now]، فتبدأ مهلة
   /// التحقق من الآن (لا تحقق في كل عودة، ولا توقف حتى تلحق الساعة).
+  ///
+  /// إن كانت آخر محاولة فاشلة (أحدث من آخر نجاح) والوقتان كلاهما في المستقبل،
+  /// فالقص يجعلهما متساويين، وتساويهما يعني نجاحاً (`recordSuccess`) فيصير
+  /// الموعد 7 أيام بدل 24 ساعة. لذا يبقى آخر نجاح قبل المحاولة بميلي ثانية،
+  /// فتظل الحالة فشلاً (`isCheckDue`).
   Future<void> clampFuture(DateTime now) async {
-    for (final key in [lastAttemptKey, lastCheckOkKey]) {
-      final t = _time(key);
-      if (t != null && t.isAfter(now)) {
-        await _prefs.setInt(key, now.millisecondsSinceEpoch);
-      }
+    final attempt = lastAttempt;
+    final ok = lastCheckOk;
+    final failedLast =
+        attempt != null && (ok == null || attempt.isAfter(ok));
+    final nowMs = now.millisecondsSinceEpoch;
+    if (attempt != null && attempt.isAfter(now)) {
+      await _prefs.setInt(lastAttemptKey, nowMs);
+    }
+    if (ok != null && ok.isAfter(now)) {
+      await _prefs.setInt(lastCheckOkKey, failedLast ? nowMs - 1 : nowMs);
+    } else if (failedLast && ok != null && !ok.isBefore(now)) {
+      // آخر نجاح يساوي الآن تماماً والمحاولة الفاشلة بعده في المستقبل.
+      await _prefs.setInt(lastCheckOkKey, nowMs - 1);
     }
   }
 }

@@ -100,12 +100,6 @@ abstract class AppLocalizations {
   /// **'ديرة الدرور'**
   String get appTitle;
 
-  /// عنوان قسم تاريخ اليوم في الشاشة الرئيسية
-  ///
-  /// In ar, this message translates to:
-  /// **'اليوم'**
-  String get todayLabel;
-
   /// عبارة ثابتة في الشاشة الرئيسية (SPEC الميزة 6)
   ///
   /// In ar, this message translates to:
