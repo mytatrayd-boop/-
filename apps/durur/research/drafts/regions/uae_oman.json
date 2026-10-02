@@ -1,0 +1,1871 @@
+{
+ "regionId": "uae_oman",
+ "durur": [
+  {
+   "start": "08-15",
+   "number": 1,
+   "name": {
+    "ar": "العشر"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "08-25",
+   "number": 2,
+   "name": {
+    "ar": "العشرين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "09-04",
+   "number": 3,
+   "name": {
+    "ar": "الثلاثين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "09-14",
+   "number": 4,
+   "name": {
+    "ar": "الأربعين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "09-24",
+   "number": 5,
+   "name": {
+    "ar": "الخمسين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "10-04",
+   "number": 6,
+   "name": {
+    "ar": "الستين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "10-14",
+   "number": 7,
+   "name": {
+    "ar": "السبعين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "10-24",
+   "number": 8,
+   "name": {
+    "ar": "الثمانين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "11-03",
+   "number": 9,
+   "name": {
+    "ar": "التسعين"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "11-13",
+   "number": 10,
+   "name": {
+    "ar": "المائة"
+   },
+   "seasonId": "safari",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "11-23",
+   "number": 1,
+   "name": {
+    "ar": "العشر"
+   },
+   "seasonId": "shita",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "12-03",
+   "number": 2,
+   "name": {
+    "ar": "العشرين"
+   },
+   "seasonId": "shita",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "12-13",
+   "number": 3,
+   "name": {
+    "ar": "الثلاثين"
+   },
+   "seasonId": "shita",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "12-23",
+   "number": 4,
+   "name": {
+    "ar": "الأربعين"
+   },
+   "seasonId": "shita",
+   "weather": [
+    "cold",
+    "wind_strong",
+    "sea_rough"
+   ],
+   "weatherNote": {
+    "ar": "رياح باردة قوية، ولا يُنصح فيه بدخول البحر أو السفر."
+   },
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "weatherSource": {
+    "ref": "S03",
+    "title": "حسابات الدرور.. ابتكارات فلكية لأهل البر والبحر",
+    "author": "صحيفة البيان",
+    "year": 2016,
+    "page": "https://www.albayan.ae/across-the-uae/news-and-reports/2016-03-05-1.2587909"
+   }
+  },
+  {
+   "start": "01-02",
+   "number": 5,
+   "name": {
+    "ar": "الخمسين"
+   },
+   "seasonId": "shita",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "01-12",
+   "number": 6,
+   "name": {
+    "ar": "الستين"
+   },
+   "seasonId": "shita",
+   "weather": [
+    "very_cold"
+   ],
+   "weatherNote": {
+    "ar": "«برد الستين» من أشد فترات البرد."
+   },
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "weatherSource": {
+    "ref": "S43",
+    "title": "«برد الستين».. تعرف إلى بدء ذروة برودة الشتاء",
+    "author": "الإمارات اليوم",
+    "year": 2025,
+    "page": "https://www.emaratalyoum.com/local-section/other/2025-01-09-1.1911231"
+   }
+  },
+  {
+   "start": "01-22",
+   "number": 7,
+   "name": {
+    "ar": "السبعين"
+   },
+   "seasonId": "shita",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "02-01",
+   "number": 8,
+   "name": {
+    "ar": "الثمانين"
+   },
+   "seasonId": "shita",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "02-11",
+   "number": 9,
+   "name": {
+    "ar": "التسعين"
+   },
+   "seasonId": "shita",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "02-21",
+   "number": 10,
+   "name": {
+    "ar": "المائة"
+   },
+   "seasonId": "shita",
+   "weather": [
+    "cold",
+    "rain"
+   ],
+   "weatherNote": {
+    "ar": "برودة مع أمطار موسمية خصوصاً في الساحل."
+   },
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "weatherSource": {
+    "ref": "S03",
+    "title": "حسابات الدرور.. ابتكارات فلكية لأهل البر والبحر",
+    "author": "صحيفة البيان",
+    "year": 2016,
+    "page": "https://www.albayan.ae/across-the-uae/news-and-reports/2016-03-05-1.2587909"
+   }
+  },
+  {
+   "start": "03-03",
+   "number": 1,
+   "name": {
+    "ar": "العشر"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "03-13",
+   "number": 2,
+   "name": {
+    "ar": "العشرين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "03-23",
+   "number": 3,
+   "name": {
+    "ar": "الثلاثين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "04-02",
+   "number": 4,
+   "name": {
+    "ar": "الأربعين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "04-12",
+   "number": 5,
+   "name": {
+    "ar": "الخمسين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "04-22",
+   "number": 6,
+   "name": {
+    "ar": "الستين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "05-02",
+   "number": 7,
+   "name": {
+    "ar": "السبعين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "05-12",
+   "number": 8,
+   "name": {
+    "ar": "الثمانين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "05-22",
+   "number": 9,
+   "name": {
+    "ar": "التسعين"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "06-01",
+   "number": 10,
+   "name": {
+    "ar": "المائة"
+   },
+   "seasonId": "saif",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "06-11",
+   "number": 1,
+   "name": {
+    "ar": "العشر"
+   },
+   "seasonId": "qaiz",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "06-21",
+   "number": 2,
+   "name": {
+    "ar": "العشرين"
+   },
+   "seasonId": "qaiz",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "07-01",
+   "number": 3,
+   "name": {
+    "ar": "الثلاثين"
+   },
+   "seasonId": "qaiz",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "07-11",
+   "number": 4,
+   "name": {
+    "ar": "الأربعين"
+   },
+   "seasonId": "qaiz",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "07-21",
+   "number": 5,
+   "name": {
+    "ar": "الخمسين"
+   },
+   "seasonId": "qaiz",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "07-31",
+   "number": 6,
+   "name": {
+    "ar": "الستين"
+   },
+   "seasonId": "qaiz",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/",
+    "derived": "تاريخ الدَّرّ مشتق بإضافة 10 أيام لكل دَرّ من حدود المئات المنشورة (15 أغسطس، 23 نوفمبر، 3 مارس، 11 يونيو)."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "start": "08-10",
+   "number": null,
+   "name": {
+    "ar": null
+   },
+   "seasonId": "qaiz",
+   "weather": [],
+   "weatherNote": null,
+   "source": {
+    "ref": null,
+    "title": null,
+    "author": null,
+    "year": null,
+    "page": null,
+    "missing": "لا مصدر"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   },
+   "_gap": "الأيام الخمسة 10-14 أغسطس خارج الـ360 يوماً؛ لم نجد مصدراً يسمّيها. انظر GAPS.md"
+  }
+ ],
+ "majorSeasons": [
+  {
+   "itemId": "safari",
+   "start": "08-15",
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "shita",
+   "start": "11-23",
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "saif",
+   "start": "03-03",
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "qaiz",
+   "start": "06-11",
+   "source": {
+    "ref": "S01",
+    "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+    "author": "صحيفة الاتحاد",
+    "year": 2010,
+    "page": "https://www.aletihad.ae/article/13101/2010/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  }
+ ],
+ "stars": [
+  {
+   "itemId": "tarf",
+   "start": "08-24",
+   "source": {
+    "ref": "S30",
+    "title": "الطوالع (الجبهة 6 سبتمبر 14 يوماً، العواء 16 أكتوبر، السماك 29 أكتوبر، الإكليل أول المربعانية)",
+    "author": "تميم التميمي - علم الفلك والدرور",
+    "year": null,
+    "page": "https://www.tameem.ae/wp/tag/الطوالع/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "jabha",
+   "start": "09-06",
+   "source": {
+    "ref": "S30",
+    "title": "الطوالع (الجبهة 6 سبتمبر 14 يوماً، العواء 16 أكتوبر، السماك 29 أكتوبر، الإكليل أول المربعانية)",
+    "author": "تميم التميمي - علم الفلك والدرور",
+    "year": null,
+    "page": "https://www.tameem.ae/wp/tag/الطوالع/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "zubra",
+   "start": "09-20",
+   "source": {
+    "ref": "S30",
+    "title": "الطوالع (الجبهة 6 سبتمبر 14 يوماً، العواء 16 أكتوبر، السماك 29 أكتوبر، الإكليل أول المربعانية)",
+    "author": "تميم التميمي - علم الفلك والدرور",
+    "year": null,
+    "page": "https://www.tameem.ae/wp/tag/الطوالع/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "sarfa",
+   "start": "10-03",
+   "source": {
+    "ref": "S30",
+    "title": "الطوالع (الجبهة 6 سبتمبر 14 يوماً، العواء 16 أكتوبر، السماك 29 أكتوبر، الإكليل أول المربعانية)",
+    "author": "تميم التميمي - علم الفلك والدرور",
+    "year": null,
+    "page": "https://www.tameem.ae/wp/tag/الطوالع/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "awwa",
+   "start": "10-16",
+   "source": {
+    "ref": "S29",
+    "title": "16 أكتوبر موعد دخول موسم الوسمي",
+    "author": "مركز أخبار ARN",
+    "year": null,
+    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "simak",
+   "start": "10-29",
+   "source": {
+    "ref": "S29",
+    "title": "16 أكتوبر موعد دخول موسم الوسمي",
+    "author": "مركز أخبار ARN",
+    "year": null,
+    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "ghafr",
+   "start": "11-11",
+   "source": {
+    "ref": "S29",
+    "title": "16 أكتوبر موعد دخول موسم الوسمي",
+    "author": "مركز أخبار ARN",
+    "year": null,
+    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "zubana",
+   "start": "11-24",
+   "source": {
+    "ref": "S29",
+    "title": "16 أكتوبر موعد دخول موسم الوسمي",
+    "author": "مركز أخبار ARN",
+    "year": null,
+    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "iklil",
+   "start": "12-07",
+   "source": {
+    "ref": "S16",
+    "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
+    "author": "الراي / مركز العجيري العلمي",
+    "year": null,
+    "page": "https://www.alraimedia.com/article/1710247"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "qalb",
+   "start": "12-20",
+   "source": {
+    "ref": "S16",
+    "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
+    "author": "الراي / مركز العجيري العلمي",
+    "year": null,
+    "page": "https://www.alraimedia.com/article/1710247"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "shawla",
+   "start": "01-02",
+   "source": {
+    "ref": "S16",
+    "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
+    "author": "الراي / مركز العجيري العلمي",
+    "year": null,
+    "page": "https://www.alraimedia.com/article/1710247"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "naaim",
+   "start": "01-15",
+   "source": {
+    "ref": "S39",
+    "title": "مسميات الفصول عند البدو (الصيف، القيظ، الصفري، الشتاء)",
+    "author": "صحيفة البيان",
+    "year": 2010,
+    "page": "https://www.albayan.ae/five-senses/2010-05-21-1.247245"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "balda",
+   "start": "01-28",
+   "source": {
+    "ref": "S39",
+    "title": "مسميات الفصول عند البدو (الصيف، القيظ، الصفري، الشتاء)",
+    "author": "صحيفة البيان",
+    "year": 2010,
+    "page": "https://www.albayan.ae/five-senses/2010-05-21-1.247245"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "saad_dhabih",
+   "start": "02-10",
+   "source": {
+    "ref": "S07",
+    "title": "الإمارات للفلك: موسم العقارب من 10 فبراير إلى 20 مارس",
+    "author": "الإمارات اليوم / جمعية الإمارات للفلك",
+    "year": 2023,
+    "page": "https://www.emaratalyoum.com/local-section/other/2023-02-03-1.1714637"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "saad_bula",
+   "start": "02-23",
+   "source": {
+    "ref": "S07",
+    "title": "الإمارات للفلك: موسم العقارب من 10 فبراير إلى 20 مارس",
+    "author": "الإمارات اليوم / جمعية الإمارات للفلك",
+    "year": 2023,
+    "page": "https://www.emaratalyoum.com/local-section/other/2023-02-03-1.1714637"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "saad_suud",
+   "start": "03-08",
+   "source": {
+    "ref": "S07",
+    "title": "الإمارات للفلك: موسم العقارب من 10 فبراير إلى 20 مارس",
+    "author": "الإمارات اليوم / جمعية الإمارات للفلك",
+    "year": 2023,
+    "page": "https://www.emaratalyoum.com/local-section/other/2023-02-03-1.1714637"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "saad_akhbiya",
+   "start": "03-21",
+   "source": {
+    "ref": "S20",
+    "title": "سكان الجزيرة العربية قسموا السنة إلى مواسم... سهيل 53، الوسم 52، المربعانية 39، الشبط 26، العقارب 39، الحميمين 26، الذراعين 26",
+    "author": "أ.د. عبدالله المسند (منصة X)",
+    "year": 2022,
+    "page": "https://x.com/ALMISNID/status/1561908934310612992",
+    "derived": "مشتق: بداية المنزلة السابقة + 13 يوماً (قاعدة 13 يوماً لكل منزلة عدا الجبهة 14). لم نجد نصاً صريحاً بالتاريخ."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "muqaddam",
+   "start": "04-03",
+   "source": {
+    "ref": "S20",
+    "title": "سكان الجزيرة العربية قسموا السنة إلى مواسم... سهيل 53، الوسم 52، المربعانية 39، الشبط 26، العقارب 39، الحميمين 26، الذراعين 26",
+    "author": "أ.د. عبدالله المسند (منصة X)",
+    "year": 2022,
+    "page": "https://x.com/ALMISNID/status/1561908934310612992",
+    "derived": "مشتق: بداية المنزلة السابقة + 13 يوماً (قاعدة 13 يوماً لكل منزلة عدا الجبهة 14). لم نجد نصاً صريحاً بالتاريخ."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "muakhkhar",
+   "start": "04-16",
+   "source": {
+    "ref": "S20",
+    "title": "سكان الجزيرة العربية قسموا السنة إلى مواسم... سهيل 53، الوسم 52، المربعانية 39، الشبط 26، العقارب 39، الحميمين 26، الذراعين 26",
+    "author": "أ.د. عبدالله المسند (منصة X)",
+    "year": 2022,
+    "page": "https://x.com/ALMISNID/status/1561908934310612992",
+    "derived": "مشتق: بداية المنزلة السابقة + 13 يوماً (قاعدة 13 يوماً لكل منزلة عدا الجبهة 14). لم نجد نصاً صريحاً بالتاريخ."
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "risha",
+   "start": "04-29",
+   "source": {
+    "ref": "S08",
+    "title": "29 أبريل بدء موسم «كنة الثريا» في الجزيرة العربية",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2025,
+    "page": "https://www.wam.ae/ar/article/bjdfag2"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "sharatain",
+   "start": "05-12",
+   "source": {
+    "ref": "S08",
+    "title": "29 أبريل بدء موسم «كنة الثريا» في الجزيرة العربية",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2025,
+    "page": "https://www.wam.ae/ar/article/bjdfag2"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "butain",
+   "start": "05-25",
+   "source": {
+    "ref": "S08",
+    "title": "29 أبريل بدء موسم «كنة الثريا» في الجزيرة العربية",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2025,
+    "page": "https://www.wam.ae/ar/article/bjdfag2"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "thurayya",
+   "start": "06-07",
+   "source": {
+    "ref": "S09",
+    "title": "طلوع الثريا في سماء الدولة 7 يونيو لمدة 13 يوماً",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2026,
+    "page": "https://www.wam.ae/ar/article/c0k0obw"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "dabaran",
+   "start": "06-20",
+   "source": {
+    "ref": "S09",
+    "title": "طلوع الثريا في سماء الدولة 7 يونيو لمدة 13 يوماً",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2026,
+    "page": "https://www.wam.ae/ar/article/c0k0obw"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "haqaa",
+   "start": "07-03",
+   "source": {
+    "ref": "S10",
+    "title": "الإمارات للفلك: جمرة القيظ من 3 يوليو حتى 10 أغسطس",
+    "author": "الإمارات اليوم / الخليج",
+    "year": 2026,
+    "page": "https://www.emaratalyoum.com/local-section/other/2026-07-02-1.2061156"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "hanaa",
+   "start": "07-16",
+   "source": {
+    "ref": "S10",
+    "title": "الإمارات للفلك: جمرة القيظ من 3 يوليو حتى 10 أغسطس",
+    "author": "الإمارات اليوم / الخليج",
+    "year": 2026,
+    "page": "https://www.emaratalyoum.com/local-section/other/2026-07-02-1.2061156"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "dhiraa",
+   "start": "07-29",
+   "source": {
+    "ref": "S10",
+    "title": "الإمارات للفلك: جمرة القيظ من 3 يوليو حتى 10 أغسطس",
+    "author": "الإمارات اليوم / الخليج",
+    "year": 2026,
+    "page": "https://www.emaratalyoum.com/local-section/other/2026-07-02-1.2061156"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "nathra",
+   "start": "08-11",
+   "source": {
+    "ref": "S40",
+    "title": "الإمارات للفلك: مرخيات القلايد تبدأ 11 أغسطس",
+    "author": "صحيفة الخليج",
+    "year": 2026,
+    "page": "https://www.alkhaleej.ae/2026-08-08/الإمارات/أخبار-الدار/الإمارات-مرخيات-القلايد-أشد-أيام-الصيف-تبدأ-11-أغسطس"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  }
+ ],
+ "weatherSeasons": [
+  {
+   "itemId": "suhail_season",
+   "start": "08-24",
+   "end": "09-05",
+   "source": {
+    "ref": "S38",
+    "title": "الإمارات للفلك تحدد أول أيام موسم سهيل وانحسار القيظ (هبايب سهيل)",
+    "author": "صحيفة الاتحاد",
+    "year": 2026,
+    "page": "https://www.aletihad.ae/news/الإمارات/4422860",
+    "derived": "حتى بداية الصفرية حسب جمعية الإمارات للفلك"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "safariya",
+   "start": "09-06",
+   "end": "10-15",
+   "source": {
+    "ref": "S06",
+    "title": "الإمارات للفلك: الصفرية أول مواسم الخريف 6 سبتمبر حتى 15 أكتوبر",
+    "author": "الإمارات اليوم / جمعية الإمارات للفلك",
+    "year": 2026,
+    "page": "https://www.emaratalyoum.com/local-section/other/2026-09-03-1.2079412"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "wasm",
+   "start": "10-16",
+   "end": "12-06",
+   "source": {
+    "ref": "S29",
+    "title": "16 أكتوبر موعد دخول موسم الوسمي",
+    "author": "مركز أخبار ARN",
+    "year": null,
+    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "murabbaniya",
+   "start": "12-07",
+   "end": "01-14",
+   "source": {
+    "ref": "S16",
+    "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
+    "author": "الراي / مركز العجيري العلمي",
+    "year": null,
+    "page": "https://www.alraimedia.com/article/1710247",
+    "derived": "مصدر كويتي؛ لم نجد نصاً إماراتياً بالتواريخ"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "shabt",
+   "start": "01-15",
+   "end": "02-09",
+   "source": {
+    "ref": "S41",
+    "title": "موسم الشبط يبدأ 15 يناير ومدته 26 يوماً (التقويم القطري)",
+    "author": "دار التقويم القطري",
+    "year": null,
+    "page": "https://www.qatarch.com/cal",
+    "derived": "مصدر قطري"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "bard_ajayiz",
+   "start": "02-26",
+   "end": "03-04",
+   "source": {
+    "ref": "S32",
+    "title": "المسند يحدد موعد أيام العجوز (26 فبراير - 4 مارس)",
+    "author": "صحيفة صدى (slaati)",
+    "year": 2019,
+    "page": "https://slaati.com/2019/02/20/p1334201.html",
+    "derived": "مصدر سعودي"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "kanna",
+   "start": "04-29",
+   "end": "06-06",
+   "source": {
+    "ref": "S08",
+    "title": "29 أبريل بدء موسم «كنة الثريا» في الجزيرة العربية",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2025,
+    "page": "https://www.wam.ae/ar/article/bjdfag2"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "jamrat_qaiz",
+   "start": "07-03",
+   "end": "08-10",
+   "source": {
+    "ref": "S10",
+    "title": "الإمارات للفلك: جمرة القيظ من 3 يوليو حتى 10 أغسطس",
+    "author": "الإمارات اليوم / الخليج",
+    "year": 2026,
+    "page": "https://www.emaratalyoum.com/local-section/other/2026-07-02-1.2061156"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  }
+ ],
+ "_seasons14_proposed": [
+  {
+   "itemId": "suhail_season",
+   "start": "08-24",
+   "source": {
+    "ref": "S19",
+    "title": "«العجيري»: انكسار الحر مع طلوع سهيل 24 أغسطس (52 يوماً)، الوسم 16 أكتوبر، المربعانية 7 ديسمبر",
+    "author": "سرمد / الجريدة",
+    "year": null,
+    "page": "https://sarmad.com/289112/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "wasm",
+   "start": "10-16",
+   "source": {
+    "ref": "S29",
+    "title": "16 أكتوبر موعد دخول موسم الوسمي",
+    "author": "مركز أخبار ARN",
+    "year": null,
+    "page": "https://www.arnnewscentre.ae/ar/news/منوعات/16-أكتوبر-موعد-دخول-موسم-الوسمي/"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "murabbaniya",
+   "start": "12-07",
+   "source": {
+    "ref": "S16",
+    "title": "العجيري: المربعانية 39 يوماً (الإكليل والقلب والشولة)",
+    "author": "الراي / مركز العجيري العلمي",
+    "year": null,
+    "page": "https://www.alraimedia.com/article/1710247"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "shabt",
+   "start": "01-15",
+   "source": {
+    "ref": "S41",
+    "title": "موسم الشبط يبدأ 15 يناير ومدته 26 يوماً (التقويم القطري)",
+    "author": "دار التقويم القطري",
+    "year": null,
+    "page": "https://www.qatarch.com/cal"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "aqarib",
+   "start": "02-10",
+   "source": {
+    "ref": "S07",
+    "title": "الإمارات للفلك: موسم العقارب من 10 فبراير إلى 20 مارس",
+    "author": "الإمارات اليوم / جمعية الإمارات للفلك",
+    "year": 2023,
+    "page": "https://www.emaratalyoum.com/local-section/other/2023-02-03-1.1714637"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "hamimain",
+   "start": "03-21",
+   "source": {
+    "ref": "S21",
+    "title": "بداية ونهاية مواسم السنة بالتاريخ الهجري والميلادي",
+    "author": "hijridates.com (موقع تجميعي)",
+    "year": null,
+    "page": "https://hijridates.com/moasem.html"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "dhiraain",
+   "start": "04-16",
+   "source": {
+    "ref": "S21",
+    "title": "بداية ونهاية مواسم السنة بالتاريخ الهجري والميلادي",
+    "author": "hijridates.com (موقع تجميعي)",
+    "year": null,
+    "page": "https://hijridates.com/moasem.html"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "kanna",
+   "start": "04-29",
+   "source": {
+    "ref": "S08",
+    "title": "29 أبريل بدء موسم «كنة الثريا» في الجزيرة العربية",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2025,
+    "page": "https://www.wam.ae/ar/article/bjdfag2"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "thurayya_season",
+   "start": "06-07",
+   "source": {
+    "ref": "S09",
+    "title": "طلوع الثريا في سماء الدولة 7 يونيو لمدة 13 يوماً",
+    "author": "وام / جمعية الإمارات للفلك",
+    "year": 2026,
+    "page": "https://www.wam.ae/ar/article/c0k0obw"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "tuwaibi_season",
+   "start": "06-20",
+   "source": {
+    "ref": "S21",
+    "title": "بداية ونهاية مواسم السنة بالتاريخ الهجري والميلادي",
+    "author": "hijridates.com (موقع تجميعي)",
+    "year": null,
+    "page": "https://hijridates.com/moasem.html"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "jawza1",
+   "start": "07-03",
+   "source": {
+    "ref": "S10",
+    "title": "الإمارات للفلك: جمرة القيظ من 3 يوليو حتى 10 أغسطس",
+    "author": "الإمارات اليوم / الخليج",
+    "year": 2026,
+    "page": "https://www.emaratalyoum.com/local-section/other/2026-07-02-1.2061156"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "jawza2",
+   "start": "07-16",
+   "source": {
+    "ref": "S10",
+    "title": "الإمارات للفلك: جمرة القيظ من 3 يوليو حتى 10 أغسطس",
+    "author": "الإمارات اليوم / الخليج",
+    "year": 2026,
+    "page": "https://www.emaratalyoum.com/local-section/other/2026-07-02-1.2061156"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "mirzam",
+   "start": "07-29",
+   "source": {
+    "ref": "S18",
+    "title": "«العجيري»: جمرة القيظ / المرزم 29 يوليو 13 يوماً",
+    "author": "الراي / مركز العجيري العلمي",
+    "year": 2026,
+    "page": "https://www.alraimedia.com/article/1774146"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  },
+  {
+   "itemId": "kulaibain",
+   "start": "08-11",
+   "source": {
+    "ref": "S40",
+    "title": "الإمارات للفلك: مرخيات القلايد تبدأ 11 أغسطس",
+    "author": "صحيفة الخليج",
+    "year": 2026,
+    "page": "https://www.alkhaleej.ae/2026-08-08/الإمارات/أخبار-الدار/الإمارات-مرخيات-القلايد-أشد-أيام-الصيف-تبدأ-11-أغسطس"
+   },
+   "approval": {
+    "status": "draft",
+    "reviewer": null,
+    "date": null,
+    "note": "بانتظار اعتماد المراجع"
+   }
+  }
+ ]
+}

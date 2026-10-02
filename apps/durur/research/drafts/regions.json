@@ -1,0 +1,82 @@
+[
+ {
+  "id": "najd",
+  "name": {
+   "ar": "نجد"
+  },
+  "leapDayRule": null,
+  "source": {
+   "ref": "S20",
+   "title": "سكان الجزيرة العربية قسموا السنة إلى مواسم... سهيل 53، الوسم 52، المربعانية 39، الشبط 26، العقارب 39، الحميمين 26، الذراعين 26",
+   "author": "أ.د. عبدالله المسند (منصة X)",
+   "year": 2022,
+   "page": "https://x.com/ALMISNID/status/1561908934310612992"
+  },
+  "approval": {
+   "status": "draft",
+   "reviewer": null,
+   "date": null,
+   "note": "بانتظار اعتماد المراجع"
+  }
+ },
+ {
+  "id": "kuwait",
+  "name": {
+   "ar": "الكويت"
+  },
+  "leapDayRule": null,
+  "source": {
+   "ref": "S19",
+   "title": "«العجيري»: انكسار الحر مع طلوع سهيل 24 أغسطس (52 يوماً)، الوسم 16 أكتوبر، المربعانية 7 ديسمبر",
+   "author": "سرمد / الجريدة",
+   "year": null,
+   "page": "https://sarmad.com/289112/"
+  },
+  "approval": {
+   "status": "draft",
+   "reviewer": null,
+   "date": null,
+   "note": "بانتظار اعتماد المراجع"
+  }
+ },
+ {
+  "id": "uae_oman",
+  "name": {
+   "ar": "الإمارات وعُمان"
+  },
+  "leapDayRule": null,
+  "source": {
+   "ref": "S01",
+   "title": "حساب «الدرور» طريقة أهل الإمارات لمعرفة الطقس",
+   "author": "صحيفة الاتحاد",
+   "year": 2010,
+   "page": "https://www.aletihad.ae/article/13101/2010/"
+  },
+  "approval": {
+   "status": "draft",
+   "reviewer": null,
+   "date": null,
+   "note": "بانتظار اعتماد المراجع"
+  }
+ },
+ {
+  "id": "bh_qa_ahsa",
+  "name": {
+   "ar": "البحرين وقطر والأحساء (مقترحة)"
+  },
+  "leapDayRule": null,
+  "source": {
+   "ref": "S24",
+   "title": "Suhail star to rise in Qatar's sky on Sunday (دار التقويم القطري)",
+   "author": "قطر تريبيون / دار التقويم القطري",
+   "year": 2025,
+   "page": "https://www.qatar-tribune.com/article/190813/latest-news/suhail-star-to-rise-in-qatars-sky-on-sunday"
+  },
+  "approval": {
+   "status": "draft",
+   "reviewer": null,
+   "date": null,
+   "note": "بانتظار اعتماد المراجع"
+  }
+ }
+]
