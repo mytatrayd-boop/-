@@ -63,3 +63,8 @@ GoogleService-Info.plist
 
 # إعدادات البناء المحلية (تُنسخ من config/app_config.example.json)
 config/app_config.json
+
+# مفاتيح توقيع حزم البيانات (D21): المفتاح الخاص لا يدخل المستودع أبداً
+*.key
+*.pem
+*.ed25519
