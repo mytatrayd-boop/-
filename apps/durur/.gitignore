@@ -1,0 +1,70 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Widget Preview related
+.widget_preview/
+
+# أسرار ومفاتيح (لا تُرفع أبداً)
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+key.properties
+android/key.properties
+google-services.json
+GoogleService-Info.plist
+
+# ملاحظة: .gitignore الجذري يستثني أي مجلد اسمه data/ — لا تسمِّ مجلداً بهذا الاسم.
+
+# إعدادات البناء المحلية (تُنسخ من config/app_config.example.json)
+config/app_config.json
+
+# مفاتيح توقيع حزم البيانات (D21): المفتاح الخاص لا يدخل المستودع أبداً
+*.key
+*.pem
+*.ed25519

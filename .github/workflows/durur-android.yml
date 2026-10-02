@@ -1,0 +1,73 @@
+name: Durur — Android test APK (sample data)
+
+# يبني APK تجريبياً لـ «ديرة الدرور» ببيانات تجريبية (sample) وموقّعاً بمفتاح debug
+# (كما في android/app/build.gradle.kts). ليس للمتجر ولا للنشر العام.
+# - كل push: فحص + بناء + رفع الملف كـ artifact (يظهر لمن له صلاحية على المستودع).
+# - نشر Release تجريبي (prerelease) يحدث فقط عند التشغيل اليدوي مع اختيار publish_prerelease،
+#   لأن المستودع عام والـ Release رابط تحميل علني.
+# لا رفع لأي متجر، ولا دعوة مختبرين، ولا keystore هنا.
+on:
+  push:
+    paths: ['apps/durur/**', '.github/workflows/durur-android.yml']
+  workflow_dispatch:
+    inputs:
+      publish_prerelease:
+        description: "انشر الملف كـ GitHub prerelease تجريبي (رابط عام)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/durur } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+
+      - name: Write build config
+        # config/app_config.json مستثنى من git: من secret اختياري، وإلا من الملف المثال.
+        env: { DURUR_APP_CONFIG_JSON: "${{ secrets.DURUR_APP_CONFIG_JSON }}" }
+        run: |
+          if [ -n "$DURUR_APP_CONFIG_JSON" ]; then
+            printf '%s' "$DURUR_APP_CONFIG_JSON" > config/app_config.json
+          else
+            cp config/app_config.example.json config/app_config.json
+          fi
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      # بلا --release: البيانات تجريبية (sample-1) والمسودات تحذير لا فشل.
+      - run: dart run tool/validate_tables.dart
+
+      - name: Build APK (debug-signed, sample data)
+        run: flutter build apk --release --dart-define-from-file=config/app_config.json --build-number=${{ github.run_number }}
+      - run: cp build/app/outputs/flutter-apk/app-release.apk durur-test-sample-data.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "durur-test-sample-data-apk-${{ github.run_number }}"
+          path: apps/durur/durur-test-sample-data.apk
+
+  prerelease:
+    needs: apk
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_prerelease
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: "durur-test-sample-data-apk-${{ github.run_number }}" }
+      - name: Publish test prerelease
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release create "durur-test-v${{ github.run_number }}" durur-test-sample-data.apk \
+            --repo "${{ github.repository }}" --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title "ديرة الدرور — نسخة تجريبية ${{ github.run_number }} (بيانات تجريبية)" \
+            --notes "نسخة تجريبية للاختبار فقط: البيانات تجريبية غير معتمدة (sample-1)، والملف موقّع بمفتاح debug. ليست للمتجر ولا للاستخدام العام."

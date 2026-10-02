@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- يمنع R8 من حذف أيقونة الإشعار (تُستدعى بالاسم من Dart). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_durur" />

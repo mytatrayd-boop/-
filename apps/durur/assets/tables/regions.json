@@ -1,0 +1,6 @@
+[
+  {"id": "najd", "name": {"ar": "نجد"}, "leapDayRule": "extend_feb28", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+  {"id": "kuwait", "name": {"ar": "الكويت"}, "leapDayRule": "extend_feb28", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+  {"id": "uae_oman", "name": {"ar": "الإمارات وعُمان"}, "leapDayRule": "extend_feb28", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+  {"id": "region4", "name": {"ar": "المنطقة الرابعة (تجريبية، بانتظار قرار المالك)"}, "leapDayRule": "extend_feb28", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}}
+]

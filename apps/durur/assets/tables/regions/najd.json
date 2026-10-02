@@ -1,0 +1,22 @@
+{
+  "regionId": "najd",
+  "durur": [],
+  "dururBorrow": {"fromRegionId": "uae_oman", "note": {"ar": "الدرور حساب خليجي ساحلي موثّق في الإمارات وعُمان، وليس من التقويم النجدي. التقويم السعودي المتوارث هو المواسم والطوالع."}, "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+  "majorSeasons": [
+    {"itemId": "saif", "start": "03-03", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "qaiz", "start": "06-11", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "safari", "start": "08-15", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "shita", "start": "11-23", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}}
+  ],
+  "stars": [
+    {"itemId": "thurayya", "start": "06-07", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "dabaran", "start": "06-20", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "suhail", "start": "08-24", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}}
+  ],
+  "weatherSeasons": [
+    {"itemId": "bard_ajayiz", "start": "02-22", "end": "02-28", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "jamrat_qaiz", "start": "07-15", "end": "07-25", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "wasm", "start": "10-16", "end": "12-06", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}},
+    {"itemId": "murabbaniya", "start": "12-07", "end": "01-15", "source": {"title": "بيانات تجريبية مختلقة لاختبار الكود فقط — ليست من أي مصدر تراثي، وتُستبدل بالجداول المعتمدة", "author": null, "year": null, "page": null}, "approval": {"status": "draft", "reviewer": null, "date": null}}
+  ]
+}

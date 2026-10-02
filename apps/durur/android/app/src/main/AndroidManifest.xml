@@ -1,0 +1,85 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- الميزة 4 (ARCHITECTURE §7، D11): الموقع التقريبي فقط، قراءة واحدة. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- geolocator_android يضيف هذا الإذن لخدمة التتبع في المقدمة؛ لا نتتبع،
+         فنحذفه من الملف المدمج. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
+        tools:node="remove"/>
+    <!-- الميزة 8 (ARCHITECTURE §9، §13، D13): التنبيهات المحلية المجدولة.
+         POST_NOTIFICATIONS يُطلب وقت التشغيل على أندرويد 13+ (شرح التنبيهات).
+         RECEIVE_BOOT_COMPLETED لإعادة الجدولة بعد إعادة تشغيل الجهاز.
+         لا SCHEDULE_EXACT_ALARM ولا USE_EXACT_ALARM: الجدولة غير دقيقة
+         (inexactAllowWhileIdle)، والتأخير دقائق لا يهم لتنبيه موسمي. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- الميزة 11 (ARCHITECTURE §16، D21، بموافقة المالك): لهذا الغرض فقط —
+         طلب GET أسبوعي لملف بيانات موقّع ثابت عبر HTTPS، بلا معرّفات ولا
+         معاملات. لا ACCESS_NETWORK_STATE ولا أي إذن شبكة آخر. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application
+        android:label="ديرة الدرور"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- flutter_local_notifications: إظهار التنبيه المجدول وإعادة جدولته
+             بعد إعادة التشغيل أو تحديث التطبيق. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- url_launcher (أندرويد 11+): روابط صفحة المصادر في المتصفح (D27). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+</manifest>

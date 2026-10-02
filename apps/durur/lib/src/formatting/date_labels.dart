@@ -1,0 +1,31 @@
+import '../../l10n/app_localizations.dart';
+import '../hijri/hijri_date.dart';
+import 'digits.dart';
+
+/// نص التاريخ الهجري (أم القرى) من ملف الترجمة، مثل: ٢١ ربيع الآخر ١٤٤٨هـ.
+/// [digits] شكل الأرقام من الإعدادات (DESIGN 8.7).
+String hijriDateLabel(
+  AppLocalizations l10n,
+  HijriDate date, {
+  DigitStyle digits = DigitStyle.arabicIndic,
+}) => l10n.hijriDate(
+  formatInteger(date.day, digits),
+  'm${date.month}',
+  formatInteger(date.year, digits),
+);
+
+/// نص التاريخ الميلادي من ملف الترجمة، مثل: ٢ أكتوبر ٢٠٢٦م.
+/// يُؤخذ التاريخ فقط بلا الوقت.
+String gregorianDateLabel(
+  AppLocalizations l10n,
+  DateTime date, {
+  DigitStyle digits = DigitStyle.arabicIndic,
+}) => l10n.gregorianDate(
+  formatInteger(date.day, digits),
+  'g${date.month}',
+  formatInteger(date.year, digits),
+);
+
+/// اسم اليوم من ملف الترجمة، مثل: الجمعة.
+String weekdayLabel(AppLocalizations l10n, DateTime date) =>
+    l10n.weekdayName('w${date.weekday}');

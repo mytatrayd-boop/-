@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ديرة الدرور — أيقونة التطبيق (مصدر iOS والمتاجر)
+  1024×1024، مربع كامل بلا شفافية، بلا زوايا مستديرة (النظام يضيف القناع).
+  الفكرة: حلقة الدَّرّ (10 مقاطع = 10 أيام) ونجمة سهيل الرباعية في المركز.
+  المقطع العلوي الذهبي = «اليوم» تحت المؤشر.
+  الألوان: خلفية #1B2A4A، الحلقة #F3ECDD، الذهبي #E9C46A. التفاصيل في DESIGN.md القسم 15.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>ديرة الدرور</title>
+  <defs>
+    <!-- مقطع واحد من الحلقة في الأعلى: من -14° إلى +14° حول المركز، نصف قطر 290، سماكة 84 (الفجوة 8°) -->
+    <path id="seg" d="M441.84 230.61 A290 290 0 0 1 582.16 230.61" fill="none" stroke-width="84" stroke-linecap="butt"/>
+  </defs>
+
+  <!-- الخلفية: كحلي الليل (primary في الوضع الفاتح) -->
+  <rect x="0" y="0" width="1024" height="1024" fill="#1B2A4A"/>
+
+  <!-- حلقة الدَّرّ: 9 مقاطع رملية + المقطع العلوي ذهبي -->
+  <g stroke="#F3ECDD">
+    <use xlink:href="#seg" href="#seg" transform="rotate(36 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(72 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(108 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(144 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(180 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(216 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(252 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(288 512 512)"/>
+    <use xlink:href="#seg" href="#seg" transform="rotate(324 512 512)"/>
+  </g>
+  <use xlink:href="#seg" href="#seg" stroke="#E9C46A"/>
+
+  <!-- نجمة سهيل: رباعية الأطراف بأضلاع مقعّرة، الطول الرأسي أطول من الأفقي -->
+  <path fill="#E9C46A" d="M512 332 Q534 490 652 512 Q534 534 512 692 Q490 534 372 512 Q490 490 512 332 Z"/>
+</svg>
