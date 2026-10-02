@@ -2,6 +2,7 @@ import '../domain/item.dart';
 import '../domain/month_day.dart';
 import '../domain/region_table.dart';
 import '../domain/tables.dart';
+import '../hijri/hijri_table_validator.dart';
 
 /// نتيجة التحقق من الجداول.
 class ValidationReport {
@@ -36,6 +37,10 @@ class TableValidator {
     _checkCities(tables, errors);
     for (final table in tables.regionTables.values) {
       _checkRegionTable(table, tables, errors);
+    }
+    final hijri = tables.hijri;
+    if (hijri != null) {
+      errors.addAll(const HijriTableValidator().validate(hijri));
     }
 
     final unapproved = [

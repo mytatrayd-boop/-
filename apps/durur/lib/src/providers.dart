@@ -6,6 +6,7 @@ import 'domain/day_info.dart';
 import 'domain/region.dart';
 import 'domain/tables.dart';
 import 'engine/calendar_engine.dart';
+import 'hijri/umm_al_qura_calendar.dart';
 import 'repository/settings_repository.dart';
 import 'repository/table_repository.dart';
 
@@ -27,6 +28,12 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 final tablesProvider = FutureProvider<Tables>(
   (ref) => TableRepository().load(),
   retry: (_, _) => null,
+);
+
+/// تقويم أم القرى من الجداول المحمّلة (D22)، أو null قبل اكتمال التحميل.
+/// يتبع tablesProvider، فيتحدث مع أي إعادة تحميل للجداول (§16.5).
+final hijriCalendarProvider = Provider<UmmAlQuraCalendar?>(
+  (ref) => ref.watch(tablesProvider).value?.hijri,
 );
 
 /// الإعدادات المحفوظة. حالياً المدينة فقط؛ تُضاف مفاتيح التنبيهات

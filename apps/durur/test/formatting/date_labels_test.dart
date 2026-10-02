@@ -5,8 +5,11 @@ import 'package:durur/src/hijri/hijri_date.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/hijri_asset.dart';
+
 void main() {
   late AppLocalizations l10n;
+  final calendar = loadAssetHijriCalendar();
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('ar'));
@@ -50,7 +53,7 @@ void main() {
 
     test('اليوم الميلادي 2026-10-02 يُعرض 21 ربيع الآخر 1448', () {
       expect(
-        hijriDateLabel(l10n, HijriDate.fromGregorian(DateTime(2026, 10, 2))),
+        hijriDateLabel(l10n, HijriDate.fromGregorian(DateTime(2026, 10, 2), calendar)),
         '٢١ ربيع الآخر ١٤٤٨هـ',
       );
     });
@@ -95,7 +98,7 @@ void main() {
         !d.isAfter(DateTime.utc(2035, 12, 31));
         d = d.add(const Duration(days: 17))) {
       expect(gregorianDateLabel(l10n, d), isNot(contains(latin)));
-      expect(hijriDateLabel(l10n, HijriDate.fromGregorian(d)),
+      expect(hijriDateLabel(l10n, HijriDate.fromGregorian(d, calendar)),
           isNot(contains(latin)));
     }
   });

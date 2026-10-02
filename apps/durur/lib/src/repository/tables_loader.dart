@@ -19,6 +19,7 @@ class TablesLoader {
   static const regionsPath = '$root/regions.json';
   static const itemsPath = '$root/items.json';
   static const citiesPath = '$root/cities.json';
+  static const hijriPath = '$root/hijri_umm_al_qura.json';
   static String regionTablePath(String regionId) =>
       '$root/regions/$regionId.json';
 
@@ -38,6 +39,7 @@ class TablesLoader {
       itemsJson: await _readJson(itemsPath),
       regionTablesJson: regionTables,
       citiesJson: await _readJson(citiesPath),
+      hijriJson: await _readJson(hijriPath),
     );
   }
 

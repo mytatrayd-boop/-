@@ -1,6 +1,8 @@
 import 'package:durur/src/hijri/hijri_date.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/hijri_asset.dart';
+
 // المصدر المرجعي لكل التواريخ في هذا الملف (SPEC الميزة 2، المعيار 3):
 // تقويم أم القرى كما تنشره تطبيقات مستقلة منشورة، وقد طابقت كلها يوماً بيوم:
 //   1) Java SE 21: java.time.chrono.HijrahChronology (المعرّف Hijrah-umalqura،
@@ -14,7 +16,9 @@ import 'package:flutter_test/flutter_test.dart';
 // والخلاف مسجّل للمراجع في STATUS.md.
 
 void main() {
-  HijriDate h(DateTime d) => HijriDate.fromGregorian(d);
+  // الجدول المضمّن (D22) بدل مكتبة hijri؛ التوقعات أدناه كما هي.
+  final calendar = loadAssetHijriCalendar();
+  HijriDate h(DateTime d) => HijriDate.fromGregorian(d, calendar);
 
   group('المعيار 3: تواريخ مرجعية لأم القرى 2025–2035', () {
     // (سنة, شهر, يوم) ميلادي ← (سنة, شهر, يوم) هجري.

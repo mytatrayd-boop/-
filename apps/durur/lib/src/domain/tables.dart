@@ -1,3 +1,4 @@
+import '../hijri/umm_al_qura_calendar.dart';
 import 'city.dart';
 import 'item.dart';
 import 'json_utils.dart';
@@ -7,13 +8,22 @@ import 'region_table.dart';
 
 /// معلومات ملف meta.json.
 class TablesMeta {
-  const TablesMeta({required this.schemaVersion, required this.dataVersion});
+  const TablesMeta({
+    required this.schemaVersion,
+    required this.dataVersion,
+    this.dataSeq = 0,
+  });
 
   factory TablesMeta.fromJson(Object? json) {
     final map = asObject(json, 'meta.json');
+    final dataSeq = readOptional<int>(map, 'dataSeq', 'meta.json') ?? 0;
+    if (dataSeq < 0) {
+      throw FormatException('meta.json: dataSeq سالب ($dataSeq).');
+    }
     return TablesMeta(
       schemaVersion: readField<int>(map, 'schemaVersion', 'meta.json'),
       dataVersion: readField<String>(map, 'dataVersion', 'meta.json'),
+      dataSeq: dataSeq,
     );
   }
 
@@ -22,6 +32,10 @@ class TablesMeta {
 
   final int schemaVersion;
   final String dataVersion;
+
+  /// رقم حزمة البيانات المنشورة (ARCHITECTURE §16.3)؛ يزيد مع كل نشر.
+  /// 0 = لم تُنشر حزمة بعد.
+  final int dataSeq;
 }
 
 /// كل بيانات الجداول بعد التحميل.
@@ -32,17 +46,20 @@ class Tables {
     required this.itemList,
     required this.regionTables,
     this.cities = const [],
+    this.hijri,
   }) : items = {for (final item in itemList) item.id: item};
 
   /// يبني الجداول من JSON محلَّل (بلا Flutter، يستخدمه التطبيق والأداة والاختبارات).
   /// [regionTablesJson]: معرّف المنطقة ← محتوى `regions/<id>.json`.
   /// [citiesJson]: محتوى `cities.json` (اختياري لاختبارات المحرك).
+  /// [hijriJson]: محتوى `hijri_umm_al_qura.json` (اختياري لاختبارات المحرك).
   factory Tables.fromJson({
     required Object? metaJson,
     required Object? regionsJson,
     required Object? itemsJson,
     required Map<String, Object?> regionTablesJson,
     Object? citiesJson,
+    Object? hijriJson,
   }) {
     final meta = TablesMeta.fromJson(metaJson);
     if (meta.schemaVersion != TablesMeta.supportedSchemaVersion) {
@@ -78,6 +95,7 @@ class Tables {
       itemList: items,
       regionTables: tables,
       cities: cities,
+      hijri: hijriJson == null ? null : UmmAlQuraCalendar.fromJson(hijriJson),
     );
   }
 
@@ -92,6 +110,9 @@ class Tables {
 
   /// المدن بترتيب الملف (SPEC الميزة 3).
   final List<City> cities;
+
+  /// تقويم أم القرى (D22). التطبيق يحمّله دائماً؛ null في جداول اختبار المحرك.
+  final UmmAlQuraCalendar? hijri;
 
   City? city(String id) {
     for (final c in cities) {
@@ -111,6 +132,7 @@ class Tables {
         ...regions,
         ...itemList,
         ...cities,
+        ?hijri,
         for (final t in regionTables.values) ...t.allRecords,
       ];
 

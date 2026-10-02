@@ -294,7 +294,7 @@ packages:
     source: hosted
     version: "0.2.8"
   hijri:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: hijri
       sha256: b3f754c35bfa87fb53a5b5066e6390faf85200198a7d1b25f8dae1f14b96c47a

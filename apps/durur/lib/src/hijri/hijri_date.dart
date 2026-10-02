@@ -1,14 +1,17 @@
-import 'package:hijri/hijri_calendar.dart';
+import 'umm_al_qura_calendar.dart';
 
-/// تاريخ هجري حسب تقويم أم القرى (جدول مضمّن في مكتبة hijri، بلا إنترنت).
+/// تاريخ هجري حسب تقويم أم القرى. التحويل من جدول بيانات
+/// (`assets/tables/hijri_umm_al_qura.json`، D22) لا من مكتبة.
 class HijriDate {
   const HijriDate(this.year, this.month, this.day);
 
-  /// يحوّل يوماً ميلادياً (يُؤخذ التاريخ فقط، بلا الوقت) إلى أم القرى.
-  factory HijriDate.fromGregorian(DateTime date) {
-    final h = HijriCalendar.fromDate(DateTime(date.year, date.month, date.day));
-    return HijriDate(h.hYear, h.hMonth, h.hDay);
-  }
+  /// يحوّل يوماً ميلادياً (يُؤخذ التاريخ فقط، بلا الوقت) إلى أم القرى
+  /// بجدول [calendar]. يرمي [RangeError] خارج مدى الجدول.
+  factory HijriDate.fromGregorian(
+    DateTime date,
+    UmmAlQuraCalendar calendar,
+  ) =>
+      calendar.convert(date);
 
   final int year;
 
