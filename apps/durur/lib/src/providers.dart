@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'astronomy/heliacal.dart';
 import 'domain/city.dart';
 import 'domain/day_info.dart';
+import 'domain/local_date.dart';
 import 'domain/region.dart';
 import 'domain/tables.dart';
 import 'engine/calendar_engine.dart';
+import 'engine/year_index.dart';
 import 'hijri/umm_al_qura_calendar.dart';
 import 'location/city_locator.dart';
 import 'location/geolocator_location_service.dart';
@@ -88,13 +92,94 @@ final engineProvider = Provider<CalendarEngine?>((ref) {
   final tables = ref.watch(tablesProvider).value;
   final table = region == null ? null : tables?.regionTables[region.id];
   if (region == null || table == null) return null;
-  return CalendarEngine(region: region, table: table);
+  return CalendarEngine.fromTables(tables!, region.id);
 });
 
 /// نتيجة المحرك ليوم محلي في منطقة المدينة المختارة، أو null بلا مدينة.
+/// المفتاح يُمرَّر **مقرّباً لمنتصف الليل** (`dateOnly`)، وإلا يُنشأ مدخل
+/// جديد لكل لحظة (ARCHITECTURE §3)؛ يُفحص ذلك في وضع التطوير.
 final dayInfoProvider = Provider.family<DayInfo?, DateTime>((ref, date) {
+  assert(date == dateOnly(date), 'مفتاح dayInfoProvider غير مقرّب: $date');
   return ref.watch(engineProvider)?.resolve(date);
 });
+
+/// هل في البيانات المحمّلة سجل غير معتمد؟ (شريط «بيانات تجريبية»، DESIGN 5.7).
+/// يُحسب مرة لكل تحميل للجداول.
+final hasUnapprovedDataProvider = Provider<bool>(
+  (ref) => ref.watch(tablesProvider).value?.hasUnapproved ?? false,
+);
+
+/// نتائج كل أيام سنة لمنطقة المدينة المختارة (تغذي حلقات الدائرة)، أو null.
+final yearIndexProvider = Provider.family<YearIndex?, int>((ref, year) {
+  final engine = ref.watch(engineProvider);
+  return engine == null ? null : YearIndex(engine, year);
+});
+
+/// ساعة الجهاز؛ تُستبدل في الاختبارات بوقت ثابت.
+final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
+/// تاريخ اليوم المحلي مقرّباً لمنتصف الليل (الميزة 6). يتحدث عند منتصف
+/// الليل بمؤقت، وعند عودة التطبيق للواجهة عبر [TodayController.refresh].
+class TodayController extends Notifier<DateTime> {
+  Timer? _midnight;
+
+  @override
+  DateTime build() {
+    ref.onDispose(() => _midnight?.cancel());
+    final now = ref.watch(clockProvider)();
+    _scheduleMidnight(now);
+    return dateOnly(now);
+  }
+
+  /// يعيد قراءة الساعة (عند عودة التطبيق للواجهة أو عند منتصف الليل).
+  void refresh() {
+    final now = ref.read(clockProvider)();
+    final today = dateOnly(now);
+    if (today != state) state = today;
+    _scheduleMidnight(now);
+  }
+
+  void _scheduleMidnight(DateTime now) {
+    _midnight?.cancel();
+    final next = addDays(dateOnly(now), 1);
+    _midnight = Timer(
+      next.difference(now) + const Duration(seconds: 1),
+      refresh,
+    );
+  }
+}
+
+final todayProvider = NotifierProvider<TodayController, DateTime>(
+  TodayController.new,
+);
+
+/// التاريخ المعروض في الدائرة (مقرّب، ومحصور في 2025–2040). إن كان يعرض
+/// اليوم ثم تغيّر اليوم (منتصف الليل أو العودة في يوم جديد) يتبعه؛ وإن كان
+/// المستخدم يتصفح تاريخاً آخر لا يتغيّر عليه (DESIGN 8.4).
+class SelectedDateController extends Notifier<DateTime> {
+  @override
+  DateTime build() {
+    ref.listen<DateTime>(todayProvider, (previous, next) {
+      if (previous != null && state == DateRange.clamp(previous)) {
+        state = DateRange.clamp(next);
+      }
+    });
+    return DateRange.clamp(ref.read(todayProvider));
+  }
+
+  void select(DateTime date) {
+    final day = DateRange.clamp(date);
+    if (day != state) state = day;
+  }
+
+  void shiftDays(int days) => select(addDays(state, days));
+
+  void backToToday() => select(ref.read(todayProvider));
+}
+
+final selectedDateProvider = NotifierProvider<SelectedDateController, DateTime>(
+  SelectedDateController.new,
+);
 
 /// قراءة الموقع (geolocator)؛ تُستبدل في الاختبارات بنسخة وهمية.
 final locationServiceProvider = Provider<LocationService>(

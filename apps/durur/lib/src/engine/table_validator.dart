@@ -115,7 +115,10 @@ class TableValidator {
           'في regions.json.',
         );
       }
-      if (city.lat < -90 || city.lat > 90 || city.lon < -180 || city.lon > 180) {
+      if (city.lat < -90 ||
+          city.lat > 90 ||
+          city.lon < -180 ||
+          city.lon > 180) {
         errors.add('${city.recordPath}: إحداثيات خارج النطاق.');
       }
     }
@@ -148,11 +151,16 @@ class TableValidator {
   ) {
     final where = 'regions/${table.regionId}.json';
 
-    _checkContinuous(
-      table.durur.map((r) => r.start).toList(),
-      '$where:durur',
-      errors,
-    );
+    final borrow = table.dururBorrow;
+    if (borrow == null) {
+      _checkContinuous(
+        table.durur.map((r) => r.start).toList(),
+        '$where:durur',
+        errors,
+      );
+    } else {
+      _checkDururBorrow(table, borrow, tables, errors);
+    }
     _checkContinuous(
       table.majorSeasons.map((r) => r.start).toList(),
       '$where:majorSeasons',
@@ -210,6 +218,42 @@ class TableValidator {
     }
 
     _checkWeatherSeasonOverlap(table, where, errors);
+  }
+
+  /// استعارة الدرور (D24): إما `durur` غير فارغ أو `dururBorrow`، لا الاثنان؛
+  /// المُعيرة موجودة، ليست المنطقة نفسها، ولها درور خاصة (لا سلاسل).
+  /// `note` غير الفارغ مضمون من المحلل.
+  void _checkDururBorrow(
+    RegionTable table,
+    DururBorrow borrow,
+    Tables tables,
+    List<String> errors,
+  ) {
+    final where = borrow.recordPath;
+    if (table.durur.isNotEmpty) {
+      errors.add(
+        '$where: الجدول فيه درور خاصة واستعارة معاً؛ '
+        'المسموح أحدهما فقط.',
+      );
+    }
+    if (borrow.fromRegionId == table.regionId) {
+      errors.add('$where: المنطقة لا تستعير من نفسها.');
+      return;
+    }
+    final lender = tables.regionTables[borrow.fromRegionId];
+    if (lender == null || tables.region(borrow.fromRegionId) == null) {
+      errors.add(
+        '$where: المنطقة المُعيرة "${borrow.fromRegionId}" '
+        'غير موجودة.',
+      );
+      return;
+    }
+    if (lender.borrowsDurur || lender.durur.isEmpty) {
+      errors.add(
+        '$where: المنطقة المُعيرة "${borrow.fromRegionId}" '
+        'بلا درور خاصة (سلاسل الاستعارة ممنوعة).',
+      );
+    }
   }
 
   /// بدايات مرتبة تصاعدياً وفريدة وغير فارغة؛ الغطاء الكامل مضمون بالبناء (D6).

@@ -1,6 +1,7 @@
 import 'package:durur/src/domain/tables.dart';
 import 'package:durur/src/engine/table_validator.dart';
-import 'package:durur/src/features/home/home_screen.dart';
+import 'package:durur/l10n/app_localizations.dart';
+import 'package:durur/src/features/home/day_text.dart';
 import 'package:durur/src/hijri/umm_al_qura_calendar.dart';
 import 'package:durur/src/providers.dart';
 import 'package:flutter/material.dart';
@@ -46,13 +47,19 @@ Future<void> main() async {
         0,
       );
       expect(
-        TablesMeta.fromJson(
-            {'schemaVersion': 1, 'dataVersion': 'x', 'dataSeq': 7}).dataSeq,
+        TablesMeta.fromJson({
+          'schemaVersion': 1,
+          'dataVersion': 'x',
+          'dataSeq': 7,
+        }).dataSeq,
         7,
       );
       expect(
-        () => TablesMeta.fromJson(
-            {'schemaVersion': 1, 'dataVersion': 'x', 'dataSeq': -1}),
+        () => TablesMeta.fromJson({
+          'schemaVersion': 1,
+          'dataVersion': 'x',
+          'dataSeq': -1,
+        }),
         throwsFormatException,
       );
     });
@@ -93,26 +100,21 @@ Future<void> main() async {
       expect(container.read(hijriCalendarProvider), same(assetTables.hijri));
     });
 
-    testWidgets('تاريخ خارج مدى الجدول: يُخفى الهجري ويبقى الميلادي',
-        (tester) async {
-      await pumpScreen(
-        tester,
-        HomeScreen(today: DateTime(2050, 1, 1)),
-        prefs: await fakePrefs(),
-        tables: assetTables,
+    // الرئيسية صارت تحصر التاريخ في 2025–2040 (الميزة 6)، فحالة «خارج مدى
+    // الجدول» تُختبر في دالة سطر التاريخين التي تستخدمها الرئيسية.
+    final l10n = lookupAppLocalizations(const Locale('ar'));
+
+    test('تاريخ خارج مدى الجدول: يُحذف الهجري ويبقى الميلادي', () {
+      expect(
+        datesLine(l10n, DateTime(2050, 1, 1), hijri, isToday: true),
+        'السبت ١ يناير ٢٠٥٠م',
       );
-      expect(find.byKey(const Key('hijriDate')), findsNothing);
-      expect(find.byKey(const Key('gregorianDate')), findsOneWidget);
     });
 
-    testWidgets('آخر يوم في الجدول يُعرض هجرياً', (tester) async {
-      await pumpScreen(
-        tester,
-        HomeScreen(today: hijri.lastDay),
-        prefs: await fakePrefs(),
-        tables: assetTables,
-      );
-      expect(find.byKey(const Key('hijriDate')), findsOneWidget);
+    test('آخر يوم في الجدول يُعرض هجرياً', () {
+      final line = datesLine(l10n, hijri.lastDay, hijri, isToday: true);
+      expect(line, contains('—'));
+      expect(line, endsWith('هـ'));
     });
   });
 }

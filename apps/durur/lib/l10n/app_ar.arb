@@ -258,5 +258,382 @@
   "settingsRelocate": "تحديد موقعي مرة أخرى",
   "@settingsRelocate": {
     "description": "صف في الإعدادات (SPEC الميزة 4 بند 6، DESIGN settings.relocate)"
+  },
+  "commonToday": "اليوم",
+  "@commonToday": {
+    "description": "زر العودة إلى اليوم (DESIGN common.today)"
+  },
+  "commonClose": "إغلاق",
+  "@commonClose": {
+    "description": "زر إغلاق الورقة السفلية (DESIGN common.close)"
+  },
+  "commonSource": "المصدر: {source}",
+  "@commonSource": {
+    "description": "سطر المصدر (DESIGN common.source)",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "draftDataBanner": "بيانات تجريبية — غير معتمدة",
+  "@draftDataBanner": {
+    "description": "شريط ثابت أعلى الشاشات ما دامت في البيانات سجلات غير معتمدة (DESIGN 5.7، common.draft_data_banner)"
+  },
+  "listSeparator": "، ",
+  "@listSeparator": {
+    "description": "فاصل بين عناصر قائمة نصية (مثل رموز الجو المعتاد)"
+  },
+  "weekdayName": "{weekday, select, w1{الاثنين} w2{الثلاثاء} w3{الأربعاء} w4{الخميس} w5{الجمعة} w6{السبت} w7{الأحد} other{}}",
+  "@weekdayName": {
+    "description": "اسم اليوم. weekday بالصيغة w1..w7 (1 = الاثنين كما في DateTime.weekday)",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "gregorianMonthName": "{month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}}",
+  "@gregorianMonthName": {
+    "description": "اسم الشهر الميلادي في حلقة الأشهر. month بالصيغة g1..g12",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDatesLine": "{weekday} {gregorian} — {hijri}",
+  "@homeDatesLine": {
+    "description": "سطر التاريخين في الرئيسية، مثل: الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ. الفاصل شرطة طويلة قبلها مسافة لا تنكسر (U+00A0)؛ «·» ممنوعة بجانب الأرقام (DESIGN §3، home.dates_line)",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "gregorian": {
+        "type": "String"
+      },
+      "hijri": {
+        "type": "String"
+      }
+    }
+  },
+  "homeViewingDate": "تعرض: {date}",
+  "@homeViewingDate": {
+    "description": "سطر التاريخين عند عرض تاريخ غير اليوم (DESIGN home.viewing_date)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "homePrevDay": "اليوم السابق",
+  "@homePrevDay": {
+    "description": "زر اليوم السابق؛ الضغط المطوّل دَرّ كامل (DESIGN home.prev_day)"
+  },
+  "homeNextDay": "اليوم التالي",
+  "@homeNextDay": {
+    "description": "زر اليوم التالي؛ الضغط المطوّل دَرّ كامل (DESIGN home.next_day)"
+  },
+  "homePickDate": "اختر تاريخاً",
+  "@homePickDate": {
+    "description": "زر اختيار تاريخ (DESIGN home.pick_date)"
+  },
+  "homeDayOfDar": "اليوم {day} من {total}",
+  "@homeDayOfDar": {
+    "description": "اليوم داخل الدَّرّ بطوله الفعلي (DESIGN home.day_of_dar)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStar": "النجم",
+  "@homeStar": {
+    "description": "صف النجم في بطاقة اليوم (DESIGN home.star)"
+  },
+  "homeWeatherSeason": "موسم الجو",
+  "@homeWeatherSeason": {
+    "description": "صف موسم الجو في بطاقة اليوم (DESIGN home.weather_season)"
+  },
+  "homeNoWeatherSeason": "لا يوجد موسم جو مسمّى في هذه الأيام",
+  "@homeNoWeatherSeason": {
+    "description": "بلا موسم جو (DESIGN home.no_weather_season)"
+  },
+  "homeUsualWeather": "الجو المعتاد",
+  "@homeUsualWeather": {
+    "description": "قسم الجو المعتاد في بطاقة اليوم (DESIGN home.usual_weather)"
+  },
+  "homeDarDetails": "تفاصيل دَرّ {dar}",
+  "@homeDarDetails": {
+    "description": "صف الدَّرّ في بطاقة اليوم (DESIGN home.dar_details)",
+    "placeholders": {
+      "dar": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCalcError": "تعذّر حساب هذا اليوم.",
+  "@homeCalcError": {
+    "description": "لم يجد المحرك نتيجة (DESIGN home.calc_error)"
+  },
+  "homeDururBorrowed": "الدَّرّ حسب حساب {region}",
+  "@homeDururBorrowed": {
+    "description": "عنوان قسم الدَّرّ لمنطقة تستعير الدرور (D24)، مثل: الدَّرّ حسب حساب الإمارات وعُمان",
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "dialDururLegend": "حلقة الدرور: حساب {region}",
+  "@dialDururLegend": {
+    "description": "وسيلة إيضاح تحت الدائرة لمنطقة تستعير الدرور (D24، ARCHITECTURE §11)",
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelResetZoom": "إعادة الحجم",
+  "@wheelResetZoom": {
+    "description": "زر إعادة تكبير الدائرة إلى 1× (DESIGN wheel.reset_zoom)"
+  },
+  "wheelA11yPrefixToday": "اليوم",
+  "@wheelA11yPrefixToday": {
+    "description": "بداية نص قارئ الشاشة للدائرة حين يكون المعروض اليوم (DESIGN wheel.a11y.today)"
+  },
+  "wheelA11yPrefixViewing": "التاريخ المعروض",
+  "@wheelA11yPrefixViewing": {
+    "description": "بداية نص قارئ الشاشة للدائرة لتاريخ غير اليوم (DESIGN wheel.a11y.viewing)"
+  },
+  "wheelA11yDate": "{prefix}: {weekday}، {gregorian}، {hijri} هجري.",
+  "@wheelA11yDate": {
+    "description": "جملة التاريخ لقارئ الشاشة، gregorian وhijri بلا لاحقتي م وهـ (DESIGN wheel.a11y.date)",
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      },
+      "weekday": {
+        "type": "String"
+      },
+      "gregorian": {
+        "type": "String"
+      },
+      "hijri": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yDar": "دَرّ {dar} من {season}، اليوم {day} من {total}.",
+  "@wheelA11yDar": {
+    "description": "جملة الدَّرّ في نص قارئ الشاشة؛ total طول الدَّرّ الفعلي (DESIGN 7.7)",
+    "placeholders": {
+      "dar": {
+        "type": "String"
+      },
+      "season": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yDarBorrowed": "دَرّ {dar} من {season} حسب حساب {region}، اليوم {day} من {total}.",
+  "@wheelA11yDarBorrowed": {
+    "description": "جملة الدَّرّ المستعار (D24) في نص قارئ الشاشة",
+    "placeholders": {
+      "dar": {
+        "type": "String"
+      },
+      "season": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yMajorSeason": "الموسم: {season}.",
+  "@wheelA11yMajorSeason": {
+    "description": "جملة الموسم الكبير في نص قارئ الشاشة لمنطقة تستعير الدرور (D24: المواسم والطوالع أولاً)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yStar": "النجم: {star}.",
+  "@wheelA11yStar": {
+    "description": "جملة النجم في نص قارئ الشاشة (DESIGN 7.7)",
+    "placeholders": {
+      "star": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yWeatherSeason": "موسم الجو: {name}.",
+  "@wheelA11yWeatherSeason": {
+    "description": "جملة موسم الجو في نص قارئ الشاشة (DESIGN 7.7)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yWeather": "الجو المعتاد: {weather}.",
+  "@wheelA11yWeather": {
+    "description": "جملة الجو المعتاد في نص قارئ الشاشة (DESIGN 7.7)",
+    "placeholders": {
+      "weather": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yNone": "لا يوجد",
+  "@wheelA11yNone": {
+    "description": "لا موسم جو أو لا رموز جو (DESIGN wheel.a11y.none)"
+  },
+  "wheelA11yHint": "اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الدَّرّ.",
+  "@wheelA11yHint": {
+    "description": "تلميح قارئ الشاشة للدائرة (DESIGN wheel.a11y.hint)"
+  },
+  "wheelA11yOpenStar": "افتح صفحة النجم",
+  "@wheelA11yOpenStar": {
+    "description": "إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_star)"
+  },
+  "wheelA11yOpenSeason": "افتح صفحة الموسم",
+  "@wheelA11yOpenSeason": {
+    "description": "إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_season)"
+  },
+  "wheelA11yOpenWeatherSeason": "افتح صفحة موسم الجو",
+  "@wheelA11yOpenWeatherSeason": {
+    "description": "إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_weather_season)"
+  },
+  "wheelA11yNextDar": "انتقل دَرّاً للأمام",
+  "@wheelA11yNextDar": {
+    "description": "إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.next_dar)"
+  },
+  "wheelA11yPrevDar": "انتقل دَرّاً للخلف",
+  "@wheelA11yPrevDar": {
+    "description": "إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.prev_dar)"
+  },
+  "wheelA11yBackToToday": "العودة إلى اليوم",
+  "@wheelA11yBackToToday": {
+    "description": "إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.back_to_today)"
+  },
+  "detailTypeStar": "نجم",
+  "@detailTypeStar": {
+    "description": "نوع العنصر في ورقته (DESIGN detail.type.star)"
+  },
+  "detailTypeSeason": "موسم",
+  "@detailTypeSeason": {
+    "description": "نوع العنصر في ورقته (DESIGN detail.type.season)"
+  },
+  "detailTypeWeatherSeason": "موسم جو",
+  "@detailTypeWeatherSeason": {
+    "description": "نوع العنصر في ورقته (DESIGN detail.type.weather_season)"
+  },
+  "detailTypeDar": "دَرّ",
+  "@detailTypeDar": {
+    "description": "نوع العنصر في ورقته (DESIGN detail.type.dar)"
+  },
+  "detailRange": "من {start} إلى {end} في جدول {region}",
+  "@detailRange": {
+    "description": "تواريخ العنصر في منطقة المستخدم (DESIGN detail.range)",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherSymbolName": "{symbol, select, hot{حر} very_hot{حر شديد} mild{معتدل} cool{بارد خفيف} cold{برد} very_cold{برد شديد} wind{رياح} wind_strong{رياح شديدة} rain{مطر} heavy_rain{أمطار غزيرة} thunder{رعد وبرق} cloud{غيوم} dust{غبار} humidity{رطوبة} fog{ضباب} sea_calm{بحر هادئ} sea_rough{بحر هائج} other{}}",
+  "@weatherSymbolName": {
+    "description": "اسم رمز الجو للشرائح وقارئ الشاشة (D23، DESIGN weather.*). symbol رمز JSON مثل very_hot",
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelA11yDateValue": "{weekday}، {gregorian}، {hijri} هجري.",
+  "@wheelA11yDateValue": {
+    "description": "جملة التاريخ في قيمة الدائرة لقارئ الشاشة (value): مثل wheelA11yDate بلا البادئة، لأن البادئة («اليوم» أو «التاريخ المعروض») في label",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "gregorian": {
+        "type": "String"
+      },
+      "hijri": {
+        "type": "String"
+      }
+    }
+  },
+  "gregorianDateSpoken": "{day} {month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}} {year}",
+  "@gregorianDateSpoken": {
+    "description": "التاريخ الميلادي المسموع بلا لاحقة «م» (DESIGN 13: wheel.a11y.date)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "hijriDateSpoken": "{day} {month, select, m1{محرم} m2{صفر} m3{ربيع الأول} m4{ربيع الآخر} m5{جمادى الأولى} m6{جمادى الآخرة} m7{رجب} m8{شعبان} m9{رمضان} m10{شوال} m11{ذو القعدة} m12{ذو الحجة} other{}} {year}",
+  "@hijriDateSpoken": {
+    "description": "التاريخ الهجري المسموع بلا لاحقة «هـ» (DESIGN 13: wheel.a11y.date)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "wheelHubStar": "طالع {star}",
+  "@wheelHubStar": {
+    "description": "السطر الثاني في محور الدائرة للمنطقة المستعيرة للدرور، مثل: طالع الغفر (DESIGN wheel.hub_star، 7.8)",
+    "placeholders": {
+      "star": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOriginLink": "أصل التقويم",
+  "@homeOriginLink": {
+    "description": "رابط صفحة أصل التقويم للمنطقة المستعيرة (DESIGN home.origin_link، 7.8)"
+  },
+  "wheelA11yHintSeason": "اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.",
+  "@wheelA11yHintSeason": {
+    "description": "تلميح قارئ الشاشة للدائرة في المنطقة المستعيرة، المحور يفتح الموسم (DESIGN wheel.a11y.hint_season)"
   }
 }

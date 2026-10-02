@@ -76,6 +76,24 @@ flutter:
   assets:
     - assets/tables/
     - assets/tables/regions/
+    # رخص الخطوط (OFL) تُسجَّل في LicenseRegistry (main.dart).
+    - assets/fonts/ReemKufi-OFL.txt
+    - assets/fonts/IBMPlexSansArabic-OFL.txt
+
+  # خطوط مضمّنة برخصة SIL OFL (DESIGN §3)؛ لا تحميل من الإنترنت.
+  # الرخص في assets/fonts/*-OFL.txt. Amiri (المثل) يُضاف مع صفحة العنصر (الميزة 7).
+  fonts:
+    - family: ReemKufi
+      fonts:
+        - asset: assets/fonts/ReemKufi-Variable.ttf
+    - family: IBMPlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
+          weight: 600
 
   # To add assets to your application, add an assets section, like this:
   # assets:

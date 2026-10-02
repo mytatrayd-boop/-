@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../l10n/app_localizations.dart';
+import 'features/common/draft_banner.dart';
 import 'providers.dart';
 import 'routing/app_router.dart';
+import 'theme/app_theme.dart';
 
 /// جذر التطبيق: العربية فقط في النسخة الأولى، واتجاه من اليمين لليسار.
 class DururApp extends ConsumerStatefulWidget {
@@ -83,9 +85,10 @@ class _DururAppState extends ConsumerState<DururApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF8D6E3F)),
-      ),
+      // الوضعان حسب الجهاز؛ اختيار السمة في الإعدادات يُضاف مع ميزتها.
+      theme: buildDururTheme(Brightness.light),
+      darkTheme: buildDururTheme(Brightness.dark),
+      builder: (context, child) => DraftBannerFrame(child: child!),
       routerConfig: _router,
     );
   }

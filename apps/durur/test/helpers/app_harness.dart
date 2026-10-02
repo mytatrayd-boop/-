@@ -26,12 +26,11 @@ List<Override> appOverrides(
   SharedPreferences prefs,
   Tables? tables, [
   List<Override> extra = const [],
-]) =>
-    [
-      sharedPreferencesProvider.overrideWithValue(prefs),
-      if (tables != null) tablesProvider.overrideWith((ref) async => tables),
-      ...extra,
-    ];
+]) => [
+  sharedPreferencesProvider.overrideWithValue(prefs),
+  if (tables != null) tablesProvider.overrideWith((ref) async => tables),
+  ...extra,
+];
 
 /// التطبيق كاملاً (مع الموجّه).
 Future<void> pumpDururApp(
@@ -76,3 +75,34 @@ Future<void> pumpScreen(
   );
   await tester.pumpAndSettle();
 }
+
+/// ساعة ثابتة للجهاز (اليوم المعروض في الرئيسية).
+Override fixedClock(DateTime now) => clockProvider.overrideWithValue(() => now);
+
+/// يمرّر قائمة الرئيسية حتى [finder] (السحب على الدائرة يدوّرها لا يمرّر).
+Future<void> scrollHomeTo(WidgetTester tester, Finder finder) async {
+  final list = find
+      .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+      .first;
+  final position = tester.state<ScrollableState>(list).position;
+  for (var i = 0; i < 40 && finder.evaluate().isEmpty; i++) {
+    position.jumpTo(
+      (position.pixels + 200).clamp(0, position.maxScrollExtent).toDouble(),
+    );
+    await tester.pump();
+  }
+  await tester.ensureVisible(finder);
+  await tester.pump();
+}
+
+/// نص أصل من القرص (لاختبار زمن التحميل).
+String readAsset(String path) => File(path).readAsStringSync();
+
+/// سطر التاريخين بصيغتيه: سطر واحد بفاصل «—»، أو سطران بلا فاصل إن لم
+/// يتسع (خط الاختبار Ahem أعرض من الخط الحقيقي فينكسر غالباً).
+Finder findDatesLine(String single) => find.byWidgetPredicate(
+  (w) =>
+      w is Text &&
+      (w.data == single || w.data == single.replaceFirst(' — ', '\n')),
+  description: 'سطر التاريخين "$single"',
+);

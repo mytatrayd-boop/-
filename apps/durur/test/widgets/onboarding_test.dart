@@ -38,6 +38,9 @@ Future<void> main() async {
   }
 
   Future<void> tapKey(WidgetTester tester, Key key) async {
+    // مع تكبير الخط وشريط «بيانات تجريبية» قد يكون الزر تحت حافة الشاشة.
+    await tester.ensureVisible(find.byKey(key));
+    await tester.pump();
     await tester.tap(find.byKey(key));
     await tester.pumpAndSettle();
   }

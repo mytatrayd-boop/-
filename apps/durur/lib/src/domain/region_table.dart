@@ -133,6 +133,47 @@ class WeatherSeasonRecord implements Sourced {
   List<Source> get sources => [source];
 }
 
+/// استعارة درور منطقة أخرى (D24، عرض السعودية): المنطقة بلا درور خاصة بها
+/// تعرض درور [fromRegionId] مع سطر ثابت [note] من البيانات.
+class DururBorrow implements Sourced {
+  const DururBorrow({
+    required this.regionId,
+    required this.fromRegionId,
+    required this.note,
+    required this.source,
+    required this.approval,
+  });
+
+  factory DururBorrow.fromJson(Object? json, String regionId, String where) {
+    final map = asObject(json, where);
+    return DururBorrow(
+      regionId: regionId,
+      fromRegionId: readField<String>(map, 'fromRegionId', where),
+      note: LocalizedText.fromJson(map['note'], '$where.note'),
+      source: Source.fromJson(map['source'], where),
+      approval: Approval.fromJson(map['approval'], where),
+    );
+  }
+
+  /// المنطقة المستعيرة.
+  final String regionId;
+
+  /// المنطقة المُعيرة (جدول الدرور الفعلي).
+  final String fromRegionId;
+
+  /// السطر الثابت المعروض تحت الدَّرّ (النص المعتمد من المالك).
+  final LocalizedText note;
+  final Source source;
+  @override
+  final Approval approval;
+
+  @override
+  String get recordPath => 'regions/$regionId.json:dururBorrow';
+
+  @override
+  List<Source> get sources => [source];
+}
+
 /// جدول منطقة واحدة (`assets/tables/regions/<id>.json`).
 class RegionTable {
   const RegionTable({
@@ -141,14 +182,19 @@ class RegionTable {
     required this.majorSeasons,
     required this.stars,
     required this.weatherSeasons,
+    this.dururBorrow,
   });
 
   factory RegionTable.fromJson(Object? json, String where) {
     final map = asObject(json, where);
     final regionId = readField<String>(map, 'regionId', where);
     List<Object?> list(String key) => asList(map[key], '$where.$key');
+    final borrow = map['dururBorrow'];
     return RegionTable(
       regionId: regionId,
+      dururBorrow: borrow == null
+          ? null
+          : DururBorrow.fromJson(borrow, regionId, '$where.dururBorrow'),
       durur: [
         for (final (i, r) in list('durur').indexed)
           DarRecord.fromJson(r, regionId, '$where.durur[$i]'),
@@ -174,6 +220,17 @@ class RegionTable {
   final List<LayerRecord> stars;
   final List<WeatherSeasonRecord> weatherSeasons;
 
-  Iterable<Sourced> get allRecords =>
-      [...durur, ...majorSeasons, ...stars, ...weatherSeasons];
+  /// استعارة الدرور (D24)، أو null إن كانت للمنطقة درورها الخاصة.
+  final DururBorrow? dururBorrow;
+
+  /// هل يُستعار جدول الدرور من منطقة أخرى؟
+  bool get borrowsDurur => dururBorrow != null;
+
+  Iterable<Sourced> get allRecords => [
+    ...durur,
+    ...majorSeasons,
+    ...stars,
+    ...weatherSeasons,
+    ?dururBorrow,
+  ];
 }

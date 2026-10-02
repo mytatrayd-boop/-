@@ -16,11 +16,10 @@ import 'engine_expectations.dart';
 /// لا تفترض قيماً بعينها، فتبقى صالحة بعد استبدال البيانات التجريبية بالمعتمدة.
 Future<void> main() async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  final tables =
-      await TablesLoader((path) => File(path).readAsString()).load();
+  final tables = await TablesLoader((path) => File(path).readAsString()).load();
   final engines = {
     for (final r in tables.regions)
-      r.id: CalendarEngine(region: r, table: tables.regionTables[r.id]!),
+      r.id: CalendarEngine.fromTables(tables, r.id),
   };
   const years = (first: 2025, last: 2040);
 
@@ -61,25 +60,28 @@ Future<void> main() async {
         }
       });
 
-      test('معيار 3 و4: بداية كل دَرّ = اليوم 1، والسابق = آخر يوم في السابق',
-          () {
-        for (final y in [years.first, 2027, 2028, years.last]) {
-          for (final dar in table.durur) {
-            final start = dar.start.inYear(y);
-            final info = engine.resolve(start);
-            expect(info.dar.record, same(dar));
-            expect(info.dar.dayNumber, 1);
-            expect(info.dar.start, start);
-            expect(info.majorSeason.itemId, dar.seasonId);
+      test(
+        'معيار 3 و4: بداية كل دَرّ = اليوم 1، والسابق = آخر يوم في السابق',
+        () {
+          for (final y in [years.first, 2027, 2028, years.last]) {
+            for (final dar in table.durur) {
+              final start = dar.start.inYear(y);
+              final info = engine.resolve(start);
+              expect(info.dar.record, same(dar));
+              expect(info.dar.dayNumber, 1);
+              expect(info.dar.start, start);
+              expect(info.majorSeason.itemId, dar.seasonId);
 
-            final before =
-                engine.resolve(start.subtract(const Duration(days: 1)));
-            expect(before.dar.record, isNot(same(dar)));
-            expect(before.dar.dayNumber, before.dar.length);
-            expect(before.dar.end, start.subtract(const Duration(days: 1)));
+              final before = engine.resolve(
+                start.subtract(const Duration(days: 1)),
+              );
+              expect(before.dar.record, isNot(same(dar)));
+              expect(before.dar.dayNumber, before.dar.length);
+              expect(before.dar.end, start.subtract(const Duration(days: 1)));
+            }
           }
-        }
-      });
+        },
+      );
 
       test('نهاية السنة: 31 ديسمبر ثم 1 يناير متصلان', () {
         for (var y = years.first; y < years.last; y++) {

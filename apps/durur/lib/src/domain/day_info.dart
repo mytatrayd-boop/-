@@ -55,15 +55,23 @@ class DayInfo {
   const DayInfo({
     required this.date,
     required this.regionId,
+    String? dururRegionId,
     required this.dar,
     required this.majorSeason,
     required this.weatherSeason,
     required this.star,
-  });
+  }) : dururRegionId = dururRegionId ?? regionId;
 
   /// اليوم المحلي بصيغة UTC منتصف الليل.
   final DateTime date;
   final String regionId;
+
+  /// منطقة جدول الدرور الفعلي: المُعيرة عند الاستعارة (D24)، وإلا [regionId].
+  final String dururRegionId;
+
+  /// هل الدَّرّ مستعار من جدول منطقة أخرى؟ (D24)
+  bool get borrowsDurur => dururRegionId != regionId;
+
   final DarPeriod dar;
   final ItemPeriod majorSeason;
 

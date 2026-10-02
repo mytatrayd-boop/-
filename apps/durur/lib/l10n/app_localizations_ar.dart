@@ -211,4 +211,289 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsRelocate => 'تحديد موقعي مرة أخرى';
+
+  @override
+  String get commonToday => 'اليوم';
+
+  @override
+  String get commonClose => 'إغلاق';
+
+  @override
+  String commonSource(String source) {
+    return 'المصدر: $source';
+  }
+
+  @override
+  String get draftDataBanner => 'بيانات تجريبية — غير معتمدة';
+
+  @override
+  String get listSeparator => '، ';
+
+  @override
+  String weekdayName(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      'w1': 'الاثنين',
+      'w2': 'الثلاثاء',
+      'w3': 'الأربعاء',
+      'w4': 'الخميس',
+      'w5': 'الجمعة',
+      'w6': 'السبت',
+      'w7': 'الأحد',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String gregorianMonthName(String month) {
+    String _temp0 = intl.Intl.selectLogic(month, {
+      'g1': 'يناير',
+      'g2': 'فبراير',
+      'g3': 'مارس',
+      'g4': 'أبريل',
+      'g5': 'مايو',
+      'g6': 'يونيو',
+      'g7': 'يوليو',
+      'g8': 'أغسطس',
+      'g9': 'سبتمبر',
+      'g10': 'أكتوبر',
+      'g11': 'نوفمبر',
+      'g12': 'ديسمبر',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String homeDatesLine(String weekday, String gregorian, String hijri) {
+    return '$weekday $gregorian — $hijri';
+  }
+
+  @override
+  String homeViewingDate(String date) {
+    return 'تعرض: $date';
+  }
+
+  @override
+  String get homePrevDay => 'اليوم السابق';
+
+  @override
+  String get homeNextDay => 'اليوم التالي';
+
+  @override
+  String get homePickDate => 'اختر تاريخاً';
+
+  @override
+  String homeDayOfDar(String day, String total) {
+    return 'اليوم $day من $total';
+  }
+
+  @override
+  String get homeStar => 'النجم';
+
+  @override
+  String get homeWeatherSeason => 'موسم الجو';
+
+  @override
+  String get homeNoWeatherSeason => 'لا يوجد موسم جو مسمّى في هذه الأيام';
+
+  @override
+  String get homeUsualWeather => 'الجو المعتاد';
+
+  @override
+  String homeDarDetails(String dar) {
+    return 'تفاصيل دَرّ $dar';
+  }
+
+  @override
+  String get homeCalcError => 'تعذّر حساب هذا اليوم.';
+
+  @override
+  String homeDururBorrowed(String region) {
+    return 'الدَّرّ حسب حساب $region';
+  }
+
+  @override
+  String dialDururLegend(String region) {
+    return 'حلقة الدرور: حساب $region';
+  }
+
+  @override
+  String get wheelResetZoom => 'إعادة الحجم';
+
+  @override
+  String get wheelA11yPrefixToday => 'اليوم';
+
+  @override
+  String get wheelA11yPrefixViewing => 'التاريخ المعروض';
+
+  @override
+  String wheelA11yDate(
+    String prefix,
+    String weekday,
+    String gregorian,
+    String hijri,
+  ) {
+    return '$prefix: $weekday، $gregorian، $hijri هجري.';
+  }
+
+  @override
+  String wheelA11yDar(String dar, String season, String day, String total) {
+    return 'دَرّ $dar من $season، اليوم $day من $total.';
+  }
+
+  @override
+  String wheelA11yDarBorrowed(
+    String dar,
+    String season,
+    String region,
+    String day,
+    String total,
+  ) {
+    return 'دَرّ $dar من $season حسب حساب $region، اليوم $day من $total.';
+  }
+
+  @override
+  String wheelA11yMajorSeason(String season) {
+    return 'الموسم: $season.';
+  }
+
+  @override
+  String wheelA11yStar(String star) {
+    return 'النجم: $star.';
+  }
+
+  @override
+  String wheelA11yWeatherSeason(String name) {
+    return 'موسم الجو: $name.';
+  }
+
+  @override
+  String wheelA11yWeather(String weather) {
+    return 'الجو المعتاد: $weather.';
+  }
+
+  @override
+  String get wheelA11yNone => 'لا يوجد';
+
+  @override
+  String get wheelA11yHint =>
+      'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الدَّرّ.';
+
+  @override
+  String get wheelA11yOpenStar => 'افتح صفحة النجم';
+
+  @override
+  String get wheelA11yOpenSeason => 'افتح صفحة الموسم';
+
+  @override
+  String get wheelA11yOpenWeatherSeason => 'افتح صفحة موسم الجو';
+
+  @override
+  String get wheelA11yNextDar => 'انتقل دَرّاً للأمام';
+
+  @override
+  String get wheelA11yPrevDar => 'انتقل دَرّاً للخلف';
+
+  @override
+  String get wheelA11yBackToToday => 'العودة إلى اليوم';
+
+  @override
+  String get detailTypeStar => 'نجم';
+
+  @override
+  String get detailTypeSeason => 'موسم';
+
+  @override
+  String get detailTypeWeatherSeason => 'موسم جو';
+
+  @override
+  String get detailTypeDar => 'دَرّ';
+
+  @override
+  String detailRange(String start, String end, String region) {
+    return 'من $start إلى $end في جدول $region';
+  }
+
+  @override
+  String weatherSymbolName(String symbol) {
+    String _temp0 = intl.Intl.selectLogic(symbol, {
+      'hot': 'حر',
+      'very_hot': 'حر شديد',
+      'mild': 'معتدل',
+      'cool': 'بارد خفيف',
+      'cold': 'برد',
+      'very_cold': 'برد شديد',
+      'wind': 'رياح',
+      'wind_strong': 'رياح شديدة',
+      'rain': 'مطر',
+      'heavy_rain': 'أمطار غزيرة',
+      'thunder': 'رعد وبرق',
+      'cloud': 'غيوم',
+      'dust': 'غبار',
+      'humidity': 'رطوبة',
+      'fog': 'ضباب',
+      'sea_calm': 'بحر هادئ',
+      'sea_rough': 'بحر هائج',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String wheelA11yDateValue(String weekday, String gregorian, String hijri) {
+    return '$weekday، $gregorian، $hijri هجري.';
+  }
+
+  @override
+  String gregorianDateSpoken(String day, String month, String year) {
+    String _temp0 = intl.Intl.selectLogic(month, {
+      'g1': 'يناير',
+      'g2': 'فبراير',
+      'g3': 'مارس',
+      'g4': 'أبريل',
+      'g5': 'مايو',
+      'g6': 'يونيو',
+      'g7': 'يوليو',
+      'g8': 'أغسطس',
+      'g9': 'سبتمبر',
+      'g10': 'أكتوبر',
+      'g11': 'نوفمبر',
+      'g12': 'ديسمبر',
+      'other': '',
+    });
+    return '$day $_temp0 $year';
+  }
+
+  @override
+  String hijriDateSpoken(String day, String month, String year) {
+    String _temp0 = intl.Intl.selectLogic(month, {
+      'm1': 'محرم',
+      'm2': 'صفر',
+      'm3': 'ربيع الأول',
+      'm4': 'ربيع الآخر',
+      'm5': 'جمادى الأولى',
+      'm6': 'جمادى الآخرة',
+      'm7': 'رجب',
+      'm8': 'شعبان',
+      'm9': 'رمضان',
+      'm10': 'شوال',
+      'm11': 'ذو القعدة',
+      'm12': 'ذو الحجة',
+      'other': '',
+    });
+    return '$day $_temp0 $year';
+  }
+
+  @override
+  String wheelHubStar(String star) {
+    return 'طالع $star';
+  }
+
+  @override
+  String get homeOriginLink => 'أصل التقويم';
+
+  @override
+  String get wheelA11yHintSeason =>
+      'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.';
 }

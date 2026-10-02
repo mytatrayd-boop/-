@@ -363,6 +363,323 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تحديد موقعي مرة أخرى'**
   String get settingsRelocate;
+
+  /// زر العودة إلى اليوم (DESIGN common.today)
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get commonToday;
+
+  /// زر إغلاق الورقة السفلية (DESIGN common.close)
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get commonClose;
+
+  /// سطر المصدر (DESIGN common.source)
+  ///
+  /// In ar, this message translates to:
+  /// **'المصدر: {source}'**
+  String commonSource(String source);
+
+  /// شريط ثابت أعلى الشاشات ما دامت في البيانات سجلات غير معتمدة (DESIGN 5.7، common.draft_data_banner)
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات تجريبية — غير معتمدة'**
+  String get draftDataBanner;
+
+  /// فاصل بين عناصر قائمة نصية (مثل رموز الجو المعتاد)
+  ///
+  /// In ar, this message translates to:
+  /// **'، '**
+  String get listSeparator;
+
+  /// اسم اليوم. weekday بالصيغة w1..w7 (1 = الاثنين كما في DateTime.weekday)
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday, select, w1{الاثنين} w2{الثلاثاء} w3{الأربعاء} w4{الخميس} w5{الجمعة} w6{السبت} w7{الأحد} other{}}'**
+  String weekdayName(String weekday);
+
+  /// اسم الشهر الميلادي في حلقة الأشهر. month بالصيغة g1..g12
+  ///
+  /// In ar, this message translates to:
+  /// **'{month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}}'**
+  String gregorianMonthName(String month);
+
+  /// سطر التاريخين في الرئيسية، مثل: الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ. الفاصل شرطة طويلة قبلها مسافة لا تنكسر (U+00A0)؛ «·» ممنوعة بجانب الأرقام (DESIGN §3، home.dates_line)
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday} {gregorian} — {hijri}'**
+  String homeDatesLine(String weekday, String gregorian, String hijri);
+
+  /// سطر التاريخين عند عرض تاريخ غير اليوم (DESIGN home.viewing_date)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعرض: {date}'**
+  String homeViewingDate(String date);
+
+  /// زر اليوم السابق؛ الضغط المطوّل دَرّ كامل (DESIGN home.prev_day)
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم السابق'**
+  String get homePrevDay;
+
+  /// زر اليوم التالي؛ الضغط المطوّل دَرّ كامل (DESIGN home.next_day)
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم التالي'**
+  String get homeNextDay;
+
+  /// زر اختيار تاريخ (DESIGN home.pick_date)
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر تاريخاً'**
+  String get homePickDate;
+
+  /// اليوم داخل الدَّرّ بطوله الفعلي (DESIGN home.day_of_dar)
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم {day} من {total}'**
+  String homeDayOfDar(String day, String total);
+
+  /// صف النجم في بطاقة اليوم (DESIGN home.star)
+  ///
+  /// In ar, this message translates to:
+  /// **'النجم'**
+  String get homeStar;
+
+  /// صف موسم الجو في بطاقة اليوم (DESIGN home.weather_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'موسم الجو'**
+  String get homeWeatherSeason;
+
+  /// بلا موسم جو (DESIGN home.no_weather_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد موسم جو مسمّى في هذه الأيام'**
+  String get homeNoWeatherSeason;
+
+  /// قسم الجو المعتاد في بطاقة اليوم (DESIGN home.usual_weather)
+  ///
+  /// In ar, this message translates to:
+  /// **'الجو المعتاد'**
+  String get homeUsualWeather;
+
+  /// صف الدَّرّ في بطاقة اليوم (DESIGN home.dar_details)
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل دَرّ {dar}'**
+  String homeDarDetails(String dar);
+
+  /// لم يجد المحرك نتيجة (DESIGN home.calc_error)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حساب هذا اليوم.'**
+  String get homeCalcError;
+
+  /// عنوان قسم الدَّرّ لمنطقة تستعير الدرور (D24)، مثل: الدَّرّ حسب حساب الإمارات وعُمان
+  ///
+  /// In ar, this message translates to:
+  /// **'الدَّرّ حسب حساب {region}'**
+  String homeDururBorrowed(String region);
+
+  /// وسيلة إيضاح تحت الدائرة لمنطقة تستعير الدرور (D24، ARCHITECTURE §11)
+  ///
+  /// In ar, this message translates to:
+  /// **'حلقة الدرور: حساب {region}'**
+  String dialDururLegend(String region);
+
+  /// زر إعادة تكبير الدائرة إلى 1× (DESIGN wheel.reset_zoom)
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الحجم'**
+  String get wheelResetZoom;
+
+  /// بداية نص قارئ الشاشة للدائرة حين يكون المعروض اليوم (DESIGN wheel.a11y.today)
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get wheelA11yPrefixToday;
+
+  /// بداية نص قارئ الشاشة للدائرة لتاريخ غير اليوم (DESIGN wheel.a11y.viewing)
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ المعروض'**
+  String get wheelA11yPrefixViewing;
+
+  /// جملة التاريخ لقارئ الشاشة، gregorian وhijri بلا لاحقتي م وهـ (DESIGN wheel.a11y.date)
+  ///
+  /// In ar, this message translates to:
+  /// **'{prefix}: {weekday}، {gregorian}، {hijri} هجري.'**
+  String wheelA11yDate(
+    String prefix,
+    String weekday,
+    String gregorian,
+    String hijri,
+  );
+
+  /// جملة الدَّرّ في نص قارئ الشاشة؛ total طول الدَّرّ الفعلي (DESIGN 7.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'دَرّ {dar} من {season}، اليوم {day} من {total}.'**
+  String wheelA11yDar(String dar, String season, String day, String total);
+
+  /// جملة الدَّرّ المستعار (D24) في نص قارئ الشاشة
+  ///
+  /// In ar, this message translates to:
+  /// **'دَرّ {dar} من {season} حسب حساب {region}، اليوم {day} من {total}.'**
+  String wheelA11yDarBorrowed(
+    String dar,
+    String season,
+    String region,
+    String day,
+    String total,
+  );
+
+  /// جملة الموسم الكبير في نص قارئ الشاشة لمنطقة تستعير الدرور (D24: المواسم والطوالع أولاً)
+  ///
+  /// In ar, this message translates to:
+  /// **'الموسم: {season}.'**
+  String wheelA11yMajorSeason(String season);
+
+  /// جملة النجم في نص قارئ الشاشة (DESIGN 7.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'النجم: {star}.'**
+  String wheelA11yStar(String star);
+
+  /// جملة موسم الجو في نص قارئ الشاشة (DESIGN 7.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'موسم الجو: {name}.'**
+  String wheelA11yWeatherSeason(String name);
+
+  /// جملة الجو المعتاد في نص قارئ الشاشة (DESIGN 7.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'الجو المعتاد: {weather}.'**
+  String wheelA11yWeather(String weather);
+
+  /// لا موسم جو أو لا رموز جو (DESIGN wheel.a11y.none)
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد'**
+  String get wheelA11yNone;
+
+  /// تلميح قارئ الشاشة للدائرة (DESIGN wheel.a11y.hint)
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الدَّرّ.'**
+  String get wheelA11yHint;
+
+  /// إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_star)
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح صفحة النجم'**
+  String get wheelA11yOpenStar;
+
+  /// إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح صفحة الموسم'**
+  String get wheelA11yOpenSeason;
+
+  /// إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_weather_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح صفحة موسم الجو'**
+  String get wheelA11yOpenWeatherSeason;
+
+  /// إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.next_dar)
+  ///
+  /// In ar, this message translates to:
+  /// **'انتقل دَرّاً للأمام'**
+  String get wheelA11yNextDar;
+
+  /// إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.prev_dar)
+  ///
+  /// In ar, this message translates to:
+  /// **'انتقل دَرّاً للخلف'**
+  String get wheelA11yPrevDar;
+
+  /// إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.back_to_today)
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى اليوم'**
+  String get wheelA11yBackToToday;
+
+  /// نوع العنصر في ورقته (DESIGN detail.type.star)
+  ///
+  /// In ar, this message translates to:
+  /// **'نجم'**
+  String get detailTypeStar;
+
+  /// نوع العنصر في ورقته (DESIGN detail.type.season)
+  ///
+  /// In ar, this message translates to:
+  /// **'موسم'**
+  String get detailTypeSeason;
+
+  /// نوع العنصر في ورقته (DESIGN detail.type.weather_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'موسم جو'**
+  String get detailTypeWeatherSeason;
+
+  /// نوع العنصر في ورقته (DESIGN detail.type.dar)
+  ///
+  /// In ar, this message translates to:
+  /// **'دَرّ'**
+  String get detailTypeDar;
+
+  /// تواريخ العنصر في منطقة المستخدم (DESIGN detail.range)
+  ///
+  /// In ar, this message translates to:
+  /// **'من {start} إلى {end} في جدول {region}'**
+  String detailRange(String start, String end, String region);
+
+  /// اسم رمز الجو للشرائح وقارئ الشاشة (D23، DESIGN weather.*). symbol رمز JSON مثل very_hot
+  ///
+  /// In ar, this message translates to:
+  /// **'{symbol, select, hot{حر} very_hot{حر شديد} mild{معتدل} cool{بارد خفيف} cold{برد} very_cold{برد شديد} wind{رياح} wind_strong{رياح شديدة} rain{مطر} heavy_rain{أمطار غزيرة} thunder{رعد وبرق} cloud{غيوم} dust{غبار} humidity{رطوبة} fog{ضباب} sea_calm{بحر هادئ} sea_rough{بحر هائج} other{}}'**
+  String weatherSymbolName(String symbol);
+
+  /// جملة التاريخ في قيمة الدائرة لقارئ الشاشة (value): مثل wheelA11yDate بلا البادئة، لأن البادئة («اليوم» أو «التاريخ المعروض») في label
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday}، {gregorian}، {hijri} هجري.'**
+  String wheelA11yDateValue(String weekday, String gregorian, String hijri);
+
+  /// التاريخ الميلادي المسموع بلا لاحقة «م» (DESIGN 13: wheel.a11y.date)
+  ///
+  /// In ar, this message translates to:
+  /// **'{day} {month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}} {year}'**
+  String gregorianDateSpoken(String day, String month, String year);
+
+  /// التاريخ الهجري المسموع بلا لاحقة «هـ» (DESIGN 13: wheel.a11y.date)
+  ///
+  /// In ar, this message translates to:
+  /// **'{day} {month, select, m1{محرم} m2{صفر} m3{ربيع الأول} m4{ربيع الآخر} m5{جمادى الأولى} m6{جمادى الآخرة} m7{رجب} m8{شعبان} m9{رمضان} m10{شوال} m11{ذو القعدة} m12{ذو الحجة} other{}} {year}'**
+  String hijriDateSpoken(String day, String month, String year);
+
+  /// السطر الثاني في محور الدائرة للمنطقة المستعيرة للدرور، مثل: طالع الغفر (DESIGN wheel.hub_star، 7.8)
+  ///
+  /// In ar, this message translates to:
+  /// **'طالع {star}'**
+  String wheelHubStar(String star);
+
+  /// رابط صفحة أصل التقويم للمنطقة المستعيرة (DESIGN home.origin_link، 7.8)
+  ///
+  /// In ar, this message translates to:
+  /// **'أصل التقويم'**
+  String get homeOriginLink;
+
+  /// تلميح قارئ الشاشة للدائرة في المنطقة المستعيرة، المحور يفتح الموسم (DESIGN wheel.a11y.hint_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.'**
+  String get wheelA11yHintSeason;
 }
 
 class _AppLocalizationsDelegate
