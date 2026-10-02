@@ -36,6 +36,26 @@ class AppLocalizationsAr extends AppLocalizations {
       'm12': 'ذو الحجة',
       'other': '',
     });
-    return '$day $_temp0 $year هـ';
+    return '$day $_temp0 $yearهـ';
+  }
+
+  @override
+  String gregorianDate(String day, String month, String year) {
+    String _temp0 = intl.Intl.selectLogic(month, {
+      'g1': 'يناير',
+      'g2': 'فبراير',
+      'g3': 'مارس',
+      'g4': 'أبريل',
+      'g5': 'مايو',
+      'g6': 'يونيو',
+      'g7': 'يوليو',
+      'g8': 'أغسطس',
+      'g9': 'سبتمبر',
+      'g10': 'أكتوبر',
+      'g11': 'نوفمبر',
+      'g12': 'ديسمبر',
+      'other': '',
+    });
+    return '$day $_temp0 $yearم';
   }
 }

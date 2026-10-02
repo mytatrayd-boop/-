@@ -17,19 +17,23 @@ void main() {
         findsOneWidget);
   });
 
-  testWidgets('الشاشة تعرض التاريخ الهجري بأم القرى', (tester) async {
+  testWidgets('الشاشة تعرض التاريخين الهجري والميلادي بالعربية (الميزة 2)',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: DururApp.arabic,
         supportedLocales: const [DururApp.arabic],
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: HomeScreen(today: DateTime(2026, 2, 18)),
+        home: HomeScreen(today: DateTime(2026, 10, 2, 9, 30)),
       ),
     );
     await tester.pumpAndSettle();
 
-    final hijri = tester.widget<Text>(find.byKey(const Key('hijriDate')));
-    expect(hijri.data, contains('رمضان'));
-    expect(hijri.data, endsWith('هـ'));
+    final hijri = find.byKey(const Key('hijriDate'));
+    final gregorian = find.byKey(const Key('gregorianDate'));
+    expect(tester.widget<Text>(hijri).data, '٢١ ربيع الآخر ١٤٤٨هـ');
+    expect(tester.widget<Text>(gregorian).data, '٢ أكتوبر ٢٠٢٦م');
+    expect(Directionality.of(tester.element(hijri)), TextDirection.rtl);
+    expect(Directionality.of(tester.element(gregorian)), TextDirection.rtl);
   });
 }
