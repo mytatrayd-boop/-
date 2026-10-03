@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { runScan } from './scan.js';
 import { createMassiveStore } from './massive.js';
 import { diskStorage } from './disk-storage.js';
-import { buildProviders } from './providers.js';
+import { buildProviders, trendFor } from './providers.js';
 import { statusLights } from './status.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -25,6 +25,8 @@ const LOOKALIKES = Object.keys(process.env).filter(k => /massive|polygon|alpha|v
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, '..', 'data'));
 const PORT = Number(process.env.PORT) || 3000;
 const SYNC_EVERY_MS = 60 * 60 * 1000;
+// نتائج المختبر (lab/results) — تُقرأ من القرص عند كل طلب، فتظهر فور ما يكتبها المختبر
+const LAB_DIR = path.resolve(process.env.RASED_LAB_DIR || path.join(ROOT, '..', 'lab', 'results'));
 
 const store = MASSIVE_KEY ? createMassiveStore({ apiKey: MASSIVE_KEY, storage: diskStorage(DATA_DIR) }) : null;
 const DEMO = !MASSIVE_KEY && !API_KEY;
@@ -61,6 +63,25 @@ async function handleScan(req, res) {
   sendJson(res, status, out);
 }
 
+async function handleTrend(req, res) {
+  const sym = new URL(req.url, 'http://x').searchParams.get('sym');
+  try {
+    sendJson(res, 200, await trendFor(providers, sym));
+  } catch (e) {
+    const status = e.code === 'bad_symbol' || e.code === 'no_massive' ? 400 : e.code === 'rate_limited' ? 429 : 502;
+    sendJson(res, status, { error: e.message, code: e.code || 'error' });
+  }
+}
+
+// top5 كما هو؛ backtest: نرسل الأسابيع والحساب فقط (الصفقات كثيرة والواجهة ما تحتاجها)
+async function handleLab(res, which) {
+  let data;
+  try { data = JSON.parse(await readFile(path.join(LAB_DIR, which + '.json'), 'utf8')); }
+  catch { return sendJson(res, 404, { error: 'ما فيه نتائج اختبار بعد — المختبر يشتغل كل سبت.', code: 'no_results' }); }
+  if (which === 'backtest') data = { generatedAt: data.generatedAt, source: data.source, dataFrom: data.dataFrom, dataTo: data.dataTo, weeks: data.weeks || [], account: data.account || null };
+  sendJson(res, 200, data);
+}
+
 async function serveStatic(req, res) {
   const urlPath = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   const rel = urlPath === '/' ? 'index.html' : urlPath.replace(/^\/+/, '');
@@ -78,6 +99,10 @@ export const server = http.createServer(async (req, res) => {
     if (req.url.startsWith('/api/')) {
       if (req.url === '/api/health' && req.method === 'GET') return sendJson(res, 200, health());
       if (req.url === '/api/scan' && req.method === 'POST') return await handleScan(req, res);
+      const route = new URL(req.url, 'http://x').pathname;
+      if (route === '/api/trend' && req.method === 'GET') return await handleTrend(req, res);
+      if (route === '/api/lab/top5' && req.method === 'GET') return await handleLab(res, 'top5');
+      if (route === '/api/lab/backtest' && req.method === 'GET') return await handleLab(res, 'backtest');
       return sendJson(res, 404, { error: 'مسار غير معروف.' });
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }

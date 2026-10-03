@@ -1,5 +1,6 @@
 // بيانات مصطنعة للوضع التجريبي فقط (بدون مفتاح). الواجهة توسمها بوضوح "تجريبي".
 // ثابتة لكل (سهم، يوم) حتى يكون العرض قابلاً للتكرار.
+import { etParts } from './trend.js';
 
 function seedFrom(str) {
   let h = 2166136261;
@@ -29,6 +30,64 @@ export function demoBars(symbol, days = 100) {
     out.o.push(open); out.h.push(hi); out.l.push(lo); out.c.push(close);
     out.v.push(Math.round(baseVol * (0.7 + r() * 0.6) * (i === days - 1 ? spike : 1)));
     price = close;
+  }
+  return out;
+}
+
+/* ---------- شموع 5 دقائق مصطنعة (تبويب الاتجاهات، وضع تجريبي) ---------- */
+const DAY_MS = 86400000;
+// وقت UTC لدقيقة بتوقيت نيويورك في يوم معيّن (نجرب الصيفي −4 والشتوي −5 ونأخذ المطابق)
+function etToUtc(date, minutes) {
+  const [y, m, d] = date.split('-').map(Number);
+  for (const off of [240, 300]) {
+    const t = Date.UTC(y, m - 1, d) + (minutes + off) * 60000;
+    const e = etParts(t);
+    if (e.date === date && e.minutes === minutes) return t;
+  }
+  return Date.UTC(y, m - 1, d) + (minutes + 300) * 60000;
+}
+const isoDay = ms => new Date(ms).toISOString().slice(0, 10);
+
+// أسبوع سابق كامل + الأسبوع الحالي حتى nowMs. ثابتة لكل (سهم، أسبوع): نفس المدخلات = نفس الشموع.
+// قمم الأسبوع الماضي هابطة على خط واحد (مقاومة)، وفي ~60% من الأسهم يُكسر الخط يوم الاثنين بحجم مرتفع،
+// بعدها يتجه السعر صعودًا أو هبوطًا أو يتذبذب. البقية بلا كسر. بيانات مصطنعة — ليست السوق الحقيقي.
+export function demoBars5m(symbol, nowMs = Date.now()) {
+  const now = etParts(nowMs);
+  const [ny, nm, nd] = now.date.split('-').map(Number);
+  const monday = Date.UTC(ny, nm - 1, nd) - (now.weekday - 1) * DAY_MS;
+  const weekKey = isoDay(monday);
+  const r = rng(seedFrom('trend5m' + symbol + weekKey));
+  const base = 30 + r() * 300;
+  const unit = base * 0.0012;                  // حجم الحركة النموذجية لشمعة
+  const period = 18 + Math.floor(r() * 12);    // طول الموجة بالشموع
+  const amp = unit * (3 + r() * 3);
+  const slope = -unit * (0.08 + r() * 0.08);   // ميل الخط الهابط لكل شمعة
+  const phase = Math.floor(r() * period);
+  const breaks = r() < 0.6;
+  const breakBar = 15 + Math.floor(r() * 30);  // شمعة الكسر يوم الاثنين (10:45 تقريبًا حتى 13:15)
+  const after = r();                           // اتجاه ما بعد الكسر
+  const drift = after < 0.45 ? unit * 0.05 : after < 0.75 ? -unit * 0.05 : 0;
+  const baseVol = Math.round(20000 + r() * 200000);
+  const days = [];
+  for (let k = -7; k < 5; k++) { const d = monday + k * DAY_MS, wd = new Date(d).getUTCDay(); if (wd !== 0 && wd !== 6) days.push({ date: isoDay(d), cur: k >= 0, mon: k === 0 }); }
+  const out = { t: [], o: [], h: [], l: [], c: [], v: [] };
+  const wave = g => base + slope * g + amp * Math.sin(2 * Math.PI * (g + phase) / period);
+  let g = 0, prev = wave(0), broke = false, walk = 0;
+  bars: for (const day of days) for (let k = 0; k < 78; k++, g++) {
+    const t = etToUtc(day.date, 570 + 5 * k);
+    const noise = (r() - 0.5) * unit * 0.6, wick = unit * (0.2 + r() * 0.5), vm = 0.6 + r() * 0.8;
+    let c, vol = baseVol * vm;
+    if (!broke && day.mon && breaks && k === breakBar) {
+      c = wave(g) - amp * Math.sin(2 * Math.PI * (g + phase) / period) + amp * 1.6; // فوق الخط بوضوح
+      vol = baseVol * 4; broke = true; walk = c;
+    } else if (broke) {
+      walk += drift + (r() - 0.5) * unit * 1.4; c = walk;
+    } else c = wave(g) + noise;
+    if (!(c > 0)) c = prev;
+    if (t + 5 * 60000 > nowMs) break bars; // الشمعة لم تكتمل بعد
+    const o = prev;
+    out.t.push(t); out.o.push(o); out.h.push(Math.max(o, c) + wick); out.l.push(Math.min(o, c) - wick); out.c.push(c); out.v.push(Math.round(vol));
+    prev = c;
   }
   return out;
 }
@@ -103,4 +162,5 @@ export const demoProviders = {
   profile: sym => DEMO_COMPANIES[sym] ? { name: DEMO_COMPANIES[sym][0], exchange: DEMO_COMPANIES[sym][1] } : null,
   news: async sym => ({ news: demoNews(sym) }),
   earnings: async syms => ({ calendar: demoEarnings(syms) }),
+  trend5m: async sym => { const bars = demoBars5m(sym); return { bars, demo: true, dataAsOf: bars.t.length ? bars.t[bars.t.length - 1] : null }; },
 };

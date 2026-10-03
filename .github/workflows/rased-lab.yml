@@ -1,0 +1,102 @@
+name: Rased — Trend Lab
+
+# مختبر الاتجاهات: ينزّل شموع 5 دقائق ← يشغّل الحساب الوهمي ← شبكة المعاملات ← الترتيب ← التقرير،
+# ثم يرجع lab/results/ للفرع نفسه. المصدر Massive إن وُجد السر MASSIVE_API_KEY، وإلا Yahoo (60 يوم).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 6' # كل سبت 06:00 UTC
+  push:
+    paths: ['lab/**', 'server/trend.js', '.github/workflows/rased-lab.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rased-lab-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300 # التنزيل الأول من Massive (سنتان، 5 طلبات/دقيقة) ≈ ساعة وأكثر
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - run: npm test
+
+      - name: Week key
+        id: week
+        run: echo "key=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+      # مفتاح بالأسبوع: إعادة التشغيل بنفس الأسبوع تستعيد البيانات (والملفات الحديثة < 12 ساعة لا يُعاد تنزيلها)،
+      # وأسبوع جديد يبدأ من بيانات الأسبوع السابق ويكمّل تدريجيًا بدل التنزيل من الصفر.
+      - uses: actions/cache@v4
+        with:
+          path: lab/data
+          key: rased-lab-data-${{ steps.week.outputs.key }}-${{ github.run_id }}
+          restore-keys: |
+            rased-lab-data-${{ steps.week.outputs.key }}-
+            rased-lab-data-
+
+      - name: Fetch 5-minute bars
+        env:
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: node lab/fetch.mjs
+
+      - name: Backtest (paper account)
+        run: node lab/backtest.mjs
+
+      - name: Parameter sweep (walk-forward)
+        run: node lab/backtest.mjs --sweep
+
+      - name: Rank
+        run: if [ -f lab/rank.mjs ]; then node lab/rank.mjs; else echo "lab/rank.mjs غير موجود بعد — تخطّي"; fi
+
+      - name: Report
+        run: if [ -f lab/report.mjs ]; then node lab/report.mjs; else echo "lab/report.mjs غير موجود بعد — تخطّي"; fi
+
+      - name: Account summary
+        if: always()
+        run: |
+          [ -f lab/results/backtest.json ] || exit 0
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync("lab/results/backtest.json", "utf8"));
+            const a = r.account, pct = x => x === null ? "-" : Math.round(x * 100) + "%";
+            const rows = [
+              "## Rased Trend Lab — paper account",
+              "",
+              `Data: **${r.source}** ${r.dataFrom} → ${r.dataTo}, ${r.universe.length} symbols, ${r.weeks.length} weeks`,
+              "",
+              "| start | end | return | max DD | trades | win rate | avg R | profit factor |",
+              "|---|---|---|---|---|---|---|---|",
+              `| ${a.start} | ${a.end} | ${a.returnPct}% | ${a.maxDrawdownPct}% | ${a.trades} | ${pct(a.winRate)} | ${a.avgR ?? "-"} | ${a.profitFactor ?? "-"} |`,
+            ];
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, rows.join("\n") + "\n");
+          '
+          [ -f lab/results/REPORT.md ] && { echo; cat lab/results/REPORT.md; } >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rased-lab-results-${{ github.run_number }}
+          path: lab/results
+          if-no-files-found: ignore
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lab/results
+          if git diff --cached --quiet; then echo "لا تغيير في النتائج"; exit 0; fi
+          git commit -m "lab: results $(date -u +%F) [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            echo "محاولة $i فشلت — إعادة بعد $((i * 5)) ث"
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 5))
+          done
+          exit 1

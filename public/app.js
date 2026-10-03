@@ -30,9 +30,10 @@ const persist = () => save('rased.settings', settings);
 function show(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
-  $('#scanBtn').hidden = view === 'settings' || view === 'yaqeen';
+  $('#scanBtn').hidden = view === 'settings' || view === 'yaqeen' || view === 'trends';
   window.scrollTo({ top: 0 });
   if (view === 'home') requestAnimationFrame(drawCharts);
+  if (view === 'trends') openTrends();
 }
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => show(t.dataset.view)));
 
@@ -226,7 +227,7 @@ function drawChart(canvas, p) {
   line(target, '#3fb950'); line(stop, '#f0605a'); line(entry, '#4fa3e3', true);
 }
 let resizeTimer;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 120); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { drawCharts(); drawTrendCharts(); }, 120); });
 
 /* ---------- all tickers list ---------- */
 document.querySelectorAll('.seg-btn').forEach(b => b.addEventListener('click', () => {
@@ -334,6 +335,392 @@ $('#resetBtn').addEventListener('click', e => {
   settings = structuredClone(DEFAULTS); persist(); renderSettings(); renderYaqeen(); toast('تم الاسترجاع.', 'ok');
 });
 
+/* ---------- الاتجاهات: أفضل 5 من المختبر + شارت 5 دقائق ---------- */
+// المصادر: مضمّنة وقت البناء (window.RASED_LAB) → آخر نسخة محفوظة → تحديث من الخادم أو GitHub وقت التشغيل.
+const LAB_RAW = 'https://raw.githubusercontent.com/mytatrayd-boop/-/claude/mobile-app-design-gxh65v/lab/results/';
+const DEMO_TREND_SYMS = ['AAPL', 'MSFT', 'NVDA', 'AMD', 'META'];
+const TREND_TTL_MS = 10 * 60 * 1000;
+const slimBacktest = b => b && typeof b === 'object' ? { generatedAt: b.generatedAt, source: b.source, dataFrom: b.dataFrom, dataTo: b.dataTo, weeks: Array.isArray(b.weeks) ? b.weeks : [], account: b.account || null } : null;
+const okTop5 = t => !!(t && Array.isArray(t.top) && t.top.length);
+const okBacktest = b => !!(b && (b.account || (b.weeks && b.weeks.length)));
+const newer = (a, b) => !a ? b || null : !b ? a : String(b.generatedAt || '') > String(a.generatedAt || '') ? b : a;
+let lab = (() => {
+  const e = window.RASED_LAB || {}, c = load('rased.lab', {}) || {};
+  return { top5: newer(okTop5(e.top5) ? e.top5 : null, okTop5(c.top5) ? c.top5 : null), backtest: newer(okBacktest(e.backtest) ? slimBacktest(e.backtest) : null, okBacktest(c.backtest) ? c.backtest : null) };
+})();
+let labRefreshedAt = 0;
+let serverMode = null;            // وضع الخادم من /api/health: { demo, massive }
+const trendData = new Map();      // sym → { status: 'loading'|'ok'|'error', data, error, code, at }
+let trendQueue = [], trendBusy = false, trendObserver = null;
+
+const trendsOpen = () => { const v = $('#view-trends'); return !!(v && v.classList.contains('active')); };
+function trendMode() {
+  if (LOCAL && LOCAL.keys) { const k = LOCAL.keys(); return { demo: !k.massive && !k.alpha, massive: !!k.massive }; }
+  if (LOCAL) return { demo: true, massive: false };   // النسخة المستقلة: تجريبية دائمًا
+  return serverMode || { demo: false, massive: true }; // قبل وصول /api/health نحاول ونعرض الخطأ إن وُجد
+}
+function trendSymbols() {
+  if (okTop5(lab.top5)) return lab.top5.top.slice(0, 5).map(x => String(x.sym).toUpperCase());
+  return trendMode().demo ? DEMO_TREND_SYMS : [];
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+// نجرب كل مصدر بالترتيب؛ أي فشل صامت (المختبر قد لا يكون كتب نتائج بعد)
+async function refreshLab() {
+  if (Date.now() - labRefreshedAt < TREND_TTL_MS) return;
+  labRefreshedAt = Date.now();
+  const bases = LOCAL ? [LAB_RAW] : ['api/lab/', LAB_RAW];
+  const get = async which => {
+    for (const base of bases) {
+      try { return await fetchJson(base + (base === LAB_RAW ? which + '.json' : which)); } catch { /* المصدر التالي */ }
+    }
+    return null;
+  };
+  const [t, b] = await Promise.all([get('top5'), get('backtest')]);
+  let changed = false;
+  if (okTop5(t) && newer(lab.top5, t) === t && t !== lab.top5) { lab.top5 = t; changed = true; }
+  const sb = okBacktest(b) ? slimBacktest(b) : null;
+  if (sb && newer(lab.backtest, sb) === sb && sb !== lab.backtest) { lab.backtest = sb; changed = true; }
+  if (changed) { save('rased.lab', lab); if (trendsOpen()) renderTrends(); }
+}
+
+async function trendRequest(sym) {
+  if (LOCAL) {
+    if (!LOCAL.trend) throw Object.assign(new Error('هذي النسخة ما فيها شارت الاتجاهات.'), { code: 'unsupported' });
+    return LOCAL.trend(sym);
+  }
+  const res = await fetch('api/trend?sym=' + encodeURIComponent(sym), { cache: 'no-store' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error || `الخادم رد بالحالة ${res.status}`), { code: data.code });
+  return data;
+}
+
+// طابور واحد: سهم بعد سهم (الخطة المجانية 5 طلبات/دقيقة، مشتركة مع المزامنة اليومية)
+function queueTrend(sym, front = false) {
+  const cur = trendData.get(sym);
+  // الخطأ لا يُعاد تلقائيًا عند التمرير (زر «إعادة المحاولة» أو إعادة فتح التبويب)
+  if (cur && (cur.status === 'loading' || cur.status === 'error' || (cur.status === 'ok' && Date.now() - cur.at < TREND_TTL_MS))) return;
+  trendQueue = trendQueue.filter(s => s !== sym);
+  if (front) trendQueue.unshift(sym); else trendQueue.push(sym);
+  pumpTrends();
+}
+async function pumpTrends() {
+  if (trendBusy) return;
+  const sym = trendQueue.shift();
+  if (!sym) return;
+  trendBusy = true;
+  trendData.set(sym, { status: 'loading', at: Date.now() });
+  updateTrendCard(sym);
+  try {
+    const data = await trendRequest(sym);
+    trendData.set(sym, { status: 'ok', data, at: Date.now() });
+  } catch (e) {
+    const msg = e.message === 'Failed to fetch' ? 'ما قدرنا نوصل للخادم — تأكد من الاتصال.' : e.message;
+    trendData.set(sym, { status: 'error', error: msg, code: e.code, at: Date.now() });
+    if (e.code === 'no_massive') { trendQueue = []; if (!LOCAL) serverMode = { demo: false, massive: false }; }
+  } finally {
+    trendBusy = false;
+    if (trendData.get(sym).code === 'no_massive') renderTrends(); else updateTrendCard(sym);
+    pumpTrends();
+  }
+}
+
+function openTrends() {
+  for (const [sym, st] of trendData) if (st.status === 'error') trendData.delete(sym);
+  renderTrends();
+  refreshLab();
+}
+
+/* --- تنسيق --- */
+const AR_DAYS = { Mon: 'الاثنين', Tue: 'الثلاثاء', Wed: 'الأربعاء', Thu: 'الخميس', Fri: 'الجمعة', Sat: 'السبت', Sun: 'الأحد' };
+let etFmt = null;
+function etInfo(ms) {
+  if (!etFmt) etFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const q = {};
+  for (const x of etFmt.formatToParts(new Date(ms))) q[x.type] = x.value;
+  return { date: `${q.year}-${q.month}-${q.day}`, day: AR_DAYS[q.weekday] || q.weekday, wd: q.weekday, time: `${q.hour === '24' ? '00' : q.hour}:${q.minute}` };
+}
+const rateTxt = x => Number.isFinite(+x) && x !== null ? fmt(+x <= 1 ? +x * 100 : +x, 0) + '%' : '—';
+const rTxt = x => Number.isFinite(+x) && x !== null ? (+x > 0 ? '+' : '') + fmt(+x, 2) + 'R' : '—';
+const usdTxt = (x, d = 0) => Number.isFinite(+x) && x !== null ? (+x < 0 ? '-$' : '$') + fmt(Math.abs(+x), d) : '—';
+const pctTxt = x => Number.isFinite(+x) && x !== null ? (+x > 0 ? '+' : '') + fmt(+x, 1) + '%' : '—';
+
+function trendChip(live) {
+  if (!live) return ['none', '—'];
+  switch (live.state) {
+    case 'waiting': return ['wait', 'ينتظر الكسر (الاثنين)'];
+    case 'entered': return ['in', 'دخلنا الصفقة'];
+    case 'closed': return live.exit && live.exit.how === 'target' ? ['win', 'ضرب الهدف ✓'] : ['loss', 'ضرب الوقف ✗'];
+    case 'no-signal': return ['none', 'ما فيه كسر هذا الأسبوع'];
+    case 'week-over': return ['over', 'انتهى الأسبوع'];
+    default: return ['none', 'ما فيه بيانات'];
+  }
+}
+
+/* --- الرسم --- */
+function renderTrends() {
+  const mode = trendMode(), syms = trendSymbols(), hasTop = okTop5(lab.top5);
+  const keyMissing = !mode.demo && !mode.massive;
+  const t = lab.top5;
+  $('#trendsMeta').innerHTML = hasTop
+    ? `أفضل 5 أسهم استجابت لهذي الصيغة في المختبر · نتائج <span class="mono">${esc(String(t.generatedAt || '').slice(0, 10))}</span>${t.minTrades ? ` · أقل عدد صفقات ${esc(t.minTrades)}` : ''}`
+    : 'أفضل 5 أسهم استجابت لهذي الصيغة في المختبر — شموع 5 دقائق، دخول الاثنين فقط';
+  let notice = '';
+  if (mode.demo) notice += '<div class="demo-warn">⚠️ <b>وضع تجريبي:</b> شموع الـ5 دقائق هنا <b>مصطنعة</b> عشان تشوف شكل الشارت — ما تطابق السعر الحقيقي. أضف مفتاح Massive للبيانات الحقيقية.</div>';
+  if (keyMissing) notice += `<div class="tnotice"><div class="big">🔑</div><div><b>الشارت يحتاج مفتاح Massive — الإعدادات ← المفاتيح</b><div class="hint">نتائج المختبر تظهر تحت، لكن شموع الـ5 دقائق تجي من Massive بس.${LOCAL && LOCAL.setKeys ? '' : ' في الخادم: أضف MASSIVE_API_KEY في متغيرات Railway.'}</div>${LOCAL && LOCAL.setKeys ? '<button type="button" class="btn-sm" data-go="settings">افتح الإعدادات</button>' : ''}</div></div>`;
+  $('#trendsNotice').innerHTML = notice;
+
+  const cards = $('#trendCards');
+  let html = '';
+  if (!hasTop) {
+    html += `<div class="placeholder"><div class="big">🧪</div>ما فيه نتائج اختبار بعد — المختبر يشتغل كل سبت.<br><span class="hint">أول ما يخلص الاختبار التاريخي تظهر هنا أفضل 5 أسهم مع شارت الأسبوع.</span></div>`;
+    if (syms.length) html += '<div class="tsection">معاينة تجريبية — أسهم عشوائية، مو نتائج المختبر</div>';
+  }
+  html += syms.map((sym, i) => `<article class="pick tcard" data-sym="${esc(sym)}" data-rank="${hasTop ? i + 1 : ''}"></article>`).join('');
+  cards.innerHTML = html;
+  syms.forEach(updateTrendCard);
+  renderPaper();
+
+  if (keyMissing) return;
+  // تحميل كسول: الطابور يبدأ بفتح التبويب، والبطاقة الظاهرة تتقدم الطابور
+  if (trendObserver) trendObserver.disconnect();
+  if ('IntersectionObserver' in window) {
+    trendObserver = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) queueTrend(e.target.dataset.sym, true); }), { rootMargin: '120px' });
+    cards.querySelectorAll('.tcard').forEach(c => trendObserver.observe(c));
+  }
+  syms.forEach(s => queueTrend(s));
+}
+
+function updateTrendCard(sym) {
+  const card = document.querySelector(`.tcard[data-sym="${CSS.escape(sym)}"]`);
+  if (!card) return;
+  const st = trendData.get(sym), d = st && st.status === 'ok' ? st.data : null, live = d && d.live;
+  const entry = okTop5(lab.top5) ? lab.top5.top.find(x => String(x.sym).toUpperCase() === sym) : null;
+  const mode = trendMode(), keyMissing = !mode.demo && !mode.massive;
+  const [chipCls, chipTxt] = d ? trendChip(live) : st && st.status === 'error' ? ['err', 'تعذّر الجلب'] : keyMissing ? ['none', 'بدون شارت'] : ['load', 'يحمّل…'];
+  const name = d && d.profile && d.profile.name;
+  const rank = card.dataset.rank;
+  const stats = entry ? `<div class="tstats">
+      <div><span class="n mono">${esc(entry.trades ?? '—')}</span><span class="l">صفقات</span></div>
+      <div><span class="n mono">${rateTxt(entry.winRate)}</span><span class="l">نسبة الربح</span></div>
+      <div><span class="n mono ${+entry.avgR > 0 ? 'pos' : +entry.avgR < 0 ? 'neg' : ''}">${rTxt(entry.avgR)}</span><span class="l">متوسط R</span></div>
+      <div><span class="n mono">${entry.oos && entry.oos.trades ? rTxt(entry.oos.avgR) : '—'}</span><span class="l">خارج العينة${entry.oos && entry.oos.trades ? ` · ${esc(entry.oos.trades)}` : ''}</span></div>
+    </div>${entry.why ? `<p class="hint twhy">${esc(entry.why)}</p>` : ''}` : '';
+
+  let body;
+  if (d) {
+    const s = live.signal, x = live.exit;
+    const levels = s ? `<div class="levels">
+        <div class="lvl en"><span class="lbl">الدخول</span><span class="val">${fmt(s.entry)}</span><span class="pct">${esc(etInfo(s.entryT).day)} ${esc(etInfo(s.entryT).time)}</span></div>
+        <div class="lvl tp"><span class="lbl">الهدف</span><span class="val">${fmt(s.target)}</span><span class="pct">${pctTxt(pct(s.entry, s.target))}</span></div>
+        <div class="lvl sl"><span class="lbl">الوقف</span><span class="val">${fmt(s.stop)}</span><span class="pct">${pctTxt(pct(s.entry, s.stop))}</span></div>
+      </div>` : '';
+    let note = '';
+    if (x) note = `خرجنا ${x.how === 'target' ? 'عند الهدف' : x.how === 'stop' ? 'عند الوقف' : 'بإغلاق الجمعة'} <span class="mono">${fmt(x.price)}</span> · النتيجة <b class="mono ${live.r > 0 ? 'pos' : 'neg'}">${rTxt(live.r)}</b> (<span class="mono">${pctTxt(live.pct * 100)}</span>)`;
+    else if (s) note = `صفقة مفتوحة · آخر سعر <span class="mono">${fmt(live.last.price)}</span> (<span class="mono">${pctTxt(pct(s.entry, live.last.price))}</span>)`;
+    else if (live.pendingBreak) note = `كسر على آخر شمعة (إغلاق <span class="mono">${fmt(live.pendingBreak.close)}</span> فوق الخط <span class="mono">${fmt(live.pendingBreak.lineValue)}</span>) — الدخول بافتتاح الشمعة التالية`;
+    else if (live.line) note = `خط المقاومة الآن عند <span class="mono">${fmt(live.line.p1 + live.line.slope * (d.bars.t.length - 1 - live.line.i1))}</span> · ${esc(live.line.touches || 2)} لمسات`;
+    else note = 'ما فيه خط هابط واضح على الشموع الحالية.';
+    let asOf = '';
+    if (d.dataAsOf) {
+      const a = etInfo(d.dataAsOf), today = etInfo(Date.now()).date;
+      asOf = a.date === today
+        ? `آخر شمعة: ${esc(a.day)} <span class="mono">${a.date} ${a.time}</span> بتوقيت نيويورك`
+        : `آخر بيانات: ${esc(a.day)} <span class="mono">${a.date} ${a.time}</span> بتوقيت نيويورك${d.demo ? '' : ' — الخطة المجانية ما فيها بيانات لحظية'}`;
+    }
+    body = `<div class="tchart-wrap"><canvas class="tchart" data-sym="${esc(sym)}"></canvas></div>
+      <div class="tlegend"><span class="lg line">خط المقاومة</span>${s ? '<span class="lg en">دخول</span><span class="lg sl">وقف</span><span class="lg tp">هدف</span>' : ''}</div>
+      ${levels}
+      <p class="tnote">${note}</p>
+      <div class="tfoot">${d.demo ? '<span class="tag yq">تجريبي</span>' : ''}<span>${asOf || 'ما فيه شموع بعد'}</span></div>`;
+  } else if (st && st.status === 'error') {
+    body = `<div class="tchart-wrap msg err"><div>⚠️ ${esc(st.error)}</div>${st.code === 'no_massive' ? '' : `<button type="button" class="btn-sm" data-retry="${esc(sym)}">إعادة المحاولة</button>`}</div>`;
+  } else if (keyMissing) {
+    body = `<div class="tchart-wrap msg"><div>الشارت يحتاج مفتاح Massive — الإعدادات ← المفاتيح</div></div>`;
+  } else {
+    body = `<div class="tchart-wrap msg loading"><div class="spin"></div><div>${st && st.status === 'loading' ? 'يجلب شموع 5 دقائق…' : 'بالدور — نجلب سهم سهم عشان حد الطلبات'}</div></div>`;
+  }
+  card.innerHTML = `
+    <div class="pick-head">
+      <div>
+        <div class="pick-sym"><span class="sym">${esc(sym)}</span>${rank ? `<span class="rank">#${rank}</span>` : ''}</div>
+        ${name ? `<div class="pick-co">${esc(name)}${d.profile.exchange ? ` <span class="exch">${esc(d.profile.exchange)}</span>` : ''}</div>` : ''}
+      </div>
+      <span class="tchip ${chipCls}">${chipTxt}</span>
+    </div>
+    ${stats}
+    ${body}`;
+  if (d) requestAnimationFrame(() => { const cv = card.querySelector('canvas.tchart'); if (cv) drawTrendChart(cv, d); });
+}
+$('#view-trends').addEventListener('click', e => {
+  const r = e.target.closest('[data-retry]');
+  if (r) { trendData.delete(r.dataset.retry); queueTrend(r.dataset.retry, true); return; }
+  const g = e.target.closest('[data-go]');
+  if (g) show(g.dataset.go);
+});
+
+function drawTrendCharts() {
+  document.querySelectorAll('canvas.tchart').forEach(cv => { const st = trendData.get(cv.dataset.sym); if (st && st.data) drawTrendChart(cv, st.data); });
+  const eq = document.querySelector('canvas.equity'); if (eq && lab.backtest) drawEquity(eq, lab.backtest);
+}
+const cssVar = (n, fb) => (getComputedStyle(document.documentElement).getPropertyValue(n) || '').trim() || fb;
+
+function canvas2d(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width) return null;
+  const dpr = window.devicePixelRatio || 1, w = rect.width, h = rect.height;
+  canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+// ملصقات الأسعار على الهامش الأيمن بدون تداخل
+function priceLabels(ctx, items, x0, wLab, top, bottom) {
+  items.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < items.length; i++) if (items[i].y - items[i - 1].y < 16) items[i].y = items[i - 1].y + 16;
+  const over = items.length ? items[items.length - 1].y - (bottom - 8) : 0;
+  if (over > 0) items.forEach(it => { it.y -= over; });
+  items.forEach(it => { if (it.y < top + 8) it.y = top + 8; });
+  ctx.font = '600 10px "IBM Plex Mono", monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  for (const it of items) {
+    ctx.fillStyle = it.color; ctx.beginPath(); ctx.roundRect(x0, it.y - 8, wLab, 16, 4); ctx.fill();
+    ctx.fillStyle = '#0a0d12'; ctx.fillText(it.text, x0 + wLab / 2, it.y + 0.5);
+  }
+}
+
+function drawTrendChart(canvas, d) {
+  const c2 = canvas2d(canvas); if (!c2) return;
+  const { ctx, w, h } = c2, b = d.bars, live = d.live || {}, n = b.t ? b.t.length : 0;
+  const C = { buy: cssVar('--buy', '#3fb950'), sell: cssVar('--sell', '#f0605a'), info: cssVar('--info', '#4fa3e3'), news: cssVar('--news', '#f2b134'), muted: cssVar('--muted2', '#5b6674'), border: cssVar('--border', '#232a36'), text: cssVar('--muted', '#8b96a5') };
+  if (!n) { ctx.fillStyle = C.text; ctx.font = '13px "IBM Plex Sans Arabic", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('ما فيه شموع', w / 2, h / 2); return; }
+  // الأسبوع الأخير (+ ذيل الأسبوع الماضي إذا بدأ الخط هناك)
+  const info = b.t.map(etInfo);
+  const mondayKey = i => { const [y, m, dd] = info[i].date.split('-').map(Number); const k = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(info[i].wd); return new Date(Date.UTC(y, m - 1, dd) - k * 86400000).toISOString().slice(0, 10); };
+  const lastKey = mondayKey(n - 1);
+  let start = n - 1;
+  while (start > 0 && mondayKey(start - 1) === lastKey) start--;
+  const L = live.line, s = live.signal, x = live.exit;
+  if (L && L.i1 < start) start = Math.max(0, L.i1 - 4);
+  const count = n - start;
+  const lineAt = i => L.p1 + L.slope * (i - L.i1);
+  let lo = Infinity, hi = -Infinity;
+  for (let i = start; i < n; i++) { lo = Math.min(lo, b.l[i]); hi = Math.max(hi, b.h[i]); }
+  if (L) for (const i of [Math.max(start, L.i1), n - 1]) { const v = lineAt(i); if (v > 0) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }
+  if (s) { lo = Math.min(lo, s.stop); hi = Math.max(hi, s.target); }
+  const padY = (hi - lo) * 0.06 || 1; lo -= padY; hi += padY;
+  const mL = 6, mR = 56, mT = 18, mB = 8, pw = w - mL - mR, ph = h - mT - mB;
+  const X = i => mL + ((i - start + 0.5) / count) * pw;
+  const Y = v => mT + (1 - (v - lo) / (hi - lo)) * ph;
+  const bw = Math.max(1, (pw / count) * 0.7);
+
+  // فواصل الأيام وأسماؤها
+  ctx.font = '10px "IBM Plex Sans Arabic", sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  let dayStart = start;
+  for (let i = start; i <= n; i++) {
+    if (i < n && info[i].date === info[dayStart].date) continue;
+    if (dayStart > start) { ctx.strokeStyle = C.border; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(X(dayStart) - pw / count / 2, mT - 4); ctx.lineTo(X(dayStart) - pw / count / 2, h - mB); ctx.stroke(); ctx.setLineDash([]); }
+    const mid = (X(dayStart) + X(i - 1)) / 2;
+    if (X(i - 1) - X(dayStart) > 34) { ctx.fillStyle = mondayKey(dayStart) === lastKey ? C.text : C.muted; ctx.fillText(info[dayStart].day, mid, 8); }
+    dayStart = i;
+  }
+
+  // الشموع
+  for (let i = start; i < n; i++) {
+    const up = b.c[i] >= b.o[i];
+    ctx.strokeStyle = ctx.fillStyle = up ? C.buy : C.sell; ctx.lineWidth = 1;
+    if (bw > 2) { ctx.beginPath(); ctx.moveTo(X(i), Y(b.h[i])); ctx.lineTo(X(i), Y(b.l[i])); ctx.stroke(); }
+    const top = Math.min(Y(b.o[i]), Y(b.c[i]));
+    if (bw > 2) ctx.fillRect(X(i) - bw / 2, top, bw, Math.max(Math.abs(Y(b.c[i]) - Y(b.o[i])), 1));
+    else ctx.fillRect(X(i) - bw / 2, Y(b.h[i]), bw, Math.max(Y(b.l[i]) - Y(b.h[i]), 1)); // شموع كثيفة: عمود المدى فقط
+  }
+
+  const labels = [];
+  // خط المقاومة: صلب بين نقطتيه، متقطع امتداده حتى آخر شمعة
+  if (L) {
+    const a = Math.max(start, L.i1);
+    ctx.save(); ctx.beginPath(); ctx.rect(mL, mT - 2, pw, ph + 4); ctx.clip();
+    ctx.strokeStyle = C.news; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(X(a), Y(lineAt(a))); ctx.lineTo(X(L.i2), Y(lineAt(L.i2))); ctx.stroke();
+    ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(X(L.i2), Y(lineAt(L.i2))); ctx.lineTo(X(n - 1), Y(lineAt(n - 1))); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = C.news;
+    for (const i of [L.i1, L.i2]) if (i >= start) { ctx.beginPath(); ctx.arc(X(i), Y(L.p1 + L.slope * (i - L.i1)), 3.5, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+    if (!s) labels.push({ y: Y(lineAt(n - 1)), color: C.news, text: fmt(lineAt(n - 1)) });
+  }
+  // الدخول / الوقف / الهدف من شمعة الإشارة حتى النهاية
+  if (s) {
+    const from = X(Math.max(start, s.idx));
+    const hline = (v, color, dash) => { ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash(dash ? [5, 4] : []); ctx.beginPath(); ctx.moveTo(from, Y(v)); ctx.lineTo(w - mR, Y(v)); ctx.stroke(); ctx.setLineDash([]); labels.push({ y: Y(v), color, text: fmt(v) }); };
+    hline(s.target, C.buy); hline(s.stop, C.sell); hline(s.entry, C.info, true);
+    // علامة الدخول: مثلث تحت شمعة الدخول + نقطة على سعر الدخول
+    const ex = X(s.entryIdx), ey = Y(s.entry), by = Math.min(h - mB - 1, Y(b.l[s.entryIdx]) + 12);
+    ctx.fillStyle = C.info; ctx.beginPath(); ctx.moveTo(ex, by - 8); ctx.lineTo(ex - 6, by + 2); ctx.lineTo(ex + 6, by + 2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(ex, ey, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    if (x) {
+      const xc = x.how === 'target' ? C.buy : x.how === 'stop' ? C.sell : C.text;
+      ctx.fillStyle = xc; ctx.beginPath(); ctx.arc(X(x.idx), Y(x.price), 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  } else if (live.pendingBreak) {
+    ctx.strokeStyle = C.news; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(live.pendingBreak.idx), Y(live.pendingBreak.close), 6, 0, Math.PI * 2); ctx.stroke();
+  }
+  if (!s) labels.push({ y: Y(b.c[n - 1]), color: C.text, text: fmt(b.c[n - 1]) });
+  priceLabels(ctx, labels, w - mR + 3, mR - 5, mT, h - mB);
+}
+
+/* --- الحساب الوهمي --- */
+function renderPaper() {
+  const el = $('#paperAccount'), bt = lab.backtest;
+  if (!okBacktest(bt)) {
+    el.innerHTML = `<h2 class="view-title">الحساب الوهمي</h2><div class="placeholder small"><div class="big">📒</div>ما فيه نتائج اختبار بعد — المختبر يشتغل كل سبت.</div>`;
+    return;
+  }
+  const a = bt.account || {}, weeks = bt.weeks || [];
+  const dd = Number.isFinite(+a.maxDrawdownPct) && a.maxDrawdownPct !== null ? '-' + fmt(Math.abs(+a.maxDrawdownPct), 1) + '%' : '—';
+  const span = bt.dataFrom && bt.dataTo ? `<span class="mono">${esc(String(bt.dataFrom).slice(0, 10))}</span> ← <span class="mono">${esc(String(bt.dataTo).slice(0, 10))}</span>` : '';
+  el.innerHTML = `
+    <h2 class="view-title">الحساب الوهمي</h2>
+    <p class="hint">اختبار تاريخي: ${usdTxt(a.start ?? 10000)} بداية، مخاطرة 1% لكل صفقة، حتى 5 صفقات مع بعض${span ? ' · ' + span : ''}${bt.source ? ` · المصدر ${esc(bt.source)}` : ''}</p>
+    <div class="pstats">
+      <div class="stat wide"><div class="n">${usdTxt(a.start ?? 10000)} <span class="arrow">←</span> <b class="${+a.end >= +(a.start ?? 10000) ? 'pos' : 'neg'}">${usdTxt(a.end)}</b></div><div class="l">رأس المال: البداية ← النهاية</div></div>
+      <div class="stat"><div class="n ${+a.returnPct > 0 ? 'pos' : +a.returnPct < 0 ? 'neg' : ''}">${pctTxt(a.returnPct)}</div><div class="l">العائد</div></div>
+      <div class="stat"><div class="n neg">${dd}</div><div class="l">أقصى تراجع</div></div>
+      <div class="stat"><div class="n">${rateTxt(a.winRate)}</div><div class="l">نسبة الربح${a.trades ? ` · ${esc(a.trades)} صفقة` : ''}</div></div>
+    </div>
+    ${weeks.length ? `<div class="card"><div class="card-title">رأس المال نهاية كل أسبوع</div><canvas class="equity"></canvas></div>
+    <div class="card wtable-card"><div class="card-title">الأسابيع (${weeks.length})</div><div class="wtable" role="table">
+      <div class="wrow wh" role="row"><span>الأسبوع</span><span>صفقات</span><span>رابحة</span><span>الربح/الخسارة</span></div>
+      ${weeks.slice().reverse().map(wk => `<div class="wrow" role="row"><span class="mono">${esc(String(wk.weekKey || '').slice(0, 10))}</span><span class="mono">${esc(wk.trades ?? 0)}</span><span class="mono">${esc(wk.wins ?? 0)}</span><span class="mono ${+wk.pnl > 0 ? 'pos' : +wk.pnl < 0 ? 'neg' : ''}">${+wk.pnl > 0 ? '+' : ''}${usdTxt(wk.pnl)}</span></div>`).join('')}
+    </div></div>` : ''}`;
+  requestAnimationFrame(() => { const cv = el.querySelector('canvas.equity'); if (cv) drawEquity(cv, bt); });
+}
+
+function drawEquity(canvas, bt) {
+  const c2 = canvas2d(canvas); if (!c2) return;
+  const { ctx, w, h } = c2, weeks = bt.weeks || [], start = +((bt.account && bt.account.start) ?? 10000);
+  const pts = [start, ...weeks.map(wk => +wk.equityEnd)].filter(Number.isFinite);
+  if (pts.length < 2) return;
+  const liq = cssVar('--liq', '#2dd4bf'), muted = cssVar('--muted2', '#5b6674'), text = cssVar('--muted', '#8b96a5'), sell = cssVar('--sell', '#f0605a');
+  let lo = Math.min(...pts), hi = Math.max(...pts); const pad = (hi - lo) * 0.1 || start * 0.01; lo -= pad; hi += pad;
+  const mL = 8, mR = 58, mT = 8, mB = 18, pw = w - mL - mR, ph = h - mT - mB;
+  const X = i => mL + (i / (pts.length - 1)) * pw, Y = v => mT + (1 - (v - lo) / (hi - lo)) * ph;
+  // خط البداية
+  ctx.strokeStyle = muted; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(mL, Y(start)); ctx.lineTo(w - mR, Y(start)); ctx.stroke(); ctx.setLineDash([]);
+  // مساحة + خط
+  const g = ctx.createLinearGradient(0, mT, 0, h - mB); g.addColorStop(0, 'rgba(45,212,191,.28)'); g.addColorStop(1, 'rgba(45,212,191,0)');
+  ctx.beginPath(); pts.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))); ctx.lineTo(X(pts.length - 1), h - mB); ctx.lineTo(X(0), h - mB); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+  ctx.beginPath(); pts.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))); ctx.strokeStyle = liq; ctx.lineWidth = 2; ctx.stroke();
+  const last = pts[pts.length - 1];
+  ctx.fillStyle = last >= start ? liq : sell; ctx.beginPath(); ctx.arc(X(pts.length - 1), Y(last), 3.5, 0, Math.PI * 2); ctx.fill();
+  priceLabels(ctx, [{ y: Y(last), color: last >= start ? liq : sell, text: '$' + fmt(last, 0) }, { y: Y(start), color: muted, text: '$' + fmt(start, 0) }], w - mR + 3, mR - 5, mT, h - mB);
+  ctx.fillStyle = text; ctx.font = '10px "IBM Plex Mono", monospace'; ctx.textBaseline = 'middle';
+  const first = weeks[0] && String(weeks[0].weekKey || '').slice(0, 10), end = weeks[weeks.length - 1] && String(weeks[weeks.length - 1].weekKey || '').slice(0, 10);
+  ctx.textAlign = 'left'; if (first) ctx.fillText(first, mL, h - 7);
+  ctx.textAlign = 'right'; if (end) ctx.fillText(end, w - mR, h - 7);
+}
+
 /* ---------- keys (تطبيق الأندرويد) ---------- */
 function renderKeys() {
   if (!LOCAL || !LOCAL.setKeys) return;
@@ -348,6 +735,7 @@ $('#keysCard').addEventListener('submit', e => {
   if (!m && !a) return toast('الصق مفتاح واحد على الأقل.', 'err');
   LOCAL.setKeys({ massive: m || LOCAL.rawKeys().massive, alpha: a || LOCAL.rawKeys().alpha });
   $('#massiveKey').value = ''; $('#alphaKey').value = '';
+  trendData.clear(); trendQueue = []; // شموع الاتجاهات تُعاد بالمفتاح الجديد
   renderKeys(); refreshStatusOnce(); toast('انحفظت المفاتيح. المزامنة بدأت — شوف الإشارة فوق.', 'ok');
 });
 renderKeys();
@@ -378,6 +766,8 @@ function refreshHealth() {
   if (LOCAL) return setStatus(LOCAL_STATUS);
   fetch('api/health').then(r => r.json()).then(h => {
     setStatus(h.status || { level: h.demo ? 'red' : 'green', badge: h.demo ? 'تجريبي' : 'حقيقي', lights: [] });
+    const m = { demo: !!h.demo, massive: !!h.demo || !!h.market };
+    if (!serverMode || serverMode.demo !== m.demo || serverMode.massive !== m.massive) { serverMode = m; if (trendsOpen()) renderTrends(); }
   }).catch(() => setStatus({ level: 'red', badge: 'غير متصل', lights: [{ level: 'red', label: 'ما قدرت أوصل للخادم', fix: 'تأكد إن خدمة Railway شغالة وإن الإنترنت عندك شغال.' }] }))
     .finally(() => setTimeout(refreshHealth, 60000)); // الإشارة تتحدث كل دقيقة (تقدّم التعبئة، يوم جديد، أخطاء)
 }

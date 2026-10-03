@@ -5,6 +5,7 @@
 // ⚠️ شكل الرد مبني على توثيق Massive/Polygon — لم يُلاحظ رد حي بعد (الشبكة هنا تحجب النطاق).
 // شغّل `npm run check:massive` مرة بمفتاحك قبل الاعتماد عليه. المحلل دفاعي: أي صف ناقص يُتجاهل.
 // بدون أي اعتماد على Node: التخزين يُمرَّر كمحوّل (قرص في الخادم، IndexedDB في تطبيق الأندرويد).
+import { etParts } from './trend.js';
 
 const ENV = typeof process !== 'undefined' && process.env ? process.env : {}; // غير موجود داخل تطبيق الأندرويد
 const BASE = (ENV.MASSIVE_API_BASE || 'https://api.polygon.io').replace(/\/+$/, '');
@@ -21,11 +22,7 @@ export class MassiveError extends Error {
 
 // Grouped Daily → [[ticker, o, h, l, c, v], ...]
 export function parseGroupedDaily(payload) {
-  if (!payload || typeof payload !== 'object') throw new MassiveError('bad_shape', 'رد Massive غير متوقع.');
-  if (payload.status === 'ERROR' || payload.status === 'NOT_AUTHORIZED') {
-    throw new MassiveError(/exceeded|maximum requests/i.test(payload.error || payload.message || '') ? 'rate_limited' : 'not_authorized',
-      'Massive: ' + String(payload.error || payload.message || payload.status).slice(0, 200));
-  }
+  checkPayload(payload);
   if (!('results' in payload) && !('resultsCount' in payload)) throw new MassiveError('bad_shape', 'رد Massive بدون results. بداية الرد: ' + JSON.stringify(payload).slice(0, 200));
   const rows = [];
   for (const r of Array.isArray(payload.results) ? payload.results : []) {
@@ -35,6 +32,39 @@ export function parseGroupedDaily(payload) {
     rows.push([t, ...vals]);
   }
   return rows; // فاضي = عطلة/نهاية أسبوع أو اليوم لم يُنشر بعد
+}
+
+// فحص رد الخطأ المشترك بين طلبات Massive
+function checkPayload(payload) {
+  if (!payload || typeof payload !== 'object') throw new MassiveError('bad_shape', 'رد Massive غير متوقع.');
+  if (payload.status === 'ERROR' || payload.status === 'NOT_AUTHORIZED') {
+    throw new MassiveError(/exceeded|maximum requests/i.test(payload.error || payload.message || '') ? 'rate_limited' : 'not_authorized',
+      'Massive: ' + String(payload.error || payload.message || payload.status).slice(0, 200));
+  }
+}
+
+// شموع 5 دقائق (/v2/aggs/ticker/SYM/range/5/minute/…) → bars بالجلسة النظامية فقط (09:30–16:00 نيويورك، يراعي التوقيت الصيفي)
+export function parseAggs5m(payload) {
+  checkPayload(payload);
+  if (!('results' in payload) && !('resultsCount' in payload)) throw new MassiveError('bad_shape', 'رد شموع 5 دقائق بدون results. بداية الرد: ' + JSON.stringify(payload).slice(0, 200));
+  const rows = [];
+  for (const r of Array.isArray(payload.results) ? payload.results : []) {
+    if (!r) continue;
+    const t = Number(r.t), vals = [r.o, r.h, r.l, r.c].map(Number), v = Number(r.v) || 0;
+    if (!Number.isFinite(t) || vals.some(x => !Number.isFinite(x) || x <= 0)) continue;
+    const e = etParts(t);
+    if (e.weekday > 5 || e.minutes < 570 || e.minutes >= 960) continue; // قبل/بعد الجلسة
+    rows.push([t, ...vals, v]);
+  }
+  rows.sort((a, b) => a[0] - b[0]);
+  const out = { t: [], o: [], h: [], l: [], c: [], v: [] };
+  let prev = -1;
+  for (const [t, o, h, l, c, v] of rows) {
+    if (t === prev) continue; // تكرار
+    prev = t;
+    out.t.push(t); out.o.push(o); out.h.push(h); out.l.push(l); out.c.push(c); out.v.push(v);
+  }
+  return out;
 }
 
 // رمز البورصة (MIC) → اسم يعرفه المستخدم، عشان يفرّق بين الرموز المتشابهة
@@ -87,13 +117,13 @@ export function createMassiveStore({ apiKey, storage, log = console.log }) {
   let bars = new Map();
   let commonStocks = null; // Set
   let tickerInfo = {};     // sym → {name, exchange}
-  let lastCallAt = 0;
+  let nextSlot = 0;        // موعد الطلب التالي: يُحجز فورًا فتصطف الطلبات المتزامنة (المزامنة + شموع 5 دقائق) بفاصل 12.5 ث
   const state = { ready: false, syncing: false, lastDay: null, days: 0, tickers: 0, commonStocks: 0, error: null, progress: null };
 
   async function call(url) {
-    const wait = lastCallAt + FREE_GAP_MS - Date.now();
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
-    lastCallAt = Date.now();
+    const now = Date.now(), at = Math.max(now, nextSlot);
+    nextSlot = at + FREE_GAP_MS;
+    if (at > now) await new Promise(r => setTimeout(r, at - now));
     const u = new URL(url); u.searchParams.set('apiKey', apiKey);
     let res;
     try { res = await fetch(u.toString(), { signal: AbortSignal.timeout(60000) }); }
@@ -198,8 +228,15 @@ export function createMassiveStore({ apiKey, storage, log = console.log }) {
     return out;
   }
 
+  // شموع 5 دقائق لسهم واحد — نفس طابور الطلبات (الخطة المجانية: حتى إغلاق آخر يوم، مو لحظي)
+  async function aggs5m(sym, fromMs, toMs) {
+    if (!/^[A-Z][A-Z0-9.\-]{0,9}$/.test(sym)) throw new MassiveError('bad_symbol', 'رمز غير صالح.');
+    const from = etParts(fromMs).date, to = etParts(toMs).date;
+    return parseAggs5m(await call(`${BASE}/v2/aggs/ticker/${encodeURIComponent(sym)}/range/5/minute/${from}/${to}?adjusted=true&sort=asc&limit=50000`));
+  }
+
   return {
-    state, loadFromDisk, sync, universe,
+    state, loadFromDisk, sync, universe, aggs5m,
     profile: sym => tickerInfo[sym] || null,
     bars: sym => { const b = bars.get(sym); if (!b) throw new MassiveError('no_data', 'لا توجد بيانات لهذا الرمز في Massive.'); return b; },
   };

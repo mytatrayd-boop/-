@@ -3,11 +3,15 @@
 // الناتج جزء HTML بدون <html>/<head>/<body> — مناسب للنشر كـ Claude Artifact.
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { buildPage, ROOT } from './bundle.mjs';
+import { buildPage, labScript, ROOT } from './bundle.mjs';
 
 const out = await buildPage({
-  modules: ['engine', 'demo', 'scan'],
-  init: `window.RASED_LOCAL = { runScan: req => __mods.scan.runScan(req, __mods.demo.demoProviders) };`,
+  modules: ['engine', 'trend', 'massive', 'alphavantage', 'demo', 'providers', 'scan'],
+  init: `${await labScript()}
+window.RASED_LOCAL = {
+  runScan: req => __mods.scan.runScan(req, __mods.demo.demoProviders),
+  trend: sym => __mods.providers.trendFor(__mods.demo.demoProviders, sym),
+};`,
   css: `
 /* النسخة المستقلة: إطار العرض يضيف هامش المنطقة الآمنة للصفحة، فالرأس اللاصق يلتصق تحته */
 .topbar{top:env(safe-area-inset-top,0px);padding-top:10px;}

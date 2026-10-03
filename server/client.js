@@ -1,7 +1,7 @@
 // تطبيق الأندرويد: نفس منطق الخادم لكن يشتغل داخل الجوال — يجلب من Massive و Alpha Vantage مباشرة
 // بالمفاتيح اللي يدخلها المستخدم، ويخزّن أيام السوق في IndexedDB. بدون أي اعتماد على Node.
 import { createMassiveStore } from './massive.js';
-import { buildProviders } from './providers.js';
+import { buildProviders, trendFor } from './providers.js';
 import { statusLights } from './status.js';
 import { runScan } from './scan.js';
 
@@ -54,6 +54,8 @@ export function createClientApp({ storage, keysStore, log = () => {} }) {
 
   return {
     runScan: req => runScan(req, providers),
+    // شموع 5 دقائق + حالة الإشارة لتبويب الاتجاهات: { sym, bars, live, demo, dataAsOf, profile }
+    trend: sym => trendFor(providers, sym),
     status: () => statusLights({ massiveKey: !!keys.massive, alphaKey: !!keys.alpha, persistentData: true, market: store ? { ...store.state } : null, app: true }),
     keys: () => ({ massive: !!keys.massive, alpha: !!keys.alpha }),
     rawKeys: () => ({ ...keys }),
