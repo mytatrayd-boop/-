@@ -344,9 +344,19 @@ const slimBacktest = b => b && typeof b === 'object' ? { generatedAt: b.generate
 const okTop5 = t => !!(t && Array.isArray(t.top) && t.top.length);
 const okBacktest = b => !!(b && (b.account || (b.weeks && b.weeks.length)));
 const newer = (a, b) => !a ? b || null : !b ? a : String(b.generatedAt || '') > String(a.generatedAt || '') ? b : a;
+const slimSpikeLab = d => d && typeof d === 'object' ? { generatedAt: d.generatedAt, source: d.source, dataFrom: d.dataFrom, dataTo: d.dataTo, defaultKey: d.defaultKey, default: d.default || null, account: d.account || null, walkForward: d.walkForward || null } : null;
+const okSpikeLab = d => !!(d && d.default && Number.isFinite(+d.default.trades));
+const okSpikesToday = d => !!(d && typeof d.day === 'string' && Array.isArray(d.signals));
+// المسح الليلي: الأحدث بيوم السوق ثم بوقت التوليد
+const newerDay = (a, b) => !a ? b || null : !b ? a : (b.day > a.day || (b.day === a.day && String(b.generatedAt || '') > String(a.generatedAt || ''))) ? b : a;
 let lab = (() => {
   const e = window.RASED_LAB || {}, c = load('rased.lab', {}) || {};
-  return { top5: newer(okTop5(e.top5) ? e.top5 : null, okTop5(c.top5) ? c.top5 : null), backtest: newer(okBacktest(e.backtest) ? slimBacktest(e.backtest) : null, okBacktest(c.backtest) ? c.backtest : null) };
+  return {
+    top5: newer(okTop5(e.top5) ? e.top5 : null, okTop5(c.top5) ? c.top5 : null),
+    backtest: newer(okBacktest(e.backtest) ? slimBacktest(e.backtest) : null, okBacktest(c.backtest) ? c.backtest : null),
+    spike: newer(okSpikeLab(e.spike) ? slimSpikeLab(e.spike) : null, okSpikeLab(c.spike) ? c.spike : null),
+    spikesToday: newerDay(okSpikesToday(e.spikesToday) ? e.spikesToday : null, okSpikesToday(c.spikesToday) ? c.spikesToday : null),
+  };
 })();
 let labRefreshedAt = 0;
 let serverMode = null;            // وضع الخادم من /api/health: { demo, massive }
@@ -355,13 +365,15 @@ let trendQueue = [], trendBusy = false, trendObserver = null;
 
 const trendsOpen = () => { const v = $('#view-trends'); return !!(v && v.classList.contains('active')); };
 function trendMode() {
-  if (LOCAL && LOCAL.keys) { const k = LOCAL.keys(); return { demo: !k.massive && !k.alpha, massive: !!k.massive }; }
+  // تطبيق الأندرويد: Massive بالمفتاح، وإلا Yahoo بدون مفتاح (والتجريبي فقط لو فشل Yahoo — موسوم على البطاقة)
+  if (LOCAL && LOCAL.keys) return { demo: false, massive: true, yahoo: !LOCAL.keys().massive };
   if (LOCAL) return { demo: true, massive: false };   // النسخة المستقلة: تجريبية دائمًا
   return serverMode || { demo: false, massive: true }; // قبل وصول /api/health نحاول ونعرض الخطأ إن وُجد
 }
 function trendSymbols() {
   if (okTop5(lab.top5)) return lab.top5.top.slice(0, 5).map(x => String(x.sym).toUpperCase());
-  return trendMode().demo ? DEMO_TREND_SYMS : [];
+  const m = trendMode();
+  return m.demo || m.yahoo ? DEMO_TREND_SYMS : []; // معاينة (Yahoo بدون مفتاح يكفي) — Massive المجاني نوفّر طلباته
 }
 
 async function fetchJson(url) {
@@ -380,12 +392,16 @@ async function refreshLab() {
     }
     return null;
   };
-  const [t, b] = await Promise.all([get('top5'), get('backtest')]);
-  let changed = false;
+  const [t, b, sp, st] = await Promise.all([get('top5'), get('backtest'), get('spike'), get('spikes-today')]);
+  let changed = false, spikesChanged = false;
+  const ssp = okSpikeLab(sp) ? slimSpikeLab(sp) : null;
+  if (ssp && newer(lab.spike, ssp) === ssp && ssp !== lab.spike) { lab.spike = ssp; changed = spikesChanged = true; }
+  if (okSpikesToday(st) && newerDay(lab.spikesToday, st) === st && st !== lab.spikesToday) { lab.spikesToday = st; changed = spikesChanged = true; }
+  if (spikesChanged && spikesOpen()) loadSpikes();
   if (okTop5(t) && newer(lab.top5, t) === t && t !== lab.top5) { lab.top5 = t; changed = true; }
   const sb = okBacktest(b) ? slimBacktest(b) : null;
   if (sb && newer(lab.backtest, sb) === sb && sb !== lab.backtest) { lab.backtest = sb; changed = true; }
-  if (changed) { save('rased.lab', lab); if (trendsOpen()) renderTrends(); }
+  if (changed) { save('rased.lab', lab); if (trendsOpen() && trendsSub === 'trend') renderTrends(); }
 }
 
 async function trendRequest(sym) {
@@ -429,9 +445,21 @@ async function pumpTrends() {
   }
 }
 
+let trendsSub = load('rased.trendsSub', 'spikes') === 'trend' ? 'trend' : 'spikes';
+function setTrendsSub(sub) {
+  trendsSub = sub; save('rased.trendsSub', sub);
+  document.querySelectorAll('.sub-btn').forEach(b => { const on = b.dataset.sub === sub; b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on)); });
+  $('#spikePane').classList.toggle('active', sub === 'spikes');
+  $('#trendPane').classList.toggle('active', sub === 'trend');
+}
+document.querySelectorAll('.sub-btn').forEach(b => b.addEventListener('click', () => { setTrendsSub(b.dataset.sub); openTrends(); }));
 function openTrends() {
-  for (const [sym, st] of trendData) if (st.status === 'error') trendData.delete(sym);
-  renderTrends();
+  setTrendsSub(trendsSub);
+  if (trendsSub === 'spikes') loadSpikes();
+  else {
+    for (const [sym, st] of trendData) if (st.status === 'error') trendData.delete(sym);
+    renderTrends();
+  }
   refreshLab();
 }
 
@@ -530,11 +558,13 @@ function updateTrendCard(sym) {
       const a = etInfo(d.dataAsOf), today = etInfo(Date.now()).date;
       asOf = a.date === today
         ? `آخر شمعة: ${esc(a.day)} <span class="mono">${a.date} ${a.time}</span> بتوقيت نيويورك`
-        : `آخر بيانات: ${esc(a.day)} <span class="mono">${a.date} ${a.time}</span> بتوقيت نيويورك${d.demo ? '' : ' — الخطة المجانية ما فيها بيانات لحظية'}`;
+        : `آخر بيانات: ${esc(a.day)} <span class="mono">${a.date} ${a.time}</span> بتوقيت نيويورك${d.demo || d.source === 'yahoo' ? '' : ' — الخطة المجانية ما فيها بيانات لحظية'}`;
+      if (d.source === 'yahoo') asOf += ' · Yahoo (متأخر ~15 دقيقة)';
     }
     body = `<div class="tchart-wrap"><canvas class="tchart" data-sym="${esc(sym)}"></canvas></div>
       <div class="tlegend"><span class="lg line">خط المقاومة</span>${s ? '<span class="lg en">دخول</span><span class="lg sl">وقف</span><span class="lg tp">هدف</span>' : ''}</div>
       ${levels}
+      ${d.fallback ? `<div class="demo-warn">⚠️ ${esc(d.fallback)}</div>` : ''}
       <p class="tnote">${note}</p>
       <div class="tfoot">${d.demo ? '<span class="tag yq">تجريبي</span>' : ''}<span>${asOf || 'ما فيه شموع بعد'}</span></div>`;
   } else if (st && st.status === 'error') {
@@ -566,6 +596,7 @@ $('#view-trends').addEventListener('click', e => {
 function drawTrendCharts() {
   document.querySelectorAll('canvas.tchart').forEach(cv => { const st = trendData.get(cv.dataset.sym); if (st && st.data) drawTrendChart(cv, st.data); });
   const eq = document.querySelector('canvas.equity'); if (eq && lab.backtest) drawEquity(eq, lab.backtest);
+  drawSpikeCharts();
 }
 const cssVar = (n, fb) => (getComputedStyle(document.documentElement).getPropertyValue(n) || '').trim() || fb;
 
@@ -721,6 +752,177 @@ function drawEquity(canvas, bt) {
   ctx.textAlign = 'right'; if (end) ctx.fillText(end, w - mR, h - 7);
 }
 
+/* ---------- انفجار السيولة ---------- */
+// المصدر: حساب محلي من مخزن Massive (إن وُجد بأيام كافية) ← المسح الليلي spikes-today.json (مضمّن / محدّث من GitHub)
+// ← سوق تجريبي (بدون أي بيانات). فلتر يقين بنفس قاعدة المسح الرئيسي (applyYaqeen في server/).
+let spikeState = null; // { data } | { error }
+let spikeSeq = 0;
+const spikesOpen = () => trendsOpen() && trendsSub === 'spikes';
+const AR_WD = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const dayAr = d => { const t = Date.parse(String(d) + 'T12:00:00Z'); return Number.isFinite(t) ? `${AR_WD[new Date(t).getUTCDay()]} <span class="mono">${esc(d)}</span>` : esc(d || '—'); };
+const px = v => { const x = +v; return !Number.isFinite(x) ? '—' : x < 1 ? fmt(x, 4) : x < 10 ? fmt(x, 3) : fmt(x, 2); };
+const bigNum = v => { const x = +v; return !Number.isFinite(x) ? '—' : x >= 1e9 ? fmt(x / 1e9, 1) + 'B' : x >= 1e6 ? fmt(x / 1e6, 1) + 'M' : x >= 1e3 ? fmt(x / 1e3, 0) + 'K' : fmt(x, 0); };
+
+async function spikesRequest() {
+  const req = { yaqeen: settings.yaqeen, excludeHaram: settings.excludeHaram, excludeMashbooh: settings.excludeMashbooh, nightly: lab.spikesToday || null };
+  if (LOCAL) {
+    if (!LOCAL.spikes) throw new Error('هذي النسخة ما فيها انفجار السيولة.');
+    return LOCAL.spikes(req);
+  }
+  const res = await fetch('api/spikes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req), cache: 'no-store' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `الخادم رد بالحالة ${res.status}`);
+  return data;
+}
+
+async function loadSpikes() {
+  const seq = ++spikeSeq;
+  if (!spikeState) $('#spikeCards').innerHTML = '<div class="skeleton"></div>';
+  renderSpikeLab();
+  try {
+    const data = await spikesRequest();
+    if (seq !== spikeSeq) return;
+    spikeState = { data };
+  } catch (e) {
+    if (seq !== spikeSeq) return;
+    spikeState = { error: e.message === 'Failed to fetch' ? 'ما قدرنا نوصل للخادم — تأكد من الاتصال.' : e.message };
+  }
+  renderSpikes();
+}
+
+function renderSpikeLab() {
+  const el = $('#spikeLab'), sp = lab.spike;
+  if (!sp || !sp.default) { el.innerHTML = ''; return; }
+  const d = sp.default, wf = sp.walkForward, out = wf && wf.defaults && wf.defaults.outSample;
+  el.innerHTML = `<section class="spike-lab" aria-label="نتيجة المختبر">
+    <div class="t">🧪 نتيجة المختبر للصيغة الافتراضية (دخول بالافتتاح، ${esc(sp.defaultKey ? (sp.defaultKey.match(/-h(\d+)-/) || [])[1] || '3' : '3')} أيام، وقف تحت أدنى يوم الإشارة) · بيانات <span class="mono">${esc(sp.dataFrom || '?')}</span> → <span class="mono">${esc(sp.dataTo || '?')}</span></div>
+    <div class="tstats">
+      <div><span class="n mono">${rateTxt(d.winRate)}</span><span class="l">نسبة الربح</span></div>
+      <div><span class="n mono ${+d.avgRet > 0 ? 'pos' : +d.avgRet < 0 ? 'neg' : ''}">${Number.isFinite(+d.avgRet) && d.avgRet !== null ? pctTxt(d.avgRet * 100) : '—'}</span><span class="l">متوسط العائد</span></div>
+      <div><span class="n mono">${esc(d.trades ?? '—')}</span><span class="l">صفقات</span></div>
+    </div>
+    ${out && out.trades ? `<p class="hint">خارج العينة (الأشهر الأحدث): <span class="mono">${esc(out.trades)}</span> صفقة · ربح <span class="mono">${rateTxt(out.winRate)}</span> · متوسط <span class="mono">${pctTxt(out.avgRet * 100)}</span></p>` : ''}
+    <p class="hint">قبل الانزلاق والعمولات. فيها انحياز بقاء (الأسهم المشطوبة غير موجودة) — الواقع غالبًا أسوأ.</p>
+  </section>`;
+}
+
+function renderSpikes() {
+  renderSpikeLab();
+  const meta = $('#spikesMeta'), notice = $('#spikesNotice'), cards = $('#spikeCards');
+  if (!spikeState) return;
+  if (spikeState.error) {
+    notice.innerHTML = '';
+    cards.innerHTML = `<div class="placeholder"><div class="big">⚠️</div>${esc(spikeState.error)}<br><button type="button" class="btn-sm" data-spike-retry>إعادة المحاولة</button></div>`;
+    return;
+  }
+  const d = spikeState.data;
+  let n = '';
+  if (d.source === 'demo') n += '<div class="demo-warn">⚠️ <b>وضع تجريبي:</b> هذي رموز وأسعار <b>مصطنعة</b> (DSP…) عشان تشوف شكل الإشارة — مو السوق الحقيقي. الإشارات الحقيقية تجي من المسح الليلي بعد كل إغلاق.</div>';
+  if (d.day && d.source !== 'demo') {
+    const age = Math.floor((Date.now() - Date.parse(d.day + 'T21:00:00Z')) / 86400000);
+    if (age > 4) n += `<div class="demo-warn">⚠️ آخر بيانات من <span class="mono">${esc(d.day)}</span> (قبل ${age} أيام) — المسح الليلي ما تحدّث. الإشارات قديمة؛ لا تدخل على أساسها.</div>`;
+  }
+  notice.innerHTML = n;
+  const src = d.source === 'local' ? 'محسوب على جهازك من أيام السوق المخزّنة (Massive)'
+    : d.source === 'nightly' ? `من المسح الليلي على GitHub (${esc(d.dataSource === 'massive' ? 'Massive' : 'Yahoo')})`
+    : d.source === 'demo' ? 'بيانات تجريبية' : '';
+  meta.innerHTML = d.day
+    ? `إشارات إغلاق ${dayAr(d.day)} · ${src}${d.generatedAt && d.source === 'nightly' ? ` · حُدّث <span class="mono">${esc(String(d.generatedAt).slice(0, 16).replace('T', ' '))} UTC</span>` : ''}`
+    : 'أسهم صغيرة رخيصة انفجر حجمها وكسرت قاعدتها — شراء فقط، والخروج بالوقت';
+  if (d.source === 'none' || !d.day) {
+    cards.innerHTML = `<div class="placeholder"><div class="big">🌙</div>ما فيه بيانات بعد.<br><span class="hint">المسح الليلي يشتغل بعد كل إغلاق للسوق الأمريكي (الإثنين–الجمعة، ~12:30 ليلًا بتوقيت السعودية) ويحدّث هذي الصفحة تلقائيًا — بدون أي مفتاح.</span></div>`;
+    return;
+  }
+  const ex = Object.keys(d.yaqeenExcluded || {}).length;
+  const exLine = ex ? `<p class="hint">استُبعد ${ex} سهم بفلتر يقين: ${Object.entries(d.yaqeenExcluded).map(([s, v]) => `<span class="mono">${esc(s)}</span> (${esc(v)})`).join('، ')}</p>` : '';
+  if (!d.signals.length) {
+    cards.innerHTML = `<div class="placeholder"><div class="big">🔍</div>ما فيه سهم انفجرت سيولته بالشروط كاملة بإغلاق ${dayAr(d.day)}.<br><span class="hint">هذا طبيعي — الإشارة نادرة (قد تمر أيام بدون أي سهم).</span></div>${exLine}`;
+    return;
+  }
+  cards.innerHTML = `<div class="sdate">${d.signals.length} ${d.signals.length === 1 ? 'إشارة' : d.signals.length === 2 ? 'إشارتين' : 'إشارات'} · الأعلى مضاعف حجم أولاً</div>`
+    + d.signals.map((s, i) => spikeCardHtml(s, i, d)).join('') + exLine;
+  requestAnimationFrame(drawSpikeCharts);
+}
+
+function spikeCardHtml(s, i, d) {
+  const yq = s.yaqeen && s.yaqeen !== 'غير معروف' ? `<span class="yq ${yqClass(s.yaqeen)}">يقين: ${esc(s.yaqeen)}</span>` : '';
+  const stop = d.params && d.params.stop === false ? '' : `، حماية تحت <b class="mono">${px(s.lowD)}</b>`;
+  return `<article class="pick scard" data-i="${i}">
+    <div class="pick-head">
+      <div>
+        <div class="pick-sym"><span class="sym">${esc(s.sym)}</span><span class="rank">#${i + 1}</span></div>
+        ${s.name || s.exchange ? `<div class="pick-co">${esc(s.name || '')}${s.exchange ? ` <span class="exch">${esc(s.exchange)}</span>` : ''}</div>` : ''}
+      </div>
+      <span class="tchip win"><span class="mono">+${fmt(s.chgPct, 1)}%</span></span>
+    </div>
+    <div class="stats5">
+      <div><span class="n pos">${pctTxt(s.chgPct)}</span><span class="l">تغير اليوم</span></div>
+      <div><span class="n">×${fmt(s.volMult, 0)}</span><span class="l">مضاعف الحجم</span></div>
+      <div><span class="n">${px(s.close)}</span><span class="l">الإغلاق</span></div>
+      <div><span class="n hi">${px(s.highD)}</span><span class="l">أعلى اليوم</span></div>
+      <div><span class="n lo">${px(s.lowD)}</span><span class="l">أدنى اليوم</span></div>
+      <div><span class="n">${bigNum(s.volume)}</span><span class="l">الحجم</span></div>
+    </div>
+    <div class="plan">ادخل عند افتتاح يوم ${dayAr(s.entryDate)}، اخرج بإغلاق يوم ${dayAr(s.exitDate)}${stop}</div>
+    <canvas class="schart" data-i="${i}" aria-label="شارت يومي آخر 40 يوم لـ ${esc(s.sym)}"></canvas>
+    <div class="sfoot">
+      <a class="chip-link" href="https://yaaqen.com/stocks/${encodeURIComponent(s.sym)}" target="_blank" rel="noopener">☪︎ تحقق في يقين ↗</a>
+      ${yq}
+      <a class="chip-link" href="${quoteUrl(s.sym)}" target="_blank" rel="noopener">Yahoo ↗</a>
+      ${d.source === 'demo' ? '<span class="tag yq">تجريبي</span>' : ''}
+    </div>
+  </article>`;
+}
+
+$('#spikePane').addEventListener('click', e => { if (e.target.closest('[data-spike-retry]')) { spikeState = null; loadSpikes(); } });
+
+function drawSpikeCharts() {
+  if (!spikeState || !spikeState.data) return;
+  document.querySelectorAll('canvas.schart').forEach(cv => { const s = spikeState.data.signals[+cv.dataset.i]; if (s) drawSpikeChart(cv, s); });
+}
+
+// شموع يومية (آخر 40 يوم) + حجم تحت، يوم الإشارة مظلل، وخطا أعلى/أدنى يوم الإشارة
+function drawSpikeChart(canvas, s) {
+  const c2 = canvas2d(canvas); if (!c2) return;
+  const { ctx, w, h } = c2, b = s.bars40 || {}, n = b.c ? b.c.length : 0;
+  const C = { buy: cssVar('--buy', '#3fb950'), sell: cssVar('--sell', '#f0605a'), info: cssVar('--info', '#4fa3e3'), news: cssVar('--news', '#f2b134'), muted: cssVar('--muted2', '#5b6674'), text: cssVar('--muted', '#8b96a5') };
+  if (!n) { ctx.fillStyle = C.text; ctx.font = '13px "IBM Plex Sans Arabic", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('ما فيه شموع', w / 2, h / 2); return; }
+  const mL = 6, mR = 58, mT = 10, mB = 16, volH = Math.round((h - mT - mB) * 0.22), pw = w - mL - mR, ph = h - mT - mB - volH - 6;
+  let lo = Infinity, hi = -Infinity, vmax = 0;
+  for (let i = 0; i < n; i++) { lo = Math.min(lo, b.l[i]); hi = Math.max(hi, b.h[i]); vmax = Math.max(vmax, (b.v && b.v[i]) || 0); }
+  const pad = (hi - lo) * 0.06 || hi * 0.02 || 1; lo -= pad; hi += pad;
+  const X = i => mL + ((i + 0.5) / n) * pw, Y = v => mT + (1 - (v - lo) / (hi - lo)) * ph;
+  const bw = Math.max(2, (pw / n) * 0.62), vy0 = h - mB;
+  // يوم الإشارة: عمود مظلل
+  const sx = X(n - 1);
+  ctx.fillStyle = 'rgba(242,177,52,.14)'; ctx.fillRect(sx - pw / n / 2 - 1, mT, pw / n + 2, vy0 - mT);
+  for (let i = 0; i < n; i++) {
+    const up = b.c[i] >= b.o[i], col = up ? C.buy : C.sell;
+    ctx.strokeStyle = ctx.fillStyle = col; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(i), Y(b.h[i])); ctx.lineTo(X(i), Y(b.l[i])); ctx.stroke();
+    const top = Math.min(Y(b.o[i]), Y(b.c[i]));
+    ctx.fillRect(X(i) - bw / 2, top, bw, Math.max(Math.abs(Y(b.c[i]) - Y(b.o[i])), 1));
+    if (b.v && vmax > 0) {
+      const vh = Math.max(1, Math.sqrt(b.v[i] / vmax) * volH); // جذر: يوم الانفجار ما يخفي باقي الأيام
+      ctx.globalAlpha = i === n - 1 ? 0.95 : 0.45; ctx.fillRect(X(i) - bw / 2, vy0 - vh, bw, vh); ctx.globalAlpha = 1;
+    }
+  }
+  const hline = (v, color) => { ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(mL, Y(v)); ctx.lineTo(w - mR, Y(v)); ctx.stroke(); ctx.setLineDash([]); };
+  hline(s.highD, C.info); hline(s.lowD, C.sell);
+  // سهم فوق شمعة الإشارة
+  ctx.fillStyle = C.news; ctx.beginPath(); const ay = Math.max(mT + 2, Y(b.h[n - 1]) - 10);
+  ctx.moveTo(sx, ay + 7); ctx.lineTo(sx - 5, ay); ctx.lineTo(sx + 5, ay); ctx.closePath(); ctx.fill();
+  priceLabels(ctx, [{ y: Y(s.highD), color: C.info, text: px(s.highD) }, { y: Y(s.lowD), color: C.sell, text: px(s.lowD) }], w - mR + 3, mR - 5, mT, mT + ph);
+  ctx.fillStyle = C.text; ctx.font = '10px "IBM Plex Mono", monospace'; ctx.textBaseline = 'middle';
+  const dstr = t => new Date(t).toISOString().slice(5, 10);
+  ctx.direction = 'ltr';
+  ctx.textAlign = 'left'; ctx.fillText(dstr(b.t[0]), mL, h - 7);
+  ctx.textAlign = 'right'; ctx.fillStyle = C.news; ctx.fillText(dstr(b.t[n - 1]), w - mR, h - 7);
+  const dw = ctx.measureText(dstr(b.t[n - 1])).width;
+  ctx.font = '10px "IBM Plex Sans Arabic", sans-serif'; ctx.direction = 'rtl'; ctx.textAlign = 'right';
+  ctx.fillText('يوم الإشارة', w - mR - dw - 6, h - 7);
+}
+
 /* ---------- keys (تطبيق الأندرويد) ---------- */
 function renderKeys() {
   if (!LOCAL || !LOCAL.setKeys) return;
@@ -766,8 +968,8 @@ function refreshHealth() {
   if (LOCAL) return setStatus(LOCAL_STATUS);
   fetch('api/health').then(r => r.json()).then(h => {
     setStatus(h.status || { level: h.demo ? 'red' : 'green', badge: h.demo ? 'تجريبي' : 'حقيقي', lights: [] });
-    const m = { demo: !!h.demo, massive: !!h.demo || !!h.market };
-    if (!serverMode || serverMode.demo !== m.demo || serverMode.massive !== m.massive) { serverMode = m; if (trendsOpen()) renderTrends(); }
+    const m = { demo: !!h.demo && !h.yahoo, massive: !!h.demo || !!h.market || !!h.yahoo, yahoo: !!h.yahoo };
+    if (!serverMode || serverMode.demo !== m.demo || serverMode.massive !== m.massive || serverMode.yahoo !== m.yahoo) { serverMode = m; if (trendsOpen()) renderTrends(); }
   }).catch(() => setStatus({ level: 'red', badge: 'غير متصل', lights: [{ level: 'red', label: 'ما قدرت أوصل للخادم', fix: 'تأكد إن خدمة Railway شغالة وإن الإنترنت عندك شغال.' }] }))
     .finally(() => setTimeout(refreshHealth, 60000)); // الإشارة تتحدث كل دقيقة (تقدّم التعبئة، يوم جديد، أخطاء)
 }

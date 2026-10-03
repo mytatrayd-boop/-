@@ -238,6 +238,8 @@ export function createMassiveStore({ apiKey, storage, log = console.log }) {
   return {
     state, loadFromDisk, sync, universe, aggs5m,
     profile: sym => tickerInfo[sym] || null,
+    // كل شموع السوق المخزّنة (بدون أي طلب): لانفجار السيولة — { bars: Map(sym → bars), dates, commonStocks: Set|null }
+    allBars: () => ({ bars, dates: days.map(d => d.date), commonStocks }),
     bars: sym => { const b = bars.get(sym); if (!b) throw new MassiveError('no_data', 'لا توجد بيانات لهذا الرمز في Massive.'); return b; },
   };
 }

@@ -1,13 +1,15 @@
-name: Rased — Trend Lab
+name: Rased — Trend + Spike Lab
 
 # مختبر الاتجاهات: ينزّل شموع 5 دقائق ← يشغّل الحساب الوهمي ← شبكة المعاملات ← الترتيب ← التقرير،
 # ثم يرجع lab/results/ للفرع نفسه. المصدر Massive إن وُجد السر MASSIVE_API_KEY، وإلا Yahoo (60 يوم).
+# وانفجار السيولة: شموع يومية للسوق كامل (Yahoo بدون مفتاح، أو Massive grouped daily بالسر) ← spike-backtest.
+# الإيداع في وظيفة منفصلة بمجموعة تزامن مشتركة مع rased-spikes.yml حتى لا يتصارع الاثنان على الدفع.
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * 6' # كل سبت 06:00 UTC
   push:
-    paths: ['lab/**', 'server/trend.js', '.github/workflows/rased-lab.yml']
+    paths: ['lab/**', 'server/trend.js', 'server/spike.js', 'server/yahoo.js', '.github/workflows/rased-lab.yml']
 
 permissions:
   contents: write
@@ -19,14 +21,16 @@ concurrency:
 jobs:
   lab:
     runs-on: ubuntu-latest
-    timeout-minutes: 300 # التنزيل الأول من Massive (سنتان، 5 طلبات/دقيقة) ≈ ساعة وأكثر
+    # التنزيل الأول: شموع 5 دقائق ≈ ساعة+ بـ Massive، واليومي ≈ 20–30 دقيقة بـ Yahoo (أو ~105 دقيقة بـ Massive grouped daily)
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
 
-      - run: npm test
+      - id: tests
+        run: npm test
 
       - name: Week key
         id: week
@@ -36,7 +40,9 @@ jobs:
       # وأسبوع جديد يبدأ من بيانات الأسبوع السابق ويكمّل تدريجيًا بدل التنزيل من الصفر.
       - uses: actions/cache@v4
         with:
-          path: lab/data
+          path: |
+            lab/data/5m
+            lab/data/meta.json
           key: rased-lab-data-${{ steps.week.outputs.key }}-${{ github.run_id }}
           restore-keys: |
             rased-lab-data-${{ steps.week.outputs.key }}-
@@ -59,6 +65,26 @@ jobs:
       - name: Report
         run: if [ -f lab/report.mjs ]; then node lab/report.mjs; else echo "lab/report.mjs غير موجود بعد — تخطّي"; fi
 
+      # الشموع اليومية لانفجار السيولة — نفس الكاش الذي يستعمله المسح الليلي (rased-spikes.yml)
+      - name: Restore daily bars cache
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
+        uses: actions/cache@v4
+        with:
+          path: lab/data/daily
+          key: rased-daily-${{ github.run_id }}
+          restore-keys: rased-daily-
+
+      - name: Spike — fetch daily bars
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
+        env:
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: node lab/spike-fetch.mjs
+
+      - name: Spike — backtest
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
+        run: |
+          if ls lab/data/daily/*.json >/dev/null 2>&1; then node lab/spike-backtest.mjs; else echo "ما فيه بيانات يومية — تخطّي"; fi
+
       - name: Account summary
         if: always()
         run: |
@@ -78,14 +104,39 @@ jobs:
             require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, rows.join("\n") + "\n");
           '
           [ -f lab/results/REPORT.md ] && { echo; cat lab/results/REPORT.md; } >> "$GITHUB_STEP_SUMMARY" || true
+          [ -f lab/results/SPIKE_REPORT.md ] && { echo; cat lab/results/SPIKE_REPORT.md; } >> "$GITHUB_STEP_SUMMARY" || true
 
+      # ملفات هذا المختبر فقط (spikes-today.json يملكه المسح الليلي — لا نكتب نسخة قديمة فوقه)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: rased-lab-results-${{ github.run_number }}
-          path: lab/results
+          path: |
+            lab/results/backtest.json
+            lab/results/sweep.json
+            lab/results/top5.json
+            lab/results/REPORT.md
+            lab/results/spike.json
+            lab/results/SPIKE_REPORT.md
           if-no-files-found: ignore
 
+  commit:
+    needs: lab
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # مجموعة مشتركة مع rased-spikes.yml: دفع واحد في كل مرة
+    concurrency:
+      group: rased-results-push-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: rased-lab-results-${{ github.run_number }}
+          path: lab/results
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"

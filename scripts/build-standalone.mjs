@@ -6,11 +6,12 @@ import path from 'node:path';
 import { buildPage, labScript, ROOT } from './bundle.mjs';
 
 const out = await buildPage({
-  modules: ['engine', 'trend', 'massive', 'alphavantage', 'demo', 'providers', 'scan'],
+  modules: ['engine', 'trend', 'spike', 'yahoo', 'massive', 'alphavantage', 'demo', 'providers', 'scan'],
   init: `${await labScript()}
 window.RASED_LOCAL = {
   runScan: req => __mods.scan.runScan(req, __mods.demo.demoProviders),
   trend: sym => __mods.providers.trendFor(__mods.demo.demoProviders, sym),
+  spikes: (req = {}) => Promise.resolve(__mods.providers.spikesFor(__mods.demo.demoProviders, req, [req.nightly])),
 };`,
   css: `
 /* النسخة المستقلة: إطار العرض يضيف هامش المنطقة الآمنة للصفحة، فالرأس اللاصق يلتصق تحته */
