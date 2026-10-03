@@ -1,5 +1,5 @@
 name: durur
-description: "ديرة الدرور"
+description: "دليل المواسم"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -81,29 +81,29 @@ flutter:
     - assets/tables/
     - assets/tables/regions/
     # رخص الخطوط (OFL) تُسجَّل في LicenseRegistry (main.dart).
-    - assets/fonts/ReemKufi-OFL.txt
-    - assets/fonts/IBMPlexSansArabic-OFL.txt
+    - assets/fonts/Almarai-OFL.txt
     - assets/fonts/Amiri-OFL.txt
 
-  # خطوط مضمّنة برخصة SIL OFL (DESIGN §3)؛ لا تحميل من الإنترنت.
-  # الرخص في assets/fonts/*-OFL.txt. Amiri للمثل الشعبي (الميزة 7).
+  # خطوط مضمّنة برخصة SIL OFL (DESIGN §3، D37 الخيار ٣)؛ لا تحميل من الإنترنت.
+  # المصدر: github.com/google/fonts (ofl/almarai، ofl/amiri)، والرخص في
+  # assets/fonts/*-OFL.txt. Amiri للعناوين (21sp فأكثر) والمثل، Almarai للنص.
   fonts:
-    - family: ReemKufi
+    - family: Almarai
       fonts:
-        - asset: assets/fonts/ReemKufi-Variable.ttf
-    - family: IBMPlexSansArabic
-      fonts:
-        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+        - asset: assets/fonts/Almarai-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Almarai-Regular.ttf
           weight: 400
-        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
-          weight: 600
+        - asset: assets/fonts/Almarai-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Almarai-ExtraBold.ttf
+          weight: 800
     - family: Amiri
       fonts:
         - asset: assets/fonts/Amiri-Regular.ttf
-        - asset: assets/fonts/Amiri-Italic.ttf
-          style: italic
+          weight: 400
+        - asset: assets/fonts/Amiri-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

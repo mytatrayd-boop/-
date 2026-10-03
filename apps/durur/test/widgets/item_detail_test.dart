@@ -374,6 +374,9 @@ Future<void> main() async {
             )
             .first,
       );
+      // يكتمل ظهور الشريحة داخل الورقة قبل الضغط (لا حافتها فقط).
+      await tester.ensureVisible(find.byKey(ItemDetailView.seasonChipKey));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(ItemDetailView.seasonChipKey));
       await tester.pumpAndSettle();
       expect(inSheet(find.text(hundred)), findsOneWidget);
@@ -672,7 +675,6 @@ Future<void> main() async {
   test('ملف الخط Amiri ورخصته موجودان', () {
     for (final path in [
       'assets/fonts/Amiri-Regular.ttf',
-      'assets/fonts/Amiri-Italic.ttf',
     ]) {
       expect(File(path).lengthSync(), greaterThan(100000), reason: path);
     }

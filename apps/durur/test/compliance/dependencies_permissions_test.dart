@@ -197,7 +197,7 @@ void main() {
       expect(manifest, isNot(contains('AD_ID')));
       expect(manifest, isNot(contains('com.google.android.gms.ads')));
       expect(manifest, contains('android:usesCleartextTraffic="false"'));
-      expect(manifest, contains('android:label="ديرة الدرور"'));
+      expect(manifest, contains('android:label="دليل المواسم"'));
     });
   });
 
@@ -234,7 +234,7 @@ void main() {
       );
       for (final key in ['CFBundleDisplayName', 'CFBundleName']) {
         expect(
-          RegExp('<key>$key</key>\\s*<string>ديرة الدرور</string>')
+          RegExp('<key>$key</key>\\s*<string>دليل المواسم</string>')
               .hasMatch(plist),
           isTrue,
           reason: key,

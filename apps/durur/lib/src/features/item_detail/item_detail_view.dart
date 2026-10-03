@@ -435,8 +435,8 @@ class _SourceLine extends StatelessWidget {
   }
 }
 
-/// «بانتظار الاعتماد» بخط مائل `ink-soft` (المائل العربي بخط Amiri فقط،
-/// DESIGN §3).
+/// «بانتظار الاعتماد» بخط Almarai 700 بحجم `caption` ولون `ink-soft`
+/// (DESIGN §3 `pending`): الوزن يميّزه عن سطر المصدر، بلا مائل.
 class PendingApprovalText extends StatelessWidget {
   const PendingApprovalText({super.key});
 
@@ -447,10 +447,10 @@ class PendingApprovalText extends StatelessWidget {
       AppLocalizations.of(context).approvalPending,
       key: ItemDetailView.pendingKey,
       style: TextStyle(
-        fontFamily: DururFonts.proverb,
-        fontStyle: FontStyle.italic,
-        fontSize: 15,
-        height: 1.6,
+        fontFamily: DururFonts.body,
+        fontSize: 13,
+        height: 20 / 13,
+        fontWeight: FontWeight.w700,
         color: colors.inkSoft,
       ),
     );

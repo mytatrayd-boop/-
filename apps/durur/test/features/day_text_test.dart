@@ -125,7 +125,7 @@ Future<void> main() async {
     final entries = await fontLicenses().toList();
     expect(
       entries.expand((e) => e.packages),
-      containsAll(['Reem Kufi', 'IBM Plex Sans Arabic', 'Amiri']),
+      unorderedEquals(['Almarai', 'Amiri']),
     );
     for (final e in entries) {
       expect(

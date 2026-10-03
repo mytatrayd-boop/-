@@ -10,7 +10,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appTitle => 'ديرة الدرور';
+  String get appTitle => 'دليل المواسم';
 
   @override
   String get traditionDisclaimer =>
@@ -134,7 +134,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonContinue => 'متابعة';
 
   @override
-  String get onboardingWelcomeTitle => 'أهلاً بك في ديرة الدرور';
+  String get onboardingWelcomeTitle => 'أهلاً بك في دليل المواسم';
 
   @override
   String get onboardingWelcomeBody =>

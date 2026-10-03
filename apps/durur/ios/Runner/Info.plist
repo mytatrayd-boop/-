@@ -11,7 +11,7 @@
 		<string>ar</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>ديرة الدرور</string>
+	<string>دليل المواسم</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -19,7 +19,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>ديرة الدرور</string>
+	<string>دليل المواسم</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

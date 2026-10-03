@@ -1,0 +1,6986 @@
+{
+ "_status": "draft",
+ "_warning": "مسودة بحث غير معتمدة — بانتظار اعتماد المراجع. ليست ضمن assets ولا تُحمَّل في التطبيق. الإحداثيات من GeoNames (CC BY 4.0) أو من بيانات العنوان الوطني عبر مستودع homaily (GPL-2.0، تحتاج قرار ترخيص).",
+ "schemaProposal": "country → region (منطقة/إمارة/محافظة) → governorate (محافظة/ولاية، اختياري) → city",
+ "countries": [
+  {
+   "code": "SA",
+   "name": {
+    "ar": "السعودية"
+   },
+   "adminLevelName": {
+    "ar": "منطقة إدارية"
+   },
+   "folkRegions": [
+    {
+     "id": "central",
+     "name": {
+      "ar": "المنطقة الوسطى"
+     }
+    },
+    {
+     "id": "eastern",
+     "name": {
+      "ar": "المنطقة الشرقية"
+     }
+    },
+    {
+     "id": "western",
+     "name": {
+      "ar": "المنطقة الغربية"
+     }
+    },
+    {
+     "id": "southern",
+     "name": {
+      "ar": "المنطقة الجنوبية"
+     }
+    },
+    {
+     "id": "northern",
+     "name": {
+      "ar": "المنطقة الشمالية"
+     }
+    }
+   ],
+   "_folkNote": "الأقاليم الشعبية ليست تقسيماً رسمياً؛ التوزيع مقترح ويحتاج قرار المالك (انظر CITIES.md §3)",
+   "regions": [
+    {
+     "id": "riyadh",
+     "name": {
+      "ar": "منطقة الرياض"
+     },
+     "folkRegionId": "central",
+     "officialGovernorateCount": 22,
+     "listedGovernorates": 21,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "riyadh__seat",
+       "name": {
+        "ar": "الرياض (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "riyadh",
+         "name": {
+          "ar": "الرياض"
+         },
+         "role": "regionSeat",
+         "lat": 24.6877,
+         "lon": 46.7219,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108410 (Riyadh)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_diriyah",
+       "name": {
+        "ar": "محافظة الدرعية"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "diriyah",
+         "name": {
+          "ar": "الدرعية"
+         },
+         "role": "governorateSeat",
+         "lat": 24.7519,
+         "lon": 46.5387,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110312 (Ad Dir‘īyah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 4.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_kharj",
+       "name": {
+        "ar": "محافظة الخرج"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "al_kharj",
+         "name": {
+          "ar": "الخرج"
+         },
+         "role": "governorateSeat",
+         "lat": 24.1554,
+         "lon": 47.3346,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109353 (Al Kharj)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.9
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ad_dawadmi",
+       "name": {
+        "ar": "محافظة الدوادمي"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "ad_dawadmi",
+         "name": {
+          "ar": "الدوادمي"
+         },
+         "role": "governorateSeat",
+         "lat": 24.5077,
+         "lon": 44.3924,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110325 (Ad Dawādimī)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.3
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_majmaah",
+       "name": {
+        "ar": "محافظة المجمعة"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "al_majmaah",
+         "name": {
+          "ar": "المجمعة"
+         },
+         "role": "governorateSeat",
+         "lat": 25.911,
+         "lon": 45.3567,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109194 (Al Majma‘ah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_quway_iyah",
+       "name": {
+        "ar": "محافظة القويعية"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_al_quway_iyah",
+         "name": {
+          "ar": "القويعية"
+         },
+         "role": "governorateSeat",
+         "lat": 24.0507,
+         "lon": 45.2657,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 880 (Al Quway'iyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_wadi_ad_dawasir",
+       "name": {
+        "ar": "محافظة وادي الدواسر"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_wadi_ad_dawasir",
+         "name": {
+          "ar": "وادي الدواسر"
+         },
+         "role": "governorateSeat",
+         "lat": 20.4697,
+         "lon": 44.783,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1351 (Wadi Ad Dawasir)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_layla",
+       "name": {
+        "ar": "محافظة الأفلاج"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_layla",
+         "name": {
+          "ar": "الأفلاج"
+         },
+         "role": "governorateSeat",
+         "lat": 22.2921,
+         "lon": 46.7238,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 104716 (Laylá)",
+          "url": "https://www.geonames.org/104716",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.0
+         },
+         "_seatNote": "المدينة: ليلى",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_az_zulfi",
+       "name": {
+        "ar": "محافظة الزلفي"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "az_zulfi",
+         "name": {
+          "ar": "الزلفي"
+         },
+         "role": "governorateSeat",
+         "lat": 26.2995,
+         "lon": 44.8154,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107781 (Az Zulfī)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.0
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_shaqra",
+       "name": {
+        "ar": "محافظة شقراء"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "shaqra",
+         "name": {
+          "ar": "شقراء"
+         },
+         "role": "governorateSeat",
+         "lat": 25.2402,
+         "lon": 45.251,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 102170 (Shaqra)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_hawtat_bani_tamim",
+       "name": {
+        "ar": "محافظة حوطة بني تميم"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_hawtat_bani_tamim",
+         "name": {
+          "ar": "حوطة بني تميم"
+         },
+         "role": "governorateSeat",
+         "lat": 23.496,
+         "lon": 46.878,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 13631408 (Ḥawṭah Banī Tamīm)",
+          "url": "https://www.geonames.org/13631408",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_afif",
+       "name": {
+        "ar": "محافظة عفيف"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "afif",
+         "name": {
+          "ar": "عفيف"
+         },
+         "role": "governorateSeat",
+         "lat": 23.9065,
+         "lon": 42.9172,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110250 (Afif)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_as_sulayyil",
+       "name": {
+        "ar": "محافظة السليل"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "as_sulayyil",
+         "name": {
+          "ar": "السليل"
+         },
+         "role": "governorateSeat",
+         "lat": 20.4607,
+         "lon": 45.5779,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108048 (As Sulayyil)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_duruma",
+       "name": {
+        "ar": "محافظة ضرماء"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_duruma",
+         "name": {
+          "ar": "ضرماء"
+         },
+         "role": "governorateSeat",
+         "lat": 24.6041,
+         "lon": 46.1318,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 839 (Duruma)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_muzahimiyah",
+       "name": {
+        "ar": "محافظة المزاحمية"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_muzahimiyah",
+         "name": {
+          "ar": "المزاحمية"
+         },
+         "role": "governorateSeat",
+         "lat": 24.462,
+         "lon": 46.2766,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 990 (Al Muzahimiyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_rumah",
+       "name": {
+        "ar": "محافظة رماح"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_rumah",
+         "name": {
+          "ar": "رماح"
+         },
+         "role": "governorateSeat",
+         "lat": 25.5639,
+         "lon": 47.1641,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 102744 (Rumāḩ)",
+          "url": "https://www.geonames.org/102744",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_thadiq",
+       "name": {
+        "ar": "محافظة ثادق"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_thadiq",
+         "name": {
+          "ar": "ثادق"
+         },
+         "role": "governorateSeat",
+         "lat": 25.2971,
+         "lon": 45.8618,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 443 (Thadiq)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_huraymila",
+       "name": {
+        "ar": "محافظة حريملاء"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_huraymila",
+         "name": {
+          "ar": "حريملاء"
+         },
+         "role": "governorateSeat",
+         "lat": 25.1323,
+         "lon": 46.1284,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 795 (Huraymila)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_hariq",
+       "name": {
+        "ar": "محافظة الحريق"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_hariq",
+         "name": {
+          "ar": "الحريق"
+         },
+         "role": "governorateSeat",
+         "lat": 25.4509,
+         "lon": 45.4013,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 580 (Al Hariq)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_ghat",
+       "name": {
+        "ar": "محافظة الغاط"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_ghat",
+         "name": {
+          "ar": "الغاط"
+         },
+         "role": "governorateSeat",
+         "lat": 26.0407,
+         "lon": 44.9504,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 306 (Al Ghat)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_marat",
+       "name": {
+        "ar": "محافظة مرات"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_marat",
+         "name": {
+          "ar": "مرات"
+         },
+         "role": "governorateSeat",
+         "lat": 25.0706,
+         "lon": 45.4577,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 104376 (Marāt)",
+          "url": "https://www.geonames.org/104376",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.7
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ad_dilam",
+       "name": {
+        "ar": "محافظة الدلم"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_ad_dilam",
+         "name": {
+          "ar": "الدلم"
+         },
+         "role": "governorateSeat",
+         "lat": 23.991,
+         "lon": 47.1618,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110314 (Ad Dilam)",
+          "url": "https://www.geonames.org/110314",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 5.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "makkah",
+     "name": {
+      "ar": "منطقة مكة المكرمة"
+     },
+     "folkRegionId": "western",
+     "officialGovernorateCount": 16,
+     "listedGovernorates": 16,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "makkah__seat",
+       "name": {
+        "ar": "مكة المكرمة (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "makkah",
+         "name": {
+          "ar": "مكة المكرمة"
+         },
+         "role": "regionSeat",
+         "lat": 21.4266,
+         "lon": 39.8256,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 104515 (Makkah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_jeddah",
+       "name": {
+        "ar": "محافظة جدة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "jeddah",
+         "name": {
+          "ar": "جدة"
+         },
+         "role": "governorateSeat",
+         "lat": 21.4901,
+         "lon": 39.1862,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 105343 (Jeddah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.6
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_taif",
+       "name": {
+        "ar": "محافظة الطائف"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "taif",
+         "name": {
+          "ar": "الطائف"
+         },
+         "role": "governorateSeat",
+         "lat": 21.2703,
+         "lon": 40.4158,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107968 (Ta’if)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_qunfidhah",
+       "name": {
+        "ar": "محافظة القنفذة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_qunfidhah",
+         "name": {
+          "ar": "القنفذة"
+         },
+         "role": "governorateSeat",
+         "lat": 19.1272,
+         "lon": 41.0906,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1625 (Al Qunfidhah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_lith",
+       "name": {
+        "ar": "محافظة الليث"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_lith",
+         "name": {
+          "ar": "الليث"
+         },
+         "role": "governorateSeat",
+         "lat": 20.148,
+         "lon": 40.2722,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109253 (Al Līth)",
+          "url": "https://www.geonames.org/109253",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_rabigh",
+       "name": {
+        "ar": "محافظة رابغ"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_rabigh",
+         "name": {
+          "ar": "رابغ"
+         },
+         "role": "governorateSeat",
+         "lat": 22.7986,
+         "lon": 39.0349,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 103035 (Rābigh)",
+          "url": "https://www.geonames.org/103035",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_khulays",
+       "name": {
+        "ar": "محافظة خليص"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_khulays",
+         "name": {
+          "ar": "خليص"
+         },
+         "role": "governorateSeat",
+         "lat": 22.1555,
+         "lon": 39.3201,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 104923 (Khulayş)",
+          "url": "https://www.geonames.org/104923",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_khurmah",
+       "name": {
+        "ar": "محافظة الخرمة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_khurmah",
+         "name": {
+          "ar": "الخرمة"
+         },
+         "role": "governorateSeat",
+         "lat": 21.9115,
+         "lon": 42.0309,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109306 (Al Khurmah)",
+          "url": "https://www.geonames.org/109306",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ranyah",
+       "name": {
+        "ar": "محافظة رنية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_ranyah",
+         "name": {
+          "ar": "رنية"
+         },
+         "role": "governorateSeat",
+         "lat": 21.2504,
+         "lon": 42.8475,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 12546009 (Ranyah)",
+          "url": "https://www.geonames.org/12546009",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.6
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_turbah",
+       "name": {
+        "ar": "محافظة تربة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_turbah",
+         "name": {
+          "ar": "تربة"
+         },
+         "role": "governorateSeat",
+         "lat": 21.2141,
+         "lon": 41.6331,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 101322 (Turabah)",
+          "url": "https://www.geonames.org/101322",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_jumum",
+       "name": {
+        "ar": "محافظة الجموم"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_jumum",
+         "name": {
+          "ar": "الجموم"
+         },
+         "role": "governorateSeat",
+         "lat": 21.6195,
+         "lon": 39.6966,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109417 (Al Jumūm)",
+          "url": "https://www.geonames.org/109417",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_kamil",
+       "name": {
+        "ar": "محافظة الكامل"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_kamil",
+         "name": {
+          "ar": "الكامل"
+         },
+         "role": "governorateSeat",
+         "lat": 22.2646,
+         "lon": 39.7902,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1150 (Al Kamil)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_muwayh_al_jadid",
+       "name": {
+        "ar": "محافظة المويه"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_muwayh_al_jadid",
+         "name": {
+          "ar": "المويه"
+         },
+         "role": "governorateSeat",
+         "lat": 22.4333,
+         "lon": 41.7583,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 409993 (Al Muwayh)",
+          "url": "https://www.geonames.org/409993",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.4
+         },
+         "_seatNote": "المدينة: المويه الجديد — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_maysan",
+       "name": {
+        "ar": "محافظة ميسان"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_maysan",
+         "name": {
+          "ar": "ميسان"
+         },
+         "role": "governorateSeat",
+         "lat": 20.7476,
+         "lon": 40.8503,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2129 (Maysan)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_adham",
+       "name": {
+        "ar": "محافظة أضم"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_adham",
+         "name": {
+          "ar": "أضم"
+         },
+         "role": "governorateSeat",
+         "lat": 20.4593,
+         "lon": 40.8871,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3684 (Adham)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_thurayban",
+       "name": {
+        "ar": "محافظة العرضيات"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_thurayban",
+         "name": {
+          "ar": "العرضيات"
+         },
+         "role": "governorateSeat",
+         "lat": 19.4477,
+         "lon": 41.8357,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1609 (Thurayban)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "_seatNote": "المقر المفترض: ثريبان (العرضيات الجنوبية) — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_bahrah_al_mujahidin",
+       "name": {
+        "ar": "محافظة بحرة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_bahrah_al_mujahidin",
+         "name": {
+          "ar": "بحرة"
+         },
+         "role": "governorateSeat",
+         "lat": 21.4023,
+         "lon": 39.4504,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1882 (Bahrah Al Mujahidin)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "_seatNote": "المدينة: بحرة المجاهدين — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "madinah",
+     "name": {
+      "ar": "منطقة المدينة المنورة"
+     },
+     "folkRegionId": "western",
+     "officialGovernorateCount": 8,
+     "listedGovernorates": 8,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "madinah__seat",
+       "name": {
+        "ar": "المدينة المنورة (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "madinah",
+         "name": {
+          "ar": "المدينة المنورة"
+         },
+         "role": "regionSeat",
+         "lat": 24.4686,
+         "lon": 39.6142,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109223 (Madinah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.7
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_yanbu",
+       "name": {
+        "ar": "محافظة ينبع"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "yanbu",
+         "name": {
+          "ar": "ينبع"
+         },
+         "role": "governorateSeat",
+         "lat": 24.0895,
+         "lon": 38.0618,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 100425 (Yanbu)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_ula",
+       "name": {
+        "ar": "محافظة العلا"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_ula",
+         "name": {
+          "ar": "العلا"
+         },
+         "role": "governorateSeat",
+         "lat": 26.6085,
+         "lon": 37.9232,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108841 (Al-`Ula)",
+          "url": "https://www.geonames.org/108841",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 3.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_mahd_adh_dhahab",
+       "name": {
+        "ar": "محافظة المهد"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_mahd_adh_dhahab",
+         "name": {
+          "ar": "المهد"
+         },
+         "role": "governorateSeat",
+         "lat": 23.4997,
+         "lon": 40.8841,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 104578 (Mahd adh Dhahab)",
+          "url": "https://www.geonames.org/104578",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.1
+         },
+         "_seatNote": "المدينة: مهد الذهب",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_badr",
+       "name": {
+        "ar": "محافظة بدر"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_badr",
+         "name": {
+          "ar": "بدر"
+         },
+         "role": "governorateSeat",
+         "lat": 23.7829,
+         "lon": 38.7905,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107744 (Badr Ḩunayn)",
+          "url": "https://www.geonames.org/107744",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_khaybar",
+       "name": {
+        "ar": "محافظة خيبر"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_khaybar",
+         "name": {
+          "ar": "خيبر"
+         },
+         "role": "governorateSeat",
+         "lat": 25.7134,
+         "lon": 39.2803,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 104979 (Khaybar)",
+          "url": "https://www.geonames.org/104979",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.6
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_hinakiyah",
+       "name": {
+        "ar": "محافظة الحناكية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_hinakiyah",
+         "name": {
+          "ar": "الحناكية"
+         },
+         "role": "governorateSeat",
+         "lat": 24.8684,
+         "lon": 40.4927,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 777 (Al Hinakiyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_is",
+       "name": {
+        "ar": "محافظة العيص"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_is",
+         "name": {
+          "ar": "العيص"
+         },
+         "role": "governorateSeat",
+         "lat": 25.0599,
+         "lon": 38.1163,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 485 (Al 'Is)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_furaysh",
+       "name": {
+        "ar": "محافظة وادي الفرع"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_furaysh",
+         "name": {
+          "ar": "وادي الفرع"
+         },
+         "role": "governorateSeat",
+         "lat": 24.216,
+         "lon": 39.2841,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3103 (Al Furaysh)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "_seatNote": "المقر المفترض: الفريش — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qassim",
+     "name": {
+      "ar": "منطقة القصيم"
+     },
+     "folkRegionId": "central",
+     "officialGovernorateCount": 13,
+     "listedGovernorates": 13,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "qassim__seat",
+       "name": {
+        "ar": "بريدة (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "buraydah",
+         "name": {
+          "ar": "بريدة"
+         },
+         "role": "regionSeat",
+         "lat": 26.326,
+         "lon": 43.975,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107304 (Buraydah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_unaizah",
+       "name": {
+        "ar": "محافظة عنيزة"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "unaizah",
+         "name": {
+          "ar": "عنيزة"
+         },
+         "role": "governorateSeat",
+         "lat": 26.1,
+         "lon": 44.0,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 101732 (Unaizah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ar_rass",
+       "name": {
+        "ar": "محافظة الرس"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "ar_rass",
+         "name": {
+          "ar": "الرس"
+         },
+         "role": "governorateSeat",
+         "lat": 25.8694,
+         "lon": 43.4973,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108435 (Ar Rass)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.0
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_midhnab",
+       "name": {
+        "ar": "محافظة المذنب"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_al_midhnab",
+         "name": {
+          "ar": "المذنب"
+         },
+         "role": "governorateSeat",
+         "lat": 25.8601,
+         "lon": 44.2223,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109131 (Al Mithnab)",
+          "url": "https://www.geonames.org/109131",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_bukayriyah",
+       "name": {
+        "ar": "محافظة البكيرية"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_al_bukayriyah",
+         "name": {
+          "ar": "البكيرية"
+         },
+         "role": "governorateSeat",
+         "lat": 26.1392,
+         "lon": 43.6578,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109878 (Al Bukayrīyah)",
+          "url": "https://www.geonames.org/109878",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_badai",
+       "name": {
+        "ar": "محافظة البدائع"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_al_badai",
+         "name": {
+          "ar": "البدائع"
+         },
+         "role": "governorateSeat",
+         "lat": 25.9855,
+         "lon": 43.7366,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 397833 (Al Badā’i‘ al Wusţá)",
+          "url": "https://www.geonames.org/397833",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ayn_ibn_fuhayd",
+       "name": {
+        "ar": "محافظة الأسياح"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_ayn_ibn_fuhayd",
+         "name": {
+          "ar": "الأسياح"
+         },
+         "role": "governorateSeat",
+         "lat": 26.7716,
+         "lon": 44.2071,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107840 (Ayn Ibn Fuhayd)",
+          "url": "https://www.geonames.org/107840",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.1
+         },
+         "_seatNote": "المقر المفترض: عين ابن فهيد — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_an_nabhaniyah",
+       "name": {
+        "ar": "محافظة النبهانية"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_an_nabhaniyah",
+         "name": {
+          "ar": "النبهانية"
+         },
+         "role": "governorateSeat",
+         "lat": 25.8721,
+         "lon": 43.0584,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3030 (An Nabhaniyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ash_shimasiyah",
+       "name": {
+        "ar": "محافظة الشماسية"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_ash_shimasiyah",
+         "name": {
+          "ar": "الشماسية"
+         },
+         "role": "governorateSeat",
+         "lat": 26.3259,
+         "lon": 44.2551,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2777 (Ash Shimasiyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_uyun_al_jawa",
+       "name": {
+        "ar": "محافظة عيون الجواء"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_uyun_al_jawa",
+         "name": {
+          "ar": "عيون الجواء"
+         },
+         "role": "governorateSeat",
+         "lat": 26.4983,
+         "lon": 43.6312,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108782 (‘Uyūn al Jiwā’)",
+          "url": "https://www.geonames.org/108782",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_riyad_al_khabra",
+       "name": {
+        "ar": "محافظة رياض الخبراء"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_riyad_al_khabra",
+         "name": {
+          "ar": "رياض الخبراء"
+         },
+         "role": "governorateSeat",
+         "lat": 26.0667,
+         "lon": 43.5534,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 11835536 (Riyāḑ al Khabrā’)",
+          "url": "https://www.geonames.org/11835536",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 3.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_dariyah",
+       "name": {
+        "ar": "محافظة ضرية"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_dariyah",
+         "name": {
+          "ar": "ضرية"
+         },
+         "role": "governorateSeat",
+         "lat": 24.7129,
+         "lon": 42.9342,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3151 (Dariyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_uqlat_as_suqur",
+       "name": {
+        "ar": "محافظة عقلة الصقور"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_uqlat_as_suqur",
+         "name": {
+          "ar": "عقلة الصقور"
+         },
+         "role": "governorateSeat",
+         "lat": 25.8292,
+         "lon": 42.2012,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 100732 (‘Uqlat aş Şuqūr)",
+          "url": "https://www.geonames.org/100732",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_abanat",
+       "name": {
+        "ar": "محافظة أبانات"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_abanat",
+         "name": {
+          "ar": "أبانات"
+         },
+         "role": "governorateSeat",
+         "lat": 25.5012,
+         "lon": 42.8527,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2396 (Abanat)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "eastern",
+     "name": {
+      "ar": "المنطقة الشرقية"
+     },
+     "folkRegionId": "eastern",
+     "officialGovernorateCount": 12,
+     "listedGovernorates": 12,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "eastern__seat",
+       "name": {
+        "ar": "الدمام (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "dammam",
+         "name": {
+          "ar": "الدمام"
+         },
+         "role": "regionSeat",
+         "lat": 26.4344,
+         "lon": 50.1033,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110336 (Dammam)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.0
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_ahsa",
+       "name": {
+        "ar": "محافظة الأحساء"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "al_ahsa",
+         "name": {
+          "ar": "الأحساء"
+         },
+         "role": "governorateSeat",
+         "lat": 25.3647,
+         "lon": 49.5876,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109571 (Al Hufūf)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 4.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_hafar_al_batin",
+       "name": {
+        "ar": "محافظة حفر الباطن"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "hafar_al_batin",
+         "name": {
+          "ar": "حفر الباطن"
+         },
+         "role": "governorateSeat",
+         "lat": 28.4328,
+         "lon": 45.9708,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 106297 (Hafar Al-Batin)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_jubail",
+       "name": {
+        "ar": "محافظة الجبيل"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "jubail",
+         "name": {
+          "ar": "الجبيل"
+         },
+         "role": "governorateSeat",
+         "lat": 27.0174,
+         "lon": 49.6225,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109435 (Al Jubayl)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 5.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_qatif",
+       "name": {
+        "ar": "محافظة القطيف"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "qatif",
+         "name": {
+          "ar": "القطيف"
+         },
+         "role": "governorateSeat",
+         "lat": 26.5654,
+         "lon": 50.0089,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108927 (Al Qaţīf)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_khobar",
+       "name": {
+        "ar": "محافظة الخبر"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "khobar",
+         "name": {
+          "ar": "الخبر"
+         },
+         "role": "governorateSeat",
+         "lat": 26.2794,
+         "lon": 50.2083,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109323 (Khobar)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 3.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "dhahran",
+         "name": {
+          "ar": "الظهران"
+         },
+         "role": "city",
+         "lat": 26.2886,
+         "lon": 50.114,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107797 (Dhahran)",
+          "license": "CC BY 4.0"
+         },
+         "_note": "تبعية الظهران الإدارية (الخبر أم الدمام) غير مؤكدة",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_khafji",
+       "name": {
+        "ar": "محافظة الخفجي"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_al_khafji",
+         "name": {
+          "ar": "الخفجي"
+         },
+         "role": "governorateSeat",
+         "lat": 28.4391,
+         "lon": 48.4913,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109380 (Al Khafjī)",
+          "url": "https://www.geonames.org/109380",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_salwa",
+       "name": {
+        "ar": "محافظة العديد"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_salwa",
+         "name": {
+          "ar": "العديد"
+         },
+         "role": "governorateSeat",
+         "lat": 24.7123,
+         "lon": 50.7701,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2641 (Salwa)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "_seatNote": "المقر المفترض: سلوى — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ras_tannurah",
+       "name": {
+        "ar": "محافظة رأس تنورة"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_ras_tannurah",
+         "name": {
+          "ar": "رأس تنورة"
+         },
+         "role": "governorateSeat",
+         "lat": 26.7074,
+         "lon": 50.0673,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 102891 (Ras Tanura)",
+          "url": "https://www.geonames.org/102891",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_buqayq",
+       "name": {
+        "ar": "محافظة بقيق"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_buqayq",
+         "name": {
+          "ar": "بقيق"
+         },
+         "role": "governorateSeat",
+         "lat": 25.934,
+         "lon": 49.6688,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107312 (Abqaiq)",
+          "url": "https://www.geonames.org/107312",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.9
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_an_nu_ayriyah",
+       "name": {
+        "ar": "محافظة النعيرية"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_an_nu_ayriyah",
+         "name": {
+          "ar": "النعيرية"
+         },
+         "role": "governorateSeat",
+         "lat": 27.4757,
+         "lon": 48.4774,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 115 (An Nu'ayriyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_qaryat_al_ulya",
+       "name": {
+        "ar": "محافظة قرية العليا"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_qaryat_al_ulya",
+         "name": {
+          "ar": "قرية العليا"
+         },
+         "role": "governorateSeat",
+         "lat": 27.563,
+         "lon": 47.7004,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 89 (Qaryat Al 'Ulya)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_eastern_74",
+       "name": {
+        "ar": "محافظة البيضاء"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_eastern_74",
+         "name": {
+          "ar": "البيضاء"
+         },
+         "role": "governorateSeat",
+         "lat": null,
+         "lon": null,
+         "coordSource": {
+          "kind": "missing",
+          "note": "لم نجد إحداثيات؛ يحتاج المراجع"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "asir",
+     "name": {
+      "ar": "منطقة عسير"
+     },
+     "folkRegionId": "southern",
+     "officialGovernorateCount": 18,
+     "listedGovernorates": 18,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "asir__seat",
+       "name": {
+        "ar": "أبها (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "abha",
+         "name": {
+          "ar": "أبها"
+         },
+         "role": "regionSeat",
+         "lat": 18.2164,
+         "lon": 42.5053,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110690 (Abha)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.6
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_khamis_mushait",
+       "name": {
+        "ar": "محافظة خميس مشيط"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "khamis_mushait",
+         "name": {
+          "ar": "خميس مشيط"
+         },
+         "role": "governorateSeat",
+         "lat": 18.3,
+         "lon": 42.7333,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 105072 (Khamis Mushait)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_bisha",
+       "name": {
+        "ar": "محافظة بيشة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "bisha",
+         "name": {
+          "ar": "بيشة"
+         },
+         "role": "governorateSeat",
+         "lat": 20.0005,
+         "lon": 42.6052,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 103369 (Qal‘at Bīshah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 180.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_an_namas",
+       "name": {
+        "ar": "محافظة النماص"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_an_namas",
+         "name": {
+          "ar": "النماص"
+         },
+         "role": "governorateSeat",
+         "lat": 19.1455,
+         "lon": 42.1201,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108617 (An Nimas)",
+          "url": "https://www.geonames.org/108617",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 3.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_muhayil",
+       "name": {
+        "ar": "محافظة محايل"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_muhayil",
+         "name": {
+          "ar": "محايل"
+         },
+         "role": "governorateSeat",
+         "lat": 18.5443,
+         "lon": 42.0432,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1801 (Muhayil)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_tathlith",
+       "name": {
+        "ar": "محافظة تثليث"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_tathlith",
+         "name": {
+          "ar": "تثليث"
+         },
+         "role": "governorateSeat",
+         "lat": 19.5318,
+         "lon": 43.5197,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 101547 (Tathlīth)",
+          "url": "https://www.geonames.org/101547",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.7
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_rijal_al_ma",
+       "name": {
+        "ar": "محافظة رجال ألمع"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_rijal_al_ma",
+         "name": {
+          "ar": "رجال ألمع"
+         },
+         "role": "governorateSeat",
+         "lat": 18.1954,
+         "lon": 42.2845,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1846 (Rijal Al Ma')",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_dhahran_al_janub",
+       "name": {
+        "ar": "محافظة ظهران الجنوب"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_dhahran_al_janub",
+         "name": {
+          "ar": "ظهران الجنوب"
+         },
+         "role": "governorateSeat",
+         "lat": 17.6698,
+         "lon": 43.5099,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3381 (Dhahran Al Janub)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_sarat_abidah",
+       "name": {
+        "ar": "محافظة سراة عبيدة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_sarat_abidah",
+         "name": {
+          "ar": "سراة عبيدة"
+         },
+         "role": "governorateSeat",
+         "lat": 18.089,
+         "lon": 43.132,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 12500245 (Sarāt ‘Abīdah)",
+          "url": "https://www.geonames.org/12500245",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ahad_rifaydah",
+       "name": {
+        "ar": "محافظة أحد رفيدة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_ahad_rifaydah",
+         "name": {
+          "ar": "أحد رفيدة"
+         },
+         "role": "governorateSeat",
+         "lat": 18.1736,
+         "lon": 42.8366,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 65 (Ahad Rifaydah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_balqarn",
+       "name": {
+        "ar": "محافظة بلقرن"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_balqarn",
+         "name": {
+          "ar": "بلقرن"
+         },
+         "role": "governorateSeat",
+         "lat": 19.5773,
+         "lon": 41.9636,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 11670045 (Sabt Alalayah)",
+          "url": "https://www.geonames.org/11670045",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 8.0
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_majardah",
+       "name": {
+        "ar": "محافظة المجاردة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_majardah",
+         "name": {
+          "ar": "المجاردة"
+         },
+         "role": "governorateSeat",
+         "lat": 19.132,
+         "lon": 41.924,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 399518 (Al Majāridah)",
+          "url": "https://www.geonames.org/399518",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.5
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_tanumah",
+       "name": {
+        "ar": "محافظة تنومة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_tanumah",
+         "name": {
+          "ar": "تنومة"
+         },
+         "role": "governorateSeat",
+         "lat": 18.9636,
+         "lon": 42.1661,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3273 (Tanumah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_tarib",
+       "name": {
+        "ar": "محافظة طريب"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_tarib",
+         "name": {
+          "ar": "طريب"
+         },
+         "role": "governorateSeat",
+         "lat": 18.5668,
+         "lon": 43.2069,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 256 (Tarib)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_bariq",
+       "name": {
+        "ar": "محافظة بارق"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_bariq",
+         "name": {
+          "ar": "بارق"
+         },
+         "role": "governorateSeat",
+         "lat": 18.9297,
+         "lon": 41.9295,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 12495725 (Bariq)",
+          "url": "https://www.geonames.org/12495725",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.3
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_birk",
+       "name": {
+        "ar": "محافظة البرك"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_birk",
+         "name": {
+          "ar": "البرك"
+         },
+         "role": "governorateSeat",
+         "lat": 18.2249,
+         "lon": 41.5415,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2893 (Al Birk)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_harajah",
+       "name": {
+        "ar": "محافظة الحرجة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_harajah",
+         "name": {
+          "ar": "الحرجة"
+         },
+         "role": "governorateSeat",
+         "lat": 19.5778,
+         "lon": 41.9936,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1551 (Al Harajah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_amwah",
+       "name": {
+        "ar": "محافظة الأمواه"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_amwah",
+         "name": {
+          "ar": "الأمواه"
+         },
+         "role": "governorateSeat",
+         "lat": 18.715,
+         "lon": 43.6594,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1453 (Al Amwah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_farshah",
+       "name": {
+        "ar": "محافظة الفرشة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_farshah",
+         "name": {
+          "ar": "الفرشة"
+         },
+         "role": "governorateSeat",
+         "lat": 17.7555,
+         "lon": 43.1624,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3330 (Al Farshah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "tabuk",
+     "name": {
+      "ar": "منطقة تبوك"
+     },
+     "folkRegionId": "northern",
+     "officialGovernorateCount": 6,
+     "listedGovernorates": 6,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "tabuk__seat",
+       "name": {
+        "ar": "تبوك (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "tabuk",
+         "name": {
+          "ar": "تبوك"
+         },
+         "role": "regionSeat",
+         "lat": 28.3998,
+         "lon": 36.5715,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 101628 (Tabuk)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 4.0
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_wajh",
+       "name": {
+        "ar": "محافظة الوجه"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_al_wajh",
+         "name": {
+          "ar": "الوجه"
+         },
+         "role": "governorateSeat",
+         "lat": 26.2309,
+         "lon": 36.4649,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108773 (Al Wajh)",
+          "url": "https://www.geonames.org/108773",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.3
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_duba",
+       "name": {
+        "ar": "محافظة ضبا"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_duba",
+         "name": {
+          "ar": "ضبا"
+         },
+         "role": "governorateSeat",
+         "lat": 27.3513,
+         "lon": 35.6901,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 106909 (Duba)",
+          "url": "https://www.geonames.org/106909",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_tayma",
+       "name": {
+        "ar": "محافظة تيماء"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_tayma",
+         "name": {
+          "ar": "تيماء"
+         },
+         "role": "governorateSeat",
+         "lat": 27.6223,
+         "lon": 38.5388,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 101516 (Taymā’)",
+          "url": "https://www.geonames.org/101516",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_umluj",
+       "name": {
+        "ar": "محافظة أملج"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_umluj",
+         "name": {
+          "ar": "أملج"
+         },
+         "role": "governorateSeat",
+         "lat": 25.0213,
+         "lon": 37.2685,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 100926 (Umluj)",
+          "url": "https://www.geonames.org/100926",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 2.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_haql",
+       "name": {
+        "ar": "محافظة حقل"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_haql",
+         "name": {
+          "ar": "حقل"
+         },
+         "role": "governorateSeat",
+         "lat": 29.2863,
+         "lon": 34.9469,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 106102 (Ḩaql)",
+          "url": "https://www.geonames.org/106102",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.6
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_bada",
+       "name": {
+        "ar": "محافظة البدع"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_bada",
+         "name": {
+          "ar": "البدع"
+         },
+         "role": "governorateSeat",
+         "lat": 28.5112,
+         "lon": 35.0076,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3614 (Al Bada')",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "hail",
+     "name": {
+      "ar": "منطقة حائل"
+     },
+     "folkRegionId": "northern",
+     "officialGovernorateCount": 8,
+     "listedGovernorates": 8,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "hail__seat",
+       "name": {
+        "ar": "حائل (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "hail",
+         "name": {
+          "ar": "حائل"
+         },
+         "role": "regionSeat",
+         "lat": 27.5219,
+         "lon": 41.6907,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 106281 (Ha'il)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 1.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_hait",
+       "name": {
+        "ar": "محافظة الحائط"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_hait",
+         "name": {
+          "ar": "الحائط"
+         },
+         "role": "governorateSeat",
+         "lat": 25.9882,
+         "lon": 40.4739,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2721 (Al Hait)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_baq_a",
+       "name": {
+        "ar": "محافظة بقعاء"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_baq_a",
+         "name": {
+          "ar": "بقعاء"
+         },
+         "role": "governorateSeat",
+         "lat": 27.9065,
+         "lon": 42.389,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107588 (Baq‘ā’)",
+          "url": "https://www.geonames.org/107588",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 2.0
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_ghazalah",
+       "name": {
+        "ar": "محافظة الغزالة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_ghazalah",
+         "name": {
+          "ar": "الغزالة"
+         },
+         "role": "governorateSeat",
+         "lat": 26.7944,
+         "lon": 41.3173,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2715 (Al Ghazalah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ash_shinan",
+       "name": {
+        "ar": "محافظة الشنان"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_ash_shinan",
+         "name": {
+          "ar": "الشنان"
+         },
+         "role": "governorateSeat",
+         "lat": 27.1807,
+         "lon": 42.4416,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1228 (Ash Shinan)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_as_sulaymi",
+       "name": {
+        "ar": "محافظة السليمي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_as_sulaymi",
+         "name": {
+          "ar": "السليمي"
+         },
+         "role": "governorateSeat",
+         "lat": 26.2949,
+         "lon": 41.3638,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2702 (As Sulaymi)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ash_shamli",
+       "name": {
+        "ar": "محافظة الشملي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_ash_shamli",
+         "name": {
+          "ar": "الشملي"
+         },
+         "role": "governorateSeat",
+         "lat": 26.8577,
+         "lon": 40.3295,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 13237017 (Ash Shamli)",
+          "url": "https://www.geonames.org/13237017",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.9
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_mawqaq",
+       "name": {
+        "ar": "محافظة موقق"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_mawqaq",
+         "name": {
+          "ar": "موقق"
+         },
+         "role": "governorateSeat",
+         "lat": 27.3873,
+         "lon": 41.1747,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2351 (Mawqaq)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_simira",
+       "name": {
+        "ar": "محافظة سميراء"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_simira",
+         "name": {
+          "ar": "سميراء"
+         },
+         "role": "governorateSeat",
+         "lat": 26.4994,
+         "lon": 42.1294,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2602 (Simira')",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "northern_borders",
+     "name": {
+      "ar": "منطقة الحدود الشمالية"
+     },
+     "folkRegionId": "northern",
+     "officialGovernorateCount": 3,
+     "listedGovernorates": 3,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "northern_borders__seat",
+       "name": {
+        "ar": "عرعر (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "arar",
+         "name": {
+          "ar": "عرعر"
+         },
+         "role": "regionSeat",
+         "lat": 30.9753,
+         "lon": 41.0381,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108512 (Arar)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 2.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_rafha",
+       "name": {
+        "ar": "محافظة رفحاء"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_rafha",
+         "name": {
+          "ar": "رفحاء"
+         },
+         "role": "governorateSeat",
+         "lat": 29.6372,
+         "lon": 43.499,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2256 (Rafha')",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_turaif",
+       "name": {
+        "ar": "محافظة طريف"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_turaif",
+         "name": {
+          "ar": "طريف"
+         },
+         "role": "governorateSeat",
+         "lat": 31.6725,
+         "lon": 38.6637,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 101312 (Turaif)",
+          "url": "https://www.geonames.org/101312",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_uwayqiliyah",
+       "name": {
+        "ar": "محافظة العويقيلة"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_uwayqiliyah",
+         "name": {
+          "ar": "العويقيلة"
+         },
+         "role": "governorateSeat",
+         "lat": 30.3878,
+         "lon": 42.2398,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2215 (Al 'Uwayqiliyah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "jazan",
+     "name": {
+      "ar": "منطقة جازان"
+     },
+     "folkRegionId": "southern",
+     "officialGovernorateCount": 16,
+     "listedGovernorates": 16,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "jazan__seat",
+       "name": {
+        "ar": "جازان (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "jazan",
+         "name": {
+          "ar": "جازان"
+         },
+         "role": "regionSeat",
+         "lat": 16.8892,
+         "lon": 42.5511,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 105299 (Jizan)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.9
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_sabya",
+       "name": {
+        "ar": "محافظة صبيا"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_sabya",
+         "name": {
+          "ar": "صبيا"
+         },
+         "role": "governorateSeat",
+         "lat": 17.1495,
+         "lon": 42.6254,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 102651 (Şabyā)",
+          "url": "https://www.geonames.org/102651",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_abu_arish",
+       "name": {
+        "ar": "محافظة أبو عريش"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_abu_arish",
+         "name": {
+          "ar": "أبو عريش"
+         },
+         "role": "governorateSeat",
+         "lat": 16.9689,
+         "lon": 42.8325,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110619 (Abū ‘Arīsh)",
+          "url": "https://www.geonames.org/110619",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_samtah",
+       "name": {
+        "ar": "محافظة صامطة"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_samtah",
+         "name": {
+          "ar": "صامطة"
+         },
+         "role": "governorateSeat",
+         "lat": 16.596,
+         "lon": 42.9444,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 102451 (Şāmitah)",
+          "url": "https://www.geonames.org/102451",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_bish",
+       "name": {
+        "ar": "محافظة بيش"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_bish",
+         "name": {
+          "ar": "بيش"
+         },
+         "role": "governorateSeat",
+         "lat": 17.3789,
+         "lon": 42.5464,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3462 (Bish)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_farasan",
+       "name": {
+        "ar": "محافظة فرسان"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_farasan",
+         "name": {
+          "ar": "فرسان"
+         },
+         "role": "governorateSeat",
+         "lat": 16.7022,
+         "lon": 42.1183,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 106744 (Farasān)",
+          "url": "https://www.geonames.org/106744",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ad_darb",
+       "name": {
+        "ar": "محافظة الدرب"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_ad_darb",
+         "name": {
+          "ar": "الدرب"
+         },
+         "role": "governorateSeat",
+         "lat": 17.7229,
+         "lon": 42.2526,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110328 (Ad Darb)",
+          "url": "https://www.geonames.org/110328",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 3.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_khawbah",
+       "name": {
+        "ar": "محافظة الحرث"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_khawbah",
+         "name": {
+          "ar": "الحرث"
+         },
+         "role": "governorateSeat",
+         "lat": 16.7885,
+         "lon": 43.2203,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3633 (Al Khawbah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "_seatNote": "المقر المفترض: الخوبة — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_damad",
+       "name": {
+        "ar": "محافظة ضمد"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_damad",
+         "name": {
+          "ar": "ضمد"
+         },
+         "role": "governorateSeat",
+         "lat": 17.1043,
+         "lon": 42.7816,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107117 (Ḑamad)",
+          "url": "https://www.geonames.org/107117",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ar_rayth",
+       "name": {
+        "ar": "محافظة الريث"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_ar_rayth",
+         "name": {
+          "ar": "الريث"
+         },
+         "role": "governorateSeat",
+         "lat": 17.6022,
+         "lon": 42.8583,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3427 (Ar Rayth)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ad_dair",
+       "name": {
+        "ar": "محافظة الدائر"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_ad_dair",
+         "name": {
+          "ar": "الدائر"
+         },
+         "role": "governorateSeat",
+         "lat": 17.3325,
+         "lon": 43.1363,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3447 (Ad Dair)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ahad_al_musarihah",
+       "name": {
+        "ar": "محافظة أحد المسارحة"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_ahad_al_musarihah",
+         "name": {
+          "ar": "أحد المسارحة"
+         },
+         "role": "governorateSeat",
+         "lat": 16.7081,
+         "lon": 42.9515,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3652 (Ahad Al Musarihah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_aydabi",
+       "name": {
+        "ar": "محافظة العيدابي"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_aydabi",
+         "name": {
+          "ar": "العيدابي"
+         },
+         "role": "governorateSeat",
+         "lat": 17.2355,
+         "lon": 42.9446,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3455 (Al 'Aydabi)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_aridah",
+       "name": {
+        "ar": "محافظة العارضة"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_aridah",
+         "name": {
+          "ar": "العارضة"
+         },
+         "role": "governorateSeat",
+         "lat": 17.039,
+         "lon": 43.088,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3597 (Al 'Aridah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_harub",
+       "name": {
+        "ar": "محافظة هروب"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_harub",
+         "name": {
+          "ar": "هروب"
+         },
+         "role": "governorateSeat",
+         "lat": 17.4374,
+         "lon": 42.8981,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3457 (Harub)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_fayfa",
+       "name": {
+        "ar": "محافظة فيفاء"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_fayfa",
+         "name": {
+          "ar": "فيفاء"
+         },
+         "role": "governorateSeat",
+         "lat": 17.2806,
+         "lon": 43.1373,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 106667 (Fayfā’)",
+          "url": "https://www.geonames.org/106667",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 4.3
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_at_tuwal",
+       "name": {
+        "ar": "محافظة الطوال"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_at_tuwal",
+         "name": {
+          "ar": "الطوال"
+         },
+         "role": "governorateSeat",
+         "lat": 16.5289,
+         "lon": 42.9681,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3555 (At Tuwal)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "najran",
+     "name": {
+      "ar": "منطقة نجران"
+     },
+     "folkRegionId": "southern",
+     "officialGovernorateCount": 7,
+     "listedGovernorates": 7,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "najran__seat",
+       "name": {
+        "ar": "نجران (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "najran",
+         "name": {
+          "ar": "نجران"
+         },
+         "role": "regionSeat",
+         "lat": 17.4933,
+         "lon": 44.1277,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 103630 (Najrān)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 15.6
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_sharurah",
+       "name": {
+        "ar": "محافظة شرورة"
+       },
+       "category": "A",
+       "cities": [
+        {
+         "id": "sa_sharurah",
+         "name": {
+          "ar": "شرورة"
+         },
+         "role": "governorateSeat",
+         "lat": 17.4998,
+         "lon": 47.1886,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3347 (Sharurah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_hubuna",
+       "name": {
+        "ar": "محافظة حبونا"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_hubuna",
+         "name": {
+          "ar": "حبونا"
+         },
+         "role": "governorateSeat",
+         "lat": 17.8472,
+         "lon": 44.0208,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 12513575 (Ḩabūnā)",
+          "url": "https://www.geonames.org/12513575",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_badr_al_janub",
+       "name": {
+        "ar": "محافظة بدر الجنوب"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_badr_al_janub",
+         "name": {
+          "ar": "بدر الجنوب"
+         },
+         "role": "governorateSeat",
+         "lat": 17.8853,
+         "lon": 43.7141,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107746 (Badr al-Janūb)",
+          "url": "https://www.geonames.org/107746",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 2.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_yadamah",
+       "name": {
+        "ar": "محافظة يدمة"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_yadamah",
+         "name": {
+          "ar": "يدمة"
+         },
+         "role": "governorateSeat",
+         "lat": 18.5292,
+         "lon": 44.2031,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 399659 (Yadamah)",
+          "url": "https://www.geonames.org/399659",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 7.4
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_thar",
+       "name": {
+        "ar": "محافظة ثار"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_thar",
+         "name": {
+          "ar": "ثار"
+         },
+         "role": "governorateSeat",
+         "lat": 17.9774,
+         "lon": 44.0763,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2877 (Thar)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_bir_khubash",
+       "name": {
+        "ar": "محافظة خباش"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_bir_khubash",
+         "name": {
+          "ar": "خباش"
+         },
+         "role": "governorateSeat",
+         "lat": 17.5563,
+         "lon": 44.748,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 13645278 (Khubāsh)",
+          "url": "https://www.geonames.org/13645278",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 3.6
+         },
+         "_seatNote": "المقر المفترض: بئر خباش — غير مؤكد",
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_kharkhir",
+       "name": {
+        "ar": "محافظة الخرخير"
+       },
+       "category": "B",
+       "cities": [
+        {
+         "id": "sa_al_kharkhir",
+         "name": {
+          "ar": "الخرخير"
+         },
+         "role": "governorateSeat",
+         "lat": 18.8588,
+         "lon": 51.1347,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3562 (Al Kharkhir)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "baha",
+     "name": {
+      "ar": "منطقة الباحة"
+     },
+     "folkRegionId": "southern",
+     "officialGovernorateCount": 9,
+     "listedGovernorates": 9,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "baha__seat",
+       "name": {
+        "ar": "الباحة (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "al_bahah",
+         "name": {
+          "ar": "الباحة"
+         },
+         "role": "regionSeat",
+         "lat": 20.0129,
+         "lon": 41.4677,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109953 (Al Bahah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_biljurashi",
+       "name": {
+        "ar": "محافظة بلجرشي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_biljurashi",
+         "name": {
+          "ar": "بلجرشي"
+         },
+         "role": "governorateSeat",
+         "lat": 19.8594,
+         "lon": 41.5572,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 107692 (Baljurashi)",
+          "url": "https://www.geonames.org/107692",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 2.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_aqiq",
+       "name": {
+        "ar": "محافظة العقيق"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_aqiq",
+         "name": {
+          "ar": "العقيق"
+         },
+         "role": "governorateSeat",
+         "lat": 20.2736,
+         "lon": 41.6643,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 110060 (Al ‘Aqīq)",
+          "url": "https://www.geonames.org/110060",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_quray",
+       "name": {
+        "ar": "محافظة القرى"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_quray",
+         "name": {
+          "ar": "القرى"
+         },
+         "role": "governorateSeat",
+         "lat": 20.2608,
+         "lon": 41.1498,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1400 (Al Quray)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_bani_hasan",
+       "name": {
+        "ar": "محافظة بني حسن"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_bani_hasan",
+         "name": {
+          "ar": "بني حسن"
+         },
+         "role": "governorateSeat",
+         "lat": 20.0527,
+         "lon": 41.3598,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1545 (Bani Hasan)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_mandaq",
+       "name": {
+        "ar": "محافظة المندق"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_mandaq",
+         "name": {
+          "ar": "المندق"
+         },
+         "role": "governorateSeat",
+         "lat": 20.1588,
+         "lon": 41.2834,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 109118 (Al Mindak)",
+          "url": "https://www.geonames.org/109118",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 1.1
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_mukhwah",
+       "name": {
+        "ar": "محافظة المخواة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_mukhwah",
+         "name": {
+          "ar": "المخواة"
+         },
+         "role": "governorateSeat",
+         "lat": 19.7865,
+         "lon": 41.4385,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3236 (Al Mukhwah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_qilwah",
+       "name": {
+        "ar": "محافظة قلوة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_qilwah",
+         "name": {
+          "ar": "قلوة"
+         },
+         "role": "governorateSeat",
+         "lat": 19.948,
+         "lon": 41.2394,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3220 (Qilwah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_hajrah",
+       "name": {
+        "ar": "محافظة الحجرة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_hajrah",
+         "name": {
+          "ar": "الحجرة"
+         },
+         "role": "governorateSeat",
+         "lat": 20.2287,
+         "lon": 41.0744,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 1425 (Al Hajrah)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_ghamid_az_zinad",
+       "name": {
+        "ar": "محافظة غامد الزناد"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_ghamid_az_zinad",
+         "name": {
+          "ar": "غامد الزناد"
+         },
+         "role": "governorateSeat",
+         "lat": 19.5962,
+         "lon": 41.5228,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 3235 (Ghamid Az Zinad)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "jawf",
+     "name": {
+      "ar": "منطقة الجوف"
+     },
+     "folkRegionId": "northern",
+     "officialGovernorateCount": 3,
+     "listedGovernorates": 3,
+     "calendarRegionId": "najd",
+     "_calendarNote": "الربط الحالي في cities.json (كل السعودية ← najd)؛ غير معتمد",
+     "governorates": [
+      {
+       "id": "jawf__seat",
+       "name": {
+        "ar": "سكاكا (مقر الإمارة)"
+       },
+       "category": "seat",
+       "cities": [
+        {
+         "id": "sakaka",
+         "name": {
+          "ar": "سكاكا"
+         },
+         "role": "regionSeat",
+         "lat": 29.9697,
+         "lon": 40.2064,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 102527 (Sakakah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي (المعرّف محفوظ)",
+          "crossCheckSplKm": 0.8
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_al_qurayyat",
+       "name": {
+        "ar": "محافظة القريات"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_al_qurayyat",
+         "name": {
+          "ar": "القريات"
+         },
+         "role": "governorateSeat",
+         "lat": 31.3318,
+         "lon": 37.3428,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 108648 (Qurayyat)",
+          "url": "https://www.geonames.org/108648",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 2.2
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_dawmat_al_jandal",
+       "name": {
+        "ar": "محافظة دومة الجندل"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_dawmat_al_jandal",
+         "name": {
+          "ar": "دومة الجندل"
+         },
+         "role": "governorateSeat",
+         "lat": 29.8179,
+         "lon": 39.8657,
+         "coordSource": {
+          "kind": "spl_national_address",
+          "ref": "homaily dataset city_id 2268 (Dawmat Al Jandal)",
+          "url": "https://github.com/homaily/Saudi-Arabia-Regions-Cities-and-Districts",
+          "license": "GPL-2.0 (المستودع) — البيانات مأخوذة من maps.address.gov.sa؛ لا تُضمَّن قبل قرار الترخيص",
+          "needsLicenseDecision": true
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      },
+      {
+       "id": "gov_tubarjal",
+       "name": {
+        "ar": "محافظة طبرجل"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sa_tubarjal",
+         "name": {
+          "ar": "طبرجل"
+         },
+         "role": "governorateSeat",
+         "lat": 30.4999,
+         "lon": 38.216,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 101631 (Ţubarjal)",
+          "url": "https://www.geonames.org/101631",
+          "license": "CC BY 4.0",
+          "crossCheckSplKm": 0.6
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "source": {
+      "ref": "C01-C14",
+      "note": "قائمة المحافظات من ملخصات محرك البحث لصفحات سعوديبيديا والصحف (انظر research/CITIES.md)؛ لم تُقرأ الصفحات مباشرة"
+     },
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    }
+   ]
+  },
+  {
+   "code": "KW",
+   "name": {
+    "ar": "الكويت"
+   },
+   "adminLevelName": {
+    "ar": "محافظة"
+   },
+   "regions": [
+    {
+     "id": "kw_capital",
+     "name": {
+      "ar": "محافظة العاصمة"
+     },
+     "calendarRegionId": "kuwait",
+     "governorates": [
+      {
+       "id": "kw_capital__all",
+       "name": {
+        "ar": "محافظة العاصمة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "kuwait_city",
+         "name": {
+          "ar": "مدينة الكويت"
+         },
+         "role": "city",
+         "lat": 29.367,
+         "lon": 47.9743,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 285787 (Kuwait City)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "kw_hawalli",
+     "name": {
+      "ar": "محافظة حولي"
+     },
+     "calendarRegionId": "kuwait",
+     "governorates": [
+      {
+       "id": "kw_hawalli__all",
+       "name": {
+        "ar": "محافظة حولي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "hawalli",
+         "name": {
+          "ar": "حولي"
+         },
+         "role": "city",
+         "lat": 29.3328,
+         "lon": 48.0286,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 285629 (Ḩawallī)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "kw_farwaniya",
+     "name": {
+      "ar": "محافظة الفروانية"
+     },
+     "calendarRegionId": "kuwait",
+     "governorates": [
+      {
+       "id": "kw_farwaniya__all",
+       "name": {
+        "ar": "محافظة الفروانية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_farwaniyah",
+         "name": {
+          "ar": "الفروانية"
+         },
+         "role": "city",
+         "lat": 29.2775,
+         "lon": 47.9586,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 285815 (Al Farwānīyah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "kw_ahmadi",
+     "name": {
+      "ar": "محافظة الأحمدي"
+     },
+     "calendarRegionId": "kuwait",
+     "governorates": [
+      {
+       "id": "kw_ahmadi__all",
+       "name": {
+        "ar": "محافظة الأحمدي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_ahmadi",
+         "name": {
+          "ar": "الأحمدي"
+         },
+         "role": "city",
+         "lat": 29.0769,
+         "lon": 48.0839,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 285839 (Al Aḩmadī)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "kw_jahra",
+     "name": {
+      "ar": "محافظة الجهراء"
+     },
+     "calendarRegionId": "kuwait",
+     "governorates": [
+      {
+       "id": "kw_jahra__all",
+       "name": {
+        "ar": "محافظة الجهراء"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_jahra",
+         "name": {
+          "ar": "الجهراء"
+         },
+         "role": "city",
+         "lat": 29.3375,
+         "lon": 47.6581,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 285799 (Al Jahrā’)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "kw_mubarak",
+     "name": {
+      "ar": "محافظة مبارك الكبير"
+     },
+     "calendarRegionId": "kuwait",
+     "governorates": [
+      {
+       "id": "kw_mubarak__all",
+       "name": {
+        "ar": "محافظة مبارك الكبير"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "mubarak_al_kabeer",
+         "name": {
+          "ar": "مبارك الكبير"
+         },
+         "role": "city",
+         "lat": 29.1898,
+         "lon": 48.0872,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 7329411 (Mubārak al Kabīr)",
+          "url": "https://www.geonames.org/7329411",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    }
+   ]
+  },
+  {
+   "code": "BH",
+   "name": {
+    "ar": "البحرين"
+   },
+   "adminLevelName": {
+    "ar": "محافظة"
+   },
+   "regions": [
+    {
+     "id": "bh_capital",
+     "name": {
+      "ar": "محافظة العاصمة"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "bh_capital__all",
+       "name": {
+        "ar": "محافظة العاصمة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "manama",
+         "name": {
+          "ar": "المنامة"
+         },
+         "role": "city",
+         "lat": 26.2279,
+         "lon": 50.5857,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 290340 (Manama)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "bh_muharraq",
+     "name": {
+      "ar": "محافظة المحرق"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "bh_muharraq__all",
+       "name": {
+        "ar": "محافظة المحرق"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "muharraq",
+         "name": {
+          "ar": "المحرق"
+         },
+         "role": "city",
+         "lat": 26.2572,
+         "lon": 50.6119,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 290332 (Al Muharraq)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "bh_northern",
+     "name": {
+      "ar": "المحافظة الشمالية"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "bh_northern__all",
+       "name": {
+        "ar": "المحافظة الشمالية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "hamad_town",
+         "name": {
+          "ar": "مدينة حمد"
+         },
+         "role": "city",
+         "lat": 26.1153,
+         "lon": 50.5069,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 290247 (Madīnat Ḩamad)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "bh_southern",
+     "name": {
+      "ar": "المحافظة الجنوبية"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "bh_southern__all",
+       "name": {
+        "ar": "المحافظة الجنوبية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "riffa",
+         "name": {
+          "ar": "الرفاع"
+         },
+         "role": "city",
+         "lat": 26.13,
+         "lon": 50.555,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 385038 (Ar Rifā‘)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "isa_town",
+         "name": {
+          "ar": "مدينة عيسى"
+         },
+         "role": "city",
+         "lat": 26.1736,
+         "lon": 50.5478,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 290187 (Madīnat ‘Īsá)",
+          "url": "https://www.geonames.org/290187",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    }
+   ]
+  },
+  {
+   "code": "QA",
+   "name": {
+    "ar": "قطر"
+   },
+   "adminLevelName": {
+    "ar": "بلدية"
+   },
+   "regions": [
+    {
+     "id": "qa_doha",
+     "name": {
+      "ar": "بلدية الدوحة"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_doha__all",
+       "name": {
+        "ar": "بلدية الدوحة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "doha",
+         "name": {
+          "ar": "الدوحة"
+         },
+         "role": "city",
+         "lat": 25.2855,
+         "lon": 51.531,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 290030 (Doha)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qa_rayyan",
+     "name": {
+      "ar": "بلدية الريان"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_rayyan__all",
+       "name": {
+        "ar": "بلدية الريان"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_rayyan",
+         "name": {
+          "ar": "الريان"
+         },
+         "role": "city",
+         "lat": 25.2919,
+         "lon": 51.4244,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289888 (Ar Rayyān)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qa_wakrah",
+     "name": {
+      "ar": "بلدية الوكرة"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_wakrah__all",
+       "name": {
+        "ar": "بلدية الوكرة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_wakrah",
+         "name": {
+          "ar": "الوكرة"
+         },
+         "role": "city",
+         "lat": 25.1715,
+         "lon": 51.6034,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289915 (Al Wakrah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qa_khor",
+     "name": {
+      "ar": "بلدية الخور"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_khor__all",
+       "name": {
+        "ar": "بلدية الخور"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_khor",
+         "name": {
+          "ar": "الخور"
+         },
+         "role": "city",
+         "lat": 25.6839,
+         "lon": 51.5058,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289962 (Al Khawr)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qa_umm_salal",
+     "name": {
+      "ar": "بلدية أم صلال"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_umm_salal__all",
+       "name": {
+        "ar": "بلدية أم صلال"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "umm_salal_mohammed",
+         "name": {
+          "ar": "أم صلال محمد"
+         },
+         "role": "city",
+         "lat": 25.4152,
+         "lon": 51.4065,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289523 (Umm Şalāl Muḩammad)",
+          "url": "https://www.geonames.org/289523",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qa_daayen",
+     "name": {
+      "ar": "بلدية الضعاين"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_daayen__all",
+       "name": {
+        "ar": "بلدية الضعاين"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "lusail",
+         "name": {
+          "ar": "لوسيل"
+         },
+         "role": "city",
+         "lat": 25.4175,
+         "lon": 51.5075,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 13512674 (Lusail)",
+          "url": "https://www.geonames.org/13512674",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qa_shamal",
+     "name": {
+      "ar": "بلدية الشمال"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_shamal__all",
+       "name": {
+        "ar": "بلدية الشمال"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "madinat_ash_shamal",
+         "name": {
+          "ar": "مدينة الشمال"
+         },
+         "role": "city",
+         "lat": 26.1293,
+         "lon": 51.2009,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289739 (Madīnat ash Shamāl)",
+          "url": "https://www.geonames.org/289739",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "qa_shahaniya",
+     "name": {
+      "ar": "بلدية الشيحانية"
+     },
+     "calendarRegionId": "region4",
+     "governorates": [
+      {
+       "id": "qa_shahaniya__all",
+       "name": {
+        "ar": "بلدية الشيحانية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_shahaniya",
+         "name": {
+          "ar": "الشيحانية"
+         },
+         "role": "city",
+         "lat": 25.3709,
+         "lon": 51.2226,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289877 (Ash Shīḩānīyah)",
+          "url": "https://www.geonames.org/289877",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    }
+   ]
+  },
+  {
+   "code": "AE",
+   "name": {
+    "ar": "الإمارات"
+   },
+   "adminLevelName": {
+    "ar": "إمارة"
+   },
+   "regions": [
+    {
+     "id": "ae_abu_dhabi",
+     "name": {
+      "ar": "إمارة أبوظبي"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "ae_abu_dhabi__all",
+       "name": {
+        "ar": "إمارة أبوظبي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "abu_dhabi",
+         "name": {
+          "ar": "أبوظبي"
+         },
+         "role": "city",
+         "lat": 24.4512,
+         "lon": 54.397,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292968 (Abu Dhabi)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "al_ain",
+         "name": {
+          "ar": "العين"
+         },
+         "role": "city",
+         "lat": 24.1917,
+         "lon": 55.7606,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292913 (Al Ain City)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "madinat_zayed",
+         "name": {
+          "ar": "مدينة زايد"
+         },
+         "role": "city",
+         "lat": 23.6542,
+         "lon": 53.7052,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 291580 (Zayed City)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "ae_dubai",
+     "name": {
+      "ar": "إمارة دبي"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "ae_dubai__all",
+       "name": {
+        "ar": "إمارة دبي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "dubai",
+         "name": {
+          "ar": "دبي"
+         },
+         "role": "city",
+         "lat": 25.0772,
+         "lon": 55.3093,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292223 (Dubai)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "hatta",
+         "name": {
+          "ar": "حتا"
+         },
+         "role": "city",
+         "lat": 24.8007,
+         "lon": 56.1273,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292862 (Ḩattā)",
+          "url": "https://www.geonames.org/292862",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "ae_sharjah",
+     "name": {
+      "ar": "إمارة الشارقة"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "ae_sharjah__all",
+       "name": {
+        "ar": "إمارة الشارقة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sharjah",
+         "name": {
+          "ar": "الشارقة"
+         },
+         "role": "city",
+         "lat": 25.3342,
+         "lon": 55.4122,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292672 (Sharjah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "khor_fakkan",
+         "name": {
+          "ar": "خورفكان"
+         },
+         "role": "city",
+         "lat": 25.3313,
+         "lon": 56.342,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 291696 (Khawr Fakkān)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "kalba",
+         "name": {
+          "ar": "كلباء"
+         },
+         "role": "city",
+         "lat": 25.0513,
+         "lon": 56.3542,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 291763 (Kalbā)",
+          "url": "https://www.geonames.org/291763",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "ae_ajman",
+     "name": {
+      "ar": "إمارة عجمان"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "ae_ajman__all",
+       "name": {
+        "ar": "إمارة عجمان"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "ajman",
+         "name": {
+          "ar": "عجمان"
+         },
+         "role": "city",
+         "lat": 25.4018,
+         "lon": 55.4788,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292932 (Ajman)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "ae_uaq",
+     "name": {
+      "ar": "إمارة أم القيوين"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "ae_uaq__all",
+       "name": {
+        "ar": "إمارة أم القيوين"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "umm_al_quwain",
+         "name": {
+          "ar": "أم القيوين"
+         },
+         "role": "city",
+         "lat": 25.5647,
+         "lon": 55.5552,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 290594 (Umm Al Quwain City)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "ae_rak",
+     "name": {
+      "ar": "إمارة رأس الخيمة"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "ae_rak__all",
+       "name": {
+        "ar": "إمارة رأس الخيمة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "ras_al_khaimah",
+         "name": {
+          "ar": "رأس الخيمة"
+         },
+         "role": "city",
+         "lat": 25.7895,
+         "lon": 55.9432,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 291074 (Ras Al Khaimah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "ae_fujairah",
+     "name": {
+      "ar": "إمارة الفجيرة"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "ae_fujairah__all",
+       "name": {
+        "ar": "إمارة الفجيرة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "fujairah",
+         "name": {
+          "ar": "الفجيرة"
+         },
+         "role": "city",
+         "lat": 25.1164,
+         "lon": 56.3414,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292878 (Fujairah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "dibba_al_fujairah",
+         "name": {
+          "ar": "دبا الفجيرة"
+         },
+         "role": "city",
+         "lat": 25.5925,
+         "lon": 56.2618,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 292231 (Dibba Al-Fujairah)",
+          "url": "https://www.geonames.org/292231",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    }
+   ]
+  },
+  {
+   "code": "OM",
+   "name": {
+    "ar": "عُمان"
+   },
+   "adminLevelName": {
+    "ar": "محافظة"
+   },
+   "_note": "في عُمان مستوى «ولاية» تحت المحافظة (61 ولاية حسب ملخص بحث، والعدد قد تغير) — يُمثَّل بحقل governorates لاحقاً",
+   "regions": [
+    {
+     "id": "om_muscat",
+     "name": {
+      "ar": "محافظة مسقط"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_muscat__all",
+       "name": {
+        "ar": "محافظة مسقط"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "muscat",
+         "name": {
+          "ar": "مسقط"
+         },
+         "role": "city",
+         "lat": 23.5841,
+         "lon": 58.4078,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 287286 (Muscat)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "seeb",
+         "name": {
+          "ar": "السيب"
+         },
+         "role": "city",
+         "lat": 23.6703,
+         "lon": 58.1891,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 288967 (Seeb)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_dhofar",
+     "name": {
+      "ar": "محافظة ظفار"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_dhofar__all",
+       "name": {
+        "ar": "محافظة ظفار"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "salalah",
+         "name": {
+          "ar": "صلالة"
+         },
+         "role": "city",
+         "lat": 17.015,
+         "lon": 54.0924,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 286621 (Şalālah)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_musandam",
+     "name": {
+      "ar": "محافظة مسندم"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_musandam__all",
+       "name": {
+        "ar": "محافظة مسندم"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "khasab",
+         "name": {
+          "ar": "خصب"
+         },
+         "role": "city",
+         "lat": 26.1799,
+         "lon": 56.2477,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 287614 (Khasab)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_buraimi",
+     "name": {
+      "ar": "محافظة البريمي"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_buraimi__all",
+       "name": {
+        "ar": "محافظة البريمي"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "al_buraimi",
+         "name": {
+          "ar": "البريمي"
+         },
+         "role": "city",
+         "lat": 24.2509,
+         "lon": 55.7931,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289317 (Al Buraymī)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_dakhiliyah",
+     "name": {
+      "ar": "محافظة الداخلية"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_dakhiliyah__all",
+       "name": {
+        "ar": "محافظة الداخلية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "nizwa",
+         "name": {
+          "ar": "نزوى"
+         },
+         "role": "city",
+         "lat": 22.9333,
+         "lon": 57.5333,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 286987 (Nizwá)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        },
+        {
+         "id": "bahla",
+         "name": {
+          "ar": "بهلاء"
+         },
+         "role": "city",
+         "lat": 22.9789,
+         "lon": 57.3047,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 288899 (Bahlā’)",
+          "url": "https://www.geonames.org/288899",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_n_batinah",
+     "name": {
+      "ar": "محافظة شمال الباطنة"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_n_batinah__all",
+       "name": {
+        "ar": "محافظة شمال الباطنة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sohar",
+         "name": {
+          "ar": "صحار"
+         },
+         "role": "city",
+         "lat": 24.3474,
+         "lon": 56.7094,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 286282 (Sohar)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_s_batinah",
+     "name": {
+      "ar": "محافظة جنوب الباطنة"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_s_batinah__all",
+       "name": {
+        "ar": "محافظة جنوب الباطنة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "rustaq",
+         "name": {
+          "ar": "الرستاق"
+         },
+         "role": "city",
+         "lat": 23.3908,
+         "lon": 57.4244,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 289011 (Rustaq)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_s_sharqiyah",
+     "name": {
+      "ar": "محافظة جنوب الشرقية"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_s_sharqiyah__all",
+       "name": {
+        "ar": "محافظة جنوب الشرقية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "sur",
+         "name": {
+          "ar": "صور"
+         },
+         "role": "city",
+         "lat": 22.5667,
+         "lon": 59.5289,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 286245 (Sur)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_n_sharqiyah",
+     "name": {
+      "ar": "محافظة شمال الشرقية"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_n_sharqiyah__all",
+       "name": {
+        "ar": "محافظة شمال الشرقية"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "ibra",
+         "name": {
+          "ar": "إبراء"
+         },
+         "role": "city",
+         "lat": 22.6906,
+         "lon": 58.5334,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 287832 (Ibrā’)",
+          "url": "https://www.geonames.org/287832",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_dhahirah",
+     "name": {
+      "ar": "محافظة الظاهرة"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_dhahirah__all",
+       "name": {
+        "ar": "محافظة الظاهرة"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "ibri",
+         "name": {
+          "ar": "عبري"
+         },
+         "role": "city",
+         "lat": 23.2257,
+         "lon": 56.5157,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 287830 (‘Ibrī)",
+          "license": "CC BY 4.0",
+          "via": "assets/tables/cities.json الحالي"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    },
+    {
+     "id": "om_wusta",
+     "name": {
+      "ar": "محافظة الوسطى"
+     },
+     "calendarRegionId": "uae_oman",
+     "governorates": [
+      {
+       "id": "om_wusta__all",
+       "name": {
+        "ar": "محافظة الوسطى"
+       },
+       "category": null,
+       "cities": [
+        {
+         "id": "haima",
+         "name": {
+          "ar": "هيماء"
+         },
+         "role": "city",
+         "lat": 19.9593,
+         "lon": 56.2758,
+         "coordSource": {
+          "kind": "geonames",
+          "ref": "geonameId 287939 (Haymā’)",
+          "url": "https://www.geonames.org/287939",
+          "license": "CC BY 4.0"
+         },
+         "approval": {
+          "status": "draft",
+          "reviewer": null,
+          "date": null,
+          "note": "بانتظار اعتماد المراجع"
+         }
+        }
+       ]
+      }
+     ],
+     "approval": {
+      "status": "draft",
+      "reviewer": null,
+      "date": null,
+      "note": "بانتظار اعتماد المراجع"
+     }
+    }
+   ]
+  }
+ ]
+}
