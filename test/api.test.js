@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 // يضمن الوضع التجريبي بدون استهلاك حصة
 for (const k of ['ALPHA_VANTAGE_KEY', 'MASSIVE_API_KEY', 'POLYGON_API_KEY']) delete process.env[k];
 process.env.RASED_NO_ENV_FILE = '1';
+process.env.RASED_YAHOO = '0'; // بدون شبكة: لا شموع Yahoo في الاختبارات
 const { server } = await import('../server/index.js');
 let base;
 before(() => new Promise(r => server.listen(0, () => { base = `http://127.0.0.1:${server.address().port}`; r(); })));

@@ -1,0 +1,92 @@
+name: Rased — Nightly Spike Scan
+
+# انفجار السيولة: كل ليلة بعد إغلاق السوق الأمريكي (الإثنين–الجمعة 21:30 UTC — بعد الإغلاق صيفًا وشتاءً)
+# يحدّث كاش الشموع اليومية (Yahoo بدون مفتاح؛ Massive إن وُجد السر)، يمسح آخر يوم تداول للسوق كامل،
+# ويرجع lab/results/spikes-today.json للفرع — التطبيق يقرأه من raw.githubusercontent بدون أي مفتاح.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 21 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rased-spikes-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    # أول تشغيل بدون كاش: سنتان لكل سهم ≈ 20–30 دقيقة بـ Yahoo (أو ~105 دقيقة بـ Massive grouped daily)
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - name: Restore daily bars cache
+        uses: actions/cache@v4
+        with:
+          path: lab/data/daily
+          key: rased-daily-${{ github.run_id }}
+          restore-keys: rased-daily-
+
+      - name: Fetch daily bars
+        env:
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: node lab/spike-fetch.mjs
+
+      - name: Scan latest trading day
+        run: |
+          if ls lab/data/daily/*.json >/dev/null 2>&1; then node lab/spike-scan.mjs; else echo "ما فيه بيانات يومية — تخطّي"; fi
+
+      - name: Summary
+        if: always()
+        run: |
+          [ -f lab/results/spikes-today.json ] || exit 0
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync("lab/results/spikes-today.json", "utf8"));
+            const rows = ["## انفجار السيولة — " + r.day, "", `${r.signals.length} إشارة من ${r.scanned} سهم (${r.source})`, ""];
+            if (r.signals.length) { rows.push("| sym | close | chg | vol× | entry | exit |", "|---|---|---|---|---|---|");
+              for (const s of r.signals) rows.push(`| ${s.sym} | ${s.close} | ${s.chgPct}% | ${s.volMult} | ${s.entryDate} | ${s.exitDate} |`); }
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, rows.join("\n") + "\n");
+          '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rased-spikes-today-${{ github.run_number }}
+          path: lab/results/spikes-today.json
+          if-no-files-found: ignore
+
+  commit:
+    needs: scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # مجموعة مشتركة مع rased-lab.yml: دفع واحد في كل مرة (+ إعادة المحاولة بـ pull --rebase)
+    concurrency:
+      group: rased-results-push-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: rased-spikes-today-${{ github.run_number }}
+          path: lab/results
+      - name: Commit spikes-today.json
+        run: |
+          [ -f lab/results/spikes-today.json ] || { echo "ما فيه ملف — لا شيء للإيداع"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lab/results/spikes-today.json
+          if git diff --cached --quiet; then echo "لا تغيير"; exit 0; fi
+          git commit -m "spikes: nightly scan $(date -u +%F) [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            echo "محاولة $i فشلت — إعادة بعد $((i * 5)) ث"
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 5))
+          done
+          exit 1

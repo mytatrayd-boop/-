@@ -1,7 +1,7 @@
 // تطبيق الأندرويد: نفس منطق الخادم لكن يشتغل داخل الجوال — يجلب من Massive و Alpha Vantage مباشرة
 // بالمفاتيح اللي يدخلها المستخدم، ويخزّن أيام السوق في IndexedDB. بدون أي اعتماد على Node.
 import { createMassiveStore } from './massive.js';
-import { buildProviders, trendFor } from './providers.js';
+import { buildProviders, trendFor, spikesFor } from './providers.js';
 import { statusLights } from './status.js';
 import { runScan } from './scan.js';
 
@@ -36,14 +36,15 @@ export function idbStorage(name = 'rased') {
 }
 
 // keysStore: { load() → {massive, alpha}, save(keys) }
-export function createClientApp({ storage, keysStore, log = () => {} }) {
+// yahoo: شموع الاتجاهات من Yahoo بدون مفتاح (تطبيق الأندرويد يمررها true؛ الاختبارات بدونها = بدون شبكة)
+export function createClientApp({ storage, keysStore, log = () => {}, yahoo = false, fetchImpl }) {
   let keys = { massive: '', alpha: '', ...(keysStore.load() || {}) };
   let store = null, providers = null, timer = null;
 
   function setup() {
     if (timer) clearInterval(timer);
     store = keys.massive ? createMassiveStore({ apiKey: keys.massive, storage, log }) : null;
-    providers = buildProviders({ massiveKey: keys.massive, alphaKey: keys.alpha, store });
+    providers = buildProviders({ massiveKey: keys.massive, alphaKey: keys.alpha, store, yahoo, fetchImpl });
     if (store) {
       const s = store;
       s.loaded = s.loadFromDisk().then(() => { if (s === store) return s.sync(); });
@@ -56,6 +57,8 @@ export function createClientApp({ storage, keysStore, log = () => {} }) {
     runScan: req => runScan(req, providers),
     // شموع 5 دقائق + حالة الإشارة لتبويب الاتجاهات: { sym, bars, live, demo, dataAsOf, profile }
     trend: sym => trendFor(providers, sym),
+    // انفجار السيولة: req = { yaqeen, excludeHaram, excludeMashbooh, nightly } — nightly = آخر spikes-today.json عند الواجهة
+    spikes: (req = {}) => Promise.resolve(spikesFor(providers, req, [req.nightly])),
     status: () => statusLights({ massiveKey: !!keys.massive, alphaKey: !!keys.alpha, persistentData: true, market: store ? { ...store.state } : null, app: true }),
     keys: () => ({ massive: !!keys.massive, alpha: !!keys.alpha }),
     rawKeys: () => ({ ...keys }),

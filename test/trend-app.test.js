@@ -7,6 +7,7 @@ import path from 'node:path';
 // وضع تجريبي بدون شبكة، فاصل طلبات قصير للاختبار، ومجلد مختبر فاضي
 for (const k of ['ALPHA_VANTAGE_KEY', 'MASSIVE_API_KEY', 'POLYGON_API_KEY']) delete process.env[k];
 process.env.RASED_NO_ENV_FILE = '1';
+process.env.RASED_YAHOO = '0'; // بدون شبكة: لا شموع Yahoo في الاختبارات
 process.env.MASSIVE_GAP_MS = '60';
 const LAB = await mkdtemp(path.join(tmpdir(), 'rased-lab-'));
 process.env.RASED_LAB_DIR = LAB;

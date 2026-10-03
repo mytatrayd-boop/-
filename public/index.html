@@ -65,6 +65,28 @@
 
   <!-- ===== الاتجاهات: أفضل 5 من المختبر + شارت 5 دقائق ===== -->
   <section class="view" id="view-trends" aria-label="الاتجاهات">
+    <!-- قسمين داخل التبويب (شريط التبويبات يبقى 5 — مقروء على جوال 390px) -->
+    <div class="subseg" role="tablist" aria-label="أقسام الاتجاهات">
+      <button type="button" class="sub-btn" role="tab" data-sub="spikes">💥 انفجار السيولة</button>
+      <button type="button" class="sub-btn" role="tab" data-sub="trend">📉 كسر الخط الهابط</button>
+    </div>
+
+    <!-- ===== انفجار السيولة: إشارات آخر إغلاق ===== -->
+    <div class="subpane" id="spikePane">
+      <div class="hero">
+        <div class="hero-sub">انفجار السيولة</div>
+        <div id="spikesMeta" class="hero-meta">أسهم صغيرة رخيصة انفجر حجمها وكسرت قاعدتها — شراء فقط، 2–3 أيام والخروج بالوقت</div>
+      </div>
+      <div id="spikesNotice"></div>
+      <div id="spikeLab"></div>
+      <div id="spikeCards"></div>
+      <details class="disclaimer">
+        <summary><b>مو توصية مالية</b> — اضغط للتفاصيل</summary>
+        <p>الإشارة تُحسب بعد إغلاق السوق من الشموع اليومية فقط. الأسهم الصغيرة بعد الانفجار تتذبذب بعنف، تتوقف عن التداول (halt)، وتطرح أسهم جديدة فجأة — الوقف قد يتنفذ بسعر أسوأ بكثير. نتائج المختبر تاريخية وفيها انحياز بقاء (الأسهم المشطوبة غير موجودة). القرار والمخاطرة عليك بالكامل.</p>
+      </details>
+    </div>
+
+    <div class="subpane" id="trendPane">
     <div class="hero">
       <div class="hero-sub">كسر الخط الهابط</div>
       <div id="trendsMeta" class="hero-meta">أفضل 5 أسهم استجابت لهذي الصيغة في المختبر — شموع 5 دقائق، دخول الاثنين فقط</div>
@@ -74,8 +96,9 @@
     <section class="paper" id="paperAccount" aria-label="الحساب الوهمي"></section>
     <details class="disclaimer">
       <summary><b>مو توصية مالية</b> — اضغط للتفاصيل</summary>
-      <p>الأسهم مختارة من اختبار تاريخي على حساب وهمي (بدون عمولات). الأداء الماضي ما يضمن المستقبل. الخطة المجانية في Massive تعطي شموع حتى إغلاق آخر يوم تداول — مو أسعار لحظية — فالحالة هنا قد تتأخر يوم.</p>
+      <p>الأسهم مختارة من اختبار تاريخي على حساب وهمي (بدون عمولات). الأداء الماضي ما يضمن المستقبل. شموع الـ5 دقائق من Massive (بالمفتاح) أو Yahoo بدون مفتاح (متأخرة ~15 دقيقة) — مو أسعار لحظية.</p>
     </details>
+    </div>
   </section>
 
   <!-- ===== الإعدادات ===== -->

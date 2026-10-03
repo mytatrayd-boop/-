@@ -152,6 +152,47 @@ const DEMO_COMPANIES = {
 };
 const DEMO_UNIVERSE = Object.keys(DEMO_COMPANIES);
 
+/* ---------- سوق يومي مصطنع لانفجار السيولة (وضع تجريبي) ---------- */
+// رموز وهمية بوضوح (ليست أسهمًا حقيقية). ثلاثة تنفجر في آخر يوم (إشارة)، وواحد ينفجر لكن يغلق بعيد عن قمته
+// (يفشل شرط ربع المدى)، والباقي هادئ. ثابت لكل يوم: نفس nowMs = نفس الشموع.
+const DEMO_SPIKE = {
+  DSPA: ['Demo Spike Alpha (تجريبي)', 45], DSPB: ['Demo Spike Beta (تجريبي)', 28], DSPC: ['Demo Spike Gamma (تجريبي)', 70],
+  DSPX: ['Demo Fade Inc. (تجريبي)', -35],
+  DQTA: ['Demo Quiet A (تجريبي)', 0], DQTB: ['Demo Quiet B (تجريبي)', 0], DQTC: ['Demo Quiet C (تجريبي)', 0],
+  DQTD: ['Demo Quiet D (تجريبي)', 0], DQTE: ['Demo Quiet E (تجريبي)', 0], DQTF: ['Demo Quiet F (تجريبي)', 0],
+};
+export function demoSpikeMarket(nowMs = Date.now(), days = 60) {
+  let end = Math.floor(nowMs / DAY_MS) * DAY_MS;
+  while ([0, 6].includes(new Date(end).getUTCDay())) end -= DAY_MS;
+  const dates = [];
+  for (let d = end; dates.length < days; d -= DAY_MS) { const wd = new Date(d).getUTCDay(); if (wd !== 0 && wd !== 6) dates.unshift(d); }
+  const bars = new Map();
+  for (const [sym, [, mult]] of Object.entries(DEMO_SPIKE)) {
+    const r = rng(seedFrom('spike' + sym + isoDay(end)));
+    const base = 1 + r() * 9, baseVol = 200000 + r() * 400000, phase = r() * 6;
+    const b = { t: [], o: [], h: [], l: [], c: [], v: [] };
+    let prev = base;
+    dates.forEach((t, i) => {
+      let o, h, l, c, v;
+      if (i === days - 1 && mult) {
+        o = prev * 1.05; l = Math.min(o, prev * 1.02);
+        if (mult > 0) { c = prev * (1.3 + r() * 0.4); h = c * (1 + r() * 0.04); }
+        else { c = prev * 1.35; h = c * 1.25; }
+        v = Math.round(baseVol * Math.abs(mult));
+      } else {
+        c = base * (1 + 0.03 * Math.sin(i / 5 + phase) + (r() - 0.5) * 0.03);
+        o = prev * (1 + (r() - 0.5) * 0.01);
+        h = Math.max(o, c) * (1 + r() * 0.02); l = Math.min(o, c) * (1 - r() * 0.02);
+        v = Math.round(baseVol * (0.6 + r() * 0.8));
+      }
+      b.t.push(t); b.o.push(o); b.h.push(h); b.l.push(l); b.c.push(c); b.v.push(v);
+      prev = c;
+    });
+    bars.set(sym, b);
+  }
+  return { bars, dates: dates.map(isoDay), commonStocks: null, profile: sym => DEMO_SPIKE[sym] ? { name: DEMO_SPIKE[sym][0], exchange: null } : null };
+}
+
 export const demoProviders = {
   demo: true,
   universe: async ({ minPrice }) => {
@@ -163,4 +204,5 @@ export const demoProviders = {
   news: async sym => ({ news: demoNews(sym) }),
   earnings: async syms => ({ calendar: demoEarnings(syms) }),
   trend5m: async sym => { const bars = demoBars5m(sym); return { bars, demo: true, dataAsOf: bars.t.length ? bars.t[bars.t.length - 1] : null }; },
+  spikeMarket: () => demoSpikeMarket(),
 };
