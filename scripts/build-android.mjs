@@ -3,7 +3,7 @@
 // بدون مفاتيح يشتغل تجريبي، والإشارة فوق تقول هذا بالأحمر.
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { buildPage, ROOT } from './bundle.mjs';
+import { buildPage, labScript, ROOT } from './bundle.mjs';
 
 const init = `
 // fetch → جسر Java لطلبات https (مواقع الأسعار فقط؛ الجسر يرفض غيرها)
@@ -27,6 +27,8 @@ const init = `
   };
 })();
 
+${await labScript()}
+
 const KEYS = 'rased.keys';
 const app = __mods.client.createClientApp({
   storage: __mods.client.idbStorage(),
@@ -42,7 +44,7 @@ if (window.RasedNative) { let on = false; setInterval(() => { const s = app.sync
 `;
 
 const out = await buildPage({
-  modules: ['engine', 'massive', 'alphavantage', 'demo', 'providers', 'status', 'scan', 'client'],
+  modules: ['engine', 'trend', 'massive', 'alphavantage', 'demo', 'providers', 'status', 'scan', 'client'],
   init, document: true,
   head: '<meta name="theme-color" content="#0a0d12">',
 });
