@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بدائل الخط</title>
+<!-- للمعاينة فقط: التطبيق يضمّن ملفات الخط داخله ولا يحمّلها من الإنترنت (DESIGN.md القسم 3). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Noto+Kufi+Arabic:wght@500;600;700&family=Readex+Pro:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&family=Tajawal:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --sand-bg: #FAF5EA; --surface: #FFFFFF; --surface-alt: #F2EADB;
+    --ink: #2B2118; --ink-soft: #5E5246; --primary: #1B2A4A; --line: #E3D8C3;
+    --gold-text: #7A5C00; --safari: #8A4B12;
+    --night-bg: #0E1626; --night-surface: #17223A; --night-ink: #F3ECDD;
+    --night-soft: #B9B0A0; --night-gold: #E9C46A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px; background: var(--sand-bg); color: var(--ink);
+    font-family: "IBM Plex Sans Arabic", sans-serif; line-height: 1.6;
+  }
+  header.page { max-width: 1240px; margin: 0 auto 24px; }
+  header.page h1 { font-size: 22px; margin: 0 0 4px; }
+  header.page p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+  .grid {
+    max-width: 1240px; margin: 0 auto; display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(43,33,24,.08);
+  }
+  .card.current { opacity: .9; border-style: dashed; }
+  .tag {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    padding: 12px 16px; background: var(--surface-alt); border-top: 4px solid var(--safari);
+    font-family: "IBM Plex Sans Arabic", sans-serif; font-size: 13px; color: var(--ink-soft);
+  }
+  .tag b { color: var(--ink); font-size: 15px; }
+  .light { padding: 16px; }
+  .dark  { padding: 16px; background: var(--night-bg); color: var(--night-ink); }
+  .app-name { font-size: 34px; line-height: 48px; margin: 0; }
+  .h1 { font-size: 26px; line-height: 38px; margin: 4px 0 0; color: var(--primary); }
+  .dark .h1 { color: var(--night-gold); }
+  .h3 { font-size: 18px; line-height: 28px; margin: 12px 0 0; }
+  .body { font-size: 15px; line-height: 25px; margin: 8px 0 0; }
+  .dates { font-size: 15px; line-height: 25px; color: var(--ink-soft); margin: 8px 0 0; }
+  .dark .dates { color: var(--night-soft); }
+  .nums { font-size: 18px; line-height: 28px; margin: 12px 0 0; letter-spacing: 0; }
+  .nums span { display: inline-block; margin-inline-end: 12px; }
+  .small13 { font-size: 13px; line-height: 20px; color: var(--ink-soft); margin: 8px 0 0; }
+  .dark .small13 { color: var(--night-soft); }
+  .small11 { font-size: 11px; line-height: 16px; margin: 6px 0 0; }
+  .chip {
+    display: inline-block; font-size: 15px; line-height: 22px; padding: 7px 12px;
+    border-radius: 999px; background: rgba(138,75,18,.12); color: var(--ink); margin-top: 12px;
+  }
+  .ring-strip {
+    margin-top: 12px; padding: 8px; border-radius: 8px; background: var(--night-surface);
+    display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; line-height: 16px;
+  }
+  .ring-strip span { white-space: nowrap; }
+  .proverb { font-family: "Amiri", serif; font-size: 20px; line-height: 34px; margin: 12px 0 0; }
+  .label { font-size: 12px; color: var(--ink-soft); font-family: "IBM Plex Sans Arabic", sans-serif; margin: 16px 0 0; }
+  .dark .label { color: var(--night-soft); }
+
+  /* ===== الخيارات ===== */
+  /* الحالي (مرجع للمقارنة فقط) */
+  .opt-0 .hd { font-family: "Reem Kufi", sans-serif; font-weight: 700; }
+  .opt-0 .tx { font-family: "IBM Plex Sans Arabic", sans-serif; font-weight: 400; }
+  .opt-0 .tx-strong { font-family: "IBM Plex Sans Arabic", sans-serif; font-weight: 600; }
+
+  /* الخيار ١: Readex Pro لكل الأدوار */
+  .opt-1 .hd { font-family: "Readex Pro", sans-serif; font-weight: 600; }
+  .opt-1 .tx { font-family: "Readex Pro", sans-serif; font-weight: 400; }
+  .opt-1 .tx-strong { font-family: "Readex Pro", sans-serif; font-weight: 500; }
+
+  /* الخيار ٢: Noto Kufi Arabic للعناوين + Tajawal للنص */
+  .opt-2 .hd { font-family: "Noto Kufi Arabic", sans-serif; font-weight: 700; }
+  .opt-2 .tx { font-family: "Tajawal", sans-serif; font-weight: 500; }
+  .opt-2 .tx-strong { font-family: "Tajawal", sans-serif; font-weight: 700; }
+
+  /* الخيار ٣: Amiri للعناوين + Almarai للنص */
+  .opt-3 .hd { font-family: "Amiri", serif; font-weight: 700; }
+  .opt-3 .tx { font-family: "Almarai", sans-serif; font-weight: 400; }
+  .opt-3 .tx-strong { font-family: "Almarai", sans-serif; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header class="page">
+  <h1>معاينة بدائل الخط — دليل المواسم</h1>
+  <p>نفس النصوص بكل خيار، بأحجام التطبيق الفعلية (القسم 3 في DESIGN.md): العرض ٣٤، العنوان ٢٦، النص ١٥، التلميح ١٣، الحد الأدنى داخل الدائرة ١١. المثل الشعبي يبقى بخط Amiri في كل الخيارات. البطاقة الأخيرة المنقطة هي الخط الحالي للمقارنة.</p>
+</header>
+
+<main class="grid">
+
+  <!-- ===== الخيار ١ ===== -->
+  <section class="card opt-1">
+    <div class="tag"><b>الخيار ١ — Readex Pro</b><span>كوفي حديث، عائلة واحدة</span></div>
+    <div class="light">
+      <p class="app-name hd">دليل المواسم</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <p class="h3 tx-strong">دَرّ العشرين من الصفري</p>
+      <p class="body tx">يعرض لك دليل المواسم الدَّرّ والموسم والنجم في منطقتك كل يوم، والجو المعتاد حسب التراث. يعمل بلا إنترنت، ويذكّرك بدخول سهيل والوسم والمربعانية.</p>
+      <span class="chip tx-strong">الصفري</span>
+      <p class="nums tx-strong"><span>٠١٢٣٤٥٦٧٨٩</span><span>0123456789</span></p>
+      <p class="small13 tx">١٣sp: الجو المعتاد حسب التراث، وليس توقعاً للطقس. — ١٤ أغسطس إلى ٢٦ أغسطس</p>
+      <p class="small11 tx-strong">١١sp: ١٠ ٢٠ ٣٠ ٤٠ ٥٠ ٦٠ ٧٠ ٨٠ ٩٠ ١٠٠ — الجبهة، الزبرة، الصرفة، العواء</p>
+    </div>
+    <div class="dark">
+      <p class="label">الوضع الداكن</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <div class="ring-strip tx-strong"><span>يناير</span><span>الشتاء</span><span>١٠٠</span><span>٧٠</span><span>سهيل</span><span>الثريا</span><span>المربعانية</span></div>
+    </div>
+  </section>
+
+  <!-- ===== الخيار ٢ ===== -->
+  <section class="card opt-2">
+    <div class="tag"><b>الخيار ٢ — Noto Kufi Arabic + Tajawal</b><span>كوفي تراثي + نص خليجي خفيف</span></div>
+    <div class="light">
+      <p class="app-name hd">دليل المواسم</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <p class="h3 tx-strong">دَرّ العشرين من الصفري</p>
+      <p class="body tx">يعرض لك دليل المواسم الدَّرّ والموسم والنجم في منطقتك كل يوم، والجو المعتاد حسب التراث. يعمل بلا إنترنت، ويذكّرك بدخول سهيل والوسم والمربعانية.</p>
+      <span class="chip tx-strong">الصفري</span>
+      <p class="nums tx-strong"><span>٠١٢٣٤٥٦٧٨٩</span><span>0123456789</span></p>
+      <p class="small13 tx">١٣sp: الجو المعتاد حسب التراث، وليس توقعاً للطقس. — ١٤ أغسطس إلى ٢٦ أغسطس</p>
+      <p class="small11 tx-strong">١١sp: ١٠ ٢٠ ٣٠ ٤٠ ٥٠ ٦٠ ٧٠ ٨٠ ٩٠ ١٠٠ — الجبهة، الزبرة، الصرفة، العواء</p>
+    </div>
+    <div class="dark">
+      <p class="label">الوضع الداكن</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <div class="ring-strip tx-strong"><span>يناير</span><span>الشتاء</span><span>١٠٠</span><span>٧٠</span><span>سهيل</span><span>الثريا</span><span>المربعانية</span></div>
+    </div>
+  </section>
+
+  <!-- ===== الخيار ٣ ===== -->
+  <section class="card opt-3">
+    <div class="tag"><b>الخيار ٣ — Amiri + Almarai</b><span>نسخ كلاسيكي + نص سعودي مألوف</span></div>
+    <div class="light">
+      <p class="app-name hd">دليل المواسم</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <p class="h3 tx-strong">دَرّ العشرين من الصفري</p>
+      <p class="body tx">يعرض لك دليل المواسم الدَّرّ والموسم والنجم في منطقتك كل يوم، والجو المعتاد حسب التراث. يعمل بلا إنترنت، ويذكّرك بدخول سهيل والوسم والمربعانية.</p>
+      <span class="chip tx-strong">الصفري</span>
+      <p class="nums tx-strong"><span>٠١٢٣٤٥٦٧٨٩</span><span>0123456789</span></p>
+      <p class="small13 tx">١٣sp: الجو المعتاد حسب التراث، وليس توقعاً للطقس. — ١٤ أغسطس إلى ٢٦ أغسطس</p>
+      <p class="small11 tx-strong">١١sp: ١٠ ٢٠ ٣٠ ٤٠ ٥٠ ٦٠ ٧٠ ٨٠ ٩٠ ١٠٠ — الجبهة، الزبرة، الصرفة، العواء</p>
+    </div>
+    <div class="dark">
+      <p class="label">الوضع الداكن</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <div class="ring-strip tx-strong"><span>يناير</span><span>الشتاء</span><span>١٠٠</span><span>٧٠</span><span>سهيل</span><span>الثريا</span><span>المربعانية</span></div>
+    </div>
+  </section>
+
+  <!-- ===== الحالي (مرجع) ===== -->
+  <section class="card current opt-0">
+    <div class="tag"><b>الحالي — Reem Kufi + IBM Plex Sans Arabic</b><span>للمقارنة فقط</span></div>
+    <div class="light">
+      <p class="app-name hd">دليل المواسم</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <p class="h3 tx-strong">دَرّ العشرين من الصفري</p>
+      <p class="body tx">يعرض لك دليل المواسم الدَّرّ والموسم والنجم في منطقتك كل يوم، والجو المعتاد حسب التراث. يعمل بلا إنترنت، ويذكّرك بدخول سهيل والوسم والمربعانية.</p>
+      <span class="chip tx-strong">الصفري</span>
+      <p class="nums tx-strong"><span>٠١٢٣٤٥٦٧٨٩</span><span>0123456789</span></p>
+      <p class="small13 tx">١٣sp: الجو المعتاد حسب التراث، وليس توقعاً للطقس. — ١٤ أغسطس إلى ٢٦ أغسطس</p>
+      <p class="small11 tx-strong">١١sp: ١٠ ٢٠ ٣٠ ٤٠ ٥٠ ٦٠ ٧٠ ٨٠ ٩٠ ١٠٠ — الجبهة، الزبرة، الصرفة، العواء</p>
+    </div>
+    <div class="dark">
+      <p class="label">الوضع الداكن</p>
+      <p class="h1 hd">الوسم — اليوم ٥ من ١٣</p>
+      <p class="dates tx">الجمعة ٢ أكتوبر ٢٠٢٦م — ٢١ ربيع الآخر ١٤٤٨هـ</p>
+      <div class="ring-strip tx-strong"><span>يناير</span><span>الشتاء</span><span>١٠٠</span><span>٧٠</span><span>سهيل</span><span>الثريا</span><span>المربعانية</span></div>
+    </div>
+  </section>
+
+</main>
+
+<header class="page" style="margin-top:24px">
+  <p class="proverb">سطر المثل الشعبي يبقى بخط Amiri في كل الخيارات (هذا السطر نفسه بخط Amiri ٢٠sp للمقارنة).</p>
+</header>
+
+</body>
+</html>
