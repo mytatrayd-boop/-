@@ -9,6 +9,7 @@ const { FAMILIES, gridCombos } = await import('../lab/research/strategies/index.
 const C = await import('../lab/research/strategies/common.mjs');
 const { checkCriteria, runResearch, buildReport } = await import('../lab/research/run.mjs');
 const DATA = await import('../lab/research/data.mjs');
+const { RISK_FAMILIES, OVERLAY_TARGETS, overlaySpecs, withRisk } = await import('../lab/research/overlays.mjs');
 
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) <= eps * Math.max(1, Math.abs(b)), `${a} ≠ ${b}`);
 const fam = id => FAMILIES.find(f => f.family === id);
@@ -92,18 +93,18 @@ test('cost model: at least 0.05% per side, higher for illiquid and cheap stocks'
 });
 
 /* ---------- عدم النظر للمستقبل ---------- */
-test('no look-ahead: truncating future data does not change past equity or trades (every family)', () => {
-  const { barsBySym, groups } = synthUniverse({ nLarge: 40, nSmall: 8, days: 700, seed: 3 });
+test('no look-ahead: truncating future data does not change past equity or trades (every family, incl. +risk)', () => {
+  const { barsBySym, groups, sectors } = synthUniverse({ nLarge: 40, nSmall: 8, days: 700, seed: 3 });
   const K = 620;
   const cut = new Map([...barsBySym].map(([s, b]) => {
     const tK = barsBySym.get('SPY').t[K];
     const n = b.t.findIndex(t => t >= tK); const k = n < 0 ? b.t.length : n;
     return [s, Object.fromEntries(Object.entries(b).map(([f, a]) => [f, a.slice(0, k)]))];
   }));
-  const opt = { largeN: 25, warmup: 260 };
+  const opt = { largeN: 25, warmup: 260, sectors };
   const Pf = E.buildPanel(barsBySym, groups, opt), Pc = E.buildPanel(cut, groups, opt);
   assert.equal(Pc.D, K);
-  for (const f of FAMILIES) {
+  for (const f of [...FAMILIES, ...RISK_FAMILIES]) {
     const p = gridCombos(f.grid)[0];
     const a = E.runStrategy(Pf, f.make(p)), b = E.runStrategy(Pc, f.make(p));
     const lim = K - 10;
@@ -314,8 +315,12 @@ test('data: universe selection by median dollar volume, small sleeve, shariah na
 /* ---------- تشغيل كامل صغير ---------- */
 test('research run: end-to-end on a small synthetic market writes candidates, criteria and an Arabic verdict', async () => {
   const u = synthUniverse({ nLarge: 30, nSmall: 6, days: 1100, seed: 11 });
-  const out = await runResearch({ ...u, info: { source: 'synthetic', screen: 'synthetic' }, log: () => {}, panelOpt: { largeN: 20 } });
-  assert.equal(out.candidates.length, FAMILIES.length + 1);
+  const out = await runResearch({ ...u, info: { source: 'synthetic', screen: 'synthetic', sectors: u.sectors }, log: () => {}, panelOpt: { largeN: 20 } });
+  const nFam = FAMILIES.length + RISK_FAMILIES.length;
+  assert.equal(out.candidates.length, nFam + 1 + OVERLAY_TARGETS.length + 2);
+  assert.equal(out.frontier.length, nFam + 1 + 2);
+  for (const f of out.frontier) assert.deepEqual(f.rows.map(r => r.maxDD), [0.10, 0.15, 0.20]);
+  for (const c of out.candidates) assert.ok(Array.isArray(c.episodes));
   for (const c of out.candidates) { assert.equal(c.criteria.checks.length, 7); assert.ok(c.oos.trades >= 0); assert.ok(Array.isArray(c.equity)); }
   for (const c of out.candidates.filter(x => x.universe === 'etf')) assert.equal(c.criteria.checks[6].ok, false);
   const mars = out.candidates.map(c => (c.oos.mar === 'Infinity' ? 1e9 : c.oos.mar ?? -1e9));
@@ -323,4 +328,116 @@ test('research run: end-to-end on a small synthetic market writes candidates, cr
   const md = buildReport(out);
   assert.match(md, /وصلنا لنتيجة ممتازة|لا توجد استراتيجية تحقق كل الشروط بعد/);
   assert.match(md, /انحياز البقاء/);
+  assert.match(md, /حدود الكفاءة/);
+  assert.match(md, /المفاضلة الصريحة/);
+});
+
+/* ---------- الجولة 2: طبقات المخاطر ---------- */
+const mkStream = (rets, start = 0) => ({ rets: Float64Array.from(rets), gross: new Float64Array(rets.length).fill(1), turn: new Float64Array(rets.length), trades: [], start });
+
+test('overlay: weight for day d uses only base returns up to d-2 (no look-ahead), cost on changes, never above 100%', () => {
+  const r = Array.from({ length: 200 }, (_, i) => (i % 3 === 0 ? 0.02 : -0.012));
+  const spec = { vt: { target: 0.08, lookback: 20 }, dd: { x: 0.05, days: 10 }, cost: 0.001 };
+  const a = E.applyOverlay(mkStream(r), spec);
+  for (const k of [50, 100, 150]) {
+    const r2 = r.slice(); for (let i = k; i < r2.length; i++) r2[i] = -0.2;
+    const b = E.applyOverlay(mkStream(r2), spec);
+    for (let d = 0; d <= k + 1; d++) assert.equal(b.weight[d], a.weight[d], `day ${d} after poisoning ${k}`);
+  }
+  assert.ok(Math.max(...a.weight) <= 1 && Math.min(...a.weight) >= 0);
+  assert.ok(Math.max(...a.gross) <= 1 + 1e-12);
+  // تذبذب ثابت مرتفع → وزن ≈ الهدف ÷ التذبذب
+  const hv = Array.from({ length: 120 }, (_, i) => (i % 2 ? 0.02 : -0.02));
+  const v = E.applyOverlay(mkStream(hv), { vt: { target: 0.08, lookback: 20 }, cost: 0, band: 0 });
+  const vol = Math.sqrt(0.0004 * 20 / 19 * 252);
+  near(v.weight[100], 0.08 / vol, 1e-6);
+  near(v.rets[100], v.weight[100] * hv[100], 1e-12);
+});
+
+test('overlay: drawdown breaker goes to cash after the lag and comes back after N days; regime gate', () => {
+  const r = [0, ...Array(10).fill(-0.01), ...Array(40).fill(0.001)];
+  const o = E.applyOverlay(mkStream(r), { dd: { x: 0.05, days: 10 }, cost: 0 });
+  const first0 = o.weight.findIndex(w => w === 0);
+  // تراجع ≥ 5% بإغلاق يوم 6 → قرار بعد إغلاق 6، تنفيذ بإغلاق 7 → وزن 0 من يوم 8
+  assert.equal(first0, 8);
+  const back = o.weight.findIndex((w, i) => i > first0 && w === 1);
+  assert.equal(back, 6 + 10 + 2);
+  const g = E.applyOverlay(mkStream(Array(30).fill(0.001)), { regime: d => d < 10, cost: 0 });
+  assert.equal(g.weight[11], 1); assert.equal(g.weight[12], 0);
+  // تكلفة التعديل تُخصم يوم التنفيذ
+  const c = E.applyOverlay(mkStream(Array(30).fill(0)), { regime: d => d < 10, cost: 0.001 });
+  near(c.rets[11], -0.001);
+});
+
+test('overlay specs: 12 fixed overlays; strong and breadth regimes use data up to the day', () => {
+  const P = panelOf({ SPY: barsFrom(ramp(260, 100, 0.1)), A: barsFrom(ramp(260, 50, 0.1)) });
+  const specs = overlaySpecs(P);
+  assert.equal(specs.length, 12);
+  assert.equal(new Set(specs.map(s => s.id)).size, 12);
+  assert.equal(C.regimeFn(P, 'strong')(259), true);
+  const Q = panelOf({ SPY: barsFrom([...ramp(240, 100, 0.2), ...ramp(20, 147, -0.5)]) });
+  assert.equal(C.regimeFn(Q, 'strong')(259), false);
+  assert.equal(C.regimeFn(Q, 'sma200')(259), true);
+});
+
+test('sector cap: positions in one sector never exceed 30% of equity', () => {
+  const many = {}, sectors = {};
+  for (const s of ['A', 'B', 'C', 'D', 'E']) { many[s] = barsFrom(ramp(40, 10, 0.05)); sectors[s] = 'Tech'; }
+  many.F = barsFrom(ramp(40, 10, 0.05)); sectors.F = 'Energy';
+  const P = E.buildPanel(new Map(Object.entries(many)), {}, { sectors });
+  const cfg = { universe: ['A', 'B', 'C', 'D', 'E', 'F'], maxPositions: 5, entryAt: 'open', exitAt: 'open', hold: 50, sectorCap: 0.3, score: (d, s) => (s === 5 ? 0.5 : 1) };
+  const r = E.runStrategy(P, cfg, { warmup: 1, flatCost: 0 });
+  const tech = r.trades.filter(t => sectors[t.sym] === 'Tech').reduce((x, t) => x + t.w, 0);
+  assert.ok(tech <= 0.3 + 1e-9, String(tech));
+  assert.ok(r.trades.some(t => t.sym === 'F'));
+});
+
+test('risk wrapper: adds stops, sector cap and an optional entry gate; grids stay ≤ 12', () => {
+  for (const f of RISK_FAMILIES) assert.ok(gridCombos(f.grid).length <= 12, f.family);
+  const f = RISK_FAMILIES.find(x => x.family === 'mr-ibs+risk');
+  const c = f.make({ ibs: 0.1, down: 2, stop: 'atr2' });
+  assert.equal(c.stopAtr, 2); assert.equal(c.sectorCap, 0.3); assert.equal(c.maxPositions, 10);
+  const g = withRisk(fam('gap-up'), { grid: { gate: ['strong'] } }).make({ gate: 'strong' });
+  const P = panelOf({ SPY: barsFrom(ramp(260, 100, 0.1)) });
+  g.init(P); assert.equal(typeof g.regime, 'function'); assert.equal(g.regime(259), true);
+});
+
+test('walk-forward with a drawdown cap: highest in-sample CAGR under the cap, else the lowest DD, never using OOS data', () => {
+  const dates = weekdays(252 * 6, Date.UTC(2016, 0, 4)), D = dates.length;
+  const tr = Array.from({ length: 40 }, (_, k) => ({ entryIdx: k * 10, exitIdx: k * 10 + 2, contrib: 0, ret: 0, pnl: 0 }));
+  const mk = (amp, drift) => ({ rets: Float64Array.from({ length: D }, (_, d) => drift + (Math.floor(d / 40) % 2 ? -amp : amp)), gross: new Float64Array(D), turn: new Float64Array(D), trades: tr, start: 0 });
+  const calm = mk(0.001, 0.0004), wild = mk(0.01, 0.0008);
+  const folds = E.makeFolds(dates, { start: 0 });
+  const [t10, loose] = E.wfSelectMulti(folds, () => [wild, calm], [{ maxDD: 0.10 }, { maxDD: 0.9 }], { start: 0, minTradesIS: 5 });
+  assert.ok(t10.folds.every(f => f.chosen === 1 && f.isDD < 0.10));
+  assert.ok(loose.folds.every(f => f.chosen === 0));
+  const none = E.wfSelectMulti(folds, () => [wild, mk(0.005, 0.0004)], [{ maxDD: 0.001 }], { start: 0, minTradesIS: 5 })[0];
+  assert.ok(none.folds.every(f => f.chosen === 1)); // لا أحد تحت الحد → الأقل تراجعًا
+  for (const f of folds) {
+    const poison = { ...calm, rets: calm.rets.slice() }; for (let d = f.from; d < D; d++) poison.rets[d] = -0.05;
+    const again = E.wfSelectMulti(folds, () => [wild, poison], [{ maxDD: 0.10 }], { start: 0, minTradesIS: 5 })[0];
+    assert.equal(again.folds.find(x => x.year === f.year).chosen, 1);
+  }
+});
+
+test('drawdown episodes and stream combination', () => {
+  const eps = E.drawdownEpisodes([0.1, -0.1, -0.1, 0.3, -0.05, 0.01], [10, 11, 12, 13, 14, 15], 0.03);
+  assert.equal(eps.length, 2);
+  near(eps[0].depth, 0.19); assert.equal(eps[0].start, 10); assert.equal(eps[0].trough, 12); assert.equal(eps[0].recovery, 13);
+  assert.equal(eps[1].recovery, null);
+  const a = mkStream([0, 0.1, 0.2]), b = mkStream([0, -0.1, 0]);
+  a.trades = [{ entryIdx: 1, exitIdx: 2, contrib: 0.1, w: 1 }];
+  const c = E.combineStreams([{ stream: a, w: 0.3 }, { stream: b, w: 0.5 }]);
+  near(c.rets[1], 0.03 - 0.05); near(c.gross[1], 0.8); near(c.trades[0].contrib, 0.03);
+});
+
+test('sector cap on rebalance: target holds at most floor(cap × positions) names per sector', () => {
+  const many = {}, sectors = {};
+  for (const [i, s] of ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].entries()) { many[s] = barsFrom(ramp(30, 10, 0.05)); sectors[s] = i < 5 ? 'Tech' : 'S' + i; }
+  const P = E.buildPanel(new Map(Object.entries(many)), {}, { sectors });
+  const cfg = { universe: Object.keys(many), maxPositions: 5, entryAt: 'open', exitAt: 'open', sectorCap: 0.3, rebalance: d => d === 2, score: (d, s) => 10 - s };
+  const r = E.runStrategy(P, cfg, { warmup: 1, flatCost: 0 });
+  const held = r.trades.map(t => t.sym);
+  assert.equal(held.filter(s => sectors[s] === 'Tech').length, 1);
+  assert.deepEqual(held.sort(), ['A', 'F', 'G', 'H']);
 });
