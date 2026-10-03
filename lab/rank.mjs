@@ -21,6 +21,7 @@ export const RANK_DEFAULTS = {
   seWeight: 0.5,       // كم نطرح من الخطأ المعياري من متوسط R (عقوبة إضافية للعينة الصغيرة)
   topN: 5,
   oosMinTrades: null,  // حد الصفقات في النصف الأقدم؛ null = max(2, ceil(minTrades/2))
+  requirePositive: true, // لازم متوسط R المنكمش > 0 — سهم خسران ما يدخل أفضل 5 حتى لو تكرر كثير
 };
 
 // ===== أدوات =====
@@ -133,7 +134,7 @@ export function rankSymbols(bt, opts = {}) {
     const row = {
       sym,
       score: sc.score,
-      eligible: st.trades >= opt.minTrades,
+      eligible: st.trades >= opt.minTrades && (!opt.requirePositive || sc.shrunkAvgR > 0),
       trades: st.trades,
       wins: st.wins,
       winRate: st.trades ? st.wins / st.trades : 0,
