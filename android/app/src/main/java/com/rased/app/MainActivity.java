@@ -29,7 +29,8 @@ import java.util.concurrent.Executors;
 public class MainActivity extends Activity {
     // الجسر يرد فقط على مواقع الأسعار — أي رابط ثاني يُرفض
     private static final Set<String> ALLOWED_HOSTS = new HashSet<>(Arrays.asList(
-            "api.polygon.io", "api.massive.com", "www.alphavantage.co"));
+            "api.polygon.io", "api.massive.com", "www.alphavantage.co",
+            "raw.githubusercontent.com"));  // نتائج مختبر الاتجاهات (top5.json / backtest.json)
 
     private WebView web;
     private final ExecutorService pool = Executors.newFixedThreadPool(3);
