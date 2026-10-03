@@ -30,7 +30,8 @@ public class MainActivity extends Activity {
     // الجسر يرد فقط على مواقع الأسعار — أي رابط ثاني يُرفض
     private static final Set<String> ALLOWED_HOSTS = new HashSet<>(Arrays.asList(
             "api.polygon.io", "api.massive.com", "www.alphavantage.co",
-            "raw.githubusercontent.com"));  // نتائج مختبر الاتجاهات (top5.json / backtest.json)
+            "raw.githubusercontent.com",   // نتائج المختبر (top5 / backtest / spike / spikes-today)
+            "query1.finance.yahoo.com", "query2.finance.yahoo.com")); // شموع Yahoo بدون مفتاح
 
     private WebView web;
     private final ExecutorService pool = Executors.newFixedThreadPool(3);
@@ -97,6 +98,10 @@ public class MainActivity extends Activity {
                     c.setConnectTimeout(20000);
                     c.setReadTimeout(90000);
                     c.setRequestProperty("Accept", "application/json");
+                    // Yahoo يرفض أحيانًا عميل Java الافتراضي — نرسل User-Agent متصفح
+                    if (u.getHost().endsWith(".finance.yahoo.com")) {
+                        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36");
+                    }
                     status = c.getResponseCode();
                     InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
                     body = in == null ? "" : readAll(in);

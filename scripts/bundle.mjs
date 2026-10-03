@@ -6,13 +6,15 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = f => readFile(path.join(ROOT, f), 'utf8');
 
-// نتائج المختبر وقت البناء (إن وُجدت): top5 كما هو، و backtest بالأسابيع والحساب فقط.
+// نتائج المختبر وقت البناء (إن وُجدت): top5 كما هو، و backtest بالأسابيع والحساب فقط، وملخص spike و spikes-today.
 // ترجع سطر JS يعرّف window.RASED_LAB (أو null) — التطبيق يحدّثها من GitHub وقت التشغيل.
 export async function labScript() {
   const json = async f => { try { return JSON.parse(await read(`lab/results/${f}.json`)); } catch { return null; } };
-  const top5 = await json('top5'), bt = await json('backtest');
+  const top5 = await json('top5'), bt = await json('backtest'), sp = await json('spike'), spikesToday = await json('spikes-today');
   const backtest = bt ? { generatedAt: bt.generatedAt, source: bt.source, dataFrom: bt.dataFrom, dataTo: bt.dataTo, weeks: bt.weeks || [], account: bt.account || null } : null;
-  const lab = top5 || backtest ? { top5, backtest } : null;
+  // انفجار السيولة: ملخص المختبر (بدون الصفقات) + آخر مسح ليلي كما هو
+  const spike = sp ? { generatedAt: sp.generatedAt, source: sp.source, dataFrom: sp.dataFrom, dataTo: sp.dataTo, defaultKey: sp.defaultKey, default: sp.default || null, account: sp.account || null, walkForward: sp.walkForward || null } : null;
+  const lab = top5 || backtest || spike || spikesToday ? { top5, backtest, spike, spikesToday } : null;
   return `window.RASED_LAB = ${JSON.stringify(lab).replace(/</g, '\\u003c')};`;
 }
 

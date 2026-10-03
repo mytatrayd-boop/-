@@ -37,6 +37,7 @@ const app = __mods.client.createClientApp({
     save(k) { try { localStorage.setItem(KEYS, JSON.stringify(k)); } catch { /* تجاهل */ } },
   },
   log: m => console.log(m),
+  yahoo: true, // بدون مفتاح: شموع الاتجاهات من Yahoo عبر الجسر (والتجريبي فقط لو فشل)
 });
 window.RASED_LOCAL = app;
 // الشاشة تبقى شغالة أثناء المزامنة
@@ -44,7 +45,7 @@ if (window.RasedNative) { let on = false; setInterval(() => { const s = app.sync
 `;
 
 const out = await buildPage({
-  modules: ['engine', 'trend', 'massive', 'alphavantage', 'demo', 'providers', 'status', 'scan', 'client'],
+  modules: ['engine', 'trend', 'spike', 'yahoo', 'massive', 'alphavantage', 'demo', 'providers', 'status', 'scan', 'client'],
   init, document: true,
   head: '<meta name="theme-color" content="#0a0d12">',
 });
