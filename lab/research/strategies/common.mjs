@@ -32,6 +32,7 @@ export function regimeFn(P, kind = 'none', bench = 'SPY') {
   const trend = d => c[d] > m[d], calm = d => v[d] < 0.25;
   if (kind === 'strong') { const r21 = P.series('ret:21')[s]; return d => trend(d) && r21[d] > 0; }
   if (kind === 'breadth') { const b = breadth(P); return d => b[d] > 0.5; }
+  if (kind === 'spy12m') { const r252 = P.series('ret:252')[s]; return d => r252[d] > 0; }
   return kind === 'sma200' ? trend : kind === 'vol' ? calm : d => trend(d) && calm(d);
 }
 
@@ -49,3 +50,29 @@ export function breadth(P) {
 }
 
 export const sizing = x => (x === 'vol' ? { vol: 0.30 } : 'equal');
+
+// زخم 12-1: العائد من قبل 252 يومًا حتى قبل 21 يومًا (نتجاهل آخر شهر) — لكل سهم، مخزّن
+export function mom121(P) {
+  if (P.cache.has('mom121')) return P.cache.get('mom121');
+  const r252 = P.series('ret:252'), r21 = P.series('ret:21');
+  const out = r252.map((a, s) => Float64Array.from(a, (x, d) => (1 + x) / (1 + r21[s][d]) - 1));
+  P.cache.set('mom121', out);
+  return out;
+}
+
+// الترتيب المئوي المقطعي (0..1، 1 = الأعلى) لسلسلة بين أسهم كون «large» المؤهلة في كل يوم — بيانات اليوم نفسه فقط
+export function xsRank(P, key, arrs) {
+  const ck = 'rank:' + key;
+  if (P.cache.has(ck)) return P.cache.get(ck);
+  const U = P.universe('large'), out = new Array(P.S).fill(null).map(() => new Float64Array(P.D).fill(NaN));
+  const buf = [];
+  for (let d = 0; d < P.D; d++) {
+    buf.length = 0;
+    for (const s of U.members) if (U.el[s][d] && Number.isFinite(arrs[s][d])) buf.push(s);
+    if (buf.length < 2) continue;
+    buf.sort((a, b) => arrs[a][d] - arrs[b][d]);
+    for (let i = 0; i < buf.length; i++) out[buf[i]][d] = i / (buf.length - 1);
+  }
+  P.cache.set(ck, out);
+  return out;
+}

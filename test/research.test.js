@@ -7,7 +7,7 @@ const I = await import('../lab/research/indicators.mjs');
 const { synthUniverse, weekdays } = await import('../lab/research/synth.mjs');
 const { FAMILIES, gridCombos } = await import('../lab/research/strategies/index.mjs');
 const C = await import('../lab/research/strategies/common.mjs');
-const { checkCriteria, runResearch, buildReport } = await import('../lab/research/run.mjs');
+const { checkCriteria, runResearch, buildReport, recentHalf, yearsBeating } = await import('../lab/research/run.mjs');
 const DATA = await import('../lab/research/data.mjs');
 const { RISK_FAMILIES, OVERLAY_TARGETS, overlaySpecs, withRisk } = await import('../lab/research/overlays.mjs');
 
@@ -140,14 +140,17 @@ test('walk-forward: selection for year Y never uses data from Y or later', () =>
 });
 
 /* ---------- الشروط ---------- */
-test('criteria checker: all seven must pass; each failure is reported', () => {
-  const good = { dataYears: 10, folds: 6, shariah: { ok: true, why: 'x' },
-    oos: { trades: 150, ret: 0.8, cagr: 0.1, maxDD: 0.08, best2Removed: 0.6, yearsProfitable: 5, yearsTotal: 6, maxGross: 1, bench: { ret: 0.5, cagr: 0.07 } } };
+test('criteria checker (owner round 3): all seven must pass; each failure is reported', () => {
+  const good = { dataYears: 10, folds: 7, shariah: { ok: true, why: 'x' },
+    oos: { trades: 150, ret: 1.8, cagr: 0.18, maxDD: 0.25, best2Removed: 0.6, yearsProfitable: 5, yearsTotal: 7, yearsBeatSpy: 4, maxGross: 1,
+      bench: { ret: 1.6, cagr: 0.154 }, recent: { from: '2023-05-18', ret: 0.7, cagr: 0.2, benchRet: 0.6, benchCagr: 0.17 } } };
   const ok = checkCriteria(good);
-  assert.equal(ok.passed, true); assert.equal(ok.score, 7);
+  assert.equal(ok.passed, true, JSON.stringify(ok.checks.filter(k => !k.ok)));
+  assert.equal(ok.score, 7);
   const fails = {
-    1: { dataYears: 5 }, 2: { oos: { trades: 99 } }, 3: { folds: 2 }, 4: { oos: { bench: { ret: 0.9, cagr: 0.12 } } },
-    5: { oos: { maxDD: 0.1 } }, 6: { oos: { best2Removed: -0.01 } }, 7: { shariah: { ok: false, why: 'etf' } },
+    1: { dataYears: 5 }, 2: { oos: { trades: 99 } }, 3: { folds: 2 },
+    4: { oos: { bench: { ret: 1.9, cagr: 0.19 } } },
+    5: { oos: { maxDD: 0.2501 } }, 6: { oos: { best2Removed: 0 } }, 7: { shariah: { ok: false, why: 'etf' } },
   };
   for (const [id, patch] of Object.entries(fails)) {
     const c = { ...good, ...patch, oos: { ...good.oos, ...(patch.oos || {}) } };
@@ -155,10 +158,23 @@ test('criteria checker: all seven must pass; each failure is reported', () => {
     assert.equal(r.passed, false, 'criterion ' + id);
     assert.deepEqual(r.checks.filter(k => !k.ok).map(k => k.id), [Number(id)]);
   }
-  const fewYears = checkCriteria({ ...good, oos: { ...good.oos, yearsProfitable: 3, yearsTotal: 6 } });
-  assert.deepEqual(fewYears.checks.filter(k => !k.ok).map(k => k.id), [6]);
-  const lev = checkCriteria({ ...good, oos: { ...good.oos, maxGross: 1.2 } });
-  assert.deepEqual(lev.checks.filter(k => !k.ok).map(k => k.id), [7]);
+  const ids = patch => checkCriteria({ ...good, oos: { ...good.oos, ...patch } }).checks.filter(k => !k.ok).map(k => k.id);
+  assert.deepEqual(ids({ recent: { ...good.oos.recent, ret: 0.5 } }), [4]);           // النصف الأحدث يخسر أمام SPY
+  assert.deepEqual(ids({ yearsBeatSpy: 3 }), [6]);                                     // 3 من 7 فقط
+  assert.deepEqual(ids({ yearsProfitable: 3 }), [6]);
+  assert.deepEqual(ids({ maxGross: 1.2 }), [7]);
+  assert.deepEqual(ids({ maxDD: 0.30 }), [5]);
+});
+
+test('newer-half split by date and years beating SPY', () => {
+  const dates = weekdays(400, Date.UTC(2020, 0, 1));
+  const days = [...Array(400).keys()].slice(1);
+  const rets = days.map((d, i) => (i < 200 ? 0.002 : 0)), bench = days.map(() => 0.001);
+  const h = recentHalf(dates, days, rets, bench);
+  const mid = (dates[days[0]] + dates[days[days.length - 1]]) / 2;
+  assert.ok(Date.parse(h.from) >= mid && Date.parse(h.from) - mid < 4 * 86400000);
+  assert.ok(h.ret < h.benchRet);
+  assert.equal(yearsBeating({ 2020: 0.1, 2021: -0.1, 2022: 0.3 }, { 2020: 0.05, 2021: 0.0, 2022: 0.3 }), 1);
 });
 
 /* ---------- إشارات كل عائلة ---------- */
@@ -317,9 +333,11 @@ test('research run: end-to-end on a small synthetic market writes candidates, cr
   const u = synthUniverse({ nLarge: 30, nSmall: 6, days: 1100, seed: 11 });
   const out = await runResearch({ ...u, info: { source: 'synthetic', screen: 'synthetic', sectors: u.sectors }, log: () => {}, panelOpt: { largeN: 20 } });
   const nFam = FAMILIES.length + RISK_FAMILIES.length;
-  assert.equal(out.candidates.length, nFam + 1 + OVERLAY_TARGETS.length + 2);
-  assert.equal(out.frontier.length, nFam + 1 + 2);
-  for (const f of out.frontier) assert.deepEqual(f.rows.map(r => r.maxDD), [0.10, 0.15, 0.20]);
+  assert.equal(out.candidates.length, nFam + 1 + 1 + OVERLAY_TARGETS.length + 2); // + المزيج + أساس/قمر + الطبقات + الأكمام
+  assert.equal(out.frontier.length, nFam + 1 + 1 + 2);
+  for (const f of out.frontier) assert.deepEqual(f.rows.map(r => r.maxDD), [0.15, 0.20, 0.25]);
+  for (const c of out.candidates) { assert.ok(c.oos.recent && c.oos.recent.from); assert.ok(Number.isInteger(c.oos.yearsBeatSpy)); }
+  for (const c of out.candidates.filter(x => x.criteria.passed)) { assert.ok(c.tradingRules.length >= 4); assert.ok(c.tradingRules.every(r => typeof r === 'string' && r.length > 5)); }
   for (const c of out.candidates) assert.ok(Array.isArray(c.episodes));
   for (const c of out.candidates) { assert.equal(c.criteria.checks.length, 7); assert.ok(c.oos.trades >= 0); assert.ok(Array.isArray(c.equity)); }
   for (const c of out.candidates.filter(x => x.universe === 'etf')) assert.equal(c.criteria.checks[6].ok, false);
@@ -440,4 +458,94 @@ test('sector cap on rebalance: target holds at most floor(cap × positions) name
   const held = r.trades.map(t => t.sym);
   assert.equal(held.filter(s => sectors[s] === 'Tech').length, 1);
   assert.deepEqual(held.sort(), ['A', 'F', 'G', 'H']);
+});
+
+/* ---------- الجولة 3: عائلات الزخم/الاتجاه ---------- */
+const { pickSectors } = await import('../lab/research/strategies/sector-mom.mjs');
+const { advWeights } = await import('../lab/research/strategies/core-basket.mjs');
+
+test('every stock family has mechanical Arabic trading rules for every grid point', () => {
+  for (const f of [...FAMILIES, ...RISK_FAMILIES]) {
+    if (f.universe === 'etf') continue;
+    assert.equal(typeof f.rules, 'function', f.family);
+    for (const p of gridCombos(f.grid)) { const r = f.rules(p); assert.ok(r.length >= 3 && r.every(x => typeof x === 'string' && !x.includes('undefined')), f.family + JSON.stringify(p)); }
+  }
+});
+
+test('signal conc-mom: score variants rank strong uptrends and skip weak or decelerating ones', () => {
+  // UP يتسارع: نمو بطيء ثم سريع (عائد 3 أشهر > نصف عائد 6 أشهر)
+  const accel = Array.from({ length: 300 }, (_, i) => 50 * Math.exp(0.0005 * Math.min(i, 230) + 0.012 * Math.max(0, i - 230)));
+  const P = panelOf({ SPY: barsFrom(ramp(300, 100, 0.1)), UP: barsFrom(accel), DN: barsFrom(ramp(300, 150, -0.3)),
+    FADE: barsFrom([...ramp(240, 50, 0.4), ...ramp(60, 145.6, -0.1)]) });
+  const d = P.D - 1, s = n => P.sym(n);
+  for (const score of ['r12_1', 'riskadj', 'hi52mix', 'accel']) {
+    const c = init('conc-mom', { score, n: 5 }, P);
+    assert.ok(c.score(d, s('UP')) > 0, score); assert.equal(c.score(d, s('DN')), null, score);
+    assert.equal(c.rebalance(d), C.lastOfWeek(P, d));
+  }
+  assert.equal(init('conc-mom', { score: 'accel' }, P).score(d, s('FADE')), null); // يتباطأ: عائد 3 أشهر سالب
+  assert.ok(init('conc-mom', { score: 'r12_1' }, P).score(d, s('FADE')) > 0);
+});
+
+test('signal mom-rotation: gate on → top-n momentum at 1/n; gate off → core basket by dollar volume or cash', () => {
+  const cands = [{ s: 0, score: 0.5, adv: 1 }, { s: 1, score: 0.3, adv: 9 }, { s: 2, score: -1e9, adv: 5 }, { s: 3, score: 0.1, adv: 2 }];
+  const P = panelOf({ SPY: barsFrom(ramp(300, 100, 0.1)) }), Q = panelOf({ SPY: barsFrom(ramp(300, 200, -0.2)) });
+  const on = init('mom-rotation', { gate: 'sma200', off: 'core', n: 2 }, P).select(P.D - 1, cands);
+  assert.deepEqual(on.map(x => x.s), [0, 1]); assert.ok(on.every(x => x.w === 0.5));
+  const off = init('mom-rotation', { gate: 'sma200', off: 'core', n: 2 }, Q).select(Q.D - 1, cands);
+  assert.deepEqual(off.map(x => x.s), [1, 2, 3, 0]); assert.ok(off.every(x => x.w === 1 / 20));
+  assert.deepEqual(init('mom-rotation', { gate: 'spy12m', off: 'cash', n: 2 }, Q).select(Q.D - 1, cands), []);
+});
+
+test('signal trend-breakout and the ATR trailing stop: new high enters, stop ratchets up and exits on the pullback', () => {
+  const closes = [...ramp(260, 50, 0.1), ...ramp(15, 76, 1), ...ramp(10, 89, -2)];
+  const P = panelOf({ SPY: barsFrom(ramp(closes.length, 100, 0.1)), AAA: barsFrom(closes) });
+  const cfg = init('trend-breakout', { look: 126, trail: 3, maxPositions: 10 }, P);
+  assert.ok(cfg.score(261, P.sym('AAA')) !== null); assert.equal(cfg.score(280, P.sym('AAA')), null);
+  const fresh = fam('trend-breakout').make({ look: 126, trail: 3, maxPositions: 10 });
+  const r = E.runStrategy(P, { ...fresh, universe: ['AAA'] }, { warmup: 255, flatCost: 0 });
+  const t = r.trades[0];
+  assert.equal(t.how, 'stop');
+  assert.ok(t.exit > t.entry, 'الوقف المتحرك يحفظ الربح');
+  assert.ok(t.exitIdx > 275);
+});
+
+test('signal sector-mom: best sectors by mean momentum, then the strongest names inside them', () => {
+  const sec = ['A', 'A', 'A', 'B', 'B', 'B', 'C', 'C', 'C', 'C'];
+  const sc = [0.9, 0.5, 0.4, 0.2, 0.1, 0.0, -0.5, -0.4, 0.8, -0.6];
+  const cands = sc.map((score, s) => ({ s, score })).sort((a, b) => b.score - a.score);
+  const out = pickSectors(cands, s => sec[s], 2, 2);
+  assert.deepEqual(out.map(x => x.s), [0, 1, 3, 4]);
+  assert.ok(out.every(x => x.w === 0.25));
+  const P = panelOf({ SPY: barsFrom(ramp(300, 100, 0.1)), UP: barsFrom(ramp(300, 50, 0.3)) });
+  P.sector[P.sym('UP')] = 'Tech';
+  assert.ok(init('sector-mom', {}, P).score(299, P.sym('UP')) > 0);
+  assert.equal(init('sector-mom', {}, P).score(299, P.sym('SPY')), null); // بلا قطاع
+});
+
+test('signal mom-pullback: top-decile momentum stock after a short dip', () => {
+  const many = { SPY: barsFrom(ramp(300, 100, 0.1)) };
+  for (let i = 0; i < 12; i++) many['S' + i] = barsFrom(ramp(300, 50, 0.01 * i));
+  many.TOP = barsFrom([...ramp(297, 50, 0.4), 167, 166, 165]);
+  const P = E.buildPanel(new Map(Object.entries(many)), {}, { largeN: 50, minHistory: 10 });
+  const c = init('mom-pullback', { pull: 'down2' }, P), s = P.sym('TOP');
+  assert.ok(c.score(299, s) > 0); assert.equal(c.score(296, s), null);
+  assert.equal(init('mom-pullback', { pull: 'down3' }, P).score(299, s) > 0, true);
+  assert.equal(c.score(299, P.sym('S1')), null);
+});
+
+test('core basket: dollar-volume weights capped at 15% and summing to 1; engine honours per-signal weights', () => {
+  const w = advWeights([{ adv: 100 }, { adv: 10 }, { adv: 10 }, { adv: 10 }, { adv: 10 }, { adv: 10 }, { adv: 10 }, { adv: 10 }]);
+  near(w.reduce((a, b) => a + b, 0), 1); assert.ok(Math.max(...w) <= 0.15 + 1e-9);
+  const P = panelOf({ A: barsFrom(ramp(30, 10, 0.05)), B: barsFrom(ramp(30, 10, 0.05)) });
+  const cfg = { universe: ['A', 'B'], maxPositions: 20, entryAt: 'open', exitAt: 'open', rebalance: d => d === 2, score: (d, s) => ({ score: 1, w: s === 0 ? 0.7 : 0.3 }) };
+  const r = E.runStrategy(P, cfg, { warmup: 1, flatCost: 0 });
+  near(r.gross[3], 1, 1e-2);
+  const ws = r.trades.map(t => t.w).sort(); near(ws[0], 0.3, 1e-9); near(ws[1], 0.7, 1e-9);
+});
+
+test('live selection uses all data up to the last day (rules), while walk-forward never does', () => {
+  const D = 600, a = mkStream(Array.from({ length: D }, (_, d) => (d < 500 ? 0.001 : -0.01))), b = mkStream(Array.from({ length: D }, (_, d) => (d < 500 ? 0.0005 : 0.002)));
+  a.trades = b.trades = Array.from({ length: 30 }, (_, k) => ({ entryIdx: k * 15, exitIdx: k * 15 + 2, contrib: 0 }));
+  assert.equal(E.pickLive([a, b], { start: 0, minTradesIS: 5 }), 1);
 });

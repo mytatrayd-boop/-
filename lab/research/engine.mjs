@@ -157,7 +157,7 @@ export function runStrategy(P, cfg, opt = {}) {
   const U = P.universe(cfg.universe), members = U.members, el = U.el;
   const maxPos = cfg.maxPositions || 5, entryAt = cfg.entryAt || 'open', exitAt = cfg.exitAt || 'open';
   const hold = Number.isFinite(cfg.hold) ? cfg.hold : null;
-  const adv20 = P.series('adv:20'), atr14 = cfg.stopAtr ? P.series('atr:14') : null, vol20 = cfg.sizing && cfg.sizing.vol ? P.series('vol:20') : null;
+  const adv20 = P.series('adv:20'), atr14 = cfg.stopAtr || cfg.trailAtr ? P.series('atr:14') : null, vol20 = cfg.sizing && cfg.sizing.vol ? P.series('vol:20') : null;
   const equity = nanArr(D), gross = new Float64Array(D), turn = new Float64Array(D);
   const trades = [], positions = new Map(); // s → pos
   let cash = o0.start, eqPrev = o0.start, pendingExits = [], pendingEntries = [];
@@ -174,7 +174,8 @@ export function runStrategy(P, cfg, opt = {}) {
     positions.delete(s);
   };
   const buy = (s, d, px, sig, eqRef) => {
-    let w = 1 / maxPos;
+    // الوزن: من الإشارة (sig.w — مثل سلة أساسية بأوزان مختلفة) وإلا 1 ÷ الحد الأقصى للمراكز
+    let w = sig && Number.isFinite(sig.w) ? sig.w : 1 / maxPos;
     if (vol20) { const sv = vol20[s][d - 1]; if (sv > 0) w *= Math.min(1, cfg.sizing.vol / sv); }
     const r = costAt(s, d);
     let value = Math.min(eqRef * w, cash);
@@ -189,10 +190,10 @@ export function runStrategy(P, cfg, opt = {}) {
     cash -= value; turn[d] += shares * px;
     let stop = sig && Number.isFinite(sig.stop) ? sig.stop : null;
     if (stop === null && cfg.stopPct) stop = px * (1 - cfg.stopPct);
-    if (stop === null && atr14) { const a = atr14[s][sig && sig.d >= 0 ? sig.d : d - 1]; if (a > 0) stop = px - cfg.stopAtr * a; }
+    if (stop === null && atr14 && cfg.stopAtr) { const a = atr14[s][sig && sig.d >= 0 ? sig.d : d - 1]; if (a > 0) stop = px - cfg.stopAtr * a; }
     let target = sig && Number.isFinite(sig.target) ? sig.target : null;
     if (target === null && cfg.targetPct) target = px * (1 + cfg.targetPct);
-    positions.set(s, { s, shares, entry: px, cost: value, entryIdx: d, eqAtEntry: eqRef, stop, target, last: px, at: entryAt });
+    positions.set(s, { s, shares, entry: px, cost: value, entryIdx: d, eqAtEntry: eqRef, stop, target, last: px, at: entryAt, hiClose: px });
     return true;
   };
   const norm = (r, d) => r === null || r === undefined || r === false ? null
@@ -249,6 +250,12 @@ export function runStrategy(P, cfg, opt = {}) {
     // التقييم
     let mv = 0;
     for (const pos of positions.values()) { const c = P.c[pos.s][d]; if (Number.isFinite(c)) pos.last = c; mv += pos.shares * pos.last; }
+    // وقف متحرك بـ ATR: بعد الإغلاق (بيانات حتى d) يُرفع الوقف إلى أعلى إغلاق منذ الدخول − k×ATR، ولا ينزل أبدًا؛ يُفحص من الغد
+    if (cfg.trailAtr) for (const pos of positions.values()) {
+      if (pos.last > pos.hiClose) pos.hiClose = pos.last;
+      const a = atr14[pos.s][d];
+      if (a > 0) { const st = pos.hiClose - cfg.trailAtr * a; if (pos.stop === null || st > pos.stop) pos.stop = st; }
+    }
     const eq = cash + mv;
     equity[d] = eq; gross[d] = eq > 0 ? mv / eq : 0; turn[d] = eqPrev > 0 ? turn[d] / eqPrev : 0;
     eqPrev = eq;
@@ -271,7 +278,8 @@ export function runStrategy(P, cfg, opt = {}) {
       cands.sort((a, b) => b.score - a.score);
       // مع سقف القطاع: نختار الهدف بحد أقصى floor(سقف × عدد المراكز) سهمًا لكل قطاع معروف
       let top = cands.slice(0, maxPos);
-      if (cfg.sectorCap) {
+      if (cfg.select) top = cfg.select(d, cands).slice(0, maxPos); // اختيار مخصّص (عدد/أوزان/قطاعات) من المرشحين المرتبين
+      else if (cfg.sectorCap) {
         const per = Math.max(1, Math.floor(cfg.sectorCap * maxPos + 1e-9)), cnt = new Map(); top = [];
         for (const x of cands) {
           if (top.length >= maxPos) break;
@@ -497,6 +505,11 @@ export function wfSelectMulti(folds, optionsFor, objectives, { start = 0, minTra
     });
   });
   return outs;
+}
+// الاختيار «الحي»: نفس قاعدة الاختيار على كل البيانات حتى آخر يوم (للتداول من اليوم فصاعدًا — ليس نتيجة اختبار)
+export function pickLive(options, { start = 0, objective = 'mar', minTradesIS = 20 } = {}) {
+  const D = options[0].rets.length;
+  return pickIndex(options, { from: D }, objective, minTradesIS, start).k;
 }
 export const wfSelect = (folds, optionsFor, { objective = 'mar', ...o } = {}) => wfSelectMulti(folds, optionsFor, [objective], o)[0];
 

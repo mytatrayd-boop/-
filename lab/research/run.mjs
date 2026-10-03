@@ -9,16 +9,17 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildPanel, runStrategy, fullMetrics, returnStats, ENGINE_DEFAULTS, streamFromRun, combineStreams, applyOverlay,
-  makeFolds, wfSelectMulti, drawdownEpisodes } from './engine.mjs';
+  makeFolds, wfSelectMulti, drawdownEpisodes, pickLive } from './engine.mjs';
 import { FAMILIES, gridCombos } from './strategies/index.mjs';
-import { RISK_FAMILIES, overlaySpecs, OVERLAY_TARGETS, MOM_SLEEVES, MR_SLEEVES, SLEEVE_BUDGETS, FRONTIER_DD } from './overlays.mjs';
+import { RISK_FAMILIES, overlaySpecs, OVERLAY_TARGETS, OVERLAY_SET, OBJECTIVE_DD, SAT_FAMILIES, CORE_WEIGHTS, MOM_SLEEVES, MR_SLEEVES, SLEEVE_BUDGETS, FRONTIER_DD } from './overlays.mjs';
 import { loadResearchData } from './data.mjs';
 import { synthUniverse } from './synth.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const RESULTS = path.join(HERE, '..', 'results');
+// شروط «النتيجة الممتازة» — مُحدَّثة بقرار المالك (desk/ROADMAP.md، 2026-10-03): الأولوية للتفوق على SPY، وتراجع ≤ 25%.
 export const CRITERIA = {
-  minDataYears: 9.5, minTrades: 100, minOosYears: 3, maxDD: 0.10,
+  minDataYears: 9.5, minTrades: 100, minOosYears: 3, maxDD: 0.25, beatYearsFrac: 4 / 7,
 };
 const r4 = x => (x === null || x === undefined ? null : !Number.isFinite(x) ? (x > 0 ? 'Infinity' : x < 0 ? '-Infinity' : null) : Math.round(x * 1e4) / 1e4);
 const pct = (x, d = 1) => (x === null || x === undefined || !Number.isFinite(Number(x)) ? '—' : (Number(x) * 100).toFixed(d) + '%');
@@ -28,24 +29,37 @@ const fmtDay = (P, d) => new Date(P.dates[d]).toISOString().slice(0, 10);
 /* ---------- الشروط السبعة ---------- */
 // c: { dataYears, folds, oos: {...fullMetrics}, shariah: {ok, why} } → { passed, score, checks: [{id, label, ok, value, why}] }
 export function checkCriteria(c, k = CRITERIA) {
-  const o = c.oos || {}, b = o.bench || {};
+  const o = c.oos || {}, b = o.bench || {}, rc = o.recent || {};
+  const needBeat = Math.ceil((o.yearsTotal || 0) * k.beatYearsFrac - 1e-9);
   const checks = [
     { id: 1, label: 'نحو 10 سنوات بيانات', ok: c.dataYears >= k.minDataYears, value: r4(c.dataYears),
       why: `${num(c.dataYears, 1)} سنة (المطلوب ≥ ${k.minDataYears})` },
     { id: 2, label: '≥ 100 صفقة', ok: o.trades >= k.minTrades, value: o.trades ?? 0, why: `${o.trades ?? 0} صفقة خارج العينة` },
     { id: 3, label: 'رابحة خارج العينة (اختبار أمامي)', ok: (c.folds || 0) >= k.minOosYears && o.ret > 0, value: r4(o.ret),
       why: `${c.folds || 0} سنوات خارج العينة، العائد ${pct(o.ret)}` },
-    { id: 4, label: 'تتفوق على SPY بعد التكاليف', ok: Number.isFinite(b.ret) && o.ret > b.ret, value: r4((o.ret ?? 0) - (b.ret ?? 0)),
-      why: `${pct(o.ret)} مقابل SPY ${pct(b.ret)} (CAGR ${pct(o.cagr)} مقابل ${pct(b.cagr)})` },
-    { id: 5, label: 'أقصى تراجع < 10%', ok: Number.isFinite(o.maxDD) && o.maxDD < k.maxDD, value: r4(o.maxDD), why: `أقصى تراجع ${pct(o.maxDD)}` },
-    { id: 6, label: 'لا تعتمد على صفقتين + رابحة أغلب السنوات', ok: o.best2Removed >= 0 && o.yearsProfitable > (o.yearsTotal || 0) / 2,
-      value: r4(o.best2Removed), why: `بعد حذف أفضل صفقتين ${pct(o.best2Removed)}، سنوات رابحة ${o.yearsProfitable ?? 0}/${o.yearsTotal ?? 0}` },
-    { id: 7, label: 'شراء فقط ومتوافقة شرعيًا في الشكل', ok: !!(c.shariah && c.shariah.ok) && !(o.maxGross > 1 + 1e-9),
-      value: r4(o.maxGross), why: `${c.shariah ? c.shariah.why : '—'}؛ أقصى تعرض ${pct(o.maxGross, 0)} بلا رافعة ولا بيع على المكشوف` },
+    { id: 4, label: 'تتفوق على SPY بعد التكاليف (كامل الفترة + النصف الأحدث)',
+      ok: Number.isFinite(b.ret) && o.ret > b.ret && Number.isFinite(rc.benchRet) && rc.ret > rc.benchRet, value: r4((rc.cagr ?? 0) - (rc.benchCagr ?? 0)),
+      why: `كامل: ${pct(o.ret)} مقابل SPY ${pct(b.ret)} (CAGR ${pct(o.cagr)} مقابل ${pct(b.cagr)})؛ النصف الأحدث من ${rc.from ?? '—'}: CAGR ${pct(rc.cagr)} مقابل ${pct(rc.benchCagr)}` },
+    { id: 5, label: `أقصى تراجع ≤ ${k.maxDD * 100}%`, ok: Number.isFinite(o.maxDD) && o.maxDD <= k.maxDD, value: r4(o.maxDD), why: `أقصى تراجع ${pct(o.maxDD)}` },
+    { id: 6, label: 'لا تعتمد على صفقتين + رابحة أغلب السنوات + تتفوق على SPY في 4 من 7 سنوات',
+      ok: o.best2Removed > 0 && o.yearsProfitable > (o.yearsTotal || 0) / 2 && (o.yearsBeatSpy ?? 0) >= needBeat && needBeat > 0,
+      value: r4(o.best2Removed), why: `بعد حذف أفضل صفقتين ${pct(o.best2Removed)}، سنوات رابحة ${o.yearsProfitable ?? 0}/${o.yearsTotal ?? 0}، تفوق على SPY ${o.yearsBeatSpy ?? 0}/${o.yearsTotal ?? 0} (المطلوب ${needBeat})` },
+    { id: 7, label: 'شراء فقط ومتوافقة شرعيًا في الشكل (تعرض ≤ 100%)', ok: !!(c.shariah && c.shariah.ok) && !(o.maxGross > 1 + 1e-9),
+      value: r4(o.maxGross), why: `${c.shariah ? c.shariah.why : '—'}؛ أقصى تعرض ${pct(o.maxGross, 0)} بلا رافعة ولا بيع على المكشوف ولا خيارات` },
   ];
   const score = checks.filter(x => x.ok).length;
   return { passed: score === checks.length, score, checks };
 }
+
+// النصف الأحدث من فترة خارج العينة (تقسيم بالتاريخ عند المنتصف) + عدد السنوات التي تفوقت فيها على SPY
+export function recentHalf(dates, days, rets, bench) {
+  if (!days.length) return null;
+  const mid = (dates[days[0]] + dates[days[days.length - 1]]) / 2;
+  const i0 = days.findIndex(d => dates[d] >= mid);
+  const a = returnStats(rets.slice(i0)), b = returnStats((bench || []).slice(i0));
+  return { from: new Date(dates[days[i0]]).toISOString().slice(0, 10), ret: a.ret, cagr: a.cagr, maxDD: a.maxDD, benchRet: b.ret, benchCagr: b.cagr };
+}
+export const yearsBeating = (yearly, benchYearly) => Object.keys(yearly).filter(y => benchYearly && Number.isFinite(benchYearly[y]) && yearly[y] > benchYearly[y]).length;
 
 /* ---------- أدوات ---------- */
 function benchRets(P, days) {
@@ -74,11 +88,14 @@ const cashStream = D => ({ rets: new Float64Array(D), gross: new Float64Array(D)
 function summarize(P, ctx, { id, name, universe, grid, combos, wf, paramsOf, shariah, extra = {} }) {
   const bench = benchRets(P, wf.days);
   const m = fullMetrics({ rets: wf.rets, years: wf.years, trades: wf.trades, gross: wf.gross, turn: wf.turn, bench });
+  const rh = recentHalf(P.dates, wf.days, wf.rets, bench);
+  m.recent = rh; m.yearsBeatSpy = m.bench ? yearsBeating(m.yearly, m.bench.yearly) : 0;
   const folds = wf.folds.map((f, j) => ({ year: f.year, params: paramsOf(f, j), isScore: r4(f.isScore), isTrades: f.isTrades, isDD: r4(f.isDD), isCagr: r4(f.isCagr) }));
   const oos = {
     from: wf.days.length ? fmtDay(P, wf.days[0]) : null,
     to: wf.days.length ? fmtDay(P, wf.days[wf.days.length - 1]) : null,
-    ...Object.fromEntries(Object.entries(m).filter(([k]) => !['yearly', 'bench'].includes(k)).map(([k, v]) => [k, typeof v === 'number' ? r4(v) : v])),
+    ...Object.fromEntries(Object.entries(m).filter(([k]) => !['yearly', 'bench', 'recent'].includes(k)).map(([k, v]) => [k, typeof v === 'number' ? r4(v) : v])),
+    recent: rh ? Object.fromEntries(Object.entries(rh).map(([k, v]) => [k, typeof v === 'number' ? r4(v) : v])) : null,
     yearly: Object.fromEntries(Object.entries(m.yearly).map(([y, v]) => [y, r4(v)])),
     bench: m.bench ? { ret: r4(m.bench.ret), cagr: r4(m.bench.cagr), sharpe: r4(m.bench.sharpe), maxDD: r4(m.bench.maxDD), mar: r4(m.bench.mar),
       yearly: Object.fromEntries(Object.entries(m.bench.yearly).map(([y, v]) => [y, r4(v)])) } : null,
@@ -107,7 +124,10 @@ export function evaluateFamily(P, fam, ctx, log = () => {}) {
   res.bestFullPeriod = { params: combos[full.k], cagr: r4(full.st.cagr), maxDD: r4(full.st.maxDD), mar: r4(full.st.mar), trades: full.n, note: 'داخل العينة — للمقارنة فقط' };
   log(`${fam.family}: ${combos.length} تركيبة، OOS ${pct(res.oos.ret)} MAR ${num(res.oos.mar)} DD ${pct(res.oos.maxDD)} صفقات ${res.oos.trades} — ${res.criteria.score}/7`);
   // التركيبة المختارة لكل سنة (تُبنى عليها الطبقات والمزائج)
-  return { id: fam.family, name: fam.name, universe: fam.universe, res, combos, wf, baseFor: j => streams[wf.folds[j].chosen], paramsFor: j => combos[wf.folds[j].chosen] };
+  // المعاملات «الحية»: نفس قاعدة الاختيار على كل البيانات حتى اليوم (لقواعد التداول — ليست نتيجة اختبار)
+  const live = pickLive(streams, { start: ctx.start });
+  return { id: fam.family, name: fam.name, universe: fam.universe, fam, res, combos, wf, baseFor: j => streams[wf.folds[j].chosen], paramsFor: j => combos[wf.folds[j].chosen],
+    liveStream: streams[live], liveParams: combos[live] };
 }
 
 /* ---------- المزيج (ensemble) ---------- */
@@ -157,17 +177,25 @@ export function buildReport(out) {
   L.push(`> أُنشئ: ${out.generatedAt} — المصدر: ${out.data.source} — البيانات من ${out.data.from} إلى ${out.data.to} (${num(out.data.years, 1)} سنة)، ${out.data.symbols} سهمًا (large ${out.data.large}، small ${out.data.small}) + SPY/QQQ/IWM. الجولة ${out.round}.`, '');
   L.push('## الحكم', '', out.verdict, '');
   if (out.tradeoff) L.push(out.tradeoff, '');
+  L.push(`**الشروط (قرار المالك):** ${out.criteriaRules ? `10 سنوات بيانات، ≥ 100 صفقة، رابحة خارج العينة، تتفوق على SPY بعد التكاليف خارج العينة كاملًا **وفي نصفه الأحدث**، أقصى تراجع ≤ ${out.criteriaRules.maxDD * 100}%، بعد حذف أفضل صفقتين تبقى موجبة + رابحة أغلب السنوات + تتفوق على SPY في 4 من 7 سنوات على الأقل، شراء فقط بلا رافعة وتعرض ≤ 100%.` : ''}`, '');
+  for (const c of cands.filter(x => x.tradingRules)) {
+    L.push(`### قواعد التداول — ${c.name} (\`${c.id}\`)`, '');
+    if (c.live) L.push(`> ${c.live.note}: \`${JSON.stringify(c.live.params)}\``, '');
+    for (const r of c.tradingRules) L.push(r.startsWith('  ') ? `   - ${r.trim()}` : `- ${r}`);
+    L.push('');
+  }
   L.push('## ملخص كل المرشحين (مرتبة بـ MAR خارج العينة)', '');
-  L.push('| # | الاستراتيجية | خارج العينة | العائد | CAGR | SPY CAGR | شارب | أقصى تراجع | MAR | صفقات | سنوات رابحة | بعد حذف أفضل صفقتين | الشروط |');
-  L.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+  L.push('| # | الاستراتيجية | العائد | CAGR | SPY CAGR | النصف الأحدث: CAGR / SPY | شارب | أقصى تراجع | MAR | صفقات | سنوات رابحة | تفوق على SPY (سنوات) | بعد حذف أفضل صفقتين | الشروط |');
+  L.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
   cands.forEach((c, i) => {
-    const o = c.oos;
-    L.push(`| ${i + 1} | ${c.name} (\`${c.id}\`) | ${o.from ?? '—'} → ${o.to ?? '—'} | ${pct(o.ret)} | ${pct(o.cagr)} | ${pct(o.bench && o.bench.cagr)} | ${num(o.sharpe)} | ${pct(o.maxDD)} | ${num(o.mar)} | ${o.trades} | ${o.yearsProfitable}/${o.yearsTotal} | ${pct(o.best2Removed)} | ${c.criteria.score}/7${c.criteria.passed ? ' ✅' : ''} |`);
+    const o = c.oos, rc = o.recent || {};
+    L.push(`| ${i + 1} | ${c.name} (\`${c.id}\`) | ${pct(o.ret)} | ${pct(o.cagr)} | ${pct(o.bench && o.bench.cagr)} | ${pct(rc.cagr)} / ${pct(rc.benchCagr)} | ${num(o.sharpe)} | ${pct(o.maxDD)} | ${num(o.mar)} | ${o.trades} | ${o.yearsProfitable}/${o.yearsTotal} | ${o.yearsBeatSpy ?? 0}/${o.yearsTotal} | ${pct(o.best2Removed)} | ${c.criteria.score}/7${c.criteria.passed ? ' ✅' : ''} |`);
   });
+  if (cands.length) L.push('', `فترة خارج العينة: ${cands[0].oos.from} → ${cands[0].oos.to}؛ النصف الأحدث يبدأ ${(cands[0].oos.recent || {}).from ?? '—'}.`);
   L.push('');
   if (out.frontier && out.frontier.length) {
     L.push('## حدود الكفاءة: أفضل CAGR خارج العينة مع حد للتراجع (الاختيار داخل العينة فقط)', '');
-    L.push('لكل سنة نختار الطبقة (من 12) أو ميزانية الأكمام بأعلى CAGR داخل العينة بشرط أن يبقى تراجعها داخل العينة تحت الحد، ثم نقيس السنة التالية. الخانة: CAGR / أقصى تراجع خارج العينة. ✅ = التراجع خارج العينة تحت الحد **و** CAGR > SPY؛ ⚠️ = تجاوز الحد خارج العينة.', '');
+    L.push(`لكل سنة نختار الطبقة (من 12 طبقة «${out.overlaySet || 'mild'}») أو ميزانية الأكمام بأعلى CAGR داخل العينة بشرط أن يبقى تراجعها داخل العينة تحت الحد، ثم نقيس السنة التالية. الخانة: CAGR / أقصى تراجع خارج العينة. ✅ = التراجع خارج العينة تحت الحد **و** CAGR > SPY؛ ⚠️ = تجاوز الحد خارج العينة.`, '');
     L.push(`| الأساس | تراجع < ${FRONTIER_DD.map(x => x * 100 + '%').join(' | تراجع < ')} |`);
     L.push('|---|' + FRONTIER_DD.map(() => '---').join('|') + '|');
     const spy = out.frontier[0].rows[0].benchCagr;
@@ -196,6 +224,8 @@ export function buildReport(out) {
   }
   L.push('## المنهجية', '');
   L.push('- **الاختبار الأمامي:** لكل سنة تقويمية Y (بعد سنتين تدريب على الأقل) نختار تركيبة المعاملات بأعلى MAR (ثم شارب) على كل الأيام قبل Y فقط (نافذة متوسعة، بحد أدنى 20 صفقة داخل العينة)، ثم نأخذ أداءها في Y. السنوات الخارجية تُوصل ببعضها. سنوات الاختبار لا تدخل أبدًا في الاختيار.');
+  L.push('- **الجولة 3 (التفوق على SPY):** عائلات زخم/اتجاه جديدة — زخم مركّز أسبوعي (12-1 خام/معدّل بالتذبذب/مع قمة السنة/مع التسارع)، تدوير الزخم ↔ السلة الأساسية ببوابة SPY، اختراق قمة 6/12 شهرًا بوقف ATR متحرك وسقف قطاع، زخم القطاعات، زخم + شراء تراجع قصير، والسلة الأساسية المتوافقة (أكبر 20/30 سهمًا بقيمة التداول كبديل لصندوق متوافق غير موجود بتاريخ 10 سنوات) و«أساس + قمر» (60/70/80% أساس + أفضل عائلتي زخم داخل العينة). الطبقات خفيفة: استهداف تذبذب 15–25%، فلاتر انهيار، قواطع 15–20%. الاختيار في المرحلة الثانية: أعلى CAGR داخل العينة بتراجع < 25%.');
+  L.push('- **المعاملات الحية في «قواعد التداول»:** نفس قاعدة الاختيار مطبّقة على كل البيانات حتى آخر يوم — هي ما نتداول به من الآن، وليست نتيجة اختبار.');
   L.push('- **طبقات المخاطر (الجولة 2):** فوق التركيبة المختارة لكل سنة نجرب 12 طبقة ثابتة: بدون، استهداف تذبذب المحفظة 6/8/10% (تذبذب 60 يومًا) و8% (20 يومًا) بسقف تعرض 100%، فلتر سوق قوي (SPY فوق متوسط 200 **و** عائد شهر > 0)، فلتر اتساع (> 50% من الكون فوق متوسط 50)، قاطع تراجع 5% → نقد أسبوعين، 7% → نقد 4 أسابيع، 5% → نقد حتى يتحسن السوق، وتركيبتان. الطبقة تُختار داخل العينة بأعلى CAGR بشرط تراجع داخل العينة < 10% (وإلا الأقل تراجعًا). الإشارة بعد إغلاق يوم والتنفيذ بإغلاق اليوم التالي، وتكلفة 0.10% على قيمة كل تعديل. النقد بعائد 0% (البديل المتوافق؛ لا صناديق سندات، وصناديق الصكوك تاريخها أقصر من 10 سنوات).');
   L.push('- **عائلات «+risk»:** نفس الإشارة مع وقف لكل مركز (ATR×2/3 أو 5%/10%) أو فلتر دخول، وسقف 30% من رأس المال لكل قطاع (من Yahoo).');
   L.push('- **الأكمام:** «زخم + ارتداد» = أفضل كم زخم وأفضل كم ارتداد داخل العينة، و«ميزانية المخاطر» = أعضاء المزيج؛ وزن كل كم = ميزانية تذبذب (2/3/4/6%) ÷ تذبذبه داخل العينة (بسقف)، والباقي نقد.');
@@ -217,6 +247,17 @@ export function buildReport(out) {
 }
 
 /* ---------- التشغيل ---------- */
+// قواعد التداول الآلية (عربي) لمرشح: من قواعد العائلة بالمعاملات الحية + الطبقة/الأوزان + قواعد عامة
+const COMMON_RULES = [
+  'قبل كل شراء: فحص يقين الشرعي (غير المتوافق أو «غير معروف» لا يُشترى إلا بقرار المالك)، ولا دخول قبل إعلان أرباح خلال مدة الصفقة إن أمكن.',
+  'بلا رافعة ولا بيع على المكشوف ولا خيارات؛ النقد غير المستثمر يبقى نقدًا (0%).',
+  'التنفيذ بأوامر السوق عند الافتتاح (أو بأمر إغلاق عند تعديل التعرض)، وتسجيل كل أمر في desk/journal.',
+];
+function familyRules(F, params) {
+  if (F && F.fam && typeof F.fam.rules === 'function') return F.fam.rules(params);
+  return [`الإشارة: ${F ? F.name : '—'} بالمعاملات \`${JSON.stringify(params)}\` (التفاصيل في lab/research/strategies).`];
+}
+
 export async function runResearch({ barsBySym, groups, info = {}, log = console.log, families = [...FAMILIES, ...RISK_FAMILIES], panelOpt = {} }) {
   const T0 = Date.now();
   const P = buildPanel(barsBySym, groups, { ...panelOpt, sectors: info.sectors || panelOpt.sectors });
@@ -234,7 +275,12 @@ export async function runResearch({ barsBySym, groups, info = {}, log = console.
   }
   const candidates = fams.map(f => f.res);
   const byId = new Map(fams.map(f => [f.id, f]));
+  const live = new Map(fams.map(f => [f.id, { rules: () => familyRules(f, f.liveParams), params: f.liveParams }]));
   const sh = { ok: true, why: ctx.screen };
+  const objIdx = Math.max(0, FRONTIER_DD.indexOf(OBJECTIVE_DD));
+  const objectives = FRONTIER_DD.map(T => ({ maxDD: T }));
+  const frontier = [];
+  const multi = optionsFor => wfSelectMulti(ctx.folds, optionsFor, objectives, { start, years: P.years });
 
   // المزيج (الجولة 1)
   const ensPick = ctx.folds.map((f, j) => ensembleMembers(fams, ctx, j));
@@ -247,22 +293,64 @@ export async function runResearch({ barsBySym, groups, info = {}, log = console.
     candidates.push(res); byId.set('ensemble', { id: 'ensemble', name: res.name, universe: 'large|small', baseFor: j => ensStream[j], paramsFor: j => ensFolds[j] });
     log(`ensemble: OOS ${pct(res.oos.ret)} MAR ${num(res.oos.mar)} DD ${pct(res.oos.maxDD)} — ${res.criteria.score}/7`);
   }
+  // المزيج الحي: نفس قاعدة اختيار الأعضاء على كل البيانات حتى اليوم
+  {
+    const cand = fams.filter(x => x.universe !== 'etf').map(x => { const isR = Array.prototype.slice.call(x.liveStream.rets, start + 1); return { x, isR, s: returnStats(isR) }; })
+      .filter(o => o.s.mar > 0).sort((a, b) => b.s.mar - a.s.mar);
+    const picked = [];
+    for (const o of cand) { if (picked.length >= 3) break; if (picked.every(q => corr(q.isR, o.isR) < 0.5)) picked.push(o); }
+    live.set('ensemble', { params: picked.map(o => ({ family: o.x.id, params: o.x.liveParams })), rules: () => picked.flatMap(o => [
+      `كم «${o.x.name}» (${(100 / picked.length).toFixed(0)}% من رأس المال، حساب فرعي):`, ...familyRules(o.x, o.x.liveParams).map(r => '  ' + r)]) });
+  }
 
-  // طبقات المخاطر فوق كل أساس → حدود الكفاءة؛ ومرشح «+طبقات» (هدف: تراجع < 10%) للأسس المستهدفة
-  const specs = overlaySpecs(P);
-  const frontier = [];
+  // «أساس + قمر صناعي»: السلة الأساسية (60/70/80%) + أفضل عائلتي زخم داخل العينة كقمر؛ الاختيار داخل العينة بأعلى CAGR بتراجع < 25%
+  const core = byId.get('core-basket');
+  if (core && ctx.folds.length) {
+    const sats = j => SAT_FAMILIES.map(i => byId.get(i)).filter(Boolean).filter(x => x.wf.folds[j]).sort((a, b) => b.wf.folds[j].isScore - a.wf.folds[j].isScore).slice(0, 2);
+    const csOpts = (coreSt, satList) => CORE_WEIGHTS.flatMap(w => satList.map(([id, st]) => Object.assign(combineStreams([{ stream: coreSt, w }, { stream: st, w: 1 - w }]),
+      { label: { core: w, satellite: id } })));
+    const wfs = multi((f, j) => csOpts(core.baseFor(j), sats(j).map(x => [x.id, x.baseFor(j)])));
+    const wf = wfs[objIdx];
+    const res = summarize(P, ctx, { id: 'core-satellite', name: 'أساس متوافق + قمر زخم', universe: 'large', grid: { core: CORE_WEIGHTS, satellite: 'أفضل 2 من ' + SAT_FAMILIES.join('/') },
+      combos: CORE_WEIGHTS.length * 2, wf, paramsOf: (f, j) => ({ ...f.label, coreParams: core.paramsFor(j) }), shariah: sh });
+    candidates.push(res);
+    const chosenOpt = [];
+    byId.set('core-satellite', { id: 'core-satellite', name: res.name, universe: 'large',
+      baseFor: j => { if (!chosenOpt[j]) { const o = csOpts(core.baseFor(j), sats(j).map(x => [x.id, x.baseFor(j)])); chosenOpt[j] = o[wf.folds[j].chosen]; } return chosenOpt[j]; },
+      paramsFor: j => wf.folds[j].label });
+    // الحي: أفضل قمرين على كل البيانات
+    const liveSats = SAT_FAMILIES.map(i => byId.get(i)).filter(Boolean).map(x => ({ x, s: returnStats(Array.prototype.slice.call(x.liveStream.rets, start + 1)) }))
+      .sort((a, b) => b.s.mar - a.s.mar).slice(0, 2).map(o => [o.x.id, o.x.liveStream]);
+    const lo = csOpts(core.liveStream, liveSats), lk = pickLive(lo, { start, objective: objectives[objIdx] }), lab = lo[lk].label;
+    const satF = byId.get(lab.satellite);
+    live.set('core-satellite', { params: lab, liveStream: lo[lk], rules: () => [
+      `الأساس (${Math.round(lab.core * 100)}% من رأس المال):`, ...familyRules(core, core.liveParams).map(x => '  ' + x),
+      `القمر (${Math.round((1 - lab.core) * 100)}%): ${satF.name}:`, ...familyRules(satF, satF.liveParams).map(x => '  ' + x),
+      'الأوزان: كل كم يُدار كحساب فرعي بنسبته؛ إعادة النسب إلى الهدف شهريًا.'] });
+    log(`core-satellite: OOS CAGR ${pct(res.oos.cagr)} DD ${pct(res.oos.maxDD)} — ${res.criteria.score}/7`);
+  }
+
+  // طبقات المخاطر (الخفيفة) فوق كل أساس → حدود الكفاءة؛ ومرشح «+طبقات» للأسس المستهدفة
+  const specs = overlaySpecs(P, OVERLAY_SET);
   for (const [id, b] of byId) {
-    const wfs = overlayWF(P, ctx, specs, b.baseFor);
+    const options = (f, j) => { const base = b.baseFor(j); return specs.map(o => Object.assign(applyOverlay(base, o.spec, { regimeFn: o.regimeFn }), { label: o.id })); };
+    const wfs = multi(options);
     frontier.push(frontierRow(P, id, b.name, wfs));
     if (OVERLAY_TARGETS.includes(id)) {
-      const res = summarize(P, ctx, { id: id + '+overlay', name: b.name + ' + طبقات المخاطر', universe: b.universe, grid: null, combos: specs.length, wf: wfs[0],
+      const res = summarize(P, ctx, { id: id + '+overlay', name: b.name + ' + طبقات المخاطر', universe: b.universe, grid: null, combos: specs.length, wf: wfs[objIdx],
         paramsOf: (f, j) => ({ base: b.paramsFor(j), overlay: f.label }), shariah: shariahFor(b.universe, ctx) });
       candidates.push(res);
+      const bl = live.get(id), baseLive = b.liveStream || (bl && bl.liveStream);
+      if (bl && baseLive) {
+        const lo = specs.map(o => applyOverlay(baseLive, o.spec, { regimeFn: o.regimeFn })), sp = specs[pickLive(lo, { start, objective: objectives[objIdx] })];
+        live.set(id + '+overlay', { params: { base: bl.params, overlay: sp.id }, rules: () => [...bl.rules(),
+          `طبقة المحفظة: ${sp.label}. القرار بعد الإغلاق والتعديل بأمر إغلاق اليوم التالي؛ الجزء غير المستثمر نقد.`] });
+      }
       log(`${id}+overlay: OOS CAGR ${pct(res.oos.cagr)} DD ${pct(res.oos.maxDD)} — ${res.criteria.score}/7`);
     }
   }
 
-  // الأكمام بميزانية مخاطر
+  // الأكمام بميزانية مخاطر (الجولة 2)
   const best = (ids, j) => ids.map(i => byId.get(i)).filter(Boolean).map(x => ({ x, fold: x.wf && x.wf.folds[j] })).filter(o => o.fold)
     .sort((a, b) => b.fold.isScore - a.fold.isScore)[0];
   const sleeves = [
@@ -276,9 +364,9 @@ export async function runResearch({ barsBySym, groups, info = {}, log = console.
     }],
   ];
   for (const [id, name, optionsFor] of sleeves) {
-    const wfs = wfSelectMulti(ctx.folds, optionsFor, FRONTIER_DD.map(T => ({ maxDD: T })), { start, years: P.years });
+    const wfs = multi(optionsFor);
     frontier.push(frontierRow(P, id, name, wfs));
-    const res = summarize(P, ctx, { id, name, universe: 'large|small', grid: { budget: SLEEVE_BUDGETS }, combos: SLEEVE_BUDGETS.length, wf: wfs[0],
+    const res = summarize(P, ctx, { id, name, universe: 'large|small', grid: { budget: SLEEVE_BUDGETS }, combos: SLEEVE_BUDGETS.length, wf: wfs[objIdx],
       paramsOf: f => f.label, shariah: sh });
     candidates.push(res);
     log(`${id}: OOS CAGR ${pct(res.oos.cagr)} DD ${pct(res.oos.maxDD)} — ${res.criteria.score}/7`);
@@ -287,30 +375,34 @@ export async function runResearch({ barsBySym, groups, info = {}, log = console.
   const marKey = c => (c.oos.mar === 'Infinity' ? 1e9 : Number.isFinite(c.oos.mar) ? c.oos.mar : -1e9);
   candidates.sort((a, b) => marKey(b) - marKey(a));
   const passed = candidates.filter(c => c.criteria.passed);
+  for (const c of passed) {
+    const l = live.get(c.id);
+    c.live = l ? { params: l.params, note: 'المعاملات مختارة بنفس القاعدة على كل البيانات حتى آخر يوم (للتداول من الآن، ليست نتيجة اختبار)' } : null;
+    c.tradingRules = [...(l ? l.rules() : [`الإشارة كما في وصف «${c.name}».`]), ...COMMON_RULES];
+  }
   const closest = [...candidates].sort((a, b) => b.criteria.score - a.criteria.score || marKey(b) - marKey(a))[0];
   const failedOf = c => c.criteria.checks.filter(k => !k.ok).map(k => k.label).join('، ');
   const spyC = closest && closest.oos.bench ? closest.oos.bench.cagr : null;
-  // المفاضلة الصريحة: أعلى CAGR بتراجع < 10%، وأقل تراجع مع CAGR > SPY (من كل المرشحين وكل خانات حدود الكفاءة)
-  const points = [...candidates.filter(c => c.universe !== 'etf').map(c => ({ name: c.name, id: c.id, cagr: c.oos.cagr, dd: c.oos.maxDD })),
-    ...frontier.filter(f => byId.get(f.id) ? byId.get(f.id).universe !== 'etf' : true).flatMap(f => f.rows.map(r => ({ name: `${f.name} (حد ${r.maxDD * 100}%)`, id: f.id, cagr: r.cagr, dd: r.oosDD })))]
-    .filter(x => Number.isFinite(x.cagr) && Number.isFinite(x.dd));
-  const under10 = points.filter(x => x.dd < CRITERIA.maxDD).sort((a, b) => b.cagr - a.cagr)[0];
-  const beating = points.filter(x => spyC !== null && x.cagr > spyC).sort((a, b) => a.dd - b.dd)[0];
-  const tradeoff = `**المفاضلة الصريحة (أسهم متوافقة فقط، خارج العينة):** أعلى CAGR مع تراجع < 10% = ${under10 ? `${pct(under10.cagr)} (${under10.name}، تراجع ${pct(under10.dd)})` : 'لا يوجد'} مقابل SPY ${pct(spyC)}؛ وأقل تراجع مع CAGR أعلى من SPY = ${beating ? `${pct(beating.dd)} (${beating.name}، CAGR ${pct(beating.cagr)})` : 'لا يوجد'}.`;
-  const impossible = !passed.length && !(under10 && spyC !== null && under10.cagr > spyC);
+  const nums = c => { const o = c.oos, rc = o.recent || {}; return `CAGR ${pct(o.cagr)} مقابل SPY ${pct(o.bench && o.bench.cagr)}، النصف الأحدث ${pct(rc.cagr)} مقابل ${pct(rc.benchCagr)}، أقصى تراجع ${pct(o.maxDD)}، تفوق على SPY في ${o.yearsBeatSpy}/${o.yearsTotal} سنوات، ${o.trades} صفقة`; };
+  // المفاضلة الصريحة: من يتفوق على SPY (كامل + النصف الأحدث) وبأي تراجع، وأعلى CAGR بتراجع ≤ 25%
+  const stock = candidates.filter(c => c.universe !== 'etf');
+  const beatBoth = stock.filter(c => c.criteria.checks[3].ok).sort((a, b) => a.oos.maxDD - b.oos.maxDD)[0];
+  const under = stock.filter(c => c.oos.maxDD <= CRITERIA.maxDD).sort((a, b) => b.oos.cagr - a.oos.cagr)[0];
+  const tradeoff = `**المفاضلة الصريحة (أسهم متوافقة فقط، خارج العينة):** أقل تراجع بين من تفوق على SPY كاملًا وفي النصف الأحدث = ${beatBoth ? `${pct(beatBoth.oos.maxDD)} (${beatBoth.name}، CAGR ${pct(beatBoth.oos.cagr)})` : 'لا يوجد'}؛ وأعلى CAGR بتراجع ≤ ${CRITERIA.maxDD * 100}% = ${under ? `${pct(under.oos.cagr)} (${under.name}، تراجع ${pct(under.oos.maxDD)})` : 'لا يوجد'} مقابل SPY ${pct(spyC)}.`;
   const verdict = passed.length
-    ? `«✅ وصلنا لنتيجة ممتازة: ${passed.map(c => `${c.name} (\`${c.id}\`) — CAGR خارج العينة ${pct(c.oos.cagr)} مقابل SPY ${pct(c.oos.bench && c.oos.bench.cagr)}، أقصى تراجع ${pct(c.oos.maxDD)}، ${c.oos.trades} صفقة`).join('؛ ')}»`
-    : `«❌ لا توجد استراتيجية تحقق كل الشروط بعد — الأقرب: ${closest ? `${closest.name} (\`${closest.id}\`) ${closest.criteria.score}/7، CAGR ${pct(closest.oos.cagr)} مقابل SPY ${pct(spyC)}، أقصى تراجع ${pct(closest.oos.maxDD)}، تفشل في: ${failedOf(closest)}` : '—'}${impossible ? `. بصراحة: لم نجد خارج العينة أي تركيبة تجمع تراجعًا < 10% مع CAGR أعلى من SPY — ${beating ? `أقل تراجع حققناه مع التفوق على SPY هو ${pct(beating.dd)} (${beating.name})` : 'ولا توجد أصلًا تركيبة أسهم متوافقة تتفوق على SPY خارج العينة'}، وأعلى CAGR بتراجع < 10% هو ${under10 ? `${pct(under10.cagr)} (${under10.name})` : '—'}` : ''}»`;
+    ? `«✅ وصلنا لنتيجة ممتازة: ${passed.map(c => `${c.name} (\`${c.id}\`) — ${nums(c)}`).join('؛ ')}»`
+    : `«❌ لا توجد استراتيجية تحقق كل الشروط بعد — الأقرب: ${closest ? `${closest.name} (\`${closest.id}\`) ${closest.criteria.score}/7: ${nums(closest)}؛ تفشل في: ${failedOf(closest)}` : '—'}»`;
   const seconds = (Date.now() - T0) / 1000;
   log(`انتهى: ${candidates.length} مرشحًا، ${configs} تركيبة + ${specs.length} طبقة، ${seconds.toFixed(1)} ث`);
   const fmt = t => new Date(t).toISOString().slice(0, 10);
   return {
-    generatedAt: new Date().toISOString(), round: 2, runtimeSec: r4(seconds), configs, overlays: specs.map(o => ({ id: o.id, label: o.label })),
+    generatedAt: new Date().toISOString(), round: 3, runtimeSec: r4(seconds), configs, overlaySet: OVERLAY_SET, overlays: specs.map(o => ({ id: o.id, label: o.label })),
     data: { source: info.source || 'yahoo', from: P.D ? fmt(P.dates[0]) : null, to: P.D ? fmt(P.dates[P.D - 1]) : null, years: r4(dataYears), days: P.D,
       symbols: P.S, large: P.group.filter(g => g === 'large').length, small: P.group.filter(g => g === 'small').length,
       excluded: info.excluded || 0, screen: ctx.screen, universeRule: info.universeRule || '—', fetchedAt: info.fetchedAt || null,
       sectorsKnown: P.sector.filter(Boolean).length },
-    criteriaRules: CRITERIA, verdict, tradeoff, impossible, bestUnder10: under10 || null, lowestDDBeatingSpy: beating || null,
+    criteriaRules: CRITERIA, verdict, tradeoff, lowestDDBeatingSpy: beatBoth ? { id: beatBoth.id, maxDD: beatBoth.oos.maxDD, cagr: beatBoth.oos.cagr } : null,
+    bestUnderMaxDD: under ? { id: under.id, maxDD: under.oos.maxDD, cagr: under.oos.cagr } : null,
     passed: passed.map(c => c.id), closest: closest ? closest.id : null, frontier, candidates,
   };
 }
