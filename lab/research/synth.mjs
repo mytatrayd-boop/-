@@ -31,9 +31,10 @@ export function synthBars(n, { seed = 1, start = 50, drift = 0.0003, vol = 0.018
   return { t: ts.slice(0, n), o, h, l, c, v, rc: c.slice() };
 }
 
-// كون كامل: SPY/QQQ/IWM + nLarge + nSmall أسهم → { barsBySym: Map, groups }
+// كون كامل: SPY/QQQ/IWM + nLarge + nSmall أسهم → { barsBySym: Map, groups, sectors }
 export function synthUniverse({ nLarge = 50, nSmall = 10, days = 800, seed = 7 } = {}) {
-  const t = weekdays(days), barsBySym = new Map(), groups = {};
+  const t = weekdays(days), barsBySym = new Map(), groups = {}, sectors = {};
+  const SECT = ['Technology', 'Healthcare', 'Energy', 'Industrials', 'Consumer Cyclical'];
   const r = rng(seed);
   for (const [k, sym] of ['SPY', 'QQQ', 'IWM'].entries()) { barsBySym.set(sym, synthBars(days, { seed: seed * 100 + k, start: 200 + 50 * k, vol: 0.011, drift: 0.0004, volume: 8e7, t })); groups[sym] = 'bench'; }
   for (let i = 0; i < nLarge + nSmall; i++) {
@@ -42,7 +43,7 @@ export function synthUniverse({ nLarge = 50, nSmall = 10, days = 800, seed = 7 }
       drift: (r() - 0.4) * 0.0012, volume: small ? 4e5 + r() * 1e6 : 1e6 + r() * 2e7, revert: 0.08, t });
     // بعض الأسهم تبدأ متأخرة (إدراج جديد)
     if (i % 17 === 5) for (const k of Object.keys(b)) b[k] = b[k].slice(Math.floor(days / 3));
-    barsBySym.set(sym, b); groups[sym] = small ? 'small' : 'large';
+    barsBySym.set(sym, b); groups[sym] = small ? 'small' : 'large'; sectors[sym] = SECT[i % SECT.length];
   }
-  return { barsBySym, groups };
+  return { barsBySym, groups, sectors };
 }

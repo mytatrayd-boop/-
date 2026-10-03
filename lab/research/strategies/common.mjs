@@ -30,7 +30,22 @@ export function regimeFn(P, kind = 'none', bench = 'SPY') {
   const s = P.sym(bench); if (s < 0) return () => false;
   const c = P.c[s], m = P.series('sma:200')[s], v = P.series('vol:20')[s];
   const trend = d => c[d] > m[d], calm = d => v[d] < 0.25;
+  if (kind === 'strong') { const r21 = P.series('ret:21')[s]; return d => trend(d) && r21[d] > 0; }
+  if (kind === 'breadth') { const b = breadth(P); return d => b[d] > 0.5; }
   return kind === 'sma200' ? trend : kind === 'vol' ? calm : d => trend(d) && calm(d);
+}
+
+// اتساع السوق: نسبة أسهم كون «large» (المؤهلة ذلك اليوم) التي تغلق فوق متوسط 50 يومًا — بيانات حتى اليوم نفسه
+export function breadth(P) {
+  if (P.cache.has('breadth50')) return P.cache.get('breadth50');
+  const U = P.universe('large'), m50 = P.series('sma:50'), out = new Float64Array(P.D).fill(NaN);
+  for (let d = 0; d < P.D; d++) {
+    let n = 0, up = 0;
+    for (const s of U.members) if (U.el[s][d] && Number.isFinite(m50[s][d])) { n++; if (P.c[s][d] > m50[s][d]) up++; }
+    if (n >= 10) out[d] = up / n;
+  }
+  P.cache.set('breadth50', out);
+  return out;
 }
 
 export const sizing = x => (x === 'vol' ? { vol: 0.30 } : 'equal');

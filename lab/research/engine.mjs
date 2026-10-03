@@ -45,7 +45,7 @@ export function buildPanel(barsBySym, groups = {}, opt = {}) {
   const dates = Float64Array.from(tset);
   const years = new Int16Array(D), months = new Int8Array(D), wdays = new Int8Array(D);
   for (let i = 0; i < D; i++) { const dt = new Date(tset[i]); years[i] = dt.getUTCFullYear(); months[i] = dt.getUTCMonth(); wdays[i] = dt.getUTCDay(); }
-  const P = { D, dates, years, months, wdays, syms: [], group: [], o: [], h: [], l: [], c: [], v: [], rc: [], first: [], last: [],
+  const P = { D, dates, years, months, wdays, syms: [], group: [], o: [], h: [], l: [], c: [], v: [], rc: [], first: [], last: [], sector: [],
     cache: new Map(), opt: { ...ENGINE_DEFAULTS, ...opt }, index: new Map() };
   for (const [sym, b] of entries) {
     const o = nanArr(D), h = nanArr(D), l = nanArr(D), c = nanArr(D), v = nanArr(D), rc = nanArr(D);
@@ -64,6 +64,7 @@ export function buildPanel(barsBySym, groups = {}, opt = {}) {
     P.syms.push(sym); P.group.push(groups[sym] || 'large');
     P.o.push(o); P.h.push(h); P.l.push(l); P.c.push(c); P.v.push(v); P.rc.push(rc); P.first.push(first); P.last.push(last);
     P.index.set(sym, s);
+    P.sector.push((opt.sectors && opt.sectors[sym]) || null);
   }
   P.S = P.syms.length;
   P.series = key => series(P, key);
@@ -176,7 +177,13 @@ export function runStrategy(P, cfg, opt = {}) {
     let w = 1 / maxPos;
     if (vol20) { const sv = vol20[s][d - 1]; if (sv > 0) w *= Math.min(1, cfg.sizing.vol / sv); }
     const r = costAt(s, d);
-    const value = Math.min(eqRef * w, cash);
+    let value = Math.min(eqRef * w, cash);
+    // سقف القطاع: قيمة مراكز نفس القطاع (بآخر سعر) + الجديد ≤ sectorCap × رأس المال. قطاع مجهول = بلا سقف.
+    if (cfg.sectorCap && P.sector[s]) {
+      let inSec = 0;
+      for (const q of positions.values()) if (P.sector[q.s] === P.sector[s]) inSec += q.shares * q.last;
+      value = Math.min(value, cfg.sectorCap * eqRef - inSec);
+    }
     if (!(value > eqRef * 1e-4) || !(px > 0)) return false;
     const shares = value / (px * (1 + r));
     cash -= value; turn[d] += shares * px;
@@ -262,9 +269,20 @@ export function runStrategy(P, cfg, opt = {}) {
         if (sig) { sig.s = s; cands.push(sig); }
       }
       cands.sort((a, b) => b.score - a.score);
-      const target = new Set(cands.slice(0, maxPos).map(x => x.s));
+      // مع سقف القطاع: نختار الهدف بحد أقصى floor(سقف × عدد المراكز) سهمًا لكل قطاع معروف
+      let top = cands.slice(0, maxPos);
+      if (cfg.sectorCap) {
+        const per = Math.max(1, Math.floor(cfg.sectorCap * maxPos + 1e-9)), cnt = new Map(); top = [];
+        for (const x of cands) {
+          if (top.length >= maxPos) break;
+          const sec = P.sector[x.s];
+          if (sec) { const k = cnt.get(sec) || 0; if (k >= per) continue; cnt.set(sec, k + 1); }
+          top.push(x);
+        }
+      }
+      const target = new Set(top.map(x => x.s));
       for (const pos of positions.values()) if (!target.has(pos.s) && !exiting.has(pos.s)) { pos.exitHow = 'rebalance'; pendingExits.push(pos); exiting.add(pos.s); }
-      pendingEntries = cands.slice(0, maxPos).filter(x => !positions.has(x.s));
+      pendingEntries = top.filter(x => !positions.has(x.s));
       continue;
     }
     if (entryAt === 'close' || !regimeOk) continue;
@@ -279,8 +297,8 @@ export function runStrategy(P, cfg, opt = {}) {
       sig.s = s; cands.push(sig);
     }
     if (cands.length > 1) cands.sort((a, b) => b.score - a.score || a.s - b.s);
-    // نحتفظ بالمرشحين الزائدين (أمر الإيقاف قد لا يُنفّذ)، والمركز الخارج غدًا لا يُعاد شراؤه بنفس الافتتاح
-    pendingEntries = cands.filter(x => !exiting.has(x.s)).slice(0, entryAt === 'stop' ? maxPos * 4 : free);
+    // نحتفظ بالمرشحين الزائدين (أمر الإيقاف قد لا يُنفّذ، أو سقف القطاع يرفض)، والمركز الخارج غدًا لا يُعاد شراؤه بنفس الافتتاح
+    pendingEntries = cands.filter(x => !exiting.has(x.s)).slice(0, entryAt === 'stop' || cfg.sectorCap ? maxPos * 4 : free);
   }
   return { equity, gross, turn, trades, start };
 }
@@ -358,35 +376,152 @@ export function fullMetrics({ rets, years, trades, gross = null, turn = null, be
   return out;
 }
 
-/* ---------- الاختبار الأمامي (walk-forward) ---------- */
-// runs: [{ params, equity, gross, turn, trades }] (نفس التقويم). لكل سنة Y خارج العينة: نختار التركيبة بأعلى MAR
-// (ثم شارب) على كل الأيام قبل بداية Y فقط (نافذة متوسعة)، ثم نأخذ عوائدها اليومية في Y. السنوات الخارجية تُوصل.
-// تشغيل سببي ⇒ مقطع البداية من تشغيل كامل = تشغيل مقطوع عند نهاية العينة (لا يرى المستقبل).
-export function walkForward(runs, dates, { start = 0, minTrainDays = 2 * 252 - 10, minTradesIS = 20, metric = 'mar' } = {}) {
-  const D = dates.length, yearOf = i => new Date(dates[i]).getUTCFullYear();
-  const yearStart = new Map();
-  for (let d = start; d < D; d++) { const y = yearOf(d); if (!yearStart.has(y)) yearStart.set(y, d); }
-  const folds = [];
-  for (const [y, y0] of yearStart) {
-    if (y0 - start < minTrainDays) continue;
-    let y1 = D - 1; for (const [y2, d2] of yearStart) if (y2 === y + 1) y1 = d2 - 1;
-    const scored = runs.map((r, k) => {
-      const st = returnStats(dailyReturns(r.equity, start + 1, y0 - 1));
-      const n = r.trades.filter(t => t.exitIdx < y0).length;
-      return { k, n, score: Number.isFinite(st[metric]) ? st[metric] : (st[metric] > 0 ? 1e9 : -1e9), sharpe: st.sharpe };
-    });
-    const pool = scored.filter(x => x.n >= minTradesIS);
-    const pick = (pool.length ? pool : scored).sort((a, b) => b.score - a.score || b.sharpe - a.sharpe || a.k - b.k)[0];
-    folds.push({ year: y, from: y0, to: y1, trainFrom: start, trainTo: y0 - 1, chosen: pick.k, isScore: pick.score, isTrades: pick.n });
+/* ---------- سلاسل العوائد (streams) ---------- */
+// stream = { rets, gross, turn: Float64Array(D) لكل يوم من التقويم (0 قبل البداية)، trades: [...] }.
+// كل التشغيلات والطبقات والمزائج تتحول لهذه الصيغة، فالاختبار الأمامي واحد للجميع.
+export function streamFromRun(r) {
+  const D = r.equity.length, rets = new Float64Array(D);
+  for (let d = r.start + 1; d < D; d++) { const a = r.equity[d - 1], b = r.equity[d]; rets[d] = a > 0 && Number.isFinite(b) ? b / a - 1 : 0; }
+  return { rets, gross: Float64Array.from(r.gross), turn: Float64Array.from(r.turn), trades: r.trades, start: r.start };
+}
+
+// مزيج بأوزان ثابتة (الباقي نقد بعائد 0%) — توازن يومي للأوزان (تقريب بلا تكلفة إضافية)
+export function combineStreams(parts) {
+  const D = parts[0].stream.rets.length, rets = new Float64Array(D), gross = new Float64Array(D), turn = new Float64Array(D), trades = [];
+  for (const { stream: st, w } of parts) {
+    for (let d = 0; d < D; d++) { rets[d] += w * st.rets[d]; gross[d] += w * st.gross[d]; turn[d] += w * st.turn[d]; }
+    for (const t of st.trades) trades.push({ ...t, contrib: t.contrib * w, w: t.w * w });
   }
-  const rets = [], years = [], gross = [], turn = [], trades = [], days = [];
-  for (const f of folds) {
-    const r = runs[f.chosen];
-    for (let d = f.from; d <= f.to; d++) {
-      const a = r.equity[d - 1], b = r.equity[d];
-      rets.push(a > 0 && Number.isFinite(b) ? b / a - 1 : 0); years.push(yearOf(d)); gross.push(r.gross[d]); turn.push(r.turn[d]); days.push(d);
+  return { rets, gross, turn, trades, start: Math.min(...parts.map(p => p.stream.start)) };
+}
+
+/* ---------- طبقات المخاطر على مستوى المحفظة (overlays) ---------- */
+// تضرب تعرض الاستراتيجية كلها في وزن w ∈ [0, 1] (الباقي نقد بعائد 0% — بديل «النقد» المتوافق شرعيًا).
+// لا نظر للمستقبل: الإشارة تُحسب بعد إغلاق يوم e-1 (بيانات حتى e-1)، والتنفيذ بأمر إغلاق يوم e،
+// فعائد يوم e يكون بالوزن القديم ويبدأ الجديد من يوم e+1. تكلفة التعديل: |Δw| × تعرض الأساس × cost.
+// spec: { vt: {target, lookback}, regime: d → bool, dd: {x, days|null, untilRegime: bool}, cost = 0.001, band = 0.1 }
+export function applyOverlay(base, spec = {}, { regimeFn = null } = {}) {
+  const D = base.rets.length, start = base.start || 0, cost = spec.cost ?? 0.001, band = spec.band ?? 0.1;
+  const rets = new Float64Array(D), gross = new Float64Array(D), turn = new Float64Array(D), w = new Float64Array(D);
+  const regime = spec.regime || null, reg = regime || regimeFn;
+  let cur = 1, eq = 1, peak = 1, outUntil = -1, waitRegime = false;
+  const eqAt = new Float64Array(D).fill(1);
+  // تذبذب سنوي لعوائد الأساس على [e-L+1, e]
+  const vol = (e, L) => {
+    if (e - L < start) return NaN;
+    let s1 = 0, s2 = 0; for (let k = e - L + 1; k <= e; k++) { s1 += base.rets[k]; s2 += base.rets[k] ** 2; }
+    return Math.sqrt(Math.max(0, (s2 - s1 * s1 / L) / (L - 1)) * 252);
+  };
+  for (let d = start; d < D; d++) {
+    w[d] = cur;
+    if (d > start) { rets[d] = cur * base.rets[d]; gross[d] = cur * base.gross[d]; turn[d] = cur * base.turn[d]; }
+    // قرار بعد إغلاق d-1 (بيانات حتى d-1) → تنفيذ بإغلاق d
+    const e = d - 1;
+    let tgt = 1;
+    if (e >= start) {
+      if (spec.vt) { const v = vol(e, spec.vt.lookback); tgt = Number.isFinite(v) && v > 0 ? Math.min(1, spec.vt.target / v) : 1; }
+      if (regime && !regime(e)) tgt = 0;
+      if (spec.dd) {
+        const eqE = eqAt[e];
+        if (outUntil >= 0 || waitRegime) {
+          const doneTime = outUntil >= 0 && e >= outUntil;
+          const doneReg = waitRegime && e >= outUntil && reg && reg(e);
+          if ((spec.dd.untilRegime ? doneReg : doneTime)) { outUntil = -1; waitRegime = false; peak = eqE; }
+          else tgt = 0;
+        } else {
+          if (eqE > peak) peak = eqE;
+          if (1 - eqE / peak >= spec.dd.x) { tgt = 0; outUntil = e + (spec.dd.days || 5); waitRegime = !!spec.dd.untilRegime; }
+        }
+      }
     }
-    for (const t of r.trades) if (t.entryIdx >= f.from && t.entryIdx <= f.to) trades.push({ ...t, fold: f.year });
+    const change = Math.abs(tgt - cur);
+    if (d > start && change > 0 && (change >= band || tgt === 0 || tgt === 1)) {
+      const c = change * base.gross[d] * cost;
+      rets[d] -= c; turn[d] += change * base.gross[d]; cur = tgt;
+    }
+    eq *= 1 + rets[d]; eqAt[d] = eq;
   }
-  return { folds, rets, years, gross, turn, trades, days };
+  // الصفقات: مساهمتها × متوسط الوزن أثناء الاحتفاظ؛ ما دخل بوزن ~0 لا يُعد صفقة
+  const trades = [];
+  for (const t of base.trades) {
+    let s = 0, n = 0; for (let d = Math.max(t.entryIdx, start); d <= Math.min(t.exitIdx, D - 1); d++) { s += w[d]; n++; }
+    const k = n ? s / n : 0;
+    if (k >= 0.01) trades.push({ ...t, contrib: t.contrib * k, w: t.w * k });
+  }
+  return { rets, gross, turn, trades, start, weight: w };
+}
+
+/* ---------- الاختبار الأمامي (walk-forward) ---------- */
+// السنوات: كل سنة تقويمية Y بعد minTrainDays يوم تداول من البداية تصبح «خارج العينة»، والتدريب = كل ما قبلها.
+export function makeFolds(dates, { start = 0, minTrainDays = 2 * 252 - 10 } = {}) {
+  const D = dates.length, yearOf = i => new Date(dates[i]).getUTCFullYear();
+  const ys = [];
+  for (let d = start; d < D; d++) { const y = yearOf(d); if (!ys.length || ys[ys.length - 1][0] !== y) ys.push([y, d]); }
+  const folds = [];
+  ys.forEach(([y, y0], i) => { if (y0 - start >= minTrainDays) folds.push({ year: y, from: y0, to: i + 1 < ys.length ? ys[i + 1][1] - 1 : D - 1, trainFrom: start, trainTo: y0 - 1 }); });
+  return folds;
+}
+
+// أهداف الاختيار داخل العينة: 'mar' (ثم شارب)، أو { maxDD: T } = أعلى CAGR بشرط تراجع < T (وإلا الأقل تراجعًا)
+function isStats(st, from, to) { return returnStats(Array.prototype.slice.call(st.rets, from, to + 1)); }
+function pickIndex(options, f, objective, minTradesIS, start) {
+  const scored = options.map((st, k) => {
+    const s = isStats(st, start + 1, f.from - 1);
+    const n = st.trades.reduce((x, t) => x + (t.exitIdx < f.from ? 1 : 0), 0);
+    const mar = Number.isFinite(s.mar) ? s.mar : (s.mar > 0 ? 1e9 : -1e9);
+    return { k, n, s, mar };
+  });
+  const pool0 = scored.filter(x => x.n >= minTradesIS), pool = pool0.length ? pool0 : scored;
+  let pick;
+  if (objective && objective.maxDD) {
+    const ok = pool.filter(x => x.s.maxDD < objective.maxDD);
+    pick = ok.length ? ok.sort((a, b) => b.s.cagr - a.s.cagr || a.k - b.k)[0]
+      : pool.sort((a, b) => a.s.maxDD - b.s.maxDD || b.s.cagr - a.s.cagr || a.k - b.k)[0];
+  } else pick = pool.sort((a, b) => b.mar - a.mar || b.s.sharpe - a.s.sharpe || a.k - b.k)[0];
+  return { k: pick.k, n: pick.n, isScore: objective && objective.maxDD ? pick.s.cagr : pick.mar, isDD: pick.s.maxDD, isCagr: pick.s.cagr };
+}
+
+// optionsFor(fold, j) → [stream] (قد تختلف لكل سنة، مثل طبقة فوق التركيبة المختارة لتلك السنة).
+// الاختيار يرى فقط الأيام قبل fold.from؛ ثم تُوصل عوائد الخيار المختار في أيام السنة.
+// wfSelectMulti: نفس الخيارات لكل سنة تُقيَّم بعدة أهداف دفعة واحدة (مثل حدود تراجع 10/15/20%).
+export function wfSelectMulti(folds, optionsFor, objectives, { start = 0, minTradesIS = 20, years } = {}) {
+  const outs = objectives.map(() => ({ folds: [], rets: [], years: [], gross: [], turn: [], trades: [], days: [] }));
+  folds.forEach((f, j) => {
+    const options = optionsFor(f, j);
+    if (!options.length) return;
+    objectives.forEach((objective, q) => {
+      const out = outs[q], p = pickIndex(options, f, objective, minTradesIS, start), st = options[p.k];
+      out.folds.push({ ...f, chosen: p.k, isScore: p.isScore, isTrades: p.n, isDD: p.isDD, isCagr: p.isCagr, label: st.label ?? null, meta: st.meta ?? null });
+      for (let d = f.from; d <= f.to; d++) { out.rets.push(st.rets[d]); out.gross.push(st.gross[d]); out.turn.push(st.turn[d]); out.days.push(d); out.years.push(years ? years[d] : null); }
+      for (const t of st.trades) if (t.entryIdx >= f.from && t.entryIdx <= f.to) out.trades.push({ ...t, fold: f.year });
+    });
+  });
+  return outs;
+}
+export const wfSelect = (folds, optionsFor, { objective = 'mar', ...o } = {}) => wfSelectMulti(folds, optionsFor, [objective], o)[0];
+
+// runs: [{ equity, gross, turn, trades }] — نفس الواجهة القديمة: كل السنوات تختار من نفس التركيبات بأعلى MAR داخل العينة.
+// تشغيل سببي ⇒ مقطع البداية من تشغيل كامل = تشغيل مقطوع عند نهاية العينة (لا يرى المستقبل).
+export function walkForward(runs, dates, { start = 0, minTrainDays = 2 * 252 - 10, minTradesIS = 20, objective = 'mar' } = {}) {
+  const streams = runs.map(r => streamFromRun({ ...r, start: r.start ?? start }));
+  const years = Int16Array.from(dates, t => new Date(t).getUTCFullYear());
+  return wfSelect(makeFolds(dates, { start, minTrainDays }), () => streams, { start, minTradesIS, objective, years });
+}
+
+// فترات التراجع: { start (القمة), trough, recovery|null, depth } مرتبة بالعمق
+export function drawdownEpisodes(rets, days, minDepth = 0.03) {
+  const eps = []; let eq = 1, peak = 1, peakI = 0, cur = null;
+  for (let i = 0; i < rets.length; i++) {
+    eq *= 1 + rets[i];
+    if (eq >= peak) {
+      if (cur) { cur.recovery = days[i]; if (cur.depth >= minDepth) eps.push(cur); cur = null; }
+      peak = eq; peakI = i;
+    } else {
+      const dd = 1 - eq / peak;
+      if (!cur) cur = { start: days[peakI], trough: days[i], recovery: null, depth: dd };
+      else if (dd > cur.depth) { cur.depth = dd; cur.trough = days[i]; }
+    }
+  }
+  if (cur && cur.depth >= minDepth) eps.push(cur);
+  return eps.sort((a, b) => b.depth - a.depth);
 }
