@@ -1,4 +1,4 @@
-# معمارية «ديرة الدرور» — ARCHITECTURE
+# معمارية «دليل المواسم» (سابقاً «ديرة الدرور») — ARCHITECTURE
 
 > المرجع: SPEC.md وIDEA.md. أسباب القرارات في DECISIONS.md (يُشار إليها بـ D1، D2 ...).
 
@@ -385,7 +385,7 @@ apps/durur/
 | go_router | 18.0.2 | التنقل وفتح الصفحات من التنبيه |
 | hijri (تطوير فقط) | 3.0.1 | في `dev_dependencies`: توليد `hijri_umm_al_qura.json` واختبار التطابق (D22)؛ لا تدخل التطبيق |
 | geolocator | 14.1.1 | قراءة الموقع التقريبي مرة واحدة |
-| خطوط مضمّنة (ليست مكتبات) | — | Reem Kufi (متغيّر، محور wght) وIBM Plex Sans Arabic (400/500/600) وAmiri (400 عادي ومائل، للمثل الشعبي و«بانتظار الاعتماد») في `assets/fonts/` مع رخص OFL مسجّلة في `LicenseRegistry` (`main.dart`) |
+| خطوط مضمّنة (ليست مكتبات) | — | Almarai (300/400/700/800، للنص والدائرة) وAmiri (700 للعناوين 21sp فأكثر، و400 للمثل الشعبي؛ لا خط مائل)، من `google/fonts`، D37 في `assets/fonts/` مع رخص OFL مسجّلة في `LicenseRegistry` (`main.dart`) |
 | flutter_local_notifications | 22.3.1 | التنبيهات المجدولة على الجهاز |
 | timezone | 0.11.1 | الجدولة بالتوقيت المحلي |
 | flutter_timezone | 5.1.0 | اسم المنطقة الزمنية للجهاز |

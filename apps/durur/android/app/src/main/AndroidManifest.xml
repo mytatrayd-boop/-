@@ -19,7 +19,7 @@
          معاملات. لا ACCESS_NETWORK_STATE ولا أي إذن شبكة آخر. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="ديرة الدرور"
+        android:label="دليل المواسم"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="false">

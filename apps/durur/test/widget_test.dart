@@ -15,7 +15,7 @@ Future<void> main() async {
       tables: tables,
     );
 
-    expect(tester.widget<Title>(find.byType(Title)).title, 'ديرة الدرور');
+    expect(tester.widget<Title>(find.byType(Title)).title, 'دليل المواسم');
     final direction = Directionality.of(
       tester.element(find.byType(HomeScreen)),
     );

@@ -97,7 +97,7 @@ abstract class AppLocalizations {
   /// اسم التطبيق
   ///
   /// In ar, this message translates to:
-  /// **'ديرة الدرور'**
+  /// **'دليل المواسم'**
   String get appTitle;
 
   /// عبارة ثابتة في الشاشة الرئيسية (SPEC الميزة 6)
@@ -235,7 +235,7 @@ abstract class AppLocalizations {
   /// عنوان شاشة الترحيب (DESIGN onboarding.welcome.title)
   ///
   /// In ar, this message translates to:
-  /// **'أهلاً بك في ديرة الدرور'**
+  /// **'أهلاً بك في دليل المواسم'**
   String get onboardingWelcomeTitle;
 
   /// نص شاشة الترحيب (DESIGN onboarding.welcome.body)

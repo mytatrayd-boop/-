@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "appTitle": "ديرة الدرور",
+  "appTitle": "دليل المواسم",
   "@appTitle": {
     "description": "اسم التطبيق"
   },
@@ -148,7 +148,7 @@
   "@commonContinue": {
     "description": "زر المتابعة (DESIGN common.continue)"
   },
-  "onboardingWelcomeTitle": "أهلاً بك في ديرة الدرور",
+  "onboardingWelcomeTitle": "أهلاً بك في دليل المواسم",
   "@onboardingWelcomeTitle": {
     "description": "عنوان شاشة الترحيب (DESIGN onboarding.welcome.title)"
   },

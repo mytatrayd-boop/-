@@ -106,7 +106,7 @@ Future<void> main() async {
         await openApp(tester, location);
 
         expect(find.byType(WelcomeScreen), findsOneWidget);
-        expect(find.text('أهلاً بك في ديرة الدرور'), findsOneWidget);
+        expect(find.text('أهلاً بك في دليل المواسم'), findsOneWidget);
         expect(
           find.text(
             'تعرف الدَّرّ والموسم والنجم اليوم في منطقتك، وما الجو '

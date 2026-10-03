@@ -22,8 +22,7 @@ Future<void> main() async {
 /// رخص الخطوط المضمّنة (SIL OFL 1.1) لصفحة الرخص في النظام.
 Stream<LicenseEntry> fontLicenses() async* {
   for (final (family, file) in const [
-    ('Reem Kufi', 'assets/fonts/ReemKufi-OFL.txt'),
-    ('IBM Plex Sans Arabic', 'assets/fonts/IBMPlexSansArabic-OFL.txt'),
+    ('Almarai', 'assets/fonts/Almarai-OFL.txt'),
     ('Amiri', 'assets/fonts/Amiri-OFL.txt'),
   ]) {
     yield LicenseEntryWithLineBreaks([

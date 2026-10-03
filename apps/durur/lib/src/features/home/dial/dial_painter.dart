@@ -51,7 +51,7 @@ class DialLabels {
         style: TextStyle(
           fontFamily: DururFonts.body,
           fontSize: size,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700, // Almarai بلا 600 (DESIGN §3)
           color: color,
           height: 1.2,
         ),

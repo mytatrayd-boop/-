@@ -124,10 +124,16 @@ class DururColors extends ThemeExtension<DururColors> {
       t < 0.5 || other == null ? this : other;
 }
 
-/// أسماء عائلات الخطوط المضمّنة (DESIGN §3).
+/// أسماء عائلات الخطوط المضمّنة (DESIGN §3، D37 الخيار ٣).
 abstract final class DururFonts {
-  static const display = 'ReemKufi';
-  static const body = 'IBMPlexSansArabic';
+  /// العناوين (`display`، `h1`، `h2`): نسخي لا يُستخدم تحت [displayMinSize].
+  static const display = 'Amiri';
+
+  /// النص والواجهة والدائرة. أوزانه 300/400/700/800 فقط (لا 500/600).
+  static const body = 'Almarai';
+
+  /// أصغر حجم لخط العناوين Amiri (`h2`، DESIGN §3).
+  static const displayMinSize = 21.0;
 
   /// المثل الشعبي (DESIGN §3، `proverb`)، والمائل العربي الوحيد المسموح.
   static const proverb = 'Amiri';
@@ -158,16 +164,19 @@ ThemeData buildDururTheme(Brightness brightness) {
     outlineVariant: c.line,
   );
 
-  // Reem Kufi خط متغيّر: الوزن عبر محور wght.
-  TextStyle kufi(double size, double height, int weight) => TextStyle(
-    fontFamily: DururFonts.display,
-    fontSize: size,
-    height: height / size,
-    fontWeight: FontWeight.values[weight ~/ 100 - 1],
-    fontVariations: [FontVariation.weight(weight.toDouble())],
-    color: c.ink,
-  );
-  TextStyle plex(
+  // Amiri للعناوين فقط، ولا يُستخدم تحت 21sp (DESIGN §3).
+  TextStyle heading(double size, double height) {
+    assert(size >= DururFonts.displayMinSize);
+    return TextStyle(
+      fontFamily: DururFonts.display,
+      fontSize: size,
+      height: height / size,
+      fontWeight: FontWeight.w700,
+      color: c.ink,
+    );
+  }
+
+  TextStyle text(
     double size,
     double height,
     FontWeight weight, [
@@ -182,18 +191,19 @@ ThemeData buildDururTheme(Brightness brightness) {
 
   // سلّم الأحجام (DESIGN §3): display، h1، h2، h3، body-l، body، label، caption.
   final textTheme = TextTheme(
-    displaySmall: kufi(34, 48, 700),
-    headlineMedium: kufi(26, 38, 700),
-    headlineSmall: kufi(26, 38, 700),
-    titleLarge: kufi(21, 32, 500),
-    titleMedium: plex(18, 28, FontWeight.w600),
-    titleSmall: plex(15, 22, FontWeight.w600),
-    bodyLarge: plex(17, 28, FontWeight.w400),
-    bodyMedium: plex(15, 25, FontWeight.w400),
-    bodySmall: plex(13, 20, FontWeight.w500, c.inkSoft),
-    labelLarge: plex(15, 22, FontWeight.w600),
-    labelMedium: plex(13, 20, FontWeight.w600),
-    labelSmall: plex(11, 16, FontWeight.w600),
+    // Almarai بلا 500/600: h3 و label و ring بوزن 700، و caption بوزن 400.
+    displaySmall: heading(34, 48),
+    headlineMedium: heading(26, 38),
+    headlineSmall: heading(26, 38),
+    titleLarge: heading(21, 32),
+    titleMedium: text(18, 28, FontWeight.w700),
+    titleSmall: text(15, 22, FontWeight.w700),
+    bodyLarge: text(17, 28, FontWeight.w400),
+    bodyMedium: text(15, 25, FontWeight.w400),
+    bodySmall: text(13, 20, FontWeight.w400, c.inkSoft),
+    labelLarge: text(15, 22, FontWeight.w700),
+    labelMedium: text(13, 20, FontWeight.w700),
+    labelSmall: text(11, 16, FontWeight.w700),
   );
 
   return ThemeData(
