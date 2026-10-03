@@ -9,7 +9,7 @@ on:
   schedule:
     - cron: '0 6 * * 6' # كل سبت 06:00 UTC
   push:
-    paths: ['lab/**', 'server/trend.js', 'server/spike.js', 'server/yahoo.js', '.github/workflows/rased-lab.yml']
+    paths: ['lab/**', '!lab/research/**', 'server/trend.js', 'server/spike.js', 'server/yahoo.js', '.github/workflows/rased-lab.yml']
 
 permissions:
   contents: write

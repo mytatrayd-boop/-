@@ -1,0 +1,15 @@
+// ارتداد IBS: إغلاق قرب قاع اليوم (IBS منخفض) بعد أيام هبوط متتالية وفوق متوسط 200 → شراء افتتاح الغد.
+// الخروج: إغلاق فوق أعلى الأمس، أو بعد 5 أيام.
+export default {
+  family: 'mr-ibs', name: 'ارتداد IBS بعد أيام هبوط', universe: 'large',
+  grid: { ibs: [0.1, 0.2], down: [1, 2, 3], maxPositions: [5, 10] },
+  make(p) {
+    let c, h, ib, dn, m200;
+    return {
+      universe: 'large', maxPositions: p.maxPositions, entryAt: 'open', exitAt: 'open', hold: 5,
+      init(P) { c = P.c; h = P.h; ib = P.series('ibs'); dn = P.series('down'); m200 = P.series('sma:200'); },
+      score: (d, s) => (ib[s][d] < p.ibs && dn[s][d] >= p.down && c[s][d] > m200[s][d] ? -ib[s][d] : null),
+      exitSignal: (d, s) => d > 0 && c[s][d] > h[s][d - 1],
+    };
+  },
+};
