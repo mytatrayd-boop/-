@@ -32,6 +32,14 @@ export function sweepLines(sweep) {
   const out = [];
   const wf = sweep.walkForward ?? sweep.walkforward ?? sweep.wf ?? sweep.oos ?? null;
   if (typeof sweep.summary === 'string') out.push(sweep.summary);
+  // مخطط backtest.mjs --sweep: walkForward.{inSample,outSample,chosen,defaults}
+  if (wf && wf.chosen && wf.chosen.outSample && wf.outSample) {
+    const c = wf.chosen, d = wf.defaults || {};
+    const fmt = x => x ? `${int(x.trades)} صفقة، ربح ${rate(x.winRate)}، متوسط ${rr(x.avgR)}، عائد ${pct(x.returnPct)}` : DASH;
+    out.push(`أفضل إعدادات على الأسابيع القديمة (${wf.inSample.from} ← ${wf.inSample.to}): \`${JSON.stringify(c.params)}\` — هناك: ${fmt(c.inSample)}.`);
+    out.push(`نفس الإعدادات على الأسابيع الجديدة (${wf.outSample.from} ← ${wf.outSample.to}): ${fmt(c.outSample)}. الإعدادات الافتراضية في نفس الفترة: ${fmt(d.outSample)}.`);
+    return out;
+  }
   if (wf && typeof wf === 'object') {
     if (typeof wf.note === 'string') out.push(wf.note);
     const parts = Object.entries(wf)

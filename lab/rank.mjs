@@ -15,6 +15,9 @@ export const WEIGHTS = {
   frequency: 0.10,    // كم مرة يظهر الإعداد: إشارات/أسبوع (حدّها 1 لأن صفقة واحدة أسبوعيًا)
 };
 
+// أقل عدد صفقات للمختارين في النصف الأحدث قبل ما نقول «صمد» أو «لم يصمد»
+export const OOS_MIN_TRADES = 5;
+
 export const RANK_DEFAULTS = {
   minTrades: 4,        // أقل عدد صفقات ليدخل السهم الترتيب
   prior: 6,            // k: وزن المتوسط المسبق (بعدد صفقات وهمية) في (n·x + k·μ)/(n + k)
@@ -188,6 +191,8 @@ export function oosCheck(bt, opts = {}) {
   let heldUp = null, beatUniverse = null, note;
   if (!picks.length) note = 'لا يوجد سهم مؤهَّل في النصف الأقدم.';
   else if (!pAll.trades) note = 'المختارون من النصف الأقدم لم يتداولوا في النصف الأحدث.';
+  // أقل من OOS_MIN_TRADES صفقة = ما نحكم (صفقة وحدة محظوظة ما تثبت شي)
+  else if (pAll.trades < OOS_MIN_TRADES) note = `العينة غير كافية للحكم: ${pAll.trades} صفقة فقط للمختارين في النصف الأحدث (نحتاج ${OOS_MIN_TRADES} على الأقل).`;
   else {
     beatUniverse = pAll.avgR > uAll.avgR;
     heldUp = beatUniverse && pAll.avgR > 0;

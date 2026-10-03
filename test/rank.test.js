@@ -76,24 +76,30 @@ test('deterministic tie-breaking: identical records sort by symbol regardless of
 
 test('OOS split ranks on older weeks only', () => {
   // OLD يربح في النصف الأقدم ويخسر في الأحدث؛ NEW العكس
-  const OLD = [1, 1, 1, 1, -1, -1, -1, -1];
-  const NEW = [-1, -1, -1, -1, 1.5, 1.5, 1.5, 1.5];
-  const FLAT = [0, 0, 0, 0, 0, 0, 0, 0];
+  // 5 أسابيع لكل نصف: OOS_MIN_TRADES = 5 صفقات قبل أي حكم
+  const OLD = [1, 1, 1, 1, 1, -1, -1, -1, -1, -1];
+  const NEW = [-1, -1, -1, -1, -1, 1.5, 1.5, 1.5, 1.5, 1.5];
+  const FLAT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   const bt = makeBt({ OLD, NEW, FLAT });
   const o = oosCheck(bt, { minTrades: 4, topN: 1 });
-  assert.equal(o.olderWeeks, 4);
-  assert.equal(o.newerWeeks, 4);
-  assert.equal(o.newerFrom, wk(4));
+  assert.equal(o.olderWeeks, 5);
+  assert.equal(o.newerWeeks, 5);
+  assert.equal(o.newerFrom, wk(5));
   assert.equal(o.picks[0].sym, 'OLD');
-  assert.equal(o.picks[0].olderTrades, 4);
+  assert.equal(o.picks[0].olderTrades, 5);
   assert.equal(o.picks[0].avgR, -1);
   assert.equal(o.heldUp, false);
   assert.equal(o.beatUniverse, false);
   // تغيير النصف الأحدث لا يغيّر ترتيب الأقدم
-  const bt2 = makeBt({ OLD, NEW: [-1, -1, -1, -1, 3, 3, 3, 3], FLAT });
-  const ranked1 = rankSymbols(bt, { weeks: [wk(0), wk(1), wk(2), wk(3)] }).rows.map((r) => [r.sym, r.score]);
-  const ranked2 = rankSymbols(bt2, { weeks: [wk(0), wk(1), wk(2), wk(3)] }).rows.map((r) => [r.sym, r.score]);
+  const bt2 = makeBt({ OLD, NEW: [-1, -1, -1, -1, -1, 3, 3, 3, 3, 3], FLAT });
+  const older = [wk(0), wk(1), wk(2), wk(3), wk(4)];
+  const ranked1 = rankSymbols(bt, { weeks: older }).rows.map((r) => [r.sym, r.score]);
+  const ranked2 = rankSymbols(bt2, { weeks: older }).rows.map((r) => [r.sym, r.score]);
   assert.deepEqual(ranked1, ranked2);
+  // أقل من 5 صفقات في النصف الأحدث → «العينة غير كافية» بدل حكم
+  const small = oosCheck(makeBt({ OLD: [1, 1, 1, 1, -1, -1, -1, -1], FLAT: [0, 0, 0, 0, 0, 0, 0, 0] }), { minTrades: 4, topN: 1 });
+  assert.equal(small.heldUp, null);
+  assert.match(small.note, /غير كافية/);
   // ويظهر في top5.json
   const out = buildTop5(bt, { minTrades: 4 });
   assert.ok(out.oosSummary.available);

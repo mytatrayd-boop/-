@@ -74,6 +74,9 @@ export function splitWeeks(bars) {
     if (!cur || cur.weekKey !== key) { cur = { weekKey: key, start: i, end: i, firstDay: e.date, lastDay: e.date }; out.push(cur); }
     cur.end = i; cur.lastDay = e.date;
   }
+  // أول أسبوع في البيانات لو بدأ بعد الاثنين = ناقص (البيانات بدأت في نصّه، مو عطلة) — ما نتداول فيه،
+  // وإلا يُعامَل أول يوم متوفر (مثلاً الجمعة) كأنه «الاثنين»
+  if (out.length && etParts(bars.t[out[0].start]).weekday > 1) out[0].partialStart = true;
   return out;
 }
 
@@ -235,6 +238,7 @@ function weekComplete(bars, week) {
 
 export function weeklyTrade(bars, week, p = TREND_DEFAULTS) {
   p = { ...TREND_DEFAULTS, ...p };
+  if (week.partialStart) return { weekKey: week.weekKey, signal: null, exit: null, r: null, pct: null };
   return simulate(bars, week, p, weekComplete(bars, week));
 }
 

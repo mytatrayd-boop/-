@@ -44,7 +44,7 @@ test('splitWeeks: normal weeks and a Monday-holiday week (MLK 2026-01-19)', () =
   const bars = makeBars(wave, {}, ['2026-01-15', '2026-01-16', '2026-01-20', '2026-01-21', '2026-01-23']);
   const w = splitWeeks(bars);
   assert.equal(w.length, 2);
-  assert.deepEqual(w[0], { weekKey: '2026-01-12', start: 0, end: 155, firstDay: '2026-01-15', lastDay: '2026-01-16' });
+  assert.deepEqual(w[0], { weekKey: '2026-01-12', start: 0, end: 155, firstDay: '2026-01-15', lastDay: '2026-01-16', partialStart: true }); // البيانات بدأت الخميس
   assert.deepEqual(w[1], { weekKey: '2026-01-19', start: 156, end: 389, firstDay: '2026-01-20', lastDay: '2026-01-23' });
   assert.deepEqual(splitWeeks({ t: [], o: [], h: [], l: [], c: [], v: [] }), []);
 });
@@ -215,4 +215,18 @@ test('TREND_GRID: small sweep over existing parameters', () => {
     assert.ok(TREND_GRID[k].length >= 2 && TREND_GRID[k].length <= 4);
     assert.ok(TREND_GRID[k].includes(TREND_DEFAULTS[k]));
   }
+});
+
+test('a first week whose data starts after Monday is partial and never trades', async () => {
+  const { splitWeeks, weeklyTrade } = await import('../server/trend.js');
+  // جمعة 2026-07-10 ثم الاثنين 2026-07-13 (EDT: 09:30 = 13:30 UTC)
+  const bars = { t: [], o: [], h: [], l: [], c: [], v: [] };
+  for (const d of [Date.UTC(2026, 6, 10), Date.UTC(2026, 6, 13)]) for (let k = 0; k < 78; k++) {
+    const p = 100 + k * 0.1; bars.t.push(d + (13.5 * 3600 + k * 300) * 1000); bars.o.push(p); bars.h.push(p + 0.2); bars.l.push(p - 0.2); bars.c.push(p + 0.05); bars.v.push(1e5);
+  }
+  const weeks = splitWeeks(bars);
+  assert.equal(weeks.length, 2);
+  assert.equal(weeks[0].partialStart, true);
+  assert.ok(!weeks[1].partialStart);
+  assert.equal(weeklyTrade(bars, weeks[0]).signal, null);
 });
