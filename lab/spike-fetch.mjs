@@ -166,7 +166,7 @@ export async function runPool(items, worker, concurrency) {
 /* ---------- التشغيل ---------- */
 
 async function readJson(file) { try { return JSON.parse(await readFile(file, 'utf8')); } catch { return null; } }
-async function getText(url) {
+export async function getText(url) {
   for (let a = 0; a < 4; a++) {
     try {
       const res = await fetch(url, { headers: { 'User-Agent': YAHOO_UA }, signal: AbortSignal.timeout(60000) });

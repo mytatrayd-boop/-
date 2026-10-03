@@ -1,0 +1,104 @@
+name: Rased — Strategy Research
+
+# بحث الاستراتيجيات: ~10 سنوات شموع يومية (Yahoo بدون مفتاح) لكون ~1500 سهم سائل + سلة أصغر + SPY/QQQ/IWM
+# ← كل العائلات مع اختبار أمامي سنوي ← فحص الشروط السبعة ← lab/results/research.json و RESEARCH_REPORT.md.
+# الكاش lab/data/research يُحفظ دائمًا (حتى لو فشل/انتهى الوقت) فالتنزيل الأول الطويل يُستأنف في التشغيل التالي.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '13 4 * * 0' # كل أحد 04:13 UTC
+  push:
+    paths: ['lab/research/**', '.github/workflows/rased-research.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rased-research-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    # التنزيل الأول: ترتيب السيولة لكل الأسهم (~6500 طلب) + 10 سنوات لـ ~2100 سهم + القطاعات، بمعدل ~6 طلبات/ث
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - name: Tests
+        run: npm test
+
+      - name: Restore research data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: lab/data/research
+          key: rased-research-${{ github.run_id }}
+          restore-keys: rased-research-
+
+      - name: Fetch 10y daily bars (Yahoo, 4 concurrent, ~6 req/s)
+        timeout-minutes: 290
+        env:
+          RESEARCH_BUDGET_MIN: 270
+          YAHOO_CONCURRENCY: 4
+          YAHOO_GAP_MS: 160
+        run: node lab/research/data.mjs
+
+      - name: Save research data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: lab/data/research
+          key: rased-research-${{ github.run_id }}
+
+      - name: Run research (walk-forward + criteria)
+        timeout-minutes: 30
+        run: node --max-old-space-size=6144 lab/research/run.mjs
+
+      - name: Summary
+        if: always()
+        run: |
+          [ -f lab/results/RESEARCH_REPORT.md ] && head -c 60000 lab/results/RESEARCH_REPORT.md >> "$GITHUB_STEP_SUMMARY" || echo "لا يوجد تقرير" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rased-research-${{ github.run_number }}
+          path: |
+            lab/results/research.json
+            lab/results/RESEARCH_REPORT.md
+          if-no-files-found: ignore
+
+  commit:
+    needs: research
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # مجموعة مشتركة مع rased-lab.yml و rased-spikes.yml: دفع واحد في كل مرة (+ إعادة المحاولة بـ pull --rebase)
+    concurrency:
+      group: rased-results-push-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: rased-research-${{ github.run_number }}
+          path: lab/results
+      - name: Commit research results
+        run: |
+          [ -f lab/results/research.json ] || { echo "ما فيه نتائج — لا شيء للإيداع"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lab/results/research.json lab/results/RESEARCH_REPORT.md
+          if git diff --cached --quiet; then echo "لا تغيير"; exit 0; fi
+          git commit -m "research: results $(date -u +%F) [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            echo "محاولة $i فشلت — إعادة بعد $((i * 5)) ث"
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 5))
+          done
+          exit 1
