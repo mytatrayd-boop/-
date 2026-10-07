@@ -5,6 +5,7 @@ import 'package:durur/l10n/app_localizations.dart';
 import 'package:durur/src/app.dart';
 import 'package:durur/src/features/city_picker/city_picker_screen.dart';
 import 'package:durur/src/features/home/dial/day_dial.dart';
+import 'package:durur/src/features/home/home_cards.dart';
 import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/item_detail/item_detail_page.dart';
 import 'package:durur/src/features/item_detail/item_detail_sheet.dart';
@@ -225,10 +226,11 @@ Future<void> main() async {
     await tester.pumpAndSettle();
   }
 
-  Offset dialPoint(WidgetTester tester, double refRadius, double degrees) {
+  /// [fraction] من نصف القطر (DESIGN R2.5)؛ الطوالع 0.505.
+  Offset dialPoint(WidgetTester tester, double fraction, double degrees) {
     final c = tester.getCenter(find.byKey(DayDial.dialKey));
     final r = tester.getSize(find.byKey(DayDial.dialKey)).width / 2;
-    final rr = refRadius / 170 * r;
+    final rr = fraction * r;
     final a = degrees * math.pi / 180;
     return c + Offset(rr * math.sin(a), -rr * math.cos(a));
   }
@@ -248,7 +250,7 @@ Future<void> main() async {
     checkScreen(tester, 'الرئيسية');
 
     // الدائرة: حلقة النجم ← ورقته.
-    await tester.tapAt(dialPoint(tester, 90, 0));
+    await tester.tapAt(dialPoint(tester, 0.505, 0));
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
     final sheet = find.byKey(ItemDetailSheet.sheetKey);
@@ -258,8 +260,8 @@ Future<void> main() async {
     await tester.pumpAndSettle();
 
     // صفحة النجم الكاملة من البطاقة.
-    await scrollHomeTo(tester, find.text(l10n.homeStar));
-    await tester.tap(find.text(l10n.homeStar));
+    await scrollHomeTo(tester, find.byKey(HomeCardKeys.starCard));
+    await tester.tap(find.byKey(HomeCardKeys.starCard));
     await tester.pumpAndSettle();
     expect(find.byKey(ItemDetailPage.pageKey), findsOneWidget);
     expect(find.byKey(ItemDetailPage.loadErrorKey), findsNothing);

@@ -4,7 +4,8 @@ import 'package:durur/l10n/app_localizations.dart';
 import 'package:durur/src/domain/local_date.dart';
 import 'package:durur/src/engine/calendar_engine.dart';
 import 'package:durur/src/features/about/origin_screen.dart';
-import 'package:durur/src/features/home/day_card.dart';
+import 'package:durur/src/features/heritage/heritage_screen.dart';
+import 'package:durur/src/features/home/home_cards.dart';
 import 'package:durur/src/features/home/dial/dial_model.dart';
 import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/item_detail/detail_data.dart';
@@ -409,11 +410,11 @@ Future<void> main() async {
       return '';
     }
 
-    testWidgets('صف النجم ← /item/suhail، والرجوع للرئيسية', (tester) async {
+    testWidgets('بطاقة الطالع ← /item/suhail، والرجوع للرئيسية', (tester) async {
       phone(tester);
       await openApp(tester);
-      await scrollHomeTo(tester, find.text(l10n.homeStar));
-      await tester.tap(find.text(l10n.homeStar));
+      await scrollHomeTo(tester, find.byKey(HomeCardKeys.starCard));
+      await tester.tap(find.byKey(HomeCardKeys.starCard));
       await tester.pumpAndSettle();
       expect(find.byKey(ItemDetailPage.pageKey), findsOneWidget);
       expect(location(tester), '/item/suhail?from=2026-10-02');
@@ -425,12 +426,12 @@ Future<void> main() async {
       expect(find.byType(HomeScreen), findsOneWidget);
     });
 
-    testWidgets('صف «تفاصيل دَرّ» ← /dar/uae_oman/<MM-DD>، وشريحة المئة '
+    testWidgets('شريط الدَّرّ ← /dar/uae_oman/<MM-DD>، وشريحة المئة '
         'تفتح صفحة الموسم، و«انتقل إلى بدايته» يعود للرئيسية', (tester) async {
       phone(tester);
       final container = await openApp(tester);
       final info = container.read(dayInfoProvider(today))!;
-      final row = find.text(l10n.homeDarDetails(info.dar.name.ar));
+      final row = find.text(l10n.darTitle(info.dar.name.ar));
       await scrollHomeTo(tester, row);
       await tester.tap(row);
       await tester.pumpAndSettle();
@@ -455,9 +456,9 @@ Future<void> main() async {
       expect(start.isBefore(today) || start == today, isTrue);
     });
 
-    testWidgets('شريحة الموسم في البطاقة تفتح صفحته الكاملة', (tester) async {
+    testWidgets('شريحة المئة في شريط الدَّرّ تفتح صفحة موسمها', (tester) async {
       phone(tester);
-      // الكويت: الشريحة بجانب اسم الدَّرّ في البطاقة.
+      // الكويت: الشريحة بجانب اسم الدَّرّ في شريطه.
       await pumpDururApp(
         tester,
         prefs: await fakePrefs(savedCity('kuwait_city')),
@@ -467,15 +468,27 @@ Future<void> main() async {
       final info = ProviderScope.containerOf(
         tester.element(find.byType(HomeScreen)),
       ).read(dayInfoProvider(today))!;
-      await scrollHomeTo(tester, find.byKey(DayCard.cardKey));
-      await tester.tap(
-        find.descendant(
-          of: find.byKey(DayCard.cardKey),
-          matching: find.byType(ActionChip),
-        ),
-      );
+      await scrollHomeTo(tester, find.byKey(HomeCardKeys.darSeasonChip));
+      await tester.tap(find.byKey(HomeCardKeys.darSeasonChip));
       await tester.pumpAndSettle();
-      expect(location(tester), startsWith('/item/${info.majorSeason.itemId}'));
+      expect(location(tester), startsWith('/item/${info.dar.record.seasonId}'));
+    });
+
+    testWidgets('العدّاد وصفوف «القادم» تفتح صفحاتها الكاملة', (tester) async {
+      phone(tester);
+      await openApp(tester);
+      await scrollHomeTo(tester, find.byKey(HomeCardKeys.countdown));
+      await tester.tap(find.byKey(HomeCardKeys.countdown));
+      await tester.pumpAndSettle();
+      expect(location(tester), '/item/wasm?from=2026-10-16');
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      await scrollHomeTo(tester, find.byKey(HomeCardKeys.upcomingRow(0)));
+      await tester.tap(find.byKey(HomeCardKeys.upcomingRow(0)));
+      await tester.pumpAndSettle();
+      expect(location(tester), startsWith('/dar/uae_oman/'));
+      expect(find.byKey(ItemDetailPage.pageKey), findsOneWidget);
     });
 
     testWidgets('مسار لا يجد سجله ← الرئيسية بلا خطأ', (tester) async {
@@ -501,7 +514,7 @@ Future<void> main() async {
       expect(find.text('يبدأ بعد ١٤ يوماً'), findsOneWidget);
     });
 
-    testWidgets('«أصل التقويم»: سطر الإيضاح ورابط البطاقة يفتحانها (D24)', (
+    testWidgets('«أصل التقويم»: سطر الإيضاح وتبويب «التراث» يفتحانها (D24)', (
       tester,
     ) async {
       phone(tester);
@@ -528,14 +541,11 @@ Future<void> main() async {
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
-      await scrollHomeTo(tester, find.byKey(DayCard.originLinkKey));
-      final button = tester.widget<TextButton>(
-        find.byKey(DayCard.originLinkKey),
-      );
-      expect(button.onPressed, isNotNull);
-      await tester.tap(find.byKey(DayCard.originLinkKey));
+      await openTab(tester, AppTab.heritage);
+      await tester.tap(find.byKey(HeritageScreen.originRowKey));
       await tester.pumpAndSettle();
       expect(find.byKey(OriginScreen.screenKey), findsOneWidget);
+      expect(location(tester), '/about/origin');
     });
   });
 

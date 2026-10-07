@@ -68,22 +68,49 @@ Future<void> main() async {
     });
   }
 
-  group('الهندسة واللمس', () {
-    const geo = DialGeometry(radius: 170, dayCount: 365);
+  group('الهندسة واللمس (DESIGN R2.5)', () {
+    const geo = DialGeometry(radius: 200, dayCount: 365);
 
-    test('أنصاف أقطار الحلقات تتناسب مع القطر', () {
-      const small = DialGeometry(radius: 144, dayCount: 365);
-      expect(small.band(DialRing.months), (144.0, 146 / 170 * 144));
-      expect(small.hubRadius, closeTo(58 / 170 * 144, 1e-9));
+    test('الحلقات من الخارج للداخل بنسبها من R، بلا فجوات', () {
+      expect(geo.band(DialRing.weather).$1, 200.0);
+      expect(geo.band(DialRing.weather).$2, closeTo(174, 1e-9));
+      expect(geo.band(DialRing.months).$2, closeTo(146, 1e-9));
+      expect(geo.band(DialRing.durur).$2, closeTo(116, 1e-9));
+      expect(geo.band(DialRing.stars).$2, closeTo(86, 1e-9));
+      expect(geo.band(DialRing.seasons).$1, closeTo(86, 1e-9));
+      expect(geo.band(DialRing.seasons).$2, closeTo(26, 1e-9));
+      expect(geo.hubRadius, closeTo(26, 1e-9));
+      expect(geo.agriBand, isNull);
+      for (var i = 1; i < DialRing.values.length; i++) {
+        expect(
+          geo.band(DialRing.values[i]).$1,
+          closeTo(geo.band(DialRing.values[i - 1]).$2, 1e-9),
+        );
+      }
+      // تتناسب مع القطر.
+      const small = DialGeometry(radius: 166, dayCount: 365);
+      expect(small.band(DialRing.weather).$2, closeTo(0.87 * 166, 1e-9));
+    });
+
+    test('حلقة الزراعة (R2.7): مكانها بين الطوالع والمركز حين توجد بيانات', () {
+      const agri = DialGeometry(radius: 200, dayCount: 365, agri: true);
+      expect(agri.agriBand!.$1, closeTo(90, 1e-9));
+      expect(agri.agriBand!.$2, closeTo(72, 1e-9));
+      expect(agri.band(DialRing.stars).$2, closeTo(90, 1e-9));
+      expect(agri.band(DialRing.seasons).$1, closeTo(72, 1e-9));
+      // اللمس على حلقة الزراعة لا يُرجع حلقة أخرى.
+      expect(agri.hitTest(0, -80, 0), isNull);
+      // بلا بيانات: الطوالع تتمدد مكانها.
+      expect((geo.hitTest(0, -88, 0)! as RingHit).ring, DialRing.stars);
     });
 
     test('أعلى الدائرة = اليوم المعروض في كل حلقة', () {
       for (final (ring, r) in [
+        (DialRing.weather, 190.0),
         (DialRing.months, 160.0),
-        (DialRing.seasons, 138.0),
-        (DialRing.durur, 116.0),
-        (DialRing.stars, 90.0),
-        (DialRing.weather, 70.0),
+        (DialRing.durur, 130.0),
+        (DialRing.stars, 100.0),
+        (DialRing.seasons, 50.0),
       ]) {
         final hit = geo.hitTest(0, -r, 274)! as RingHit;
         expect(hit.ring, ring);
@@ -93,25 +120,48 @@ Future<void> main() async {
 
     test('الزمن مع عقارب الساعة: يمين المؤشر = أيام قادمة', () {
       // ربع دورة مع عقارب الساعة (يمين المركز) ≈ 91 يوماً بعد المعروض.
-      final right = geo.hitTest(116, 0, 10)! as RingHit;
+      final right = geo.hitTest(130, 0, 10)! as RingHit;
       expect(right.day, 10 + 91);
-      final left = geo.hitTest(-116, 0, 10)! as RingHit;
+      final left = geo.hitTest(-130, 0, 10)! as RingHit;
       expect(left.day, (10 - 91) % 365);
       // التفاف عبر نهاية السنة.
-      final wrap = geo.hitTest(0, -116, 364.6)! as RingHit;
+      final wrap = geo.hitTest(0, -130, 364.6)! as RingHit;
       expect(wrap.day, 0);
     });
 
-    test('المحور وخارج الدائرة', () {
+    test('المقبض وخارج الدائرة', () {
       expect(geo.hitTest(0, 0, 0), isA<HubHit>());
-      expect(geo.hitTest(30, 30, 0), isA<HubHit>());
-      expect(geo.hitTest(171, 0, 0), isNull);
+      expect(geo.hitTest(15, 15, 0), isA<HubHit>());
+      expect(geo.hitTest(201, 0, 0), isNull);
     });
 
     test('زاوية اليوم: اليوم المعروض متمركز تحت المؤشر', () {
       expect(geo.angleOf(100, 100), closeTo(-geo.step / 2, 1e-12));
       expect(geo.angleOf(101, 100), closeTo(geo.step / 2, 1e-12));
       expect(geo.step * 365, closeTo(2 * math.pi, 1e-9));
+    });
+
+    test('القطع العابرة لنهاية السنة تُدمج في قطعة دائرية واحدة', () {
+      final model = DialModel.fromYearIndex(
+        YearIndex(CalendarEngine.fromTables(tables, 'najd'), 2026),
+      );
+      final cyc = model.cyclicSegments(DialRing.weather);
+      final murabbaniya = cyc.where((s) => s.itemId == 'murabbaniya').single;
+      expect(murabbaniya.end, greaterThan(model.dayCount));
+      expect(
+        murabbaniya.length,
+        model
+            .segments(DialRing.weather)
+            .where((s) => s.itemId == 'murabbaniya')
+            .fold<int>(0, (a, s) => a + s.length),
+      );
+      // مجموع أطوال الحلقات الكاملة = طول السنة بعد الدمج أيضاً.
+      for (final ring in [DialRing.durur, DialRing.stars, DialRing.seasons]) {
+        expect(
+          model.cyclicSegments(ring).fold<int>(0, (a, s) => a + s.length),
+          model.dayCount,
+        );
+      }
     });
   });
 

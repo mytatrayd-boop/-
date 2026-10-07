@@ -286,29 +286,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get homeStar => 'النجم';
-
-  @override
-  String get homeWeatherSeason => 'موسم الجو';
-
-  @override
-  String get homeNoWeatherSeason => 'لا يوجد موسم جو مسمّى في هذه الأيام';
-
-  @override
   String get homeUsualWeather => 'الجو المعتاد';
 
   @override
-  String homeDarDetails(String dar) {
-    return 'تفاصيل دَرّ $dar';
-  }
-
-  @override
   String get homeCalcError => 'تعذّر حساب هذا اليوم.';
-
-  @override
-  String homeDururBorrowed(String region) {
-    return 'الدَّرّ حسب حساب $region';
-  }
 
   @override
   String dialDururLegend(String region) {
@@ -372,10 +353,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get wheelA11yNone => 'لا يوجد';
-
-  @override
-  String get wheelA11yHint =>
-      'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الدَّرّ.';
 
   @override
   String get wheelA11yOpenStar => 'افتح صفحة النجم';
@@ -486,9 +463,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String wheelHubStar(String star) {
     return 'طالع $star';
   }
-
-  @override
-  String get homeOriginLink => 'أصل التقويم';
 
   @override
   String get wheelA11yHintSeason =>
@@ -729,18 +703,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsSectionAppearance => 'المظهر';
 
   @override
-  String get settingsTheme => 'السمة';
-
-  @override
-  String get settingsThemeSystem => 'تلقائي (حسب الجهاز)';
-
-  @override
-  String get settingsThemeLight => 'فاتح';
-
-  @override
-  String get settingsThemeDark => 'داكن';
-
-  @override
   String get settingsDigits => 'الأرقام';
 
   @override
@@ -926,5 +888,230 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String sourcesDataVersion(String version, String seq) {
     return 'نسخة البيانات: $version ($seq)';
+  }
+
+  @override
+  String get tabWheel => 'الدائرة';
+
+  @override
+  String get tabSymbols => 'الرموز';
+
+  @override
+  String get tabHeritage => 'التراث';
+
+  @override
+  String get tabSettings => 'الإعدادات';
+
+  @override
+  String get countdownRemaining => 'باقي';
+
+  @override
+  String countdownDaysUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يوم',
+      many: 'يوماً',
+      few: 'أيام',
+      two: 'يومان',
+      one: 'يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String countdownDaysPhrase(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$days يوم',
+      many: '$days يوماً',
+      few: '$days أيام',
+      two: 'يومان',
+      one: 'يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String countdownToSeason(String name) {
+    return 'على دخول $name';
+  }
+
+  @override
+  String countdownToStar(String name) {
+    return 'على طلوع $name';
+  }
+
+  @override
+  String countdownSeasonToday(String name) {
+    return 'دخل $name اليوم';
+  }
+
+  @override
+  String countdownStarToday(String gender, String name) {
+    String _temp0 = intl.Intl.selectLogic(gender, {
+      'f': 'طلعت $name اليوم',
+      'other': 'طلع $name اليوم',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String countdownStarTodayIn(String gender, String name, String city) {
+    String _temp0 = intl.Intl.selectLogic(gender, {
+      'f': 'طلعت $name اليوم في $city',
+      'other': 'طلع $name اليوم في $city',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String countdownFromDate(String date) {
+    return 'من $date';
+  }
+
+  @override
+  String countdownA11y(String days, String target, String date) {
+    return 'باقي $days $target، $date';
+  }
+
+  @override
+  String weekdayDayMonth(String weekday, String date) {
+    return '$weekday $date';
+  }
+
+  @override
+  String dayMonthDate(String day, String month) {
+    String _temp0 = intl.Intl.selectLogic(month, {
+      'g1': 'يناير',
+      'g2': 'فبراير',
+      'g3': 'مارس',
+      'g4': 'أبريل',
+      'g5': 'مايو',
+      'g6': 'يونيو',
+      'g7': 'يوليو',
+      'g8': 'أغسطس',
+      'g9': 'سبتمبر',
+      'g10': 'أكتوبر',
+      'g11': 'نوفمبر',
+      'g12': 'ديسمبر',
+      'other': '',
+    });
+    return '$day $_temp0';
+  }
+
+  @override
+  String get cardStarTitle => 'الطالع';
+
+  @override
+  String get cardWeatherTitle => 'الجو المعتاد';
+
+  @override
+  String get cardWeatherNote => 'حسب التراث، وليس توقعاً للطقس.';
+
+  @override
+  String get cardAgriTitle => 'مواسم الزراعة';
+
+  @override
+  String get cardUpcomingTitle => 'القادم';
+
+  @override
+  String upcomingAfter(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $days يوم',
+      many: 'بعد $days يوماً',
+      few: 'بعد $days أيام',
+      two: 'بعد يومين',
+      one: 'بعد يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeSeasonLabel(String season) {
+    return 'الموسم: $season';
+  }
+
+  @override
+  String homeWeatherSeasonLabel(String name) {
+    return 'موسم الجو: $name';
+  }
+
+  @override
+  String get homeNone => 'لا يوجد';
+
+  @override
+  String darTitle(String dar) {
+    return 'دَرّ $dar';
+  }
+
+  @override
+  String darOfSeason(String season) {
+    return 'من $season';
+  }
+
+  @override
+  String darBorrowedCaption(String region) {
+    return 'حسب حساب $region';
+  }
+
+  @override
+  String get agriNoData => 'لا توجد بيانات زراعية موثقة لمنطقتك';
+
+  @override
+  String get agriKnowSource => 'أعرف مصدراً';
+
+  @override
+  String bubblePeriod(String period) {
+    return 'يتبع: $period';
+  }
+
+  @override
+  String bubbleRange(String name, String start, String end) {
+    return '$name — $start إلى $end';
+  }
+
+  @override
+  String bubbleDururOf(String season) {
+    return 'درور $season';
+  }
+
+  @override
+  String bubbleDururRange(String first, String last) {
+    return 'دَرّ $first إلى دَرّ $last';
+  }
+
+  @override
+  String get symbolsTitle => 'دليل الرموز';
+
+  @override
+  String get wheelA11yReadSymbols => 'اقرأ رموز الجو حول اليوم';
+
+  @override
+  String weatherSymbolDesc(String symbol) {
+    String _temp0 = intl.Intl.selectLogic(symbol, {
+      'hot': 'حرّ معتاد في هذه الفترة حسب التراث.',
+      'very_hot': 'حرّ شديد، من أشد أيام السنة حرارة حسب التراث.',
+      'mild': 'جو معتدل، لا حرّ شديد ولا برد.',
+      'cool': 'برودة خفيفة، خاصة في الليل والصباح الباكر.',
+      'cold': 'برد معتاد في هذه الفترة حسب التراث.',
+      'very_cold': 'برد شديد، من أبرد أيام السنة حسب التراث.',
+      'wind': 'هبوب رياح معتاد في هذه الفترة حسب التراث.',
+      'wind_strong': 'رياح شديدة أو هبايب قد تثير الغبار.',
+      'rain': 'فترة يُرجى فيها المطر حسب التراث.',
+      'heavy_rain': 'فترة تُعرف بأمطار غزيرة حسب التراث.',
+      'thunder': 'فترة تكثر فيها السحب الرعدية والبرق.',
+      'cloud': 'سماء يكثر فيها الغيم.',
+      'dust': 'غبار معتاد في هذه الفترة حسب التراث.',
+      'humidity': 'رطوبة عالية، خاصة على السواحل.',
+      'fog': 'ضباب أو شبورة في الصباح الباكر.',
+      'sea_calm': 'بحر هادئ في الغالب حسب التراث.',
+      'sea_rough': 'بحر هائج وأمواج عالية في الغالب حسب التراث.',
+      'other': '',
+    });
+    return '$_temp0';
   }
 }

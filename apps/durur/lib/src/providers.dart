@@ -81,14 +81,13 @@ final hijriCalendarProvider = Provider<UmmAlQuraCalendar?>(
 );
 
 /// الإعدادات المحفوظة (ARCHITECTURE §12): المدينة، وانتهاء الإعداد الأولي،
-/// ومفتاحا التنبيهات (الميزة 8)، والسمة والأرقام (DESIGN 8.7).
+/// ومفتاحا التنبيهات (الميزة 8)، والأرقام (DESIGN 8.7). السمة داكنة فقط (D38).
 class Settings {
   const Settings({
     this.cityId,
     this.onboardingDone = false,
     this.notifyImportant = true,
     this.notifyDar = false,
-    this.theme = ThemeChoice.system,
     this.digits = DigitStyle.arabicIndic,
     this.autoUpdate = true,
   });
@@ -102,7 +101,6 @@ class Settings {
   final bool notifyImportant;
   final bool notifyDar;
 
-  final ThemeChoice theme;
   final DigitStyle digits;
 
   /// «تحديث البيانات تلقائياً» (مفعّل افتراضياً، D21). مطفأ ← لا تحقق تلقائي
@@ -114,7 +112,6 @@ class Settings {
     bool? onboardingDone,
     bool? notifyImportant,
     bool? notifyDar,
-    ThemeChoice? theme,
     DigitStyle? digits,
     bool? autoUpdate,
   }) => Settings(
@@ -122,7 +119,6 @@ class Settings {
     onboardingDone: onboardingDone ?? this.onboardingDone,
     notifyImportant: notifyImportant ?? this.notifyImportant,
     notifyDar: notifyDar ?? this.notifyDar,
-    theme: theme ?? this.theme,
     digits: digits ?? this.digits,
     autoUpdate: autoUpdate ?? this.autoUpdate,
   );
@@ -141,7 +137,6 @@ class SettingsController extends Notifier<Settings> {
       onboardingDone: repo.onboardingDone,
       notifyImportant: repo.notifyImportant,
       notifyDar: repo.notifyDar,
-      theme: repo.theme,
       digits: repo.digits,
       autoUpdate: repo.autoUpdate,
     );
@@ -165,11 +160,6 @@ class SettingsController extends Notifier<Settings> {
   Future<void> setNotifyDar(bool on) async {
     await _repo.saveNotifyDar(on);
     state = state.copyWith(notifyDar: on);
-  }
-
-  Future<void> setTheme(ThemeChoice theme) async {
-    await _repo.saveTheme(theme);
-    state = state.copyWith(theme: theme);
   }
 
   Future<void> setDigits(DigitStyle digits) async {

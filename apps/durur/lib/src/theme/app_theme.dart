@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 
-/// ألوان DESIGN §2 للوضعين، تُقرأ في الواجهة بـ `DururColors.of(context)`.
+/// ألوان هوية «سماء الدرور» الزجاجية (DESIGN R2.2): وضع داكن واحد (D38).
+/// تُقرأ في الواجهة بـ `DururColors.of(context)`.
 @immutable
 class DururColors extends ThemeExtension<DururColors> {
   const DururColors({
     required this.background,
+    required this.backgroundDeep,
+    required this.backgroundGlow,
     required this.surface,
     required this.surfaceAlt,
     required this.ink,
     required this.inkSoft,
+    required this.inkMuted,
     required this.primary,
     required this.onPrimary,
     required this.sea,
     required this.goldText,
     required this.goldDeco,
     required this.starMark,
+    required this.agri,
     required this.line,
+    required this.glassStroke,
     required this.outline,
     required this.error,
     required this.warningBg,
@@ -25,96 +31,115 @@ class DururColors extends ThemeExtension<DururColors> {
     required this.seasonTint,
   });
 
-  /// الوضع الفاتح «رمل النهار» (DESIGN 2.1، 2.3).
-  static const light = DururColors(
-    background: Color(0xFFFAF5EA),
-    surface: Color(0xFFFFFFFF),
-    surfaceAlt: Color(0xFFF2EADB),
-    ink: Color(0xFF2B2118),
-    inkSoft: Color(0xFF5E5246),
-    primary: Color(0xFF1B2A4A),
-    onPrimary: Color(0xFFFFFFFF),
-    sea: Color(0xFF0F6E6E),
-    goldText: Color(0xFF7A5C00),
-    goldDeco: Color(0xFFD4A82A),
-    starMark: Color(0xFF7A5C00),
-    line: Color(0xFFE3D8C3),
-    outline: Color(0xFF8A7C69),
-    error: Color(0xFFB3261E),
-    warningBg: Color(0xFFFFE9B3),
-    onWarning: Color(0xFF2B2118),
-    seasons: {
-      'safari': Color(0xFF8A4B12),
-      'shita': Color(0xFF1F4E79),
-      'saif': Color(0xFF2E6B34),
-      'qaiz': Color(0xFFA3361F),
-    },
-    onSeason: Color(0xFFFFFFFF),
-    seasonTint: 0.16,
-  );
-
-  /// الوضع الداكن «سماء الليل» (DESIGN 2.2، 2.3).
-  static const dark = DururColors(
-    background: Color(0xFF0E1626),
-    surface: Color(0xFF17223A),
-    surfaceAlt: Color(0xFF1F2C48),
-    ink: Color(0xFFF3ECDD),
-    inkSoft: Color(0xFFB9B0A0),
-    primary: Color(0xFFE9C46A),
-    onPrimary: Color(0xFF0E1626),
-    sea: Color(0xFF5CC2C2),
-    goldText: Color(0xFFE9C46A),
-    goldDeco: Color(0xFFD4A82A),
-    starMark: Color(0xFFD4A82A),
-    line: Color(0xFF2A3756),
-    outline: Color(0xFF7D8BA8),
+  /// الوضع الوحيد (DESIGN R2.2، R2.11).
+  static const night = DururColors(
+    background: Color(0xFF0A1A2F),
+    backgroundDeep: Color(0xFF06101F),
+    backgroundGlow: Color(0xFF143450),
+    surface: Color(0xFF13283E),
+    surfaceAlt: Color(0xFF214A5E),
+    ink: Color(0xFFEAF6FA),
+    inkSoft: Color(0xFFA9C3D1),
+    inkMuted: Color(0xFF7F9BB0),
+    primary: Color(0xFF5FE3F0),
+    onPrimary: Color(0xFF06101F),
+    sea: Color(0xFF5FE3F0),
+    goldText: Color(0xFFF2C66D),
+    goldDeco: Color(0xFFF2C66D),
+    starMark: Color(0xFFF2C66D),
+    agri: Color(0xFF8FE0A8),
+    line: Color(0x2E7FE9F3),
+    glassStroke: Color(0x597FE9F3),
+    outline: Color(0xFF7F9BB0),
     error: Color(0xFFFFB4AB),
     warningBg: Color(0xFF5A4300),
     onWarning: Color(0xFFFFF4D6),
     seasons: {
-      'safari': Color(0xFFE8A55C),
-      'shita': Color(0xFF8DB8E8),
-      'saif': Color(0xFF8FCB8A),
-      'qaiz': Color(0xFFF08A6C),
+      'saif': Color(0xFFB5D47A),
+      'qaiz': Color(0xFFF2A65A),
+      'safari': Color(0xFFE3A6D8),
+      'shita': Color(0xFF8CC8FF),
     },
-    onSeason: Color(0xFF0E1626),
-    seasonTint: 0.24,
+    onSeason: Color(0xFFEAF6FA),
+    seasonTint: 0.30,
   );
 
+  /// `bg`: الخلفية الأساسية.
   final Color background;
+
+  /// `bg-deep`: أسفل التدرّج، والنص فوق `cyan`.
+  final Color backgroundDeep;
+
+  /// `bg-glow`: أفتح نقطة في التدرّج خلف الدائرة (سقف لا يُتجاوز).
+  final Color backgroundGlow;
+
+  /// `surface`: البطاقة الزجاجية بعد التركيب فوق `bg`.
   final Color surface;
+
+  /// `surface-selected`: التبويب والشريحة المختاران.
   final Color surfaceAlt;
   final Color ink;
   final Color inkSoft;
+
+  /// `ink-muted`: على `bg` و`surface` فقط (ممنوع فوق `bg-glow`).
+  final Color inkMuted;
+
+  /// `cyan`: الحدود، التوهج، المؤشر، أسماء الأشهر، الأزرار.
   final Color primary;
+
+  /// النص فوق `cyan` (`bg-deep`).
   final Color onPrimary;
+
+  /// الروابط (`cyan`).
   final Color sea;
+
+  /// `gold`: «اليوم»، النجم الطالع، رأس المؤشر.
   final Color goldText;
   final Color goldDeco;
-
-  /// نجوم حلقة النجوم: gold-deco لا يصلح على الرمل وحده (DESIGN 2.1)،
-  /// فيُستخدم gold-text في الفاتح.
   final Color starMark;
+
+  /// أقواس حلقة الزراعة وأيقونتها.
+  final Color agri;
+
+  /// فواصل رفيعة وخلفية شريط التقدم.
   final Color line;
+
+  /// حد الأسطح الزجاجية وحدود الحلقات (`#7FE9F3` شفافية 35%).
+  final Color glassStroke;
   final Color outline;
   final Color error;
   final Color warningBg;
   final Color onWarning;
 
-  /// لون كل موسم كبير بمعرّف عنصره في items.json (DESIGN 2.3).
+  /// نغمة كل موسم كبير بمعرّف عنصره في items.json (DESIGN R2.2).
   final Map<String, Color> seasons;
 
-  /// النص فوق لون الموسم المصمت (أبيض في الفاتح، كحلي في الداكن).
+  /// النص فوق تعبئة الموسم (30%): `ink` دائماً.
   final Color onSeason;
 
-  /// شفافية ظل الموسم خلف الدرور (16% فاتح، 24% داكن).
+  /// شفافية تعبئة الموسم (30%).
   final double seasonTint;
 
-  /// لون الموسم الكبير [itemId]، أو `outline` لمعرّف غير معروف.
+  /// نغمة الموسم الكبير [itemId]، أو `outline` لمعرّف غير معروف.
   Color season(String? itemId) => seasons[itemId] ?? outline;
 
+  /// اللون الدلالي لأيقونة الجو في البطاقات فقط (DESIGN R2.2): حر/شمس
+  /// `gold`، برد/مطر/رطوبة/ضباب أزرق الشتاء، غبار/رياح كهرماني القيظ.
+  Color weatherTone(String code) => switch (code) {
+    'hot' || 'very_hot' || 'mild' => goldText,
+    'cool' ||
+    'cold' ||
+    'very_cold' ||
+    'rain' ||
+    'heavy_rain' ||
+    'humidity' ||
+    'fog' => const Color(0xFF8CC8FF),
+    'dust' || 'wind' || 'wind_strong' => const Color(0xFFF2A65A),
+    _ => ink,
+  };
+
   static DururColors of(BuildContext context) =>
-      Theme.of(context).extension<DururColors>() ?? light;
+      Theme.of(context).extension<DururColors>() ?? night;
 
   @override
   DururColors copyWith() => this;
@@ -139,29 +164,35 @@ abstract final class DururFonts {
   static const proverb = 'Amiri';
 }
 
-/// ثيم التطبيق (DESIGN §2–§5): ألوان الوضعين، والخطوط، وسلّم الأحجام.
-ThemeData buildDururTheme(Brightness brightness) {
-  final c = brightness == Brightness.light
-      ? DururColors.light
-      : DururColors.dark;
+/// توهج النص (DESIGN R2.3): ظل بلون النص نفسه، نصف قطر 6، شفافية 45%.
+/// لأسماء الأشهر (≥ 13sp، وزن 800) ورقم العدّاد فقط.
+List<Shadow> textGlow(Color color) => [
+  Shadow(color: color.withValues(alpha: 0.45), blurRadius: 6),
+];
+
+/// ثيم التطبيق (DESIGN R2): داكن فقط (D38)، والخطوط وسلّم الأحجام (§3).
+ThemeData buildDururTheme() {
+  const c = DururColors.night;
   final scheme = ColorScheme(
-    brightness: brightness,
+    brightness: Brightness.dark,
     primary: c.primary,
     onPrimary: c.onPrimary,
-    secondary: c.sea,
+    secondary: c.primary,
     onSecondary: c.onPrimary,
     error: c.error,
-    onError: brightness == Brightness.light ? Colors.white : c.background,
+    onError: c.backgroundDeep,
     surface: c.surface,
     onSurface: c.ink,
     onSurfaceVariant: c.inkSoft,
     surfaceContainerHighest: c.surfaceAlt,
-    surfaceContainerHigh: c.surfaceAlt,
+    surfaceContainerHigh: c.surface,
     surfaceContainer: c.surface,
     surfaceContainerLow: c.surface,
-    surfaceContainerLowest: c.surface,
+    surfaceContainerLowest: c.background,
+    secondaryContainer: c.surfaceAlt,
+    onSecondaryContainer: c.ink,
     outline: c.outline,
-    outlineVariant: c.line,
+    outlineVariant: c.glassStroke,
   );
 
   // Amiri للعناوين فقط، ولا يُستخدم تحت 21sp (DESIGN §3).
@@ -208,48 +239,65 @@ ThemeData buildDururTheme(Brightness brightness) {
 
   return ThemeData(
     useMaterial3: true,
-    brightness: brightness,
+    brightness: Brightness.dark,
     colorScheme: scheme,
     scaffoldBackgroundColor: c.background,
     fontFamily: DururFonts.body,
     textTheme: textTheme,
-    extensions: [c],
+    extensions: const [c],
+    iconTheme: IconThemeData(color: c.ink),
     appBarTheme: AppBarTheme(
-      backgroundColor: c.background,
+      backgroundColor: Colors.transparent,
       foregroundColor: c.ink,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      scrolledUnderElevation: 0,
       toolbarHeight: 56,
     ),
+    // بلا ظلال سوداء؛ العمق من الشفافية والحد الزجاجي (R2.3).
     cardTheme: CardThemeData(
       color: c.surface,
       surfaceTintColor: Colors.transparent,
-      elevation: brightness == Brightness.light ? 1 : 0,
-      shadowColor: const Color(0x142B2118),
+      elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: brightness == Brightness.light
-            ? BorderSide(color: c.line)
-            : BorderSide.none,
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: c.glassStroke),
       ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: c.surface,
       surfaceTintColor: Colors.transparent,
       showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: c.glassStroke),
       ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: c.surface,
+      surfaceTintColor: Colors.transparent,
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: c.surface,
+      surfaceTintColor: Colors.transparent,
     ),
     chipTheme: ChipThemeData(
       shape: const StadiumBorder(),
-      side: BorderSide(color: c.outline),
+      side: BorderSide(color: c.glassStroke),
+      backgroundColor: Colors.transparent,
+      selectedColor: c.surfaceAlt,
       labelStyle: textTheme.labelLarge,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: c.surfaceAlt,
+      contentTextStyle: textTheme.bodyMedium,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(48, 52),
+        backgroundColor: c.primary,
+        foregroundColor: c.onPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: textTheme.labelLarge,
       ),
@@ -268,6 +316,14 @@ ThemeData buildDururTheme(Brightness brightness) {
         minimumSize: const Size(48, 48),
         foregroundColor: c.sea,
         textStyle: textTheme.labelLarge,
+      ),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? c.onPrimary : c.inkSoft,
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? c.primary : c.surface,
       ),
     ),
     dividerTheme: DividerThemeData(color: c.line, thickness: 1),

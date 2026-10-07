@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:durur/l10n/app_localizations.dart';
 import 'package:durur/src/app.dart';
 import 'package:durur/src/domain/tables.dart';
+import 'package:durur/src/features/shell/app_shell.dart';
 import 'package:durur/src/providers.dart';
 import 'package:durur/src/repository/settings_repository.dart';
 import 'package:durur/src/repository/tables_loader.dart';
@@ -136,3 +137,12 @@ Finder findDatesLine(String single) => find.byWidgetPredicate(
       (w.data == single || w.data == single.replaceFirst(' — ', '\n')),
   description: 'سطر التاريخين "$single"',
 );
+
+/// تبويبات الشريط السفلي (DESIGN R2.9) بترتيبها من اليمين.
+enum AppTab { wheel, symbols, heritage, settings }
+
+/// يضغط تبويباً في شريط التبويب.
+Future<void> openTab(WidgetTester tester, AppTab tab) async {
+  await tester.tap(find.byKey(AppShell.tabKey(tab.index)));
+  await tester.pumpAndSettle();
+}

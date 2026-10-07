@@ -436,47 +436,17 @@ abstract class AppLocalizations {
   /// **'اليوم {day} من {total}'**
   String homeDayOfDar(String day, String total);
 
-  /// صف النجم في بطاقة اليوم (DESIGN home.star)
-  ///
-  /// In ar, this message translates to:
-  /// **'النجم'**
-  String get homeStar;
-
-  /// صف موسم الجو في بطاقة اليوم (DESIGN home.weather_season)
-  ///
-  /// In ar, this message translates to:
-  /// **'موسم الجو'**
-  String get homeWeatherSeason;
-
-  /// بلا موسم جو (DESIGN home.no_weather_season)
-  ///
-  /// In ar, this message translates to:
-  /// **'لا يوجد موسم جو مسمّى في هذه الأيام'**
-  String get homeNoWeatherSeason;
-
   /// قسم الجو المعتاد في بطاقة اليوم (DESIGN home.usual_weather)
   ///
   /// In ar, this message translates to:
   /// **'الجو المعتاد'**
   String get homeUsualWeather;
 
-  /// صف الدَّرّ في بطاقة اليوم (DESIGN home.dar_details)
-  ///
-  /// In ar, this message translates to:
-  /// **'تفاصيل دَرّ {dar}'**
-  String homeDarDetails(String dar);
-
   /// لم يجد المحرك نتيجة (DESIGN home.calc_error)
   ///
   /// In ar, this message translates to:
   /// **'تعذّر حساب هذا اليوم.'**
   String get homeCalcError;
-
-  /// عنوان قسم الدَّرّ لمنطقة تستعير الدرور (D24)، مثل: الدَّرّ حسب حساب الإمارات وعُمان
-  ///
-  /// In ar, this message translates to:
-  /// **'الدَّرّ حسب حساب {region}'**
-  String homeDururBorrowed(String region);
 
   /// وسيلة إيضاح تحت الدائرة لمنطقة تستعير الدرور (D24، ARCHITECTURE §11)
   ///
@@ -560,12 +530,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا يوجد'**
   String get wheelA11yNone;
-
-  /// تلميح قارئ الشاشة للدائرة (DESIGN wheel.a11y.hint)
-  ///
-  /// In ar, this message translates to:
-  /// **'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الدَّرّ.'**
-  String get wheelA11yHint;
 
   /// إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_star)
   ///
@@ -663,13 +627,7 @@ abstract class AppLocalizations {
   /// **'طالع {star}'**
   String wheelHubStar(String star);
 
-  /// رابط صفحة أصل التقويم للمنطقة المستعيرة (DESIGN home.origin_link، 7.8)
-  ///
-  /// In ar, this message translates to:
-  /// **'أصل التقويم'**
-  String get homeOriginLink;
-
-  /// تلميح قارئ الشاشة للدائرة في المنطقة المستعيرة، المحور يفتح الموسم (DESIGN wheel.a11y.hint_season)
+  /// تلميح قارئ الشاشة للدائرة: المقبض يفتح ما يعرضه المركز، موسم الجو المسمّى أو الموسم الكبير (DESIGN R2.5 F، wheel.a11y.hint_season)
   ///
   /// In ar, this message translates to:
   /// **'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.'**
@@ -963,30 +921,6 @@ abstract class AppLocalizations {
   /// **'المظهر'**
   String get settingsSectionAppearance;
 
-  /// عنوان اختيار السمة (DESIGN settings.theme)
-  ///
-  /// In ar, this message translates to:
-  /// **'السمة'**
-  String get settingsTheme;
-
-  /// شريحة السمة حسب الجهاز (DESIGN settings.theme.system)
-  ///
-  /// In ar, this message translates to:
-  /// **'تلقائي (حسب الجهاز)'**
-  String get settingsThemeSystem;
-
-  /// شريحة السمة الفاتحة (DESIGN settings.theme.light)
-  ///
-  /// In ar, this message translates to:
-  /// **'فاتح'**
-  String get settingsThemeLight;
-
-  /// شريحة السمة الداكنة (DESIGN settings.theme.dark)
-  ///
-  /// In ar, this message translates to:
-  /// **'داكن'**
-  String get settingsThemeDark;
-
   /// عنوان اختيار شكل الأرقام (DESIGN settings.digits)
   ///
   /// In ar, this message translates to:
@@ -1262,6 +1196,228 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'نسخة البيانات: {version} ({seq})'**
   String sourcesDataVersion(String version, String seq);
+
+  /// تبويب الرئيسية (DESIGN R2.9 tab.wheel)
+  ///
+  /// In ar, this message translates to:
+  /// **'الدائرة'**
+  String get tabWheel;
+
+  /// تبويب دليل الرموز (DESIGN R2.9 tab.symbols)
+  ///
+  /// In ar, this message translates to:
+  /// **'الرموز'**
+  String get tabSymbols;
+
+  /// تبويب التراث: أصل التقويم والمصادر (DESIGN R2.9 tab.heritage)
+  ///
+  /// In ar, this message translates to:
+  /// **'التراث'**
+  String get tabHeritage;
+
+  /// تبويب الإعدادات (DESIGN R2.9 tab.settings)
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get tabSettings;
+
+  /// السطر الأول في العدّاد (DESIGN R2.8 countdown.remaining)
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي'**
+  String get countdownRemaining;
+
+  /// كلمة الأيام بجانب الرقم الكبير في العدّاد؛ لـ 1 و2 تُعرض الكلمة وحدها بلا رقم (DESIGN R2.12 countdown.days)
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{يوم واحد} =2{يومان} few{أيام} many{يوماً} other{يوم}}'**
+  String countdownDaysUnit(int count);
+
+  /// عدد الأيام بالرقم والكلمة لقارئ الشاشة (DESIGN R2.12 countdown.days)
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{يوم واحد} =2{يومان} few{{days} أيام} many{{days} يوماً} other{{days} يوم}}'**
+  String countdownDaysPhrase(int count, String days);
+
+  /// هدف العدّاد: موسم أو موسم جو (DESIGN R2.12 countdown.to_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'على دخول {name}'**
+  String countdownToSeason(String name);
+
+  /// هدف العدّاد: طالع أو نجم محسوب (DESIGN R2.12 countdown.to_star)
+  ///
+  /// In ar, this message translates to:
+  /// **'على طلوع {name}'**
+  String countdownToStar(String name);
+
+  /// يوم البداية نفسه لموسم (DESIGN R2.12 countdown.season_today)
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل {name} اليوم'**
+  String countdownSeasonToday(String name);
+
+  /// يوم بداية طالع من الجدول، بجنس النجم (DESIGN R2.8، §13)
+  ///
+  /// In ar, this message translates to:
+  /// **'{gender, select, f{طلعت {name} اليوم} other{طلع {name} اليوم}}'**
+  String countdownStarToday(String gender, String name);
+
+  /// يوم الطلوع المحسوب لسهيل/الثريا في مدينة المستخدم، بجنس النجم (DESIGN R2.8)
+  ///
+  /// In ar, this message translates to:
+  /// **'{gender, select, f{طلعت {name} اليوم في {city}} other{طلع {name} اليوم في {city}}}'**
+  String countdownStarTodayIn(String gender, String name, String city);
+
+  /// تحت العدّاد إن كان التاريخ المعروض غير اليوم (DESIGN R2.12 countdown.from_date)
+  ///
+  /// In ar, this message translates to:
+  /// **'من {date}'**
+  String countdownFromDate(String date);
+
+  /// العدّاد لقارئ الشاشة: «باقي ٩ أيام على دخول الوسم، الجمعة ١٦ أكتوبر» (DESIGN R2.8)
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {days} {target}، {date}'**
+  String countdownA11y(String days, String target, String date);
+
+  /// اسم اليوم ثم اليوم والشهر بلا سنة: «الجمعة ١٦ أكتوبر»
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday} {date}'**
+  String weekdayDayMonth(String weekday, String date);
+
+  /// اليوم والشهر الميلادي بلا سنة: «١٦ أكتوبر». month بالصيغة g1..g12
+  ///
+  /// In ar, this message translates to:
+  /// **'{day} {month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}}'**
+  String dayMonthDate(String day, String month);
+
+  /// عنوان بطاقة الطالع (DESIGN R2.12 card.star.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'الطالع'**
+  String get cardStarTitle;
+
+  /// عنوان بطاقة الجو المعتاد (DESIGN R2.12 card.weather.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'الجو المعتاد'**
+  String get cardWeatherTitle;
+
+  /// سطر ثابت في بطاقة الجو المعتاد (DESIGN R2.12 card.weather.note)
+  ///
+  /// In ar, this message translates to:
+  /// **'حسب التراث، وليس توقعاً للطقس.'**
+  String get cardWeatherNote;
+
+  /// عنوان بطاقة الزراعة (DESIGN R2.12 card.agri.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'مواسم الزراعة'**
+  String get cardAgriTitle;
+
+  /// عنوان بطاقة القادم (DESIGN R2.12 card.upcoming.title)
+  ///
+  /// In ar, this message translates to:
+  /// **'القادم'**
+  String get cardUpcomingTitle;
+
+  /// متى يبدأ صف في بطاقة القادم (DESIGN R2.12 upcoming.after)
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بعد يوم واحد} =2{بعد يومين} few{بعد {days} أيام} many{بعد {days} يوماً} other{بعد {days} يوم}}'**
+  String upcomingAfter(int count, String days);
+
+  /// سطر الموسم في بطاقة الطالع (DESIGN R2.12 home.season_label)
+  ///
+  /// In ar, this message translates to:
+  /// **'الموسم: {season}'**
+  String homeSeasonLabel(String season);
+
+  /// سطر موسم الجو في بطاقة الطالع (DESIGN R2.12 home.weather_season_label)
+  ///
+  /// In ar, this message translates to:
+  /// **'موسم الجو: {name}'**
+  String homeWeatherSeasonLabel(String name);
+
+  /// قيمة فارغة: لا موسم جو (DESIGN R2.8 الفراغ)
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد'**
+  String get homeNone;
+
+  /// عنوان شريط الدَّرّ: «دَرّ الستين» (DESIGN R2.8)
+  ///
+  /// In ar, this message translates to:
+  /// **'دَرّ {dar}'**
+  String darTitle(String dar);
+
+  /// شريحة مئة الدَّرّ في شريطه (DESIGN R2.12 dar.of_season)
+  ///
+  /// In ar, this message translates to:
+  /// **'من {season}'**
+  String darOfSeason(String season);
+
+  /// سطر الدَّرّ المستعار في شريطه (DESIGN R2.8، D24)
+  ///
+  /// In ar, this message translates to:
+  /// **'حسب حساب {region}'**
+  String darBorrowedCaption(String region);
+
+  /// حالة بلا بيانات زراعية معتمدة، النص بالضبط (SPEC 15.5، DESIGN R2.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بيانات زراعية موثقة لمنطقتك'**
+  String get agriNoData;
+
+  /// زر يفتح البلاغ معبأً باسم المنطقة (SPEC 15.5، DESIGN R2.7)
+  ///
+  /// In ar, this message translates to:
+  /// **'أعرف مصدراً'**
+  String get agriKnowSource;
+
+  /// سطر الفترة في فقاعة رمز الجو (DESIGN R2.12 bubble.period)
+  ///
+  /// In ar, this message translates to:
+  /// **'يتبع: {period}'**
+  String bubblePeriod(String period);
+
+  /// فترة الرمز: الاسم ثم المدى بلا سنة (DESIGN R2.6)
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} — {start} إلى {end}'**
+  String bubbleRange(String name, String start, String end);
+
+  /// اسم مقطع درور متتالية من مئة واحدة (DESIGN R2.6)
+  ///
+  /// In ar, this message translates to:
+  /// **'درور {season}'**
+  String bubbleDururOf(String season);
+
+  /// اسم مقطع درور متتالية من أكثر من مئة (DESIGN R2.6)
+  ///
+  /// In ar, this message translates to:
+  /// **'دَرّ {first} إلى دَرّ {last}'**
+  String bubbleDururRange(String first, String last);
+
+  /// عنوان صفحة دليل الرموز (DESIGN R2.12 symbols.title، SPEC 16.8)
+  ///
+  /// In ar, this message translates to:
+  /// **'دليل الرموز'**
+  String get symbolsTitle;
+
+  /// إجراء مخصص للدائرة لقارئ الشاشة (DESIGN R2.12 wheel.a11y.read_symbols)
+  ///
+  /// In ar, this message translates to:
+  /// **'اقرأ رموز الجو حول اليوم'**
+  String get wheelA11yReadSymbols;
+
+  /// سطر شرح رمز الجو في الفقاعة ودليل الرموز (DESIGN R2.6 weather.<code>.desc، SPEC 16.9). نص تراثي يراجعه المراجع
+  ///
+  /// In ar, this message translates to:
+  /// **'{symbol, select, hot{حرّ معتاد في هذه الفترة حسب التراث.} very_hot{حرّ شديد، من أشد أيام السنة حرارة حسب التراث.} mild{جو معتدل، لا حرّ شديد ولا برد.} cool{برودة خفيفة، خاصة في الليل والصباح الباكر.} cold{برد معتاد في هذه الفترة حسب التراث.} very_cold{برد شديد، من أبرد أيام السنة حسب التراث.} wind{هبوب رياح معتاد في هذه الفترة حسب التراث.} wind_strong{رياح شديدة أو هبايب قد تثير الغبار.} rain{فترة يُرجى فيها المطر حسب التراث.} heavy_rain{فترة تُعرف بأمطار غزيرة حسب التراث.} thunder{فترة تكثر فيها السحب الرعدية والبرق.} cloud{سماء يكثر فيها الغيم.} dust{غبار معتاد في هذه الفترة حسب التراث.} humidity{رطوبة عالية، خاصة على السواحل.} fog{ضباب أو شبورة في الصباح الباكر.} sea_calm{بحر هادئ في الغالب حسب التراث.} sea_rough{بحر هائج وأمواج عالية في الغالب حسب التراث.} other{}}'**
+  String weatherSymbolDesc(String symbol);
 }
 
 class _AppLocalizationsDelegate

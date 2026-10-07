@@ -10,8 +10,11 @@ import '../features/item_detail/item_detail_page.dart';
 import '../features/onboarding/location_screen.dart';
 import '../features/onboarding/notifications_intro_screen.dart';
 import '../features/onboarding/welcome_screen.dart';
+import '../features/heritage/heritage_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/settings/sources_screen.dart';
+import '../features/shell/app_shell.dart';
+import '../features/symbols/symbols_screen.dart';
 import 'app_routes.dart';
 
 export 'app_routes.dart';
@@ -47,17 +50,48 @@ GoRouter createAppRouter({
   observers: observers,
   redirect: (context, state) => appRedirect(state.matchedLocation, readState()),
   routes: [
-    GoRoute(
-      path: AppRoutes.home,
-      builder: (context, state) => const HomeScreen(),
+    // شريط التبويب (DESIGN R2.9): الدائرة، الرموز، التراث، الإعدادات. كل
+    // ما عداها صفحات كاملة فوق الشريط (مسارات الإشعارات تُفتح فوق الدائرة).
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, shell) => AppShell(shell: shell),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.home,
+              builder: (context, state) => const HomeScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.symbols,
+              builder: (context, state) => const SymbolsScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.heritage,
+              builder: (context, state) => const HeritageScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.settings,
+              builder: (context, state) => const SettingsScreen(),
+            ),
+          ],
+        ),
+      ],
     ),
     GoRoute(
       path: AppRoutes.city,
       builder: (context, state) => const CityPickerScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.settings,
-      builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
       path: AppRoutes.sources,

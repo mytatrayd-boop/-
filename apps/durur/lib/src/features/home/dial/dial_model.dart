@@ -4,8 +4,10 @@ import '../../../domain/day_info.dart';
 import '../../../domain/region_table.dart';
 import '../../../engine/year_index.dart';
 
-/// حلقات الدائرة من الخارج إلى الداخل (DESIGN 7.2).
-enum DialRing { months, seasons, durur, stars, weather }
+/// حلقات الدائرة من الخارج إلى الداخل (DESIGN R2.5): مواسم الجو ورموزه (A)،
+/// الأشهر (B)، الدرور (C)، الطوالع (D)، والمواسم الأربعة في المركز (F).
+/// حلقة الزراعة (E) مكانها محجوز في [DialGeometry] وتُخفى بلا بيانات (R2.7).
+enum DialRing { weather, months, durur, stars, seasons }
 
 /// قطعة في حلقة: مدى أيام متصل داخل السنة المعروضة.
 class DialSegment {
@@ -31,7 +33,7 @@ class DialSegment {
   /// سجل الدَّرّ (حلقة الدرور).
   final DarRecord? dar;
 
-  /// الموسم الكبير الذي يحدد لون القطعة (DESIGN 2.3–2.4).
+  /// الموسم الكبير الذي يحدد لون القطعة (DESIGN R2.2).
   final String? colorSeasonId;
 
   /// الشهر 1–12 (حلقة الأشهر).
@@ -71,7 +73,6 @@ class DialModel {
     }
 
     List<DialSegment> group(
-      DialRing ring,
       ActivePeriod? Function(DayInfo) periodOf,
       DialSegment Function(DayInfo first, int start, int length) make,
     ) {
@@ -94,21 +95,20 @@ class DialModel {
     String? seasonAt(int day) => days[day].majorSeason.itemId;
 
     return DialModel._(index, months, {
-      DialRing.months: months,
-      DialRing.seasons: group(
-        DialRing.seasons,
-        (d) => d.majorSeason,
+      // مواسم الجو بنغمة الموسم الكبير الذي تقع فيه (منتصفها)، والفراغات بلا قطع.
+      DialRing.weather: group(
+        (d) => d.weatherSeason,
         (d, s, l) => DialSegment(
-          ring: DialRing.seasons,
+          ring: DialRing.weather,
           start: s,
           length: l,
-          itemId: d.majorSeason.itemId,
-          colorSeasonId: d.majorSeason.itemId,
+          itemId: d.weatherSeason!.itemId,
+          colorSeasonId: seasonAt(s + l ~/ 2),
         ),
       ),
+      DialRing.months: months,
       // الدرور تُلوَّن بمئتها (seasonId، D25).
       DialRing.durur: group(
-        DialRing.durur,
         (d) => d.dar,
         (d, s, l) => DialSegment(
           ring: DialRing.durur,
@@ -119,7 +119,6 @@ class DialModel {
         ),
       ),
       DialRing.stars: group(
-        DialRing.stars,
         (d) => d.star,
         (d, s, l) => DialSegment(
           ring: DialRing.stars,
@@ -129,16 +128,14 @@ class DialModel {
           colorSeasonId: seasonAt(s),
         ),
       ),
-      // مواسم الجو بلون الموسم الكبير الذي تقع فيه (منتصفها)، والفراغات بلا قطع.
-      DialRing.weather: group(
-        DialRing.weather,
-        (d) => d.weatherSeason,
+      DialRing.seasons: group(
+        (d) => d.majorSeason,
         (d, s, l) => DialSegment(
-          ring: DialRing.weather,
+          ring: DialRing.seasons,
           start: s,
           length: l,
-          itemId: d.weatherSeason!.itemId,
-          colorSeasonId: seasonAt(s + l ~/ 2),
+          itemId: d.majorSeason.itemId,
+          colorSeasonId: d.majorSeason.itemId,
         ),
       ),
     });
@@ -152,6 +149,31 @@ class DialModel {
   int get dayCount => index.length;
 
   List<DialSegment> segments(DialRing ring) => rings[ring]!;
+
+  /// قطع [ring] بعد دمج القطعتين اللتين تعبران نهاية السنة لنفس الفترة،
+  /// فتصبح فترة واحدة دائرية (قد يتجاوز `end` طول السنة).
+  List<DialSegment> cyclicSegments(DialRing ring) {
+    final segs = rings[ring]!;
+    if (segs.length < 2) return segs;
+    final first = segs.first;
+    final last = segs.last;
+    final samePeriod = first.dar != null
+        ? identical(first.dar, last.dar)
+        : first.itemId != null && first.itemId == last.itemId;
+    if (first.start != 0 || last.end != dayCount || !samePeriod) return segs;
+    return [
+      for (final s in segs.sublist(1, segs.length - 1)) s,
+      DialSegment(
+        ring: ring,
+        start: last.start,
+        length: last.length + first.length,
+        itemId: last.itemId,
+        dar: last.dar,
+        colorSeasonId: last.colorSeasonId,
+        month: last.month,
+      ),
+    ];
+  }
 
   /// القطعة في [ring] التي تحتوي اليوم [day]، أو null (فراغ مواسم الجو).
   DialSegment? segmentAt(DialRing ring, int day) {
@@ -174,7 +196,7 @@ sealed class DialHit {
   const DialHit();
 }
 
-/// المحور (المركز).
+/// المحور (المقبض في المركز، G).
 class HubHit extends DialHit {
   const HubHit();
 }
@@ -187,38 +209,65 @@ class RingHit extends DialHit {
   final int day;
 }
 
-/// هندسة الدائرة (DESIGN 7.2): أنصاف أقطار الحلقات بالنسبة لدائرة مرجعية
-/// نصف قطرها 170، وتحويل اليوم إلى زاوية واللمس إلى (حلقة، يوم).
+/// هندسة الدائرة (DESIGN R2.5): أنصاف أقطار الحلقات كنسبة من نصف القطر R،
+/// وتحويل اليوم إلى زاوية واللمس إلى (حلقة، يوم).
 ///
 /// الزوايا مع عقارب الساعة من الأعلى (موضع الساعة 12)، والزمن يتقدّم مع
 /// عقارب الساعة. [rotation] = فهرس اليوم (قد يكون كسرياً أثناء السحب) الواقع
-/// تحت المؤشر في الأعلى.
+/// تحت الإبرة في الأعلى.
 class DialGeometry {
-  const DialGeometry({required this.radius, required this.dayCount});
+  const DialGeometry({
+    required this.radius,
+    required this.dayCount,
+    this.agri = false,
+  });
 
-  static const double refRadius = 170;
-
-  /// الحدود من الخارج إلى الداخل بالقياس المرجعي.
-  static const Map<DialRing, (double outer, double inner)> refBands = {
-    DialRing.months: (170, 146),
-    DialRing.seasons: (146, 130),
-    DialRing.durur: (130, 102),
-    DialRing.stars: (102, 78),
-    DialRing.weather: (78, 60),
+  /// حدود الحلقات من الخارج إلى الداخل (نسبة من R) بلا حلقة زراعة.
+  static const Map<DialRing, (double outer, double inner)> bands = {
+    DialRing.weather: (1.00, 0.87),
+    DialRing.months: (0.87, 0.73),
+    DialRing.durur: (0.73, 0.58),
+    DialRing.stars: (0.58, 0.43),
+    DialRing.seasons: (0.43, 0.13),
   };
-  static const double refHub = 58;
+
+  /// حلقة الزراعة E (R2.7) حين توجد بيانات معتمدة: الطوالع تنتهي عند 0.45،
+  /// والمركز يبدأ من 0.36.
+  static const (double, double) agriBandFraction = (0.45, 0.36);
+
+  /// المقبض (المحور G).
+  static const double hubFraction = 0.13;
 
   final double radius;
   final int dayCount;
 
-  double scale(double ref) => ref / refRadius * radius;
+  /// هل تُرسم حلقة الزراعة؟ (لا بيانات زراعية معتمدة بعد، فهي مخفية.)
+  final bool agri;
+
+  double scale(double fraction) => fraction * radius;
 
   (double outer, double inner) band(DialRing ring) {
-    final (o, i) = refBands[ring]!;
-    return (scale(o), scale(i));
+    var (o, i) = bands[ring]!;
+    if (agri && ring == DialRing.stars) i = agriBandFraction.$1;
+    if (agri && ring == DialRing.seasons) o = agriBandFraction.$2;
+    return (o * radius, i * radius);
   }
 
-  double get hubRadius => scale(refHub);
+  /// حلقة الزراعة بالـ dp، أو null إن كانت مخفية.
+  (double outer, double inner)? get agriBand => agri
+      ? (agriBandFraction.$1 * radius, agriBandFraction.$2 * radius)
+      : null;
+
+  double get hubRadius => hubFraction * radius;
+
+  /// منتصف الحلقة A حيث تُرسم رموز الجو وأسماء مواسمه.
+  double get weatherMid {
+    final (o, i) = band(DialRing.weather);
+    return (o + i) / 2;
+  }
+
+  /// نصف قطر قوس تقدّم الموسم (حد المركز الخارجي − 3dp).
+  double get progressRadius => band(DialRing.seasons).$1 - 3;
 
   /// زاوية يوم واحد بالراديان.
   double get step => 2 * math.pi / dayCount;
@@ -227,20 +276,26 @@ class DialGeometry {
   /// [rotation] تحت المؤشر (منتصف شريحته في الأعلى).
   double angleOf(num day, double rotation) => (day - rotation - 0.5) * step;
 
-  /// يحوّل نقطة (بالنسبة لمركز الدائرة) إلى حلقة ويوم، أو null خارج الدائرة.
+  /// نقطة بزاوية [angle] مع عقارب الساعة من الأعلى ونصف قطر [r]
+  /// (بالنسبة للمركز، y للأسفل).
+  static (double x, double y) polar(double angle, double r) =>
+      (r * math.sin(angle), -r * math.cos(angle));
+
+  /// يحوّل نقطة (بالنسبة لمركز الدائرة) إلى حلقة ويوم، أو null خارج الدائرة
+  /// أو على حلقة الزراعة المخفية.
   DialHit? hitTest(double dx, double dy, double rotation) {
     final distance = math.sqrt(dx * dx + dy * dy);
     if (distance > radius) return null;
-    if (distance <= scale(59)) return const HubHit();
+    if (distance <= hubRadius) return const HubHit();
     DialRing? ring;
-    for (final e in refBands.entries) {
-      if (distance <= scale(e.value.$1) && distance > scale(e.value.$2)) {
-        ring = e.key;
+    for (final r in DialRing.values) {
+      final (outer, inner) = band(r);
+      if (distance <= outer && distance > inner) {
+        ring = r;
         break;
       }
     }
-    // الفاصل الرفيع بين المحور وحلقة مواسم الجو يتبع الحلقة.
-    ring ??= DialRing.weather;
+    if (ring == null) return null;
     // atan2(dx, -dy): الزاوية مع عقارب الساعة من الأعلى (y للأسفل).
     var theta = math.atan2(dx, -dy);
     if (theta < 0) theta += 2 * math.pi;

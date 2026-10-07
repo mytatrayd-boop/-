@@ -22,9 +22,10 @@ Future<void> main() async {
   };
 
   group('الثيم', () {
-    for (final brightness in Brightness.values) {
-      test('العناوين Amiri ≥ 21 والباقي Almarai ($brightness)', () {
-        final theme = buildDururTheme(brightness);
+    {
+      test('العناوين Amiri ≥ 21 والباقي Almarai (داكن فقط، D38)', () {
+        final theme = buildDururTheme();
+        expect(theme.brightness, Brightness.dark);
         final t = theme.textTheme;
         final headings = {
           'displaySmall': t.displaySmall!,
