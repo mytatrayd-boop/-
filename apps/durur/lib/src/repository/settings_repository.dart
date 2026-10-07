@@ -12,28 +12,10 @@ class SettingsSaveException implements Exception {
   String toString() => 'SettingsSaveException: تعذّر حفظ "$key".';
 }
 
-/// السمة المختارة (DESIGN 8.7): حسب الجهاز (الافتراضي)، فاتح، داكن.
-enum ThemeChoice {
-  system('system'),
-  light('light'),
-  dark('dark');
-
-  const ThemeChoice(this.code);
-
-  final String code;
-
-  static ThemeChoice parse(String? code) {
-    for (final t in values) {
-      if (t.code == code) return t;
-    }
-    return system;
-  }
-}
-
 /// إعدادات المستخدم المحفوظة على الجهاز فقط (ARCHITECTURE §12).
 ///
 /// يُحفظ **معرّف المدينة فقط**، ولا تُحفظ أي إحداثيات (D11)؛ ومعه مفتاحا
-/// التنبيهات وانتهاء الإعداد الأولي والسمة والأرقام (الميزة 8)، ومفتاح تحديث
+/// التنبيهات وانتهاء الإعداد الأولي والأرقام (الميزة 8)، ومفتاح تحديث
 /// البيانات (الميزة 11ب). القيم
 /// الافتراضية لا تُكتب على الجهاز؛ يُحفظ ما يغيّره المستخدم فقط.
 class SettingsRepository {
@@ -53,7 +35,6 @@ class SettingsRepository {
   /// مفتاح «تحديث البيانات تلقائياً» (مفعّل افتراضياً، D21، ARCHITECTURE §16.4).
   static const autoUpdateKey = 'data.autoUpdate';
 
-  static const themeKey = 'theme';
   static const digitsKey = 'digits';
 
   final SharedPreferences _prefs;
@@ -63,7 +44,6 @@ class SettingsRepository {
   bool get notifyImportant => _prefs.getBool(notifyImportantKey) ?? true;
   bool get notifyDar => _prefs.getBool(notifyDarKey) ?? false;
   bool get autoUpdate => _prefs.getBool(autoUpdateKey) ?? true;
-  ThemeChoice get theme => ThemeChoice.parse(_prefs.getString(themeKey));
   DigitStyle get digits => DigitStyle.parse(_prefs.getString(digitsKey));
 
   Future<void> saveCityId(String cityId) => _setString(cityIdKey, cityId);
@@ -75,8 +55,6 @@ class SettingsRepository {
   Future<void> saveNotifyDar(bool on) => _setBool(notifyDarKey, on);
 
   Future<void> saveAutoUpdate(bool on) => _setBool(autoUpdateKey, on);
-
-  Future<void> saveTheme(ThemeChoice theme) => _setString(themeKey, theme.code);
 
   Future<void> saveDigits(DigitStyle digits) =>
       _setString(digitsKey, digits.code);

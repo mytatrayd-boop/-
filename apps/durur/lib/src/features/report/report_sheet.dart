@@ -63,6 +63,9 @@ Future<void> showReportSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    // فوق شريط التبويب (DESIGN R2.9)، وفي موجّه الجذر الذي يراقبه
+    // PopupRouteTracker.
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,

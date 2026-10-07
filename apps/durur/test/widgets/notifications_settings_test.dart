@@ -6,6 +6,7 @@ import 'package:durur/src/features/item_detail/item_detail_page.dart';
 import 'package:durur/src/features/item_detail/item_detail_view.dart';
 import 'package:durur/src/features/onboarding/notifications_intro_screen.dart';
 import 'package:durur/src/features/settings/settings_screen.dart';
+import 'package:durur/src/features/shell/app_shell.dart';
 import 'package:durur/src/formatting/digits.dart';
 import 'package:durur/src/location/location_service.dart';
 import 'package:durur/src/notifications/notification_planner.dart';
@@ -272,7 +273,6 @@ Future<void> main() async {
         SettingsScreen.openDeviceSettingsKey,
         SettingsScreen.importantSwitchKey,
         SettingsScreen.darSwitchKey,
-        SettingsScreen.themeChipKey(ThemeChoice.dark),
         SettingsScreen.digitsChipKey(DigitStyle.latin),
       ]) {
         await reveal(tester, k);
@@ -308,27 +308,19 @@ Future<void> main() async {
   });
 
   group('الإعدادات: المظهر (DESIGN 8.7)', () {
-    testWidgets('السمة: تلقائي افتراضياً، واختيار «داكن» يُحفظ ويُطبَّق', (
+    testWidgets('السمة داكنة فقط (D38): لا صف «السمة»، ووضع الجهاز يُتجاهل', (
       tester,
     ) async {
-      final prefs = await openApp(tester, FakeNotificationScheduler());
-      ThemeMode mode() =>
-          tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode!;
-      expect(mode(), ThemeMode.system);
+      await openApp(tester, FakeNotificationScheduler());
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(app.themeMode, ThemeMode.dark);
+      expect(app.theme!.brightness, Brightness.dark);
+      expect(app.darkTheme!.brightness, Brightness.dark);
       await openSettings(tester);
-      expect(
-        tester
-            .widget<ChoiceChip>(
-              find.byKey(SettingsScreen.themeChipKey(ThemeChoice.system)),
-            )
-            .selected,
-        isTrue,
-      );
-      await tapKey(tester, SettingsScreen.themeChipKey(ThemeChoice.dark));
-      expect(mode(), ThemeMode.dark);
-      expect(prefs.getString(SettingsRepository.themeKey), 'dark');
-      await tapKey(tester, SettingsScreen.themeChipKey(ThemeChoice.light));
-      expect(mode(), ThemeMode.light);
+      expect(find.text('المظهر'), findsOneWidget);
+      for (final gone in ['السمة', 'تلقائي (حسب الجهاز)', 'فاتح', 'داكن']) {
+        expect(find.text(gone), findsNothing, reason: gone);
+      }
     });
 
     testWidgets('الأرقام: ١٢٣ افتراضياً، و123 تغيّر أرقام الرئيسية والإعدادات', (
@@ -343,8 +335,7 @@ Future<void> main() async {
         find.text('تصل التنبيهات الساعة 8:00 صباحاً بتوقيت جهازك.'),
         findsOneWidget,
       );
-      await tester.tap(find.byType(BackButton).last);
-      await tester.pumpAndSettle();
+      await openTab(tester, AppTab.wheel);
       expect(find.textContaining('2026'), findsWidgets);
       expect(find.textContaining('٢٠٢٦'), findsNothing);
     });
@@ -503,8 +494,8 @@ Future<void> main() async {
       await tester.tap(find.byKey(SettingsScreen.relocateRowKey));
       await tester.pump();
       await tester.pump();
-      // الرسالة ظاهرة، ثم يغادر المستخدم الإعدادات فيزول سياقها.
-      await tester.tap(find.byType(BackButton).last);
+      // الرسالة ظاهرة، ثم يغادر المستخدم الإعدادات إلى تبويب آخر.
+      await tester.tap(find.byKey(AppShell.tabKey(AppTab.wheel.index)));
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(SettingsScreen), findsNothing);
       await tester.tap(find.widgetWithText(SnackBarAction, 'اختيار المدينة'));

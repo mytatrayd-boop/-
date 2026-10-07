@@ -9,6 +9,10 @@ abstract final class AppRoutes {
   static const city = '/city';
   static const settings = '/settings';
 
+  /// تبويبا «الرموز» و«التراث» (DESIGN R2.9).
+  static const symbols = '/symbols';
+  static const heritage = '/heritage';
+
   /// صفحة المصادر (D27).
   static const sources = '/settings/sources';
 

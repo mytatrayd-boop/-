@@ -272,8 +272,7 @@ Future<void> main() async {
       expect(container.read(engineProvider)?.region.id, 'uae_oman');
       expect(prefs.getString(SettingsRepository.cityIdKey), 'muscat');
 
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
+      await openTab(tester, AppTab.wheel);
       expect(chipText(tester), 'مسقط · الإمارات وعُمان');
     });
   });

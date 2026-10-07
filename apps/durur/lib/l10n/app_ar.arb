@@ -346,43 +346,13 @@
       }
     }
   },
-  "homeStar": "النجم",
-  "@homeStar": {
-    "description": "صف النجم في بطاقة اليوم (DESIGN home.star)"
-  },
-  "homeWeatherSeason": "موسم الجو",
-  "@homeWeatherSeason": {
-    "description": "صف موسم الجو في بطاقة اليوم (DESIGN home.weather_season)"
-  },
-  "homeNoWeatherSeason": "لا يوجد موسم جو مسمّى في هذه الأيام",
-  "@homeNoWeatherSeason": {
-    "description": "بلا موسم جو (DESIGN home.no_weather_season)"
-  },
   "homeUsualWeather": "الجو المعتاد",
   "@homeUsualWeather": {
     "description": "قسم الجو المعتاد في بطاقة اليوم (DESIGN home.usual_weather)"
   },
-  "homeDarDetails": "تفاصيل دَرّ {dar}",
-  "@homeDarDetails": {
-    "description": "صف الدَّرّ في بطاقة اليوم (DESIGN home.dar_details)",
-    "placeholders": {
-      "dar": {
-        "type": "String"
-      }
-    }
-  },
   "homeCalcError": "تعذّر حساب هذا اليوم.",
   "@homeCalcError": {
     "description": "لم يجد المحرك نتيجة (DESIGN home.calc_error)"
-  },
-  "homeDururBorrowed": "الدَّرّ حسب حساب {region}",
-  "@homeDururBorrowed": {
-    "description": "عنوان قسم الدَّرّ لمنطقة تستعير الدرور (D24)، مثل: الدَّرّ حسب حساب الإمارات وعُمان",
-    "placeholders": {
-      "region": {
-        "type": "String"
-      }
-    }
   },
   "dialDururLegend": "حلقة الدرور: حساب {region}",
   "@dialDururLegend": {
@@ -502,10 +472,6 @@
   "@wheelA11yNone": {
     "description": "لا موسم جو أو لا رموز جو (DESIGN wheel.a11y.none)"
   },
-  "wheelA11yHint": "اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الدَّرّ.",
-  "@wheelA11yHint": {
-    "description": "تلميح قارئ الشاشة للدائرة (DESIGN wheel.a11y.hint)"
-  },
   "wheelA11yOpenStar": "افتح صفحة النجم",
   "@wheelA11yOpenStar": {
     "description": "إجراء مخصص لقارئ الشاشة (DESIGN wheel.a11y.open_star)"
@@ -624,13 +590,9 @@
       }
     }
   },
-  "homeOriginLink": "أصل التقويم",
-  "@homeOriginLink": {
-    "description": "رابط صفحة أصل التقويم للمنطقة المستعيرة (DESIGN home.origin_link، 7.8)"
-  },
   "wheelA11yHintSeason": "اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.",
   "@wheelA11yHintSeason": {
-    "description": "تلميح قارئ الشاشة للدائرة في المنطقة المستعيرة، المحور يفتح الموسم (DESIGN wheel.a11y.hint_season)"
+    "description": "تلميح قارئ الشاشة للدائرة: المقبض يفتح ما يعرضه المركز، موسم الجو المسمّى أو الموسم الكبير (DESIGN R2.5 F، wheel.a11y.hint_season)"
   },
   "wheelA11yDateValueNoHijri": "{weekday}، {gregorian}.",
   "@wheelA11yDateValueNoHijri": {
@@ -916,22 +878,6 @@
   "settingsSectionAppearance": "المظهر",
   "@settingsSectionAppearance": {
     "description": "قسم في الإعدادات (DESIGN settings.section.appearance)"
-  },
-  "settingsTheme": "السمة",
-  "@settingsTheme": {
-    "description": "عنوان اختيار السمة (DESIGN settings.theme)"
-  },
-  "settingsThemeSystem": "تلقائي (حسب الجهاز)",
-  "@settingsThemeSystem": {
-    "description": "شريحة السمة حسب الجهاز (DESIGN settings.theme.system)"
-  },
-  "settingsThemeLight": "فاتح",
-  "@settingsThemeLight": {
-    "description": "شريحة السمة الفاتحة (DESIGN settings.theme.light)"
-  },
-  "settingsThemeDark": "داكن",
-  "@settingsThemeDark": {
-    "description": "شريحة السمة الداكنة (DESIGN settings.theme.dark)"
   },
   "settingsDigits": "الأرقام",
   "@settingsDigits": {
@@ -1225,6 +1171,300 @@
         "type": "String"
       },
       "seq": {
+        "type": "String"
+      }
+    }
+  },
+  "tabWheel": "الدائرة",
+  "@tabWheel": {
+    "description": "تبويب الرئيسية (DESIGN R2.9 tab.wheel)"
+  },
+  "tabSymbols": "الرموز",
+  "@tabSymbols": {
+    "description": "تبويب دليل الرموز (DESIGN R2.9 tab.symbols)"
+  },
+  "tabHeritage": "التراث",
+  "@tabHeritage": {
+    "description": "تبويب التراث: أصل التقويم والمصادر (DESIGN R2.9 tab.heritage)"
+  },
+  "tabSettings": "الإعدادات",
+  "@tabSettings": {
+    "description": "تبويب الإعدادات (DESIGN R2.9 tab.settings)"
+  },
+  "countdownRemaining": "باقي",
+  "@countdownRemaining": {
+    "description": "السطر الأول في العدّاد (DESIGN R2.8 countdown.remaining)"
+  },
+  "countdownDaysUnit": "{count, plural, =1{يوم واحد} =2{يومان} few{أيام} many{يوماً} other{يوم}}",
+  "@countdownDaysUnit": {
+    "description": "كلمة الأيام بجانب الرقم الكبير في العدّاد؛ لـ 1 و2 تُعرض الكلمة وحدها بلا رقم (DESIGN R2.12 countdown.days)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countdownDaysPhrase": "{count, plural, =1{يوم واحد} =2{يومان} few{{days} أيام} many{{days} يوماً} other{{days} يوم}}",
+  "@countdownDaysPhrase": {
+    "description": "عدد الأيام بالرقم والكلمة لقارئ الشاشة (DESIGN R2.12 countdown.days)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownToSeason": "على دخول {name}",
+  "@countdownToSeason": {
+    "description": "هدف العدّاد: موسم أو موسم جو (DESIGN R2.12 countdown.to_season)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownToStar": "على طلوع {name}",
+  "@countdownToStar": {
+    "description": "هدف العدّاد: طالع أو نجم محسوب (DESIGN R2.12 countdown.to_star)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownSeasonToday": "دخل {name} اليوم",
+  "@countdownSeasonToday": {
+    "description": "يوم البداية نفسه لموسم (DESIGN R2.12 countdown.season_today)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownStarToday": "{gender, select, f{طلعت {name} اليوم} other{طلع {name} اليوم}}",
+  "@countdownStarToday": {
+    "description": "يوم بداية طالع من الجدول، بجنس النجم (DESIGN R2.8، §13)",
+    "placeholders": {
+      "gender": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownStarTodayIn": "{gender, select, f{طلعت {name} اليوم في {city}} other{طلع {name} اليوم في {city}}}",
+  "@countdownStarTodayIn": {
+    "description": "يوم الطلوع المحسوب لسهيل/الثريا في مدينة المستخدم، بجنس النجم (DESIGN R2.8)",
+    "placeholders": {
+      "gender": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownFromDate": "من {date}",
+  "@countdownFromDate": {
+    "description": "تحت العدّاد إن كان التاريخ المعروض غير اليوم (DESIGN R2.12 countdown.from_date)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownA11y": "باقي {days} {target}، {date}",
+  "@countdownA11y": {
+    "description": "العدّاد لقارئ الشاشة: «باقي ٩ أيام على دخول الوسم، الجمعة ١٦ أكتوبر» (DESIGN R2.8)",
+    "placeholders": {
+      "days": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "weekdayDayMonth": "{weekday} {date}",
+  "@weekdayDayMonth": {
+    "description": "اسم اليوم ثم اليوم والشهر بلا سنة: «الجمعة ١٦ أكتوبر»",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dayMonthDate": "{day} {month, select, g1{يناير} g2{فبراير} g3{مارس} g4{أبريل} g5{مايو} g6{يونيو} g7{يوليو} g8{أغسطس} g9{سبتمبر} g10{أكتوبر} g11{نوفمبر} g12{ديسمبر} other{}}",
+  "@dayMonthDate": {
+    "description": "اليوم والشهر الميلادي بلا سنة: «١٦ أكتوبر». month بالصيغة g1..g12",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "cardStarTitle": "الطالع",
+  "@cardStarTitle": {
+    "description": "عنوان بطاقة الطالع (DESIGN R2.12 card.star.title)"
+  },
+  "cardWeatherTitle": "الجو المعتاد",
+  "@cardWeatherTitle": {
+    "description": "عنوان بطاقة الجو المعتاد (DESIGN R2.12 card.weather.title)"
+  },
+  "cardWeatherNote": "حسب التراث، وليس توقعاً للطقس.",
+  "@cardWeatherNote": {
+    "description": "سطر ثابت في بطاقة الجو المعتاد (DESIGN R2.12 card.weather.note)"
+  },
+  "cardAgriTitle": "مواسم الزراعة",
+  "@cardAgriTitle": {
+    "description": "عنوان بطاقة الزراعة (DESIGN R2.12 card.agri.title)"
+  },
+  "cardUpcomingTitle": "القادم",
+  "@cardUpcomingTitle": {
+    "description": "عنوان بطاقة القادم (DESIGN R2.12 card.upcoming.title)"
+  },
+  "upcomingAfter": "{count, plural, =1{بعد يوم واحد} =2{بعد يومين} few{بعد {days} أيام} many{بعد {days} يوماً} other{بعد {days} يوم}}",
+  "@upcomingAfter": {
+    "description": "متى يبدأ صف في بطاقة القادم (DESIGN R2.12 upcoming.after)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSeasonLabel": "الموسم: {season}",
+  "@homeSeasonLabel": {
+    "description": "سطر الموسم في بطاقة الطالع (DESIGN R2.12 home.season_label)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "homeWeatherSeasonLabel": "موسم الجو: {name}",
+  "@homeWeatherSeasonLabel": {
+    "description": "سطر موسم الجو في بطاقة الطالع (DESIGN R2.12 home.weather_season_label)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNone": "لا يوجد",
+  "@homeNone": {
+    "description": "قيمة فارغة: لا موسم جو (DESIGN R2.8 الفراغ)"
+  },
+  "darTitle": "دَرّ {dar}",
+  "@darTitle": {
+    "description": "عنوان شريط الدَّرّ: «دَرّ الستين» (DESIGN R2.8)",
+    "placeholders": {
+      "dar": {
+        "type": "String"
+      }
+    }
+  },
+  "darOfSeason": "من {season}",
+  "@darOfSeason": {
+    "description": "شريحة مئة الدَّرّ في شريطه (DESIGN R2.12 dar.of_season)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "darBorrowedCaption": "حسب حساب {region}",
+  "@darBorrowedCaption": {
+    "description": "سطر الدَّرّ المستعار في شريطه (DESIGN R2.8، D24)",
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "agriNoData": "لا توجد بيانات زراعية موثقة لمنطقتك",
+  "@agriNoData": {
+    "description": "حالة بلا بيانات زراعية معتمدة، النص بالضبط (SPEC 15.5، DESIGN R2.7)"
+  },
+  "agriKnowSource": "أعرف مصدراً",
+  "@agriKnowSource": {
+    "description": "زر يفتح البلاغ معبأً باسم المنطقة (SPEC 15.5، DESIGN R2.7)"
+  },
+  "bubblePeriod": "يتبع: {period}",
+  "@bubblePeriod": {
+    "description": "سطر الفترة في فقاعة رمز الجو (DESIGN R2.12 bubble.period)",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "bubbleRange": "{name} — {start} إلى {end}",
+  "@bubbleRange": {
+    "description": "فترة الرمز: الاسم ثم المدى بلا سنة (DESIGN R2.6)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "bubbleDururOf": "درور {season}",
+  "@bubbleDururOf": {
+    "description": "اسم مقطع درور متتالية من مئة واحدة (DESIGN R2.6)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "bubbleDururRange": "دَرّ {first} إلى دَرّ {last}",
+  "@bubbleDururRange": {
+    "description": "اسم مقطع درور متتالية من أكثر من مئة (DESIGN R2.6)",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "symbolsTitle": "دليل الرموز",
+  "@symbolsTitle": {
+    "description": "عنوان صفحة دليل الرموز (DESIGN R2.12 symbols.title، SPEC 16.8)"
+  },
+  "wheelA11yReadSymbols": "اقرأ رموز الجو حول اليوم",
+  "@wheelA11yReadSymbols": {
+    "description": "إجراء مخصص للدائرة لقارئ الشاشة (DESIGN R2.12 wheel.a11y.read_symbols)"
+  },
+  "weatherSymbolDesc": "{symbol, select, hot{حرّ معتاد في هذه الفترة حسب التراث.} very_hot{حرّ شديد، من أشد أيام السنة حرارة حسب التراث.} mild{جو معتدل، لا حرّ شديد ولا برد.} cool{برودة خفيفة، خاصة في الليل والصباح الباكر.} cold{برد معتاد في هذه الفترة حسب التراث.} very_cold{برد شديد، من أبرد أيام السنة حسب التراث.} wind{هبوب رياح معتاد في هذه الفترة حسب التراث.} wind_strong{رياح شديدة أو هبايب قد تثير الغبار.} rain{فترة يُرجى فيها المطر حسب التراث.} heavy_rain{فترة تُعرف بأمطار غزيرة حسب التراث.} thunder{فترة تكثر فيها السحب الرعدية والبرق.} cloud{سماء يكثر فيها الغيم.} dust{غبار معتاد في هذه الفترة حسب التراث.} humidity{رطوبة عالية، خاصة على السواحل.} fog{ضباب أو شبورة في الصباح الباكر.} sea_calm{بحر هادئ في الغالب حسب التراث.} sea_rough{بحر هائج وأمواج عالية في الغالب حسب التراث.} other{}}",
+  "@weatherSymbolDesc": {
+    "description": "سطر شرح رمز الجو في الفقاعة ودليل الرموز (DESIGN R2.6 weather.<code>.desc، SPEC 16.9). نص تراثي يراجعه المراجع",
+    "placeholders": {
+      "symbol": {
         "type": "String"
       }
     }

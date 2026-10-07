@@ -6,14 +6,13 @@ import '../../../l10n/app_localizations.dart';
 import '../../formatting/digits.dart';
 import '../../location/city_locator.dart';
 import '../../providers.dart';
-import '../../repository/settings_repository.dart';
 import '../../routing/app_routes.dart';
 import '../report/report_sheet.dart';
 import 'data_update_section.dart';
 
 /// الإعدادات (DESIGN 8.7): «المنطقة» (صف المدينة، الميزة 3؛ و«تحديد موقعي
 /// مرة أخرى»، الميزة 4)، و«التنبيهات» (مفتاحان مستقلان وملاحظة الإذن وخطأ
-/// الجدولة، الميزة 8)، و«المظهر» (السمة والأرقام)، و«تحديث البيانات» (الميزة
+/// الجدولة، الميزة 8)، و«المظهر» (الأرقام؛ السمة داكنة فقط، D38)، و«تحديث البيانات» (الميزة
 /// 11ب، [DataUpdateSection])، و«البيانات والمساعدة»
 /// (المصادر، D27؛ وأبلغ عن خطأ، الميزة 9). «عن التطبيق» لم يُبنَ بعد.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -28,7 +27,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
   static const permissionNoteKey = Key('settingsNotifPermissionNote');
   static const openDeviceSettingsKey = Key('settingsOpenDeviceSettings');
   static const scheduleErrorKey = Key('settingsNotifScheduleError');
-  static Key themeChipKey(ThemeChoice t) => Key('settingsTheme_${t.code}');
   static Key digitsChipKey(DigitStyle d) => Key('settingsDigits_${d.code}');
 
   @override
@@ -138,19 +136,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           header(l10n.settingsSectionAppearance),
-          _ChoiceRow<ThemeChoice>(
-            title: l10n.settingsTheme,
-            values: ThemeChoice.values,
-            selected: settings.theme,
-            keyOf: SettingsScreen.themeChipKey,
-            labelOf: (t) => switch (t) {
-              ThemeChoice.system => l10n.settingsThemeSystem,
-              ThemeChoice.light => l10n.settingsThemeLight,
-              ThemeChoice.dark => l10n.settingsThemeDark,
-            },
-            onSelected: (t) =>
-                _save(() => ref.read(settingsProvider.notifier).setTheme(t)),
-          ),
           _ChoiceRow<DigitStyle>(
             title: l10n.settingsDigits,
             values: DigitStyle.values,

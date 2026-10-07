@@ -7,7 +7,6 @@ import '../l10n/app_localizations.dart';
 import 'features/common/draft_banner.dart';
 import 'notifications/notification_content.dart';
 import 'providers.dart';
-import 'repository/settings_repository.dart';
 import 'routing/app_router.dart';
 import 'routing/popup_tracker.dart';
 import 'theme/app_theme.dart';
@@ -181,14 +180,10 @@ class _DururAppState extends ConsumerState<DururApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      // السمة من الإعدادات (DESIGN 8.7)؛ الافتراضي حسب الجهاز.
-      themeMode: switch (ref.watch(settingsProvider.select((s) => s.theme))) {
-        ThemeChoice.system => ThemeMode.system,
-        ThemeChoice.light => ThemeMode.light,
-        ThemeChoice.dark => ThemeMode.dark,
-      },
-      theme: buildDururTheme(Brightness.light),
-      darkTheme: buildDururTheme(Brightness.dark),
+      // داكن فقط (D38، DESIGN R2.11): يُتجاهل وضع الجهاز الفاتح.
+      themeMode: ThemeMode.dark,
+      theme: buildDururTheme(),
+      darkTheme: buildDururTheme(),
       builder: (context, child) => DraftBannerFrame(child: child!),
       routerConfig: _router,
     );

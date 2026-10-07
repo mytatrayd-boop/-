@@ -12,6 +12,9 @@ import 'item_detail_view.dart';
 Future<void> showItemDetailSheet(BuildContext context, DetailRequest request) {
   return showModalBottomSheet<void>(
     context: context,
+    // فوق شريط التبويب (DESIGN R2.9)، وفي موجّه الجذر الذي يراقبه
+    // PopupRouteTracker.
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (context) => ItemDetailSheet(initial: request),

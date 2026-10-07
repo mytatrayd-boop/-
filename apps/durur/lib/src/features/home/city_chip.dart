@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../providers.dart';
 import '../../routing/app_router.dart';
+import '../../theme/app_theme.dart';
 
-/// شريحة المدينة أعلى الرئيسية: «الرياض · نجد»، والضغط يفتح اختيار المدينة
-/// (DESIGN 5.3 و8.4). قبل اختيار مدينة تعرض «اختر مدينتك».
+/// شريحة المدينة الزجاجية أعلى الرئيسية: «الرياض · نجد» بدبوس `cyan`،
+/// ارتفاع 36 ولمس 48، والضغط يفتح اختيار المدينة (DESIGN R2.8 بند 1).
+/// قبل اختيار مدينة تعرض «اختر مدينتك».
 class CityChip extends ConsumerWidget {
   const CityChip({super.key});
 
@@ -21,7 +23,7 @@ class CityChip extends ConsumerWidget {
         : l10n.cityChipLabel(city.name.ar, region.name.ar);
     return ActionChip(
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      avatar: const Icon(Icons.place_outlined),
+      avatar: Icon(Icons.place_outlined, color: DururColors.of(context).primary),
       label: Text(label, overflow: TextOverflow.ellipsis),
       onPressed: () => context.push(AppRoutes.city),
     );
