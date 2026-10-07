@@ -132,12 +132,6 @@ String readAsset(String path) => File(path).readAsStringSync();
 
 /// سطر التاريخين بصيغتيه: سطر واحد بفاصل «—»، أو سطران بلا فاصل إن لم
 /// يتسع (خط الاختبار Ahem أعرض من الخط الحقيقي فينكسر غالباً).
-Finder findDatesLine(String single) => find.byWidgetPredicate(
-  (w) =>
-      w is Text &&
-      (w.data == single || w.data == single.replaceFirst(' — ', '\n')),
-  description: 'سطر التاريخين "$single"',
-);
 
 /// تبويبات الشريط السفلي (DESIGN R2.9) بترتيبها من اليمين.
 enum AppTab { wheel, symbols, heritage, settings }

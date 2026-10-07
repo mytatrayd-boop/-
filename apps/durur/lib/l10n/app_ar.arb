@@ -100,18 +100,6 @@
   "@citySaveError": {
     "description": "فشل حفظ المدينة (DESIGN city.save_error)"
   },
-  "cityChipLabel": "{city} · {region}",
-  "@cityChipLabel": {
-    "description": "شريحة المدينة أعلى الرئيسية، مثل: الرياض · نجد (DESIGN 5.3)",
-    "placeholders": {
-      "city": {
-        "type": "String"
-      },
-      "region": {
-        "type": "String"
-      }
-    }
-  },
   "settingsTitle": "الإعدادات",
   "@settingsTitle": {
     "description": "عنوان شاشة الإعدادات وتلميح زرها (DESIGN settings.title)"

@@ -53,7 +53,9 @@ Future<void> main() async {
     final handle = tester.ensureSemantics();
     await openApp(tester);
     expect(find.byKey(AppShell.tabBarKey), findsOneWidget);
-    expect(tester.getSize(find.byKey(AppShell.tabBarKey)).height, 64);
+    // الكبسولة (R3.1-19): 56 ارتفاعاً، وعرضها min(العرض − 32، 360).
+    expect(tester.getSize(find.byKey(AppShell.tabBarKey)).height, 56);
+    expect(tester.getSize(find.byKey(AppShell.tabBarKey)).width, 360);
     final labels = ['الدائرة', 'الرموز', 'التراث', 'الإعدادات'];
     double? lastX;
     for (final (i, label) in labels.indexed) {
@@ -129,10 +131,11 @@ Future<void> main() async {
     );
     await openTab(tester, AppTab.wheel);
     expect(find.byType(HomeScreen), findsOneWidget);
-    // ضغطة على الطوالع ← الورقة في موجّه الجذر (فوق شريط التبويب).
+    // ضغطة على الطوالع (الرياض بلا درور: 0.69–0.51 من R، R3.10) ← الورقة
+    // في موجّه الجذر (فوق شريط التبويب).
     final c = tester.getCenter(find.byKey(DayDial.dialKey));
     final r = tester.getSize(find.byKey(DayDial.dialKey)).width / 2;
-    await tester.tapAt(c + Offset(0, -0.505 * r));
+    await tester.tapAt(c + Offset(0, -0.60 * r));
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
     final sheet = find.byKey(ItemDetailSheet.sheetKey);

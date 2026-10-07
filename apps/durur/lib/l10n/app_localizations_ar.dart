@@ -105,11 +105,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get citySaveError => 'تعذّر حفظ اختيارك. حاول مرة أخرى.';
 
   @override
-  String cityChipLabel(String city, String region) {
-    return '$city · $region';
-  }
-
-  @override
   String get settingsTitle => 'الإعدادات';
 
   @override

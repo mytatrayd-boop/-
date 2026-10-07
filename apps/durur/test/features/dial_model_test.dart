@@ -96,7 +96,7 @@ Future<void> main() async {
         (seg) => seg.astroSeason == s,
       ),
     );
-    final mid = (AstroSeason s) {
+    DateTime mid(AstroSeason s) {
       final p = model.astro.seasons.firstWhere(
         (p) => p.value == s && p.start.day.year == 2026,
       );
@@ -105,7 +105,8 @@ Future<void> main() async {
         p.start.day.month,
         p.start.day.day + p.days ~/ 2,
       );
-    };
+    }
+
     final engine = CalendarEngine.fromTables(tables, 'kuwait');
     for (final s in [
       AstroSeason.spring,

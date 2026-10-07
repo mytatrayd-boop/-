@@ -184,12 +184,6 @@ abstract class AppLocalizations {
   /// **'تعذّر حفظ اختيارك. حاول مرة أخرى.'**
   String get citySaveError;
 
-  /// شريحة المدينة أعلى الرئيسية، مثل: الرياض · نجد (DESIGN 5.3)
-  ///
-  /// In ar, this message translates to:
-  /// **'{city} · {region}'**
-  String cityChipLabel(String city, String region);
-
   /// عنوان شاشة الإعدادات وتلميح زرها (DESIGN settings.title)
   ///
   /// In ar, this message translates to:

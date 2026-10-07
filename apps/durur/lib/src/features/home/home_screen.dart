@@ -216,11 +216,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       height: 60,
       child: Stack(
         children: [
-          // السطر بمناطق لمس 48dp تتداخل مع العنوان فوقها.
+          // السطر بمناطق لمس 48dp تتداخل مع العنوان فوقها (لا تحته، حتى لا
+          // تغطيها الدائرة في ترتيب اللمس).
           PositionedDirectional(
             start: 56,
             end: 56,
-            bottom: -6,
+            bottom: 0,
             height: 48,
             child: Center(child: line),
           ),
@@ -499,7 +500,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               prev,
               const SizedBox(width: 2),
-              SizedBox(width: 200, child: counter),
+              // 200dp، ويضيق على الشاشات الأضيق من 332dp حتى يتسع الزران.
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: counter,
+                ),
+              ),
               const SizedBox(width: 2),
               next,
             ],
@@ -676,16 +683,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Positioned.fill(
                         child: GulfBackdrop(firstScreenHeight: h),
                       ),
+                      // الدائرة تبدأ تحت الصف العلوي دائماً (R3.1-1 و2).
+                      PositionedDirectional(
+                        top: math.max(
+                          64,
+                          h * 0.379 - diameter / 2 - DayDial.margin,
+                        ),
+                        start: (width - diameter) / 2,
+                        child: dialFor(diameter, DialDensity.full),
+                      ),
                       PositionedDirectional(
                         top: 0,
                         start: 0,
                         end: 0,
                         child: header,
-                      ),
-                      PositionedDirectional(
-                        top: h * 0.379 - diameter / 2 - DayDial.margin,
-                        start: (width - diameter) / 2,
-                        child: dialFor(diameter, DialDensity.full),
                       ),
                       // البداية (يمين): الزراعة ثم القادم؛ النهاية: الطالع
                       // ثم الطقس.
