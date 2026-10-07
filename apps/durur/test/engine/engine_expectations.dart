@@ -11,7 +11,7 @@ void _expectPeriod(ActivePeriod p, DateTime date) {
 }
 
 void expectConsistent(DayInfo info) {
-  _expectPeriod(info.dar, info.date);
+  if (info.dar != null) _expectPeriod(info.dar!, info.date);
   _expectPeriod(info.majorSeason, info.date);
   _expectPeriod(info.star, info.date);
   if (info.weatherSeason != null) _expectPeriod(info.weatherSeason!, info.date);
@@ -30,7 +30,10 @@ void _expectContinuousPeriod(ActivePeriod prev, ActivePeriod next) {
 
 void expectContinuous(DayInfo prev, DayInfo next) {
   expect(next.date.difference(prev.date).inDays, 1);
-  _expectContinuousPeriod(prev.dar, next.dar);
+  if (prev.dar != null && next.dar != null) {
+    _expectContinuousPeriod(prev.dar!, next.dar!);
+  }
+  expect(prev.dar == null, next.dar == null);
   _expectContinuousPeriod(prev.majorSeason, next.majorSeason);
   _expectContinuousPeriod(prev.star, next.star);
 }

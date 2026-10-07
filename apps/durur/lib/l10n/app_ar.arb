@@ -354,15 +354,6 @@
   "@homeCalcError": {
     "description": "لم يجد المحرك نتيجة (DESIGN home.calc_error)"
   },
-  "dialDururLegend": "حلقة الدرور: حساب {region}",
-  "@dialDururLegend": {
-    "description": "وسيلة إيضاح تحت الدائرة لمنطقة تستعير الدرور (D24، ARCHITECTURE §11)",
-    "placeholders": {
-      "region": {
-        "type": "String"
-      }
-    }
-  },
   "wheelResetZoom": "إعادة الحجم",
   "@wheelResetZoom": {
     "description": "زر إعادة تكبير الدائرة إلى 1× (DESIGN wheel.reset_zoom)"
@@ -401,27 +392,6 @@
         "type": "String"
       },
       "season": {
-        "type": "String"
-      },
-      "day": {
-        "type": "String"
-      },
-      "total": {
-        "type": "String"
-      }
-    }
-  },
-  "wheelA11yDarBorrowed": "دَرّ {dar} من {season} حسب حساب {region}، اليوم {day} من {total}.",
-  "@wheelA11yDarBorrowed": {
-    "description": "جملة الدَّرّ المستعار (D24) في نص قارئ الشاشة",
-    "placeholders": {
-      "dar": {
-        "type": "String"
-      },
-      "season": {
-        "type": "String"
-      },
-      "region": {
         "type": "String"
       },
       "day": {
@@ -766,13 +736,9 @@
   "@originDururTitle": {
     "description": "قسم في صفحة أصل التقويم"
   },
-  "originDururBody": "حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي.",
+  "originDururBody": "حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي، ولا يُستعمل في السعودية.",
   "@originDururBody": {
-    "description": "أصل الدرور (research/SAUDI.md §3، بانتظار المراجع)، بلا عبارة المقارنة (DESIGN 8.10)"
-  },
-  "originDururComparison": "معروض هنا للمقارنة.",
-  "@originDururComparison": {
-    "description": "تُلحق بمسافة بعد originDururBody فقط إن كانت منطقة المستخدم تستعير الدرور (DESIGN origin.durur_comparison، 8.10)"
+    "description": "أصل الدرور (research/SAUDI.md §3)، معاد صياغته بعد D43/D50 (ARCHITECTURE §18): «حساب خليجي ساحلي لا يُستعمل في السعودية». بانتظار المراجع"
   },
   "settingsSectionHelp": "البيانات والمساعدة",
   "@settingsSectionHelp": {
@@ -944,21 +910,6 @@
         "type": "String"
       },
       "season": {
-        "type": "String"
-      }
-    }
-  },
-  "notifDarTitleBorrowed": "بدأ دَرّ {dar} من {season} حسب حساب {region}",
-  "@notifDarTitleBorrowed": {
-    "description": "عنوان تنبيه بداية الدَّرّ لمنطقة تستعير الدرور (D24): region = المنطقة المُعيرة لا منطقة المستخدم",
-    "placeholders": {
-      "dar": {
-        "type": "String"
-      },
-      "season": {
-        "type": "String"
-      },
-      "region": {
         "type": "String"
       }
     }
@@ -1191,10 +1142,6 @@
   "@tabSettings": {
     "description": "تبويب الإعدادات (DESIGN R2.9 tab.settings)"
   },
-  "countdownRemaining": "باقي",
-  "@countdownRemaining": {
-    "description": "السطر الأول في العدّاد (DESIGN R2.8 countdown.remaining)"
-  },
   "countdownDaysUnit": "{count, plural, =1{يوم واحد} =2{يومان} few{أيام} many{يوماً} other{يوم}}",
   "@countdownDaysUnit": {
     "description": "كلمة الأيام بجانب الرقم الكبير في العدّاد؛ لـ 1 و2 تُعرض الكلمة وحدها بلا رقم (DESIGN R2.12 countdown.days)",
@@ -1322,10 +1269,6 @@
   "@cardStarTitle": {
     "description": "عنوان بطاقة الطالع (DESIGN R2.12 card.star.title)"
   },
-  "cardWeatherTitle": "الجو المعتاد",
-  "@cardWeatherTitle": {
-    "description": "عنوان بطاقة الجو المعتاد (DESIGN R2.12 card.weather.title)"
-  },
   "cardWeatherNote": "حسب التراث، وليس توقعاً للطقس.",
   "@cardWeatherNote": {
     "description": "سطر ثابت في بطاقة الجو المعتاد (DESIGN R2.12 card.weather.note)"
@@ -1359,19 +1302,6 @@
       }
     }
   },
-  "homeWeatherSeasonLabel": "موسم الجو: {name}",
-  "@homeWeatherSeasonLabel": {
-    "description": "سطر موسم الجو في بطاقة الطالع (DESIGN R2.12 home.weather_season_label)",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "homeNone": "لا يوجد",
-  "@homeNone": {
-    "description": "قيمة فارغة: لا موسم جو (DESIGN R2.8 الفراغ)"
-  },
   "darTitle": "دَرّ {dar}",
   "@darTitle": {
     "description": "عنوان شريط الدَّرّ: «دَرّ الستين» (DESIGN R2.8)",
@@ -1386,15 +1316,6 @@
     "description": "شريحة مئة الدَّرّ في شريطه (DESIGN R2.12 dar.of_season)",
     "placeholders": {
       "season": {
-        "type": "String"
-      }
-    }
-  },
-  "darBorrowedCaption": "حسب حساب {region}",
-  "@darBorrowedCaption": {
-    "description": "سطر الدَّرّ المستعار في شريطه (DESIGN R2.8، D24)",
-    "placeholders": {
-      "region": {
         "type": "String"
       }
     }
@@ -1431,27 +1352,6 @@
       }
     }
   },
-  "bubbleDururOf": "درور {season}",
-  "@bubbleDururOf": {
-    "description": "اسم مقطع درور متتالية من مئة واحدة (DESIGN R2.6)",
-    "placeholders": {
-      "season": {
-        "type": "String"
-      }
-    }
-  },
-  "bubbleDururRange": "دَرّ {first} إلى دَرّ {last}",
-  "@bubbleDururRange": {
-    "description": "اسم مقطع درور متتالية من أكثر من مئة (DESIGN R2.6)",
-    "placeholders": {
-      "first": {
-        "type": "String"
-      },
-      "last": {
-        "type": "String"
-      }
-    }
-  },
   "symbolsTitle": "دليل الرموز",
   "@symbolsTitle": {
     "description": "عنوان صفحة دليل الرموز (DESIGN R2.12 symbols.title، SPEC 16.8)"
@@ -1468,5 +1368,260 @@
         "type": "String"
       }
     }
+  },
+  "astroSeasonName": "{season, select, spring{الربيع} summer{الصيف} autumn{الخريف} winter{الشتاء} other{}}",
+  "@astroSeasonName": {
+    "description": "اسم الفصل الفلكي (DESIGN R3.6 astro.season.*، D40)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "astroEventName": "{event, select, march_equinox{الاعتدال الربيعي} june_solstice{الانقلاب الصيفي} september_equinox{الاعتدال الخريفي} december_solstice{الانقلاب الشتوي} other{}}",
+  "@astroEventName": {
+    "description": "حدث بداية الفصل (DESIGN R3.6 astro.event.*)",
+    "placeholders": {
+      "event": {
+        "type": "String"
+      }
+    }
+  },
+  "astroSeasonStarts": "يبدأ: {datetime}",
+  "@astroSeasonStarts": {
+    "description": "ورقة الفصل (R3.6 astro.season.starts)",
+    "placeholders": {
+      "datetime": {
+        "type": "String"
+      }
+    }
+  },
+  "astroSeasonEnds": "ينتهي: {datetime}",
+  "@astroSeasonEnds": {
+    "description": "ورقة الفصل (R3.6 astro.season.ends)",
+    "placeholders": {
+      "datetime": {
+        "type": "String"
+      }
+    }
+  },
+  "astroSeasonLength": "{count, plural, =1{مدته يوم واحد} =2{مدته يومان} few{مدته {days} أيام} many{مدته {days} يوماً} other{مدته {days} يوم}}",
+  "@astroSeasonLength": {
+    "description": "مدة الفصل بصيغ الجمع (R3.6 astro.season.length)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "astroDaysElapsed": "{count, plural, =0{مضى أقل من يوم} =1{مضى يوم واحد} =2{مضى يومان} few{مضى {days} أيام} many{مضى {days} يوماً} other{مضى {days} يوم}}",
+  "@astroDaysElapsed": {
+    "description": "الجزء الأول من astroSeasonElapsed",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "astroDaysRemaining": "{count, plural, =0{بقي أقل من يوم} =1{بقي يوم واحد} =2{بقي يومان} few{بقي {days} أيام} many{بقي {days} يوماً} other{بقي {days} يوم}}",
+  "@astroDaysRemaining": {
+    "description": "الجزء الثاني من astroSeasonElapsed",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "astroSeasonElapsed": "{elapsed} — {remaining}",
+  "@astroSeasonElapsed": {
+    "description": "«مضى ١٤ يوماً — بقي ٧٥ يوماً» للفصل الحالي فقط (R3.6 astro.season.elapsed)",
+    "placeholders": {
+      "elapsed": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "astroSeasonHeritage": "يقابله في التراث: {name} ({period})",
+  "@astroSeasonHeritage": {
+    "description": "المقابل التراثي في ورقة الفصل (R3.6 astro.season.heritage)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "astroPeriodRange": "من {start} إلى {end}",
+  "@astroPeriodRange": {
+    "description": "مدى تاريخين في أوراق الفصل والبرج",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "astroSeasonNote": "الفصول الفلكية تبدأ بالاعتدالين والانقلابين؛ والمواسم التراثية تبدأ بطلوع النجوم، فلا تتطابق بدايتها.",
+  "@astroSeasonNote": {
+    "description": "سطر ثابت في ورقة الفصل (R3.6 astro.season.note)"
+  },
+  "astroSeasonA11ySentence": "الفصل: {season}، من {start} إلى {end}.",
+  "@astroSeasonA11ySentence": {
+    "description": "جملة الفصل في قيمة الدائرة لقارئ الشاشة (R3.5، R3.6 astro.season.a11y_sentence)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "astroComputed": "حساب فلكي",
+  "@astroComputed": {
+    "description": "بدل المصدر في أوراق الحساب الفلكي (R3.6 astro.computed)"
+  },
+  "astroDateShort": "{day}/{month}",
+  "@astroDateShort": {
+    "description": "تاريخ الفاصل المختصر على ذراع الصليب «٢١/١٢» (R3.2)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "astroTime": "{hour}:{minute} {period, select, am{ص} pm{م} other{}}",
+  "@astroTime": {
+    "description": "الساعة في ورقة الفصل «٣:٠٥ ص»",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      },
+      "minute": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "astroDateTime": "{weekday} {date}، {time}",
+  "@astroDateTime": {
+    "description": "«الأربعاء ٢٣ سبتمبر ٢٠٢٦م، ٣:٠٥ ص» في ورقة الفصل",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "zodiacName": "{sign, select, aries{الحمل} taurus{الثور} gemini{الجوزاء} cancer{السرطان} leo{الأسد} virgo{السنبلة} libra{الميزان} scorpio{العقرب} sagittarius{القوس} capricorn{الجدي} aquarius{الدلو} pisces{الحوت} other{}}",
+  "@zodiacName": {
+    "description": "أسماء البروج العربية التقليدية (R3.1-10، R3.6 zodiac.*). بلا أي معنى تنجيمي؛ يراجع المراجع إملاءها",
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      }
+    }
+  },
+  "zodiacSunIn": "الشمس في برج {name}",
+  "@zodiacSunIn": {
+    "description": "عنوان ورقة البرج (R3.6 zodiac.sun_in)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "zodiacNote": "موقع الشمس بين البروج، حساب فلكي.",
+  "@zodiacNote": {
+    "description": "سطر ثابت في ورقة البرج (R3.6 zodiac.note)"
+  },
+  "wheelA11yReadSeasonZodiac": "اقرأ الفصل والبرج",
+  "@wheelA11yReadSeasonZodiac": {
+    "description": "إجراء مخصص للدائرة (R3.5، R3.6 wheel.a11y.read_season_zodiac)"
+  },
+  "wheelA11yOpenSeasonSheet": "افتح ورقة الفصل",
+  "@wheelA11yOpenSeasonSheet": {
+    "description": "إجراء مخصص للدائرة (R3.5)"
+  },
+  "wheelA11yNextStar": "انتقل طالعاً للأمام",
+  "@wheelA11yNextStar": {
+    "description": "إجراء مخصص في منطقة بلا درور (R3.10) بدل wheelA11yNextDar"
+  },
+  "wheelA11yPrevStar": "انتقل طالعاً للخلف",
+  "@wheelA11yPrevStar": {
+    "description": "إجراء مخصص في منطقة بلا درور (R3.10) بدل wheelA11yPrevDar"
+  },
+  "wheelA11yHintStar": "اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الطالع.",
+  "@wheelA11yHintStar": {
+    "description": "تلميح الدائرة في منطقة بلا درور (R3.10)"
+  },
+  "headerMenu": "القائمة",
+  "@headerMenu": {
+    "description": "زر القائمة في الصف العلوي (R3.6 header.menu)"
+  },
+  "headerNotifications": "التنبيهات",
+  "@headerNotifications": {
+    "description": "زر الجرس (R3.6 header.notifications)"
+  },
+  "headerNotificationsDenied": "التنبيهات، الإذن مرفوض",
+  "@headerNotificationsDenied": {
+    "description": "زر الجرس حين رفض النظام الإذن (R3.6 header.notifications_denied)"
+  },
+  "headerSeparator": " — ",
+  "@headerSeparator": {
+    "description": "الفاصل بين المكان والتاريخ تحت العنوان (R3.1-1)"
+  },
+  "cardStarSubtitle": "نجم الموسم الآن",
+  "@cardStarSubtitle": {
+    "description": "العنوان الفرعي لبطاقة الطالع (R3.6 card.star.subtitle)"
+  },
+  "cardUpcomingSubtitle": "الدرور والمواسم والطوالع",
+  "@cardUpcomingSubtitle": {
+    "description": "العنوان الفرعي لبطاقة القادم (R3.6 card.upcoming.subtitle)"
+  },
+  "cardLiveWeatherTitle": "الطقس",
+  "@cardLiveWeatherTitle": {
+    "description": "بطاقة الطقس الفعلي (R3.8، D42)"
+  },
+  "cardLiveWeatherSubtitle": "الآن والأيام القادمة",
+  "@cardLiveWeatherSubtitle": {
+    "description": "العنوان الفرعي لبطاقة الطقس الفعلي (R3.8)"
+  },
+  "cardLiveWeatherUnavailable": "غير متاح بعد",
+  "@cardLiveWeatherUnavailable": {
+    "description": "حالة بطاقة الطقس الفعلي قبل تنفيذ الجلب (الجزء ب)"
+  },
+  "usualWeatherHeritageTitle": "الجو المعتاد حسب التراث",
+  "@usualWeatherHeritageTitle": {
+    "description": "عنوان صف/بطاقة الجو المعتاد (R3.1-18، R3.10)"
   }
 }

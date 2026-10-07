@@ -101,13 +101,14 @@ List<SeasonEvent> seasonEvents({
         ),
       );
     }
-    if (startsOn(info.dar, day)) {
+    final dar = info.dar;
+    if (dar != null && startsOn(dar, day)) {
       out.add(
         SeasonEvent(
           kind: SeasonEventKind.dar,
           date: day,
           days: i,
-          dar: info.dar,
+          dar: dar,
         ),
       );
     }
@@ -155,10 +156,13 @@ SeasonEvent? countdownEvent(List<SeasonEvent> events) {
 
 /// صفوف «القادم» (حتى 3، مرتبة بالأقرب): الدَّرّ التالي، والموسم الكبير
 /// التالي، وأقرب موسم جو أو طالع غير هدف [countdown]. كلها بعد اليوم المعروض.
+/// بلا درور (السعودية، R3.10): الطالع التالي، وموسم الجو التالي، والموسم
+/// الكبير التالي.
 List<SeasonEvent> upcomingEvents(
   List<SeasonEvent> events,
-  SeasonEvent? countdown,
-) {
+  SeasonEvent? countdown, {
+  bool hasDurur = true,
+}) {
   SeasonEvent? first(bool Function(SeasonEvent) test) {
     for (final e in events) {
       if (e.days > 0 && test(e)) return e;
@@ -166,6 +170,14 @@ List<SeasonEvent> upcomingEvents(
     return null;
   }
 
+  if (!hasDurur) {
+    return [
+      first((e) => e.kind == SeasonEventKind.star),
+      first((e) => e.kind == SeasonEventKind.weatherSeason),
+      first((e) => e.kind == SeasonEventKind.majorSeason),
+    ].whereType<SeasonEvent>().toList()
+      ..sort((a, b) => a.days.compareTo(b.days));
+  }
   final rows = [
     first((e) => e.kind == SeasonEventKind.dar),
     first((e) => e.kind == SeasonEventKind.majorSeason),

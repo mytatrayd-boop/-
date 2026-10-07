@@ -22,12 +22,14 @@ ItemPeriod? findItemPeriod(CalendarEngine engine, Item item, DateTime from) {
 }
 
 /// فترة الدَّرّ الذي يبدأ في [start] في جدول [engine] حول [from].
-/// [engine] محرك جدول الدرور الفعلي (المُعيرة عند الاستعارة، D26).
+/// null إن كانت المنطقة بلا درور (D50).
 DarPeriod? findDarPeriod(
   CalendarEngine engine,
   MonthDay start,
   DateTime from,
-) => _scan(engine, from, (day) => day.dar, (p) => p.record.start == start);
+) => engine.hasDurur
+    ? _scan(engine, from, (day) => day.dar, (p) => p.record.start == start)
+    : null;
 
 T? _scan<T extends ActivePeriod>(
   CalendarEngine engine,

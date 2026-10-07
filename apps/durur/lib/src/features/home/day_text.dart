@@ -43,14 +43,14 @@ String datesLine(
   DigitStyle digits = DigitStyle.arabicIndic,
 }) => datesLines(l10n, date, hijri, isToday: isToday, digits: digits).single;
 
-/// «اليوم ٤ من ١٠» بطول الدَّرّ الفعلي.
+/// «اليوم ٤ من ١٠» بطول الدَّرّ (أو الفترة) الفعلي.
 String dayOfDarLabel(
   AppLocalizations l10n,
-  DayInfo info, {
+  ActivePeriod period, {
   DigitStyle digits = DigitStyle.arabicIndic,
 }) => l10n.homeDayOfDar(
-  formatInteger(info.dar.dayNumber, digits),
-  formatInteger(info.dar.length, digits),
+  formatInteger(period.dayNumber, digits),
+  formatInteger(period.length, digits),
 );
 
 /// قائمة أسماء رموز الجو، أو «لا يوجد».
@@ -69,13 +69,15 @@ String dialSemanticsPrefix(AppLocalizations l10n, {required bool isToday}) =>
 /// ثم الجمل حسب المنطقة. اليوم داخل الدَّرّ بطوله الفعلي لا «من عشرة».
 /// - درور خاصة: التاريخ ← الدَّرّ ← الموسم (إن اختلف عن مئة الدَّرّ، D25)
 ///   ← النجم ← موسم الجو ← الجو المعتاد.
-/// - مستعيرة (D24، 7.8): التاريخ ← الموسم ← موسم الجو ← النجم ← الدَّرّ
-///   المستعار باسم المُعيرة ← الجو المعتاد.
+/// - بلا درور (السعودية، R3.10): التاريخ ← الموسم ← موسم الجو ← النجم ←
+///   الجو المعتاد.
+/// [astroSentence] جملة الفصل الفلكي (R3.5) تُضاف بعد جملة التاريخ.
 String dialSemanticsValue(
   AppLocalizations l10n,
   DayInfo info,
   Tables tables, {
   DigitStyle digits = DigitStyle.arabicIndic,
+  String? astroSentence,
 }) {
   String name(String? id) => tables.items[id]?.name.ar ?? '';
   final date = info.date;
@@ -98,8 +100,6 @@ String dialSemanticsValue(
             formatInteger(h.year, digits),
           ),
         );
-  final day = formatInteger(info.dar.dayNumber, digits);
-  final total = formatInteger(info.dar.length, digits);
   final star = l10n.wheelA11yStar(name(info.star.itemId));
   final ws = l10n.wheelA11yWeatherSeason(
     info.weatherSeason == null
@@ -107,23 +107,28 @@ String dialSemanticsValue(
         : name(info.weatherSeason!.itemId),
   );
   final weather = l10n.wheelA11yWeather(weatherListLabel(l10n, info));
-  final hundred = name(info.dar.record.seasonId);
   final major = l10n.wheelA11yMajorSeason(name(info.majorSeason.itemId));
-  if (info.borrowsDurur) {
-    final lender = tables.region(info.dururRegionId)?.name.ar ?? '';
+  final dar = info.dar;
+  if (dar == null) {
+    // منطقة بلا درور (R3.10): التاريخ ← الفصل ← الموسم ← موسم الجو ← النجم
+    // ← الجو المعتاد. لا جملة دَرّ.
     return [
       dateSentence,
+      ?astroSentence,
       major,
       ws,
       star,
-      l10n.wheelA11yDarBorrowed(info.dar.name.ar, hundred, lender, day, total),
       weather,
     ].join(' ');
   }
+  final day = formatInteger(dar.dayNumber, digits);
+  final total = formatInteger(dar.length, digits);
+  final hundred = name(dar.record.seasonId);
   return [
     dateSentence,
-    l10n.wheelA11yDar(info.dar.name.ar, hundred, day, total),
-    if (info.majorSeason.itemId != info.dar.record.seasonId) major,
+    ?astroSentence,
+    l10n.wheelA11yDar(dar.name.ar, hundred, day, total),
+    if (info.majorSeason.itemId != dar.record.seasonId) major,
     star,
     ws,
     weather,

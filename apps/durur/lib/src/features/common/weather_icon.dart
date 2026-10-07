@@ -51,12 +51,17 @@ class WeatherIconPainter extends CustomPainter {
       old.symbol != symbol || old.color != color;
 }
 
-/// يرسم [symbol] على شبكة 24×24 بلا تحجيم.
-void paintWeatherSymbol(Canvas canvas, WeatherSymbol symbol, Color color) {
+/// يرسم [symbol] على شبكة 24×24 بلا تحجيم. [strokeWidth] بوحدات الشبكة.
+void paintWeatherSymbol(
+  Canvas canvas,
+  WeatherSymbol symbol,
+  Color color, {
+  double strokeWidth = 2,
+}) {
   final stroke = Paint()
     ..color = color
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 2
+    ..strokeWidth = strokeWidth
     ..strokeCap = StrokeCap.round
     ..strokeJoin = StrokeJoin.round;
   final tint = Paint()..color = color.withValues(alpha: 0.2);

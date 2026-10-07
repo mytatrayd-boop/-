@@ -40,28 +40,23 @@ final class ItemSubject extends NotificationSubject {
   int get hashCode => Object.hash(item.id, heliacal);
 }
 
-/// بداية دَرّ. [dururRegionId] جدول الدرور الفعلي (المُعيرة عند الاستعارة،
-/// D24)، و[borrowed] هل الدرور مستعارة لمنطقة المستخدم.
+/// بداية دَرّ في جدول منطقة المستخدم (لا درور في السعودية، D50).
 final class DarSubject extends NotificationSubject {
-  const DarSubject(
-    this.record, {
-    required this.dururRegionId,
-    required this.borrowed,
-  });
+  const DarSubject(this.record);
 
   final DarRecord record;
-  final String dururRegionId;
-  final bool borrowed;
+
+  /// منطقة جدول الدَّرّ.
+  String get regionId => record.regionId;
 
   @override
   bool operator ==(Object other) =>
       other is DarSubject &&
-      other.dururRegionId == dururRegionId &&
-      other.record.start == record.start &&
-      other.borrowed == borrowed;
+      other.regionId == regionId &&
+      other.record.start == record.start;
 
   @override
-  int get hashCode => Object.hash(dururRegionId, record.start, borrowed);
+  int get hashCode => Object.hash(regionId, record.start);
 }
 
 /// تنبيه في الخطة.
@@ -127,7 +122,8 @@ class NotificationPlanner {
   /// - [important]: العناصر المهمة (`important: true`) في كل الطبقات؛ ما
   ///   طريقته `heliacal` (سهيل والثريا) يؤخذ تاريخه من [heliacal] لسنته، وإن
   ///   تعذّر الحساب (null) يُستعمل تاريخ بدايته في جدول المنطقة.
-  /// - [dar]: بداية كل دَرّ من جدول الدرور الفعلي (المُعيرة عند الاستعارة).
+  /// - [dar]: بداية كل دَرّ من جدول المنطقة. منطقة بلا درور (السعودية،
+  ///   D50) لا تُنتج تنبيهات دَرّ مهما كان المفتاح.
   /// - لا يتكرر (الموضوع، اليوم).
   List<PlannedNotification> plan({
     required DateTime now,
@@ -137,6 +133,7 @@ class NotificationPlanner {
     required bool important,
     required bool dar,
   }) {
+    dar = dar && engine.hasDurur;
     if (!important && !dar) return const [];
     final today = dateOnly(now);
     final last = addDays(today, horizonDays - 1);
@@ -203,24 +200,16 @@ class NotificationPlanner {
           }
         }
       }
-      if (dar && info.dar.dayNumber == 1) {
-        add(
-          day,
-          NotificationKind.dar,
-          DarSubject(
-            info.dar.record,
-            dururRegionId: info.dururRegionId,
-            borrowed: info.borrowsDurur,
-          ),
-        );
+      final darPeriod = info.dar;
+      if (dar && darPeriod != null && darPeriod.dayNumber == 1) {
+        add(day, NotificationKind.dar, DarSubject(darPeriod.record));
       }
     }
 
     // ترتيب زمني؛ وفي اليوم نفسه المواسم المهمة قبل الدَّرّ ثم بالمعرّف.
     String key(NotificationSubject s) => switch (s) {
       ItemSubject(:final item) => item.id,
-      DarSubject(:final dururRegionId, :final record) =>
-        '$dururRegionId/${record.start}',
+      DarSubject(:final regionId, :final record) => '$regionId/${record.start}',
     };
     entries.sort((a, b) {
       final byDate = a.$1.compareTo(b.$1);

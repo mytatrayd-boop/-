@@ -1,3 +1,4 @@
+import '../domain/city.dart';
 import '../domain/item.dart';
 import '../domain/month_day.dart';
 import '../domain/region_table.dart';
@@ -38,6 +39,7 @@ class TableValidator {
     for (final table in tables.regionTables.values) {
       _checkRegionTable(table, tables, errors);
     }
+    _checkCountryDurur(tables, release ? errors : warnings);
     final hijri = tables.hijri;
     if (hijri != null) {
       errors.addAll(const HijriTableValidator().validate(hijri));
@@ -151,15 +153,24 @@ class TableValidator {
   ) {
     final where = 'regions/${table.regionId}.json';
 
-    final borrow = table.dururBorrow;
-    if (borrow == null) {
+    if (table.hasDurur) {
       _checkContinuous(
         table.durur.map((r) => r.start).toList(),
         '$where:durur',
         errors,
       );
     } else {
-      _checkDururBorrow(table, borrow, tables, errors);
+      // منطقة بلا درور (D50): «الجو المعتاد» ورموز الإطار من النجم الحالي،
+      // فيلزم لكل نجم فيها `weather` غير فارغ.
+      for (final r in table.stars) {
+        final item = tables.items[r.itemId];
+        if (item != null && item.weather.isEmpty) {
+          errors.add(
+            '${r.recordPath}: المنطقة بلا درور، والنجم "${r.itemId}" '
+            'بلا weather (مصدر الجو المعتاد فيها).',
+          );
+        }
+      }
     }
     _checkContinuous(
       table.majorSeasons.map((r) => r.start).toList(),
@@ -220,39 +231,32 @@ class TableValidator {
     _checkWeatherSeasonOverlap(table, where, errors);
   }
 
-  /// استعارة الدرور (D24): إما `durur` غير فارغ أو `dururBorrow`، لا الاثنان؛
-  /// المُعيرة موجودة، ليست المنطقة نفسها، ولها درور خاصة (لا سلاسل).
-  /// `note` غير الفارغ مضمون من المحلل.
-  void _checkDururBorrow(
-    RegionTable table,
-    DururBorrow borrow,
-    Tables tables,
-    List<String> errors,
-  ) {
-    final where = borrow.recordPath;
-    if (table.durur.isNotEmpty) {
-      errors.add(
-        '$where: الجدول فيه درور خاصة واستعارة معاً؛ '
-        'المسموح أحدهما فقط.',
-      );
+  /// قاعدة الدولة (D43، D50، ARCHITECTURE §18): كل منطقة تشير إليها مدينة
+  /// سعودية بلا درور، وكل منطقة تشير إليها مدينة خليجية خارج السعودية
+  /// بدرور. خطأ في الإطلاق، وتحذير في التطوير.
+  void _checkCountryDurur(Tables tables, List<String> out) {
+    final saudi = <String>{};
+    final gulf = <String>{};
+    for (final city in tables.cities) {
+      (city.country == Country.sa ? saudi : gulf).add(city.regionId);
     }
-    if (borrow.fromRegionId == table.regionId) {
-      errors.add('$where: المنطقة لا تستعير من نفسها.');
-      return;
+    for (final id in saudi) {
+      final table = tables.regionTables[id];
+      if (table != null && table.hasDurur) {
+        out.add(
+          'regions/$id.json: منطقة سعودية فيها درور؛ '
+          'السعودية بلا درور (D43).',
+        );
+      }
     }
-    final lender = tables.regionTables[borrow.fromRegionId];
-    if (lender == null || tables.region(borrow.fromRegionId) == null) {
-      errors.add(
-        '$where: المنطقة المُعيرة "${borrow.fromRegionId}" '
-        'غير موجودة.',
-      );
-      return;
-    }
-    if (lender.borrowsDurur || lender.durur.isEmpty) {
-      errors.add(
-        '$where: المنطقة المُعيرة "${borrow.fromRegionId}" '
-        'بلا درور خاصة (سلاسل الاستعارة ممنوعة).',
-      );
+    for (final id in gulf) {
+      final table = tables.regionTables[id];
+      if (table != null && !table.hasDurur) {
+        out.add(
+          'regions/$id.json: منطقة خليجية خارج السعودية بلا درور '
+          '(D43: الدرور باقية في الخليج).',
+        );
+      }
     }
   }
 

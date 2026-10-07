@@ -21,10 +21,10 @@ void main() {
       final info = a.resolve(DateTime(2026, 1, 8));
       expect(info.regionId, 'a');
       expect(info.date, utc(2026, 1, 8));
-      expect(info.dar.name.ar, 'أ');
-      expect(info.dar.number, 1);
-      expect(info.dar.dayNumber, 4);
-      expect(info.dar.length, 46); // 01-05 .. 02-19
+      expect(info.dar!.name.ar, 'أ');
+      expect(info.dar!.number, 1);
+      expect(info.dar!.dayNumber, 4);
+      expect(info.dar!.length, 46); // 01-05 .. 02-19
       expect(info.majorSeason.itemId, 's1');
       expect(info.star.itemId, 'st1');
       expect(info.weatherSeason?.itemId, 'w1');
@@ -41,15 +41,15 @@ void main() {
   group('معيار 3 و4: حدود الدَّرّ', () {
     test('يوم البداية = اليوم 1، واليوم السابق = آخر يوم في السابق', () {
       final first = a.resolve(DateTime(2026, 3, 1));
-      expect(first.dar.name.ar, 'ج');
+      expect(first.dar!.name.ar, 'ج');
       expect(first.majorSeason.itemId, 's1');
-      expect(first.dar.dayNumber, 1);
-      expect(first.dar.start, utc(2026, 3, 1));
+      expect(first.dar!.dayNumber, 1);
+      expect(first.dar!.start, utc(2026, 3, 1));
 
       final before = a.resolve(DateTime(2026, 2, 28));
-      expect(before.dar.name.ar, 'ب');
-      expect(before.dar.dayNumber, before.dar.length);
-      expect(before.dar.end, utc(2026, 2, 28));
+      expect(before.dar!.name.ar, 'ب');
+      expect(before.dar!.dayNumber, before.dar!.length);
+      expect(before.dar!.end, utc(2026, 2, 28));
     });
 
     test('حدود الموسم الكبير', () {
@@ -65,15 +65,15 @@ void main() {
       final jan1 = a.resolve(DateTime(2027, 1, 1));
       final jan4 = a.resolve(DateTime(2027, 1, 4));
       final jan5 = a.resolve(DateTime(2027, 1, 5));
-      expect(dec31.dar.name.ar, 'د');
-      expect(dec31.dar.dayNumber, 7);
-      expect(jan1.dar.name.ar, 'د');
-      expect(jan1.dar.dayNumber, 8);
-      expect(jan1.dar.start, utc(2026, 12, 25));
-      expect(jan4.dar.dayNumber, jan4.dar.length);
-      expect(jan4.dar.end, utc(2027, 1, 4));
-      expect(jan5.dar.name.ar, 'أ');
-      expect(jan5.dar.dayNumber, 1);
+      expect(dec31.dar!.name.ar, 'د');
+      expect(dec31.dar!.dayNumber, 7);
+      expect(jan1.dar!.name.ar, 'د');
+      expect(jan1.dar!.dayNumber, 8);
+      expect(jan1.dar!.start, utc(2026, 12, 25));
+      expect(jan4.dar!.dayNumber, jan4.dar!.length);
+      expect(jan4.dar!.end, utc(2027, 1, 4));
+      expect(jan5.dar!.name.ar, 'أ');
+      expect(jan5.dar!.dayNumber, 1);
       expect(jan1.majorSeason.itemId, 's2');
     });
 
@@ -101,8 +101,8 @@ void main() {
   group('معيار 5: اختلاف المناطق', () {
     test('التاريخ نفسه يُرجع دَرّاً مختلفاً في جدول آخر', () {
       final date = DateTime(2026, 3, 2);
-      expect(a.resolve(date).dar.name.ar, 'ج');
-      expect(b.resolve(date).dar.name.ar, 'ب');
+      expect(a.resolve(date).dar!.name.ar, 'ج');
+      expect(b.resolve(date).dar!.name.ar, 'ب');
     });
   });
 
@@ -111,14 +111,14 @@ void main() {
       final feb28 = a.resolve(DateTime(2028, 2, 28));
       final feb29 = a.resolve(DateTime(2028, 2, 29));
       final mar1 = a.resolve(DateTime(2028, 3, 1));
-      expect(feb29.dar.name.ar, 'ب');
-      expect(feb29.dar.dayNumber, feb28.dar.dayNumber + 1);
-      expect(feb29.dar.length, 10);
-      expect(feb29.dar.dayNumber, feb29.dar.length);
-      expect(mar1.dar.name.ar, 'ج');
-      expect(mar1.dar.dayNumber, 1);
+      expect(feb29.dar!.name.ar, 'ب');
+      expect(feb29.dar!.dayNumber, feb28.dar!.dayNumber + 1);
+      expect(feb29.dar!.length, 10);
+      expect(feb29.dar!.dayNumber, feb29.dar!.length);
+      expect(mar1.dar!.name.ar, 'ج');
+      expect(mar1.dar!.dayNumber, 1);
       // في السنة غير الكبيسة طوله 9.
-      expect(a.resolve(DateTime(2027, 2, 28)).dar.length, 9);
+      expect(a.resolve(DateTime(2027, 2, 28)).dar!.length, 9);
     });
 
     test('موسم جو ينتهي 28 فبراير يشمل 29 فبراير', () {
@@ -134,7 +134,7 @@ void main() {
     test('قاعدة القرن: 2100 ليست كبيسة و2000 كبيسة', () {
       expect(YearIndex(a, 2100).length, 365);
       expect(YearIndex(a, 2000).length, 366);
-      expect(a.resolve(DateTime(2000, 2, 29)).dar.length, 10);
+      expect(a.resolve(DateTime(2000, 2, 29)).dar!.length, 10);
     });
   });
 
@@ -143,9 +143,9 @@ void main() {
       final late = a.resolve(DateTime(2026, 2, 28, 23, 59, 59));
       final midnight = a.resolve(DateTime(2026, 3, 1));
       final morning = a.resolve(DateTime(2026, 3, 1, 8, 30));
-      expect(late.dar.name.ar, 'ب');
-      expect(midnight.dar.name.ar, 'ج');
-      expect(morning.dar.name.ar, 'ج');
+      expect(late.dar!.name.ar, 'ب');
+      expect(midnight.dar!.name.ar, 'ج');
+      expect(morning.dar!.name.ar, 'ج');
       expect(morning.date, utc(2026, 3, 1));
     });
   });

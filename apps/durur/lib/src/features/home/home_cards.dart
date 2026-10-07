@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -21,7 +23,8 @@ abstract final class HomeCardKeys {
   static const weatherCard = Key('homeWeatherCard');
   static const darStrip = Key('homeDarStrip');
   static const darSeasonChip = Key('homeDarSeasonChip');
-  static const borrowNote = Key('dururBorrowNote');
+  static const liveWeatherCard = Key('homeLiveWeatherCard');
+  static const usualWeatherCard = Key('homeUsualWeatherCard');
   static const agriCard = Key('homeAgriCard');
   static const agriKnowSource = Key('homeAgriKnowSource');
   static const upcomingCard = Key('homeUpcomingCard');
@@ -48,9 +51,9 @@ String seasonEventName(
     ? l10n.darTitle(e.dar!.name.ar)
     : tables.items[e.itemId]?.name.ar ?? '';
 
-/// العدّاد (DESIGN R2.8): «باقي» ← الرقم 34 cyan متوهج + «أيام» ← «على دخول
-/// الوسم» ← «الجمعة ١٦ أكتوبر». يوم البداية نفسه: «دخل الوسم اليوم».
-/// بالأيام لا بالساعات، بلا حركة دائمة.
+/// العدّاد (DESIGN R3.1-17): بطاقة زجاجية 200×84 في الوسط: «٩» Almarai 800
+/// 30 cyan متوهج + «أيام» 15، ثم «على دخول الوسم» 15، ثم «الجمعة ١٦ أكتوبر»
+/// 12 `ink-soft`. يوم البداية نفسه: «دخل الوسم اليوم». بالأيام لا بالساعات.
 class CountdownCard extends StatelessWidget {
   const CountdownCard({
     super.key,
@@ -74,7 +77,6 @@ class CountdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final colors = DururColors.of(context);
     final item = tables.items[event.itemId];
     final name = seasonEventName(l10n, tables, event);
@@ -86,6 +88,14 @@ class CountdownCard extends StatelessWidget {
         : l10n.countdownFromDate(
             gregorianDateLabel(l10n, viewing!, digits: digits),
           );
+    TextStyle body(double size, Color color, [FontWeight w = FontWeight.w700]) =>
+        TextStyle(
+          fontFamily: DururFonts.body,
+          fontSize: size,
+          fontWeight: w,
+          color: color,
+          height: 1.25,
+        );
 
     final List<Widget> lines;
     final String spoken;
@@ -99,12 +109,11 @@ class CountdownCard extends StatelessWidget {
         Text(
           text,
           textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colors.primary,
+          style: body(15, colors.primary, FontWeight.w800).copyWith(
             shadows: textGlow(colors.primary),
           ),
         ),
-        Text(date, style: theme.textTheme.bodySmall),
+        Text(date, style: body(12, colors.inkSoft)),
       ];
       spoken = [text, date].join(l10n.listSeparator);
     } else {
@@ -113,11 +122,10 @@ class CountdownCard extends StatelessWidget {
           : l10n.countdownToSeason(name);
       final showNumber = event.days > 2;
       lines = [
-        Text(l10n.countdownRemaining, style: theme.textTheme.bodySmall),
         Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 8,
+          spacing: 6,
           children: [
             if (showNumber)
               Text(
@@ -125,32 +133,20 @@ class CountdownCard extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: DururFonts.body,
                   fontWeight: FontWeight.w800,
-                  fontSize: 34,
-                  height: 44 / 34,
+                  fontSize: 30,
+                  height: 1.1,
                   color: colors.primary,
                   shadows: textGlow(colors.primary),
                 ),
               ),
-            Text(
-              l10n.countdownDaysUnit(event.days),
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text(l10n.countdownDaysUnit(event.days), style: body(15, colors.ink)),
           ],
         ),
-        Text(
-          target,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.labelLarge,
-        ),
-        Text(date, style: theme.textTheme.bodySmall),
+        Text(target, textAlign: TextAlign.center, style: body(15, colors.ink)),
+        Text(date, style: body(12, colors.inkSoft)),
       ];
       spoken = l10n.countdownA11y(
-        l10n.countdownDaysPhrase(
-          event.days,
-          formatInteger(event.days, digits),
-        ),
+        l10n.countdownDaysPhrase(event.days, formatInteger(event.days, digits)),
         target,
         date,
       );
@@ -164,17 +160,22 @@ class CountdownCard extends StatelessWidget {
       onTap: onTap,
       child: GlassSurface(
         blur: true,
+        radius: 12,
         borderColor: colors.primary.withValues(alpha: 0.5),
-        padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 8, 10),
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: 8,
+          vertical: 6,
+        ),
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 80, minWidth: 120),
+          constraints: const BoxConstraints(minHeight: 84 - 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ...lines,
-              if (from != null) Text(from, style: theme.textTheme.bodySmall),
+              if (from != null)
+                Text(from, style: body(12, colors.inkSoft)),
             ],
           ),
         ),
@@ -183,8 +184,8 @@ class CountdownCard extends StatelessWidget {
   }
 }
 
-/// زر دائري زجاجي 48dp (السابق/التالي) بوصف لقارئ الشاشة، وضغطة مطوّلة
-/// تقفز دَرّاً (DESIGN 7.5).
+/// زر دائري زجاجي مرئي 36dp بمنطقة لمس 48dp (السابق/التالي، R3.1-17)، بوصف
+/// لقارئ الشاشة، وضغطة مطوّلة تقفز دَرّاً (أو طالعاً بلا درور، 7.5).
 class GlassCircleButton extends StatelessWidget {
   const GlassCircleButton({
     super.key,
@@ -218,18 +219,23 @@ class GlassCircleButton extends StatelessWidget {
             onTap: onTap,
             onLongPress: onLongPress,
             radius: 24,
-            child: GlassSurface(
-              radius: 24,
-              padding: EdgeInsets.zero,
-              child: Center(
-                child: Text(
-                  glyph,
-                  style: TextStyle(
-                    fontFamily: DururFonts.body,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 24,
-                    height: 1,
-                    color: colors.ink,
+            child: Center(
+              child: SizedBox.square(
+                dimension: 36,
+                child: GlassSurface(
+                  radius: 18,
+                  padding: EdgeInsets.zero,
+                  child: Center(
+                    child: Text(
+                      glyph,
+                      style: TextStyle(
+                        fontFamily: DururFonts.body,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        height: 1,
+                        color: colors.ink,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -241,145 +247,313 @@ class GlassCircleButton extends StatelessWidget {
   }
 }
 
-/// بطاقة زجاجية بعنوان (DESIGN R2.8): زوايا 20، حشوة 16، عنوان 15 `ink-soft`
-/// مع أيقونة 20، وسهم «‹» إن كانت قابلة للضغط.
-class _TitledCard extends StatelessWidget {
-  const _TitledCard({
+/// حد البطاقة في R3: `#8FB3C0` شفافية 40%، 1dp.
+const cardBorder = Color(0x668FB3C0);
+
+/// بطاقة زجاجية بشكل R3.1-15: زوايا 12، حشوة 12، حد `#8FB3C0` 40%. الرأس:
+/// عنوان 15 `ink` وتحته فرعي 12 `ink-soft` في البداية، ومربع أيقونة 32dp في
+/// النهاية.
+class R3Card extends StatelessWidget {
+  const R3Card({
     super.key,
     required this.title,
     required this.children,
+    this.subtitle,
     this.icon,
     this.onTap,
+    this.minHeight = 0,
   });
 
   final String title;
+  final String? subtitle;
   final Widget? icon;
   final List<Widget> children;
   final VoidCallback? onTap;
+  final double minHeight;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final colors = DururColors.of(context);
     return GlassSurface(
       blur: true,
+      radius: 12,
+      borderColor: cardBorder,
       onTap: onTap,
-      padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                SizedBox.square(dimension: 20, child: icon),
-                const SizedBox(width: 6),
+      padding: const EdgeInsetsDirectional.all(12),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: math.max(0, minHeight - 24)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontFamily: DururFonts.body,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: colors.ink,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontFamily: DururFonts.body,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: colors.inkSoft,
+                            height: 1.3,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (icon != null) ...[
+                  const SizedBox(width: 8),
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: colors.ink.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: SizedBox.square(dimension: 20, child: icon),
+                    ),
+                  ),
+                ],
               ],
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: colors.inkSoft,
-                    ),
-                  ),
-                ),
-              ),
-              if (onTap != null)
-                ExcludeSemantics(
-                  child: Text(
-                    '‹',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colors.inkSoft,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...children,
-        ],
+            ),
+            const SizedBox(height: 10),
+            ...children,
+          ],
+        ),
       ),
     );
   }
 }
 
-/// بطاقة «الطالع» (DESIGN R2.8): نجمة gold + «الطالع»؛ الاسم Amiri 26 gold؛
-/// «الموسم: …» بنقطة لونه؛ «موسم الجو: …» (أو «لا يوجد»)؛ ولسهيل/الثريا سطر
-/// الطلوع المحسوب لمدينة المستخدم. الضغط ← صفحة الطالع.
+/// بطاقة «الطالع» (R3.1-16، مقابل «مراحل النجوم»): صف 4 خانات (الطالع
+/// الحالي ثم الثلاثة التالية)، ثم الاسم 15 gold، و«الموسم: …»، وسطر الطلوع
+/// لسهيل والثريا. الخانة تفتح صفحة طالعها، وبقية البطاقة الطالع الحالي.
 class StarCard extends StatelessWidget {
   const StarCard({
     super.key,
     required this.info,
     required this.tables,
+    required this.nextStars,
     required this.onTap,
+    required this.onStar,
     this.risingLine,
   });
 
   final DayInfo info;
   final Tables tables;
+
+  /// معرّفات الطوالع التالية (حتى 3).
+  final List<String> nextStars;
   final VoidCallback onTap;
+  final ValueChanged<String> onStar;
 
   /// «طلع في الرياض قبل … يوماً» لسهيل والثريا، وإلا null.
   final String? risingLine;
 
+  static Key slotKey(int i) => Key('homeStarSlot$i');
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final colors = DururColors.of(context);
     String name(String? id) => tables.items[id]?.name.ar ?? '';
-    final ws = info.weatherSeason;
-    return _TitledCard(
+    final slots = [info.star.itemId, ...nextStars.take(3)];
+    TextStyle small(Color c, [double size = 11]) => TextStyle(
+      fontFamily: DururFonts.body,
+      fontSize: size,
+      fontWeight: FontWeight.w700,
+      color: c,
+      height: 1.25,
+    );
+    return R3Card(
       key: HomeCardKeys.starCard,
       title: l10n.cardStarTitle,
+      subtitle: l10n.cardStarSubtitle,
       icon: CustomPaint(painter: _StarPainter(colors.goldText)),
       onTap: onTap,
+      minHeight: 150,
       children: [
-        Text(
-          name(info.star.itemId),
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: colors.goldText,
-          ),
-        ),
         Row(
           children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: colors.season(info.majorSeason.itemId),
-                shape: BoxShape.circle,
+            for (final (i, id) in slots.indexed)
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label: name(id),
+                  excludeSemantics: true,
+                  child: InkWell(
+                    key: slotKey(i),
+                    onTap: () => onStar(id),
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox.square(
+                            dimension: i == 0 ? 24 : 20,
+                            child: CustomPaint(
+                              painter: _StarPainter(
+                                i == 0 ? colors.goldText : colors.inkSoft,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            name(id),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: small(i == 0 ? colors.ink : colors.inkSoft),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                l10n.homeSeasonLabel(name(info.majorSeason.itemId)),
-                style: theme.textTheme.bodyMedium,
-              ),
-            ),
           ],
         ),
+        const SizedBox(height: 6),
         Text(
-          l10n.homeWeatherSeasonLabel(
-            ws == null ? l10n.homeNone : name(ws.itemId),
+          name(info.star.itemId),
+          style: TextStyle(
+            fontFamily: DururFonts.body,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: colors.goldText,
+            height: 1.3,
           ),
-          style: theme.textTheme.bodySmall,
+        ),
+        Text(
+          l10n.homeSeasonLabel(name(info.majorSeason.itemId)),
+          style: small(colors.inkSoft, 12),
         ),
         if (risingLine != null)
-          Text(
-            risingLine!,
-            style: theme.textTheme.bodySmall?.copyWith(color: colors.goldText),
-          ),
+          Text(risingLine!, style: small(colors.goldText, 12)),
       ],
     );
   }
 }
 
-/// بطاقة «الجو المعتاد» (DESIGN R2.8): شرائح الجو (أيقونة ملونة + كلمة)،
-/// والشريحة تفتح فقاعة الرمز؛ وسطر «حسب التراث، وليس توقعاً للطقس.».
-/// باقي البطاقة ← صفحة الدَّرّ.
+/// بطاقة «الطقس» الفعلي (R3.8، D42): مكانها وشكلها فقط الآن، بحالة «غير
+/// متاح بعد». الجلب من الشبكة والموقع في الجزء ب. لا مصطلح تراثي فيها.
+class LiveWeatherCard extends StatelessWidget {
+  const LiveWeatherCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = DururColors.of(context);
+    return R3Card(
+      key: HomeCardKeys.liveWeatherCard,
+      title: l10n.cardLiveWeatherTitle,
+      subtitle: l10n.cardLiveWeatherSubtitle,
+      icon: WeatherIcon(
+        WeatherSymbol.cloud,
+        color: colors.inkSoft,
+      ),
+      minHeight: 200,
+      children: [
+        const SizedBox(height: 24),
+        Center(
+          child: Text(
+            l10n.cardLiveWeatherUnavailable,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: DururFonts.body,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: colors.ink,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// «الجو المعتاد حسب التراث» (R3.1-18): العنوان 13، ثم شرائح الجو (رمز
+/// ملوّن 18 + كلمة 13)، ثم «حسب التراث، وليس توقعاً للطقس.» 12. الشريحة تفتح
+/// فقاعة الرمز. لا يوضع في بطاقة الطقس الفعلي ولا بجانبها.
+class UsualWeatherSection extends StatelessWidget {
+  const UsualWeatherSection({
+    super.key,
+    required this.info,
+    required this.onSymbol,
+  });
+
+  final DayInfo info;
+
+  /// ضغطة شريحة: الرمز وموضعها على الشاشة لفقاعته.
+  final void Function(WeatherSymbol symbol, Rect anchor) onSymbol;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = DururColors.of(context);
+    return Column(
+      key: HomeCardKeys.weatherCard,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.usualWeatherHeritageTitle,
+            style: TextStyle(
+              fontFamily: DururFonts.body,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: colors.inkSoft,
+            ),
+          ),
+        ),
+        Wrap(
+          spacing: 6,
+          children: [
+            for (final s in info.weather)
+              _WeatherBubbleChip(
+                key: HomeCardKeys.weatherChip(s),
+                symbol: s,
+                onTap: onSymbol,
+              ),
+          ],
+        ),
+        Text(
+          l10n.cardWeatherNote,
+          style: TextStyle(
+            fontFamily: DururFonts.body,
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: colors.inkSoft,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// بطاقة «الجو المعتاد حسب التراث» بعرض كامل في منطقة بلا درور (R3.10، بدل
+/// شريط الدَّرّ). الضغط عليها يفتح صفحة الطالع الحالي.
 class UsualWeatherCard extends StatelessWidget {
   const UsualWeatherCard({
     super.key,
@@ -390,34 +564,18 @@ class UsualWeatherCard extends StatelessWidget {
 
   final DayInfo info;
   final VoidCallback onTap;
-
-  /// ضغطة شريحة: الرمز وموضعها على الشاشة لفقاعته.
   final void Function(WeatherSymbol symbol, Rect anchor) onSymbol;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    return _TitledCard(
-      key: HomeCardKeys.weatherCard,
-      title: l10n.cardWeatherTitle,
+    return GlassSurface(
+      key: HomeCardKeys.usualWeatherCard,
+      blur: true,
+      radius: 12,
+      borderColor: cardBorder,
       onTap: onTap,
-      children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 8,
-          children: [
-            for (final s in info.weather)
-              _WeatherBubbleChip(
-                key: HomeCardKeys.weatherChip(s),
-                symbol: s,
-                onTap: onSymbol,
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(l10n.cardWeatherNote, style: theme.textTheme.bodySmall),
-      ],
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 12),
+      child: UsualWeatherSection(info: info, onSymbol: onSymbol),
     );
   }
 }
@@ -467,12 +625,21 @@ class _WeatherBubbleChip extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  WeatherIcon(symbol, color: colors.weatherTone(symbol.code)),
+                  WeatherIcon(
+                    symbol,
+                    size: 18,
+                    color: colors.weatherTone(symbol.code),
+                  ),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       weatherSymbolLabel(l10n, symbol),
-                      style: Theme.of(context).textTheme.labelLarge,
+                      style: TextStyle(
+                        fontFamily: DururFonts.body,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: colors.ink,
+                      ),
                     ),
                   ),
                 ],
@@ -485,39 +652,42 @@ class _WeatherBubbleChip extends StatelessWidget {
   }
 }
 
-/// شريط الدَّرّ بعرض كامل (DESIGN R2.8 بند 7): «دَرّ الستين» + شريحة «من
-/// الصفري»؛ للمستعيرة «حسب حساب الإمارات وعُمان» والسطر الثابت من البيانات
-/// (D24)؛ شريط التقدم بلون المئة؛ «اليوم ٨ من ١٠». الضغط ← صفحة الدَّرّ،
-/// والشريحة ← صفحة موسم المئة.
+/// شريط الدَّرّ بعرض كامل (DESIGN R2.8 بند 7، R3.1-18): «دَرّ الستين» +
+/// شريحة «من الصفري»؛ شريط التقدم بلون المئة؛ «اليوم ٨ من ١٠»؛ ثم بعد خط
+/// فاصل صف «الجو المعتاد حسب التراث». الضغط ← صفحة الدَّرّ، والشريحة ←
+/// صفحة موسم المئة. لا يُعرض في منطقة بلا درور (R3.10).
 class DarStrip extends StatelessWidget {
   const DarStrip({
     super.key,
     required this.info,
+    required this.dar,
     required this.tables,
     required this.digits,
     required this.onTap,
     required this.onSeason,
+    required this.onSymbol,
   });
 
   final DayInfo info;
+  final DarPeriod dar;
   final Tables tables;
   final DigitStyle digits;
   final VoidCallback onTap;
   final VoidCallback onSeason;
+  final void Function(WeatherSymbol symbol, Rect anchor) onSymbol;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colors = DururColors.of(context);
-    final hundred = info.dar.record.seasonId;
+    final hundred = dar.record.seasonId;
     final tone = colors.season(hundred);
-    final note = info.borrowsDurur
-        ? tables.regionTables[info.regionId]?.dururBorrow?.note.ar
-        : null;
     return GlassSurface(
       key: HomeCardKeys.darStrip,
       blur: true,
+      radius: 12,
+      borderColor: cardBorder,
       onTap: onTap,
       padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 12),
       child: Column(
@@ -529,7 +699,7 @@ class DarStrip extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                l10n.darTitle(info.dar.name.ar),
+                l10n.darTitle(dar.name.ar),
                 style: theme.textTheme.titleMedium,
               ),
               ActionChip(
@@ -553,21 +723,14 @@ class DarStrip extends StatelessWidget {
               ),
             ],
           ),
-          if (info.borrowsDurur)
-            Text(
-              l10n.darBorrowedCaption(
-                tables.region(info.dururRegionId)?.name.ar ?? '',
-              ),
-              style: theme.textTheme.bodySmall,
-            ),
           const SizedBox(height: 10),
-          _DarProgress(info: info, color: tone),
+          _DarProgress(dar: dar, color: tone),
           const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  dayOfDarLabel(l10n, info, digits: digits),
+                  dayOfDarLabel(l10n, dar, digits: digits),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.ink,
                   ),
@@ -583,14 +746,10 @@ class DarStrip extends StatelessWidget {
               ),
             ],
           ),
-          if (note != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              note,
-              key: HomeCardKeys.borrowNote,
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+          const SizedBox(height: 8),
+          Divider(height: 1, thickness: 1, color: colors.glassStroke),
+          const SizedBox(height: 8),
+          UsualWeatherSection(info: info, onSymbol: onSymbol),
         ],
       ),
     );
@@ -600,16 +759,16 @@ class DarStrip extends StatelessWidget {
 /// شريط التقدم في الدَّرّ: مقطع لكل يوم بطوله الفعلي، يملأ من البداية
 /// (اليمين في RTL)، واليوم الحالي بنقطة gold فوقه (DESIGN 5.6).
 class _DarProgress extends StatelessWidget {
-  const _DarProgress({required this.info, required this.color});
+  const _DarProgress({required this.dar, required this.color});
 
-  final DayInfo info;
+  final DarPeriod dar;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     final colors = DururColors.of(context);
-    final total = info.dar.length;
-    final day = info.dar.dayNumber;
+    final total = dar.length;
+    final day = dar.dayNumber;
     return ExcludeSemantics(
       child: SizedBox(
         height: 14,
@@ -654,21 +813,34 @@ class _DarProgress extends StatelessWidget {
 /// بعد، فتعرض النص بالضبط «لا توجد بيانات زراعية موثقة لمنطقتك» وزر «أعرف
 /// مصدراً» يفتح البلاغ معبأً باسم المنطقة.
 class AgriCard extends StatelessWidget {
-  const AgriCard({super.key, required this.onKnowSource});
+  const AgriCard({super.key, required this.onKnowSource, this.regionName});
 
   final VoidCallback onKnowSource;
+
+  /// العنوان الفرعي: اسم المنطقة (R3.1-16).
+  final String? regionName;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final colors = DururColors.of(context);
-    return _TitledCard(
+    return R3Card(
       key: HomeCardKeys.agriCard,
       title: l10n.cardAgriTitle,
+      subtitle: regionName,
       icon: CustomPaint(painter: _SproutPainter(colors.agri)),
+      minHeight: 150,
       children: [
-        Text(l10n.agriNoData, style: theme.textTheme.bodyMedium),
+        Text(
+          l10n.agriNoData,
+          style: TextStyle(
+            fontFamily: DururFonts.body,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: colors.ink,
+            height: 1.4,
+          ),
+        ),
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: TextButton(
@@ -686,8 +858,9 @@ class AgriCard extends StatelessWidget {
   }
 }
 
-/// بطاقة «القادم» (DESIGN R2.8): حتى 3 صفوف 48dp مرتبة بالأقرب: الاسم +
-/// «بعد ٣ أيام». الصف ← صفحة العنصر.
+/// بطاقة «القادم» (R3.1-16، مقابل «أحداث الطقس والعلامات التراثية»): 3
+/// صفوف 48dp مرتبة بالأقرب: أيقونة النوع 18 ثم الاسم 13، و«بعد ٣ أيام» 12
+/// في النهاية. الصف ← صفحة العنصر.
 class UpcomingCard extends StatelessWidget {
   const UpcomingCard({
     super.key,
@@ -705,11 +878,29 @@ class UpcomingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final colors = DururColors.of(context);
-    return _TitledCard(
+    Widget iconFor(SeasonEvent e) {
+      if (e.kind == SeasonEventKind.star) {
+        return CustomPaint(painter: _StarPainter(colors.goldText));
+      }
+      final symbols = e.dar?.record.weather ??
+          tables.items[e.itemId]?.weather ??
+          const <WeatherSymbol>[];
+      if (symbols.isEmpty) {
+        return CustomPaint(painter: _StarPainter(colors.inkSoft));
+      }
+      return WeatherIcon(
+        symbols.first,
+        size: 18,
+        color: colors.weatherTone(symbols.first.code),
+      );
+    }
+
+    return R3Card(
       key: HomeCardKeys.upcomingCard,
       title: l10n.cardUpcomingTitle,
+      subtitle: l10n.cardUpcomingSubtitle,
+      minHeight: 200,
       children: [
         for (final (i, e) in events.indexed)
           InkWell(
@@ -722,19 +913,33 @@ class UpcomingCard extends StatelessWidget {
                     ? null
                     : Border(top: BorderSide(color: colors.line)),
               ),
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                runAlignment: WrapAlignment.center,
-                spacing: 8,
+              child: Row(
                 children: [
-                  Text(
-                    seasonEventName(l10n, tables, e),
-                    style: theme.textTheme.bodyMedium,
+                  SizedBox.square(dimension: 18, child: iconFor(e)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      seasonEventName(l10n, tables, e),
+                      style: TextStyle(
+                        fontFamily: DururFonts.body,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: colors.ink,
+                      ),
+                    ),
                   ),
-                  Text(
-                    l10n.upcomingAfter(e.days, formatInteger(e.days, digits)),
-                    style: theme.textTheme.bodySmall,
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      l10n.upcomingAfter(e.days, formatInteger(e.days, digits)),
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontFamily: DururFonts.body,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: colors.inkSoft,
+                      ),
+                    ),
                   ),
                 ],
               ),

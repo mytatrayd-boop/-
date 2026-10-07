@@ -30,23 +30,47 @@ Future<void> main() async {
     expect(target.date.weekday, DateTime.friday);
   });
 
-  test('القادم: الدَّرّ التالي، والموسم الكبير التالي، وأقرب موسم جو غير الهدف', () {
+  test('القادم في الرياض بلا درور (R3.10): الطالع وموسم الجو والموسم الكبير', () {
     final all = events(DateTime(2026, 10, 7));
-    final rows = upcomingEvents(all, countdownEvent(all));
+    expect(all.where((e) => e.kind == SeasonEventKind.dar), isEmpty);
+    final rows = upcomingEvents(all, countdownEvent(all), hasDurur: false);
     expect(rows, hasLength(3));
-    expect(rows[0].kind, SeasonEventKind.dar);
-    expect(rows[0].dar!.name.ar, 'السبعين');
-    expect(rows[0].days, 3);
-    expect(rows[1].kind, SeasonEventKind.majorSeason);
+    expect(rows.map((e) => e.kind).toSet(), {
+      SeasonEventKind.star,
+      SeasonEventKind.weatherSeason,
+      SeasonEventKind.majorSeason,
+    });
+    expect(rows[0].itemId, 'wasm');
+    expect(rows[0].days, 9);
     expect(rows[1].itemId, 'shita');
     expect(rows[1].days, 47);
-    expect(rows[2].itemId, 'murabbaniya');
-    expect(rows[2].days, 61);
-    // مرتبة بالأقرب، وكلها بعد اليوم المعروض.
+    expect(rows[2].kind, SeasonEventKind.star);
     for (var i = 1; i < rows.length; i++) {
       expect(rows[i].days, greaterThanOrEqualTo(rows[i - 1].days));
     }
     expect(rows.every((e) => e.days > 0), isTrue);
+  });
+
+  test('القادم في الخليج: الدَّرّ التالي، والموسم الكبير التالي، وأقرب موسم '
+      'جو أو طالع غير هدف العدّاد', () {
+    final kuwait = CalendarEngine.fromTables(tables, 'kuwait');
+    final all = seasonEvents(
+      from: DateTime(2026, 10, 7),
+      resolve: kuwait.resolve,
+      items: tables.items,
+    );
+    final target = countdownEvent(all);
+    final rows = upcomingEvents(all, target);
+    expect(rows, hasLength(3));
+    expect(rows.where((e) => e.kind == SeasonEventKind.dar), hasLength(1));
+    expect(
+      rows.where((e) => e.kind == SeasonEventKind.majorSeason),
+      hasLength(1),
+    );
+    expect(rows.any((e) => target != null && e.sameAs(target)), isFalse);
+    for (var i = 1; i < rows.length; i++) {
+      expect(rows[i].days, greaterThanOrEqualTo(rows[i - 1].days));
+    }
   });
 
   test('يوم البداية نفسه: الحدث بيوم 0 (دخل الوسم اليوم)', () {

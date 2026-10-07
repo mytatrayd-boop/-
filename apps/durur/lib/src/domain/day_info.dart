@@ -60,31 +60,33 @@ class DayInfo {
   const DayInfo({
     required this.date,
     required this.regionId,
-    String? dururRegionId,
     required this.dar,
     required this.majorSeason,
     required this.weatherSeason,
     required this.star,
-  }) : dururRegionId = dururRegionId ?? regionId;
+    this.starWeather = const [],
+    this.starWeatherNote,
+  });
 
   /// اليوم المحلي بصيغة UTC منتصف الليل.
   final DateTime date;
   final String regionId;
 
-  /// منطقة جدول الدرور الفعلي: المُعيرة عند الاستعارة (D24)، وإلا [regionId].
-  final String dururRegionId;
-
-  /// هل الدَّرّ مستعار من جدول منطقة أخرى؟ (D24)
-  bool get borrowsDurur => dururRegionId != regionId;
-
-  final DarPeriod dar;
+  /// الدَّرّ الفعّال، أو null في منطقة بلا درور (السعودية، D43، D50).
+  final DarPeriod? dar;
   final ItemPeriod majorSeason;
 
   /// موسم الجو إن وُجد (قد توجد أيام بلا موسم جو).
   final ItemPeriod? weatherSeason;
   final ItemPeriod star;
 
-  /// رموز الجو المعتاد (من الدَّرّ).
-  List<WeatherSymbol> get weather => dar.record.weather;
-  LocalizedText? get weatherNote => dar.record.weatherNote;
+  /// رموز الجو المعتاد للنجم الحالي (من `items.json`)، مصدر «الجو المعتاد»
+  /// في منطقة بلا درور (ARCHITECTURE §18).
+  final List<WeatherSymbol> starWeather;
+  final LocalizedText? starWeatherNote;
+
+  /// رموز الجو المعتاد: من الدَّرّ إن وُجد، وإلا من النجم الحالي، وإلا فارغة.
+  List<WeatherSymbol> get weather => dar?.record.weather ?? starWeather;
+  LocalizedText? get weatherNote =>
+      dar == null ? starWeatherNote : dar!.record.weatherNote;
 }

@@ -128,11 +128,12 @@ class _GlassEdge extends CustomPainter {
       old.radius != radius || old.border != border;
 }
 
-/// خلفية سماء الليل (DESIGN R2.1): تدرّج كحلي أفتح خلف الدائرة (حتى `bg-glow`)
-/// وأغمق في الأسفل، ووردة رياح ثمانية الأطراف من صنعنا بشفافية 6%. زخرفة
+/// خلفية الشاشات (DESIGN R2.1، R3.1-14): تدرّج تركوازي داكن، أفتح خلف
+/// الدائرة (حتى `bg-glow`، نصف قطره 0.75 من العرض) وأغمق في الأسفل. وردة
+/// الرياح القديمة اختيارية ([rose])؛ الرئيسية تستعمل [GulfBackdrop]. زخرفة
 /// ثابتة مخفية عن قارئ الشاشة.
 class NightSky extends StatelessWidget {
-  const NightSky({super.key, this.glowCenter = 0.3, this.rose = true});
+  const NightSky({super.key, this.glowCenter = 0.3, this.rose = false});
 
   /// موضع أفتح نقطة رأسياً (نسبة من الارتفاع).
   final double glowCenter;

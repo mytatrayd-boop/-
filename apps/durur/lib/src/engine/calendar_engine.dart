@@ -1,4 +1,5 @@
 import '../domain/day_info.dart';
+import '../domain/item.dart';
 import '../domain/month_day.dart';
 import '../domain/region.dart';
 import '../domain/region_table.dart';
@@ -10,16 +11,13 @@ import '../domain/tables.dart';
 /// يفترض جدولاً صحيحاً (انظر [TableValidator])؛ يكفي هنا ألا تكون
 /// الطبقات المتصلة فارغة.
 class CalendarEngine {
-  /// [dururRegion] و[dururTable]: المنطقة المُعيرة وجدولها، إلزاميان إن كان
-  /// للجدول `dururBorrow` (D24)، وممنوعان غير ذلك. الدَّرّ يُحسب من جدول
-  /// المُعيرة وبقاعدة 29 فبراير الخاصة بها، وبقية الطبقات من [table].
+  /// [items]: عناصر `items.json` (اختيارية)، يُؤخذ منها جو النجم الحالي في
+  /// منطقة بلا درور (ARCHITECTURE §18).
   CalendarEngine({
     required this.region,
     required this.table,
-    Region? dururRegion,
-    RegionTable? dururTable,
-  }) : dururRegion = dururRegion ?? region,
-       _durur = _sorted((dururTable ?? table).durur, (r) => r.start),
+    this.items = const {},
+  }) : _durur = _sorted(table.durur, (r) => r.start),
        _majorSeasons = _sorted(table.majorSeasons, (r) => r.start),
        _stars = _sorted(table.stars, (r) => r.start) {
     if (region.id != table.regionId) {
@@ -27,69 +25,33 @@ class CalendarEngine {
         'جدول ${table.regionId} لا يخص المنطقة ${region.id}.',
       );
     }
-    final borrow = table.dururBorrow;
-    if (borrow == null) {
-      if (dururRegion != null || dururTable != null) {
-        throw ArgumentError('جدول ${table.regionId} لا يستعير الدرور.');
-      }
-    } else {
-      if (dururRegion == null || dururTable == null) {
-        throw ArgumentError(
-          'جدول ${table.regionId} يستعير درور '
-          '${borrow.fromRegionId}: يلزم جدول المُعيرة.',
-        );
-      }
-      if (dururRegion.id != borrow.fromRegionId ||
-          dururTable.regionId != borrow.fromRegionId) {
-        throw ArgumentError(
-          'جدول ${table.regionId} يستعير درور '
-          '${borrow.fromRegionId} لا ${dururTable.regionId}.',
-        );
-      }
-      if (dururTable.borrowsDurur) {
-        throw ArgumentError(
-          '${dururTable.regionId} يستعير بدوره؛ '
-          'سلاسل الاستعارة ممنوعة.',
-        );
-      }
-    }
-    if (_durur.isEmpty || _majorSeasons.isEmpty || _stars.isEmpty) {
+    if (_majorSeasons.isEmpty || _stars.isEmpty) {
       throw ArgumentError(
-        'جدول ${table.regionId}: الدرور والمواسم الكبيرة '
-        'والنجوم يجب ألا تكون فارغة.',
+        'جدول ${table.regionId}: المواسم الكبيرة والنجوم يجب ألا تكون فارغة.',
       );
     }
   }
 
-  /// محرك منطقة من الجداول المحمّلة، مع جدول المُعيرة إن كانت تستعير الدرور.
+  /// محرك منطقة من الجداول المحمّلة.
   factory CalendarEngine.fromTables(Tables tables, String regionId) {
     final region = tables.region(regionId);
     final table = tables.regionTables[regionId];
     if (region == null || table == null) {
       throw ArgumentError('المنطقة $regionId غير موجودة.');
     }
-    final borrow = table.dururBorrow;
-    return CalendarEngine(
-      region: region,
-      table: table,
-      dururRegion: borrow == null ? null : tables.region(borrow.fromRegionId),
-      dururTable: borrow == null
-          ? null
-          : tables.regionTables[borrow.fromRegionId],
-    );
+    return CalendarEngine(region: region, table: table, items: tables.items);
   }
 
   final Region region;
   final RegionTable table;
-
-  /// منطقة جدول الدرور الفعلي (المُعيرة عند الاستعارة، وإلا [region]).
-  final Region dururRegion;
+  /// عناصر items.json (لجو النجم الحالي).
+  final Map<String, Item> items;
   final List<DarRecord> _durur;
   final List<LayerRecord> _majorSeasons;
   final List<LayerRecord> _stars;
 
-  /// استعارة الدرور (D24) أو null.
-  DururBorrow? get dururBorrow => table.dururBorrow;
+  /// هل للمنطقة درور؟ (السعودية بلا درور، D43، D50.)
+  bool get hasDurur => _durur.isNotEmpty;
 
   static List<T> _sorted<T>(List<T> list, MonthDay Function(T) startOf) =>
       [...list]..sort((a, b) => startOf(a).compareTo(startOf(b)));
@@ -99,22 +61,24 @@ class CalendarEngine {
   DayInfo resolve(DateTime localDate) {
     final date = DateTime.utc(localDate.year, localDate.month, localDate.day);
     final key = lookupKey(date);
-    final darKey = _lookupKey(date, dururRegion.leapDayRule);
 
-    final dar = _resolveContinuous(_durur, (r) => r.start, date, darKey);
+    final dar = hasDurur
+        ? _resolveContinuous(_durur, (r) => r.start, date, key)
+        : null;
     final season = _resolveContinuous(_majorSeasons, (r) => r.start, date, key);
     final star = _resolveContinuous(_stars, (r) => r.start, date, key);
 
     return DayInfo(
       date: date,
       regionId: region.id,
-      dururRegionId: dururRegion.id,
-      dar: DarPeriod(
-        record: dar.record,
-        start: dar.start,
-        end: dar.end,
-        dayNumber: dar.dayNumber,
-      ),
+      dar: dar == null
+          ? null
+          : DarPeriod(
+              record: dar.record,
+              start: dar.start,
+              end: dar.end,
+              dayNumber: dar.dayNumber,
+            ),
       majorSeason: ItemPeriod(
         itemId: season.record.itemId,
         start: season.start,
@@ -130,6 +94,8 @@ class CalendarEngine {
         dayNumber: star.dayNumber,
         record: star.record,
       ),
+      starWeather: items[star.record.itemId]?.weather ?? const [],
+      starWeatherNote: items[star.record.itemId]?.weatherNote,
     );
   }
 

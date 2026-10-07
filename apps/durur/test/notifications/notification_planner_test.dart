@@ -153,24 +153,22 @@ Future<void> main() async {
         expect(starts, contains(s.record.start));
         expect(p.date.month, s.record.start.month);
         expect(p.date.day, s.record.start.day);
-        expect(s.dururRegionId, 'kuwait');
-        expect(s.borrowed, isFalse);
+        expect(s.regionId, 'kuwait');
       }
     });
 
-    test('المنطقة المستعيرة (D24): الدرور من جدول المُعيرة', () {
-      final result = plan(
+    test('منطقة بلا درور (D50): لا تنبيهات دَرّ مهما كان المفتاح', () {
+      expect(najd.hasDurur, isFalse);
+      final onlyDar = plan(
         now: DateTime(2026, 1, 1),
         engine: najd,
         important: false,
         dar: true,
       );
-      expect(result, hasLength(37));
-      for (final p in result) {
-        final s = p.subject as DarSubject;
-        expect(s.dururRegionId, 'uae_oman');
-        expect(s.borrowed, isTrue);
-      }
+      expect(onlyDar, isEmpty);
+      final both = plan(now: DateTime(2026, 1, 1), engine: najd, dar: true);
+      expect(both, isNotEmpty);
+      expect(both.every((p) => p.kind == NotificationKind.important), isTrue);
     });
   });
 

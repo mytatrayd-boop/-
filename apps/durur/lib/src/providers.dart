@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
 import 'astronomy/heliacal.dart';
+import 'astronomy/seasons.dart';
 import 'domain/city.dart';
 import 'domain/day_info.dart';
 import 'domain/local_date.dart';
@@ -227,6 +228,12 @@ final yearIndexProvider = Provider.family<YearIndex?, int>((ref, year) {
   final engine = ref.watch(engineProvider);
   return engine == null ? null : YearIndex(engine, year);
 });
+
+/// الفصول الفلكية والبروج لسنة بتوقيت الجهاز (DESIGN R3.2، D40)؛ حساب
+/// فلكي بلا بيانات، يُخزَّن لكل سنة.
+final astroYearProvider = Provider.family<AstroYear, int>(
+  (ref, year) => AstroYear.compute(year),
+);
 
 /// ساعة الجهاز؛ تُستبدل في الاختبارات بوقت ثابت.
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);

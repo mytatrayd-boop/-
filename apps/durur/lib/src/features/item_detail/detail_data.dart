@@ -34,8 +34,8 @@ final class ItemTarget extends DetailTarget {
   String toString() => 'ItemTarget($itemId)';
 }
 
-/// دَرّ: `/dar/<regionId>/<MM-DD>`، و[regionId] جدول الدرور الفعلي
-/// (المُعيرة عند الاستعارة، D24 وD26).
+/// دَرّ: `/dar/<regionId>/<MM-DD>`، و[regionId] جدول الدرور (D26). لا أهداف
+/// دَرّ في منطقة بلا درور (السعودية، D50).
 final class DarTarget extends DetailTarget {
   const DarTarget(this.regionId, this.start);
 
@@ -143,7 +143,7 @@ DetailData? resolveDetail({
       );
     case DarTarget(:final regionId, start: final darStart):
       final table = tables.regionTables[regionId];
-      if (table == null || table.borrowsDurur) return null;
+      if (table == null || !table.hasDurur) return null;
       if (!table.durur.any((r) => r.start == darStart)) return null;
       final CalendarEngine darEngine;
       try {
@@ -170,16 +170,22 @@ DetailData? resolveDetail({
 
 /// طلب صفحة من جزء في الدائرة أو البطاقة ليوم [day]: النجم، أو الموسم
 /// الكبير (ومنه حلقة الأشهر)، أو موسم الجو إن وُجد، وإلا الدَّرّ بجدوله
-/// الفعلي (المُعيرة عند الاستعارة، D26).
+/// (D26). في منطقة بلا درور (D50) يحل الطالع محل الدَّرّ.
 DetailRequest detailRequestFor(DialRing ring, DayInfo day) {
   final from = DateTime(day.date.year, day.date.month, day.date.day);
+  final dar = day.dar;
   final DetailTarget target = switch (ring) {
     DialRing.stars => ItemTarget(day.star.itemId),
-    DialRing.seasons || DialRing.months => ItemTarget(day.majorSeason.itemId),
+    DialRing.seasons ||
+    DialRing.majorSeason ||
+    DialRing.months ||
+    DialRing.days ||
+    DialRing.zodiac => ItemTarget(day.majorSeason.itemId),
     DialRing.weather when day.weatherSeason != null => ItemTarget(
       day.weatherSeason!.itemId,
     ),
-    _ => DarTarget(day.dururRegionId, day.dar.record.start),
+    _ when dar != null => DarTarget(day.regionId, dar.record.start),
+    _ => ItemTarget(day.star.itemId),
   };
   return (target: target, from: from);
 }

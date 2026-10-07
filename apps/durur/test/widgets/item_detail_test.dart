@@ -353,15 +353,15 @@ Future<void> main() async {
       final day = CalendarEngine.fromTables(tables, 'najd').resolve(today);
       await openSheet(tester, detailRequestFor(DialRing.durur, day));
       expect(inSheet(find.text(l10n.detailTypeDar)), findsOneWidget);
-      expect(inSheet(find.text(day.dar.name.ar)), findsOneWidget);
+      expect(inSheet(find.text(day.dar!.name.ar)), findsOneWidget);
       expect(find.textContaining('في جدول الإمارات وعُمان'), findsOneWidget);
       expect(find.byKey(ItemDetailView.proverbKey), findsNothing);
       expect(find.byKey(ItemDetailView.definitionKey), findsNothing);
-      final hundred = name(day.dar.record.seasonId);
+      final hundred = name(day.dar!.record.seasonId);
       expect(find.text(l10n.detailDarHundred(hundred)), findsOneWidget);
       await scrollTo(tester, find.byKey(ItemDetailView.datesSourceKey));
       expect(
-        find.text(l10n.commonSource(day.dar.record.source.title)),
+        find.text(l10n.commonSource(day.dar!.record.source.title)),
         findsOneWidget,
       );
       expect(find.byKey(ItemDetailView.contentSourceKey), findsNothing);
@@ -431,19 +431,19 @@ Future<void> main() async {
       phone(tester);
       final container = await openApp(tester);
       final info = container.read(dayInfoProvider(today))!;
-      final row = find.text(l10n.darTitle(info.dar.name.ar));
+      final row = find.text(l10n.darTitle(info.dar!.name.ar));
       await scrollHomeTo(tester, row);
       await tester.tap(row);
       await tester.pumpAndSettle();
       expect(
         location(tester),
-        '/dar/uae_oman/${info.dar.record.start}?from=2026-10-02',
+        '/dar/uae_oman/${info.dar!.record.start}?from=2026-10-02',
       );
       expect(find.textContaining('في جدول الإمارات وعُمان'), findsOneWidget);
 
       await tester.tap(find.byKey(ItemDetailView.seasonChipKey));
       await tester.pumpAndSettle();
-      expect(location(tester), startsWith('/item/${info.dar.record.seasonId}'));
+      expect(location(tester), startsWith('/item/${info.dar!.record.seasonId}'));
       await tester.tap(find.byKey(ItemDetailView.goToStartKey).last);
       await tester.pumpAndSettle();
       expect(find.byKey(ItemDetailPage.pageKey), findsNothing);
@@ -471,7 +471,7 @@ Future<void> main() async {
       await scrollHomeTo(tester, find.byKey(HomeCardKeys.darSeasonChip));
       await tester.tap(find.byKey(HomeCardKeys.darSeasonChip));
       await tester.pumpAndSettle();
-      expect(location(tester), startsWith('/item/${info.dar.record.seasonId}'));
+      expect(location(tester), startsWith('/item/${info.dar!.record.seasonId}'));
     });
 
     testWidgets('العدّاد وصفوف «القادم» تفتح صفحاتها الكاملة', (tester) async {
@@ -514,17 +514,15 @@ Future<void> main() async {
       expect(find.text('يبدأ بعد ١٤ يوماً'), findsOneWidget);
     });
 
-    testWidgets('«أصل التقويم»: سطر الإيضاح وتبويب «التراث» يفتحانها (D24)', (
+    testWidgets('«أصل التقويم»: الدرج الجانبي وتبويب «التراث» يفتحانها', (
       tester,
     ) async {
       phone(tester);
       await openApp(tester);
-      await scrollHomeTo(tester, find.byKey(HomeScreen.legendKey));
-      expect(
-        tester.getSize(find.byKey(HomeScreen.legendKey)).height,
-        greaterThanOrEqualTo(48),
-      );
-      await tester.tap(find.byKey(HomeScreen.legendKey));
+      await tester.tap(find.byKey(HomeScreen.menuKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(HomeScreen.drawerKey), findsOneWidget);
+      await tester.tap(find.byKey(HomeScreen.drawerItem(3)));
       await tester.pumpAndSettle();
       expect(find.byKey(OriginScreen.screenKey), findsOneWidget);
       expect(location(tester), '/about/origin');
@@ -533,8 +531,8 @@ Future<void> main() async {
         l10n.originTawaliTitle,
         l10n.originTawaliBody,
         l10n.originDururTitle,
-        // المنطقة مستعيرة (نجد): عبارة المقارنة تُلحق (DESIGN 8.10).
-        '${l10n.originDururBody} ${l10n.originDururComparison}',
+        // لا عبارة مقارنة: لا درور في السعودية (D50).
+        l10n.originDururBody,
       ]) {
         expect(find.text(text), findsOneWidget, reason: text);
       }

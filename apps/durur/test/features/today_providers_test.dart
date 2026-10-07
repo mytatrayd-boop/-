@@ -89,7 +89,7 @@ Future<void> main() async {
     final index = c.read(yearIndexProvider(2028))!;
     expect(index.length, 366);
     expect(index.days.first.regionId, 'najd');
-    expect(index.days.first.dururRegionId, 'uae_oman');
+    expect(index.days.first.dar, isNull);
   });
 
   test(

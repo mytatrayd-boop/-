@@ -31,13 +31,13 @@ class DururColors extends ThemeExtension<DururColors> {
     required this.seasonTint,
   });
 
-  /// الوضع الوحيد (DESIGN R2.2، R2.11).
+  /// الوضع الوحيد (DESIGN R2.2، R2.11)، بلوحة R3.1-14 التركوازية.
   static const night = DururColors(
-    background: Color(0xFF0A1A2F),
-    backgroundDeep: Color(0xFF06101F),
-    backgroundGlow: Color(0xFF143450),
-    surface: Color(0xFF13283E),
-    surfaceAlt: Color(0xFF214A5E),
+    background: Color(0xFF0A2230),
+    backgroundDeep: Color(0xFF061620),
+    backgroundGlow: Color(0xFF11384A),
+    surface: Color(0xFF16303C),
+    surfaceAlt: Color(0xFF2E4A57),
     ink: Color(0xFFEAF6FA),
     inkSoft: Color(0xFFA9C3D1),
     inkMuted: Color(0xFF7F9BB0),
@@ -136,6 +136,21 @@ class DururColors extends ThemeExtension<DururColors> {
     'fog' => const Color(0xFF8CC8FF),
     'dust' || 'wind' || 'wind_strong' => const Color(0xFFF2A65A),
     _ => ink,
+  };
+
+  /// لون رمز الجو على الدائرة (DESIGN R3.1-5): حر/حر شديد `gold`، برد/مطر/
+  /// رطوبة/ضباب أزرق، غبار/رياح كهرماني، والبقية `ink-soft`.
+  Color dialWeatherTone(String code) => switch (code) {
+    'hot' || 'very_hot' => goldText,
+    'cool' ||
+    'cold' ||
+    'very_cold' ||
+    'rain' ||
+    'heavy_rain' ||
+    'humidity' ||
+    'fog' => const Color(0xFF8CC8FF),
+    'dust' || 'wind' || 'wind_strong' => const Color(0xFFF2A65A),
+    _ => inkSoft,
   };
 
   static DururColors of(BuildContext context) =>

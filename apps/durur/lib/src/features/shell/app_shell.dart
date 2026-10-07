@@ -5,7 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../common/glass.dart';
 
-/// إطار التبويبات (DESIGN R2.9): شريط زجاجي عائم بأربعة تبويبات من اليمين:
+/// إطار التبويبات (DESIGN R2.9، R3.1-19): كبسولة زجاجية بأربعة تبويبات من اليمين:
 /// الدائرة، الرموز، التراث، الإعدادات. كل تبويب يحفظ حالته
 /// ([StatefulNavigationShell])، والصفحات الكاملة والأوراق السفلية تُفتح فوق
 /// الشريط فيختفي تحتها.
@@ -25,12 +25,17 @@ class AppShell extends StatelessWidget {
       body: shell,
       bottomNavigationBar: _GlassTabBar(
         index: shell.currentIndex,
-        onSelect: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
+        onSelect: (i) =>
+            shell.goBranch(i, initialLocation: i == shell.currentIndex),
       ),
     );
   }
 }
 
+/// الكبسولة (R3.1-19): زجاجية، عرضها min(العرض − 32، 360) على الهاتف و44%
+/// على الجهاز اللوحي، ارتفاعها 56 وزواياها 28، في المنتصف بهامش 12 من
+/// الأسفل. تسميات بلا أيقونات (Almarai 15)؛ وعند تكبير الخط ≥ 1.5× أيقونات
+/// R2.9 فقط وأسماؤها لقارئ الشاشة.
 class _GlassTabBar extends StatelessWidget {
   const _GlassTabBar({required this.index, required this.onSelect});
 
@@ -46,38 +51,48 @@ class _GlassTabBar extends StatelessWidget {
       l10n.tabHeritage,
       l10n.tabSettings,
     ];
-    // تكبير خط ≥ 1.5×: الأيقونات فقط، وأسماؤها لقارئ الشاشة (R2.10).
     final showLabels = MediaQuery.textScalerOf(context).scale(1) < 1.5;
     final bottom = MediaQuery.paddingOf(context).bottom;
+    final width = MediaQuery.sizeOf(context).width;
+    final capsule = width >= 600
+        ? width * 0.437
+        : (width - 32).clamp(0.0, 360.0);
     return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(12, 0, 12, 12 + bottom),
-      child: SizedBox(
-        key: AppShell.tabBarKey,
-        height: 64,
-        child: GlassSurface(
-          radius: 32,
-          fill: const Color(0xE6102A40),
-          padding: const EdgeInsetsDirectional.symmetric(horizontal: 6),
-          child: Semantics(
-            container: true,
-            explicitChildNodes: true,
-            child: Row(
-              children: [
-                for (final (i, label) in labels.indexed)
-                  Expanded(
-                    child: _Tab(
-                      key: AppShell.tabKey(i),
-                      label: label,
-                      icon: _TabIcon.values[i],
-                      selected: i == index,
-                      showLabel: showLabels,
-                      onTap: () => onSelect(i),
-                    ),
-                  ),
-              ],
+      padding: EdgeInsetsDirectional.only(bottom: 12 + bottom),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            key: AppShell.tabBarKey,
+            width: capsule,
+            height: 56,
+            child: GlassSurface(
+              radius: 28,
+              fill: const Color(0xE616303C),
+              borderColor: const Color(0x668FB3C0),
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 6),
+              child: Semantics(
+                container: true,
+                explicitChildNodes: true,
+                child: Row(
+                  children: [
+                    for (final (i, label) in labels.indexed)
+                      Expanded(
+                        child: _Tab(
+                          key: AppShell.tabKey(i),
+                          label: label,
+                          icon: _TabIcon.values[i],
+                          selected: i == index,
+                          showLabel: showLabels,
+                          onTap: () => onSelect(i),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -102,9 +117,7 @@ class _Tab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DururColors.of(context);
-    final theme = Theme.of(context);
-    // المختار: حبة surface-selected وأيقونة cyan وتسمية ink؛ غيره ink-soft.
-    final iconColor = selected ? colors.primary : colors.inkSoft;
+    // المختار: حبة surface-selected ونص ink بوزن 800؛ غيره ink-soft بوزن 700.
     final textColor = selected ? colors.ink : colors.inkSoft;
     return Semantics(
       button: true,
@@ -118,37 +131,54 @@ class _Tab extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           customBorder: const StadiumBorder(),
-          child: Center(
-            child: Container(
-              height: 52,
-              constraints: const BoxConstraints(minWidth: 48),
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 8),
-              decoration: ShapeDecoration(
-                shape: const StadiumBorder(),
-                color: selected ? colors.surfaceAlt : null,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CustomPaint(
-                    size: const Size.square(24),
-                    painter: _TabIconPainter(icon, iconColor),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56, minWidth: 48),
+            child: Center(
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  shape: const StadiumBorder(),
+                  color: selected ? colors.surfaceAlt : null,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 44,
+                    maxHeight: 44,
                   ),
-                  if (showLabel)
-                    MediaQuery.withNoTextScaling(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.fade,
-                        softWrap: false,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: textColor,
-                          height: 1.3,
-                        ),
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: 6,
                     ),
-                ],
+                    child: Center(
+                      widthFactor: 1,
+                      child: showLabel
+                          ? MediaQuery.withNoTextScaling(
+                              child: Text(
+                                label,
+                                maxLines: 1,
+                                overflow: TextOverflow.fade,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontFamily: DururFonts.body,
+                                  fontSize: 15,
+                                  fontWeight: selected
+                                      ? FontWeight.w800
+                                      : FontWeight.w700,
+                                  color: textColor,
+                                  height: 1.2,
+                                ),
+                              ),
+                            )
+                          : CustomPaint(
+                              size: const Size.square(24),
+                              painter: _TabIconPainter(
+                                icon,
+                                selected ? colors.primary : colors.inkSoft,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -190,7 +220,11 @@ class _TabIconPainter extends CustomPainter {
           Path()
             ..moveTo(17, 3.5)
             ..cubicTo(15.5, 5.5, 14, 7.1, 14, 8.5)
-            ..arcToPoint(const Offset(20, 8.5), radius: const Radius.circular(3), clockwise: false)
+            ..arcToPoint(
+              const Offset(20, 8.5),
+              radius: const Radius.circular(3),
+              clockwise: false,
+            )
             ..cubicTo(20, 7.1, 18.5, 5.5, 17, 3.5),
           p,
         );
@@ -200,9 +234,21 @@ class _TabIconPainter extends CustomPainter {
           Path()
             ..moveTo(14, 17.5)
             ..lineTo(20.5, 17.5)
-            ..arcToPoint(const Offset(20.5, 13.1), radius: const Radius.circular(2.2), clockwise: false)
-            ..arcToPoint(const Offset(14.2, 13.7), radius: const Radius.circular(3.3), clockwise: false)
-            ..arcToPoint(const Offset(14, 17.5), radius: const Radius.circular(2), clockwise: false),
+            ..arcToPoint(
+              const Offset(20.5, 13.1),
+              radius: const Radius.circular(2.2),
+              clockwise: false,
+            )
+            ..arcToPoint(
+              const Offset(14.2, 13.7),
+              radius: const Radius.circular(3.3),
+              clockwise: false,
+            )
+            ..arcToPoint(
+              const Offset(14, 17.5),
+              radius: const Radius.circular(2),
+              clockwise: false,
+            ),
           p,
         );
       case _TabIcon.heritage:

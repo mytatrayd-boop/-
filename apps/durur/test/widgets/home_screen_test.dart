@@ -5,7 +5,9 @@ import 'package:durur/l10n/app_localizations.dart';
 import 'package:durur/src/domain/tables.dart';
 import 'package:durur/src/domain/weather_symbol.dart';
 import 'package:durur/src/features/common/draft_banner.dart';
+import 'package:durur/src/features/home/astro_sheets.dart';
 import 'package:durur/src/features/home/dial/day_dial.dart';
+import 'package:durur/src/features/home/dial/dial_model.dart';
 import 'package:durur/src/features/home/home_cards.dart';
 import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/home/symbol_bubble.dart';
@@ -19,13 +21,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/app_harness.dart';
 
-/// الميزة 6 و16: الشاشة الرئيسية والدائرة التفاعلية (SPEC 6 و16، DESIGN R2.5–R2.8
-/// و7.4 و7.7).
+/// الميزة 6 و16: الشاشة الرئيسية والدائرة (DESIGN R3.1، R3.2، R3.10، 7.4، 7.7).
 Future<void> main() async {
   TestWidgetsFlutterBinding.ensureInitialized();
   final tables = await loadAssetTables();
 
-  void phone(WidgetTester tester, {double width = 411, double height = 900}) {
+  void phone(WidgetTester tester, {double width = 412, double height = 900}) {
     tester.view.physicalSize = Size(width, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -54,6 +55,9 @@ Future<void> main() async {
   DateTime selected(WidgetTester tester) =>
       containerOf(tester).read(selectedDateProvider);
 
+  DialModel model(WidgetTester tester) =>
+      tester.widget<DayDial>(find.byType(DayDial)).model;
+
   SemanticsData dialData(WidgetTester tester) =>
       tester.getSemantics(find.byKey(DayDial.dialKey)).getSemanticsData();
 
@@ -62,9 +66,40 @@ Future<void> main() async {
     node.owner!.performAction(node.id, action);
   }
 
-  /// نقطة على الدائرة: [fraction] من نصف القطر R (R2.5)، و[degrees] مع عقارب
-  /// الساعة من الإبرة. منتصفات الحلقات: A 0.935، الأشهر 0.80، الدرور 0.655،
-  /// الطوالع 0.505، المركز 0.28، المقبض 0.
+  List<String> customActions(WidgetTester tester) => [
+    for (final id in dialData(tester).customSemanticsActionIds!)
+      CustomSemanticsAction.getAction(id)!.label!,
+  ];
+
+  void performCustom(WidgetTester tester, String label) {
+    final data = dialData(tester);
+    final i = customActions(tester).indexOf(label);
+    expect(i, isNonNegative, reason: label);
+    final node = tester.getSemantics(find.byKey(DayDial.dialKey));
+    node.owner!.performAction(
+      node.id,
+      SemanticsAction.customAction,
+      data.customSemanticsActionIds![i],
+    );
+  }
+
+  /// زاوية منتصف يوم بالدرجات مع عقارب الساعة من الأعلى (R3.1-3): 21
+  /// ديسمبر عند 180°، والزمن عكس عقارب الساعة.
+  double degOf(DateTime d) {
+    final days = DateTime.utc(d.year + 1).difference(DateTime.utc(d.year)).inDays;
+    final index = DateTime.utc(d.year, d.month, d.day)
+        .difference(DateTime.utc(d.year))
+        .inDays;
+    final anchor = DateTime.utc(d.year, 12, 21)
+        .difference(DateTime.utc(d.year))
+        .inDays;
+    return 180 - (index - anchor) * 360 / days;
+  }
+
+  /// نقطة على الدائرة: [fraction] من R، و[degrees] مع عقارب الساعة من الأعلى.
+  /// منتصفات الحلقات في الخليج: A 0.94، الأشهر 0.82، الأيام 0.725، الدرور
+  /// 0.59، الطوالع 0.455، البروج 0.38، المركز 0.2؛ وبلا درور: الطوالع 0.60،
+  /// البروج 0.455، المركز 0.22.
   Offset dialPoint(WidgetTester tester, double fraction, double degrees) {
     final c = tester.getCenter(find.byKey(DayDial.dialKey));
     final r = tester.getSize(find.byKey(DayDial.dialKey)).width / 2;
@@ -80,26 +115,54 @@ Future<void> main() async {
     await tester.pumpAndSettle();
   }
 
-  group('المعيار 1 و2: الدائرة واليوم بنظرة', () {
-    testWidgets('تظهر الدائرة والبطاقات لليوم، والشاشة RTL', (tester) async {
+  Future<void> closeSheet(WidgetTester tester, Finder sheet) async {
+    Navigator.of(tester.element(sheet)).pop();
+    await tester.pumpAndSettle();
+  }
+
+  group('R3: الشاشة بنظرة', () {
+    testWidgets('الخليج (مسقط): الدائرة بسبع حلقات، والبطاقات الأربع بعمودين، '
+        'وشريط الدَّرّ مع «الجو المعتاد حسب التراث»', (tester) async {
       phone(tester);
-      final handle = tester.ensureSemantics();
       await openHome(tester, city: 'muscat');
       expect(find.byKey(DayDial.dialKey), findsOneWidget);
-      expect(find.byType(CustomPaint), findsWidgets);
       expect(
         Directionality.of(tester.element(find.byKey(DayDial.dialKey))),
         TextDirection.rtl,
       );
+      expect(model(tester).hasDurur, isTrue);
+      // القطر = العرض − 16 (R3.1-2).
+      expect(tester.getSize(find.byType(DayDial)).width, 412 - 16);
+
+      // الصف العلوي: العنوان، والمكان والتاريخ الهجري، والقائمة والجرس.
+      expect(find.text('دليل المواسم'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(HomeScreen.placeKey),
+          matching: find.text('مسقط'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(HomeScreen.datesLineKey),
+          matching: find.text('٢١ ربيع الآخر ١٤٤٨هـ'),
+        ),
+        findsOneWidget,
+      );
+      // القائمة في البداية (يمين) والجرس في النهاية (يسار).
+      expect(
+        tester.getCenter(find.byKey(HomeScreen.menuKey)).dx,
+        greaterThan(tester.getCenter(find.byKey(HomeScreen.bellKey)).dx),
+      );
 
       final info = containerOf(tester)
           .read(dayInfoProvider(DateTime(2026, 10, 2)))!;
-      // بطاقة الطالع: النجم والموسم وموسم الجو (لا يوجد).
       final star = find.byKey(HomeCardKeys.starCard);
       for (final text in [
-        tables.items[info.star.itemId]!.name.ar,
+        'الطالع',
+        'نجم الموسم الآن',
         'الموسم: ${tables.items[info.majorSeason.itemId]!.name.ar}',
-        'موسم الجو: لا يوجد',
       ]) {
         expect(
           find.descendant(of: star, matching: find.text(text)),
@@ -107,37 +170,84 @@ Future<void> main() async {
           reason: text,
         );
       }
-      // الجو المعتاد: شرائح الرموز والسطر الثابت.
-      final weather = find.byKey(HomeCardKeys.weatherCard);
-      expect(
-        find.descendant(of: weather, matching: find.text('حر')),
-        findsOneWidget,
-      );
+      // الشبكة: الصف 1 الزراعة (يمين) والطالع (يسار)، والصف 2 القادم والطقس.
+      final agri = tester.getRect(find.byKey(HomeCardKeys.agriCard));
+      final starBox = tester.getRect(star);
+      final upcoming = tester.getRect(find.byKey(HomeCardKeys.upcomingCard));
+      final live = tester.getRect(find.byKey(HomeCardKeys.liveWeatherCard));
+      expect(agri.left, greaterThan(starBox.right));
+      expect(agri.top, starBox.top);
+      expect(upcoming.left, greaterThan(live.right));
+      expect(upcoming.top, greaterThan(agri.bottom));
+      expect(starBox.width, closeTo((412 - 44) / 2, 0.5));
       expect(
         find.descendant(
-          of: weather,
-          matching: find.text('حسب التراث، وليس توقعاً للطقس.'),
+          of: find.byKey(HomeCardKeys.liveWeatherCard),
+          matching: find.text('غير متاح بعد'),
         ),
         findsOneWidget,
       );
-      // اسم المدينة في الشريحة، والتاريخان مع اسم اليوم.
-      expect(find.text('مسقط · الإمارات وعُمان'), findsOneWidget);
-      expect(
-        findDatesLine('الجمعة ٢ أكتوبر ٢٠٢٦م\u00a0— ٢١ ربيع الآخر ١٤٤٨هـ'),
-        findsOneWidget,
-      );
-      // شريط الدَّرّ: الاسم واليوم داخله.
+
+      // شريط الدَّرّ ثم صف الجو المعتاد داخله (R3.1-18).
       await scrollHomeTo(tester, find.byKey(HomeCardKeys.darStrip));
       final dar = find.byKey(HomeCardKeys.darStrip);
       expect(
-        find.descendant(of: dar, matching: find.text('دَرّ ${info.dar.name.ar}')),
+        find.descendant(of: dar, matching: find.text('دَرّ ${info.dar!.name.ar}')),
         findsOneWidget,
       );
       expect(
         find.descendant(of: dar, matching: find.text('اليوم ٣ من ١٠')),
         findsOneWidget,
       );
-      handle.dispose();
+      final weather = find.descendant(
+        of: dar,
+        matching: find.byKey(HomeCardKeys.weatherCard),
+      );
+      for (final text in [
+        'الجو المعتاد حسب التراث',
+        'حسب التراث، وليس توقعاً للطقس.',
+      ]) {
+        expect(
+          find.descendant(of: weather, matching: find.text(text)),
+          findsOneWidget,
+        );
+      }
+      expect(find.byKey(HomeCardKeys.usualWeatherCard), findsNothing);
+    });
+
+    testWidgets('السعودية (الرياض) بلا درور (R3.10): لا شريط دَرّ، وبطاقة '
+        '«الجو المعتاد حسب التراث» من الطالع، و«القادم» بلا درور', (
+      tester,
+    ) async {
+      phone(tester);
+      await openHome(tester, now: DateTime(2026, 10, 7, 9));
+      expect(model(tester).hasDurur, isFalse);
+      expect(find.byKey(HomeCardKeys.darStrip), findsNothing);
+      expect(find.textContaining('دَرّ'), findsNothing);
+      await scrollHomeTo(tester, find.byKey(HomeCardKeys.usualWeatherCard));
+      final card = find.byKey(HomeCardKeys.usualWeatherCard);
+      expect(
+        find.descendant(of: card, matching: find.text('حر')),
+        findsOneWidget,
+      );
+      final rows = [
+        for (var i = 0; i < 3; i++) find.byKey(HomeCardKeys.upcomingRow(i)),
+      ];
+      expect(
+        find.descendant(of: rows[0], matching: find.text('الوسم')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: rows[0], matching: find.text('بعد ٩ أيام')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: rows[1], matching: find.text('الشتاء')),
+        findsOneWidget,
+      );
+      for (final r in rows) {
+        expect(tester.getSize(r).height, greaterThanOrEqualTo(48));
+      }
     });
 
     testWidgets('العبارة الثابتة وسطر المصدر', (tester) async {
@@ -171,66 +281,107 @@ Future<void> main() async {
       await tester.pumpAndSettle();
       expect(find.byKey(DraftBannerFrame.bannerKey), findsNothing);
     });
-  });
 
-  group('الوصولية (DESIGN 7.7)', () {
-    testWidgets('label البادئة فقط، وvalue المتغيّر بطول الدَّرّ الفعلي', (
+    testWidgets('القائمة تفتح الدرج، والجرس يُقرأ «الإذن مرفوض» بلا إذن', (
       tester,
     ) async {
       phone(tester);
-      final handle = tester.ensureSemantics();
-      // الرياض ← درور الإمارات وعُمان: دَرّ 6 أغسطس طوله 5 أيام في التجريبية.
-      await openHome(tester, now: DateTime(2026, 8, 8, 7));
-      final data = dialData(tester);
-      expect(data.label, 'اليوم');
-      final value = data.value;
-      // التاريخ مسموعاً بلا «م» و«هـ»، وكلمة «هجري».
-      expect(value, startsWith('السبت، ٨ أغسطس ٢٠٢٦، '));
-      expect(value, contains(' هجري. '));
-      expect(value, isNot(contains('٢٠٢٦م')));
-      expect(value, isNot(contains('هـ')));
-      expect(value, contains('اليوم ٣ من ٥.'));
-      expect(value, isNot(contains('عشرة')));
-      // نجد تستعير: الموسم ← موسم الجو ← النجم ← الدَّرّ المستعار ← الجو (7.7).
-      final order = [
-        'الموسم:',
-        'موسم الجو:',
-        'النجم:',
-        'دَرّ ',
-        'الجو المعتاد:',
-      ].map(value.indexOf).toList();
-      expect(order.every((i) => i >= 0), isTrue, reason: value);
-      expect(order, orderedEquals([...order]..sort()));
-      expect(value, contains('حسب حساب الإمارات وعُمان'));
-      // اليوم التالي والسابق.
-      expect(data.increasedValue, startsWith('الأحد، ٩ أغسطس ٢٠٢٦، '));
-      expect(data.increasedValue, contains('اليوم ٤ من ٥.'));
-      expect(data.decreasedValue, startsWith('الجمعة، ٧ أغسطس ٢٠٢٦، '));
-      expect(data.decreasedValue, contains('اليوم ٢ من ٥.'));
-      // المحور للمستعيرة يفتح الموسم (7.8).
-      expect(
-        data.hint,
-        'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.',
-      );
-      handle.dispose();
+      await openHome(tester);
+      // المُجدوِل الوهمي بلا إذن افتراضياً.
+      expect(find.byTooltip('التنبيهات، الإذن مرفوض'), findsOneWidget);
+      await tester.tap(find.byKey(HomeScreen.menuKey));
+      await tester.pumpAndSettle();
+      final drawer = find.byKey(HomeScreen.drawerKey);
+      expect(drawer, findsOneWidget);
+      expect(tester.getSize(drawer).width, 304);
+      // من اليمين (بداية RTL).
+      expect(tester.getRect(drawer).right, 412);
+      for (final text in ['المدينة', 'التنبيهات', 'المصادر', 'أصل التقويم',
+          'أبلغ عن خطأ']) {
+        expect(
+          find.descendant(of: drawer, matching: find.text(text)),
+          findsOneWidget,
+          reason: text,
+        );
+      }
     });
+  });
 
-    testWidgets('منطقة بدرورها: الدَّرّ بعد التاريخ، والتلميح يفتح الموسم (المركز)', (
+  group('الوصولية (7.7، R3.5)', () {
+    testWidgets('الخليج: التاريخ ← الفصل ← الدَّرّ ← النجم ← موسم الجو ← الجو', (
       tester,
     ) async {
       phone(tester);
       final handle = tester.ensureSemantics();
       await openHome(tester, city: 'kuwait_city');
       final data = dialData(tester);
-      expect(data.value, startsWith('الجمعة، ٢ أكتوبر ٢٠٢٦، '));
+      expect(data.label, 'اليوم');
       final value = data.value;
-      expect(value.indexOf('دَرّ '), lessThan(value.indexOf('النجم:')));
-      expect(value.indexOf('النجم:'), lessThan(value.indexOf('موسم الجو:')));
-      // المركز يعرض الموسم في كل المناطق (R2.5 F)، فالنقر المزدوج يفتحه.
+      expect(value, startsWith('الجمعة، ٢ أكتوبر ٢٠٢٦، '));
+      expect(value, contains(' هجري. '));
+      expect(value, isNot(contains('٢٠٢٦م')));
+      expect(value, contains('الفصل: الخريف، من ٢٣ سبتمبر إلى ٢١ ديسمبر.'));
+      final order = [
+        'هجري.',
+        'الفصل:',
+        'دَرّ ',
+        'النجم:',
+        'موسم الجو:',
+        'الجو المعتاد:',
+      ].map(value.indexOf).toList();
+      expect(order.every((i) => i >= 0), isTrue, reason: value);
+      expect(order, orderedEquals([...order]..sort()));
       expect(
         data.hint,
         'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الموسم.',
       );
+      expect(
+        customActions(tester),
+        containsAll([
+          'افتح صفحة النجم',
+          'افتح صفحة الموسم',
+          'افتح ورقة الفصل',
+          'اقرأ الفصل والبرج',
+          'اقرأ رموز الجو حول اليوم',
+          'انتقل دَرّاً للأمام',
+          'انتقل دَرّاً للخلف',
+        ]),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('السعودية: لا جملة دَرّ، و«انتقل طالعاً»، والتلميح للطالع', (
+      tester,
+    ) async {
+      phone(tester);
+      final handle = tester.ensureSemantics();
+      await openHome(tester);
+      final data = dialData(tester);
+      final value = data.value;
+      expect(value, isNot(contains('دَرّ')));
+      final order = [
+        'هجري.',
+        'الفصل:',
+        'الموسم:',
+        'موسم الجو:',
+        'النجم:',
+        'الجو المعتاد:',
+      ].map(value.indexOf).toList();
+      expect(order.every((i) => i >= 0), isTrue, reason: value);
+      expect(order, orderedEquals([...order]..sort()));
+      expect(
+        data.hint,
+        'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الطالع.',
+      );
+      final labels = customActions(tester);
+      expect(labels, contains('انتقل طالعاً للأمام'));
+      expect(labels, isNot(contains('انتقل دَرّاً للأمام')));
+      final info = containerOf(tester)
+          .read(dayInfoProvider(DateTime(2026, 10, 2)))!;
+      performCustom(tester, 'انتقل طالعاً للأمام');
+      await tester.pumpAndSettle();
+      final end = info.star.end;
+      expect(selected(tester), DateTime(end.year, end.month, end.day + 1));
       handle.dispose();
     });
 
@@ -241,17 +392,13 @@ Future<void> main() async {
       final handle = tester.ensureSemantics();
       await openHome(tester, city: 'kuwait_city');
       final before = dialData(tester);
-      expect(before.label, 'اليوم');
-
       perform(tester, SemanticsAction.increase);
       await tester.pumpAndSettle();
       expect(selected(tester), DateTime(2026, 10, 3));
       final after = dialData(tester);
       expect(after.label, 'التاريخ المعروض');
-      // قيمة اليوم الجديد = increasedValue المعلنة قبله.
       expect(after.value, before.increasedValue);
       expect(after.decreasedValue, before.value);
-
       perform(tester, SemanticsAction.decrease);
       perform(tester, SemanticsAction.decrease);
       await tester.pumpAndSettle();
@@ -272,7 +419,6 @@ Future<void> main() async {
           .select(DateTime(2040, 12, 31));
       await tester.pumpAndSettle();
       data = dialData(tester);
-      expect(data.increasedValue, isEmpty);
       expect(data.hasAction(SemanticsAction.increase), isFalse);
       expect(data.decreasedValue, startsWith('الأحد، ٣٠ ديسمبر ٢٠٤٠، '));
 
@@ -281,78 +427,58 @@ Future<void> main() async {
           .select(DateTime(2025, 1, 1));
       await tester.pumpAndSettle();
       data = dialData(tester);
-      expect(data.decreasedValue, isEmpty);
       expect(data.hasAction(SemanticsAction.decrease), isFalse);
-      expect(data.hasAction(SemanticsAction.increase), isTrue);
       expect(data.increasedValue, startsWith('الخميس، ٢ يناير ٢٠٢٥، '));
       handle.dispose();
     });
 
-    testWidgets('إجراءات مخصصة: الدَّرّ التالي والعودة لليوم', (tester) async {
+    testWidgets('إجراء «انتقل دَرّاً للأمام» في الخليج', (tester) async {
       phone(tester);
       final handle = tester.ensureSemantics();
       await openHome(tester, city: 'kuwait_city');
       final info = containerOf(tester)
           .read(dayInfoProvider(DateTime(2026, 10, 2)))!;
-      final data = tester
-          .getSemantics(find.byKey(DayDial.dialKey))
-          .getSemanticsData();
-      final labels = [
-        for (final id in data.customSemanticsActionIds!)
-          CustomSemanticsAction.getAction(id)!.label,
-      ];
-      expect(
-        labels,
-        containsAll([
-          'افتح صفحة النجم',
-          'افتح صفحة الموسم',
-          'اقرأ رموز الجو حول اليوم',
-          'انتقل دَرّاً للأمام',
-          'انتقل دَرّاً للخلف',
-        ]),
-      );
-      final next = labels.indexOf('انتقل دَرّاً للأمام');
-      final node = tester.getSemantics(find.byKey(DayDial.dialKey));
-      node.owner!.performAction(
-        node.id,
-        SemanticsAction.customAction,
-        data.customSemanticsActionIds![next],
-      );
+      performCustom(tester, 'انتقل دَرّاً للأمام');
       await tester.pumpAndSettle();
-      final end = info.dar.end;
+      final end = info.dar!.end;
       expect(selected(tester), DateTime(end.year, end.month, end.day + 1));
       handle.dispose();
     });
 
-    testWidgets('خط 200% على شاشة 320dp بلا فيضان ولا قصّ', (tester) async {
+    testWidgets('خط 200% على شاشة 320dp بلا فيضان، والبطاقات عمود واحد', (
+      tester,
+    ) async {
       phone(tester, width: 320, height: 640);
-      await openHome(tester, textScale: 2);
+      await openHome(tester, city: 'muscat', textScale: 2);
       expect(tester.takeException(), isNull);
       await scrollHomeTo(
         tester,
         find.text('الجو المعتاد حسب التراث، وليس توقعاً للطقس'),
       );
       expect(tester.takeException(), isNull);
-      // الدائرة تصغر إلى 75% من العرض عند تكبير الخط (DESIGN 7.6)، والبطاقات
-      // عمود واحد (R2.10).
       final starBox = tester.getRect(find.byKey(HomeCardKeys.starCard));
-      final weatherBox = tester.getRect(find.byKey(HomeCardKeys.weatherCard));
-      expect(weatherBox.top, greaterThanOrEqualTo(starBox.bottom));
+      final agriBox = tester.getRect(find.byKey(HomeCardKeys.agriCard));
+      expect(starBox.top, greaterThanOrEqualTo(agriBox.bottom));
     });
 
     testWidgets('شاشة 320dp بخط عادي، وأهداف اللمس 48dp', (tester) async {
       phone(tester, width: 320, height: 640);
-      final handle = tester.ensureSemantics();
       await openHome(tester);
       expect(tester.takeException(), isNull);
       expect(
         tester.getSize(find.byKey(DayDial.dialKey)).width,
         lessThanOrEqualTo(320),
       );
-      for (final k in [HomeScreen.prevKey, HomeScreen.nextKey]) {
+      for (final k in [
+        HomeScreen.prevKey,
+        HomeScreen.nextKey,
+        HomeScreen.placeKey,
+        HomeScreen.datesLineKey,
+        HomeScreen.menuKey,
+        HomeScreen.bellKey,
+      ]) {
         expect(tester.getSize(find.byKey(k)).height, greaterThanOrEqualTo(48));
       }
-      handle.dispose();
     });
   });
 
@@ -361,22 +487,15 @@ Future<void> main() async {
       phone(tester);
       await openHome(tester);
       expect(find.byKey(HomeScreen.todayButtonKey), findsNothing);
-
       await tester.tap(find.byKey(HomeScreen.nextKey));
       await tester.pumpAndSettle();
       expect(selected(tester), DateTime(2026, 10, 3));
-      // النص الظاهر (ونسخة مخفية تثبّت ارتفاع السطر).
-      expect(
-        findDatesLine('تعرض: السبت ٣ أكتوبر ٢٠٢٦م\u00a0— ٢٢ ربيع الآخر ١٤٤٨هـ'),
-        findsWidgets,
-      );
+      expect(find.text('تعرض: ٢٢ ربيع الآخر ١٤٤٨هـ'), findsOneWidget);
       expect(find.byKey(HomeScreen.todayButtonKey), findsOneWidget);
-
       await tester.tap(find.byKey(HomeScreen.todayButtonKey));
       await tester.pumpAndSettle();
       expect(selected(tester), DateTime(2026, 10, 2));
       expect(find.byKey(HomeScreen.todayButtonKey), findsNothing);
-
       await tester.tap(find.byKey(HomeScreen.prevKey));
       await tester.pumpAndSettle();
       expect(selected(tester), DateTime(2026, 10, 1));
@@ -392,38 +511,44 @@ Future<void> main() async {
       await tester.longPress(find.byKey(HomeScreen.nextKey));
       await tester.pumpAndSettle();
       final s = selected(tester);
-      expect(containerOf(tester).read(dayInfoProvider(s))!.dar.dayNumber, 1);
-      expect(s.isAfter(DateTime(2026, 10, 2)), isTrue);
-      expect(
-        s,
-        DateTime(info.dar.end.year, info.dar.end.month, info.dar.end.day + 1),
-      );
+      expect(containerOf(tester).read(dayInfoProvider(s))!.dar!.dayNumber, 1);
+      final end = info.dar!.end;
+      expect(s, DateTime(end.year, end.month, end.day + 1));
     });
 
-    testWidgets('السحب الدائري عكس عقارب الساعة يقدّم التاريخ ومعها يرجعه', (
-      tester,
-    ) async {
+    testWidgets('بلا درور: الضغط المطوّل يقفز طالعاً', (tester) async {
       phone(tester);
       await openHome(tester);
-      // من يمين الدائرة (90°) صعوداً إلى 60°: عكس عقارب الساعة ≈ 30 يوماً.
-      var g = await tester.startGesture(dialPoint(tester, 0.655, 90));
+      final info = containerOf(tester)
+          .read(dayInfoProvider(DateTime(2026, 10, 2)))!;
+      await tester.longPress(find.byKey(HomeScreen.nextKey));
+      await tester.pumpAndSettle();
+      final end = info.star.end;
+      expect(selected(tester), DateTime(end.year, end.month, end.day + 1));
+    });
+
+    testWidgets('القرص ثابت والعقرب يتبع الإصبع: عكس عقارب الساعة يقدّم، '
+        'ومعها يرجع (R3.1-3)', (tester) async {
+      phone(tester);
+      await openHome(tester, city: 'kuwait_city');
+      final start = degOf(DateTime(2026, 10, 2));
+      var g = await tester.startGesture(dialPoint(tester, 0.59, start));
       await tester.pump();
-      for (var deg = 88; deg >= 60; deg -= 2) {
-        await g.moveTo(dialPoint(tester, 0.655, deg.toDouble()));
+      for (var d = 2; d <= 30; d += 2) {
+        await g.moveTo(dialPoint(tester, 0.59, start - d));
         await tester.pump();
       }
       await g.up();
       await tester.pumpAndSettle();
       final forward = selected(tester);
       final days = forward.difference(DateTime(2026, 10, 2)).inDays;
-      expect(days, inInclusiveRange(25, 32));
+      expect(days, inInclusiveRange(27, 33));
       expect(find.byKey(HomeScreen.todayButtonKey), findsOneWidget);
 
-      // مع عقارب الساعة يرجع.
-      g = await tester.startGesture(dialPoint(tester, 0.655, 60));
+      g = await tester.startGesture(dialPoint(tester, 0.59, start - 30));
       await tester.pump();
-      for (var deg = 62; deg <= 80; deg += 2) {
-        await g.moveTo(dialPoint(tester, 0.655, deg.toDouble()));
+      for (var d = 28; d >= 10; d -= 2) {
+        await g.moveTo(dialPoint(tester, 0.59, start - d));
         await tester.pump();
       }
       await g.up();
@@ -431,28 +556,38 @@ Future<void> main() async {
       expect(selected(tester).isBefore(forward), isTrue);
     });
 
-    testWidgets('ضغطة على حلقة الأشهر تدير إلى أول الشهر', (tester) async {
+    testWidgets('ضغطة على حلقة الأشهر تنقل العقرب إلى أول الشهر', (tester) async {
       phone(tester);
       await openHome(tester);
-      // 30 يوماً مع عقارب الساعة ≈ أول نوفمبر تقريباً.
-      await tapDial(tester, dialPoint(tester, 0.80, 32));
+      await tapDial(tester, dialPoint(tester, 0.82, degOf(DateTime(2026, 11, 15))));
       expect(selected(tester), DateTime(2026, 11, 1));
+    });
+
+    testWidgets('المحور: يعيد إلى اليوم، وإن كان المعروض اليوم يفتح ورقة الفصل', (
+      tester,
+    ) async {
+      phone(tester);
+      await openHome(tester, city: 'kuwait_city');
+      await tester.tap(find.byKey(HomeScreen.nextKey));
+      await tester.pumpAndSettle();
+      await tapDial(tester, dialPoint(tester, 0, 0));
+      expect(selected(tester), DateTime(2026, 10, 2));
+      await tapDial(tester, dialPoint(tester, 0, 0));
+      expect(find.byKey(AstroSheetKeys.season), findsOneWidget);
     });
   });
 
-  group('المعيار 4: الضغط على جزء في الدائرة يفتح ورقته (الميزة 7)', () {
-    testWidgets('الطالع، والمركز (الموسم)، والدَّرّ، والمقبض', (tester) async {
+  group('المعيار 4: الضغط على جزء في الدائرة يفتح ورقته', () {
+    testWidgets('الطالع، والدَّرّ، والبرج، والفصل', (tester) async {
       phone(tester);
       await openHome(tester, city: 'kuwait_city');
       final info = containerOf(tester)
           .read(dayInfoProvider(DateTime(2026, 10, 2)))!;
+      final deg = degOf(DateTime(2026, 10, 2));
       final sheet = find.byKey(ItemDetailSheet.sheetKey);
 
-      await tapDial(tester, dialPoint(tester, 0.505, 0));
-      expect(
-        find.descendant(of: sheet, matching: find.text('نجم')),
-        findsOneWidget,
-      );
+      await tapDial(tester, dialPoint(tester, 0.455, deg));
+      expect(find.descendant(of: sheet, matching: find.text('نجم')), findsOneWidget);
       expect(
         find.descendant(
           of: sheet,
@@ -460,63 +595,68 @@ Future<void> main() async {
         ),
         findsOneWidget,
       );
+      await closeSheet(tester, sheet);
+
+      await tapDial(tester, dialPoint(tester, 0.59, deg));
+      expect(find.descendant(of: sheet, matching: find.text('دَرّ')), findsOneWidget);
+      expect(
+        find.descendant(of: sheet, matching: find.text(info.dar!.name.ar)),
+        findsOneWidget,
+      );
+      await closeSheet(tester, sheet);
+
+      await tapDial(tester, dialPoint(tester, 0.38, deg));
+      final zodiac = find.byKey(AstroSheetKeys.zodiac);
+      expect(
+        find.descendant(of: zodiac, matching: find.text('الشمس في برج الميزان')),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
-          of: sheet,
-          matching: find.textContaining('في جدول الكويت'),
+          of: zodiac,
+          matching: find.text('موقع الشمس بين البروج، حساب فلكي.'),
         ),
         findsOneWidget,
       );
-      await tester.tap(find.text('إغلاق'));
-      await tester.pumpAndSettle();
+      await closeSheet(tester, zodiac);
 
-      await tapDial(tester, dialPoint(tester, 0.28, 0));
-      expect(
-        find.descendant(of: sheet, matching: find.text('موسم')),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('إغلاق'));
-      await tester.pumpAndSettle();
-
-      await tapDial(tester, dialPoint(tester, 0.655, 0));
-      expect(
-        find.descendant(of: sheet, matching: find.text('دَرّ')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: sheet, matching: find.text(info.dar.name.ar)),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('إغلاق'));
-      await tester.pumpAndSettle();
-
-      // المقبض = ما يعرضه المركز: موسم الجو المسمّى أو الموسم الكبير.
-      await tapDial(tester, dialPoint(tester, 0, 0));
+      await tapDial(tester, dialPoint(tester, 0.2, deg));
+      final season = find.byKey(AstroSheetKeys.season);
+      for (final text in [
+        'الخريف',
+        'مدته ٨٩ يوماً',
+        'مضى ٩ أيام — بقي ٨٠ يوماً',
+        'حساب فلكي',
+      ]) {
+        expect(
+          find.descendant(of: season, matching: find.text(text)),
+          findsOneWidget,
+          reason: text,
+        );
+      }
       expect(
         find.descendant(
-          of: sheet,
-          matching: find.text(
-            info.weatherSeason == null ? 'موسم' : 'موسم جو',
-          ),
+          of: season,
+          matching: find.textContaining('يبدأ: الأربعاء ٢٣ سبتمبر ٢٠٢٦م، '),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: season,
+          matching: find.textContaining('يقابله في التراث: '),
         ),
         findsOneWidget,
       );
     });
 
-    testWidgets('دَرّ مستعار: الورقة بجدول المُعيرة', (tester) async {
+    testWidgets('بلا درور: حلقة الطوالع مكان الدرور', (tester) async {
       phone(tester);
       await openHome(tester);
-      await tapDial(tester, dialPoint(tester, 0.655, 0));
-      expect(
-        find.descendant(
-          of: find.byKey(ItemDetailSheet.sheetKey),
-          matching: find.textContaining('في جدول الإمارات وعُمان'),
-        ),
-        findsOneWidget,
-      );
+      await tapDial(tester, dialPoint(tester, 0.60, degOf(DateTime(2026, 10, 2))));
+      final sheet = find.byKey(ItemDetailSheet.sheetKey);
+      expect(find.descendant(of: sheet, matching: find.text('نجم')), findsOneWidget);
     });
-
-    // صفوف البطاقة تفتح صفحة كاملة بمسار: test/widgets/item_detail_test.dart.
   });
 
   testWidgets('التكبير: ضغطتان ← زر «إعادة الحجم»، والزر يعيد 1×', (
@@ -524,136 +664,19 @@ Future<void> main() async {
   ) async {
     phone(tester);
     await openHome(tester);
-    final at = dialPoint(tester, 0.655, 0);
+    final at = dialPoint(tester, 0.59, 0);
     await tester.tapAt(at);
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tapAt(at);
     await tester.pumpAndSettle();
     expect(find.byKey(DayDial.resetZoomKey), findsOneWidget);
     expect(find.byTooltip('إعادة الحجم'), findsOneWidget);
-    // في التكبير السحب يحرّك الدائرة ولا يغيّر اليوم.
     await tester.dragFrom(at, const Offset(-60, 40));
     await tester.pumpAndSettle();
     expect(selected(tester), DateTime(2026, 10, 2));
     await tester.tap(find.byKey(DayDial.resetZoomKey));
     await tester.pumpAndSettle();
     expect(find.byKey(DayDial.resetZoomKey), findsNothing);
-  });
-
-  group('D24: عرض السعودية', () {
-    testWidgets('الرياض: المواسم والطوالع أولاً، ثم الدَّرّ والسطر الثابت', (
-      tester,
-    ) async {
-      phone(tester);
-      await openHome(tester);
-      expect(find.byKey(HomeScreen.legendKey), findsOneWidget);
-      expect(find.text('حلقة الدرور: حساب الإمارات وعُمان'), findsOneWidget);
-      await scrollHomeTo(tester, find.byKey(HomeCardKeys.borrowNote));
-      final note = tables.regionTables['najd']!.dururBorrow!.note.ar;
-      expect(find.text(note), findsOneWidget);
-      final strip = find.byKey(HomeCardKeys.darStrip);
-      expect(
-        find.descendant(
-          of: strip,
-          matching: find.text('حسب حساب الإمارات وعُمان'),
-        ),
-        findsOneWidget,
-      );
-      // الطالع والموسم قبل الدَّرّ المستعار.
-      final starY = tester.getTopLeft(find.byKey(HomeCardKeys.starCard)).dy;
-      expect(starY, lessThan(tester.getTopLeft(strip).dy));
-    });
-
-    testWidgets('محور الرياض: الموسم و«طالع النجم»، والضغط يفتح الموسم', (
-      tester,
-    ) async {
-      phone(tester);
-      // 20 أكتوبر في نجد التجريبية: موسم الجو «الوسم».
-      await openHome(tester, now: DateTime(2026, 10, 20, 9));
-      final info = containerOf(tester)
-          .read(dayInfoProvider(DateTime(2026, 10, 20)))!;
-      expect(info.weatherSeason?.itemId, 'wasm');
-      final dial = find.byKey(DayDial.dialKey);
-      final star = tables.items[info.star.itemId]!.name.ar;
-      expect(
-        find.descendant(of: dial, matching: find.text('الوسم')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: dial, matching: find.text('طالع $star')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: dial, matching: find.text(info.dar.name.ar)),
-        findsNothing,
-      );
-      await tapDial(tester, dialPoint(tester, 0, 0));
-      final sheet = find.byKey(ItemDetailSheet.sheetKey);
-      expect(
-        find.descendant(of: sheet, matching: find.text('موسم جو')),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('إغلاق'));
-      await tester.pumpAndSettle();
-
-      // بطاقة الطالع (قبل شريط الدَّرّ): موسم الجو باسمه.
-      expect(
-        find.descendant(
-          of: find.byKey(HomeCardKeys.starCard),
-          matching: find.text('موسم الجو: الوسم'),
-        ),
-        findsOneWidget,
-      );
-      await scrollHomeTo(tester, find.byKey(HomeCardKeys.borrowNote));
-      expect(
-        tester.getTopLeft(find.byKey(HomeCardKeys.starCard)).dy,
-        lessThan(tester.getTopLeft(find.byKey(HomeCardKeys.darStrip)).dy),
-      );
-    });
-
-    testWidgets('محور الرياض بلا موسم جو: الموسم الكبير', (tester) async {
-      phone(tester);
-      await openHome(tester);
-      final info = containerOf(tester)
-          .read(dayInfoProvider(DateTime(2026, 10, 2)))!;
-      expect(info.weatherSeason, isNull);
-      expect(
-        find.descendant(
-          of: find.byKey(DayDial.dialKey),
-          matching: find.text(tables.items[info.majorSeason.itemId]!.name.ar),
-        ),
-        findsOneWidget,
-      );
-      await tapDial(tester, dialPoint(tester, 0, 0));
-      expect(
-        find.descendant(
-          of: find.byKey(ItemDetailSheet.sheetKey),
-          matching: find.text('موسم'),
-        ),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('سطر التاريخين ينكسر إلى سطرين بلا فاصل إن لم يتسع', (
-      tester,
-    ) async {
-      phone(tester, width: 320, height: 640);
-      await openHome(tester, textScale: 2);
-      expect(
-        find.text('الجمعة ٢ أكتوبر ٢٠٢٦م\n٢١ ربيع الآخر ١٤٤٨هـ'),
-        findsOneWidget,
-      );
-      expect(find.textContaining('—'), findsNothing);
-    });
-
-    testWidgets('مسقط (جدولها): بلا سطر استعارة', (tester) async {
-      phone(tester);
-      await openHome(tester, city: 'muscat');
-      expect(find.byKey(HomeScreen.legendKey), findsNothing);
-      expect(find.byKey(HomeCardKeys.borrowNote), findsNothing);
-      await scrollHomeTo(tester, find.byKey(HomeCardKeys.darStrip));
-      expect(find.textContaining('حسب حساب'), findsNothing);
-    });
   });
 
   group('التحميل والخطأ', () {
@@ -720,28 +743,18 @@ Future<void> main() async {
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
     expect(selected(tester), DateTime(2026, 10, 3));
-    expect(
-      findDatesLine('السبت ٣ أكتوبر ٢٠٢٦م\u00a0— ٢٢ ربيع الآخر ١٤٤٨هـ'),
-      findsOneWidget,
-    );
+    expect(find.text('٢٢ ربيع الآخر ١٤٤٨هـ'), findsOneWidget);
   });
 
-  group('R2.8: العدّاد والبطاقات', () {
-    testWidgets('العدّاد بالأيام: «باقي ٩ أيام على دخول الوسم» وقارئ الشاشة', (
+  group('R3.1-17: العدّاد والبطاقات', () {
+    testWidgets('العدّاد: «٩ أيام على دخول الوسم» بلا «باقي»، وقارئ الشاشة', (
       tester,
     ) async {
       phone(tester);
       final handle = tester.ensureSemantics();
       await openHome(tester, now: DateTime(2026, 10, 7, 9));
       final counter = find.byKey(HomeCardKeys.countdown);
-      await scrollHomeTo(tester, counter);
-      for (final text in [
-        'باقي',
-        '٩',
-        'أيام',
-        'على دخول الوسم',
-        'الجمعة ١٦ أكتوبر',
-      ]) {
+      for (final text in ['٩', 'أيام', 'على دخول الوسم', 'الجمعة ١٦ أكتوبر']) {
         expect(
           find.descendant(of: counter, matching: find.text(text)),
           findsOneWidget,
@@ -749,10 +762,15 @@ Future<void> main() async {
         );
       }
       expect(
+        find.descendant(of: counter, matching: find.text('باقي')),
+        findsNothing,
+      );
+      expect(tester.getSize(counter).width, 200);
+      expect(tester.getSize(counter).height, greaterThanOrEqualTo(84));
+      expect(
         tester.getSemantics(counter).label,
         'باقي ٩ أيام على دخول الوسم، الجمعة ١٦ أكتوبر',
       );
-      // الضغط يفتح صفحة العنصر: test/widgets/item_detail_test.dart.
       handle.dispose();
     });
 
@@ -761,33 +779,26 @@ Future<void> main() async {
     ) async {
       phone(tester);
       await openHome(tester, now: DateTime(2026, 10, 16, 9));
-      await scrollHomeTo(tester, find.byKey(HomeCardKeys.countdown));
       expect(find.text('دخل الوسم اليوم'), findsOneWidget);
       await tester.tap(find.byKey(HomeScreen.nextKey));
       await tester.pumpAndSettle();
       expect(find.text('من ١٧ أكتوبر ٢٠٢٦م'), findsOneWidget);
     });
 
-    testWidgets('القادم: الدَّرّ التالي والموسم الكبير وأقرب موسم جو بالأيام', (
+    testWidgets('القادم في الخليج: الدَّرّ التالي والموسم الكبير بالأيام', (
       tester,
     ) async {
       phone(tester);
-      await openHome(tester, now: DateTime(2026, 10, 7, 9));
+      await openHome(tester, city: 'kuwait_city', now: DateTime(2026, 10, 7, 9));
       final card = find.byKey(HomeCardKeys.upcomingCard);
-      await scrollHomeTo(tester, card);
-      for (final (i, name, after) in [
-        (0, 'دَرّ السبعين', 'بعد ٣ أيام'),
-        (1, 'الشتاء', 'بعد ٤٧ يوماً'),
-        (2, 'المربعانية', 'بعد ٦١ يوماً'),
-      ]) {
-        final row = find.byKey(HomeCardKeys.upcomingRow(i));
-        expect(find.descendant(of: row, matching: find.text(name)), findsOneWidget);
-        expect(
-          find.descendant(of: row, matching: find.text(after)),
-          findsOneWidget,
-        );
-        expect(tester.getSize(row).height, greaterThanOrEqualTo(48));
-      }
+      expect(
+        find.descendant(of: card, matching: find.textContaining('دَرّ ')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: card, matching: find.text('الدرور والمواسم والطوالع')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('الزراعة بلا بيانات: النص بالضبط و«أعرف مصدراً» يفتح البلاغ', (
@@ -811,27 +822,22 @@ Future<void> main() async {
     });
   });
 
-  group('الميزة 16: رموز الجو على الدائرة', () {
+  group('الميزة 16: رموز الجو في الإطار (R3.1-5)', () {
     DayDialState dialState(WidgetTester tester) =>
         tester.state<DayDialState>(find.byType(DayDial));
 
-    testWidgets('الرموز ظاهرة بلا تكبير، والضغط يفتح فقاعة واحدة بالاسم والشرح '
+    testWidgets('رمز لكل دَرّ، والضغط على خليته يفتح فقاعة واحدة بالاسم والشرح '
         'والفترة، وتُغلق بالضغط خارجها', (tester) async {
       phone(tester);
       final handle = tester.ensureSemantics();
-      await openHome(tester, now: DateTime(2026, 10, 7, 9));
+      await openHome(tester, city: 'muscat', now: DateTime(2026, 10, 7, 9));
       final marks = dialState(tester).visibleMarks;
-      // 4 مواسم جو + 4 مقاطع درور (نجد، R2.6).
-      expect(marks.length, greaterThanOrEqualTo(8));
+      expect(marks.length, greaterThanOrEqualTo(20));
       final screen = tester.getRect(find.byType(HomeScreen));
-      final visible = marks
-          .where((m) => screen.deflate(30).contains(m.center))
-          .toList();
-      expect(visible, isNotEmpty);
-      final mark = visible.first;
-
-      // منطقة اللمس 48: الضغط على بعد 20 نقطة من المركز يكفي.
-      await tapDial(tester, mark.center + const Offset(14, 14));
+      final mark = marks.firstWhere(
+        (m) => screen.deflate(30).contains(m.center),
+      );
+      await tapDial(tester, mark.center);
       final bubble = find.byKey(SymbolBubbleContent.contentKey);
       expect(bubble, findsOneWidget);
       final name = AppLocalizations.of(
@@ -839,17 +845,13 @@ Future<void> main() async {
       ).weatherSymbolName(mark.symbol.code);
       expect(find.descendant(of: bubble, matching: find.text(name)), findsOneWidget);
       expect(
-        find.descendant(of: bubble, matching: find.textContaining('يتبع: ')),
+        find.descendant(of: bubble, matching: find.textContaining('يتبع: دَرّ ')),
         findsOneWidget,
       );
       expect(tester.getSemantics(bubble).label, startsWith('$name. '));
-      // داخل الشاشة دائماً.
       final rect = tester.getRect(bubble);
       expect(screen.contains(rect.topLeft) && screen.contains(rect.bottomRight), isTrue);
-      // لا تفتح صفحة ولا ورقة.
       expect(find.byKey(ItemDetailSheet.sheetKey), findsNothing);
-
-      // ضغطة خارجها تغلقها.
       await tester.tapAt(screen.bottomLeft + const Offset(10, -10));
       await tester.pumpAndSettle();
       expect(bubble, findsNothing);
@@ -857,84 +859,47 @@ Future<void> main() async {
       handle.dispose();
     });
 
-    testWidgets('السحب على الدائرة والفقاعة مفتوحة يغلقها', (tester) async {
-      phone(tester);
-      await openHome(tester, now: DateTime(2026, 10, 7, 9));
-      final screen = tester.getRect(find.byType(HomeScreen));
-      final mark = dialState(tester).visibleMarks.firstWhere(
-        (m) => screen.deflate(30).contains(m.center),
-      );
-      await tapDial(tester, mark.center);
-      final bubble = find.byKey(SymbolBubbleContent.contentKey);
-      expect(bubble, findsOneWidget);
-      // سحب دائري على حلقة الدرور في الجهة المقابلة للفقاعة: أول لمس يغلقها.
-      final upper =
-          mark.center.dy < tester.getCenter(find.byKey(DayDial.dialKey)).dy;
-      final base = upper ? 180.0 : 0.0;
-      expect(
-        tester.getRect(bubble).contains(dialPoint(tester, 0.655, base)),
-        isFalse,
-      );
-      final g = await tester.startGesture(dialPoint(tester, 0.655, base));
-      await tester.pump();
-      for (var deg = base - 4; deg >= base - 16; deg -= 4) {
-        await g.moveTo(dialPoint(tester, 0.655, deg));
-        await tester.pump();
-      }
-      await g.up();
-      await tester.pumpAndSettle();
-      expect(bubble, findsNothing);
-      // ولا تُفتح فقاعة أو ورقة بعد السحب.
-      expect(find.byKey(ItemDetailSheet.sheetKey), findsNothing);
-      // والدائرة تدور بعد الإغلاق.
-      final g2 = await tester.startGesture(dialPoint(tester, 0.655, 90));
-      await tester.pump();
-      for (var deg = 86; deg >= 60; deg -= 2) {
-        await g2.moveTo(dialPoint(tester, 0.655, deg.toDouble()));
-        await tester.pump();
-      }
-      await g2.up();
-      await tester.pumpAndSettle();
-      expect(selected(tester).isAfter(DateTime(2026, 10, 7)), isTrue);
-    });
-
-    testWidgets('الضغط على رمز آخر والفقاعة مفتوحة يفتح فقاعته (واحدة فقط)', (
+    testWidgets('الضغط على خلية أخرى والفقاعة مفتوحة يفتح فقاعتها (واحدة فقط)', (
       tester,
     ) async {
       phone(tester);
-      await openHome(tester, now: DateTime(2026, 10, 7, 9));
+      await openHome(tester, city: 'muscat', now: DateTime(2026, 10, 7, 9));
       final screen = tester.getRect(find.byType(HomeScreen));
       final marks = dialState(tester).visibleMarks
           .where((m) => screen.deflate(30).contains(m.center))
           .toList();
-      expect(marks.length, greaterThanOrEqualTo(2));
+      final other = marks.firstWhere((m) => m.symbol != marks[0].symbol);
       await tapDial(tester, marks[0].center);
-      await tester.tapAt(marks[1].center);
+      await tester.tapAt(other.center);
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
       final bubble = find.byKey(SymbolBubbleContent.contentKey);
       expect(bubble, findsOneWidget);
       final name = AppLocalizations.of(
         tester.element(bubble),
-      ).weatherSymbolName(marks[1].symbol.code);
+      ).weatherSymbolName(other.symbol.code);
       expect(find.descendant(of: bubble, matching: find.text(name)), findsOneWidget);
     });
 
-    testWidgets('الرمز له الأولوية على حلقة الأشهر تحته', (tester) async {
+    testWidgets('بلا درور: الفقاعة «يتبع: طالع …»', (tester) async {
       phone(tester);
       await openHome(tester, now: DateTime(2026, 10, 7, 9));
-      final dialCenter = tester.getCenter(find.byKey(DayDial.dialKey));
+      final screen = tester.getRect(find.byType(HomeScreen));
       final mark = dialState(tester).visibleMarks.firstWhere(
-        (m) => m.center.dy < dialCenter.dy - 100,
+        (m) => screen.deflate(30).contains(m.center),
       );
-      // 15 نقطة نحو المركز: داخل حلقة الأشهر وضمن منطقة لمس الرمز.
-      final inward = mark.center + (dialCenter - mark.center) / (dialCenter - mark.center).distance * 15;
-      await tapDial(tester, inward);
-      expect(find.byKey(SymbolBubbleContent.contentKey), findsOneWidget);
-      expect(selected(tester), DateTime(2026, 10, 7));
+      expect(mark.cell.starItemId, isNotNull);
+      await tapDial(tester, mark.center);
+      expect(
+        find.descendant(
+          of: find.byKey(SymbolBubbleContent.contentKey),
+          matching: find.textContaining('يتبع: طالع '),
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('شريحة الجو في البطاقة تفتح فقاعة الرمز', (tester) async {
+    testWidgets('شريحة الجو تفتح فقاعة الرمز', (tester) async {
       phone(tester);
       await openHome(tester);
       final chip = find.byKey(HomeCardKeys.weatherChip(WeatherSymbol.hot));
