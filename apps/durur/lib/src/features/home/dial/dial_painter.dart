@@ -663,14 +663,17 @@ class DialPainter extends CustomPainter {
     }
     // قاعدة الاتساع: كل الأسماء أو كل الأرقام، لا خلط.
     final cMid = (co + ci) / 2;
+    // القياس على القطع الدائرية: الدَّرّ العابر لنهاية السنة قطعة واحدة،
+    // فلا يُحسب نصفاه القصيران «لا يتسع» فتتحول كل الأسماء أرقاماً.
     final plain = model.segments(DialRing.durur);
+    int labelOf(DialSegment s) =>
+        plain.indexWhere((p) => identical(p.dar, s.dar));
     bool fits(TextPainter t, DialSegment s) =>
         t.width <= (co - ci) * zoom - 4 &&
         t.height <= s.length * geo.step * cMid * zoom;
-    final useNames = [
-      for (final (i, s) in plain.indexed) fits(labels.dururNames[i], s),
-    ].every((f) => f);
-    for (final (i, s) in plain.indexed) {
+    final useNames = segs.every((s) => fits(labels.dururNames[labelOf(s)], s));
+    for (final s in segs) {
+      final i = labelOf(s);
       final t = useNames ? labels.dururNames[i] : labels.dururNumbers[i];
       if (!useNames && !fits(t, s)) continue;
       _radial(canvas, t, geo.angleOf(s.start + s.length / 2), cMid);

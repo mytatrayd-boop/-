@@ -661,66 +661,89 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const side = 16.0;
 
         // الجهاز اللوحي (≥ 600dp): مواضع المرجع (R3.0): الدائرة مركزها على
-        // y 37.9%، والبطاقات فوق زاويتيها، والعدّاد بينها.
+        // y 37.9%، والبطاقتان العلويتان فوق زاويتيها تنتهيان عند y 79.0%،
+        // والسفليتان من y 80.1% والعدّاد بينهما. البطاقات تتمدد بمحتواها ولا
+        // تُقص (R3.1-15): العلويتان تنموان لأعلى فوق زاوية الدائرة كالمرجع،
+        // والسفليتان لأسفل.
         if (width >= 600 && !bigText) {
           final h = math.max(height, width * 1.2);
           final diameter = math.min(width * 0.96, h * 0.74);
-          Widget at(double x0, double x1, double y0, double y1, Widget child) =>
-              PositionedDirectional(
-                start: width * x0,
-                width: width * (x1 - x0),
-                top: h * y0,
-                height: h * (y1 - y0),
-                child: SingleChildScrollView(child: child),
-              );
+          final cardWidth = width * 0.227;
+          final cardSide = width * 0.024;
+          Widget top(Widget child) => SizedBox(width: cardWidth, child: child);
           return SingleChildScrollView(
-            child: Column(
+            child: Stack(
               children: [
-                SizedBox(
-                  height: h,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: GulfBackdrop(firstScreenHeight: h),
+                Positioned.fill(child: GulfBackdrop(firstScreenHeight: h)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      height: h * 0.801,
+                      child: Stack(
+                        children: [
+                          // الدائرة تبدأ تحت الصف العلوي دائماً (R3.1-1 و2).
+                          PositionedDirectional(
+                            top: math.max(
+                              64,
+                              h * 0.379 - diameter / 2 - DayDial.margin,
+                            ),
+                            start: (width - diameter) / 2,
+                            child: dialFor(diameter, DialDensity.full),
+                          ),
+                          PositionedDirectional(
+                            top: 0,
+                            start: 0,
+                            end: 0,
+                            child: header,
+                          ),
+                          // البداية (يمين): الزراعة؛ النهاية: الطالع.
+                          PositionedDirectional(
+                            start: cardSide,
+                            bottom: h * (0.801 - 0.790),
+                            child: top(agriCard),
+                          ),
+                          PositionedDirectional(
+                            end: cardSide,
+                            bottom: h * (0.801 - 0.790),
+                            child: top(starCard),
+                          ),
+                        ],
                       ),
-                      // الدائرة تبدأ تحت الصف العلوي دائماً (R3.1-1 و2).
-                      PositionedDirectional(
-                        top: math.max(
-                          64,
-                          h * 0.379 - diameter / 2 - DayDial.margin,
-                        ),
-                        start: (width - diameter) / 2,
-                        child: dialFor(diameter, DialDensity.full),
+                    ),
+                    Padding(
+                      padding: EdgeInsetsDirectional.symmetric(
+                        horizontal: cardSide,
                       ),
-                      PositionedDirectional(
-                        top: 0,
-                        start: 0,
-                        end: 0,
-                        child: header,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(width: cardWidth, child: upcomingCard),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsetsDirectional.only(
+                                top: h * (0.837 - 0.801),
+                              ),
+                              child: countdownRow,
+                            ),
+                          ),
+                          SizedBox(width: cardWidth, child: weatherCard),
+                        ],
                       ),
-                      // البداية (يمين): الزراعة ثم القادم؛ النهاية: الطالع
-                      // ثم الطقس.
-                      at(0.024, 0.254, 0.659, 0.790, agriCard),
-                      at(0.024, 0.254, 0.801, 0.983, upcomingCard),
-                      at(0.746, 0.973, 0.659, 0.790, starCard),
-                      at(0.746, 0.973, 0.801, 0.983, weatherCard),
-                      PositionedDirectional(
-                        start: width * 0.30,
-                        end: width * 0.30,
-                        top: h * 0.80,
-                        child: countdownRow,
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        side,
+                        12,
+                        side,
+                        0,
                       ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(
-                    horizontal: side,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [darOrUsual, footer],
-                  ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [darOrUsual, footer],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

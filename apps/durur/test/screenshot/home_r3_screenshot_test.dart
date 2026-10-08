@@ -14,7 +14,8 @@ import '../helpers/app_harness.dart';
 ///   DURUR_SCREENSHOT=1 flutter test test/screenshot/
 ///
 /// وتكتب `design/mockups/app_home_r3.png` (412dp، الرياض، بلا درور، R3.10)
-/// و`design/mockups/app_home_r3_gulf.png` (412dp، دبي، بدرور)، ليوم 7 أكتوبر
+/// و`design/mockups/app_home_r3_gulf.png` (412dp، دبي، بدرور)،
+/// و`design/mockups/app_home_r3_tablet.png` (820×1180، دبي)، ليوم 7 أكتوبر
 /// 2026، بالخطوط الحقيقية Almarai وAmiri.
 Future<void> main() async {
   final enabled = Platform.environment['DURUR_SCREENSHOT'] == '1';
@@ -49,11 +50,15 @@ Future<void> main() async {
     ]);
   });
 
-  Future<void> shoot(WidgetTester tester, String cityId, String out) async {
-    const width = 412.0;
-    const height = 1700.0;
+  Future<void> shoot(
+    WidgetTester tester,
+    String cityId,
+    String out, {
+    double width = 412,
+    double height = 1700,
+  }) async {
     const ratio = 2.0;
-    tester.view.physicalSize = const Size(width * ratio, height * ratio);
+    tester.view.physicalSize = Size(width * ratio, height * ratio);
     tester.view.devicePixelRatio = ratio;
     addTearDown(tester.view.reset);
     await pumpDururApp(
@@ -85,5 +90,17 @@ Future<void> main() async {
 
   testWidgets('لقطة الرئيسية R3 (دبي، بدرور)', skip: !enabled, (tester) async {
     await shoot(tester, 'dubai', 'design/mockups/app_home_r3_gulf.png');
+  });
+
+  testWidgets('لقطة الجهاز اللوحي R3 (دبي، 820×1180، R3.7-2)', skip: !enabled, (
+    tester,
+  ) async {
+    await shoot(
+      tester,
+      'dubai',
+      'design/mockups/app_home_r3_tablet.png',
+      width: 820,
+      height: 1180,
+    );
   });
 }
