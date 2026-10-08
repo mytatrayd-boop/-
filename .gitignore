@@ -7,3 +7,4 @@ android/app/src/main/assets/
 android/.gradle/
 android/build/
 android/app/build/
+apps/durur/design/reference/*_LOCAL_ONLY.*
