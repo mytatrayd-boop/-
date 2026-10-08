@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:durur/l10n/app_localizations.dart';
 import 'package:durur/src/app.dart';
 import 'package:durur/src/domain/tables.dart';
+import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/shell/app_shell.dart';
 import 'package:durur/src/providers.dart';
 import 'package:durur/src/repository/settings_repository.dart';
@@ -113,7 +114,7 @@ Override fixedClock(DateTime now) => clockProvider.overrideWithValue(() => now);
 /// يمرّر قائمة الرئيسية حتى [finder] (السحب على الدائرة يدوّرها لا يمرّر).
 Future<void> scrollHomeTo(WidgetTester tester, Finder finder) async {
   final list = find
-      .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+      .descendant(of: find.byType(HomeScreen), matching: find.byType(Scrollable))
       .first;
   final position = tester.state<ScrollableState>(list).position;
   for (var i = 0; i < 40 && finder.evaluate().isEmpty; i++) {
@@ -131,12 +132,6 @@ String readAsset(String path) => File(path).readAsStringSync();
 
 /// سطر التاريخين بصيغتيه: سطر واحد بفاصل «—»، أو سطران بلا فاصل إن لم
 /// يتسع (خط الاختبار Ahem أعرض من الخط الحقيقي فينكسر غالباً).
-Finder findDatesLine(String single) => find.byWidgetPredicate(
-  (w) =>
-      w is Text &&
-      (w.data == single || w.data == single.replaceFirst(' — ', '\n')),
-  description: 'سطر التاريخين "$single"',
-);
 
 /// تبويبات الشريط السفلي (DESIGN R2.9) بترتيبها من اليمين.
 enum AppTab { wheel, symbols, heritage, settings }

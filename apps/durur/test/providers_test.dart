@@ -57,7 +57,8 @@ Future<void> main() async {
       final info = c.read(dayInfoProvider(date))!;
       expect(info.regionId, regionId);
       // نفس نتيجة محرك الميزة 1 لتلك المنطقة.
-      expect(info.dar.record, same(engine.resolve(date).dar.record));
+      expect(info.dar?.record, same(engine.resolve(date).dar?.record));
+      expect(info.star.start, engine.resolve(date).star.start);
     }
   });
 

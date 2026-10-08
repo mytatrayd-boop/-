@@ -139,7 +139,7 @@ final d = \'\'\'متعدد
       }
     });
 
-    test('لا نص لاتيني ظاهر في ARB إلا إسناد GeoNames والرخصة وvan Gent', () {
+    test('لا نص لاتيني ظاهر في ARB إلا إسناد GeoNames والرخصة وvan Gent وNatural Earth', () {
       // يُحذف ما ليس نصاً ظاهراً: أسماء المتغيرات وصيغ ICU (select/plural
       // وحالاتها).
       String visibleText(String v) => v
@@ -154,6 +154,8 @@ final d = \'\'\'متعدد
         'geonames.org',
         'CC BY 4.0',
         'R. H. van Gent',
+        'Natural Earth',
+        'naturalearthdata.com',
       ];
       final latin = <String>[];
       for (final k in keys) {

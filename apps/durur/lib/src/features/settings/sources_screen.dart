@@ -113,6 +113,8 @@ class SourcesScreen extends ConsumerWidget {
           Text(l10n.sourcesGeoNames, style: theme.textTheme.bodyMedium),
           link(geoNamesLinkKey, l10n.sourcesGeoNamesLink, geoNamesUrl),
           link(licenseLinkKey, l10n.sourcesLicenseLink, ccByUrl),
+          const SizedBox(height: 8),
+          Text(l10n.sourcesNaturalEarth, style: theme.textTheme.bodyMedium),
           heading(l10n.sourcesHijriTitle),
           Text(l10n.sourcesHijri, style: theme.textTheme.bodyMedium),
         ],

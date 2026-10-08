@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../astronomy/seasons.dart';
 import '../../domain/day_info.dart';
 import '../../domain/item.dart';
 import '../../domain/local_date.dart';
@@ -15,6 +16,7 @@ import '../../formatting/date_labels.dart';
 import '../../formatting/digits.dart';
 import '../../notifications/notification_planner.dart' show heliacalDateOf;
 import '../common/glass.dart';
+import '../common/gulf_backdrop.dart';
 import '../common/load_error.dart';
 import '../item_detail/detail_data.dart';
 import '../item_detail/item_detail_sheet.dart';
@@ -22,7 +24,7 @@ import '../report/report_sheet.dart';
 import '../../providers.dart';
 import '../../routing/app_router.dart';
 import '../../theme/app_theme.dart';
-import 'city_chip.dart';
+import 'astro_sheets.dart';
 import 'day_text.dart';
 import 'dial/day_dial.dart';
 import 'dial/dial_model.dart';
@@ -31,13 +33,18 @@ import 'home_cards.dart';
 import 'season_events.dart';
 import 'symbol_bubble.dart';
 
-/// الشاشة الرئيسية (SPEC الميزة 6، DESIGN R2.8): الشريط العلوي، سطر
-/// التاريخين، الدائرة، صف العدّاد، بطاقتا الطالع والجو المعتاد، شريط الدَّرّ،
-/// بطاقتا الزراعة والقادم، العبارة الثابتة والمصدر. فوق خلفية سماء الليل.
+/// الشاشة الرئيسية (SPEC الميزة 6، DESIGN R3.1): الصف العلوي (القائمة،
+/// العنوان وسطر المكان والتاريخ، الجرس)، الدائرة، العدّاد، البطاقات الأربع
+/// بعمودين، شريط الدَّرّ (أو «الجو المعتاد» بلا درور)، العبارة الثابتة
+/// والمصدر. فوق خلفية تركوازية وخريطة الخليج ووردة الرياح.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   static const datesLineKey = Key('homeDatesLine');
+  static const placeKey = Key('homePlace');
+  static const menuKey = Key('homeMenu');
+  static const bellKey = Key('homeBell');
+  static const drawerKey = Key('homeDrawer');
   static const todayButtonKey = Key('homeTodayButton');
   static const prevKey = Key('homePrevDay');
   static const nextKey = Key('homeNextDay');
@@ -45,7 +52,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   static const loadErrorKey = Key('homeLoadError');
   static const calcErrorKey = Key('homeCalcError');
   static const calcErrorReportKey = Key('homeCalcErrorReport');
-  static const legendKey = Key('dialDururLegend');
+  static Key drawerItem(int i) => Key('homeDrawerItem$i');
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -71,62 +78,219 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final tables = ref.watch(tablesProvider);
-
     return Scaffold(
       backgroundColor: Colors.transparent,
+      drawer: const _HomeDrawer(),
       body: Stack(
         children: [
-          const Positioned.fill(child: NightSky()),
+          const Positioned.fill(child: NightSky(glowCenter: 0.28)),
           SafeArea(
             bottom: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // DESIGN R2.8 بند 1: «دليل المواسم» Amiri 21 في البداية (يمين)،
-                // وشريحة المدينة الزجاجية في النهاية. الإعدادات صارت تبويباً
-                // (R2.9). مع تكبير الخط يلتف العنوان بدل أن يفيض.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 56),
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 16,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Semantics(
-                            header: true,
-                            child: Text(
-                              l10n.appTitle,
-                              style: theme.textTheme.titleLarge,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Flexible(child: CityChip()),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: switch (tables) {
-                    // أثناء إعادة التحميل بعد تحديث البيانات (§16.5) تبقى
-                    // الجداول السابقة معروضة حتى تكتمل الجديدة، بلا وميض.
-                    AsyncValue(hasError: false, :final value?) => _content(
-                      context,
-                      value,
-                    ),
-                    AsyncError() => DataLoadError(
+            child: switch (tables) {
+              // أثناء إعادة التحميل بعد تحديث البيانات (§16.5) تبقى الجداول
+              // السابقة معروضة حتى تكتمل الجديدة، بلا وميض.
+              AsyncValue(hasError: false, :final value?) => _content(
+                context,
+                value,
+              ),
+              AsyncError() => Column(
+                children: [
+                  _header(context, null),
+                  Expanded(
+                    child: DataLoadError(
                       key: HomeScreen.loadErrorKey,
                       onRetry: () => ref.invalidate(tablesProvider),
                     ),
-                    _ => const _DelayedSkeleton(),
-                  },
+                  ),
+                ],
+              ),
+              _ => Column(
+                children: [
+                  _header(context, null),
+                  const Expanded(child: _DelayedSkeleton()),
+                ],
+              ),
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// الصف العلوي 60dp (R3.1-1): القائمة في البداية (يمين)، والعنوان في
+  /// الوسط وتحته سطر المكان والتاريخ، والجرس في النهاية (يسار).
+  Widget _header(BuildContext context, Tables? tables) {
+    final l10n = AppLocalizations.of(context);
+    final colors = DururColors.of(context);
+    final city = ref.watch(currentCityProvider);
+    final selected = ref.watch(selectedDateProvider);
+    final today = ref.watch(todayProvider);
+    final digits = ref.watch(digitStyleProvider);
+    final denied = ref.watch(notificationPermissionProvider).value == false;
+    final hijri = tables?.hijri?.tryConvert(selected);
+    final dateText = hijri == null
+        ? gregorianDateLabel(l10n, selected, digits: digits)
+        : hijriDateLabel(l10n, hijri, digits: digits);
+    final lineStyle = TextStyle(
+      fontFamily: DururFonts.body,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 1.3,
+      color: selected == today ? colors.inkSoft : colors.goldText,
+    );
+    Widget touch({
+      required Key key,
+      required String label,
+      required VoidCallback onTap,
+      required Widget child,
+    }) => Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: InkWell(
+        key: key,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.symmetric(horizontal: 4),
+            child: Center(widthFactor: 1, child: child),
+          ),
+        ),
+      ),
+    );
+
+    final placeName = city?.name.ar ?? l10n.cityPickerTitle;
+    final line = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: touch(
+            key: HomeScreen.placeKey,
+            label: placeName,
+            onTap: () => context.push(AppRoutes.city),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.place_outlined, size: 12, color: colors.primary),
+                const SizedBox(width: 2),
+                Flexible(
+                  child: Text(
+                    placeName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: lineStyle.copyWith(color: colors.inkSoft),
+                  ),
                 ),
               ],
+            ),
+          ),
+        ),
+        ExcludeSemantics(child: Text(l10n.headerSeparator, style: lineStyle)),
+        Flexible(
+          child: touch(
+            key: HomeScreen.datesLineKey,
+            label: [
+              if (selected != today)
+                l10n.homeViewingDate(dateText)
+              else
+                dateText,
+              l10n.homePickDate,
+            ].join(l10n.listSeparator),
+            onTap: () => _pickDate(context, selected),
+            child: Text(
+              selected == today ? dateText : l10n.homeViewingDate(dateText),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: lineStyle,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    final icon = colors.ink;
+    return SizedBox(
+      height: 60,
+      child: Stack(
+        children: [
+          // السطر بمناطق لمس 48dp تتداخل مع العنوان فوقها (لا تحته، حتى لا
+          // تغطيها الدائرة في ترتيب اللمس).
+          PositionedDirectional(
+            start: 56,
+            end: 56,
+            bottom: 0,
+            height: 48,
+            child: Center(child: line),
+          ),
+          PositionedDirectional(
+            start: 56,
+            end: 56,
+            top: 2,
+            child: IgnorePointer(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  l10n.appTitle,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: DururFonts.display,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                    color: colors.ink,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          PositionedDirectional(
+            start: 8,
+            top: 6,
+            child: Builder(
+              builder: (context) => IconButton(
+                key: HomeScreen.menuKey,
+                tooltip: l10n.headerMenu,
+                iconSize: 24,
+                icon: Icon(Icons.menu, color: icon),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ),
+          ),
+          PositionedDirectional(
+            end: 8,
+            top: 6,
+            child: IconButton(
+              key: HomeScreen.bellKey,
+              tooltip: denied
+                  ? l10n.headerNotificationsDenied
+                  : l10n.headerNotifications,
+              iconSize: 24,
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(Icons.notifications_none, color: icon),
+                  if (denied)
+                    PositionedDirectional(
+                      top: 1,
+                      end: 1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colors.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () => context.go(AppRoutes.settings),
             ),
           ),
         ],
@@ -146,91 +310,110 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final city = ref.watch(currentCityProvider);
     final isToday = selected == today;
     final digits = ref.watch(digitStyleProvider);
+    final header = _header(context, tables);
 
+    // فشل الحساب الفلكي يعيد بديلاً (astro.computed = false): الدائرة بالصليب
+    // بلا تواريخ، و«تعذّر حساب هذا اليوم.» مكان البطاقات (R3.4، SPEC 19.10).
+    final astro = ref.watch(astroYearProvider(selected.year));
     if (info == null || index == null) {
-      return _CalcError(
-        message: l10n.homeCalcError,
-        onReport: () => showReportSheet(
-          context,
-          regionName: region?.name.ar,
-          date: selected,
-        ),
+      return _withHeader(
+        header,
+        _calcError(context, region?.name.ar, selected),
       );
     }
 
-    final model = _modelFor(index);
+    final model = _modelFor(index, astro, tables);
+    final hasDurur = model.hasDurur;
+    final dar = info.dar;
 
     // من الدائرة: ورقة سفلية؛ من البطاقات: صفحة كاملة (DESIGN 8.4 و8.6).
-    void open(DialRing ring, DayInfo day) =>
-        showItemDetailSheet(context, detailRequestFor(ring, day));
+    void open(DialRing ring, DayInfo day) {
+      final local = DateTime(day.date.year, day.date.month, day.date.day);
+      final dayAstro = ref.read(astroYearProvider(local.year));
+      if (!dayAstro.computed &&
+          (ring == DialRing.seasons || ring == DialRing.zodiac)) {
+        return;
+      }
+      switch (ring) {
+        case DialRing.seasons:
+          showAstroSeasonSheet(
+            context,
+            period: dayAstro.seasonAt(local),
+            selected: selected,
+            today: today,
+            resolve: (d) => ref.read(dayInfoProvider(dateOnly(d))),
+            tables: tables,
+            digits: digits,
+          );
+        case DialRing.zodiac:
+          showZodiacSheet(
+            context,
+            period: dayAstro.zodiacAt(local),
+            digits: digits,
+          );
+        default:
+          showItemDetailSheet(context, detailRequestFor(ring, day));
+      }
+    }
+
     void openPage(DialRing ring, DayInfo day) {
       final r = detailRequestFor(ring, day);
       context.push(AppRoutes.detail(r.target, from: r.from));
     }
 
-    void openOrigin() => context.push(AppRoutes.origin);
     final controller = ref.read(selectedDateProvider.notifier);
 
-    final dates = InkWell(
-      key: HomeScreen.datesLineKey,
-      onTap: () => _pickDate(context, selected),
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          vertical: 8,
-          horizontal: 16,
-        ),
-        // ارتفاع ثابت للسطر بالصيغتين («تعرض:» أطول وقد تنكسر) ولأطول تاريخ
-        // (الأربعاء ١٧ ديسمبر — ٢٦ جمادى الآخرة)، حتى لا تتحرك الدائرة تحت
-        // الإصبع أثناء التدوير.
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            for (final reference in [selected, DateTime(2025, 12, 17)])
-              Visibility(
-                visible: false,
-                maintainSize: true,
-                maintainAnimation: true,
-                maintainState: true,
-                child: _DatesLineText(
-                  lines: datesLines(
-                    l10n,
-                    reference,
-                    tables.hijri,
-                    isToday: false,
-                    digits: digits,
-                  ),
-                  style: theme.textTheme.bodyMedium!,
-                ),
-              ),
-            _DatesLineText(
-              lines: datesLines(
-                l10n,
-                selected,
-                tables.hijri,
-                isToday: isToday,
-                digits: digits,
-              ),
-              style: theme.textTheme.bodyMedium!.copyWith(
-                color: isToday ? colors.inkSoft : colors.goldText,
-              ),
-            ),
-          ],
-        ),
-      ),
+    // جملة الفصل لقارئ الشاشة (R3.5).
+    String? astroSentence(DayInfo day) {
+      final local = DateTime(day.date.year, day.date.month, day.date.day);
+      final y = ref.read(astroYearProvider(local.year));
+      if (!y.computed) return null;
+      final p = y.seasonAt(local);
+      String dm(DateTime d) =>
+          l10n.dayMonthDate(formatInteger(d.day, digits), 'g${d.month}');
+      // الموسم التراثي المقابل: الموسم الكبير في منتصف الفصل، ويُخفى إن
+      // طابق اسم الفصل أو لم يكن للتقويم مواسم كبيرة (R3.2، SPEC 19.5 و19.9).
+      final season = l10n.astroSeasonName(p.value.name);
+      final mid = addDays(p.start.day, p.days ~/ 2);
+      final heritageId = ref.read(dayInfoProvider(mid))?.majorSeason.itemId;
+      final heritage = heritageId == null
+          ? null
+          : tables.items[heritageId]?.name.ar;
+      return l10n.astroSeasonA11ySentence(
+        heritage == null || heritage.isEmpty || heritage == season
+            ? season
+            : l10n.astroSeasonA11yHeritage(season, heritage),
+        dm(p.start.day),
+        dm(p.end.day),
+      );
+    }
+
+    String valueFor(DayInfo day) => dialSemanticsValue(
+      l10n,
+      day,
+      tables,
+      digits: digits,
+      astroSentence: astroSentence(day),
     );
 
-    // قيمة قارئ الشاشة لليوم التالي والسابق (عبر نهاية السنة)، وnull خارج
-    // 2025–2040.
+    // قيمة قارئ الشاشة لليوم التالي والسابق، وnull خارج 2025–2040.
     String? neighbourValue(int days) {
       final day = addDays(selected, days);
       if (day.isBefore(DateRange.first) || day.isAfter(DateRange.last)) {
         return null;
       }
       final other = ref.watch(dayInfoProvider(day));
-      return other == null
-          ? null
-          : dialSemanticsValue(l10n, other, tables, digits: digits);
+      return other == null ? null : valueFor(other);
+    }
+
+    String readSeasonZodiac(DayInfo day) {
+      final local = DateTime(day.date.year, day.date.month, day.date.day);
+      final y = ref.read(astroYearProvider(local.year));
+      if (!y.computed) return l10n.homeCalcError;
+      return [
+        astroSentence(day),
+        l10n.zodiacSunIn(l10n.zodiacName(y.zodiacAt(local).value.name)),
+      ].join(' ');
     }
 
     Widget dialFor(double diameter, DialDensity density) => DayDial(
@@ -242,51 +425,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       selected: selected,
       today: today,
       semanticsLabel: dialSemanticsPrefix(l10n, isToday: isToday),
-      semanticsValue: dialSemanticsValue(l10n, info, tables, digits: digits),
+      semanticsValue: valueFor(info),
       increasedValue: neighbourValue(1),
       decreasedValue: neighbourValue(-1),
       onSelect: controller.select,
       onShift: controller.shiftDays,
       onOpen: open,
       onBackToToday: controller.backToToday,
+      onReadSeasonZodiac: readSeasonZodiac,
     );
 
-    // سطر الإيضاح للمنطقة المستعيرة (DESIGN 7.8): الضغط عليه (منطقة لمس
-    // 48dp) يفتح صفحة «أصل التقويم».
-    final legend = info.borrowsDurur
-        ? InkWell(
-            key: HomeScreen.legendKey,
-            onTap: openOrigin,
-            borderRadius: BorderRadius.circular(12),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
-              child: Padding(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.info_outline, size: 16, color: colors.inkSoft),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        l10n.dialDururLegend(
-                          tables.region(info.dururRegionId)?.name.ar ?? '',
-                        ),
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-        : null;
-
-    // ———— العدّاد والقادم (R2.8) ————
+    // ———— العدّاد والقادم ————
     final events = seasonEvents(
       from: selected,
       resolve: _resolver,
@@ -295,7 +444,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           heliacalDateOf(id, ref.watch(currentHeliacalProvider(year))),
     );
     final countdown = countdownEvent(events);
-    final upcoming = upcomingEvents(events, countdown);
+    final upcoming = upcomingEvents(events, countdown, hasDurur: hasDurur);
 
     void openEvent(SeasonEvent e) {
       if (e.kind == SeasonEventKind.dar) {
@@ -309,24 +458,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final scale = MediaQuery.textScalerOf(context).scale(1);
     final bigText = scale >= 1.5;
 
+    // الفترة التي يقفز إليها الضغط المطوّل: الدَّرّ، أو الطالع بلا درور.
+    final ActivePeriod jump = dar ?? info.star;
     final prev = GlassCircleButton(
       key: HomeScreen.prevKey,
       label: l10n.homePrevDay,
       // السابق يشير للبداية (اليمين في RTL، DESIGN 7.5).
       glyph: '›',
       onTap: () => controller.shiftDays(-1),
-      onLongPress: () => controller.select(_prevDarStart(info)),
+      onLongPress: () => controller.select(_prevJumpStart(jump)),
     );
     final next = GlassCircleButton(
       key: HomeScreen.nextKey,
       label: l10n.homeNextDay,
       glyph: '‹',
       onTap: () => controller.shiftDays(1),
-      onLongPress: () =>
-          controller.select(addDays(_local(info.dar.end), 1)),
+      onLongPress: () => controller.select(addDays(_local(jump.end), 1)),
     );
     final counter = countdown == null
-        ? const SizedBox(height: 48)
+        ? const SizedBox(height: 48, width: 200)
         : CountdownCard(
             event: countdown,
             tables: tables,
@@ -335,10 +485,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             viewing: isToday ? null : selected,
             onTap: () => openEvent(countdown),
           );
-    final countdownRow = Column(
-      children: [
-        if (!isToday)
-          Padding(
+    final todayPill = isToday
+        ? null
+        : Padding(
             padding: const EdgeInsetsDirectional.only(bottom: 8),
             child: FilledButton.icon(
               key: HomeScreen.todayButtonKey,
@@ -350,8 +499,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               icon: Icon(Icons.circle, size: 10, color: colors.onPrimary),
               label: Text(l10n.commonToday),
             ),
-          ),
-        // تكبير خط ≥ 1.5×: العدّاد بعرض كامل والزران تحته (R2.10).
+          );
+    // العدّاد 200dp في الوسط، والزران على بعد 8dp من جانبيه (R3.1-17).
+    // تكبير خط ≥ 1.5×: العدّاد بعرض كامل والزران تحته (R2.10).
+    final countdownRow = Column(
+      children: [
+        ?todayPill,
         if (bigText) ...[
           counter,
           const SizedBox(height: 8),
@@ -361,11 +514,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ] else
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               prev,
-              const SizedBox(width: 12),
-              Expanded(child: counter),
-              const SizedBox(width: 12),
+              const SizedBox(width: 2),
+              // 200dp، ويضيق على الشاشات الأضيق من 332dp حتى يتسع الزران.
+              Flexible(child: SizedBox(width: 200, child: counter)),
+              const SizedBox(width: 2),
               next,
             ],
           ),
@@ -401,51 +556,75 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
+    // الطوالع الثلاثة التالية للخانات (R3.1-16).
+    final starSegs = model.cyclicSegments(DialRing.stars);
+    final currentStar = starSegs.indexWhere(
+      (s) => s.itemId == info.star.itemId,
+    );
+    final nextStars = [
+      for (var k = 1; k <= 3 && k < starSegs.length; k++)
+        starSegs[(currentStar + k) % starSegs.length].itemId!,
+    ];
+
+    void onSymbol(symbol, Rect anchor) => showSymbolBubble(
+      context,
+      anchor: anchor,
+      symbol: symbol,
+      period: _periodText(l10n, info, tables, digits),
+    );
+
     final starCard = StarCard(
       info: info,
       tables: tables,
+      nextStars: nextStars,
       risingLine: risingLine(),
       onTap: () => openPage(DialRing.stars, info),
+      onStar: (id) => context.push(AppRoutes.item(id, from: selected)),
     );
-    final weatherCard = UsualWeatherCard(
-      info: info,
-      onTap: () => openPage(DialRing.durur, info),
-      onSymbol: (symbol, anchor) => showSymbolBubble(
-        context,
-        anchor: anchor,
-        symbol: symbol,
-        period: _darPeriodText(l10n, info, digits),
-      ),
+    const weatherCard = LiveWeatherCard();
+    final agriCard = AgriCard(
+      regionName: region?.name.ar,
+      onKnowSource: () =>
+          showReportSheet(context, regionName: region?.name.ar, date: selected),
     );
-    final darStrip = DarStrip(
-      info: info,
+    final upcomingCard = UpcomingCard(
+      events: upcoming,
       tables: tables,
       digits: digits,
-      onTap: () => openPage(DialRing.durur, info),
-      onSeason: () => context.push(
-        AppRoutes.item(info.dar.record.seasonId, from: selected),
-      ),
+      onOpen: openEvent,
     );
-    final agriCard = AgriCard(
-      onKnowSource: () => showReportSheet(
-        context,
-        regionName: region?.name.ar,
-        date: selected,
-      ),
-    );
-    final upcomingCard = upcoming.isEmpty
-        ? null
-        : UpcomingCard(
-            events: upcoming,
+    final Widget darOrUsual = dar != null
+        ? DarStrip(
+            info: info,
+            dar: dar,
             tables: tables,
             digits: digits,
-            onOpen: openEvent,
+            onTap: () => openPage(DialRing.durur, info),
+            onSeason: () => context.push(
+              AppRoutes.item(dar.record.seasonId, from: selected),
+            ),
+            onSymbol: onSymbol,
+          )
+        : UsualWeatherCard(
+            info: info,
+            onTap: () => openPage(DialRing.stars, info),
+            onSymbol: onSymbol,
           );
 
-    Widget pair(Widget a, Widget? b) => bigText || b == null
+    final astroFailed = !astro.computed;
+    final astroError = _CalcError(
+      inline: true,
+      message: l10n.homeCalcError,
+      onReport: () =>
+          showReportSheet(context, regionName: region?.name.ar, date: selected),
+    );
+
+    // شبكة العمودين (R3.1-15): الصف 1 الزراعة (يمين) والطالع (يسار)، والصف
+    // 2 القادم (يمين) والطقس (يسار). تكبير الخط ≥ 1.5×: عمود واحد.
+    Widget pair(Widget a, Widget b) => bigText
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [a, if (b != null) ...[const SizedBox(height: 12), b]],
+            children: [a, const SizedBox(height: 12), b],
           )
         : IntrinsicHeight(
             child: Row(
@@ -487,22 +666,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
 
-    final below = <Widget>[
-      ?legend,
-      const SizedBox(height: 4),
-      countdownRow,
-      const SizedBox(height: 12),
-      pair(starCard, weatherCard),
-      const SizedBox(height: 12),
-      darStrip,
-      const SizedBox(height: 12),
-      pair(agriCard, upcomingCard),
-      footer,
-    ];
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
         final screenWidth = MediaQuery.sizeOf(context).width;
         final density = screenWidth >= 400
             ? DialDensity.full
@@ -511,59 +678,170 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             : DialDensity.compact;
         const side = 16.0;
 
-        // أفقي/تابلت: الدائرة على اليمين (البداية) والبطاقات بجانبها (7.6).
-        if (width >= 600 && width > constraints.maxHeight) {
-          final diameter = (constraints.maxHeight - 140)
-              .clamp(200.0, 480.0)
-              .clamp(200.0, width / 2 - 2 * side);
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: diameter + 2 * side,
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [dates, dialFor(diameter, DialDensity.full)],
-                  ),
+        // الجهاز اللوحي (≥ 600dp): مواضع المرجع (R3.0): الدائرة مركزها على
+        // y 37.9%، والبطاقتان العلويتان فوق زاويتيها تنتهيان عند y 79.0%،
+        // والسفليتان من y 80.1% والعدّاد بينهما. البطاقات تتمدد بمحتواها ولا
+        // تُقص (R3.1-15): العلويتان تنموان لأعلى فوق زاوية الدائرة كالمرجع،
+        // والسفليتان لأسفل.
+        if (width >= 600 && !bigText) {
+          final h = math.max(height, width * 1.2);
+          final diameter = math.min(width * 0.96, h * 0.74);
+          final cardWidth = width * 0.227;
+          final cardSide = width * 0.024;
+          Widget top(Widget child) => SizedBox(width: cardWidth, child: child);
+          return SingleChildScrollView(
+            child: Stack(
+              children: [
+                Positioned.fill(child: GulfBackdrop(firstScreenHeight: h)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      height: h * 0.801,
+                      child: Stack(
+                        children: [
+                          // الدائرة تبدأ تحت الصف العلوي دائماً (R3.1-1 و2).
+                          PositionedDirectional(
+                            top: math.max(
+                              64,
+                              h * 0.379 - diameter / 2 - DayDial.margin,
+                            ),
+                            start: (width - diameter) / 2,
+                            child: dialFor(diameter, DialDensity.full),
+                          ),
+                          PositionedDirectional(
+                            top: 0,
+                            start: 0,
+                            end: 0,
+                            child: header,
+                          ),
+                          // البداية (يمين): الزراعة؛ النهاية: الطالع.
+                          if (!astroFailed) ...[
+                            PositionedDirectional(
+                              start: cardSide,
+                              bottom: h * (0.801 - 0.790),
+                              child: top(agriCard),
+                            ),
+                            PositionedDirectional(
+                              end: cardSide,
+                              bottom: h * (0.801 - 0.790),
+                              child: top(starCard),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsetsDirectional.symmetric(
+                        horizontal: cardSide,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: cardWidth,
+                            child: astroFailed ? null : upcomingCard,
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsetsDirectional.only(
+                                top: h * (0.837 - 0.801),
+                              ),
+                              child: countdownRow,
+                            ),
+                          ),
+                          SizedBox(
+                            width: cardWidth,
+                            child: astroFailed ? null : weatherCard,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        side,
+                        12,
+                        side,
+                        0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ?(astroFailed ? astroError : null),
+                          darOrUsual,
+                          footer,
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    side,
-                    8,
-                    side,
-                    16,
-                  ),
-                  children: below,
-                ),
-              ),
-            ],
+              ],
+            ),
           );
         }
 
-        // القطر = عرض الشاشة − 28 (هامش 14 لرأس المؤشر والتوهج)، حد أقصى
-        // 480 (R2.5)؛ ومع تكبير الخط ≥ 1.5× تصغر إلى 75% من العرض (7.6).
+        // الهاتف: القطر = العرض − 16 (حد أقصى 560، R3.1-2)؛ ومع تكبير الخط
+        // ≥ 1.5× تصغر إلى 75% من العرض (7.6).
         final double diameter = bigText
-            ? math.min(screenWidth * 0.75, width - 28)
-            : math.min(480, width - 28);
+            ? math.min(screenWidth * 0.75, width - 16)
+            : math.min(560, width - 16);
 
-        return ListView(
-          children: [
-            dates,
-            Center(child: dialFor(diameter, density)),
-            Padding(
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: side),
-              child: Column(
+        return SingleChildScrollView(
+          child: Stack(
+            children: [
+              Positioned.fill(child: GulfBackdrop(firstScreenHeight: height)),
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: below,
+                children: [
+                  header,
+                  const SizedBox(height: 4),
+                  Center(child: dialFor(diameter, density)),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: side,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        countdownRow,
+                        const SizedBox(height: 12),
+                        if (astroFailed)
+                          astroError
+                        else ...[
+                          pair(agriCard, starCard),
+                          const SizedBox(height: 12),
+                          pair(upcomingCard, weatherCard),
+                        ],
+                        const SizedBox(height: 12),
+                        darOrUsual,
+                        footer,
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
   }
+
+  Widget _withHeader(Widget header, Widget body) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      header,
+      Expanded(child: body),
+    ],
+  );
+
+  Widget _calcError(BuildContext context, String? regionName, DateTime date) =>
+      _CalcError(
+        message: AppLocalizations.of(context).homeCalcError,
+        onReport: () =>
+            showReportSheet(context, regionName: regionName, date: date),
+      );
 
   /// نتيجة المحرك ليوم من فهرس سنته المخزّن (للعدّاد و«القادم»).
   DayInfo? _resolver(DateTime day) {
@@ -573,41 +851,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return i >= 0 && i < index.days.length ? index.days[i] : null;
   }
 
-  /// سطر الفترة لفقاعة شريحة الجو: الدَّرّ الحالي ومداه.
-  String _darPeriodText(
+  /// سطر الفترة لفقاعة شريحة الجو: الدَّرّ الحالي ومداه، أو الطالع بلا درور.
+  String _periodText(
     AppLocalizations l10n,
     DayInfo info,
+    Tables tables,
     DigitStyle digits,
   ) {
     String dm(DateTime d) =>
         l10n.dayMonthDate(formatInteger(d.day, digits), 'g${d.month}');
+    final dar = info.dar;
+    final ActivePeriod period = dar ?? info.star;
+    final name = dar != null
+        ? l10n.darTitle(dar.name.ar)
+        : l10n.wheelHubStar(tables.items[info.star.itemId]?.name.ar ?? '');
     return l10n.bubblePeriod(
-      l10n.bubbleRange(
-        l10n.darTitle(info.dar.name.ar),
-        dm(info.dar.start),
-        dm(info.dar.end),
-      ),
+      l10n.bubbleRange(name, dm(period.start), dm(period.end)),
     );
   }
 
   // نموذج الدائرة مخزّن لكل سنة/منطقة (لا يُعاد بناؤه مع كل يوم).
   DialModel? _model;
 
-  DialModel _modelFor(YearIndex index) {
-    if (_model?.index != index) _model = DialModel.fromYearIndex(index);
+  DialModel _modelFor(YearIndex index, AstroYear astro, Tables tables) {
+    if (_model?.index != index || _model?.astro != astro) {
+      _model = DialModel.fromYearIndex(
+        index,
+        astro: astro,
+        items: tables.items,
+      );
+    }
     return _model!;
   }
 
   static DateTime _local(DateTime utc) =>
       DateTime(utc.year, utc.month, utc.day);
 
-  DateTime _prevDarStart(DayInfo info) {
-    final before = ref.read(
-      dayInfoProvider(addDays(_local(info.dar.start), -1)),
-    );
-    return before == null
-        ? addDays(_local(info.dar.start), -1)
-        : _local(before.dar.start);
+  /// بداية الفترة السابقة (دَرّ، أو طالع بلا درور).
+  DateTime _prevJumpStart(ActivePeriod period) {
+    final before = ref.read(dayInfoProvider(addDays(_local(period.start), -1)));
+    final ActivePeriod? prev = before == null
+        ? null
+        : (period is DarPeriod ? before.dar : before.star);
+    return prev == null
+        ? addDays(_local(period.start), -1)
+        : _local(prev.start);
   }
 
   Future<void> _pickDate(BuildContext context, DateTime selected) async {
@@ -622,33 +910,92 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// سطر التاريخين: سطر واحد بفاصل «—» إن اتسع، وإلا سطران بلا فاصل
-/// (DESIGN 8.4).
-class _DatesLineText extends StatelessWidget {
-  const _DatesLineText({required this.lines, required this.style});
-
-  final DatesLine lines;
-  final TextStyle style;
+/// الدرج الجانبي من اليمين (R3.1-1): عرضه 304dp بسطح زجاجي، واختصارات إلى
+/// شاشات موجودة: الموقع، والتنبيهات، والمصادر، وأصل التقويم، وأبلغ عن خطأ.
+class _HomeDrawer extends ConsumerWidget {
+  const _HomeDrawer();
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: lines.single, style: style),
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-          maxLines: 1,
-        )..layout();
-        final fits = painter.width <= constraints.maxWidth;
-        painter.dispose();
-        final second = lines.second;
-        return Text(
-          fits || second == null ? lines.single : '${lines.first}\n$second',
-          textAlign: TextAlign.center,
-          style: style,
-        );
-      },
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = DururColors.of(context);
+    final region = ref.watch(currentRegionProvider);
+    final selected = ref.watch(selectedDateProvider);
+    void go(VoidCallback action) {
+      Navigator.of(context).pop();
+      action();
+    }
+
+    final items = <(IconData, String, VoidCallback)>[
+      (
+        Icons.place_outlined,
+        l10n.settingsCity,
+        () => go(() => context.push(AppRoutes.city)),
+      ),
+      (
+        Icons.notifications_none,
+        l10n.settingsSectionNotifications,
+        () => go(() => context.go(AppRoutes.settings)),
+      ),
+      (
+        Icons.menu_book_outlined,
+        l10n.settingsSources,
+        () => go(() => context.push(AppRoutes.sources)),
+      ),
+      (
+        Icons.history_edu_outlined,
+        l10n.originTitle,
+        () => go(() => context.push(AppRoutes.origin)),
+      ),
+      (
+        Icons.flag_outlined,
+        l10n.reportTitle,
+        () => go(
+          () => showReportSheet(
+            context,
+            regionName: region?.name.ar,
+            date: selected,
+          ),
+        ),
+      ),
+    ];
+    return Drawer(
+      key: HomeScreen.drawerKey,
+      width: 304,
+      backgroundColor: Colors.transparent,
+      child: GlassSurface(
+        blur: true,
+        radius: 0,
+        fill: colors.surface.withValues(alpha: 0.92),
+        padding: EdgeInsets.zero,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsetsDirectional.symmetric(vertical: 16),
+            children: [
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 16),
+                child: Text(
+                  l10n.appTitle,
+                  style: TextStyle(
+                    fontFamily: DururFonts.display,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: colors.ink,
+                  ),
+                ),
+              ),
+              for (final (i, (icon, label, onTap)) in items.indexed)
+                ListTile(
+                  key: HomeScreen.drawerItem(i),
+                  minTileHeight: 56,
+                  leading: Icon(icon, color: colors.primary),
+                  title: Text(label),
+                  onTap: onTap,
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -685,7 +1032,7 @@ class _DelayedSkeletonState extends State<_DelayedSkeleton> {
     if (!_visible) return const SizedBox.expand();
     final colors = DururColors.of(context);
     final width = MediaQuery.sizeOf(context).width;
-    final diameter = (width - 28).clamp(200.0, 480.0);
+    final diameter = (width - 16).clamp(200.0, 560.0);
     Widget bar(double w) => Container(
       height: 16,
       width: w,
@@ -728,7 +1075,7 @@ class _SkeletonPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     final fractions = {
-      for (final (o, i) in DialGeometry.bands.values) ...[o, i],
+      for (final (o, i) in DialGeometry.gulfBands.values) ...[o, i],
     };
     for (final f in fractions) {
       canvas.drawCircle(size.center(Offset.zero), r * f - 1, paint);
@@ -742,28 +1089,44 @@ class _SkeletonPainter extends CustomPainter {
 /// المحرك لم يجد نتيجة (يجب ألا يحدث بعد الاختبار): «تعذّر حساب هذا اليوم.»
 /// + زر «أبلغ عن خطأ» (DESIGN 8.4، R2.8 الخطأ).
 class _CalcError extends StatelessWidget {
-  const _CalcError({required this.message, required this.onReport});
+  const _CalcError({
+    required this.message,
+    required this.onReport,
+    this.inline = false,
+  });
 
   final String message;
   final VoidCallback onReport;
 
+  /// داخل صفحة قابلة للتمرير (مكان البطاقات، R3.4) لا قائمة مستقلة.
+  final bool inline;
+
   @override
   Widget build(BuildContext context) {
+    final children = [
+      Text(message, textAlign: TextAlign.center),
+      const SizedBox(height: 16),
+      OutlinedButton(
+        key: HomeScreen.calcErrorReportKey,
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+        onPressed: onReport,
+        child: Text(AppLocalizations.of(context).reportTitle),
+      ),
+    ];
+    if (inline) {
+      return Padding(
+        key: HomeScreen.calcErrorKey,
+        padding: const EdgeInsetsDirectional.symmetric(vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
+      );
+    }
     return ListView(
       key: HomeScreen.calcErrorKey,
       padding: const EdgeInsetsDirectional.all(24),
-      children: [
-        Text(message, textAlign: TextAlign.center),
-        const SizedBox(height: 16),
-        OutlinedButton(
-          key: HomeScreen.calcErrorReportKey,
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
-          ),
-          onPressed: onReport,
-          child: Text(AppLocalizations.of(context).reportTitle),
-        ),
-      ],
+      children: children,
     );
   }
 }

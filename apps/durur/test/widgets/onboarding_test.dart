@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:durur/src/features/city_picker/city_picker_screen.dart';
-import 'package:durur/src/features/home/city_chip.dart';
 import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/onboarding/location_screen.dart';
 import 'package:durur/src/features/onboarding/notifications_intro_screen.dart';
@@ -56,9 +55,13 @@ Future<void> main() async {
   Future<void> toLocationScreen(WidgetTester tester) =>
       tapKey(tester, WelcomeScreen.startKey);
 
+  // اسم المكان في سطر الرأس (R3.1-1): الاسم وحده بلا المنطقة.
   String chipText(WidgetTester tester) => tester
       .widget<Text>(
-        find.descendant(of: find.byType(CityChip), matching: find.byType(Text)),
+        find.descendant(
+          of: find.byKey(HomeScreen.placeKey),
+          matching: find.byType(Text),
+        ),
       )
       .data!;
 
@@ -155,7 +158,7 @@ Future<void> main() async {
         await tapKey(tester, LocationScreen.continueKey);
         await finishIntro(tester);
         expect(find.byType(HomeScreen), findsOneWidget);
-        expect(chipText(tester), 'الرياض · نجد');
+        expect(chipText(tester), 'الرياض');
         // لا قراءة أخرى بعد الوصول للرئيسية (لا تتبع).
         await tester.pump(const Duration(minutes: 1));
         expect(location.reads, 1);
@@ -184,7 +187,7 @@ Future<void> main() async {
         await tester.pumpAndSettle();
         await finishIntro(tester);
         expect(find.byType(HomeScreen), findsOneWidget);
-        expect(chipText(tester), 'مسقط · الإمارات وعُمان');
+        expect(chipText(tester), 'مسقط');
         expectOnlyCityIdStored(prefs, 'muscat');
       },
     );
@@ -382,7 +385,7 @@ Future<void> main() async {
       await tester.tap(tile('riyadh'));
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(chipText(tester), 'الرياض · نجد');
+      expect(chipText(tester), 'الرياض');
       expectOnlyCityIdStored(prefs, 'riyadh');
     });
 

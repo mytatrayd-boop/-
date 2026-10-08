@@ -39,8 +39,8 @@ class ScheduledNotification {
 /// - سهيل والثريا بتاريخهما المحسوب: «طلع {النجم} اليوم في {المدينة}»،
 ///   والفعل والضمير حسب `item.gender` («طلعت الثريا…»، §13 «جنس النجم»).
 /// - بقية المواسم المهمة: «دخل {الموسم} اليوم في {المنطقة}».
-/// - بداية الدَّرّ: «بدأ دَرّ {الدَّرّ} من {المئة}»، وللمستعيرة «… حسب حساب
-///   {المُعيرة}» (D24)، والنص «الجو المعتاد: …».
+/// - بداية الدَّرّ: «بدأ دَرّ {الدَّرّ} من {المئة}»، والنص «الجو المعتاد: …».
+///   لا تنبيهات دَرّ في منطقة بلا درور (D50).
 /// الحمولة تحمل تاريخ التنبيه (`from`) فتفتح الصفحة الفترة التي بدأت يومها.
 ScheduledNotification buildScheduledNotification(
   PlannedNotification planned, {
@@ -65,19 +65,13 @@ ScheduledNotification buildScheduledNotification(
         body = l10n.notifSeasonBody(name);
       }
       payload = AppRoutes.item(item.id, from: from);
-    case DarSubject(:final record, :final dururRegionId, :final borrowed):
+    case DarSubject(:final record, :final regionId):
       final hundred = tables.items[record.seasonId]?.name.ar ?? '';
-      title = borrowed
-          ? l10n.notifDarTitleBorrowed(
-              record.name.ar,
-              hundred,
-              tables.region(dururRegionId)?.name.ar ?? dururRegionId,
-            )
-          : l10n.notifDarTitle(record.name.ar, hundred);
+      title = l10n.notifDarTitle(record.name.ar, hundred);
       body = record.weather.isEmpty
           ? ''
           : l10n.notifDarBody(_weatherList(l10n, record.weather));
-      payload = AppRoutes.dar(dururRegionId, record.start, from: from);
+      payload = AppRoutes.dar(regionId, record.start, from: from);
   }
   return ScheduledNotification(
     id: planned.id,

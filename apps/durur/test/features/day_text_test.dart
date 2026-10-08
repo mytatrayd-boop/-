@@ -46,7 +46,7 @@ Future<void> main() async {
     ) {
       final info = engine.resolve(d);
       final value = dialSemanticsValue(l10n, info, tables);
-      final differs = info.majorSeason.itemId != info.dar.record.seasonId;
+      final differs = info.majorSeason.itemId != info.dar!.record.seasonId;
       expect(value.contains('الموسم:'), differs, reason: '$d');
       if (differs) {
         sawDiff = true;
@@ -69,7 +69,7 @@ Future<void> main() async {
       'a',
     ).resolve(DateTime(2026, 1, 7));
     // 7 يناير: الدَّرّ «أ» (مئة s1) والموسم الكبير ما زال s2 حتى 10 يناير.
-    expect(info.dar.record.seasonId, 's1');
+    expect(info.dar!.record.seasonId, 's1');
     expect(info.majorSeason.itemId, 's2');
     final value = dialSemanticsValue(l10n, info, fixture);
     expect(value, contains('الموسم: s2.'));

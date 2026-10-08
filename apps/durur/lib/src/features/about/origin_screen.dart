@@ -5,10 +5,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../formatting/digits.dart';
 import '../../providers.dart';
 
-/// صفحة «أصل التقويم» (`/about/origin`، D24 وقرار المالك في عرض السعودية):
-/// سطران لكل طبقة، أصل الطوالع والمواسم وأصل الدرور. النصوص في ARB لأنها
-/// عامة لا تخص منطقة، إلا عبارة «معروض هنا للمقارنة» فتُلحق فقط إن كانت
-/// منطقة المستخدم الحالية تستعير الدرور (DESIGN 8.10).
+/// صفحة «أصل التقويم» (`/about/origin`): سطران لكل طبقة، أصل الطوالع
+/// والمواسم وأصل الدرور. النصوص في ARB لأنها عامة لا تخص منطقة. الدرور
+/// حساب خليجي ساحلي لا يُستعمل في السعودية (D43، D50).
 class OriginScreen extends ConsumerWidget {
   const OriginScreen({super.key});
 
@@ -16,9 +15,6 @@ class OriginScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final borrows = ref.watch(
-      engineProvider.select((e) => e?.dururBorrow != null),
-    );
     final digits = ref.watch(digitStyleProvider);
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
@@ -45,12 +41,7 @@ class OriginScreen extends ConsumerWidget {
           section(l10n.originTawaliTitle, l10n.originTawaliBody),
           section(
             l10n.originDururTitle,
-            localizeDigits(
-              borrows
-                  ? '${l10n.originDururBody} ${l10n.originDururComparison}'
-                  : l10n.originDururBody,
-              digits,
-            ),
+            localizeDigits(l10n.originDururBody, digits),
           ),
         ],
       ),

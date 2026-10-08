@@ -89,21 +89,27 @@ Future<void> main() async {
   });
 
   group('detailRequestFor (من الدائرة والبطاقة)', () {
-    test('الرياض: الدَّرّ بجدول المُعيرة (D24، D26)', () {
+    test('الرياض بلا درور (D50): حلقة الدرور غير موجودة، والطلب يذهب للطالع، '
+        'ومسار /dar/najd لا يجد صفحة', () {
       final day = CalendarEngine.fromTables(
         assets,
         'najd',
       ).resolve(DateTime(2026, 10, 2));
+      expect(day.dar, isNull);
       final r = detailRequestFor(DialRing.durur, day);
-      expect(r.target, DarTarget('uae_oman', day.dar.record.start));
-      expect(r.from, DateTime(2026, 10, 2));
-      final page = resolveDetail(
+      expect(r.target, ItemTarget(day.star.itemId));
+      final najdDar = resolveDetail(
         tables: assets,
         engine: CalendarEngine.fromTables(assets, 'najd'),
-        request: r,
-      )!;
-      expect(page.regionName, 'الإمارات وعُمان');
-      expect(page.period.start, day.dar.start);
+        request: (
+          target: DarTarget(
+            'najd',
+            assets.regionTables['uae_oman']!.durur.first.start,
+          ),
+          from: DateTime(2026, 10, 2),
+        ),
+      );
+      expect(najdDar, isNull);
     });
 
     test('الحلقات: النجم والموسم والأشهر وموسم الجو أو الدَّرّ', () {
@@ -122,7 +128,7 @@ Future<void> main() async {
       );
       expect(
         detailRequestFor(DialRing.weather, day).target,
-        DarTarget('kuwait', day.dar.record.start),
+        DarTarget('kuwait', day.dar!.record.start),
       );
     });
   });
@@ -142,7 +148,7 @@ Future<void> main() async {
           ..add(day.star.itemId)
           ..add(day.majorSeason.itemId);
         if (day.weatherSeason != null) ids.add(day.weatherSeason!.itemId);
-        ids.add(day.dar.record.seasonId);
+        if (day.dar != null) ids.add(day.dar!.record.seasonId);
       }
       for (final id in ids) {
         final item = assets.items[id];
@@ -163,7 +169,8 @@ Future<void> main() async {
         );
         expect(page, isNotNull, reason: '${region.id}: $id');
       }
-      // وكل دَرّ له صفحة من سجله.
+      // وكل دَرّ له صفحة من سجله (لا درور في السعودية، D50).
+      if (!engine.hasDurur) continue;
       for (final day in index.days) {
         final page = resolveDetail(
           tables: assets,

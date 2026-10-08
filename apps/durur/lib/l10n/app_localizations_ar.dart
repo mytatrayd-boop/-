@@ -105,11 +105,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get citySaveError => 'تعذّر حفظ اختيارك. حاول مرة أخرى.';
 
   @override
-  String cityChipLabel(String city, String region) {
-    return '$city · $region';
-  }
-
-  @override
   String get settingsTitle => 'الإعدادات';
 
   @override
@@ -292,11 +287,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeCalcError => 'تعذّر حساب هذا اليوم.';
 
   @override
-  String dialDururLegend(String region) {
-    return 'حلقة الدرور: حساب $region';
-  }
-
-  @override
   String get wheelResetZoom => 'إعادة الحجم';
 
   @override
@@ -318,17 +308,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String wheelA11yDar(String dar, String season, String day, String total) {
     return 'دَرّ $dar من $season، اليوم $day من $total.';
-  }
-
-  @override
-  String wheelA11yDarBorrowed(
-    String dar,
-    String season,
-    String region,
-    String day,
-    String total,
-  ) {
-    return 'دَرّ $dar من $season حسب حساب $region، اليوم $day من $total.';
   }
 
   @override
@@ -613,10 +592,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get originDururBody =>
-      'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي.';
-
-  @override
-  String get originDururComparison => 'معروض هنا للمقارنة.';
+      'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي، ولا يُستعمل في السعودية.';
 
   @override
   String get settingsSectionHelp => 'البيانات والمساعدة';
@@ -638,6 +614,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get sourcesGeoNames =>
       'إحداثيات المدن من GeoNames (geonames.org)، برخصة المشاع الإبداعي نَسب المُصنَّف 4.0 (CC BY 4.0). عُدّلت: اختيار المدن وربطها بالمناطق.';
+
+  @override
+  String get sourcesNaturalEarth =>
+      'خريطة الخليج في خلفية الشاشة الرئيسية من بيانات Natural Earth (naturalearthdata.com)، وهي ملكية عامة.';
 
   @override
   String get sourcesGeoNamesLink => 'موقع GeoNames';
@@ -742,11 +722,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String notifDarTitle(String dar, String season) {
     return 'بدأ دَرّ $dar من $season';
-  }
-
-  @override
-  String notifDarTitleBorrowed(String dar, String season, String region) {
-    return 'بدأ دَرّ $dar من $season حسب حساب $region';
   }
 
   @override
@@ -903,9 +878,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tabSettings => 'الإعدادات';
 
   @override
-  String get countdownRemaining => 'باقي';
-
-  @override
   String countdownDaysUnit(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1005,9 +977,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cardStarTitle => 'الطالع';
 
   @override
-  String get cardWeatherTitle => 'الجو المعتاد';
-
-  @override
   String get cardWeatherNote => 'حسب التراث، وليس توقعاً للطقس.';
 
   @override
@@ -1036,14 +1005,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String homeWeatherSeasonLabel(String name) {
-    return 'موسم الجو: $name';
-  }
-
-  @override
-  String get homeNone => 'لا يوجد';
-
-  @override
   String darTitle(String dar) {
     return 'دَرّ $dar';
   }
@@ -1051,11 +1012,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String darOfSeason(String season) {
     return 'من $season';
-  }
-
-  @override
-  String darBorrowedCaption(String region) {
-    return 'حسب حساب $region';
   }
 
   @override
@@ -1072,16 +1028,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String bubbleRange(String name, String start, String end) {
     return '$name — $start إلى $end';
-  }
-
-  @override
-  String bubbleDururOf(String season) {
-    return 'درور $season';
-  }
-
-  @override
-  String bubbleDururRange(String first, String last) {
-    return 'دَرّ $first إلى دَرّ $last';
   }
 
   @override
@@ -1114,4 +1060,208 @@ class AppLocalizationsAr extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String astroSeasonName(String season) {
+    String _temp0 = intl.Intl.selectLogic(season, {
+      'spring': 'الربيع',
+      'summer': 'الصيف',
+      'autumn': 'الخريف',
+      'winter': 'الشتاء',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String astroEventName(String event) {
+    String _temp0 = intl.Intl.selectLogic(event, {
+      'march_equinox': 'الاعتدال الربيعي',
+      'june_solstice': 'الانقلاب الصيفي',
+      'september_equinox': 'الاعتدال الخريفي',
+      'december_solstice': 'الانقلاب الشتوي',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String astroSeasonStarts(String datetime) {
+    return 'يبدأ: $datetime';
+  }
+
+  @override
+  String astroSeasonEnds(String datetime) {
+    return 'ينتهي: $datetime';
+  }
+
+  @override
+  String astroSeasonLength(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'مدته $days يوم',
+      many: 'مدته $days يوماً',
+      few: 'مدته $days أيام',
+      two: 'مدته يومان',
+      one: 'مدته يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String astroDaysElapsed(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'مضى $days يوم',
+      many: 'مضى $days يوماً',
+      few: 'مضى $days أيام',
+      two: 'مضى يومان',
+      one: 'مضى يوم واحد',
+      zero: 'مضى أقل من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String astroDaysRemaining(int count, String days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بقي $days يوم',
+      many: 'بقي $days يوماً',
+      few: 'بقي $days أيام',
+      two: 'بقي يومان',
+      one: 'بقي يوم واحد',
+      zero: 'بقي أقل من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String astroSeasonElapsed(String elapsed, String remaining) {
+    return '$elapsed — $remaining';
+  }
+
+  @override
+  String astroSeasonHeritage(String name, String period) {
+    return 'يقابله في التراث: $name ($period)';
+  }
+
+  @override
+  String astroPeriodRange(String start, String end) {
+    return 'من $start إلى $end';
+  }
+
+  @override
+  String get astroSeasonNote =>
+      'الفصول الفلكية تبدأ بالاعتدالين والانقلابين؛ والمواسم التراثية تبدأ بطلوع النجوم، فلا تتطابق بدايتها.';
+
+  @override
+  String astroSeasonA11yHeritage(String season, String heritage) {
+    return '$season، ويقابله في التراث $heritage';
+  }
+
+  @override
+  String astroSeasonA11ySentence(String season, String start, String end) {
+    return 'الفصل: $season، من $start إلى $end.';
+  }
+
+  @override
+  String get astroComputed => 'حساب فلكي';
+
+  @override
+  String astroDateShort(String day, String month) {
+    return '$day/$month';
+  }
+
+  @override
+  String astroTime(String hour, String minute, String period) {
+    String _temp0 = intl.Intl.selectLogic(period, {
+      'am': 'ص',
+      'pm': 'م',
+      'other': '',
+    });
+    return '$hour:$minute $_temp0';
+  }
+
+  @override
+  String astroDateTime(String weekday, String date, String time) {
+    return '$weekday $date، $time';
+  }
+
+  @override
+  String zodiacName(String sign) {
+    String _temp0 = intl.Intl.selectLogic(sign, {
+      'aries': 'الحمل',
+      'taurus': 'الثور',
+      'gemini': 'الجوزاء',
+      'cancer': 'السرطان',
+      'leo': 'الأسد',
+      'virgo': 'السنبلة',
+      'libra': 'الميزان',
+      'scorpio': 'العقرب',
+      'sagittarius': 'القوس',
+      'capricorn': 'الجدي',
+      'aquarius': 'الدلو',
+      'pisces': 'الحوت',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String zodiacSunIn(String name) {
+    return 'الشمس في برج $name';
+  }
+
+  @override
+  String get zodiacNote => 'موقع الشمس بين البروج، حساب فلكي.';
+
+  @override
+  String get wheelA11yReadSeasonZodiac => 'اقرأ الفصل والبرج';
+
+  @override
+  String get wheelA11yOpenSeasonSheet => 'افتح ورقة الفصل';
+
+  @override
+  String get wheelA11yNextStar => 'انتقل طالعاً للأمام';
+
+  @override
+  String get wheelA11yPrevStar => 'انتقل طالعاً للخلف';
+
+  @override
+  String get wheelA11yHintStar =>
+      'اسحب لأعلى أو لأسفل بإصبع واحد لتغيير اليوم. انقر مرتين لفتح صفحة الطالع.';
+
+  @override
+  String get headerMenu => 'القائمة';
+
+  @override
+  String get headerNotifications => 'التنبيهات';
+
+  @override
+  String get headerNotificationsDenied => 'التنبيهات، الإذن مرفوض';
+
+  @override
+  String get headerSeparator => ' — ';
+
+  @override
+  String get cardStarSubtitle => 'نجم الموسم الآن';
+
+  @override
+  String get cardUpcomingSubtitle => 'الدرور والمواسم والطوالع';
+
+  @override
+  String get cardLiveWeatherTitle => 'الطقس';
+
+  @override
+  String get cardLiveWeatherSubtitle => 'الآن والأيام القادمة';
+
+  @override
+  String get cardLiveWeatherUnavailable => 'غير متاح بعد';
+
+  @override
+  String get usualWeatherHeritageTitle => 'الجو المعتاد حسب التراث';
 }

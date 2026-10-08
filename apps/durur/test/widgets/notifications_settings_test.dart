@@ -327,7 +327,8 @@ Future<void> main() async {
       tester,
     ) async {
       final prefs = await openApp(tester, FakeNotificationScheduler());
-      expect(find.textContaining('٢٠٢٦'), findsWidgets);
+      // سطر التاريخ في الرأس هجري (R3.1-1).
+      expect(find.textContaining('١٤٤٨'), findsWidgets);
       await openSettings(tester);
       await tapKey(tester, SettingsScreen.digitsChipKey(DigitStyle.latin));
       expect(prefs.getString(SettingsRepository.digitsKey), 'latin');
@@ -336,8 +337,8 @@ Future<void> main() async {
         findsOneWidget,
       );
       await openTab(tester, AppTab.wheel);
-      expect(find.textContaining('2026'), findsWidgets);
-      expect(find.textContaining('٢٠٢٦'), findsNothing);
+      expect(find.textContaining('1448'), findsWidgets);
+      expect(find.textContaining('١٤٤٨'), findsNothing);
     });
   });
 
@@ -586,40 +587,24 @@ Future<void> main() async {
     });
   });
 
-  group('أصل التقويم: عبارة المقارنة (DESIGN 8.10)', () {
-    for (final (cityId, borrows) in [('riyadh', true), ('kuwait_city', false)]) {
-      testWidgets('$cityId: العبارة ${borrows ? 'تظهر' : 'لا تظهر'}', (
-        tester,
-      ) async {
+  group('أصل التقويم: الدرور لا تُقارن في السعودية (SPEC 20.11، D50)', () {
+    for (final cityId in ['riyadh', 'kuwait_city']) {
+      testWidgets('$cityId: النص نفسه بلا «للمقارنة»', (tester) async {
         await pumpScreen(
           tester,
           const OriginScreen(),
           prefs: await fakePrefs(savedCity(cityId)),
           tables: tables,
         );
-        const body = 'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي.';
         expect(
-          find.text(borrows ? '$body معروض هنا للمقارنة.' : body),
+          find.text(
+            'حساب عشري (٣٦ دَرّاً × ١٠ أيام) لأهل الساحل الخليجي، '
+            'ولا يُستعمل في السعودية.',
+          ),
           findsOneWidget,
         );
-        expect(find.textContaining('للمقارنة'), borrows ? findsOneWidget : findsNothing);
+        expect(find.textContaining('للمقارنة'), findsNothing);
       });
     }
-
-    testWidgets('تغيير المدينة والصفحة مفتوحة يحذف العبارة', (tester) async {
-      await pumpScreen(
-        tester,
-        const OriginScreen(),
-        prefs: await fakePrefs(savedCity('riyadh')),
-        tables: tables,
-      );
-      expect(find.textContaining('للمقارنة'), findsOneWidget);
-      final c = ProviderScope.containerOf(
-        tester.element(find.byType(OriginScreen)),
-      );
-      await c.read(settingsProvider.notifier).selectCity('muscat');
-      await tester.pumpAndSettle();
-      expect(find.textContaining('للمقارنة'), findsNothing);
-    });
   });
 }

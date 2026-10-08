@@ -1,6 +1,19 @@
 import 'angles.dart';
 import 'time.dart';
 
+/// طول الشمس الظاهري بالدرجات [0، 360) (Meeus فصل 25، الدقة المنخفضة).
+double sunApparentLongitude(double jde) {
+  final t = julianCenturies(jde);
+  final l0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
+  final m = 357.52911 + 35999.05029 * t - 0.0001537 * t * t;
+  final c =
+      (1.914602 - 0.004817 * t - 0.000014 * t * t) * sinDeg(m) +
+      (0.019993 - 0.000101 * t) * sinDeg(2 * m) +
+      0.000289 * sinDeg(3 * m);
+  final omega = 125.04 - 1934.136 * t;
+  return normalizeDegrees(l0 + c - 0.00569 - 0.00478 * sinDeg(omega));
+}
+
 /// الموضع الظاهري للشمس بالدقة المنخفضة (Meeus فصل 25، ~0.01°).
 /// [jde] التاريخ اليولياني بالزمن الديناميكي.
 Equatorial sunApparentPosition(double jde) {

@@ -20,23 +20,21 @@ import 'dial_model.dart';
 import 'dial_painter.dart';
 import 'weather_marks.dart';
 
-/// ما يُفتح من الدائرة: عنصر حلقة ليوم معيّن، أو الدَّرّ (المحور).
+/// ما يُفتح من الدائرة: جزء حلقة ليوم معيّن. [DialRing.seasons] ورقة الفصل
+/// الفلكي، و[DialRing.zodiac] ورقة البرج، وغيرهما صفحة العنصر.
 typedef DialOpen = void Function(DialRing ring, DayInfo day);
 
-/// الدائرة التفاعلية لليوم (DESIGN R2.5، §7.4): قرص يدور تحت إبرة ثابتة في
-/// الأعلى. الحلقات من الخارج: مواسم الجو ورموزه، الأشهر، الدرور، الطوالع،
-/// والمواسم الأربعة في المركز.
+/// الدائرة التفاعلية (DESIGN R3.1، D41): **قرص ثابت** وعقرب يدور إلى اليوم
+/// المعروض، والزمن يتقدّم عكس عقارب الساعة (21 ديسمبر عند الساعة 6).
 ///
-/// - سحب دائري بإصبع واحد يغيّر اليوم (≈ 1° لكل يوم)، ويستقر عند الرفع.
-/// - ضغطة على رمز جو ← فقاعته (R2.6، لها الأولوية على الحلقة تحتها)؛ على
-///   قطعة ← [onOpen] لعنصرها؛ على حلقة الأشهر ← أول الشهر؛ على المقبض ←
-///   ما يعرضه المركز (موسم الجو المسمّى أو الموسم الكبير).
+/// - سحب العقرب أو أي نقطة على القرص يحرّكه يوماً بيوم، ويستقر عند الرفع.
+/// - ضغطة على خلية في الإطار ← فقاعة رموز دَرّها أو طالعها (R2.6)؛ على اسم
+///   موسم جو ← ورقته؛ على حلقة الأشهر ← أول الشهر؛ على حلقة ← [onOpen]؛
+///   على المحور ← العودة لليوم، أو ورقة الفصل إن كان المعروض هو اليوم.
 /// - ضغطتان أو قرص بإصبعين ← تكبير 1×–3×؛ في التكبير يحرّك السحب الدائرة.
-/// - لقارئ الشاشة عنصر واحد قابل للتعديل (DESIGN 7.7).
+/// - لقارئ الشاشة عنصر واحد قابل للتعديل (DESIGN 7.7، R3.5).
 ///
-/// الرسم بـ [CustomPainter] داخل [RepaintBoundary]، والأجزاء الثابتة صور
-/// مخزّنة تُدار بتحويل فقط (R2.3): السحب يعيد رسم القرص وحده، وتُعاد بناء
-/// الواجهة فقط عند تغيّر اليوم.
+/// القرص يُرسم مرة في صورة مخزّنة، ولا يُعاد مع السحب إلا العقرب والتمييز.
 class DayDial extends StatefulWidget {
   const DayDial({
     super.key,
@@ -54,11 +52,12 @@ class DayDial extends StatefulWidget {
     required this.onShift,
     required this.onOpen,
     required this.onBackToToday,
+    this.onReadSeasonZodiac,
     this.digits = DigitStyle.arabicIndic,
   });
 
-  /// حجم رمز الجو المرئي: 18 على ≥ 400dp، و16 أقل (R2.6).
-  double get iconSize => density == DialDensity.full ? 18 : 16;
+  /// حجم رمز الجو المرئي: 16 على ≥ 400dp، و14 أقل (R3.1-5).
+  double get iconSize => density == DialDensity.full ? 16 : 14;
 
   static const dialKey = Key('dayDial');
   static const resetZoomKey = Key('dialResetZoom');
@@ -72,11 +71,8 @@ class DayDial extends StatefulWidget {
   final DateTime selected;
   final DateTime today;
 
-  /// قارئ الشاشة (DESIGN 7.7): [semanticsLabel] البادئة الثابتة نسبياً
-  /// («اليوم» أو «التاريخ المعروض»)، و[semanticsValue] الجزء المتغيّر
-  /// (التاريخ، الدَّرّ واليوم داخله، النجم، موسم الجو، الجو). [increasedValue]
-  /// و[decreasedValue] قيمة اليوم التالي والسابق، وnull عند حدّي 2025/2040
-  /// (فلا يُعرض التعديل في ذلك الاتجاه).
+  /// قارئ الشاشة (DESIGN 7.7): البادئة والقيمة وقيمتا اليوم التالي والسابق
+  /// (null عند حدّي 2025/2040).
   final String semanticsLabel;
   final String semanticsValue;
   final String? increasedValue;
@@ -85,24 +81,26 @@ class DayDial extends StatefulWidget {
   /// اختيار تاريخ جديد (يُحصر في المدى من المزوّد).
   final ValueChanged<DateTime> onSelect;
 
-  /// نقل التاريخ المعروض بعدد أيام (من حالته الحالية، لا من آخر بناء).
+  /// نقل التاريخ المعروض بعدد أيام.
   final ValueChanged<int> onShift;
   final DialOpen onOpen;
   final VoidCallback onBackToToday;
 
-  /// شكل الأرقام (DESIGN 8.7) في المحور وحلقتي الأشهر والدرور.
+  /// إجراء قارئ الشاشة «اقرأ الفصل والبرج» (R3.5): يعيد النص المقروء.
+  final String Function(DayInfo day)? onReadSeasonZodiac;
+
+  /// شكل الأرقام (DESIGN 8.7).
   final DigitStyle digits;
 
-  /// هامش أعلى الدائرة وأسفلها لرأس الإبرة والتوهج.
-  static const double margin = 16;
+  /// هامش أعلى الدائرة وأسفلها للتوهج.
+  static const double margin = 4;
 
   @override
   State<DayDial> createState() => DayDialState();
 }
 
 /// حالة الدائرة. عامة فقط ليقرأ الاختبار مواضع رموز الجو الظاهرة.
-class DayDialState extends State<DayDial>
-    with SingleTickerProviderStateMixin {
+class DayDialState extends State<DayDial> with SingleTickerProviderStateMixin {
   late final ValueNotifier<double> _rotation = ValueNotifier(
     widget.model.dayIndexOf(widget.selected).toDouble(),
   );
@@ -114,7 +112,7 @@ class DayDialState extends State<DayDial>
   DialLabels? _labels;
   Object? _labelsKey;
   final DialPictures _pictures = DialPictures();
-  WeatherLayout _layout = WeatherLayout.empty;
+  FrameLayout _layout = FrameLayout.empty;
   Object? _layoutKey;
   final GlobalKey _areaKey = GlobalKey();
 
@@ -141,7 +139,7 @@ class DayDialState extends State<DayDial>
     super.didUpdateWidget(oldWidget);
     final old = oldWidget;
     if (old.model.year != widget.model.year) {
-      // تغيّرت السنة: يُعاد حساب فهرس الدوران بالنسبة لـ 1 يناير الجديد.
+      // تغيّرت السنة: يُعاد حساب فهرس العقرب بالنسبة لـ 1 يناير الجديد.
       _anim.stop();
       final shift = daysBetween(
         DateTime(old.model.year),
@@ -192,6 +190,7 @@ class DayDialState extends State<DayDial>
       scaler.scale(100),
       widget.density,
       widget.digits,
+      _radius,
     );
     if (_labels == null || _labelsKey != key) {
       _labels?.dispose();
@@ -203,27 +202,36 @@ class DayDialState extends State<DayDial>
         textScaler: scaler,
         density: widget.density,
         digits: widget.digits,
+        radius: _radius,
       );
       _labelsKey = key;
     }
     return _labels!;
   }
 
-  DialGeometry get _geo =>
-      DialGeometry(radius: _radius, dayCount: widget.model.dayCount);
+  DialGeometry get _geo => DialGeometry.of(widget.model, _radius);
 
-  /// رموز الجو لهذا الحجم والتكبير (يُعاد حسابها عند تغيّر التكبير فقط).
-  WeatherLayout _layoutFor(DialLabels labels) {
+  /// أسماء مواسم الجو والرموز الظاهرة لهذا الحجم والتكبير.
+  FrameLayout _layoutFor(DialLabels labels) {
     final zoom = (_scale * 10).round() / 10;
     final key = (widget.model, labels, _radius, zoom, widget.iconSize);
     if (_layoutKey != key) {
-      _layout = layoutWeatherMarks(
+      final geo = _geo;
+      final r = geo.weatherMid;
+      final pxPerDay = geo.step * r * zoom;
+      _layout = layoutFrame(
         model: widget.model,
-        items: widget.tables.items,
-        radius: _geo.weatherMid,
+        radius: r,
         zoom: zoom,
-        iconSize: widget.iconSize,
         nameWidth: (id) => labels.weatherNames[id]?.width,
+        blocked: [
+          for (final (i, m) in widget.model.months.indexed)
+            (
+              m.start + (labels.monthNumbers[i].width / 2 + 3) / pxPerDay,
+              (labels.monthNumbers[i].width / 2 + widget.iconSize / 2 + 1) /
+                  pxPerDay,
+            ),
+        ],
       );
       _layoutKey = key;
     }
@@ -240,124 +248,104 @@ class DayDialState extends State<DayDial>
 
   DialHit? _hit(Offset local) {
     final p = _toDial(local);
-    return _geo.hitTest(p.dx, p.dy, _rotation.value.roundToDouble());
-  }
-
-  ({WeatherGroup group, WeatherMark mark})? _markAt(Offset local) {
-    final p = _toDial(local);
-    return hitWeatherMark(
-      _layout,
-      _geo,
-      p.dx,
-      p.dy,
-      _rotation.value.roundToDouble(),
-      _scale,
-    );
+    return _geo.hitTest(p.dx, p.dy);
   }
 
   void _handleTap(Offset local) {
-    // رمز الجو أولاً، حتى لو امتدت منطقة لمسه إلى حلقة الأشهر (R2.6).
-    final mark = _markAt(local);
-    if (mark != null) {
-      _openBubble(mark.group, mark.mark);
-      return;
-    }
     final hit = _hit(local);
     final days = widget.model.index.days;
     switch (hit) {
       case null:
         return;
       case HubHit():
-        widget.onOpen(_hubRing(_info), _info);
+        if (widget.selected == widget.today) {
+          widget.onOpen(DialRing.seasons, _info);
+        } else {
+          widget.onBackToToday();
+        }
       case RingHit(ring: DialRing.months, :final day):
         final month = widget.model.segmentAt(DialRing.months, day)!.month!;
         widget.onSelect(DateTime(widget.model.year, month));
-      case RingHit(:final ring, :final day):
-        if (ring == DialRing.weather && days[day].weatherSeason == null) {
-          return;
+      case RingHit(ring: DialRing.days, :final day):
+        widget.onSelect(DateTime(widget.model.year, 1, 1 + day));
+      case RingHit(ring: DialRing.weather, :final day):
+        final p = _toDial(local);
+        final at = _geo.dayAtAngle(DialGeometry.angleAt(p.dx, p.dy));
+        final n = widget.model.dayCount;
+        for (final name in _layout.names) {
+          if (name.covers(at, n) && days[day].weatherSeason != null) {
+            widget.onOpen(DialRing.weather, days[day]);
+            return;
+          }
         }
+        final cell = widget.model.cellAt(day);
+        if (cell != null) _openBubble(cell);
+      case RingHit(:final ring, :final day):
         widget.onOpen(ring, days[day]);
     }
   }
 
-  // ———— فقاعة رمز الجو (R2.6) ————
+  // ———— فقاعة رموز الجو (R2.6) ————
 
-  /// موضع مركز رمز على الشاشة (إحداثيات عامة).
-  Offset? _globalOf(WeatherGroup group, WeatherMark mark) {
+  /// موضع مركز خلية على الشاشة (إحداثيات عامة).
+  Offset? _globalOf(WeatherCell cell) {
     final box = _areaKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return null;
-    final (x, y) = markPosition(
-      _geo,
-      group,
-      mark.offset,
-      _rotation.value.roundToDouble(),
-      _geo.weatherMid,
-      _scale,
-    );
+    final geo = _geo;
+    final (x, y) = DialGeometry.polar(geo.angleOf(cell.center), geo.weatherMid);
     final local = (Offset(x, y) + _box.center(Offset.zero)) * _scale + _offset;
     return box.localToGlobal(local);
   }
 
   /// رموز الجو الظاهرة ومواضعها على الشاشة (للاختبار).
   @visibleForTesting
-  List<({WeatherSymbol symbol, Offset center, WeatherGroup group})>
+  List<({WeatherSymbol symbol, Offset center, WeatherCell cell})>
   get visibleMarks => [
-    for (final g in _layout.groups)
-      for (final m in g.marks)
-        if (_globalOf(g, m) case final c?)
-          (symbol: m.symbol, center: c, group: g),
+    for (final m in _layout.marks)
+      if (_globalOf(m.cell) case final c?)
+        (symbol: m.symbol, center: c, cell: m.cell),
   ];
 
-  void _openBubble(WeatherGroup group, WeatherMark mark) {
+  void _openBubble(WeatherCell cell) {
+    final symbol = cell.symbol;
     final box = _areaKey.currentContext?.findRenderObject() as RenderBox?;
-    final center = _globalOf(group, mark);
-    if (box == null || center == null) return;
-    final upper = center.dy < box.localToGlobal(box.size.center(Offset.zero)).dy;
+    final center = _globalOf(cell);
+    if (symbol == null || box == null || center == null) return;
+    final upper =
+        center.dy < box.localToGlobal(box.size.center(Offset.zero)).dy;
     showSymbolBubble(
       context,
       anchor: Rect.fromCircle(center: center, radius: widget.iconSize / 2),
-      symbol: mark.symbol,
-      period: _periodText(group),
+      symbol: symbol,
+      period: _periodText(cell),
       preferBelow: upper,
       onOutsideTap: (global) {
         if (!mounted) return;
-        final hit = _markAt(box.globalToLocal(global));
-        if (hit != null) _openBubble(hit.group, hit.mark);
+        final local = box.globalToLocal(global);
+        final hit = _hit(local);
+        if (hit is RingHit && hit.ring == DialRing.weather) {
+          final other = widget.model.cellAt(hit.day);
+          if (other != null) _openBubble(other);
+        }
       },
     );
   }
 
-  /// «يتبع: الوسم — ١٦ أكتوبر إلى ٦ ديسمبر» أو «يتبع: درور الصفري — …».
-  String _periodText(WeatherGroup group) {
+  /// «يتبع: دَرّ الستين — ٧ أكتوبر إلى ١٦ أكتوبر» أو «يتبع: طالع الهقعة — …».
+  String _periodText(WeatherCell cell) {
     final l10n = AppLocalizations.of(context);
-    final days = widget.model.index.days;
-    final n = days.length;
     String dm(DateTime d) =>
         l10n.dayMonthDate(formatInteger(d.day, widget.digits), 'g${d.month}');
-    String name(String? id) => widget.tables.items[id]?.name.ar ?? '';
-    if (group.kind == WeatherGroupKind.weatherSeason) {
-      final p = days[group.start % n].weatherSeason;
-      if (p == null) return '';
-      return l10n.bubblePeriod(
-        l10n.bubbleRange(name(group.itemId), dm(p.start), dm(p.end)),
-      );
-    }
-    final first = days[group.start % n].dar;
-    final last = days[(group.start + group.length - 1) % n].dar;
-    final seasons = {
-      for (var i = 0; i < group.length; i++)
-        days[(group.start + i) % n].dar.record.seasonId,
-    };
-    final label = seasons.length == 1
-        ? l10n.bubbleDururOf(name(seasons.single))
-        : l10n.bubbleDururRange(first.name.ar, last.name.ar);
-    return l10n.bubblePeriod(
-      l10n.bubbleRange(label, dm(first.start), dm(last.end)),
-    );
+    final start = DateTime(widget.model.year, 1, 1 + cell.start);
+    final end = DateTime(widget.model.year, 1, cell.end);
+    final dar = cell.dar;
+    final name = dar != null
+        ? l10n.darTitle(dar.name.ar)
+        : l10n.wheelHubStar(widget.tables.items[cell.starItemId]?.name.ar ?? '');
+    return l10n.bubblePeriod(l10n.bubbleRange(name, dm(start), dm(end)));
   }
 
-  /// «اقرأ رموز الجو حول اليوم»: رموز الدَّرّ وموسم الجو الحاليين بأسمائها
-  /// وشروحها (R2.6).
+  /// «اقرأ رموز الجو حول اليوم»: رموز الدَّرّ (أو الطالع) وموسم الجو الحاليين.
   void _readSymbols(DayInfo info) {
     final l10n = AppLocalizations.of(context);
     final symbols = <WeatherSymbol>{
@@ -371,14 +359,16 @@ class DayDialState extends State<DayDial>
             for (final s in symbols)
               '${weatherSymbolLabel(l10n, s)}. ${l10n.weatherSymbolDesc(s.code)}',
           ].join(' ');
-    SemanticsService.sendAnnouncement(
-      View.of(context),
-      text,
-      Directionality.of(context),
-    );
+    _announce(text);
   }
 
-  // التدوير بإصبع واحد من أحداث اللمس الخام (مواضع دقيقة)، والتكبير والتحريك
+  void _announce(String text) => SemanticsService.sendAnnouncement(
+    View.of(context),
+    text,
+    Directionality.of(context),
+  );
+
+  // السحب بإصبع واحد من أحداث اللمس الخام (مواضع دقيقة)، والتكبير والتحريك
   // من إيماءة القرص. الإيماءة تكسب الساحة فور الضغط فلا تتمرّر الصفحة.
 
   void _onPointerDown(PointerDownEvent e) {
@@ -414,7 +404,7 @@ class DayDialState extends State<DayDial>
     if (delta > math.pi) delta -= 2 * math.pi;
     if (delta < -math.pi) delta += 2 * math.pi;
     final step = 2 * math.pi / widget.model.dayCount;
-    // تدوير القرص مع عقارب الساعة يُرجع التاريخ، وعكسها يقدّمه (DESIGN 7.1).
+    // العقرب يتبع الإصبع: مع عقارب الساعة رجوع في الزمن (R3.1-3).
     _setRotation(_rotation.value - delta / step);
   }
 
@@ -460,7 +450,7 @@ class DayDialState extends State<DayDial>
   void _setRotation(double value) {
     final first = widget.model.dayIndexOf(DateRange.first).toDouble();
     final last = widget.model.dayIndexOf(DateRange.last).toDouble();
-    // حدود 2025 و2040: القرص لا يتجاوزها.
+    // حدود 2025 و2040: العقرب لا يتجاوزها.
     final clamped = value.clamp(first, last);
     final before = _rotation.value.round();
     _rotation.value = clamped;
@@ -484,7 +474,8 @@ class DayDialState extends State<DayDial>
     final b = days[after];
     if (a.majorSeason.start != b.majorSeason.start) {
       HapticFeedback.mediumImpact();
-    } else if (a.dar.start != b.dar.start) {
+    } else if ((a.dar?.start ?? a.star.start) !=
+        (b.dar?.start ?? b.star.start)) {
       HapticFeedback.selectionClick();
     }
   }
@@ -555,13 +546,33 @@ class DayDialState extends State<DayDial>
 
   void _shift(int days) => widget.onShift(days);
 
-  /// ما يفتحه المقبض: ما يعرضه المركز (R2.5 F، 7.8): موسم الجو المسمّى إن
-  /// وُجد، وإلا الموسم الكبير.
-  static DialRing _hubRing(DayInfo info) =>
-      info.weatherSeason != null ? DialRing.weather : DialRing.seasons;
+  /// ما تفتحه ضغطة قارئ الشاشة: في الخليج موسم الجو المسمّى إن وُجد وإلا
+  /// الموسم الكبير؛ وبلا درور صفحة الطالع (R3.10).
+  DialRing _semanticRing(DayInfo info) => !widget.model.hasDurur
+      ? DialRing.stars
+      : info.weatherSeason != null
+      ? DialRing.weather
+      : DialRing.majorSeason;
 
   DayInfo get _info =>
       widget.model.index.days[widget.model.dayIndexOf(widget.selected)];
+
+  /// بداية الفترة (الدَّرّ، أو الطالع بلا درور) التالية والسابقة.
+  (DateTime next, DateTime prev) _jumps(DayInfo info) {
+    final ActivePeriod period = info.dar ?? info.star;
+    final next = period.end.add(const Duration(days: 1));
+    final days = widget.model.index.days;
+    final selectedIndex = widget.model.dayIndexOf(widget.selected);
+    final prevIndex = selectedIndex - period.dayNumber;
+    final ActivePeriod? before = prevIndex >= 0 && prevIndex < days.length
+        ? (days[prevIndex].dar ?? days[prevIndex].star)
+        : null;
+    final prev = before?.start ?? period.start.subtract(const Duration(days: 1));
+    return (
+      DateTime(next.year, next.month, next.day),
+      DateTime(prev.year, prev.month, prev.day),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -570,7 +581,6 @@ class DayDialState extends State<DayDial>
     final labels = _labelsFor(context, colors);
     final layout = _layoutFor(labels);
     final info = _info;
-    final geo = _geo;
     final todayInYear = widget.today.year == widget.model.year
         ? widget.model.dayIndexOf(widget.today)
         : null;
@@ -594,62 +604,10 @@ class DayDialState extends State<DayDial>
       ),
     );
 
-    // نص المركز تحت الإبرة دائماً (R2.5 F، 7.8): موسم الجو المسمّى إن وُجد
-    // وإلا الموسم الكبير (Almarai 800 15)، وتحته «طالع {النجم}» (11)، أفقيين
-    // في أعلى المركز على 0.68 و0.38 من سماكته. تكبير الخط حتى 1.3× (7.6).
-    String name(String? id) => widget.tables.items[id]?.name.ar ?? '';
-    final (fo, fi) = geo.band(DialRing.seasons);
-    Widget hubLine(String text, double fraction, TextStyle style) {
-      final r = fi + (fo - fi) * fraction;
-      final chord = 2 * math.sqrt(math.max(0, fo * fo - r * r)) * 0.85;
-      return Transform.translate(
-        offset: Offset(0, -r),
-        child: SizedBox(
-          width: chord,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(text, style: style, textAlign: TextAlign.center),
-          ),
-        ),
-      );
-    }
-
-    final hub = MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.3,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          hubLine(
-            name(info.weatherSeason?.itemId ?? info.majorSeason.itemId),
-            0.68,
-            TextStyle(
-              fontFamily: DururFonts.body,
-              fontSize: 15,
-              height: 1.2,
-              fontWeight: FontWeight.w800,
-              color: colors.ink,
-            ),
-          ),
-          hubLine(
-            l10n.wheelHubStar(name(info.star.itemId)),
-            0.38,
-            TextStyle(
-              fontFamily: DururFonts.body,
-              fontSize: 11,
-              height: 1.2,
-              fontWeight: FontWeight.w700,
-              color: colors.ink,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    final next = info.dar.end.add(const Duration(days: 1));
-    final prev = info.dar.start.subtract(const Duration(days: 1));
-    final days = widget.model.index.days;
-    final selectedIndex = widget.model.dayIndexOf(widget.selected);
+    final (next, prev) = _jumps(info);
     final isToday = widget.selected == widget.today;
+    final hasDurur = widget.model.hasDurur;
+    final readSeasonZodiac = widget.onReadSeasonZodiac;
 
     return Semantics(
       key: DayDial.dialKey,
@@ -658,30 +616,33 @@ class DayDialState extends State<DayDial>
       value: widget.semanticsValue,
       increasedValue: widget.increasedValue,
       decreasedValue: widget.decreasedValue,
-      hint: l10n.wheelA11yHintSeason,
+      hint: hasDurur ? l10n.wheelA11yHintSeason : l10n.wheelA11yHintStar,
       onIncrease: widget.increasedValue == null ? null : () => _shift(1),
       onDecrease: widget.decreasedValue == null ? null : () => _shift(-1),
-      onTap: () => widget.onOpen(_hubRing(info), info),
+      onTap: () => widget.onOpen(_semanticRing(info), info),
       customSemanticsActions: {
         CustomSemanticsAction(label: l10n.wheelA11yOpenStar): () =>
             widget.onOpen(DialRing.stars, info),
         CustomSemanticsAction(label: l10n.wheelA11yOpenSeason): () =>
-            widget.onOpen(DialRing.seasons, info),
+            widget.onOpen(DialRing.majorSeason, info),
         if (info.weatherSeason != null)
           CustomSemanticsAction(label: l10n.wheelA11yOpenWeatherSeason): () =>
               widget.onOpen(DialRing.weather, info),
+        CustomSemanticsAction(label: l10n.wheelA11yOpenSeasonSheet): () =>
+            widget.onOpen(DialRing.seasons, info),
+        if (readSeasonZodiac != null)
+          CustomSemanticsAction(label: l10n.wheelA11yReadSeasonZodiac): () =>
+              _announce(readSeasonZodiac(info)),
         CustomSemanticsAction(label: l10n.wheelA11yReadSymbols): () =>
             _readSymbols(info),
-        CustomSemanticsAction(label: l10n.wheelA11yNextDar): () =>
-            widget.onSelect(DateTime(next.year, next.month, next.day)),
-        CustomSemanticsAction(label: l10n.wheelA11yPrevDar): () {
-          // بداية الدَّرّ السابق.
-          final prevIndex = selectedIndex - info.dar.dayNumber;
-          final start = prevIndex >= 0 && prevIndex < days.length
-              ? days[prevIndex].dar.start
-              : prev;
-          widget.onSelect(DateTime(start.year, start.month, start.day));
-        },
+        CustomSemanticsAction(
+          label: hasDurur ? l10n.wheelA11yNextDar : l10n.wheelA11yNextStar,
+        ): () =>
+            widget.onSelect(next),
+        CustomSemanticsAction(
+          label: hasDurur ? l10n.wheelA11yPrevDar : l10n.wheelA11yPrevStar,
+        ): () =>
+            widget.onSelect(prev),
         if (!isToday)
           CustomSemanticsAction(label: l10n.wheelA11yBackToToday):
               widget.onBackToToday,
@@ -712,17 +673,12 @@ class DayDialState extends State<DayDial>
                   onPointerUp: _onPointerEnd,
                   onPointerCancel: _onPointerEnd,
                   child: ClipRect(
+                    clipBehavior: _scale > 1 ? Clip.hardEdge : Clip.none,
                     child: Transform(
                       transform: Matrix4.identity()
                         ..translateByDouble(_offset.dx, _offset.dy, 0, 1)
                         ..scaleByDouble(_scale, _scale, 1, 1),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          dial,
-                          IgnorePointer(child: hub),
-                        ],
-                      ),
+                      child: dial,
                     ),
                   ),
                 ),
@@ -746,8 +702,8 @@ class DayDialState extends State<DayDial>
   }
 }
 
-/// إيماءة الدائرة: تكسب ساحة اللمس فور الضغط، فالسحب على الدائرة يدوّرها
-/// ولا يمرّر الصفحة (DESIGN 7.4). الضغطة والضغطتان تُميَّزان يدوياً في الحالة.
+/// إيماءة الدائرة: تكسب ساحة اللمس فور الضغط، فالسحب على الدائرة يحرّك
+/// العقرب ولا يمرّر الصفحة (DESIGN 7.4).
 class _DialGestureRecognizer extends ScaleGestureRecognizer {
   _DialGestureRecognizer() : super(debugOwner: null);
 

@@ -1,6 +1,6 @@
 import 'package:durur/src/domain/city.dart';
 import 'package:durur/src/features/city_picker/city_picker_screen.dart';
-import 'package:durur/src/features/home/city_chip.dart';
+import 'package:durur/src/features/home/home_screen.dart';
 import 'package:durur/src/features/settings/settings_screen.dart';
 import 'package:durur/src/providers.dart';
 import 'package:durur/src/repository/settings_repository.dart';
@@ -30,9 +30,10 @@ Future<void> main() async {
     await tester.pumpAndSettle();
   }
 
+  // اسم المكان في سطر الرأس (R3.1-1): الاسم وحده بلا المنطقة.
   String chipText(WidgetTester tester) {
     final label = find.descendant(
-      of: find.byType(CityChip),
+      of: find.byKey(HomeScreen.placeKey),
       matching: find.byType(Text),
     );
     return tester.widget<Text>(label).data!;
@@ -226,9 +227,9 @@ Future<void> main() async {
       final prefs =
           await fakePrefs(savedCity('kuwait_city'));
       await pumpDururApp(tester, prefs: prefs, tables: tables);
-      expect(chipText(tester), 'مدينة الكويت · الكويت');
+      expect(chipText(tester), 'مدينة الكويت');
 
-      await tester.tap(find.byType(CityChip));
+      await tester.tap(find.byKey(HomeScreen.placeKey));
       await tester.pumpAndSettle();
       expect(find.byType(CityPickerScreen), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
@@ -236,14 +237,14 @@ Future<void> main() async {
       await tester.tap(tile('riyadh'));
       await tester.pumpAndSettle();
       expect(find.byType(CityPickerScreen), findsNothing);
-      expect(chipText(tester), 'الرياض · نجد');
+      expect(chipText(tester), 'الرياض');
       expect(find.text('تم اختيار الرياض — جدول نجد'), findsOneWidget);
 
       // إعادة فتح التطبيق بنفس التخزين.
       await tester.pumpWidget(const SizedBox());
       final reopened = await SharedPreferences.getInstance();
       await pumpDururApp(tester, prefs: reopened, tables: tables);
-      expect(chipText(tester), 'الرياض · نجد');
+      expect(chipText(tester), 'الرياض');
     });
 
     testWidgets('معيار 5: التغيير من الإعدادات يحدّث العرض فوراً',
@@ -252,7 +253,7 @@ Future<void> main() async {
       late ProviderContainer container;
       await pumpDururApp(tester, prefs: prefs, tables: tables);
       container = ProviderScope.containerOf(
-          tester.element(find.byType(CityChip)));
+          tester.element(find.byKey(HomeScreen.placeKey)));
       expect(container.read(engineProvider)?.region.id, 'najd');
 
       await tester.tap(find.byTooltip('الإعدادات'));
@@ -273,7 +274,7 @@ Future<void> main() async {
       expect(prefs.getString(SettingsRepository.cityIdKey), 'muscat');
 
       await openTab(tester, AppTab.wheel);
-      expect(chipText(tester), 'مسقط · الإمارات وعُمان');
+      expect(chipText(tester), 'مسقط');
     });
   });
 }

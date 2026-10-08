@@ -120,6 +120,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             value: settings.notifyImportant,
             onChanged: (on) => _setNotify(on, important: true),
           ),
+          // لا درور في منطقة المستخدم (السعودية، D50): المفتاح يُخفى وقيمته
+          // تُحفظ وتعود إن انتقل إلى الخليج.
+          if (ref.watch(engineProvider)?.hasDurur ?? true)
           SwitchListTile(
             key: SettingsScreen.darSwitchKey,
             minTileHeight: 64,

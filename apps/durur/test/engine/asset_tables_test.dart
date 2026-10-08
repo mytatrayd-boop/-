@@ -67,17 +67,17 @@ Future<void> main() async {
             for (final dar in table.durur) {
               final start = dar.start.inYear(y);
               final info = engine.resolve(start);
-              expect(info.dar.record, same(dar));
-              expect(info.dar.dayNumber, 1);
-              expect(info.dar.start, start);
+              expect(info.dar!.record, same(dar));
+              expect(info.dar!.dayNumber, 1);
+              expect(info.dar!.start, start);
               expect(info.majorSeason.itemId, dar.seasonId);
 
               final before = engine.resolve(
                 start.subtract(const Duration(days: 1)),
               );
-              expect(before.dar.record, isNot(same(dar)));
-              expect(before.dar.dayNumber, before.dar.length);
-              expect(before.dar.end, start.subtract(const Duration(days: 1)));
+              expect(before.dar!.record, isNot(same(dar)));
+              expect(before.dar!.dayNumber, before.dar!.length);
+              expect(before.dar!.end, start.subtract(const Duration(days: 1)));
             }
           }
         },
@@ -92,16 +92,18 @@ Future<void> main() async {
       });
 
       test('معيار 6: 29 فبراير يتبع دَرّ 28 فبراير ويطوله يوماً', () {
+        // منطقة بلا درور (السعودية، D50): لا دَرّ يطول.
+        if (!table.hasDurur) return;
         for (final y in [2028, 2032, 2036, 2040]) {
           final feb28 = engine.resolve(DateTime(y, 2, 28));
           final feb29 = engine.resolve(DateTime(y, 2, 29));
           final mar1 = engine.resolve(DateTime(y, 3, 1));
-          expect(feb29.dar.record, same(feb28.dar.record));
-          expect(feb29.dar.dayNumber, feb28.dar.dayNumber + 1);
+          expect(feb29.dar!.record, same(feb28.dar!.record));
+          expect(feb29.dar!.dayNumber, feb28.dar!.dayNumber + 1);
           expectContinuous(feb29, mar1);
           final common = engine.resolve(DateTime(y - 1, 2, 28));
-          expect(common.dar.record, same(feb28.dar.record));
-          expect(feb29.dar.length, common.dar.length + 1);
+          expect(common.dar!.record, same(feb28.dar!.record));
+          expect(feb29.dar!.length, common.dar!.length + 1);
         }
       });
 
@@ -109,8 +111,9 @@ Future<void> main() async {
         final a = engine.resolve(DateTime(2026, 10, 2));
         final b = engine.resolve(DateTime(2026, 10, 2, 23, 59, 59));
         expect(b.date, a.date);
-        expect(b.dar.record, same(a.dar.record));
-        expect(b.dar.dayNumber, a.dar.dayNumber);
+        expect(b.dar?.record, same(a.dar?.record));
+        expect(b.dar?.dayNumber, a.dar?.dayNumber);
+        expect(b.star.start, a.star.start);
       });
     });
   }
@@ -120,8 +123,8 @@ Future<void> main() async {
     final kuwait = engines['kuwait']!;
     final differs = YearIndex(najd, 2026).days.any((info) {
       final other = kuwait.resolve(info.date);
-      return other.dar.record.name.ar != info.dar.record.name.ar ||
-          other.dar.dayNumber != info.dar.dayNumber ||
+      return other.dar?.record.name.ar != info.dar?.record.name.ar ||
+          other.star.start != info.star.start ||
           other.majorSeason.itemId != info.majorSeason.itemId;
     });
     expect(differs, isTrue);

@@ -8,13 +8,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/app_harness.dart';
 
-/// لقطة الشاشة الرئيسية (DESIGN R2) للمراجعة البصرية، لا اختبار مقارنة.
-/// تُشغَّل يدوياً فقط:
+/// لقطة الشاشة الرئيسية (DESIGN R3) للمراجعة البصرية بجانب المرجع، لا
+/// اختبار مقارنة. تُشغَّل يدوياً فقط:
 ///
 ///   DURUR_SCREENSHOT=1 flutter test test/screenshot/
 ///
-/// وتكتب `design/mockups/app_home_r2.png` (412dp، الرياض، 7 أكتوبر 2026،
-/// بالخطوط الحقيقية Almarai وAmiri).
+/// وتكتب `design/mockups/app_home_r3.png` (412dp، الرياض، بلا درور، R3.10)
+/// و`design/mockups/app_home_r3_gulf.png` (412dp، دبي، بدرور)،
+/// و`design/mockups/app_home_r3_tablet.png` (820×1180، دبي)، ليوم 7 أكتوبر
+/// 2026، بالخطوط الحقيقية Almarai وAmiri.
 Future<void> main() async {
   final enabled = Platform.environment['DURUR_SCREENSHOT'] == '1';
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -48,16 +50,20 @@ Future<void> main() async {
     ]);
   });
 
-  testWidgets('لقطة الرئيسية R2', skip: !enabled, (tester) async {
-    const width = 412.0;
-    const height = 1780.0;
+  Future<void> shoot(
+    WidgetTester tester,
+    String cityId,
+    String out, {
+    double width = 412,
+    double height = 1700,
+  }) async {
     const ratio = 2.0;
-    tester.view.physicalSize = const Size(width * ratio, height * ratio);
+    tester.view.physicalSize = Size(width * ratio, height * ratio);
     tester.view.devicePixelRatio = ratio;
     addTearDown(tester.view.reset);
     await pumpDururApp(
       tester,
-      prefs: await fakePrefs(savedCity('riyadh')),
+      prefs: await fakePrefs(savedCity(cityId)),
       tables: tables,
       extra: [fixedClock(DateTime(2026, 10, 7, 9))],
     );
@@ -69,10 +75,32 @@ Future<void> main() async {
     );
     await tester.runAsync(() async {
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-      File('design/mockups/app_home_r2.png')
+      File(out)
         ..createSync(recursive: true)
         ..writeAsBytesSync(bytes!.buffer.asUint8List());
     });
     image.dispose();
+  }
+
+  testWidgets('لقطة الرئيسية R3 (الرياض، بلا درور)', skip: !enabled, (
+    tester,
+  ) async {
+    await shoot(tester, 'riyadh', 'design/mockups/app_home_r3.png');
+  });
+
+  testWidgets('لقطة الرئيسية R3 (دبي، بدرور)', skip: !enabled, (tester) async {
+    await shoot(tester, 'dubai', 'design/mockups/app_home_r3_gulf.png');
+  });
+
+  testWidgets('لقطة الجهاز اللوحي R3 (دبي، 820×1180، R3.7-2)', skip: !enabled, (
+    tester,
+  ) async {
+    await shoot(
+      tester,
+      'dubai',
+      'design/mockups/app_home_r3_tablet.png',
+      width: 820,
+      height: 1180,
+    );
   });
 }

@@ -69,6 +69,8 @@ Future<void> main() async {
     'geonames.org',
     'CC BY 4.0',
     'R. H. van Gent',
+    'Natural Earth',
+    'naturalearthdata.com',
   }.toList()..sort((a, b) => b.length.compareTo(a.length));
 
   late NetworkLog network;

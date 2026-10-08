@@ -119,28 +119,6 @@ Future<void> main() async {
       expect(n.kind, NotificationKind.dar);
     });
 
-    test('الدَّرّ المستعار (D24): notifDarTitleBorrowed باسم المُعيرة لا «في نجد»',
-        () {
-      final p = find('najd', (_) => true, dar: true);
-      final s = p.subject as DarSubject;
-      expect(s.borrowed, isTrue);
-      expect(s.dururRegionId, 'uae_oman');
-      final n = build(p, 'riyadh');
-      final lender = tables.region('uae_oman')!.name.ar;
-      expect(lender, 'الإمارات وعُمان');
-      expect(
-        n.title,
-        l10n.notifDarTitleBorrowed(
-          s.record.name.ar,
-          tables.items[s.record.seasonId]!.name.ar,
-          lender,
-        ),
-      );
-      expect(n.title, endsWith('حسب حساب الإمارات وعُمان'));
-      expect(n.title, isNot(contains('نجد')));
-      expect(n.payload, startsWith('/dar/uae_oman/'));
-    });
-
     test('الحمولة الصالحة فقط تُفتح', () {
       for (final ok in [
         '/item/wasm',
@@ -225,19 +203,25 @@ Future<void> main() async {
       );
     });
 
-    test('المنطقة المستعيرة: كل تنبيهات الدرور المجدولة بعنوان المُعيرة',
-        () async {
-      final c = await start(savedCity('riyadh'));
-      await c.read(settingsProvider.notifier).setNotifyDar(true);
-      await settle();
-      final dar =
-          scheduler.pending.where((n) => n.kind == NotificationKind.dar);
-      expect(dar, isNotEmpty);
-      for (final n in dar) {
-        expect(n.title, endsWith('حسب حساب الإمارات وعُمان'), reason: n.title);
-        expect(n.title, isNot(contains('نجد')));
-        expect(n.payload, startsWith('/dar/uae_oman/'));
-      }
+    test('السعودية بلا درور (D50): مفتاح الدَّرّ مفعّل ولا تنبيه دَرّ، وأول '
+        'مزامنة تستبدل المعلّقة القديمة كلها', () async {
+      final c = await start({
+        ...savedCity('riyadh'),
+        SettingsRepository.notifyDarKey: true,
+      });
+      // أول مزامنة بعد التحديث = استبدال كامل (cancelAll ثم الخطة)، فتُلغى
+      // تنبيهات الدرور المعلّقة من النسخة السابقة.
+      expect(scheduler.replaceCalls, 1);
+      expect(c.read(settingsProvider).notifyDar, isTrue);
+      expect(scheduler.pending, isNotEmpty);
+      expect(
+        scheduler.pending.where((n) => n.kind == NotificationKind.dar),
+        isEmpty,
+      );
+      expect(
+        scheduler.pending.where((n) => n.payload.startsWith('/dar/')),
+        isEmpty,
+      );
     });
 
     test('DESIGN 8.7: تغيير «الأرقام» يعيد الجدولة بصمت', () async {
