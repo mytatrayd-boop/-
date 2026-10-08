@@ -57,8 +57,10 @@ void main() {
 
     test('قيم 2026 في جدول R3.2 للرياض', () {
       final y = AstroYear.compute(2026, utcOffset: riyadh);
-      DateTime startOf(AstroSeason s) =>
-          y.seasons.firstWhere((p) => p.value == s && p.start.day.year == 2026).start.day;
+      DateTime startOf(AstroSeason s) => y.seasons
+          .firstWhere((p) => p.value == s && p.start.day.year == 2026)
+          .start
+          .day;
       expect(startOf(AstroSeason.spring), DateTime(2026, 3, 20));
       expect(startOf(AstroSeason.summer), DateTime(2026, 6, 21));
       expect(startOf(AstroSeason.autumn), DateTime(2026, 9, 23));
@@ -108,9 +110,7 @@ void main() {
       expect(autumn.value, AstroSeason.autumn);
       expect(autumn.days, 89);
       expect(
-        DateTime.utc(2026, 10, 7)
-            .difference(DateTime.utc(2026, 9, 23))
-            .inDays,
+        DateTime.utc(2026, 10, 7).difference(DateTime.utc(2026, 9, 23)).inDays,
         14,
       );
     });
@@ -173,6 +173,43 @@ void main() {
       final y = AstroYear.compute(2026, utcOffset: const Duration(hours: 3));
       expect(y.zodiacAt(DateTime(2026, 10, 7)).value, ZodiacSign.libra);
       expect(y.zodiac.length, 13);
+    });
+  });
+
+  group('بديل فشل الحساب (R3.4، SPEC 19.10)', () {
+    for (final year in [2026, 2028]) {
+      test('$year: أرباع متساوية من 21 ديسمبر، بلا بروج، computed = false', () {
+        final y = AstroYear.fallback(year);
+        expect(y.computed, isFalse);
+        expect(y.zodiac, isEmpty);
+        expect(y.seasons.map((p) => p.value), [
+          AstroSeason.winter,
+          AstroSeason.spring,
+          AstroSeason.summer,
+          AstroSeason.autumn,
+          AstroSeason.winter,
+        ]);
+        expect(y.seasons[0].start.day, DateTime(year - 1, 12, 21));
+        expect(y.seasons[4].start.day, DateTime(year, 12, 21));
+        // متصلة بلا فجوة، وكل ربع 91–92 يوماً، فالصليب على المحورين.
+        for (var i = 0; i < 4; i++) {
+          expect(y.seasons[i].end.day, y.seasons[i + 1].start.day);
+          expect(y.seasons[i].days, inInclusiveRange(91, 92));
+        }
+        for (
+          var d = DateTime(year);
+          d.year == year;
+          d = DateTime(d.year, d.month, d.day + 1)
+        ) {
+          expect(() => y.seasonAt(d), returnsNormally);
+        }
+      });
+    }
+
+    test('الحساب السليم: computeOrFallback يعيد المحسوب', () {
+      final y = AstroYear.computeOrFallback(2026);
+      expect(y.computed, isTrue);
+      expect(y.zodiac, isNotEmpty);
     });
   });
 }

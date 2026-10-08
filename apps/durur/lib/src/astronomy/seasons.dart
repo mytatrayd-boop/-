@@ -69,16 +69,32 @@ enum ZodiacSign {
 // الجدول 27.A (السنوات 1000–3000): معاملات JDE0 بـ Y = (السنة − 2000) / 1000.
 const _meanTerms = <SolarEvent, List<double>>{
   SolarEvent.marchEquinox: [
-    2451623.80984, 365242.37404, 0.05169, -0.00411, -0.00057,
+    2451623.80984,
+    365242.37404,
+    0.05169,
+    -0.00411,
+    -0.00057,
   ],
   SolarEvent.juneSolstice: [
-    2451716.56767, 365241.62603, 0.00325, 0.00888, -0.00030,
+    2451716.56767,
+    365241.62603,
+    0.00325,
+    0.00888,
+    -0.00030,
   ],
   SolarEvent.septemberEquinox: [
-    2451810.21715, 365242.01767, -0.11575, 0.00337, 0.00078,
+    2451810.21715,
+    365242.01767,
+    -0.11575,
+    0.00337,
+    0.00078,
   ],
   SolarEvent.decemberSolstice: [
-    2451900.05952, 365242.74049, -0.06223, -0.00823, 0.00032,
+    2451900.05952,
+    365242.74049,
+    -0.06223,
+    -0.00823,
+    0.00032,
   ],
 };
 
@@ -170,7 +186,11 @@ class AstroBoundary {
 
 /// فترة فصل أو برج في سنة: من يوم بدايتها إلى اليوم السابق لبداية التالية.
 class AstroPeriod<T> {
-  const AstroPeriod({required this.value, required this.start, required this.end});
+  const AstroPeriod({
+    required this.value,
+    required this.start,
+    required this.end,
+  });
 
   final T value;
   final AstroBoundary start;
@@ -195,7 +215,44 @@ class AstroPeriod<T> {
 
 /// الفصول والبروج التي تغطي سنة ميلادية كاملة بتوقيت محلي واحد.
 class AstroYear {
-  AstroYear._(this.year, this.seasons, this.zodiac);
+  AstroYear._(this.year, this.seasons, this.zodiac, {this.computed = true});
+
+  /// بديل عند فشل الحساب الفلكي (خلل برمجي، DESIGN R3.4، SPEC 19.10):
+  /// الفصول أرباع متساوية من 21 ديسمبر، فيقع الصليب على المحورين، بلا
+  /// تواريخ تُعرض ([computed] = false)، وبلا بروج.
+  factory AstroYear.fallback(int year) {
+    final len = DateTime.utc(year + 1).difference(DateTime.utc(year)).inDays;
+    AstroBoundary at(int k) {
+      final d = DateTime(year - 1, 12, 21 + (k * len / 4).round());
+      return AstroBoundary(DateTime.utc(d.year, d.month, d.day), d);
+    }
+
+    const order = [
+      AstroSeason.winter,
+      AstroSeason.spring,
+      AstroSeason.summer,
+      AstroSeason.autumn,
+      AstroSeason.winter,
+    ];
+    return AstroYear._(
+      year,
+      List.unmodifiable([
+        for (var k = 0; k < order.length; k++)
+          AstroPeriod(value: order[k], start: at(k), end: at(k + 1)),
+      ]),
+      const [],
+      computed: false,
+    );
+  }
+
+  /// يحسب [year]، أو يعيد [AstroYear.fallback] إن فشل الحساب.
+  static AstroYear computeOrFallback(int year) {
+    try {
+      return AstroYear.compute(year);
+    } on Object {
+      return AstroYear.fallback(year);
+    }
+  }
 
   /// يحسب [year] بتوقيت الجهاز، أو بإزاحة [utcOffset] ثابتة.
   factory AstroYear.compute(int year, {Duration? utcOffset}) {
@@ -204,7 +261,10 @@ class AstroYear {
 
     // الفصول: من الانقلاب الشتوي للسنة السابقة إلى الاعتدال الربيعي للتالية.
     final seasonBounds = <(AstroSeason, AstroBoundary)>[
-      (AstroSeason.winter, at(seasonEventUtc(year - 1, SolarEvent.decemberSolstice))),
+      (
+        AstroSeason.winter,
+        at(seasonEventUtc(year - 1, SolarEvent.decemberSolstice)),
+      ),
       for (final s in [
         AstroSeason.spring,
         AstroSeason.summer,
@@ -212,7 +272,10 @@ class AstroYear {
         AstroSeason.winter,
       ])
         (s, at(seasonEventUtc(year, s.startEvent))),
-      (AstroSeason.spring, at(seasonEventUtc(year + 1, SolarEvent.marchEquinox))),
+      (
+        AstroSeason.spring,
+        at(seasonEventUtc(year + 1, SolarEvent.marchEquinox)),
+      ),
     ];
     final seasons = [
       for (var i = 0; i < seasonBounds.length - 1; i++)
@@ -241,10 +304,17 @@ class AstroYear {
           end: zodiacBounds[i + 1].$2,
         ),
     ];
-    return AstroYear._(year, List.unmodifiable(seasons), List.unmodifiable(zodiac));
+    return AstroYear._(
+      year,
+      List.unmodifiable(seasons),
+      List.unmodifiable(zodiac),
+    );
   }
 
   final int year;
+
+  /// false: بديل الفشل؛ الحدود تقريبية ولا تُعرض تواريخها ولا بروج.
+  final bool computed;
 
   /// خمس فترات: الشتاء (من السنة السابقة)، الربيع، الصيف، الخريف، الشتاء.
   final List<AstroPeriod<AstroSeason>> seasons;

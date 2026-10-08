@@ -206,9 +206,11 @@ class DialLabels {
       formatInteger(d.day, digits),
       formatInteger(d.month, digits),
     );
+    // بديل فشل الحساب: الصليب بلا تواريخ (R3.4).
     final seasonStarts = {
-      for (final p in model.astro.seasons)
-        if (p.start.day.year == model.year) p.value: p.start.day,
+      if (model.astro.computed)
+        for (final p in model.astro.seasons)
+          if (p.start.day.year == model.year) p.value: p.start.day,
     };
 
     return DialLabels._(
@@ -922,7 +924,7 @@ class DialPainter extends CustomPainter {
     // قوس التقدّم: 4dp cyan بتوهج 2، من بداية الفصل الحالي إلى العقرب.
     final a0 = geo.angleOf(cStart);
     final a1 = geo.centerAngle(rotation.value);
-    if (a0 > a1) {
+    if (model.astro.computed && a0 > a1) {
       final arc = Path()
         ..addArc(
           Rect.fromCircle(center: Offset.zero, radius: geo.progressRadius),

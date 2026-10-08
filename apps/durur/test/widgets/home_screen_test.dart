@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:durur/l10n/app_localizations.dart';
+import 'package:durur/src/astronomy/seasons.dart';
 import 'package:durur/src/domain/tables.dart';
 import 'package:durur/src/domain/weather_symbol.dart';
 import 'package:durur/src/features/common/draft_banner.dart';
@@ -679,7 +680,97 @@ Future<void> main() async {
     expect(find.byKey(DayDial.resetZoomKey), findsNothing);
   });
 
+  testWidgets('الجهاز اللوحي 820×1180 (R3.0، R3.7-2): الدائرة ومواضع البطاقات '
+      'بنسب المرجع، والبطاقات لا تُقص', (tester) async {
+    tester.view.physicalSize = const Size(820, 1180);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await openHome(tester, city: 'kuwait_city');
+    await tester.pumpAndSettle();
+    const w = 820.0;
+    final h = tester.getSize(find.byType(HomeScreen)).height;
+    final dial = tester.getRect(find.byKey(DayDial.dialKey));
+    // القطر = min(0.96 العرض، 0.74 الارتفاع)، والمركز أفقياً في الوسط.
+    final diameter = math.min(w * 0.96, h * 0.74);
+    expect(dial.width, closeTo(diameter, 1));
+    expect(dial.center.dx, closeTo(w / 2, 1));
+    // المركز على y 37.9% (±2%)، والدائرة تحت الصف العلوي.
+    expect(dial.center.dy / h, closeTo(0.379, 0.02));
+    // البطاقات بعرض 22.7% على الجانبين: الزراعة والقادم يميناً، والطالع
+    // والطقس يساراً (RTL).
+    final agri = tester.getRect(find.byKey(HomeCardKeys.agriCard));
+    final star = tester.getRect(find.byKey(HomeCardKeys.starCard));
+    final upcoming = tester.getRect(find.byKey(HomeCardKeys.upcomingCard));
+    final weather = tester.getRect(find.byKey(HomeCardKeys.liveWeatherCard));
+    for (final r in [agri, star, upcoming, weather]) {
+      expect(r.width, closeTo(w * 0.227, 2));
+    }
+    expect(agri.right, closeTo(w * (1 - 0.024), 2));
+    expect(upcoming.right, closeTo(w * (1 - 0.024), 2));
+    expect(star.left, closeTo(w * 0.024, 2));
+    expect(weather.left, closeTo(w * 0.024, 2));
+    // العلويتان تنتهيان عند 79% والسفليتان تبدآن بعدهما (±2%).
+    expect(agri.bottom / h, closeTo(0.790, 0.02));
+    expect(star.bottom / h, closeTo(0.790, 0.02));
+    expect(upcoming.top / h, closeTo(0.801, 0.02));
+    expect(weather.top / h, closeTo(0.801, 0.02));
+    // العدّاد بينهما في الوسط.
+    final countdown = tester.getRect(find.byKey(HomeCardKeys.countdown));
+    expect(countdown.center.dx, closeTo(w / 2, 2));
+    expect(countdown.top, greaterThan(upcoming.top));
+    expect(tester.takeException(), isNull);
+  });
+
   group('التحميل والخطأ', () {
+    testWidgets(
+        'فشل الحساب الفلكي (SPEC 19.10، R3.4): الدائرة بالصليب بلا تواريخ ولا '
+        'بروج، و«تعذّر حساب هذا اليوم.» مع البلاغ مكان البطاقات', (
+      tester,
+    ) async {
+      phone(tester);
+      await pumpScreen(
+        tester,
+        const HomeScreen(),
+        prefs: await fakePrefs(savedCity('kuwait_city')),
+        tables: tables,
+        extra: [
+          fixedClock(DateTime(2026, 10, 2, 9, 30)),
+          astroYearProvider.overrideWith(
+            (ref, year) => AstroYear.fallback(year),
+          ),
+        ],
+      );
+      await tester.pumpAndSettle();
+      // لا يتوقف التطبيق: الدائرة والعدّاد باقيان.
+      expect(find.byKey(DayDial.dialKey), findsOneWidget);
+      expect(find.byKey(HomeCardKeys.countdown), findsOneWidget);
+      final m = model(tester);
+      expect(m.astro.computed, isFalse);
+      expect(m.segments(DialRing.zodiac), isEmpty);
+      expect(m.cyclicSegments(DialRing.seasons), hasLength(4));
+      // البطاقات الأربع مكانها رسالة الخطأ وزر البلاغ.
+      for (final k in [
+        HomeCardKeys.starCard,
+        HomeCardKeys.agriCard,
+        HomeCardKeys.upcomingCard,
+        HomeCardKeys.liveWeatherCard,
+      ]) {
+        expect(find.byKey(k), findsNothing);
+      }
+      expect(find.text('تعذّر حساب هذا اليوم.'), findsOneWidget);
+      // جملة قارئ الشاشة بلا تواريخ فصل.
+      expect(dialData(tester).value, isNot(contains('الفصل:')));
+      // المحور والمركز لا يفتحان ورقة فصل بتواريخ غير محسوبة.
+      await tapDial(tester, dialPoint(tester, 0, 0));
+      await tapDial(tester, dialPoint(tester, 0.2, 135));
+      expect(find.byKey(AstroSheetKeys.season), findsNothing);
+      await tester.ensureVisible(find.byKey(HomeScreen.calcErrorReportKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeScreen.calcErrorReportKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReportSheet), findsOneWidget);
+    });
+
     testWidgets('تحميل بطيء: لا شيء قبل 300ms، ثم هيكل رمادي', (tester) async {
       phone(tester);
       final pending = Completer<Tables>();

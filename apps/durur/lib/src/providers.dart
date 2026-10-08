@@ -230,9 +230,10 @@ final yearIndexProvider = Provider.family<YearIndex?, int>((ref, year) {
 });
 
 /// الفصول الفلكية والبروج لسنة بتوقيت الجهاز (DESIGN R3.2، D40)؛ حساب
-/// فلكي بلا بيانات، يُخزَّن لكل سنة.
+/// فلكي بلا بيانات، يُخزَّن لكل سنة. إن فشل الحساب (خلل برمجي) فالبديل
+/// بلا تواريخ ولا بروج، والرئيسية تعرض «تعذّر حساب هذا اليوم.» (R3.4).
 final astroYearProvider = Provider.family<AstroYear, int>(
-  (ref, year) => AstroYear.compute(year),
+  (ref, year) => AstroYear.computeOrFallback(year),
 );
 
 /// ساعة الجهاز؛ تُستبدل في الاختبارات بوقت ثابت.
@@ -408,7 +409,9 @@ class NotificationPermissionController extends AsyncNotifier<bool> {
   Future<bool> request() async {
     bool granted;
     try {
-      granted = await ref.read(notificationSchedulerProvider).requestPermission();
+      granted = await ref
+          .read(notificationSchedulerProvider)
+          .requestPermission();
     } on Object {
       granted = false;
     }
@@ -636,11 +639,7 @@ final dataUpdateAvailableProvider = Provider<bool>(
 
 /// حالة تحديث البيانات للواجهة.
 class DataUpdateStatus {
-  const DataUpdateStatus({
-    this.outcome,
-    this.failure,
-    this.acceptedCount = 0,
-  });
+  const DataUpdateStatus({this.outcome, this.failure, this.acceptedCount = 0});
 
   /// نتيجة آخر محاولة (null قبلها).
   final UpdateOutcome? outcome;

@@ -312,15 +312,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final digits = ref.watch(digitStyleProvider);
     final header = _header(context, tables);
 
-    final AstroYear astro;
-    try {
-      astro = ref.watch(astroYearProvider(selected.year));
-    } on Object {
-      return _withHeader(
-        header,
-        _calcError(context, region?.name.ar, selected),
-      );
-    }
+    // فشل الحساب الفلكي يعيد بديلاً (astro.computed = false): الدائرة بالصليب
+    // بلا تواريخ، و«تعذّر حساب هذا اليوم.» مكان البطاقات (R3.4، SPEC 19.10).
+    final astro = ref.watch(astroYearProvider(selected.year));
     if (info == null || index == null) {
       return _withHeader(
         header,
@@ -336,6 +330,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     void open(DialRing ring, DayInfo day) {
       final local = DateTime(day.date.year, day.date.month, day.date.day);
       final dayAstro = ref.read(astroYearProvider(local.year));
+      if (!dayAstro.computed &&
+          (ring == DialRing.seasons || ring == DialRing.zodiac)) {
+        return;
+      }
       switch (ring) {
         case DialRing.seasons:
           showAstroSeasonSheet(
@@ -366,9 +364,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final controller = ref.read(selectedDateProvider.notifier);
 
     // جملة الفصل لقارئ الشاشة (R3.5).
-    String astroSentence(DayInfo day) {
+    String? astroSentence(DayInfo day) {
       final local = DateTime(day.date.year, day.date.month, day.date.day);
-      final p = ref.read(astroYearProvider(local.year)).seasonAt(local);
+      final y = ref.read(astroYearProvider(local.year));
+      if (!y.computed) return null;
+      final p = y.seasonAt(local);
       String dm(DateTime d) =>
           l10n.dayMonthDate(formatInteger(d.day, digits), 'g${d.month}');
       return l10n.astroSeasonA11ySentence(
@@ -399,6 +399,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String readSeasonZodiac(DayInfo day) {
       final local = DateTime(day.date.year, day.date.month, day.date.day);
       final y = ref.read(astroYearProvider(local.year));
+      if (!y.computed) return l10n.homeCalcError;
       return [
         astroSentence(day),
         l10n.zodiacSunIn(l10n.zodiacName(y.zodiacAt(local).value.name)),
@@ -600,6 +601,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onSymbol: onSymbol,
           );
 
+    final astroFailed = !astro.computed;
+    final astroError = _CalcError(
+      inline: true,
+      message: l10n.homeCalcError,
+      onReport: () =>
+          showReportSheet(context, regionName: region?.name.ar, date: selected),
+    );
+
     // شبكة العمودين (R3.1-15): الصف 1 الزراعة (يمين) والطالع (يسار)، والصف
     // 2 القادم (يمين) والطقس (يسار). تكبير الخط ≥ 1.5×: عمود واحد.
     Widget pair(Widget a, Widget b) => bigText
@@ -697,16 +706,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             child: header,
                           ),
                           // البداية (يمين): الزراعة؛ النهاية: الطالع.
-                          PositionedDirectional(
-                            start: cardSide,
-                            bottom: h * (0.801 - 0.790),
-                            child: top(agriCard),
-                          ),
-                          PositionedDirectional(
-                            end: cardSide,
-                            bottom: h * (0.801 - 0.790),
-                            child: top(starCard),
-                          ),
+                          if (!astroFailed) ...[
+                            PositionedDirectional(
+                              start: cardSide,
+                              bottom: h * (0.801 - 0.790),
+                              child: top(agriCard),
+                            ),
+                            PositionedDirectional(
+                              end: cardSide,
+                              bottom: h * (0.801 - 0.790),
+                              child: top(starCard),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -717,7 +728,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(width: cardWidth, child: upcomingCard),
+                          SizedBox(
+                            width: cardWidth,
+                            child: astroFailed ? null : upcomingCard,
+                          ),
                           Expanded(
                             child: Padding(
                               padding: EdgeInsetsDirectional.only(
@@ -726,7 +740,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: countdownRow,
                             ),
                           ),
-                          SizedBox(width: cardWidth, child: weatherCard),
+                          SizedBox(
+                            width: cardWidth,
+                            child: astroFailed ? null : weatherCard,
+                          ),
                         ],
                       ),
                     ),
@@ -739,7 +756,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [darOrUsual, footer],
+                        children: [
+                          ?(astroFailed ? astroError : null),
+                          darOrUsual,
+                          footer,
+                        ],
                       ),
                     ),
                   ],
@@ -775,9 +796,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         countdownRow,
                         const SizedBox(height: 12),
-                        pair(agriCard, starCard),
-                        const SizedBox(height: 12),
-                        pair(upcomingCard, weatherCard),
+                        if (astroFailed)
+                          astroError
+                        else ...[
+                          pair(agriCard, starCard),
+                          const SizedBox(height: 12),
+                          pair(upcomingCard, weatherCard),
+                        ],
                         const SizedBox(height: 12),
                         darOrUsual,
                         footer,
@@ -1054,28 +1079,44 @@ class _SkeletonPainter extends CustomPainter {
 /// المحرك لم يجد نتيجة (يجب ألا يحدث بعد الاختبار): «تعذّر حساب هذا اليوم.»
 /// + زر «أبلغ عن خطأ» (DESIGN 8.4، R2.8 الخطأ).
 class _CalcError extends StatelessWidget {
-  const _CalcError({required this.message, required this.onReport});
+  const _CalcError({
+    required this.message,
+    required this.onReport,
+    this.inline = false,
+  });
 
   final String message;
   final VoidCallback onReport;
 
+  /// داخل صفحة قابلة للتمرير (مكان البطاقات، R3.4) لا قائمة مستقلة.
+  final bool inline;
+
   @override
   Widget build(BuildContext context) {
+    final children = [
+      Text(message, textAlign: TextAlign.center),
+      const SizedBox(height: 16),
+      OutlinedButton(
+        key: HomeScreen.calcErrorReportKey,
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+        onPressed: onReport,
+        child: Text(AppLocalizations.of(context).reportTitle),
+      ),
+    ];
+    if (inline) {
+      return Padding(
+        key: HomeScreen.calcErrorKey,
+        padding: const EdgeInsetsDirectional.symmetric(vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
+      );
+    }
     return ListView(
       key: HomeScreen.calcErrorKey,
       padding: const EdgeInsetsDirectional.all(24),
-      children: [
-        Text(message, textAlign: TextAlign.center),
-        const SizedBox(height: 16),
-        OutlinedButton(
-          key: HomeScreen.calcErrorReportKey,
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
-          ),
-          onPressed: onReport,
-          child: Text(AppLocalizations.of(context).reportTitle),
-        ),
-      ],
+      children: children,
     );
   }
 }
