@@ -189,14 +189,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
-        ExcludeSemantics(
-          child: Text(l10n.headerSeparator, style: lineStyle),
-        ),
+        ExcludeSemantics(child: Text(l10n.headerSeparator, style: lineStyle)),
         Flexible(
           child: touch(
             key: HomeScreen.datesLineKey,
             label: [
-              if (selected != today) l10n.homeViewingDate(dateText) else dateText,
+              if (selected != today)
+                l10n.homeViewingDate(dateText)
+              else
+                dateText,
               l10n.homePickDate,
             ].join(l10n.listSeparator),
             onTap: () => _pickDate(context, selected),
@@ -315,10 +316,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       astro = ref.watch(astroYearProvider(selected.year));
     } on Object {
-      return _withHeader(header, _calcError(context, region?.name.ar, selected));
+      return _withHeader(
+        header,
+        _calcError(context, region?.name.ar, selected),
+      );
     }
     if (info == null || index == null) {
-      return _withHeader(header, _calcError(context, region?.name.ar, selected));
+      return _withHeader(
+        header,
+        _calcError(context, region?.name.ar, selected),
+      );
     }
 
     final model = _modelFor(index, astro, tables);
@@ -501,12 +508,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               prev,
               const SizedBox(width: 2),
               // 200dp، ويضيق على الشاشات الأضيق من 332dp حتى يتسع الزران.
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 200),
-                  child: counter,
-                ),
-              ),
+              Flexible(child: SizedBox(width: 200, child: counter)),
               const SizedBox(width: 2),
               next,
             ],
@@ -571,11 +573,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const weatherCard = LiveWeatherCard();
     final agriCard = AgriCard(
       regionName: region?.name.ar,
-      onKnowSource: () => showReportSheet(
-        context,
-        regionName: region?.name.ar,
-        date: selected,
-      ),
+      onKnowSource: () =>
+          showReportSheet(context, regionName: region?.name.ar, date: selected),
     );
     final upcomingCard = UpcomingCard(
       events: upcoming,
@@ -759,9 +758,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return SingleChildScrollView(
           child: Stack(
             children: [
-              Positioned.fill(
-                child: GulfBackdrop(firstScreenHeight: height),
-              ),
+              Positioned.fill(child: GulfBackdrop(firstScreenHeight: height)),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -798,7 +795,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _withHeader(Widget header, Widget body) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [header, Expanded(child: body)],
+    children: [
+      header,
+      Expanded(child: body),
+    ],
   );
 
   Widget _calcError(BuildContext context, String? regionName, DateTime date) =>
@@ -854,9 +854,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// بداية الفترة السابقة (دَرّ، أو طالع بلا درور).
   DateTime _prevJumpStart(ActivePeriod period) {
-    final before = ref.read(
-      dayInfoProvider(addDays(_local(period.start), -1)),
-    );
+    final before = ref.read(dayInfoProvider(addDays(_local(period.start), -1)));
     final ActivePeriod? prev = before == null
         ? null
         : (period is DarPeriod ? before.dar : before.star);

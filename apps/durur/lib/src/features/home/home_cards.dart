@@ -43,11 +43,8 @@ String weekdayDayMonth(
 );
 
 /// اسم الحدث كما يظهر في العدّاد و«القادم».
-String seasonEventName(
-  AppLocalizations l10n,
-  Tables tables,
-  SeasonEvent e,
-) => e.kind == SeasonEventKind.dar
+String seasonEventName(AppLocalizations l10n, Tables tables, SeasonEvent e) =>
+    e.kind == SeasonEventKind.dar
     ? l10n.darTitle(e.dar!.name.ar)
     : tables.items[e.itemId]?.name.ar ?? '';
 
@@ -88,14 +85,17 @@ class CountdownCard extends StatelessWidget {
         : l10n.countdownFromDate(
             gregorianDateLabel(l10n, viewing!, digits: digits),
           );
-    TextStyle body(double size, Color color, [FontWeight w = FontWeight.w700]) =>
-        TextStyle(
-          fontFamily: DururFonts.body,
-          fontSize: size,
-          fontWeight: w,
-          color: color,
-          height: 1.25,
-        );
+    TextStyle body(
+      double size,
+      Color color, [
+      FontWeight w = FontWeight.w700,
+    ]) => TextStyle(
+      fontFamily: DururFonts.body,
+      fontSize: size,
+      fontWeight: w,
+      color: color,
+      height: 1.25,
+    );
 
     final List<Widget> lines;
     final String spoken;
@@ -109,9 +109,11 @@ class CountdownCard extends StatelessWidget {
         Text(
           text,
           textAlign: TextAlign.center,
-          style: body(15, colors.primary, FontWeight.w800).copyWith(
-            shadows: textGlow(colors.primary),
-          ),
+          style: body(
+            15,
+            colors.primary,
+            FontWeight.w800,
+          ).copyWith(shadows: textGlow(colors.primary)),
         ),
         Text(date, style: body(12, colors.inkSoft)),
       ];
@@ -139,7 +141,10 @@ class CountdownCard extends StatelessWidget {
                   shadows: textGlow(colors.primary),
                 ),
               ),
-            Text(l10n.countdownDaysUnit(event.days), style: body(15, colors.ink)),
+            Text(
+              l10n.countdownDaysUnit(event.days),
+              style: body(15, colors.ink),
+            ),
           ],
         ),
         Text(target, textAlign: TextAlign.center, style: body(15, colors.ink)),
@@ -174,8 +179,7 @@ class CountdownCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ...lines,
-              if (from != null)
-                Text(from, style: body(12, colors.inkSoft)),
+              if (from != null) Text(from, style: body(12, colors.inkSoft)),
             ],
           ),
         ),
@@ -468,10 +472,7 @@ class LiveWeatherCard extends StatelessWidget {
       key: HomeCardKeys.liveWeatherCard,
       title: l10n.cardLiveWeatherTitle,
       subtitle: l10n.cardLiveWeatherSubtitle,
-      icon: WeatherIcon(
-        WeatherSymbol.cloud,
-        color: colors.inkSoft,
-      ),
+      icon: WeatherIcon(WeatherSymbol.cloud, color: colors.inkSoft),
       minHeight: 200,
       children: [
         const SizedBox(height: 24),
@@ -731,9 +732,7 @@ class DarStrip extends StatelessWidget {
               Expanded(
                 child: Text(
                   dayOfDarLabel(l10n, dar, digits: digits),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.ink,
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: colors.ink),
                 ),
               ),
               ExcludeSemantics(
@@ -883,7 +882,8 @@ class UpcomingCard extends StatelessWidget {
       if (e.kind == SeasonEventKind.star) {
         return CustomPaint(painter: _StarPainter(colors.goldText));
       }
-      final symbols = e.dar?.record.weather ??
+      final symbols =
+          e.dar?.record.weather ??
           tables.items[e.itemId]?.weather ??
           const <WeatherSymbol>[];
       if (symbols.isEmpty) {
@@ -929,7 +929,11 @@ class UpcomingCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Flexible(
+                  // المدة بعرضها الطبيعي («بعد ٢٤٥ يوماً» ≈ 70dp) وتلتف
+                  // بعد 80dp، والاسم يأخذ الباقي. (لا LayoutBuilder:
+                  // البطاقات داخل IntrinsicHeight.)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 80),
                     child: Text(
                       l10n.upcomingAfter(e.days, formatInteger(e.days, digits)),
                       textAlign: TextAlign.end,

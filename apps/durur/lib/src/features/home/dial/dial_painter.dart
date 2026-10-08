@@ -310,6 +310,7 @@ class DialLabels {
   final Map<int, TextPainter> dayNumbers;
   final List<TextPainter> dururNumbers;
   final List<TextPainter> dururNames;
+
   /// أسماء الطوالع بالمعرّف.
   final Map<String, TextPainter> stars;
 
@@ -805,12 +806,7 @@ class DialPainter extends CustomPainter {
     // الدَّرّ الحالي، والطالع الحالي: حد cyan 2dp مع توهج 1.
     final dar = info.dar;
     if (dar != null) {
-      outline(
-        DialRing.durur,
-        _dayIndex(dar.start),
-        _dayIndex(dar.end) + 1,
-        2,
-      );
+      outline(DialRing.durur, _dayIndex(dar.start), _dayIndex(dar.end) + 1, 2);
     }
     final star = info.star;
     final starStart = _dayIndex(star.start);
@@ -866,7 +862,12 @@ class DialPainter extends CustomPainter {
         Paint()..color = _zodiacFill,
       );
       _tangential(canvas, t, geo.angleOf(center), mid);
-      final path = _sector(geo.angleOf(start), geo.angleOf(end), eo - 1, ei + 1);
+      final path = _sector(
+        geo.angleOf(start),
+        geo.angleOf(end),
+        eo - 1,
+        ei + 1,
+      );
       canvas.drawPath(path, _stroke(colors.primary, 1.5));
     }
   }
@@ -900,10 +901,7 @@ class DialPainter extends CustomPainter {
       final heritage = (isCurrent
           ? labels.heritageCurrent
           : labels.heritage)[season];
-      final (x, y) = DialGeometry.polar(
-        geo.angleOf(s.start + s.length / 2),
-        r,
-      );
+      final (x, y) = DialGeometry.polar(geo.angleOf(s.start + s.length / 2), r);
       final chord = r * math.sqrt2 * zoom; // عرض تقريبي متاح في الربع
       final showHeritage =
           heritage != null && heritage.width <= chord && name.width <= chord;
@@ -983,7 +981,11 @@ class DialPainter extends CustomPainter {
       ..lineTo(5, -lineEnd)
       ..close();
     canvas.drawPath(tri, Paint()..color = colors.ink);
-    canvas.drawCircle(Offset(0, -lineEnd - 2), 2, Paint()..color = colors.goldDeco);
+    canvas.drawCircle(
+      Offset(0, -lineEnd - 2),
+      2,
+      Paint()..color = colors.goldDeco,
+    );
     canvas.restore();
     // المحور فوق قاعدة العقرب.
     final hub = geo.hubRadius;
