@@ -757,6 +757,10 @@
   "@sourcesGeoNames": {
     "description": "إشارة GeoNames المطلوبة برخصة CC BY 4.0 (D27)"
   },
+  "sourcesNaturalEarth": "خريطة الخليج في خلفية الشاشة الرئيسية من بيانات Natural Earth (naturalearthdata.com)، وهي ملكية عامة.",
+  "@sourcesNaturalEarth": {
+    "description": "إشارة Natural Earth لخريطة الخلفية (DESIGN R3.1-13)؛ ملكية عامة لا تشترط إشارة لكننا نذكرها"
+  },
   "sourcesGeoNamesLink": "موقع GeoNames",
   "@sourcesGeoNamesLink": {
     "description": "رابط يفتح https://www.geonames.org/ في المتصفح"

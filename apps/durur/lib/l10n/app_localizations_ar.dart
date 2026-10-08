@@ -616,6 +616,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'إحداثيات المدن من GeoNames (geonames.org)، برخصة المشاع الإبداعي نَسب المُصنَّف 4.0 (CC BY 4.0). عُدّلت: اختيار المدن وربطها بالمناطق.';
 
   @override
+  String get sourcesNaturalEarth =>
+      'خريطة الخليج في خلفية الشاشة الرئيسية من بيانات Natural Earth (naturalearthdata.com)، وهي ملكية عامة.';
+
+  @override
   String get sourcesGeoNamesLink => 'موقع GeoNames';
 
   @override

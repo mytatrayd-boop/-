@@ -777,6 +777,12 @@ abstract class AppLocalizations {
   /// **'إحداثيات المدن من GeoNames (geonames.org)، برخصة المشاع الإبداعي نَسب المُصنَّف 4.0 (CC BY 4.0). عُدّلت: اختيار المدن وربطها بالمناطق.'**
   String get sourcesGeoNames;
 
+  /// إشارة Natural Earth لخريطة الخلفية (DESIGN R3.1-13)؛ ملكية عامة لا تشترط إشارة لكننا نذكرها
+  ///
+  /// In ar, this message translates to:
+  /// **'خريطة الخليج في خلفية الشاشة الرئيسية من بيانات Natural Earth (naturalearthdata.com)، وهي ملكية عامة.'**
+  String get sourcesNaturalEarth;
+
   /// رابط يفتح https://www.geonames.org/ في المتصفح
   ///
   /// In ar, this message translates to:

@@ -602,6 +602,8 @@ Future<void> main() async {
       expect(find.text(l10n.sourcesLicensesTitle), findsOneWidget);
       expect(find.text(l10n.sourcesGeoNames), findsOneWidget);
       expect(find.text(l10n.sourcesHijri), findsOneWidget);
+      // خريطة الخلفية (DESIGN R3.1-13).
+      expect(find.text(l10n.sourcesNaturalEarth), findsOneWidget);
       await tester.tap(find.byKey(SourcesScreen.geoNamesLinkKey));
       await tester.tap(find.byKey(SourcesScreen.licenseLinkKey));
       await tester.pumpAndSettle();
