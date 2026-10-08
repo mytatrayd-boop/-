@@ -371,8 +371,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final p = y.seasonAt(local);
       String dm(DateTime d) =>
           l10n.dayMonthDate(formatInteger(d.day, digits), 'g${d.month}');
+      // الموسم التراثي المقابل: الموسم الكبير في منتصف الفصل، ويُخفى إن
+      // طابق اسم الفصل أو لم يكن للتقويم مواسم كبيرة (R3.2، SPEC 19.5 و19.9).
+      final season = l10n.astroSeasonName(p.value.name);
+      final mid = addDays(p.start.day, p.days ~/ 2);
+      final heritageId = ref.read(dayInfoProvider(mid))?.majorSeason.itemId;
+      final heritage = heritageId == null
+          ? null
+          : tables.items[heritageId]?.name.ar;
       return l10n.astroSeasonA11ySentence(
-        l10n.astroSeasonName(p.value.name),
+        heritage == null || heritage.isEmpty || heritage == season
+            ? season
+            : l10n.astroSeasonA11yHeritage(season, heritage),
         dm(p.start.day),
         dm(p.end.day),
       );

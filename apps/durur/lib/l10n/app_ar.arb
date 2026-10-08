@@ -1469,6 +1469,18 @@
   "@astroSeasonNote": {
     "description": "سطر ثابت في ورقة الفصل (R3.6 astro.season.note)"
   },
+  "astroSeasonA11yHeritage": "{season}، ويقابله في التراث {heritage}",
+  "@astroSeasonA11yHeritage": {
+    "description": "اسم الفصل مع الموسم التراثي المقابل لقارئ الشاشة (R3.2، R3.6 astro.season.a11y_heritage، SPEC 19.9)",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "heritage": {
+        "type": "String"
+      }
+    }
+  },
   "astroSeasonA11ySentence": "الفصل: {season}، من {start} إلى {end}.",
   "@astroSeasonA11ySentence": {
     "description": "جملة الفصل في قيمة الدائرة لقارئ الشاشة (R3.5، R3.6 astro.season.a11y_sentence)",

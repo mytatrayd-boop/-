@@ -321,7 +321,13 @@ Future<void> main() async {
       expect(value, startsWith('الجمعة، ٢ أكتوبر ٢٠٢٦، '));
       expect(value, contains(' هجري. '));
       expect(value, isNot(contains('٢٠٢٦م')));
-      expect(value, contains('الفصل: الخريف، من ٢٣ سبتمبر إلى ٢١ ديسمبر.'));
+      // مع الاسم التراثي المقابل (SPEC 19.9، R3.2).
+      expect(
+        value,
+        contains(
+          'الفصل: الخريف، ويقابله في التراث الصفري، من ٢٣ سبتمبر إلى ٢١ ديسمبر.',
+        ),
+      );
       final order = [
         'هجري.',
         'الفصل:',

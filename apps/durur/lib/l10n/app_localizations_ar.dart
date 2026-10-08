@@ -1155,6 +1155,11 @@ class AppLocalizationsAr extends AppLocalizations {
       'الفصول الفلكية تبدأ بالاعتدالين والانقلابين؛ والمواسم التراثية تبدأ بطلوع النجوم، فلا تتطابق بدايتها.';
 
   @override
+  String astroSeasonA11yHeritage(String season, String heritage) {
+    return '$season، ويقابله في التراث $heritage';
+  }
+
+  @override
   String astroSeasonA11ySentence(String season, String start, String end) {
     return 'الفصل: $season، من $start إلى $end.';
   }

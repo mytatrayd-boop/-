@@ -1407,6 +1407,12 @@ abstract class AppLocalizations {
   /// **'الفصول الفلكية تبدأ بالاعتدالين والانقلابين؛ والمواسم التراثية تبدأ بطلوع النجوم، فلا تتطابق بدايتها.'**
   String get astroSeasonNote;
 
+  /// اسم الفصل مع الموسم التراثي المقابل لقارئ الشاشة (R3.2، R3.6 astro.season.a11y_heritage، SPEC 19.9)
+  ///
+  /// In ar, this message translates to:
+  /// **'{season}، ويقابله في التراث {heritage}'**
+  String astroSeasonA11yHeritage(String season, String heritage);
+
   /// جملة الفصل في قيمة الدائرة لقارئ الشاشة (R3.5، R3.6 astro.season.a11y_sentence)
   ///
   /// In ar, this message translates to:
