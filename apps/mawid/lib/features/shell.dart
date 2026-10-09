@@ -32,7 +32,7 @@ class _ShellState extends State<Shell> {
       HomePage(state: s, today: t, onOpen: openDetail),
       MonthPage(state: s, today: t, extra: widget.extra.value, onOpen: openDetail),
       BudgetPage(state: s, today: t),
-      SettingsPage(state: s),
+      SettingsPage(state: s, today: t),
     ];
     return ListenableBuilder(
       listenable: s,

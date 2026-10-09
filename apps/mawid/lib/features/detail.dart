@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:share_plus/share_plus.dart';
+import '../core/ics.dart';
 import '../core/payout_rules.dart';
 import '../core/settings.dart';
 import '../main.dart';
@@ -16,6 +22,26 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   final newTask = TextEditingController();
+  final cardKey = GlobalKey();
+
+  Future<void> _shareCard(String text) async {
+    final b = cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    if (b == null) return;
+    final img = await b.toImage(pixelRatio: 3);
+    final data = await img.toByteData(format: ui.ImageByteFormat.png);
+    if (data == null) return;
+    await SharePlus.instance.share(ShareParams(
+      text: text,
+      files: [XFile.fromData(data.buffer.asUint8List(), mimeType: 'image/png', name: 'mawid.png')],
+    ));
+  }
+
+  Future<void> _addToCalendar(Program p, DateTime d) async {
+    final ics = buildIcs([IcsEvent('${p.id}-${d.year}${d.month}${d.day}', p.name, d)]);
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile.fromData(Uint8List.fromList(utf8.encode(ics)), mimeType: 'text/calendar', name: '${p.id}.ics')],
+    ));
+  }
 
   @override
   void dispose() {
@@ -33,32 +59,40 @@ class _DetailPageState extends State<DetailPage> {
         listenable: s,
         builder: (_, _) => ListView(padding: const EdgeInsets.only(bottom: 24), children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 40, 20, 22),
             decoration: const BoxDecoration(
                 color: ink, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
             margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.fromLTRB(12, 40, 0, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               IconButton(
                   tooltip: 'رجوع',
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_forward, color: Colors.white)),
-              Row(children: [
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(p.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700)),
-                  Text('${dateText(d)} · ${hijriText(d)}',
-                      style: const TextStyle(color: Color(0xFFC9D2E3), fontSize: 13)),
-                ])),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-                  child: Column(children: [
-                    Text('$n', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: ink, height: 1)),
-                    const Text('يوم', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
+              RepaintBoundary(
+                key: cardKey,
+                child: Container(
+                  color: ink,
+                  padding: const EdgeInsets.fromLTRB(8, 4, 20, 22),
+                  child: Row(children: [
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(p.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700)),
+                      Text('${dateText(d)} · ${hijriText(d)}',
+                          style: const TextStyle(color: Color(0xFFC9D2E3), fontSize: 13)),
+                      const Text('موعد', style: TextStyle(color: Color(0xFF9DB0D0), fontSize: 12)),
+                    ])),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                      child: Column(children: [
+                        Text('$n', style: const TextStyle(fontFamily: 'Lalezar', fontSize: 40, color: ink, height: 1.1)),
+                        const Text('يوم', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
+                      ]),
+                    ),
                   ]),
                 ),
-              ]),
+              ),
             ]),
           ),
           Card1(
@@ -102,6 +136,19 @@ class _DetailPageState extends State<DetailPage> {
             ]),
           ])),
           SplitCard(state: s),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(children: [
+              Expanded(
+                  child: FilledButton.tonal(
+                      onPressed: () => _shareCard('${p.name} — ${dateText(d)}'),
+                      child: const Text('مشاركة بطاقة العدّاد'))),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: OutlinedButton(
+                      onPressed: () => _addToCalendar(p, d), child: const Text('إضافة إلى التقويم'))),
+            ]),
+          ),
         ]),
       ),
     );

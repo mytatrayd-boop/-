@@ -26,4 +26,21 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('بعد يومين'), findsNothing);
   });
+
+  testWidgets('الميزانية تعرض رسم التوزيع وفاصل المواعيد، والتخصيص يعرض التنبيهات', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState(await SharedPreferences.getInstance());
+    await t.binding.setSurfaceSize(const Size(390, 844));
+    await t.pumpWidget(MawidApp(s, today: DateTime(2026, 10, 9)));
+    await t.tap(find.text('الميزانية'));
+    await t.pumpAndSettle();
+    expect(find.text('توزيع أكتوبر'), findsOneWidget);
+    // مواعيد أكتوبر 2026: 1، 5، 11، 25، 26، 27 (الأقصى بين 5 و11 = 6 ثم 11 و25 = 14)
+    expect(find.text('أطول فاصل بين موعدين: 14 يوماً'), findsOneWidget);
+
+    await t.tap(find.text('تخصيص'));
+    await t.pumpAndSettle();
+    expect(find.text('التنبيهات'), findsOneWidget);
+    expect(find.text('إضافة كل المواعيد إلى التقويم'), findsOneWidget);
+  });
 }

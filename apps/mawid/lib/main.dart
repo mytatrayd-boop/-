@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'core/notifications.dart';
 import 'core/remote_holidays.dart';
 import 'model/holidays.dart';
 import 'core/settings.dart';
@@ -25,7 +26,9 @@ Future<void> main() async {
   } catch (_) {}
   final cached = cachedHolidays(prefs);
   final extra = ValueNotifier<List<Holiday>>(cached.isNotEmpty ? cached : bundled);
-  runApp(MawidApp(AppState(prefs), extra: extra));
+  final state = AppState(prefs);
+  runApp(MawidApp(state, extra: extra));
+  _setupNotifications(state);
   // تحديث صامت: إذا فشل يبقى المعروض كما هو.
   refreshHolidays(prefs, http.Client()).then((l) {
     if (l != null) extra.value = l;
@@ -58,4 +61,16 @@ class MawidApp extends StatelessWidget {
         ),
         home: Shell(state: state, today: today ?? DateTime.now(), extra: extra ?? ValueNotifier<List<Holiday>>(const [])),
       );
+}
+
+Future<void> _setupNotifications(AppState state) async {
+  try {
+    final n = Notifier();
+    await n.init();
+    if (state.notificationsOn) await n.requestPermission();
+    await n.reschedule(state, DateTime.now());
+    state.addListener(() => n.reschedule(state, DateTime.now()));
+  } catch (_) {
+    // لا نكسر التطبيق إذا فشلت التنبيهات (مثلاً في منصة غير مدعومة)
+  }
 }

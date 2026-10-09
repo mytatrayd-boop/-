@@ -18,6 +18,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool get notificationsOn => _p.getBool('notif') ?? true;
+  Future<void> setNotificationsOn(bool v) async {
+    await _p.setBool('notif', v);
+    notifyListeners();
+  }
+
   // تذكيرات: d3 / d1 / d0
   bool reminder(String k) => _p.getBool('rem_$k') ?? (k != 'd0');
   Future<void> setReminder(String k, bool v) async {

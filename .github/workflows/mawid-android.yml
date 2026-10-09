@@ -1,0 +1,30 @@
+name: Mawid — Android test APK
+
+# يبني APK تجريبياً لـ «موعد» (موقّع بمفتاح debug، ليس للمتجر). لا رفع لأي متجر.
+on:
+  push:
+    paths: ['apps/mawid/**', '.github/workflows/mawid-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/mawid } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Build APK
+        run: flutter build apk --release --build-number=${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mawid-apk
+          path: apps/mawid/build/app/outputs/flutter-apk/app-release.apk
