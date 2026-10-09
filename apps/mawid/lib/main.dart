@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'model/holidays.dart';
 import 'core/settings.dart';
 import 'features/shell.dart';
 
@@ -14,13 +16,18 @@ const warnFg = Color(0xFF8A4D0B);
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  runApp(MawidApp(AppState(prefs)));
+  var extra = <Holiday>[];
+  try {
+    extra = parseExtra(await rootBundle.loadString('assets/holidays_extra.json'));
+  } catch (_) {}
+  runApp(MawidApp(AppState(prefs), extra: extra));
 }
 
 class MawidApp extends StatelessWidget {
   final AppState state;
   final DateTime? today; // للاختبار
-  const MawidApp(this.state, {super.key, this.today});
+  final List<Holiday> extra;
+  const MawidApp(this.state, {super.key, this.today, this.extra = const []});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -36,9 +43,10 @@ class MawidApp extends StatelessWidget {
         builder: (c, w) => Directionality(textDirection: TextDirection.rtl, child: w!),
         theme: ThemeData(
           useMaterial3: true,
+          fontFamily: 'Tajawal',
           scaffoldBackgroundColor: ground,
           colorScheme: ColorScheme.fromSeed(seedColor: ink, primary: ink),
         ),
-        home: Shell(state: state, today: today ?? DateTime.now()),
+        home: Shell(state: state, today: today ?? DateTime.now(), extra: extra),
       );
 }

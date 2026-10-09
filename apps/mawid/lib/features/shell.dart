@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/settings.dart';
 import '../main.dart';
+import '../model/holidays.dart';
 import '../model/programs.dart';
 import 'budget.dart';
 import 'detail.dart';
@@ -11,7 +12,8 @@ import 'settings_page.dart';
 class Shell extends StatefulWidget {
   final AppState state;
   final DateTime today;
-  const Shell({super.key, required this.state, required this.today});
+  final List<Holiday> extra;
+  const Shell({super.key, required this.state, required this.today, this.extra = const []});
   @override
   State<Shell> createState() => _ShellState();
 }
@@ -27,7 +29,7 @@ class _ShellState extends State<Shell> {
     final s = widget.state, t = widget.today;
     final pages = [
       HomePage(state: s, today: t, onOpen: openDetail),
-      MonthPage(state: s, today: t, onOpen: openDetail),
+      MonthPage(state: s, today: t, extra: widget.extra, onOpen: openDetail),
       BudgetPage(state: s, today: t),
       SettingsPage(state: s),
     ];

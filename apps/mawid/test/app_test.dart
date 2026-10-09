@@ -16,6 +16,7 @@ void main() {
 
     await t.tap(find.text('الشهر'));
     await t.pumpAndSettle();
+    await t.scrollUntilVisible(find.text('مواعيد الشهر'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('مواعيد الشهر'), findsOneWidget);
 
     await t.tap(find.text('تخصيص'));

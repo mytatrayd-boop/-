@@ -25,7 +25,7 @@ class HomePage extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          const Text('موعد', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: ink)),
+          const Text('موعد', style: TextStyle(fontFamily: 'Lalezar', fontSize: 36, color: ink)),
           const Spacer(),
           Flexible(
             child: Text('${dateText(today)}\n${hijriText(today)}',
@@ -138,7 +138,7 @@ class _Hero extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
                 child: Column(children: [
                   Text(weekdayAr[d.weekday]!, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
-                  Text('${d.day}', style: const TextStyle(fontSize: 110, fontWeight: FontWeight.w900, height: 1.1, color: ink)),
+                  Text('${d.day}', style: const TextStyle(fontFamily: 'Lalezar', fontSize: 120, height: 1.1, color: ink)),
                   const Divider(height: 28, color: line),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Flexible(child: Text(p.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700))),

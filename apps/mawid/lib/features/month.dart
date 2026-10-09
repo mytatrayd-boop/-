@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import '../core/payout_rules.dart';
 import '../core/settings.dart';
 import '../main.dart';
+import '../model/holidays.dart';
 import '../model/programs.dart';
 import 'common.dart';
 
 class MonthPage extends StatefulWidget {
   final AppState state;
   final DateTime today;
+  final List<Holiday> extra;
   final void Function(Program) onOpen;
-  const MonthPage({super.key, required this.state, required this.today, required this.onOpen});
+  const MonthPage({super.key, required this.state, required this.today, required this.onOpen, this.extra = const []});
   @override
   State<MonthPage> createState() => _MonthPageState();
 }
@@ -29,12 +31,17 @@ class _MonthPageState extends State<MonthPage> {
       if (wasMoved(m.year, m.month, p.day)) moved.add(p);
     }
     final rows = evs.keys.toList()..sort();
+    final hs = [...holidaysFor(m.year, extra: widget.extra), ...holidaysFor(m.year + (m.month == 12 ? 1 : 0), extra: widget.extra)];
+    final monthHs = hs
+        .where((h) => !h.end.isBefore(DateTime(m.year, m.month)) && !h.start.isAfter(DateTime(m.year, m.month + 1, 0)))
+        .toList()
+      ..sort((a, b) => a.start.compareTo(b.start));
     final lead = m.weekday % 7; // الأحد = 0
     final days = DateUtils.getDaysInMonth(m.year, m.month);
     const heads = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
     final cells = <Widget>[
       for (var i = 0; i < lead; i++) const SizedBox(),
-      for (var d = 1; d <= days; d++) _cell(DateTime(m.year, m.month, d), evs[d], today),
+      for (var d = 1; d <= days; d++) _cell(DateTime(m.year, m.month, d), evs[d], today, holidayOn(hs, DateTime(m.year, m.month, d))),
     ];
     return ListView(padding: const EdgeInsets.only(bottom: 16), children: [
       Padding(
@@ -80,6 +87,10 @@ class _MonthPageState extends State<MonthPage> {
             _Key(Color(0xFFC9D2E3), 'صُرف'),
             _Key(Color(0xFFE3E8F0), 'نهاية الأسبوع'),
           ]),
+          const SizedBox(height: 6),
+          Wrap(spacing: 14, runSpacing: 6, children: [
+            for (final k in HKind.values) _Key(kindColor[k]!, kindName[k]!.replaceFirst('إجازة ', '')),
+          ]),
         ]),
       ),
       if (moved.isNotEmpty)
@@ -92,6 +103,21 @@ class _MonthPageState extends State<MonthPage> {
               '${moved.map((p) => '${p.name} (${p.day} ← ${effectiveDate(m.year, m.month, p.day).day})').join('، ')}.',
               style: const TextStyle(color: Color(0xFF5C3408), height: 1.6)),
         ),
+      if (monthHs.isNotEmpty) ...[
+        const Padding(padding: EdgeInsets.fromLTRB(20, 6, 20, 8), child: Text('الإجازات', style: h2)),
+        Card1(
+          child: Column(children: [
+            for (final h in monthHs)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(width: 6, height: 36, decoration: BoxDecoration(color: kindColor[h.kind], borderRadius: BorderRadius.circular(3))),
+                title: Text(kindName[h.kind]!, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text(
+                    '${h.start.day} ${monthAr[h.start.month - 1]}${h.start == h.end ? '' : ' – ${h.end.day} ${monthAr[h.end.month - 1]}'}${h.approx ? ' · تقريبي حتى يُعلن رسمياً' : ''}'),
+              ),
+          ]),
+        ),
+      ],
       const Padding(padding: EdgeInsets.fromLTRB(20, 6, 20, 8), child: Text('مواعيد الشهر', style: h2)),
       Card1(
         child: Column(children: [
@@ -114,7 +140,7 @@ class _MonthPageState extends State<MonthPage> {
     ]);
   }
 
-  Widget _cell(DateTime d, List<Program>? ev, DateTime today) {
+  Widget _cell(DateTime d, List<Program>? ev, DateTime today, Holiday? hol) {
     final isToday = DateUtils.isSameDay(d, today);
     final weekend = d.weekday == DateTime.friday || d.weekday == DateTime.saturday;
     final past = d.isBefore(DateTime(today.year, today.month, today.day));
@@ -130,6 +156,8 @@ class _MonthPageState extends State<MonthPage> {
           borderRadius: BorderRadius.circular(9),
           border: isToday ? Border.all(color: const Color(0xFFC9771B), width: 2) : null),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        if (hol != null)
+          Container(height: 4, margin: const EdgeInsets.symmetric(horizontal: 6), decoration: BoxDecoration(color: kindColor[hol.kind], borderRadius: BorderRadius.circular(2))),
         Text('${d.day}', style: TextStyle(fontWeight: FontWeight.w700, color: fg)),
         if (ev != null)
           Text(ev.length > 1 ? '${ev.length}+' : ev.first.name.split(' ').last,
