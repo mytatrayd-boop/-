@@ -54,7 +54,7 @@ class _MonthPageState extends State<MonthPage> {
           Expanded(
               child: Column(children: [
             Text('${monthAr[m.month - 1]} ${m.year}',
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: ink)),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: ink)),
             Text('${hijriText(DateTime(m.year, m.month, 1))}  ←  ${hijriText(DateTime(m.year, m.month, days))}',
                 style: const TextStyle(fontSize: 11, color: muted)),
           ])),
@@ -82,15 +82,20 @@ class _MonthPageState extends State<MonthPage> {
             children: cells,
           ),
           const SizedBox(height: 10),
-          const Wrap(spacing: 14, runSpacing: 6, children: [
+          Wrap(spacing: 14, runSpacing: 6, children: [
             _Key(ink, 'موعد قادم'),
             _Key(Color(0xFFC9D2E3), 'صُرف'),
             _Key(Color(0xFFE3E8F0), 'نهاية الأسبوع'),
           ]),
           const SizedBox(height: 6),
-          Wrap(spacing: 14, runSpacing: 6, children: [
-            for (final k in HKind.values) _Key(kindColor[k]!, kindName[k]!.replaceFirst('إجازة ', '')),
-          ]),
+          for (final g in kindGroups.entries)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Wrap(spacing: 14, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                SizedBox(width: 78, child: Text(g.key, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink))),
+                for (final k in g.value) _Key(kindColor[k]!, kindName[k]!),
+              ]),
+            ),
         ]),
       ),
       if (moved.isNotEmpty)
@@ -104,7 +109,7 @@ class _MonthPageState extends State<MonthPage> {
               style: const TextStyle(color: Color(0xFF5C3408), height: 1.6)),
         ),
       if (monthHs.isNotEmpty) ...[
-        const Padding(padding: EdgeInsets.fromLTRB(20, 6, 20, 8), child: Text('الإجازات', style: h2)),
+        Padding(padding: EdgeInsets.fromLTRB(20, 6, 20, 8), child: Text('الإجازات', style: h2)),
         Card1(
           child: Column(children: [
             for (final h in monthHs)
@@ -118,7 +123,7 @@ class _MonthPageState extends State<MonthPage> {
           ]),
         ),
       ],
-      const Padding(padding: EdgeInsets.fromLTRB(20, 6, 20, 8), child: Text('مواعيد الشهر', style: h2)),
+      Padding(padding: EdgeInsets.fromLTRB(20, 6, 20, 8), child: Text('مواعيد الشهر', style: h2)),
       Card1(
         child: Column(children: [
           for (final d in rows)

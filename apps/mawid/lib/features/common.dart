@@ -4,6 +4,7 @@ import '../main.dart';
 import '../model/programs.dart';
 
 String hijriText(DateTime d) {
+  HijriCalendar.setLocal('ar'); // أسماء الأشهر بالعربية
   final h = HijriCalendar.fromDate(d);
   return '${h.hDay} ${h.getLongMonthName()} ${h.hYear} هـ';
 }
@@ -41,4 +42,4 @@ class Card1 extends StatelessWidget {
       );
 }
 
-const h2 = TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ink);
+TextStyle get h2 => TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ink);

@@ -40,7 +40,32 @@ void main() {
 
     await t.tap(find.text('تخصيص'));
     await t.pumpAndSettle();
+    await t.scrollUntilVisible(find.text('التنبيهات'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('التنبيهات'), findsOneWidget);
-    expect(find.text('إضافة كل المواعيد إلى التقويم'), findsOneWidget);
+    expect(find.text('ودجت الشاشة الرئيسية'), findsOneWidget);
+  });
+
+  testWidgets('لا نص إنجليزي تحت عنوان الشهر، واللون يتغير باختيار المستخدم', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState(await SharedPreferences.getInstance());
+    await t.binding.setSurfaceSize(const Size(390, 844));
+    await t.pumpWidget(MawidApp(s, today: DateTime(2026, 10, 9)));
+    await t.tap(find.text('الشهر'));
+    await t.pumpAndSettle();
+    final latin = RegExp(r'[A-Za-z]');
+    final texts = t.widgetList<Text>(find.byType(Text)).map((w) => w.data ?? '').where((x) => x.contains('←'));
+    expect(texts, isNotEmpty);
+    for (final x in texts) {
+      expect(latin.hasMatch(x), isFalse, reason: x);
+    }
+    expect(find.text('إجازة صيفية'), findsOneWidget);
+    expect(find.text('الإجازة الصيفية'), findsNothing);
+
+    await t.tap(find.text('تخصيص'));
+    await t.pumpAndSettle();
+    await t.tap(find.bySemanticsLabel('لون أخضر'));
+    await t.pumpAndSettle();
+    expect(s.accentIndex, 1);
+    expect(ink, accents[1].ink);
   });
 }

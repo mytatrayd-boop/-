@@ -21,7 +21,7 @@ class _BudgetPageState extends State<BudgetPage> {
   Widget build(BuildContext context) {
     final shown = widget.state.shown;
     return ListView(padding: const EdgeInsets.only(bottom: 16), children: [
-      const Padding(
+      Padding(
           padding: EdgeInsets.fromLTRB(20, 18, 20, 8),
           child: Text('الميزانية', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: ink))),
       MonthChart(state: widget.state, today: widget.today),

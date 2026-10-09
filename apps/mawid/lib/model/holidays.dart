@@ -12,19 +12,27 @@ const kindName = {
   HKind.longWeekend: 'نهاية أسبوع مطولة',
   HKind.midTerm: 'إجازة منتصف الفصل',
   HKind.termEnd: 'إجازة نهاية الفصل',
-  HKind.summer: 'الإجازة الصيفية',
+  HKind.summer: 'إجازة صيفية',
 };
 
-/// ألوان تُميَّز بالفتحة والحدّ لا باللون وحده.
+/// ألوان متباعدة في الدرجة (لا يُعتمد على اللون وحده: كل نوع له اسمه في القائمة).
+/// رسمية: أخضر، ذهبي، بنفسجي، وردي. نهاية الأسبوع: أزرق. التعليم: زيتوني، تركواز، برتقالي.
 const kindColor = {
   HKind.national: Color(0xFF0E6B4A),
-  HKind.founding: Color(0xFF8A5A12),
+  HKind.founding: Color(0xFFB8860B),
   HKind.eidFitr: Color(0xFF7A3E9D),
-  HKind.eidAdha: Color(0xFF9D3E5C),
+  HKind.eidAdha: Color(0xFFC2185B),
   HKind.longWeekend: Color(0xFF2E6FA8),
-  HKind.midTerm: Color(0xFF9A6B00),
-  HKind.termEnd: Color(0xFF9A6B00),
-  HKind.summer: Color(0xFFB45A1A),
+  HKind.midTerm: Color(0xFF6B7A12),
+  HKind.termEnd: Color(0xFF00838F),
+  HKind.summer: Color(0xFFE0651A),
+};
+
+/// مجموعات المفتاح في التقويم.
+const kindGroups = <String, List<HKind>>{
+  'رسمية': [HKind.national, HKind.founding, HKind.eidFitr, HKind.eidAdha],
+  'نهاية الأسبوع': [HKind.longWeekend],
+  'التعليم': [HKind.midTerm, HKind.termEnd, HKind.summer],
 };
 
 class Holiday {
