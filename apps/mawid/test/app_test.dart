@@ -12,6 +12,7 @@ void main() {
     final s = AppState(await SharedPreferences.getInstance());
     await t.binding.setSurfaceSize(const Size(390, 844));
     await t.pumpWidget(MawidApp(s, today: DateTime(2026, 10, 9)));
+    expect(find.text('مواعيد الرواتب والإجازات'), findsOneWidget);
     expect(find.text('حساب المواطن'), findsWidgets);
     expect(find.text('بعد يومين'), findsOneWidget);
     expect(find.textContaining('أُخّر من السبت 10 أكتوبر'), findsOneWidget);

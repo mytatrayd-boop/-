@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'core/app_name.dart';
 import 'core/notifications.dart';
 import 'core/remote_holidays.dart';
 import 'core/widget_sync.dart';
@@ -57,7 +58,7 @@ class MawidApp extends StatelessWidget {
       );
 
   Widget _app(BuildContext context) => MaterialApp(
-        title: 'موعد',
+        title: appName,
         debugShowCheckedModeBanner: false,
         locale: const Locale('ar'),
         supportedLocales: const [Locale('ar')],

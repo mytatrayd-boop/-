@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_name.dart';
 import '../core/payout_rules.dart';
 import '../core/settings.dart';
 import '../main.dart';
@@ -25,9 +26,13 @@ class HomePage extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('موعد', style: TextStyle(fontFamily: 'Lalezar', fontSize: 36, color: ink)),
-          const Spacer(),
           Flexible(
+            flex: 5,
+            child: Text(appName, maxLines: 2, style: TextStyle(fontFamily: 'Lalezar', fontSize: 24, height: 1.15, color: ink)),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 4,
             child: Text('${dateText(today)}\n${hijriText(today)}',
                 textAlign: TextAlign.end,
                 style: const TextStyle(fontSize: 13, color: muted, height: 1.5)),
