@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mawid/core/settings.dart';
 import 'package:mawid/main.dart';
+import 'package:mawid/model/holidays.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -58,8 +60,8 @@ void main() {
     for (final x in texts) {
       expect(latin.hasMatch(x), isFalse, reason: x);
     }
-    expect(find.text('إجازة صيفية'), findsOneWidget);
-    expect(find.text('الإجازة الصيفية'), findsNothing);
+    // أكتوبر 2026 بلا إجازات: لا مفتاح إجازات
+    expect(find.text('رسمية'), findsNothing);
 
     await t.tap(find.text('تخصيص'));
     await t.pumpAndSettle();
@@ -67,5 +69,31 @@ void main() {
     await t.pumpAndSettle();
     expect(s.accentIndex, 1);
     expect(ink, accents[1].ink);
+  });
+
+  testWidgets('مفتاح الإجازات يعرض أنواع الشهر المعروض فقط', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState(await SharedPreferences.getInstance());
+    final extra = ValueNotifier<List<Holiday>>(parseExtra(File('remote/holidays.json').readAsStringSync()));
+    await t.binding.setSurfaceSize(const Size(390, 844));
+    await t.pumpWidget(MawidApp(s, today: DateTime(2027, 7, 9), extra: extra));
+    await t.tap(find.text('الشهر'));
+    await t.pumpAndSettle();
+    expect(find.text('إجازة صيفية'), findsWidgets); // القائمة والمفتاح
+    expect(find.text('التعليم'), findsOneWidget);
+    expect(find.text('رسمية'), findsNothing);
+    expect(find.text('الإجازة الصيفية'), findsNothing);
+  });
+
+  testWidgets('كل إجازة تظهر مرة واحدة في قائمة الإجازات (بلا تكرار)', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState(await SharedPreferences.getInstance());
+    final extra = ValueNotifier<List<Holiday>>(parseExtra(File('remote/holidays.json').readAsStringSync()));
+    await t.binding.setSurfaceSize(const Size(390, 1400));
+    await t.pumpWidget(MawidApp(s, today: DateTime(2026, 11, 9), extra: extra));
+    await t.tap(find.text('الشهر'));
+    await t.pumpAndSettle();
+    // مرة في المفتاح ومرة في القائمة فقط
+    expect(find.text('إجازة منتصف الفصل'), findsNWidgets(2));
   });
 }

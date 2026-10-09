@@ -31,7 +31,7 @@ class _MonthPageState extends State<MonthPage> {
       if (wasMoved(m.year, m.month, p.day)) moved.add(p);
     }
     final rows = evs.keys.toList()..sort();
-    final hs = [...holidaysFor(m.year, extra: widget.extra), ...holidaysFor(m.year + (m.month == 12 ? 1 : 0), extra: widget.extra)];
+    final hs = holidaysFor(m.year, extra: widget.extra);
     final monthHs = hs
         .where((h) => !h.end.isBefore(DateTime(m.year, m.month)) && !h.start.isAfter(DateTime(m.year, m.month + 1, 0)))
         .toList()
@@ -82,20 +82,19 @@ class _MonthPageState extends State<MonthPage> {
             children: cells,
           ),
           const SizedBox(height: 10),
-          Wrap(spacing: 14, runSpacing: 6, children: [
+          Wrap(spacing: 16, runSpacing: 6, children: [
             _Key(ink, 'موعد قادم'),
-            _Key(Color(0xFFC9D2E3), 'صُرف'),
-            _Key(Color(0xFFE3E8F0), 'نهاية الأسبوع'),
+            _Key(const Color(0xFFC9D2E3), 'صُرف'),
+            _Key(const Color(0xFFE3E8F0), 'نهاية الأسبوع'),
           ]),
-          const SizedBox(height: 6),
-          for (final g in kindGroups.entries)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Wrap(spacing: 14, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                SizedBox(width: 78, child: Text(g.key, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink))),
-                for (final k in g.value) _Key(kindColor[k]!, kindName[k]!),
-              ]),
-            ),
+          if (monthHs.isNotEmpty) ...[
+            const Divider(height: 22, color: line),
+            for (final g in kindGroups.entries)
+              if (g.value.any((k) => monthHs.any((h) => h.kind == k))) _LegendGroup(
+                title: g.key,
+                kinds: [for (final k in g.value) if (monthHs.any((h) => h.kind == k)) k],
+              ),
+          ],
         ]),
       ),
       if (moved.isNotEmpty)
@@ -180,6 +179,28 @@ class _Key extends StatelessWidget {
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(3))),
         const SizedBox(width: 5),
-        Text(t, style: const TextStyle(fontSize: 12, color: muted)),
+        Flexible(child: Text(t, style: const TextStyle(fontSize: 12, color: muted))),
       ]);
+}
+
+/// مجموعة في مفتاح الإجازات: عنوان صغير ثم الأنواع في عمودين متساويين.
+class _LegendGroup extends StatelessWidget {
+  final String title;
+  final List<HKind> kinds;
+  const _LegendGroup({required this.title, required this.kinds});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: SizedBox(width: double.infinity, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: muted)),
+          const SizedBox(height: 6),
+          LayoutBuilder(builder: (context, c) {
+            final w = (c.maxWidth - 12) / 2;
+            return Wrap(spacing: 12, runSpacing: 8, children: [
+              for (final k in kinds) SizedBox(width: w, child: _Key(kindColor[k]!, kindName[k]!)),
+            ]);
+          }),
+        ])),
+      );
 }
