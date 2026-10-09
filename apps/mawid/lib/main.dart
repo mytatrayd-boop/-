@@ -6,12 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'core/notifications.dart';
 import 'core/remote_holidays.dart';
+import 'core/widget_sync.dart';
 import 'model/holidays.dart';
 import 'core/settings.dart';
 import 'features/shell.dart';
 
-const ink = Color(0xFF1C2B4B);
-const ground = Color(0xFFEEF1F6);
+/// ألوان التطبيق تتغير باختيار المستخدم (انظر accents في settings.dart).
+Color ink = const Color(0xFF1C2B4B);
+Color ground = const Color(0xFFEEF1F6);
 const line = Color(0xFFD5DBE6);
 const muted = Color(0xFF5E6A80);
 const warnBg = Color(0xFFFCEBD3);
@@ -29,6 +31,8 @@ Future<void> main() async {
   final state = AppState(prefs);
   runApp(MawidApp(state, extra: extra));
   _setupNotifications(state);
+  syncWidget(state, DateTime.now());
+  state.addListener(() => syncWidget(state, DateTime.now()));
   // تحديث صامت: إذا فشل يبقى المعروض كما هو.
   refreshHolidays(prefs, http.Client()).then((l) {
     if (l != null) extra.value = l;
@@ -42,7 +46,17 @@ class MawidApp extends StatelessWidget {
   const MawidApp(this.state, {super.key, this.today, this.extra});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: state,
+        builder: (context, _) {
+          final a = accents[state.accentIndex.clamp(0, accents.length - 1)];
+          ink = a.ink;
+          ground = a.ground;
+          return _app(context);
+        },
+      );
+
+  Widget _app(BuildContext context) => MaterialApp(
         title: 'موعد',
         debugShowCheckedModeBanner: false,
         locale: const Locale('ar'),

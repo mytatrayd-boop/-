@@ -59,7 +59,7 @@ class _DetailPageState extends State<DetailPage> {
         listenable: s,
         builder: (_, _) => ListView(padding: const EdgeInsets.only(bottom: 24), children: [
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
                 color: ink, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
             margin: const EdgeInsets.only(bottom: 14),
             padding: const EdgeInsets.fromLTRB(12, 40, 0, 0),
@@ -86,8 +86,8 @@ class _DetailPageState extends State<DetailPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
                       child: Column(children: [
-                        Text('$n', style: const TextStyle(fontFamily: 'Lalezar', fontSize: 40, color: ink, height: 1.1)),
-                        const Text('يوم', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
+                        Text('$n', style: TextStyle(fontFamily: 'Lalezar', fontSize: 40, color: ink, height: 1.1)),
+                        Text('يوم', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
                       ]),
                     ),
                   ]),
@@ -97,7 +97,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
           Card1(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('ذكّرني', style: h2),
+            Text('ذكّرني', style: h2),
             const SizedBox(height: 10),
             Wrap(spacing: 8, children: [
               for (final r in const {'d3': 'قبل 3 أيام', 'd1': 'قبل 24 ساعة', 'd0': 'عند النزول'}.entries)
@@ -110,7 +110,7 @@ class _DetailPageState extends State<DetailPage> {
           ])),
           Card1(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('مهام عند النزول', style: h2),
+            Text('مهام عند النزول', style: h2),
             for (final t in s.tasks(p.id))
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
@@ -183,7 +183,7 @@ class _SplitCardState extends State<SplitCard> {
     final sum = sp.fold<int>(0, (a, b) => a + b);
     return Card1(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('تقسيم المبلغ', style: h2),
+      Text('تقسيم المبلغ', style: h2),
       TextField(
         controller: amount,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),

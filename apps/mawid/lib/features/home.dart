@@ -25,7 +25,7 @@ class HomePage extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          const Text('موعد', style: TextStyle(fontFamily: 'Lalezar', fontSize: 36, color: ink)),
+          Text('موعد', style: TextStyle(fontFamily: 'Lalezar', fontSize: 36, color: ink)),
           const Spacer(),
           Flexible(
             child: Text('${dateText(today)}\n${hijriText(today)}',
@@ -38,7 +38,7 @@ class HomePage extends StatelessWidget {
         const Padding(padding: EdgeInsets.all(24), child: Text('كل البرامج مخفية. فعّلها من «تخصيص».'))
       else ...[
         _Hero(item: items.first, today: today, onTap: () => onOpen(items.first.p)),
-        const Padding(
+        Padding(
             padding: EdgeInsets.fromLTRB(20, 28, 20, 10),
             child: Text('الأوراق القادمة', style: h2)),
         SizedBox(
@@ -77,7 +77,7 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ],
-      const Padding(
+      Padding(
           padding: EdgeInsets.fromLTRB(20, 24, 20, 10),
           child: Text('المناسبات الوطنية', style: h2)),
       Padding(
@@ -88,7 +88,7 @@ class HomePage extends StatelessWidget {
               child: Container(
                 margin: const EdgeInsetsDirectional.only(end: 10),
                 padding: const EdgeInsets.only(top: 8),
-                decoration: const BoxDecoration(border: Border(top: BorderSide(color: ink, width: 3))),
+                decoration: BoxDecoration(border: Border(top: BorderSide(color: ink, width: 3))),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('${daysUntil(today, o.d)} يوماً',
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
@@ -128,7 +128,7 @@ class _Hero extends StatelessWidget {
             child: Column(children: [
               Container(
                 padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
-                decoration: const BoxDecoration(color: ink, borderRadius: BorderRadius.vertical(top: Radius.circular(6))),
+                decoration: BoxDecoration(color: ink, borderRadius: BorderRadius.vertical(top: Radius.circular(6))),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Text('${monthAr[d.month - 1]} ${d.year}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
                   Flexible(child: Text(hijriText(d), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500))),
@@ -138,7 +138,7 @@ class _Hero extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
                 child: Column(children: [
                   Text(weekdayAr[d.weekday]!, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
-                  Text('${d.day}', style: const TextStyle(fontFamily: 'Lalezar', fontSize: 120, height: 1.1, color: ink)),
+                  Text('${d.day}', style: TextStyle(fontFamily: 'Lalezar', fontSize: 120, height: 1.1, color: ink)),
                   const Divider(height: 28, color: line),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Flexible(child: Text(p.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700))),
