@@ -57,7 +57,10 @@ List<Holiday> holidaysFor(int year, {List<Holiday> extra = const []}) {
       if (h.start.year == year || h.end.year == year) base.add(h);
     }
   }
-  final all = [...base, ...extra.where((e) => e.start.year == year || e.end.year == year)];
+  final ex = extra.where((e) => e.start.year == year || e.end.year == year).toList();
+  // البيانات الرسمية تحلّ محل المحسوب من نفس النوع.
+  final official = ex.map((e) => e.kind).toSet();
+  final all = [...base.where((b) => !official.contains(b.kind)), ...ex];
   return [...all, ...longWeekends(all)];
 }
 

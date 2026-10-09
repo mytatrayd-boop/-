@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import '../core/settings.dart';
 import '../main.dart';
@@ -12,8 +13,8 @@ import 'settings_page.dart';
 class Shell extends StatefulWidget {
   final AppState state;
   final DateTime today;
-  final List<Holiday> extra;
-  const Shell({super.key, required this.state, required this.today, this.extra = const []});
+  final ValueListenable<List<Holiday>> extra;
+  const Shell({super.key, required this.state, required this.today, required this.extra});
   @override
   State<Shell> createState() => _ShellState();
 }
@@ -29,13 +30,15 @@ class _ShellState extends State<Shell> {
     final s = widget.state, t = widget.today;
     final pages = [
       HomePage(state: s, today: t, onOpen: openDetail),
-      MonthPage(state: s, today: t, extra: widget.extra, onOpen: openDetail),
+      MonthPage(state: s, today: t, extra: widget.extra.value, onOpen: openDetail),
       BudgetPage(state: s, today: t),
       SettingsPage(state: s),
     ];
     return ListenableBuilder(
       listenable: s,
-      builder: (_, _) => Scaffold(
+      builder: (_, _) => ValueListenableBuilder<List<Holiday>>(
+        valueListenable: widget.extra,
+        builder: (_, _, _) => Scaffold(
         body: SafeArea(child: pages[tab]),
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
@@ -49,6 +52,7 @@ class _ShellState extends State<Shell> {
             NavigationDestination(icon: Icon(Icons.tune), label: 'تخصيص'),
           ],
         ),
+      ),
       ),
     );
   }

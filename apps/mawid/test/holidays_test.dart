@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mawid/model/holidays.dart';
 
@@ -6,7 +7,7 @@ void main() {
     final hs = holidaysFor(2026);
     expect(holidayOn(hs, DateTime(2026, 9, 23))?.kind, HKind.national);
     expect(holidayOn(hs, DateTime(2026, 2, 22))?.kind, HKind.founding);
-    expect(holidayOn(hs, DateTime(2026, 9, 24)), isNull);
+    expect(holidayOn(hs, DateTime(2026, 9, 25)), isNot(HKind.national));
   });
 
   test('العيدان يقعان في السنة الصحيحة (تقريبي)', () {
@@ -34,5 +35,21 @@ void main() {
     expect(e.length, 1);
     final hs = holidaysFor(2026, extra: e);
     expect(holidayOn(hs, DateTime(2026, 11, 3))?.kind, HKind.midTerm);
+  });
+
+  test('ملف التقويم الدراسي 1448–1449 صالح ويغطي الأنواع', () {
+    final e = parseExtra(File('remote/holidays.json').readAsStringSync());
+    expect(e.length, 7);
+    expect(e.map((x) => x.kind).toSet(), {HKind.national, HKind.midTerm, HKind.termEnd, HKind.founding, HKind.eidFitr, HKind.eidAdha, HKind.summer});
+    expect(File('remote/holidays.json').readAsStringSync(), File('assets/holidays_extra.json').readAsStringSync());
+    final hs = holidaysFor(2027, extra: e);
+    expect(holidayOn(hs, DateTime(2027, 3, 1))?.kind, HKind.eidFitr);
+    expect(holidayOn(hs, DateTime(2027, 7, 1))?.kind, HKind.summer);
+    expect(holidayOn(hs, DateTime(2027, 1, 12))?.kind, HKind.termEnd);
+    // الرسمي يحلّ محل المحسوب: عيد الفطر مرة واحدة في 2027
+    expect(hs.where((h) => h.kind == HKind.eidFitr).length, 1);
+    final hs26 = holidaysFor(2026, extra: e);
+    expect(holidayOn(hs26, DateTime(2026, 9, 24))?.kind, HKind.national);
+    expect(holidayOn(hs26, DateTime(2026, 11, 25))?.kind, HKind.midTerm);
   });
 }

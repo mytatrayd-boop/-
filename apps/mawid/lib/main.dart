@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'core/remote_holidays.dart';
 import 'model/holidays.dart';
 import 'core/settings.dart';
 import 'features/shell.dart';
@@ -16,18 +19,24 @@ const warnFg = Color(0xFF8A4D0B);
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  var extra = <Holiday>[];
+  var bundled = <Holiday>[];
   try {
-    extra = parseExtra(await rootBundle.loadString('assets/holidays_extra.json'));
+    bundled = parseExtra(await rootBundle.loadString('assets/holidays_extra.json'));
   } catch (_) {}
+  final cached = cachedHolidays(prefs);
+  final extra = ValueNotifier<List<Holiday>>(cached.isNotEmpty ? cached : bundled);
   runApp(MawidApp(AppState(prefs), extra: extra));
+  // تحديث صامت: إذا فشل يبقى المعروض كما هو.
+  refreshHolidays(prefs, http.Client()).then((l) {
+    if (l != null) extra.value = l;
+  });
 }
 
 class MawidApp extends StatelessWidget {
   final AppState state;
   final DateTime? today; // للاختبار
-  final List<Holiday> extra;
-  const MawidApp(this.state, {super.key, this.today, this.extra = const []});
+  final ValueListenable<List<Holiday>>? extra;
+  const MawidApp(this.state, {super.key, this.today, this.extra});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -47,6 +56,6 @@ class MawidApp extends StatelessWidget {
           scaffoldBackgroundColor: ground,
           colorScheme: ColorScheme.fromSeed(seedColor: ink, primary: ink),
         ),
-        home: Shell(state: state, today: today ?? DateTime.now(), extra: extra),
+        home: Shell(state: state, today: today ?? DateTime.now(), extra: extra ?? ValueNotifier<List<Holiday>>(const [])),
       );
 }

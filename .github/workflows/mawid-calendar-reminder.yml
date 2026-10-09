@@ -1,0 +1,23 @@
+name: Mawid — calendar update reminder
+
+# تذكير سنوي: تحديث إجازات التعليم في apps/mawid/remote/holidays.json
+on:
+  schedule:
+    - cron: '0 6 1 8 *'   # 1 أغسطس كل عام
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              ...context.repo,
+              title: 'موعد: حدّث التقويم الدراسي للعام القادم',
+              body: 'حدّث apps/mawid/remote/holidays.json (وانسخه إلى apps/mawid/assets/holidays_extra.json) من تقويم وزارة التعليم الرسمي. الشكل في apps/mawid/assets/README.md. يصل التحديث للمستخدمين بدون نسخة جديدة.',
+            });
