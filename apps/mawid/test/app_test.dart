@@ -84,4 +84,16 @@ void main() {
     expect(find.text('رسمية'), findsNothing);
     expect(find.text('الإجازة الصيفية'), findsNothing);
   });
+
+  testWidgets('كل إجازة تظهر مرة واحدة في قائمة الإجازات (بلا تكرار)', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState(await SharedPreferences.getInstance());
+    final extra = ValueNotifier<List<Holiday>>(parseExtra(File('remote/holidays.json').readAsStringSync()));
+    await t.binding.setSurfaceSize(const Size(390, 1400));
+    await t.pumpWidget(MawidApp(s, today: DateTime(2026, 11, 9), extra: extra));
+    await t.tap(find.text('الشهر'));
+    await t.pumpAndSettle();
+    // مرة في المفتاح ومرة في القائمة فقط
+    expect(find.text('إجازة منتصف الفصل'), findsNWidgets(2));
+  });
 }

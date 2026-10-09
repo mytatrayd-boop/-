@@ -31,7 +31,7 @@ class _MonthPageState extends State<MonthPage> {
       if (wasMoved(m.year, m.month, p.day)) moved.add(p);
     }
     final rows = evs.keys.toList()..sort();
-    final hs = [...holidaysFor(m.year, extra: widget.extra), ...holidaysFor(m.year + (m.month == 12 ? 1 : 0), extra: widget.extra)];
+    final hs = holidaysFor(m.year, extra: widget.extra);
     final monthHs = hs
         .where((h) => !h.end.isBefore(DateTime(m.year, m.month)) && !h.start.isAfter(DateTime(m.year, m.month + 1, 0)))
         .toList()
@@ -179,7 +179,7 @@ class _Key extends StatelessWidget {
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(3))),
         const SizedBox(width: 5),
-        Text(t, style: const TextStyle(fontSize: 12, color: muted)),
+        Flexible(child: Text(t, style: const TextStyle(fontSize: 12, color: muted))),
       ]);
 }
 
@@ -192,7 +192,7 @@ class _LegendGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: SizedBox(width: double.infinity, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: muted)),
           const SizedBox(height: 6),
           LayoutBuilder(builder: (context, c) {
@@ -201,6 +201,6 @@ class _LegendGroup extends StatelessWidget {
               for (final k in kinds) SizedBox(width: w, child: _Key(kindColor[k]!, kindName[k]!)),
             ]);
           }),
-        ]),
+        ])),
       );
 }
