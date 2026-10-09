@@ -1,0 +1,67 @@
+name: Mawid — Google Play bundle (internal testing)
+
+# يبني حزمة المتجر (.aab) موقّعة بنفس مفتاح الرفع المحفوظ في أسرار المستودع
+# (ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD).
+# التشغيل يدوي فقط. لا Release علني: الملف يُنزَّل من Artifacts لمن لديه صلاحية.
+# إذا وُجد سر PLAY_SERVICE_ACCOUNT_JSON يُرفع تلقائياً (أول رفع لأي تطبيق جديد يدوي من Play Console).
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "ارفع إلى Google Play (يتطلب PLAY_SERVICE_ACCOUNT_JSON وأن يكون أول رفع قد تم يدوياً)"
+        type: boolean
+        default: false
+      track:
+        description: "مسار Play"
+        default: internal
+        type: choice
+        options: [internal, alpha, beta]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/mawid } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+
+      - name: Decode upload keystore
+        env: { ANDROID_KEYSTORE_BASE64: "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" }
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::سر ANDROID_KEYSTORE_BASE64 غير موجود في المستودع (انظر asraty/docs/RELEASE.md الخطوة 4-أ)"; exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Build signed App Bundle
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: flutter build appbundle --release --build-number=${{ github.run_number }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mawid-aab-${{ github.run_number }}
+          path: apps/mawid/build/app/outputs/bundle/release/app-release.aab
+
+      - name: Upload to Google Play
+        if: inputs.upload
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: sa.mawid.app
+          releaseFiles: apps/mawid/build/app/outputs/bundle/release/app-release.aab
+          track: ${{ inputs.track }}
+          status: draft
