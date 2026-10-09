@@ -1,0 +1,46 @@
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mawid/core/settings.dart';
+import 'package:mawid/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  testWidgets('الرئيسية تعرض أقرب موعد، والشهر والتخصيص يعملان', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState(await SharedPreferences.getInstance());
+    await t.binding.setSurfaceSize(const Size(390, 844));
+    await t.pumpWidget(MawidApp(s, today: DateTime(2026, 10, 9)));
+    expect(find.text('حساب المواطن'), findsWidgets);
+    expect(find.text('بعد يومين'), findsOneWidget);
+    expect(find.textContaining('أُخّر من السبت 10 أكتوبر'), findsOneWidget);
+
+    await t.tap(find.text('الشهر'));
+    await t.pumpAndSettle();
+    await t.scrollUntilVisible(find.text('مواعيد الشهر'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('مواعيد الشهر'), findsOneWidget);
+
+    await t.tap(find.text('تخصيص'));
+    await t.pumpAndSettle();
+    await s.setVisible('citizen', false);
+    await t.tap(find.text('الرئيسية'));
+    await t.pumpAndSettle();
+    expect(find.text('بعد يومين'), findsNothing);
+  });
+
+  testWidgets('الميزانية تعرض رسم التوزيع وفاصل المواعيد، والتخصيص يعرض التنبيهات', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState(await SharedPreferences.getInstance());
+    await t.binding.setSurfaceSize(const Size(390, 844));
+    await t.pumpWidget(MawidApp(s, today: DateTime(2026, 10, 9)));
+    await t.tap(find.text('الميزانية'));
+    await t.pumpAndSettle();
+    expect(find.text('توزيع أكتوبر'), findsOneWidget);
+    // مواعيد أكتوبر 2026: 1، 5، 11، 25، 26، 27 (الأقصى بين 5 و11 = 6 ثم 11 و25 = 14)
+    expect(find.text('أطول فاصل بين موعدين: 14 يوماً'), findsOneWidget);
+
+    await t.tap(find.text('تخصيص'));
+    await t.pumpAndSettle();
+    expect(find.text('التنبيهات'), findsOneWidget);
+    expect(find.text('إضافة كل المواعيد إلى التقويم'), findsOneWidget);
+  });
+}
