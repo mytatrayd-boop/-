@@ -1,4 +1,5 @@
 import '../model/programs.dart';
+import 'app_name.dart';
 import 'payout_rules.dart';
 
 class Reminder {
@@ -37,7 +38,7 @@ List<Reminder> planReminders(
         final when = DateTime(d.year, d.month, d.day, 9);
         if (!when.isAfter(now) || when.isAfter(limit)) continue;
         final id = ((e.year % 100) * 10000 + e.month * 100 + e.day) * 100 + pi * 10 + before;
-        out.add(Reminder(id, when, 'موعد', body));
+        out.add(Reminder(id, when, appName, body));
       }
     }
   }
