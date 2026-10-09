@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// توقيع الإصدار: android/key.properties محلياً، أو متغيرات البيئة في CI (نفس أسرار «أسرتي»).
+val keyProps = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun signingValue(prop: String, env: String): String? = keyProps.getProperty(prop) ?: System.getenv(env)
 
 android {
     namespace = "com.mytatrayd.mawid"
@@ -17,7 +26,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.mytatrayd.mawid"
+        applicationId = "sa.mawid.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -30,11 +39,23 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val store = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")
+            if (store != null) {
+                storeFile = file(store)
+                storePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // بدون مفتاح الرفع يرجع لتوقيع debug (للتجارب فقط؛ قوقل بلاي يرفض حزم debug).
+            signingConfig = if (signingValue("storeFile", "ANDROID_KEYSTORE_PATH") != null)
+                signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }
