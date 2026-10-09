@@ -53,7 +53,7 @@ class _BudgetPageState extends State<BudgetPage> {
                     DataCell(Builder(builder: (_) {
                       final e = effectiveDate(year, m, p.day);
                       final mv = wasMoved(year, m, p.day);
-                      return Text('${e.day}${mv ? ' ←${p.day}' : ''}',
+                      return Text('${e.day}${mv ? ' (من ${p.day})' : ''}',
                           style: TextStyle(fontWeight: mv ? FontWeight.w700 : FontWeight.w400, color: mv ? warnFg : ink));
                     })),
                 ]),

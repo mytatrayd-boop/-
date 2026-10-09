@@ -56,7 +56,7 @@ void main() {
     await t.tap(find.text('الشهر'));
     await t.pumpAndSettle();
     final latin = RegExp(r'[A-Za-z]');
-    final texts = t.widgetList<Text>(find.byType(Text)).map((w) => w.data ?? '').where((x) => x.contains('←'));
+    final texts = t.widgetList<Text>(find.byType(Text)).map((w) => w.data ?? '').where((x) => x.contains(' – '));
     expect(texts, isNotEmpty);
     for (final x in texts) {
       expect(latin.hasMatch(x), isFalse, reason: x);

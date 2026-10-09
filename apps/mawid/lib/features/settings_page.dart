@@ -98,7 +98,7 @@ class SettingsPage extends StatelessWidget {
                     final ok = await pinWidget();
                     if (!ok && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('من الشاشة الرئيسية: اضغط مطولاً ← الودجت ← موعد')));
+                          content: Text('من الشاشة الرئيسية: اضغط مطولاً ثم اختر الودجت ثم «مواعيد الرواتب والإجازات»')));
                     }
                   },
                 ),

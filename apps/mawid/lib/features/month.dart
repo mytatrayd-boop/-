@@ -55,7 +55,7 @@ class _MonthPageState extends State<MonthPage> {
               child: Column(children: [
             Text('${monthAr[m.month - 1]} ${m.year}',
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: ink)),
-            Text('${hijriText(DateTime(m.year, m.month, 1))}  ←  ${hijriText(DateTime(m.year, m.month, days))}',
+            Text('${hijriText(DateTime(m.year, m.month, 1))} – ${hijriText(DateTime(m.year, m.month, days))}',
                 style: const TextStyle(fontSize: 11, color: muted)),
           ])),
           IconButton.outlined(
@@ -104,7 +104,7 @@ class _MonthPageState extends State<MonthPage> {
           decoration: BoxDecoration(color: warnBg, borderRadius: BorderRadius.circular(14)),
           child: Text(
               'انتقل ${moved.length == 1 ? 'موعد' : '${moved.length} مواعيد'} هذا الشهر لأنها وقعت في نهاية الأسبوع: '
-              '${moved.map((p) => '${p.name} (${p.day} ← ${effectiveDate(m.year, m.month, p.day).day})').join('، ')}.',
+              '${moved.map((p) => '${p.name} (من ${p.day} إلى ${effectiveDate(m.year, m.month, p.day).day})').join('، ')}.',
               style: const TextStyle(color: Color(0xFF5C3408), height: 1.6)),
         ),
       if (monthHs.isNotEmpty) ...[
