@@ -1,6 +1,6 @@
 # نصوص المتجر
 
-**اسم التطبيق:** أسرتي — مهام العائلة
+**اسم التطبيق:** أسرتي — مهام العائلة (Google Play) · **مهام أسرتي** (App Store؛ «أسرتي» محجوز هناك)
 **العنوان الفرعي (App Store، 30 حرفاً):** مهام البيت بروح التحدي
 **الوصف القصير (Google Play، 80 حرفاً):** وزّع مهام البيت على أبنائك، وحفّزهم بالنقاط والمسابقات والمكافآت.
 
@@ -21,9 +21,11 @@
 
 **الكلمات المفتاحية (App Store):** مهام,أسرة,عائلة,أطفال,نقاط,مكافآت,روتين,تحفيز,مسابقات,تربية
 **الفئة:** Lifestyle (نمط الحياة) — أو Education/Parenting.
-**رابط الخصوصية:** `https://<project>.web.app/privacy`
-**رابط حذف الحساب:** `https://<project>.web.app/delete-account`
+**رابط الخصوصية:** https://asraty-mytatrayd-boop.vercel.app/privacy
+**رابط حذف الحساب:** https://asraty-mytatrayd-boop.vercel.app/delete-account
 **بريد الدعم:** asraty200@gmail.com
 
 **ملاحظة للمراجعين (Review notes):**
 Tap «تجربة سريعة بأسرة جاهزة» on the first screen to explore every feature with a ready-made demo family, without an account. Data in this mode stays on the device. Real accounts sign in with a 6-digit code sent by email.
+
+**لقطات الشاشة (App Store، iPhone 6.9"، 1290×2796):** `screenshots/` بالترتيب.
