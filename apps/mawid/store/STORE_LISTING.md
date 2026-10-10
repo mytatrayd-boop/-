@@ -33,4 +33,4 @@
 **ملاحظات للمراجع (Review notes):**
 No account or login. All features are available on launch. Payout dates are computed on-device from the published payout rules; the app is independent and not affiliated with any government entity (stated in the app's Customize tab and in the description). Holiday data is fetched read-only from a public JSON file; notifications are local.
 
-**لقطات الشاشة:** `screenshots/` (1290×2796 — مقاس iPhone 6.9"). ارفعها بالترتيب.
+**لقطات الشاشة:** `screenshots/` (1206×2622 — iPhone 6.1"/6.3"، خانة «iPhone with Dynamic Island»). ارفعها بالترتيب.
