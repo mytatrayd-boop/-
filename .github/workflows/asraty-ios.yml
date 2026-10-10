@@ -1,6 +1,6 @@
 name: Asraty — iOS (TestFlight)
 
-# Archives, signs (automatic signing with an App Store Connect API key) and
+# Archives, signs (temporary distribution certificate made with the App Store Connect API key, revoked after upload) and
 # uploads the build to App Store Connect, where it appears in TestFlight.
 # Required secrets are listed in asraty/docs/RELEASE.md.
 on:
@@ -35,25 +35,34 @@ jobs:
       - name: Flutter build (no codesign)
         run: flutter build ios --release --no-codesign --dart-define-from-file=env.json --build-number=${{ github.run_number }}
 
+      - name: Signing (temporary distribution certificate + App Store profile)
+        env:
+          ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
+          ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/ios_signing.py" setup sa.asraty.app ios/Runner.xcodeproj/project.pbxproj "$RUNNER_TEMP/ExportOptions.plist"
+
       - name: Archive
         run: |
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
-            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Runner.xcarchive" archive \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} CODE_SIGN_STYLE=Automatic \
-            -allowProvisioningUpdates \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Runner.xcarchive" archive
+
+      - name: Export and upload to App Store Connect
+        run: |
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
             -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
             -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_API_ISSUER_ID }}
 
-      - name: Export and upload to App Store Connect
-        run: |
-          /usr/libexec/PlistBuddy -c "Add :teamID string ${{ secrets.APPLE_TEAM_ID }}" ios/ExportOptions.plist
-          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            -exportOptionsPlist ios/ExportOptions.plist -exportPath "$RUNNER_TEMP/export" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
-            -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APPSTORE_API_ISSUER_ID }}
+      - name: Revoke temporary certificate
+        if: always()
+        env:
+          ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
+          ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/ios_signing.py" cleanup
 
       - name: Clean up key
         if: always()
