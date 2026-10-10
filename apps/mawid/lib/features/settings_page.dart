@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../core/ics.dart';
@@ -73,7 +73,9 @@ class SettingsPage extends StatelessWidget {
             ]),
           ]),
         ),
-        Card1(
+        // الودجت مبني لأندرويد فقط.
+        if (defaultTargetPlatform == TargetPlatform.android)
+          Card1(
           child: Builder(builder: (context) {
             final ids = state.widgetIds;
             return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -135,6 +137,12 @@ class SettingsPage extends StatelessWidget {
                 onChanged: (v) => state.setVisible(p.id, v),
               ),
           ]),
+        ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(8, 4, 8, 16),
+          child: Text(
+              'تطبيق مستقل غير تابع لأي جهة حكومية. المواعيد محسوبة من قواعد الصرف المعلنة وقد تتغير؛ المرجع هو الجهة الرسمية.',
+              style: TextStyle(color: muted, fontSize: 12)),
         ),
       ]);
 }
