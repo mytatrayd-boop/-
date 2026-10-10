@@ -28,4 +28,4 @@
 **ملاحظة للمراجعين (Review notes):**
 Tap «تجربة سريعة بأسرة جاهزة» on the first screen to explore every feature with a ready-made demo family, without an account. Data in this mode stays on the device. Real accounts sign in with a 6-digit code sent by email.
 
-**لقطات الشاشة (App Store، iPhone 6.9"، 1290×2796):** `screenshots/` بالترتيب.
+**لقطات الشاشة (App Store، iPhone 6.3"، 1206×2622):** `screenshots/` بالترتيب.
