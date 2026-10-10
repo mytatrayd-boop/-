@@ -97,7 +97,7 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
    - `APPSTORE_API_ISSUER_ID` = Issuer ID (أعلى صفحة المفاتيح).
    - `APPLE_TEAM_ID` = Team ID (من developer.apple.com ← Membership).
 6. **Actions ← «Asraty — iOS (TestFlight)» ← Run workflow**. بعد 10–30 دقيقة من انتهائه يظهر الإصدار في App Store Connect ← TestFlight.
-7. في TestFlight: أجب على سؤال التشفير (تم ضبطه تلقائياً: لا تشفير خاص)، ثم **Internal Testing ← +** وأضف إيميلات Apple ID لأسرتك (حتى 100 شخص، بدون مراجعة). يثبّتون تطبيق **TestFlight** من App Store ثم يقبلون الدعوة.
+7. في TestFlight: سؤال التشفير مضبوط تلقائياً (لا تشفير خاص). التطبيق لآيفون فقط فلا يحتاج لقطات آيباد، ثم **Internal Testing ← +** وأضف إيميلات Apple ID لأسرتك (حتى 100 شخص، بدون مراجعة). يثبّتون تطبيق **TestFlight** من App Store ثم يقبلون الدعوة.
    - للمختبرين الخارجيين (حتى 10,000) تحتاج مراجعة Beta سريعة: اذكر في ملاحظات المراجعة أن زر «تجربة سريعة بأسرة جاهزة» يتيح تجربة كل الميزات بدون حساب.
 
 ---
