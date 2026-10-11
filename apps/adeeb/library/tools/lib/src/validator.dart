@@ -372,17 +372,29 @@ LibraryReport validateLibrary(Directory root, {Map<String, ValidationExceptions>
         // سُجّل الخطأ أعلاه.
       }
     }
-    // ثبات المعرّفات: كل معرّف في الإصدار N-1 موجود في N أو في redirects الخاصة بـ N.
+    // ثبات المعرّفات عبر كل الإصدارات السابقة لا السابق مباشرة فقط:
+    // - lost_id: معرّف ظهر في أي إصدار سابق (فقرة أو مفتاح تحويل) وليس في N ولا في redirects الخاصة بـ N.
+    // - reused_id: معرّف صار فقرة في N بعد أن كان مفتاح تحويل في إصدار سابق (لا يُعاد استخدام معرّف).
     idsByVersion.forEach((id, versions) {
-      for (final v in versions.keys) {
-        final prev = versions[v - 1];
-        if (prev == null) continue;
+      final ordered = versions.keys.toList()..sort();
+      final everIds = <String>{};
+      final everRedirected = <String>{};
+      for (final v in ordered) {
         final cur = versions[v]!;
-        final lost = prev.ids.difference(cur.ids).difference(cur.redirected).toList()..sort();
+        final where = 'books/$id/$id.v$v.json.gz';
+        final lost = everIds.union(everRedirected).difference(cur.ids).difference(cur.redirected).toList()
+          ..sort();
         if (lost.isNotEmpty) {
-          issues.add(Issue('books/$id/$id.v$v.json.gz', 'lost_id',
-              '${lost.length} معرّف من v${v - 1} غير موجود ولا في redirects: ${lost.take(10).join('، ')}'));
+          issues.add(Issue(where, 'lost_id',
+              '${lost.length} معرّف من إصدار سابق غير موجود ولا في redirects: ${lost.take(10).join('، ')}'));
         }
+        final reused = cur.ids.intersection(everRedirected).toList()..sort();
+        if (reused.isNotEmpty) {
+          issues.add(Issue(where, 'reused_id',
+              '${reused.length} معرّف محوَّل سابقاً أُعيد استخدامه فقرة: ${reused.take(10).join('، ')}'));
+        }
+        everIds.addAll(cur.ids);
+        everRedirected.addAll(cur.redirected);
       }
     });
     for (final f in latestBookFiles(root)) {

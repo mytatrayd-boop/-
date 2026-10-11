@@ -317,7 +317,12 @@ class WikitextConverter {
           final hemis = line
               .split(RegExp(r'\t| {3,}'))
               .map((h) => h.trim())
-              .where((h) => h.isNotEmpty);
+              .where((h) => h.isNotEmpty)
+              .toList();
+          // مثل قالب البيت: لا أكثر من شطرين في البيت.
+          if (hemis.length > 2) {
+            throw WikitextException('سطر في <poem> بأكثر من شطرين (${hemis.length}): $line');
+          }
           b.write('$_verseMark${hemis.join(_hemiSep)}\n');
         }
         b.write('$_verseBreak\n');

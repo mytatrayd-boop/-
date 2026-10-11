@@ -185,4 +185,48 @@ void main() {
     File('${recipes.path}/testbook.json').writeAsStringSync(jsonEncode(j));
     expect(validateLibrary(tmp).issues, isEmpty);
   });
+
+  Map<String, Object?> recipeJson(int version, [Map<String, String> redirects = const {}]) {
+    final j = jsonDecode(File('${fixtures.path}/recipe.json').readAsStringSync()) as Map<String, Object?>;
+    j['version'] = version;
+    j['redirects'] = redirects;
+    return j;
+  }
+
+  test('سقوط سلسلة التحويل: v1 فقرة، v2 تحويل، v3 بلا تحويل = lost_id', () {
+    final full = fixtureTexts();
+    final cut = fixtureTexts();
+    cut[103] = cut[103]!.replaceFirst('فقرة في فصل فرعي.', '');
+    convertToLibrary(Recipe.fromJson(recipeJson(1)), full, tmp);
+    convertToLibrary(
+        Recipe.fromJson(recipeJson(2, {'testbook-b005-p00003': 'testbook-b005-p00002'})), cut, tmp);
+    buildCatalog(tmp, date: '2026-10-11');
+    expect(validateLibrary(tmp).issues, isEmpty, reason: 'v2 يحوّل المعرّف المفقود');
+
+    convertToLibrary(Recipe.fromJson(recipeJson(3)), cut, tmp);
+    buildCatalog(tmp, date: '2026-10-12');
+    final issues = validateLibrary(tmp).issues;
+    expect(issues.map((i) => '${i.where}|${i.code}'), ['books/testbook/testbook.v3.json.gz|lost_id']);
+    expect(issues.single.detail, contains('testbook-b005-p00003'));
+  });
+
+  test('إعادة الاستخدام: معرّف حُوِّل في v2 ثم عاد فقرة في v4 = reused_id', () {
+    final full = fixtureTexts();
+    // v2 و v3: الفقرة الأولى من الباب الثاني تُحذف فيتحول ترقيم الباب، مع تحويل المعرّف الأخير المفقود.
+    final shifted = fixtureTexts();
+    shifted[101] = shifted[101]!.replaceFirst(RegExp(r'هذه .*?بمسافة\.', dotAll: true), '');
+    const red = {'testbook-b002-p00003': 'testbook-b002-p00002'};
+    convertToLibrary(Recipe.fromJson(recipeJson(1)), full, tmp);
+    convertToLibrary(Recipe.fromJson(recipeJson(2, red)), shifted, tmp);
+    convertToLibrary(Recipe.fromJson(recipeJson(3, red)), shifted, tmp);
+    buildCatalog(tmp, date: '2026-10-11');
+    expect(validateLibrary(tmp).issues, isEmpty);
+
+    // v4 يعيد المحتوى الأصلي فيعود testbook-b002-p00003 فقرةً بعد أن كان مفتاح تحويل.
+    convertToLibrary(Recipe.fromJson(recipeJson(4)), full, tmp);
+    buildCatalog(tmp, date: '2026-10-12');
+    final issues = validateLibrary(tmp).issues;
+    expect(issues.map((i) => '${i.where}|${i.code}'), ['books/testbook/testbook.v4.json.gz|reused_id']);
+    expect(issues.single.detail, contains('testbook-b002-p00003'));
+  });
 }

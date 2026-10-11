@@ -133,4 +133,9 @@ void main() {
   test('ZWNJ يبقى', () {
     expect(texts(conv('نص‌مع')), 'P:نص‌مع');
   });
+
+  test('سطر poem بأكثر من شطرين خطأ كقالب البيت', () {
+    expect(() => conv('<poem>\nأ   ب   ج\n</poem>'), throwsA(isA<WikitextException>()));
+    expect(() => conv('<poem>\nأ\tب\tج\n</poem>'), throwsA(isA<WikitextException>()));
+  });
 }
