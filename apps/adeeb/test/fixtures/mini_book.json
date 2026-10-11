@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "mini",
+  "version": 1,
+  "title": {"ar": "كتاب اختبار اصطناعي", "en": "Synthetic Test Book"},
+  "author": {"ar": "بيانات اختبار", "en": "Test Data"},
+  "author_death_hijri": 100,
+  "source": {"name": "بيانات اختبار اصطناعية", "url": "https://example.invalid/mini", "retrieved": "2026-10-11", "edition": "لا توجد"},
+  "license": "public-domain",
+  "removed": "لا شيء — كتاب اصطناعي للاختبارات فقط، ليس نصاً تراثياً",
+  "chapters": [
+    {
+      "id": "mini-b001",
+      "title": "الباب الأول: فقرات اختبار",
+      "level": 1,
+      "paragraphs": [
+        {"id": "mini-b001-p00001", "text": "هذه فقرة اختبار اصطناعية أولى، وليست من أي كتاب."},
+        {"id": "mini-b001-p00002", "text": "فقرة اختبار ثانية فيها تشكيل تجريبي: الحِكْمَةُ والأَسَدُ."}
+      ]
+    },
+    {
+      "id": "mini-b002",
+      "title": "فصل اختبار فرعي",
+      "level": 2,
+      "paragraphs": [
+        {"id": "mini-b002-p00001", "kind": "verse", "text": "شطر اختبار أول\tشطر اختبار ثانٍ\nشطر ثالث\tشطر رابع"}
+      ]
+    }
+  ],
+  "redirects": {}
+}

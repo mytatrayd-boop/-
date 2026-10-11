@@ -15,3 +15,5 @@ key.properties
 .flutter-plugins-dependencies
 build/
 library/tools/.dart_tool/
+.idea/
+*.iml
