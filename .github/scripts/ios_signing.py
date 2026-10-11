@@ -4,8 +4,10 @@
 Uses the App Store Connect API key to create a temporary Apple Distribution
 certificate and an App Store provisioning profile, installs them in a
 throwaway keychain, switches the Runner target to manual signing and writes
-the export options. `cleanup` revokes the certificate and deletes the profile
-(builds already uploaded to App Store Connect are not affected).
+the export options. `cleanup` deletes the local keychain only: the certificate
+must stay valid until Apple has processed and reviewed the build (revoking it
+right after upload caused ITMS-90035 "Invalid Signature"). At the account's
+certificate limit, the oldest distribution certificate is revoked.
 
 Stdlib + /usr/bin/openssl only.
 
@@ -63,6 +65,24 @@ def token() -> str:
     return f"{signing_input}.{b64url(der_to_raw(der))}"
 
 
+def request(method: str, path: str, body=None):
+    """Like api() but returns (status, json) instead of exiting on an HTTP error."""
+    req = urllib.request.Request(API + path, method=method,
+                                 data=json.dumps(body).encode() if body else None)
+    req.add_header("Authorization", f"Bearer {token()}")
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req) as r:
+            raw = r.read()
+            return r.status, (json.loads(raw) if raw else None)
+    except urllib.error.HTTPError as e:
+        raw = e.read()
+        try:
+            return e.code, json.loads(raw)
+        except ValueError:
+            return e.code, {"raw": raw.decode()[:800]}
+
+
 def api(method: str, path: str, body=None):
     req = urllib.request.Request(API + path, method=method,
                                  data=json.dumps(body).encode() if body else None)
@@ -80,6 +100,27 @@ def run(*cmd, **kw):
     return subprocess.run(cmd, check=True, **kw)
 
 
+def create_certificate(csr_body: str) -> dict:
+    """New distribution certificate. At the account limit the oldest distribution
+    certificate is revoked to make room (the owner has no Mac, so they all come
+    from earlier CI runs); the newest stay valid for builds still in review."""
+    body = {"data": {"type": "certificates", "attributes": {
+        "certificateType": "DISTRIBUTION", "csrContent": csr_body}}}
+    for _ in range(3):
+        status, res = request("POST", "/certificates", body)
+        if status < 300:
+            return res["data"]
+        if status != 409:
+            sys.exit(f"::error::App Store Connect API POST /certificates -> {status}: {json.dumps(res)[:800]}")
+        old = sorted(api("GET", "/certificates?filter[certificateType]=DISTRIBUTION&limit=200")["data"],
+                     key=lambda c: c["attributes"].get("expirationDate") or "")
+        if not old:
+            break
+        print(f"Certificate limit reached; revoking the oldest distribution certificate {old[0]['id']}")
+        api("DELETE", f"/certificates/{old[0]['id']}")
+    sys.exit("::error::Could not create a distribution certificate (account limit)")
+
+
 def setup(bundle_id: str, pbxproj: str, export_options: str):
     TMP.mkdir(parents=True, exist_ok=True)
     team = os.environ["APPLE_TEAM_ID"]
@@ -89,8 +130,7 @@ def setup(bundle_id: str, pbxproj: str, export_options: str):
     run(OPENSSL, "req", "-new", "-newkey", "rsa:2048", "-nodes", "-keyout", str(key),
         "-subj", "/CN=GitHub Actions/O=CI", "-out", str(csr), capture_output=True)
     csr_body = "".join(l for l in csr.read_text().splitlines() if "-----" not in l)
-    cert = api("POST", "/certificates", {"data": {"type": "certificates", "attributes": {
-        "certificateType": "DISTRIBUTION", "csrContent": csr_body}}})["data"]
+    cert = create_certificate(csr_body)
     state = {"certificate": cert["id"]}
     STATE.write_text(json.dumps(state))
     der = TMP / "dist.cer"
@@ -166,16 +206,14 @@ def setup(bundle_id: str, pbxproj: str, export_options: str):
 
 
 def cleanup():
+    # Only the local keychain (with the private key) is removed. The certificate
+    # and profile stay valid: revoking them right after upload made Apple reject
+    # the build later with ITMS-90035 "Invalid Signature". Old certificates are
+    # revoked by create_certificate() when the account limit is reached.
     subprocess.run(["security", "delete-keychain", KEYCHAIN])
-    if not STATE.exists():
-        return
-    state = json.loads(STATE.read_text())
-    if "profile" in state:
-        api("DELETE", f"/profiles/{state['profile']}")
-    if "certificate" in state:
-        api("DELETE", f"/certificates/{state['certificate']}")
-    STATE.unlink()
-    print("Temporary certificate revoked and profile deleted")
+    if STATE.exists():
+        STATE.unlink()
+    print("Local signing keychain deleted (certificate kept so the uploaded build stays valid)")
 
 
 if __name__ == "__main__":
