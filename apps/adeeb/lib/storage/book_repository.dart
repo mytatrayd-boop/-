@@ -56,11 +56,22 @@ abstract interface class BookRepository {
 }
 
 class SqliteBookRepository implements BookRepository {
-  /// [useIsolate] = false للاختبارات التي تعمل بزمن وهمي.
-  SqliteBookRepository(this.dbPath, {this.useIsolate = true});
+  /// [useIsolate] = false للاختبارات التي تعمل بزمن وهمي. [vacuum] قابل
+  /// للاستبدال في الاختبار (دالة عليا حتى تُرسل إلى الـ Isolate).
+  SqliteBookRepository(this.dbPath, {this.useIsolate = true, this.vacuum = vacuumDatabase});
 
   final String dbPath;
   final bool useIsolate;
+  final void Function(Database db) vacuum;
+
+  /// طابور واحد لعمليات الكتابة (الاستيراد والحذف): لا تتزاحم معاملتان.
+  Future<void> _writes = Future.value();
+
+  Future<T> _write<T>(T Function(Database db) body) {
+    final result = _writes.then((_) => _run(body));
+    _writes = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
 
   Future<T> _run<T>(T Function(Database db) body) {
     final path = dbPath;
@@ -82,14 +93,28 @@ class SqliteBookRepository implements BookRepository {
   @override
   Future<void> install(Uint8List gz, CatalogBook entry) {
     final meta = _EntryMeta.from(entry);
-    return _run((db) => importBook(db, decodeBookGz(gz), meta.toEntryCheck(), meta.diacritics));
+    return _write((db) => importBook(
+          db,
+          decodeBookGz(gz, maxUncompressedBytes: meta.uncompressedBytes),
+          meta.toEntryCheck(),
+          meta.diacritics,
+        ));
   }
 
+  /// الحذف نفسه في معاملة؛ وVACUUM بعده اختياري: فشله (مثلاً القاعدة مشغولة)
+  /// لا يُفشل الحذف، والمساحة تُستعاد في حذف لاحق.
   @override
-  Future<void> delete(String bookId) => _run((db) {
-        deleteBook(db, bookId);
-        db.execute('VACUUM');
-      });
+  Future<void> delete(String bookId) {
+    final compact = vacuum;
+    return _write((db) {
+      deleteBook(db, bookId);
+      try {
+        compact(db);
+      } on SqliteException {
+        // اختياري.
+      }
+    });
+  }
 
   @override
   Future<List<ChapterInfo>> chapters(String bookId) =>
@@ -98,11 +123,13 @@ class SqliteBookRepository implements BookRepository {
 
 /// نسخة صغيرة قابلة للإرسال بين الـ Isolates من بيانات الفهرس اللازمة.
 class _EntryMeta {
-  _EntryMeta(this.id, this.version, this.diacritics);
-  factory _EntryMeta.from(CatalogBook e) => _EntryMeta(e.id, e.version, e.diacritics);
+  _EntryMeta(this.id, this.version, this.diacritics, this.uncompressedBytes);
+  factory _EntryMeta.from(CatalogBook e) =>
+      _EntryMeta(e.id, e.version, e.diacritics, e.uncompressedBytes);
   final String id;
   final int version;
   final String diacritics;
+  final int uncompressedBytes;
   ({String id, int version}) toEntryCheck() => (id: id, version: version);
 }
 
@@ -198,6 +225,8 @@ void importBook(
     rethrow;
   }
 }
+
+void vacuumDatabase(Database db) => db.execute('VACUUM');
 
 void deleteBook(Database db, String bookId) {
   db.execute('BEGIN IMMEDIATE');

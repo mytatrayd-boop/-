@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import 'book_card.dart';
@@ -15,6 +17,11 @@ class LibraryScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(libraryControllerProvider);
     final controller = ref.read(libraryControllerProvider.notifier);
+    ref.listen(libraryControllerProvider, (previous, next) {
+      for (final message in progressAnnouncements(context, previous, next)) {
+        SemanticsService.sendAnnouncement(View.of(context), message, Directionality.of(context));
+      }
+    });
 
     final Widget body = switch (state.status) {
       CatalogStatus.loading => const _SkeletonList(),
@@ -75,7 +82,24 @@ class LibraryScreen extends ConsumerWidget {
         CatalogNotice.offline => l10n.offlineBanner,
         CatalogNotice.stale => l10n.staleCatalogBanner,
         CatalogNotice.updateApp => l10n.updateAppBanner,
+        CatalogNotice.error => l10n.catalogError,
       };
+}
+
+/// تقدّم التحميل يُعلَن لقارئ الشاشة عند ٢٥ و٥٠ و٧٥ و١٠٠٪ فقط (DESIGN §7.5).
+List<String> progressAnnouncements(BuildContext context, LibraryState? previous, LibraryState next) {
+  final l10n = AppLocalizations.of(context);
+  final lang = Localizations.localeOf(context).languageCode;
+  int bucket(BookTask? t) => t is DownloadingTask ? percentOf(t.fraction) ~/ 25 : 0;
+  final messages = <String>[];
+  next.tasks.forEach((id, task) {
+    final now = bucket(task);
+    if (now > 0 && now > bucket(previous?.tasks[id])) {
+      final title = next.item(id)?.title.ar ?? id;
+      messages.add(l10n.downloadAnnouncement(title, formatInt(now * 25, lang)));
+    }
+  });
+  return messages;
 }
 
 class _Banner extends StatelessWidget {

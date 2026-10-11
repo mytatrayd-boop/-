@@ -34,6 +34,9 @@ void main() {
     ('معرّف فقرة مكرر', (b) => firstParagraph(b)['id'] = 'mini-b001-p00002'),
     ('نوع فقرة مجهول', (b) => firstParagraph(b)['kind'] = 'note'),
     ('تحويل إلى معرّف غير موجود', (b) => b['redirects'] = {'mini-b001-p00009': 'mini-b009-p00001'}),
+    ('مفتاح تحويل لكتاب آخر', (b) => b['redirects'] = {'other-b001-p00009': 'mini-b001-p00001'}),
+    ('مفتاح تحويل بصيغة خاطئة', (b) => b['redirects'] = {'mini-p9': 'mini-b001-p00001'}),
+    ('مفتاح تحويل هو معرّف قائم', (b) => b['redirects'] = {'mini-b001-p00002': 'mini-b001-p00001'}),
     ('مستوى باب 4', (b) => ((b['chapters']! as List).first as Map)['level'] = 4),
     ('بلا أبواب', (b) => b['chapters'] = <Object?>[]),
   ]) {
@@ -43,6 +46,18 @@ void main() {
       expect(() => decodeBookGz(gzJson(map)), throwsA(isA<LibraryFormatException>()));
     });
   }
+
+  test('الحد الأقصى للنص المفكوك', () {
+    final gz = gzJson(miniBook());
+    final size = gzip.decode(gz).length;
+    expect(decodeBookGz(gz, maxUncompressedBytes: size).id, 'mini');
+    expect(() => decodeBookGz(gz, maxUncompressedBytes: size - 1),
+        throwsA(isA<LibraryFormatException>()));
+    // قنبلة ضغط: 50 م.ب من الأصفار تُرفض بحد 1 م.ب دون فكها كلها.
+    final bomb = gzip.encode(List.filled(50 * 1000 * 1000, 0x20));
+    expect(() => decodeBookGz(bomb, maxUncompressedBytes: 1000000),
+        throwsA(isA<LibraryFormatException>()));
+  });
 
   test('schema أحدث وملف ليس gzip', () {
     expect(() => decodeBookGz(gzJson(miniBook()..['schema'] = 2)),

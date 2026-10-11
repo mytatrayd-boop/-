@@ -48,5 +48,8 @@
   "downloadToSeeChapters": "Download the book to see its chapters",
   "bookOpenError": "Couldn't open the book. Download it again.",
   "chapterSemantics": "Chapter {number} of {total}: {title}",
-  "bookNotFound": "This book isn't in the library."
+  "bookNotFound": "This book isn't in the library.",
+  "downloading": "Downloading…",
+  "listSeparator": ", ",
+  "downloadAnnouncement": "“{title}”: downloading… {percent}%"
 }

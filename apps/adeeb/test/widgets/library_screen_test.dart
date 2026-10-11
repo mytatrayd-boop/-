@@ -117,6 +117,48 @@ void main() {
     unawaited(stream.close());
   });
 
+  testWidgets('التقدّم يُعلَن عند ٢٥ و٥٠ و١٠٠٪ فقط، وليس في تسمية البطاقة', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final stream = StreamController<List<int>>();
+    env.server.bookStream = stream;
+    final gz = env.server.files.values.single;
+    await pumpApp(tester);
+    tester.takeAnnouncements();
+    await tester.tap(find.text('تحميل'));
+    await tester.pump();
+    var sent = 0;
+    for (final percent in [10, 20, 30, 60, 100]) {
+      final upTo = gz.length * percent ~/ 100;
+      stream.add(gz.sublist(sent, upTo));
+      sent = upTo;
+      await tester.pump();
+      if (percent == 30) {
+        expect(find.bySemanticsLabel(RegExp('٪')), findsNothing);
+        expect(find.bySemanticsLabel(RegExp('يُحمَّل…\$')), findsOneWidget);
+      }
+    }
+    unawaited(stream.close());
+    await tester.pumpAndSettle();
+    expect(
+      tester.takeAnnouncements().map((a) => a.message),
+      [
+        '«كتاب اختبار اصطناعي»: يُحمَّل… ٢٥٪',
+        '«كتاب اختبار اصطناعي»: يُحمَّل… ٥٠٪',
+        '«كتاب اختبار اصطناعي»: يُحمَّل… ١٠٠٪',
+      ],
+    );
+    expect(find.text('محمّل'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('فشل الخادم بلا فهرس محفوظ مع كتاب محمّل: لافتة خطأ والكتاب متاح', (tester) async {
+    await env.preinstall(miniBook());
+    env.server.catalogStatus = 500;
+    await pumpApp(tester);
+    expect(find.text('تعذّر تحميل قائمة الكتب. تحقّق من الاتصال وحاول مجدداً.'), findsOneWidget);
+    expect(find.text('محمّل'), findsOneWidget);
+  });
+
   testWidgets('انقطاع أثناء التحميل: رسالة و«إعادة المحاولة»', (tester) async {
     final stream = StreamController<List<int>>();
     env.server.bookStream = stream;

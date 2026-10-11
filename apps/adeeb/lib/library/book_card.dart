@@ -27,11 +27,12 @@ class BookCard extends ConsumerWidget {
     final status = item.status;
 
     final statusText = _statusText(context, l10n, status);
+    // النسبة لا تدخل في تسمية البطاقة؛ تُعلَن كل 25٪ فقط من شاشة المكتبة.
     final details = [
       ?l10n.deathSpoken(context, item.authorDeathHijri),
       l10n.sizeSpoken(context, item.displaySize),
-      statusText.text,
-    ].join('، ');
+      if (task is DownloadingTask) l10n.downloading else statusText.text,
+    ].join(l10n.listSeparator);
 
     final info = Semantics(
       container: true,
@@ -63,13 +64,17 @@ class BookCard extends ConsumerWidget {
       ),
     );
 
+    final downloading = task is DownloadingTask;
     final progress = switch (task) {
-      DownloadingTask(:final fraction) => LinearProgressIndicator(value: fraction),
+      DownloadingTask(:final fraction) =>
+        ExcludeSemantics(child: LinearProgressIndicator(value: fraction)),
       PreparingTask() => const LinearProgressIndicator(),
       _ => null,
     };
 
-    final statusRow = Row(
+    final statusRow = ExcludeSemantics(
+      excluding: downloading,
+      child: Row(
       children: [
         if (statusText.icon != null) ...[
           Icon(statusText.icon, size: 20, color: statusText.color),
@@ -82,6 +87,7 @@ class BookCard extends ConsumerWidget {
           ),
         ),
       ],
+      ),
     );
 
     final button = _actionButton(context, ref, l10n, status);

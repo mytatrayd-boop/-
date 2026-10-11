@@ -6,6 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:adeeb/library/catalog.dart';
+import 'package:adeeb/storage/book_repository.dart';
+import 'package:flutter/foundation.dart';
+
 import '../helpers/library_fixtures.dart';
 import '../helpers/test_app.dart';
 
@@ -149,6 +153,28 @@ void main() {
     expect(state().items.single.installed!.version, 2);
   });
 
+  test('فشل الحذف يعيد false ويعيد قراءة الكتب من القاعدة', () async {
+    await load();
+    await controller().download('mini');
+    container.dispose();
+    // مستودع يحذف فعلاً ثم يرمي خطأ (فشل بعد التغيير).
+    container = ProviderContainer(overrides: env.overrides(books: _ThrowAfterDelete(env.books)));
+    container.read(libraryControllerProvider);
+    await controller().refresh();
+    expect(state().items.single.status, BookStatus.installed);
+    expect(await controller().delete('mini'), isFalse);
+    expect(state().items.single.status, BookStatus.notInstalled);
+  });
+
+  test('فشل الخادم بلا فهرس محفوظ مع كتب محمّلة ← لافتة الخطأ والكتب ظاهرة', () async {
+    await env.preinstall(miniBook());
+    env.server.catalogStatus = 500;
+    final s = await load();
+    expect(s.status, CatalogStatus.ready);
+    expect(s.notice, CatalogNotice.error);
+    expect(s.items.single.status, BookStatus.installed);
+  });
+
   test('الحذف يعيده إلى «غير محمّل»', () async {
     await load();
     await controller().download('mini');
@@ -156,4 +182,24 @@ void main() {
     expect(state().items.single.status, BookStatus.notInstalled);
     expect(await container.read(bookChaptersProvider('mini').future), isEmpty);
   });
+}
+
+class _ThrowAfterDelete implements BookRepository {
+  _ThrowAfterDelete(this.inner);
+  final BookRepository inner;
+
+  @override
+  Future<void> delete(String bookId) async {
+    await inner.delete(bookId);
+    throw Exception('simulated failure after delete');
+  }
+
+  @override
+  Future<List<ChapterInfo>> chapters(String bookId) => inner.chapters(bookId);
+
+  @override
+  Future<void> install(Uint8List gz, CatalogBook entry) => inner.install(gz, entry);
+
+  @override
+  Future<List<InstalledBook>> installed() => inner.installed();
 }

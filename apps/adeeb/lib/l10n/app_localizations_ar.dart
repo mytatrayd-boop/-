@@ -184,4 +184,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get bookNotFound => 'هذا الكتاب غير موجود في المكتبة.';
+
+  @override
+  String get downloading => 'يُحمَّل…';
+
+  @override
+  String get listSeparator => '، ';
+
+  @override
+  String downloadAnnouncement(String title, String percent) {
+    return '«$title»: يُحمَّل… $percent٪';
+  }
 }

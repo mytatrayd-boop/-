@@ -76,6 +76,17 @@ void main() {
     await controller.close();
   });
 
+  test('انتهاء مهلة بدء الرد يُجهض الطلب', () async {
+    final hanging = _HangingClient();
+    final d = BookDownloader(hanging, timeout: const Duration(milliseconds: 50));
+    await expectLater(
+      d.download(url, expectedSha256: 'a' * 64, expectedSize: 10),
+      failsWith(DownloadFailure.network),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(hanging.aborted, isTrue);
+  });
+
   test('404 ← server', () async {
     server.files.clear();
     await expectLater(run(), failsWith(DownloadFailure.server));
@@ -98,4 +109,17 @@ void main() {
     );
     expect(server.requests, isEmpty);
   });
+}
+
+/// عميل لا يرد أبداً، ويسجّل إن أُجهض الطلب.
+class _HangingClient extends http.BaseClient {
+  bool aborted = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    if (request case http.Abortable(:final abortTrigger?)) {
+      abortTrigger.then((_) => aborted = true);
+    }
+    return Completer<http.StreamedResponse>().future;
+  }
 }

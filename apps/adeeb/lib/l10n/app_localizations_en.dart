@@ -185,4 +185,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bookNotFound => 'This book isn\'t in the library.';
+
+  @override
+  String get downloading => 'Downloading…';
+
+  @override
+  String get listSeparator => ', ';
+
+  @override
+  String downloadAnnouncement(String title, String percent) {
+    return '“$title”: downloading… $percent%';
+  }
 }

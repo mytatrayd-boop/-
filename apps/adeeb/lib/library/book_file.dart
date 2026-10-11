@@ -4,6 +4,7 @@ library;
 
 import 'dart:convert';
 import 'dart:io' show gzip;
+import 'dart:typed_data';
 
 import 'catalog.dart';
 
@@ -58,15 +59,46 @@ class BookFile {
       chapters.fold(0, (n, c) => n + c.paragraphs.length);
 }
 
-/// يفك gzip ثم يحلل. يرمي [LibraryFormatException] لأي خلل.
-BookFile decodeBookGz(List<int> gz) {
+/// يفك gzip ثم يحلل. يرمي [LibraryFormatException] لأي خلل، أو إن تجاوز
+/// النص المفكوك [maxUncompressedBytes] (`uncompressed_bytes` في الفهرس)،
+/// ويتوقف الفك فور التجاوز فلا يُستهلك الذاكرة ملف مضغوط خبيث.
+BookFile decodeBookGz(List<int> gz, {int? maxUncompressedBytes}) {
   final String text;
   try {
-    text = utf8.decode(gzip.decode(gz));
+    final out = _LimitedSink(maxUncompressedBytes);
+    final input = gzip.decoder.startChunkedConversion(out);
+    const chunk = 64 * 1024;
+    for (var i = 0; i < gz.length; i += chunk) {
+      input.addSlice(gz, i, i + chunk > gz.length ? gz.length : i + chunk, false);
+    }
+    input.close();
+    text = utf8.decode(out.bytes.takeBytes());
   } on FormatException catch (e) {
     throw LibraryFormatException('ملف الكتاب ليس gzip/UTF-8 صالحاً: ${e.message}');
   }
   return parseBook(text);
+}
+
+class _LimitedSink implements ByteConversionSink {
+  _LimitedSink(this.limit);
+  final int? limit;
+  final bytes = BytesBuilder(copy: true);
+
+  @override
+  void add(List<int> chunk) {
+    final max = limit;
+    if (max != null && bytes.length + chunk.length > max) {
+      throw const LibraryFormatException('النص المفكوك أكبر من المعلن في الفهرس');
+    }
+    bytes.add(chunk);
+  }
+
+  @override
+  void addSlice(List<int> chunk, int start, int end, bool isLast) =>
+      add(chunk.sublist(start, end));
+
+  @override
+  void close() {}
 }
 
 BookFile parseBook(String text) {
@@ -164,7 +196,11 @@ BookFile parseBook(String text) {
   if (rawRedirects is! Map<String, Object?>) {
     throw const LibraryFormatException('redirects غير صالح');
   }
+  final redirectKey = RegExp('^$id-b\\d{3}-p\\d{5}\$');
   rawRedirects.forEach((from, to) {
+    if (!redirectKey.hasMatch(from) || ids.contains(from)) {
+      throw LibraryFormatException('مفتاح تحويل غير صالح أو لا يخص الكتاب: $from');
+    }
     if (to is! String || !ids.contains(to)) {
       throw LibraryFormatException('تحويل إلى معرّف غير موجود: $from');
     }

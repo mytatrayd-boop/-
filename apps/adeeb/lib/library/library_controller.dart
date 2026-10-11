@@ -38,6 +38,10 @@ enum CatalogNotice {
 
   /// الفهرس بصيغة أحدث من التطبيق: «حدّث التطبيق».
   updateApp,
+
+  /// فشل الجلب لسبب غير الاتصال ولا نسخة محفوظة، وتُعرض الكتب المحمّلة فقط:
+  /// «تعذّر تحميل قائمة الكتب…».
+  error,
 }
 
 enum BookStatus { notInstalled, installed, updateAvailable }
@@ -166,7 +170,7 @@ class LibraryController extends Notifier<LibraryState> {
       notice = switch (e.failure) {
         CatalogFailure.network => CatalogNotice.offline,
         CatalogFailure.unsupportedSchema => CatalogNotice.updateApp,
-        CatalogFailure.server => _catalog != null ? CatalogNotice.stale : CatalogNotice.none,
+        CatalogFailure.server => _catalog != null ? CatalogNotice.stale : CatalogNotice.error,
       };
     }
     if (!ref.mounted) return;
@@ -286,16 +290,18 @@ class LibraryController extends Notifier<LibraryState> {
   /// يحذف الكتاب من الجهاز. يعيد true عند النجاح.
   Future<bool> delete(String id) async {
     cancel(id);
+    var ok = true;
     try {
       await _books.delete(id);
     } on Exception {
-      return false;
+      ok = false;
     }
+    // تُعاد قراءة الكتب المحمّلة في كل الأحوال: الواجهة تعكس ما في القاعدة فعلاً.
     await _loadInstalled();
-    if (!ref.mounted) return true;
+    if (!ref.mounted) return ok;
     ref.invalidate(bookChaptersProvider(id));
     final tasks = Map<String, BookTask>.of(state.tasks)..remove(id);
     state = state.copyWith(items: _merge(), tasks: tasks);
-    return true;
+    return ok;
   }
 }

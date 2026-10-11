@@ -391,6 +391,24 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'هذا الكتاب غير موجود في المكتبة.'**
   String get bookNotFound;
+
+  /// No description provided for @downloading.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُحمَّل…'**
+  String get downloading;
+
+  /// No description provided for @listSeparator.
+  ///
+  /// In ar, this message translates to:
+  /// **'، '**
+  String get listSeparator;
+
+  /// No description provided for @downloadAnnouncement.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{title}»: يُحمَّل… {percent}٪'**
+  String downloadAnnouncement(String title, String percent);
 }
 
 class _AppLocalizationsDelegate

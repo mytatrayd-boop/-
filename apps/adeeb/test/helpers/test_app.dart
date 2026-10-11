@@ -20,11 +20,11 @@ class TestEnv {
 
   SqliteBookRepository get books => SqliteBookRepository('${dir.path}/adeeb.db', useIsolate: false);
 
-  List<Override> overrides({Locale locale = const Locale('ar')}) => [
+  List<Override> overrides({Locale locale = const Locale('ar'), BookRepository? books}) => [
         storageDirectoryProvider.overrideWithValue(dir),
         appConfigProvider.overrideWithValue(const AppConfig(libraryBaseUrl: testBaseUrl)),
         httpClientProvider.overrideWithValue(server.client()),
-        bookRepositoryProvider.overrideWithValue(books),
+        bookRepositoryProvider.overrideWithValue(books ?? this.books),
         appLocaleProvider.overrideWithValue(locale),
       ];
 

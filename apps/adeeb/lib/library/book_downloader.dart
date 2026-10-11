@@ -65,7 +65,14 @@ class BookDownloader {
     }
     final token = cancel ?? CancelToken();
     if (token.isCancelled) throw const DownloadCancelledException();
-    final request = http.AbortableRequest('GET', url, abortTrigger: token.whenCancelled);
+    // يُجهض الطلب عند الإلغاء أو عند انتهاء المهلة، فلا يبقى اتصال معلّق.
+    final abort = Completer<void>();
+    void abortRequest() {
+      if (!abort.isCompleted) abort.complete();
+    }
+
+    unawaited(token.whenCancelled.then((_) => abortRequest()));
+    final request = http.AbortableRequest('GET', url, abortTrigger: abort.future);
 
     final http.StreamedResponse response;
     try {
@@ -78,6 +85,7 @@ class BookDownloader {
     } on DownloadCancelledException {
       rethrow;
     } catch (e) {
+      abortRequest();
       throw _mapError(e, token);
     }
 
@@ -104,6 +112,7 @@ class BookDownloader {
     void armIdle() {
       idle?.cancel();
       idle = Timer(timeout, () {
+        abortRequest();
         unawaited(sub.cancel());
         fail(BookDownloadException(DownloadFailure.network, 'idle timeout'));
       });
@@ -121,6 +130,7 @@ class BookDownloader {
         onProgress?.call(builder.length, expectedSize);
       },
       onError: (Object e) {
+        abortRequest();
         unawaited(sub.cancel());
         fail(_mapError(e, token));
       },

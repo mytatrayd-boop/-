@@ -71,7 +71,11 @@ class CatalogRepository {
     } on LibraryFormatException catch (e) {
       throw CatalogFetchException(CatalogFailure.server, e.message);
     }
-    _writeCache(text);
+    try {
+      _writeCache(text);
+    } on FileSystemException {
+      // الحفظ للعمل دون إنترنت لاحقاً فقط؛ فشله (مساحة ممتلئة مثلاً) لا يُفشل الجلب.
+    }
     return catalog;
   }
 

@@ -34,6 +34,19 @@ void main() {
     expect(repo.bookUrl(c.books.single).toString(), '${testBaseUrl}books/mini/mini.v1.json.gz');
   });
 
+  test('فشل حفظ النسخة المحلية لا يُفشل الجلب', () async {
+    // الأب ملف عادي، فإنشاء المجلد والكتابة يفشلان بـ FileSystemException.
+    final blocker = File('${dir.path}/blocker')..writeAsStringSync('x');
+    final unwritable = CatalogRepository(
+      client: server.client(),
+      baseUri: Uri.parse(testBaseUrl),
+      cacheFile: File('${blocker.path}/catalog.json'),
+    );
+    final c = await unwritable.fetch();
+    expect(c.books.single.id, 'mini');
+    expect(unwritable.readCache(), isNull);
+  });
+
   test('دون إنترنت ← network، وتبقى النسخة المحفوظة', () async {
     await repo.fetch();
     server.offline = true;

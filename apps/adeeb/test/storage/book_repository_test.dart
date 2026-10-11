@@ -9,6 +9,9 @@ import 'package:sqlite3/sqlite3.dart';
 
 import '../helpers/library_fixtures.dart';
 
+/// VACUUM فاشل فعلاً (مخطط غير موجود) لاختبار أن الحذف لا يفشل بسببه.
+void failingVacuum(Database db) => db.execute('VACUUM no_such_schema');
+
 CatalogBook entryFor(Map<String, Object?> book) =>
     parseCatalog(catalogJson([catalogEntry(book, gzJson(book))])).books.single;
 
@@ -102,6 +105,53 @@ void main() {
       });
     });
   }
+
+  for (final useIsolate in [false, true]) {
+    test('فشل VACUUM لا يُفشل الحذف (isolate=$useIsolate)', () async {
+      final repo = SqliteBookRepository('${dir.path}/v.db',
+          useIsolate: useIsolate, vacuum: failingVacuum);
+      final book = miniBook();
+      await repo.install(gzJson(book), entryFor(book));
+      final db = sqlite3.openInMemory();
+      addTearDown(db.close);
+      expect(() => failingVacuum(db), throwsA(isA<SqliteException>()));
+      await repo.delete('mini');
+      expect(await repo.installed(), isEmpty);
+    });
+  }
+
+  test('طابور الكتابة: استيراد وحذف متزامنان يُنفَّذان بالترتيب', () async {
+    final repo = SqliteBookRepository('${dir.path}/q.db', useIsolate: true);
+    final book = miniBook();
+    final other = miniBook(id: 'other');
+    final ops = [
+      repo.install(gzJson(book), entryFor(book)),
+      repo.install(gzJson(other), entryFor(other)),
+      repo.delete('mini'),
+    ];
+    await Future.wait(ops);
+    expect((await repo.installed()).map((b) => b.id), ['other']);
+  });
+
+  test('فشل عملية في الطابور لا يوقف ما بعدها', () async {
+    final repo = SqliteBookRepository('${dir.path}/q2.db', useIsolate: false);
+    final book = miniBook();
+    final bad = repo.install(gzJson(book), entryFor(miniBook(version: 2)));
+    final good = repo.install(gzJson(book), entryFor(book));
+    await expectLater(bad, throwsA(isA<LibraryFormatException>()));
+    await good;
+    expect((await repo.installed()).single.id, 'mini');
+  });
+
+  test('ملف يتجاوز uncompressed_bytes يُرفض عند الاستيراد', () async {
+    final repo = SqliteBookRepository('${dir.path}/u.db', useIsolate: false);
+    final book = miniBook();
+    final gz = gzJson(book);
+    final entryMap = catalogEntry(book, gz)..['uncompressed_bytes'] = 100;
+    final entry = parseCatalog(catalogJson([entryMap])).books.single;
+    await expectLater(repo.install(gz, entry), throwsA(isA<LibraryFormatException>()));
+    expect(await repo.installed(), isEmpty);
+  });
 
   test('فشل في منتصف الاستيراد لا يترك أثراً (معاملة واحدة)', () {
     final db = openAppDatabase('${dir.path}/c.db');

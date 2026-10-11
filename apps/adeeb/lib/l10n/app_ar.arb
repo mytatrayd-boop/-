@@ -4,7 +4,13 @@
   "libraryTitle": "المكتبة",
   "download": "تحميل",
   "downloadingPercent": "يُحمَّل… {percent}٪",
-  "@downloadingPercent": {"placeholders": {"percent": {"type": "String"}}},
+  "@downloadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "cancel": "إلغاء",
   "retry": "إعادة المحاولة",
   "redownload": "إعادة التحميل",
@@ -29,37 +35,143 @@
   "deleteFromDevice": "حذف من الجهاز",
   "deleteDialogTitle": "حذف الكتاب من الجهاز؟",
   "deleteDialogBody": "سيُحذف «{title}» من جهازك ويتحرّر {size}. تبقى المفضلة وآخر موضع، ويمكنك تحميله مجدداً في أي وقت.",
-  "@deleteDialogBody": {"placeholders": {"title": {"type": "String"}, "size": {"type": "String"}}},
+  "@deleteDialogBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "delete": "حذف",
   "bookDeleted": "حُذف الكتاب",
   "deleteFailed": "تعذّر حذف الكتاب",
   "bookUpdated": "حُدّث الكتاب",
   "sizeMb": "{size} م.ب",
-  "@sizeMb": {"placeholders": {"size": {"type": "String"}}},
+  "@sizeMb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "sizeKb": "{size} ك.ب",
-  "@sizeKb": {"placeholders": {"size": {"type": "String"}}},
+  "@sizeKb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "sizeMbSpoken": "{size} ميغابايت",
-  "@sizeMbSpoken": {"placeholders": {"size": {"type": "String"}}},
+  "@sizeMbSpoken": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "sizeKbSpoken": "{size} كيلوبايت",
-  "@sizeKbSpoken": {"placeholders": {"size": {"type": "String"}}},
+  "@sizeKbSpoken": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "deathHijri": "ت {year}هـ",
-  "@deathHijri": {"placeholders": {"year": {"type": "String"}}},
+  "@deathHijri": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
   "deathHijriSpoken": "متوفى {year} للهجرة",
-  "@deathHijriSpoken": {"placeholders": {"year": {"type": "String"}}},
+  "@deathHijriSpoken": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
   "authorWithDeath": "{author} ({death})",
-  "@authorWithDeath": {"placeholders": {"author": {"type": "String"}, "death": {"type": "String"}}},
+  "@authorWithDeath": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "death": {
+        "type": "String"
+      }
+    }
+  },
   "bookCardSemantics": "{title}، {author}، {details}",
-  "@bookCardSemantics": {"placeholders": {"title": {"type": "String"}, "author": {"type": "String"}, "details": {"type": "String"}}},
+  "@bookCardSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "author": {
+        "type": "String"
+      },
+      "details": {
+        "type": "String"
+      }
+    }
+  },
   "moreOptions": "خيارات أخرى",
   "sourceLine": "المصدر: {source} — {license}",
-  "@sourceLine": {"placeholders": {"source": {"type": "String"}, "license": {"type": "String"}}},
+  "@sourceLine": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "license": {
+        "type": "String"
+      }
+    }
+  },
   "licensePublicDomain": "ملك عام",
   "downloadBook": "تحميل الكتاب ({size})",
-  "@downloadBook": {"placeholders": {"size": {"type": "String"}}},
+  "@downloadBook": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "chapters": "الأبواب",
   "downloadToSeeChapters": "حمّل الكتاب لعرض أبوابه",
   "bookOpenError": "تعذّر فتح الكتاب. أعد تحميله.",
   "chapterSemantics": "الباب {number} من {total}: {title}",
-  "@chapterSemantics": {"placeholders": {"number": {"type": "String"}, "total": {"type": "String"}, "title": {"type": "String"}}},
-  "bookNotFound": "هذا الكتاب غير موجود في المكتبة."
+  "@chapterSemantics": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "bookNotFound": "هذا الكتاب غير موجود في المكتبة.",
+  "downloading": "يُحمَّل…",
+  "listSeparator": "، ",
+  "downloadAnnouncement": "«{title}»: يُحمَّل… {percent}٪",
+  "@downloadAnnouncement": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  }
 }
