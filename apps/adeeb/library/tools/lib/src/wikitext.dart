@@ -56,9 +56,11 @@ class RemovalStats {
   }
 }
 
-const _verseMark = '';
-const _verseBreak = '';
-const _hemiSep = '';
+const _verseMark = '\uE000';
+const _verseBreak = '\uE001';
+const _hemiSep = '\uE002';
+const _verseEnd = '\uE003';
+const _verseStart = '\uE004';
 
 const _strippedTags = {
   'center', 'div', 'span', 'p', 'big', 'small', 'b', 'i', 'u', 's', 'font',
@@ -136,7 +138,7 @@ class WikitextConverter {
     s = s.replaceAll(RegExp(r'<section\b[^>]*/>', caseSensitive: false), '');
     s = s.replaceAll(RegExp(r'__[A-Z]+__'), '');
     s = s.replaceAll(RegExp(r'&nbsp;|&#160;|&#xA0;', caseSensitive: false), ' ');
-    s = s.replaceAll(' ', ' ');
+    s = s.replaceAll('\u00A0', ' ');
     return s;
   }
 
@@ -145,6 +147,10 @@ class WikitextConverter {
   String _expandTemplates(String s, RemovalStats stats) {
     final unknown = <String>{};
     final out = _expandTemplatesIn(s, stats, unknown);
+    // بيت القالب على سطر مستقل دون إضافة أسطر فارغة، حتى تتجاور الأبيات المتتالية.
+    final cleaned = out
+        .replaceAll(RegExp('\n?$_verseStart'), '\n')
+        .replaceAll(RegExp('$_verseEnd\n?'), '\n');
     if (unknown.isNotEmpty) {
       final names = unknown.toList()..sort();
       throw WikitextException(
@@ -152,7 +158,7 @@ class WikitextConverter {
         '${names.join('، ')}',
       );
     }
-    return out;
+    return cleaned;
   }
 
   String _expandTemplatesIn(String s, RemovalStats stats, Set<String> unknown) {
@@ -194,7 +200,7 @@ class WikitextConverter {
         for (final a in positional.take(2))
           _expandTemplatesIn(a, stats, unknown).trim(),
       ].where((h) => h.isNotEmpty).toList();
-      return '\n$_verseMark${hemis.join(_hemiSep)}\n';
+      return '$_verseStart$_verseMark${hemis.join(_hemiSep)}$_verseEnd';
     }
     if (rules.drop.map(normalizeTemplateName).contains(name)) {
       stats.add('قالب: $name');
@@ -382,10 +388,10 @@ class WikitextConverter {
 /// لا يمسّ التشكيل ولا التطويل ولا الحروف.
 String cleanText(String s) {
   s = s.replaceAll(
-    RegExp('[​-‏‪-‮⁦-⁩﻿­]'),
+    RegExp('[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u00AD]'),
     '',
   );
-  s = s.replaceAll(RegExp(r'[\x00-\x1F\x7F-]'), ' ');
+  s = s.replaceAll(RegExp(r'[\x00-\x1F\x7F\uE000-\uE004]'), ' ');
   s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
   final bad = unsupportedMarks(s);
   if (bad.isNotEmpty) {
@@ -466,7 +472,7 @@ String decodeEntities(String s) {
     const named = {
       'amp': '&', 'lt': '<', 'gt': '>', 'quot': '"', 'apos': "'",
       'nbsp': ' ', 'laquo': '«', 'raquo': '»', 'hellip': '…', 'ndash': '–',
-      'mdash': '—', 'zwnj': '‌', 'zwj': '‍', 'lrm': '', 'rlm': '',
+      'mdash': '—', 'zwnj': '\u200C', 'zwj': '\u200D', 'lrm': '', 'rlm': '',
     };
     return named[e.toLowerCase()] ?? m[0]!;
   });

@@ -1,0 +1,25 @@
+{
+  "id": "testbook",
+  "version": 1,
+  "title": {"ar": "كتاب الاختبار", "en": "Test Book"},
+  "author": {"ar": "مؤلف تجريبي", "en": "Test Author"},
+  "author_death_hijri": 100,
+  "source_name": "ويكي مصدر",
+  "wiki": "ar.wikisource.org",
+  "root_page": "كتاب الاختبار",
+  "retrieved": "2026-10-11",
+  "license": "public-domain",
+  "removed": "حواشي المحقق ومقدمته والقوالب الملاحية (بيانات اختبار اصطناعية)",
+  "skip_headings": ["مقدمة المحقق"],
+  "templates": {
+    "drop": ["ترويسة", "تنقل"],
+    "unwrap": {"وسط": 1},
+    "verse": ["بيت"]
+  },
+  "pages": [
+    {"title": "كتاب الاختبار/المقدمة الحديثة", "revid": 100, "skip": true},
+    {"title": "كتاب الاختبار/الباب الأول", "revid": 101},
+    {"title": "كتاب الاختبار/الباب الثاني", "revid": 102, "chapter_title": "الباب الثاني: في الشعر"},
+    {"title": "كتاب الاختبار/الباب الثالث", "revid": 103}
+  ]
+}
