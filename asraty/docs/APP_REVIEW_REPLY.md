@@ -11,8 +11,8 @@ Hello, thank you for reviewing our app.
 
 3. Access instructions:
 - Quickest way, with no account: on the first screen, tap "تجربة سريعة بأسرة جاهزة" (Quick demo with a sample family). This opens a ready-made family with sample data. Demo data stays on the device only.
-- Full account: tap "دخول مسؤول الأسرة" (Family admin login) and enter any email address you can access. A one-time 6-digit code is sent to that email. There is no password. After you sign in, create a family and add members, tasks and rewards.
-- Account deletion: Settings (الإعدادات) → "حذف حسابي" (Delete my account). This deletes the account and its data. An admin can also delete the whole family.
+- Full account: tap "مسؤول الأسرة" (Family admin), enter a family name, your name and any email address you can access. A one-time 6-digit code is sent to that email. There is no password. After you sign in, create a family and add members, tasks and rewards.
+- Account deletion: tap ⚙️ Settings (الإعدادات). The family owner sees "حذف الأسرة كاملة" (Delete the entire family), which deletes the account, the family and all its data. Other members see "حذف حسابي" (Delete my account).
 
 4. External services: Google Firebase (Authentication, Cloud Firestore database, Cloud Messaging for notifications); our own backend API, which handles sign-in codes and points logic; and an email service (Gmail SMTP) that sends the sign-in codes. There is no advertising, no analytics SDK, no payment processor, and no AI service.
 
