@@ -4,6 +4,7 @@ import 'package:adeeb/app.dart';
 import 'package:adeeb/core/app_config.dart';
 import 'package:adeeb/library/catalog.dart';
 import 'package:adeeb/library/library_providers.dart';
+import 'package:adeeb/reader/passage_share.dart';
 import 'package:adeeb/reader/reader_providers.dart';
 import 'package:adeeb/storage/book_repository.dart';
 import 'package:adeeb/storage/reading_repository.dart';
@@ -25,6 +26,9 @@ class TestEnv {
   final Directory dir;
   final server = FakeLibraryServer();
 
+  /// ما أُرسل إلى قائمة المشاركة (بدل share_plus في الاختبار).
+  final shared = <(String, String)>[];
+
   SqliteBookRepository get books =>
       SqliteBookRepository('${dir.path}/adeeb.db', useIsolate: false);
 
@@ -42,6 +46,9 @@ class TestEnv {
     httpClientProvider.overrideWithValue(server.client()),
     bookRepositoryProvider.overrideWithValue(books ?? this.books),
     readingRepositoryProvider.overrideWithValue(reading),
+    shareTextProvider.overrideWithValue(
+      (text, subject) async => shared.add((text, subject)),
+    ),
     appLocaleProvider.overrideWithValue(locale),
   ];
 

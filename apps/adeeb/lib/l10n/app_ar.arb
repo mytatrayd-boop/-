@@ -291,5 +291,25 @@
         "type": "String"
       }
     }
+  },
+  "copy": "نسخ",
+  "share": "مشاركة",
+  "textCopied": "نُسخ النص",
+  "passageCitation": "{text}\n— {book}، {author}، {chapter}",
+  "@passageCitation": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "book": {
+        "type": "String"
+      },
+      "author": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
+    }
   }
 }

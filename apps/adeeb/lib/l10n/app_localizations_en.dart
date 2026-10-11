@@ -338,4 +338,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String continueReadingSemantics(String source, String text) {
     return 'Continue reading: $source. $text';
   }
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get textCopied => 'Text copied';
+
+  @override
+  String passageCitation(
+    String text,
+    String book,
+    String author,
+    String chapter,
+  ) {
+    return '$text\n— $book, $author, $chapter';
+  }
 }

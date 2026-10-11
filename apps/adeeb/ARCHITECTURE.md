@@ -85,6 +85,7 @@ apps/adeeb/
 | audio_service | 0.18.19 | ryanheise.com | MIT | 2026-06 | خدمة أمامية للتشغيل والشاشة مغلقة، تحكم شاشة القفل والإشعار (D7) |
 | audio_session | 0.2.4 | ryanheise.com | MIT | 2026-06 | التركيز الصوتي: إيقاف مؤقت عند المكالمات وفصل السماعة |
 | url_launcher | 6.3.x | flutter.dev | BSD-3 | 2026-10 | فتح روابط المصادر وسياسة الخصوصية (https فقط) |
+| share_plus | 13.3.1 | fluttercommunity.dev | BSD-3 | 2026 | مشاركة نص الفقرة مع مصدرها عبر قائمة المشاركة في النظام (الميزة 3، D20) |
 | flutter_lints (تطوير) | 6.0.0 | flutter.dev | BSD-3 | 2025-05 | قواعد التحليل |
 
 **غير مستخدم عمداً:** Firebase بكل خدماته، أي تحليلات أو Crashlytics، google_fonts (يحمّل من الإنترنت؛ الخطوط مضمّنة)، sqflite (يستخدم SQLite النظام وFTS5 غير مضمون فيه على أندرويد)، drift (توليد كود بلا حاجة لمخطط صغير)، connectivity_plus (نكتشف الانقطاع من فشل الطلب)، uuid (المعرّف من `Random.secure()`)، just_audio (لا ملفات صوتية في النسخة الأولى).

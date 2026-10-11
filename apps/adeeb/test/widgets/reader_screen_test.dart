@@ -4,6 +4,7 @@ import 'package:adeeb/library/library_screen.dart';
 import 'package:adeeb/reader/reader_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -355,7 +356,8 @@ void main() {
 
       const add = CustomSemanticsAction(label: 'أضف إلى المفضلة');
       final node = tester.getSemantics(find.text(firstMini));
-      expect(node, isSemantics(label: firstMini, customActions: [add]));
+      const copy = CustomSemanticsAction(label: 'نسخ');
+      expect(node, isSemantics(label: firstMini, customActions: [add, copy]));
       tester.semantics.customAction(find.semantics.byLabel(firstMini), add);
       await tester.pumpAndSettle();
       expect(
@@ -366,7 +368,10 @@ void main() {
         tester.getSemantics(find.text(firstMini)),
         isSemantics(
           value: 'في المفضلة',
-          customActions: [const CustomSemanticsAction(label: 'أزل من المفضلة')],
+          customActions: [
+            const CustomSemanticsAction(label: 'أزل من المفضلة'),
+            copy,
+          ],
         ),
       );
 
@@ -581,5 +586,79 @@ void main() {
     await tester.tap(find.widgetWithText(OutlinedButton, 'تحميل'));
     await tester.pumpAndSettle();
     expect(find.text(firstMini), findsOneWidget);
+  });
+
+  /// يلتقط ما يُنسخ إلى الحافظة.
+  String? Function() mockClipboard(WidgetTester tester) {
+    String? clipboard;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboard =
+              (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    return () => clipboard;
+  }
+
+  testWidgets('نسخ الفقرة ومشاركتها مع الكتاب والمؤلف والباب', (tester) async {
+    final clipboard = mockClipboard(tester);
+    await env.preinstall(miniBook());
+    await pumpApp(tester);
+    await openReader(tester, 'كتاب اختبار اصطناعي');
+
+    await tester.longPress(find.text(firstMini));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('نسخ'));
+    await tester.pumpAndSettle();
+    expect(find.text('نُسخ النص'), findsOneWidget);
+    expect(
+      clipboard(),
+      '$firstMini\n— كتاب اختبار اصطناعي، بيانات اختبار، الباب الأول: فقرات اختبار',
+    );
+
+    // الشعر: الشطران بمسافات لا بعلامة جدولة.
+    await tester.longPress(find.text('شطر اختبار أول'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('مشاركة'));
+    await tester.pumpAndSettle();
+    expect(env.shared, [
+      (
+        'شطر اختبار أول    شطر اختبار ثانٍ\nشطر ثالث    شطر رابع\n'
+            '— كتاب اختبار اصطناعي، بيانات اختبار، فصل اختبار فرعي',
+        'كتاب اختبار اصطناعي',
+      ),
+    ]);
+  });
+
+  testWidgets('النسخ إجراء مخصص لقارئ الشاشة، وبالإنجليزية تبقى الأسماء عربية', (
+    tester,
+  ) async {
+    final clipboard = mockClipboard(tester);
+    final handle = tester.ensureSemantics();
+    await env.preinstall(miniBook());
+    await pumpApp(tester, locale: const Locale('en'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Open'));
+    await tester.pumpAndSettle();
+    tester.semantics.customAction(
+      find.semantics.byLabel(firstMini),
+      const CustomSemanticsAction(label: 'Copy'),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      clipboard(),
+      '$firstMini\n— كتاب اختبار اصطناعي, بيانات اختبار, الباب الأول: فقرات اختبار',
+    );
+    expect(find.text('Text copied'), findsOneWidget);
+    handle.dispose();
   });
 }

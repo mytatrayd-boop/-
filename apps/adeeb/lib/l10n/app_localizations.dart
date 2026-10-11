@@ -655,6 +655,35 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تابع القراءة: {source}. {text}'**
   String continueReadingSemantics(String source, String text);
+
+  /// No description provided for @copy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ'**
+  String get copy;
+
+  /// No description provided for @share.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة'**
+  String get share;
+
+  /// No description provided for @textCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نُسخ النص'**
+  String get textCopied;
+
+  /// No description provided for @passageCitation.
+  ///
+  /// In ar, this message translates to:
+  /// **'{text}\n— {book}، {author}، {chapter}'**
+  String passageCitation(
+    String text,
+    String book,
+    String author,
+    String chapter,
+  );
 }
 
 class _AppLocalizationsDelegate

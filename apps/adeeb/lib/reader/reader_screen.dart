@@ -13,6 +13,7 @@ import '../library/library_text.dart';
 import '../storage/reading_repository.dart';
 import 'chapter_tile.dart';
 import 'display_settings_sheet.dart';
+import 'passage_share.dart';
 import 'reader_book.dart';
 import 'reader_providers.dart';
 import 'reader_settings.dart';
@@ -38,6 +39,8 @@ class ReaderScreen extends ConsumerStatefulWidget {
 }
 
 enum _OpenNotice { none, resumed, notFound }
+
+enum _ParagraphAction { favorite, copy, share }
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   final _scroll = ScrollController(keepScrollOffset: false);
@@ -324,33 +327,63 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
   }
 
+  Future<void> _copy(ReaderParagraph p) async {
+    final book = _book;
+    if (book == null) return;
+    final l10n = AppLocalizations.of(context);
+    await copyPassage(passageWithSource(l10n, book, p));
+    if (mounted) _showSnack(l10n.textCopied);
+  }
+
+  Future<void> _share(ReaderParagraph p) async {
+    final book = _book;
+    if (book == null) return;
+    final text = passageWithSource(AppLocalizations.of(context), book, p);
+    await ref.read(shareTextProvider)(text, book.title.ar);
+  }
+
   Future<void> _openParagraphSheet(ReaderParagraph p, bool isFavorite) async {
     final l10n = AppLocalizations.of(context);
     setState(() => _selectedId = p.id);
-    final toggle = await showModalBottomSheet<bool>(
+    final action = await showModalBottomSheet<_ParagraphAction>(
       context: context,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+      builder: (sheetContext) {
+        Widget tile(IconData icon, String label, _ParagraphAction value) =>
             ListTile(
               minTileHeight: 48,
-              leading: Icon(
+              leading: Icon(icon),
+              title: Text(label),
+              onTap: () => Navigator.of(sheetContext).pop(value),
+            );
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              tile(
                 isFavorite ? Icons.bookmark : Icons.bookmark_border,
-              ),
-              title: Text(
                 isFavorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                _ParagraphAction.favorite,
               ),
-              onTap: () => Navigator.of(sheetContext).pop(true),
-            ),
-          ],
-        ),
-      ),
+              tile(Icons.copy, l10n.copy, _ParagraphAction.copy),
+              tile(Icons.share, l10n.share, _ParagraphAction.share),
+            ],
+          ),
+        );
+      },
     );
     if (!mounted) return;
     setState(() => _selectedId = null);
-    if (toggle == true) await _toggleFavorite(p, isFavorite);
+    switch (action) {
+      case _ParagraphAction.favorite:
+        await _toggleFavorite(p, isFavorite);
+      case _ParagraphAction.copy:
+        await _copy(p);
+      case _ParagraphAction.share:
+        await _share(p);
+      case null:
+        break;
+    }
   }
 
   Future<void> _openContents() async {
@@ -473,6 +506,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 : l10n.addToFavorites,
             favoriteValue: isFavorite ? l10n.inFavorites : null,
             onToggleFavorite: () => _toggleFavorite(p, isFavorite),
+            copyLabel: l10n.copy,
+            onCopy: () => _copy(p),
             onLongPress: () => _openParagraphSheet(p, isFavorite),
           );
         }(),
@@ -688,6 +723,8 @@ class _Paragraph extends StatelessWidget {
     required this.favoriteLabel,
     required this.favoriteValue,
     required this.onToggleFavorite,
+    required this.copyLabel,
+    required this.onCopy,
     required this.onLongPress,
   });
 
@@ -699,6 +736,8 @@ class _Paragraph extends StatelessWidget {
   final String favoriteLabel;
   final String? favoriteValue;
   final VoidCallback onToggleFavorite;
+  final String copyLabel;
+  final VoidCallback onCopy;
   final VoidCallback onLongPress;
 
   @override
@@ -741,6 +780,7 @@ class _Paragraph extends StatelessWidget {
         value: favoriteValue,
         customSemanticsActions: {
           CustomSemanticsAction(label: favoriteLabel): onToggleFavorite,
+          CustomSemanticsAction(label: copyLabel): onCopy,
         },
         child: GestureDetector(
           onLongPress: onLongPress,

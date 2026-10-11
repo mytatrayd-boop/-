@@ -336,4 +336,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String continueReadingSemantics(String source, String text) {
     return 'تابع القراءة: $source. $text';
   }
+
+  @override
+  String get copy => 'نسخ';
+
+  @override
+  String get share => 'مشاركة';
+
+  @override
+  String get textCopied => 'نُسخ النص';
+
+  @override
+  String passageCitation(
+    String text,
+    String book,
+    String author,
+    String chapter,
+  ) {
+    return '$text\n— $book، $author، $chapter';
+  }
 }
