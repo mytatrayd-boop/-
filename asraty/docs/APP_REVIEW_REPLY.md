@@ -5,7 +5,7 @@
 
 Hello, thank you for reviewing our app.
 
-1. Screen recording: attached. It was recorded on a physical iPhone running the latest iOS. It starts from launching the app and shows: signing in with an email code, creating a family, adding a member, adding a task, a member completing it, the parent approving it, points and rewards, and finally account deletion (Settings → Delete my account). The app has no paid content and no in-app purchases.
+1. Screen recording: attached. It was recorded on a physical iPhone running the latest iOS. It starts from launching the app and shows the typical user flow: signing in with a one-time code sent by email, the family dashboard and its main features (members, tasks, rewards), and account deletion (Settings → Delete family / Delete my account). The app has no paid content and no in-app purchases.
 
 2. Purpose and target audience: "مهام أسرتي" (My Family Tasks) is an Arabic-language app for families. A parent creates a family and adds household tasks with points. Children and other members complete the tasks, the parent approves them, and members earn points, levels and rewards that the parent defines. The problem it solves: it makes sharing housework fair and motivating, and it replaces paper charts and repeated reminders. Target audience: parents and family members. Children use the app only inside a family that a parent created and manages.
 
