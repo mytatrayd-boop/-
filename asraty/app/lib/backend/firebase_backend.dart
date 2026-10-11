@@ -65,11 +65,14 @@ class FirebaseBackend extends Backend {
       final d = r.data;
       return d is Map ? Map<String, dynamic>.from(d) : {};
     } on FirebaseFunctionsException catch (e) {
+      // The real server error, for the device console / Xcode logs.
+      debugPrint('API $name ${data['op'] ?? ''} failed: ${e.code} ${e.message} ${e.details}');
       final det = e.details;
       final code = det is Map && det['code'] is String ? det['code'] as String : (e.code == 'unavailable' ? 'network' : e.message ?? e.code);
       throw AppError(code, det is Map ? Map<String, dynamic>.from(det) : const {});
-    } catch (e) {
+    } catch (e, st) {
       if (e is AppError) rethrow;
+      debugPrint('API $name ${data['op'] ?? ''} failed: $e\n$st');
       throw AppError('network');
     }
   }

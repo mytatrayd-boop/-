@@ -23,7 +23,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
 
   Widget signedIn(Widget Function(Ctx c) build) => Consumer(builder: (context, ref, _) {
         final s = ref.watch(appStateProvider).value ?? const AppState();
-        return s.signedIn ? build(Ctx(s)) : const SizedBox();
+        if (s.signedIn) return build(Ctx(s));
+        // Session ended while on an inner page (sign-out, deletion, removed by an admin):
+        // show the sign-in screen right away and move back to the root route.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) GoRouter.of(context).go('/');
+        });
+        return const _Home();
       });
 
   return GoRouter(
@@ -77,6 +83,12 @@ class AsratyApp extends ConsumerWidget {
         darkTheme: buildTheme(Brightness.dark),
         themeMode: ref.watch(themeModeProvider),
         routerConfig: ref.watch(_routerProvider),
-        builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+        // Cap very large system font sizes (common on Honor/Huawei) so rows keep room for their text.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2),
+          ),
+          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+        ),
       );
 }

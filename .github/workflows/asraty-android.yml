@@ -52,6 +52,15 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: flutter build appbundle --release --dart-define-from-file=env.json --build-number=${{ github.run_number }}
 
+      # Universal APK for direct install on phones where the Play test link fails
+      # (signed with the upload key, so it cannot update a Play-installed copy).
+      - name: Build APK (direct install)
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: flutter build apk --release --dart-define-from-file=env.json --build-number=${{ github.run_number }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: asraty-aab-${{ github.run_number }}
@@ -62,10 +71,12 @@ jobs:
         run: |
           tag="asraty-android-${{ github.run_number }}"
           cp build/app/outputs/bundle/release/app-release.aab "asraty-${{ github.run_number }}.aab"
-          gh release create "$tag" "asraty-${{ github.run_number }}.aab" --repo "${{ github.repository }}" \
+          cp build/app/outputs/flutter-apk/app-release.apk "asraty-${{ github.run_number }}.apk"
+          gh release create "$tag" "asraty-${{ github.run_number }}.aab" "asraty-${{ github.run_number }}.apk" --repo "${{ github.repository }}" \
             --target "${{ github.sha }}" --title "أسرتي — Android build ${{ github.run_number }}" \
-            --notes "ملف التطبيق للرفع على Google Play (Internal testing)." --prerelease
+            --notes "ملف .aab للرفع على Google Play (Internal testing)، وملف .apk للتثبيت المباشر على الجوال." --prerelease
           echo "Download: https://github.com/${{ github.repository }}/releases/download/$tag/asraty-${{ github.run_number }}.aab"
+          echo "APK: https://github.com/${{ github.repository }}/releases/download/$tag/asraty-${{ github.run_number }}.apk"
 
       - name: Upload to Google Play
         if: env.HAS_PLAY == 'true'

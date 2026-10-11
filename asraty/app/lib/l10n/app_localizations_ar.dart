@@ -229,7 +229,27 @@ class L10nAr extends L10n {
   String get errGeneric => 'حدث خطأ غير متوقع. حاول مجدداً.';
 
   @override
+  String errGenericCode(String code) {
+    return 'حدث خطأ غير متوقع ($code). حاول مجدداً، وإن تكرر أرسل صورة هذه الرسالة.';
+  }
+
+  @override
   String get errNameEmail => 'اكتب الاسم وبريداً صحيحاً';
+
+  @override
+  String errBadNumber(String min, String max) {
+    return 'اكتب رقماً صحيحاً بين $min و$max.';
+  }
+
+  @override
+  String get errMissingTitle => 'اكتب الاسم أولاً.';
+
+  @override
+  String get errPersonNotFound =>
+      'لم نجد هذا العضو في الأسرة. أضف عضواً أولاً أو حدّث الصفحة.';
+
+  @override
+  String get errSession => 'انتهت الجلسة. اخرج ثم ادخل من جديد.';
 
   @override
   String get errTaskInput => 'اكتب اسم المهمة ونقاطاً أكبر من صفر';
