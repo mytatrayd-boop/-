@@ -23,7 +23,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
 
   Widget signedIn(Widget Function(Ctx c) build) => Consumer(builder: (context, ref, _) {
         final s = ref.watch(appStateProvider).value ?? const AppState();
-        return s.signedIn ? build(Ctx(s)) : const SizedBox();
+        if (s.signedIn) return build(Ctx(s));
+        // Session ended while on an inner page (sign-out, deletion, removed by an admin):
+        // show the sign-in screen right away and move back to the root route.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) GoRouter.of(context).go('/');
+        });
+        return const _Home();
       });
 
   return GoRouter(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
 import '../core/models.dart';
@@ -22,9 +23,12 @@ class SettingsPage extends ConsumerWidget {
     final isOwner = c.me.role == Role.owner;
     final notifier = ref.read(backendProvider.notifier);
 
+    // Captured now: after a deletion the session can end (and this page unmount)
+    // before the request returns, and the sign-out must still finish.
+    final router = GoRouter.of(context);
     Future<void> signOut() async {
-      context.go('/');
       await notifier.signOut();
+      router.go('/');
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -44,16 +48,12 @@ class SettingsPage extends ConsumerWidget {
         onChanged: ref.read(themeModeProvider.notifier).set,
       ),
       if (AppConfig.privacyUrl.isNotEmpty) ...[
-        RowCard(children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(t.privacyPolicy, style: const TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              SelectableText(AppConfig.privacyUrl,
-                  textDirection: TextDirection.ltr, textAlign: TextAlign.right, style: TextStyle(color: context.pal.muted, fontSize: 13)),
-            ]),
-          ),
-        ]),
+        const SizedBox(height: 8),
+        // One tappable line; the long URL itself is not shown.
+        Btn('🔒 ${t.privacyPolicy}', kind: BtnKind.ghost, expand: true, onPressed: () async {
+          final opened = await launchUrl(Uri.parse(AppConfig.privacyUrl), mode: LaunchMode.externalApplication).catchError((_) => false);
+          if (!opened && context.mounted) toast(context, t.errNetwork);
+        }),
       ],
       const SizedBox(height: 8),
       Btn(t.signOut, kind: BtnKind.ghost, expand: true, onPressed: signOut),
@@ -63,14 +63,14 @@ class SettingsPage extends ConsumerWidget {
           if (!await confirm(context, t.deleteFamilyConfirm, ok: t.deleteConfirmBtn, danger: true) || !context.mounted) return;
           final b = ref.read(backendProvider);
           final ok = await run(context, b.deleteFamily, ok: t.deleted);
-          if (ok && context.mounted) await signOut();
+          if (ok) await signOut();
         })
       else
         Btn(t.deleteMyAccount, kind: BtnKind.no, expand: true, onPressed: () async {
           if (!await confirm(context, t.deleteAccountConfirm, ok: t.deleteConfirmBtn, danger: true) || !context.mounted) return;
           final b = ref.read(backendProvider);
           final ok = await run(context, b.deleteAccount, ok: t.deleted);
-          if (ok && context.mounted) await signOut();
+          if (ok) await signOut();
         }),
       const SizedBox(height: 16),
       Center(child: Muted(t.version(const String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0')))),

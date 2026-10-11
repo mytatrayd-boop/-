@@ -19,6 +19,17 @@ void toast(BuildContext context, String msg) {
   m.showSnackBar(SnackBar(content: Text(msg), duration: const Duration(milliseconds: 2800)));
 }
 
+/// Parses a whole number typed with Latin or Arabic-Indic digits (the Arabic
+/// iPhone keypad types ١٢٣).
+int? parseDigits(String s) {
+  const ar = '٠١٢٣٤٥٦٧٨٩', fa = '۰۱۲۳۴۵۶۷۸۹';
+  final latin = s.trim().split('').map((c) {
+    final i = ar.indexOf(c), j = fa.indexOf(c);
+    return i >= 0 ? '$i' : (j >= 0 ? '$j' : c);
+  }).join();
+  return int.tryParse(latin);
+}
+
 String errorText(L10n t, Object e) {
   if (e is! AppError) return t.errGenericCode(e.runtimeType.toString());
   return switch (e.code) {
@@ -46,7 +57,10 @@ String errorText(L10n t, Object e) {
     'removed' => t.errRemoved,
     'bad-name-email' => t.errNameEmail,
     'too-short' => t.errFbShort,
-    'bad-title' || 'bad-number' => t.errTaskInput,
+    'bad-title' => t.errMissingTitle,
+    'bad-number' => t.errBadNumber('${e.details['min'] ?? 1}', '${e.details['max'] ?? ''}'),
+    'person-not-found' => t.errPersonNotFound,
+    'unauthenticated' => t.errSession,
     // Unknown codes show the code (and the server's reason for internal errors) so a screenshot is enough to diagnose.
     _ => t.errGenericCode([e.code, if (e.details['reason'] is String) e.details['reason'] as String].join(' · ')),
   };

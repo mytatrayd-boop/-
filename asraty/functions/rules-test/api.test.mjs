@@ -124,6 +124,10 @@ test("delegated admin only gets granted permissions", async () => {
   await call("api", { op: "addTask", title: "رقم أندرويد", personId: "all", points: { "@type": "type.googleapis.com/google.protobuf.Int64Value", value: "7" } }, admin.idToken);
   const wrapped = (await db.collection(`families/${fid}/tasks`).where("title", "==", "رقم أندرويد").get()).docs;
   assert.ok(wrapped.length > 0 && wrapped.every((d) => d.data().points === 7));
+  // iOS sends whole numbers the same way: a reward tier's threshold must arrive as a number.
+  await call("api", { op: "addTier", name: "مستوى آيفون", emoji: "🎁", threshold: { "@type": "type.googleapis.com/google.protobuf.Int64Value", value: "30" }, period: "daily", scope: "each" }, owner.idToken);
+  const tier = (await db.collection(`families/${fid}/tiers`).where("name", "==", "مستوى آيفون").get()).docs;
+  assert.ok(tier.length === 1 && tier[0].data().threshold === 30);
   await rejects(call("api", { op: "addTier", name: "x", threshold: 5 }, admin.idToken), "no-permission");
   await rejects(call("api", { op: "addPerson", role: "member", name: "y", email: "y@test.sa" }, admin.idToken), "no-permission");
 });

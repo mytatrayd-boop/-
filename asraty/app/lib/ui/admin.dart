@@ -526,7 +526,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
 
   Future<void> _add() async {
     final t = context.t;
-    final title = _title.text.trim(), pts = int.tryParse(_pts.text.trim()) ?? 0;
+    final title = _title.text.trim(), pts = parseDigits(_pts.text) ?? 0;
     if (title.isEmpty || pts < 1) return toast(context, t.errTaskInput);
     final ok = await run(context, () => ref.read(backendProvider).addTask(title: title, personId: _who, points: pts, repeat: _rep), ok: t.taskAdded);
     if (ok) _title.clear();
@@ -542,7 +542,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
 
   Future<void> _save(TaskItem x) async {
     final t = context.t;
-    final pts = int.tryParse(_ePts.text.trim()) ?? x.points;
+    final pts = parseDigits(_ePts.text) ?? x.points;
     final ok = await run(context,
         () => ref.read(backendProvider).updateTask(taskId: x.id, title: _eTitle.text.trim(), personId: _eWho, points: pts < 1 ? x.points : pts, repeat: _eRep),
         ok: t.taskSaved);
@@ -727,7 +727,7 @@ class _CompsPageState extends ConsumerState<CompsPage> {
         Btn(t.launchComp, onPressed: () async {
           final title = _title.text.trim();
           if (title.isEmpty) return toast(context, t.errCompTitle);
-          final start = int.tryParse(_start.text.trim()) ?? 20, mins = int.tryParse(_mins.text.trim()) ?? 0;
+          final start = parseDigits(_start.text) ?? 20, mins = parseDigits(_mins.text) ?? 0;
           final ok = await run(context,
               () => ref.read(backendProvider).addCompetition(title: title, startPoints: start < 1 ? 20 : start, minutes: mins < 0 ? 0 : mins),
               ok: t.compLaunched);
@@ -798,7 +798,7 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
         ),
         Labeled(t.countedFor, Select<Scope>(value: _scope, items: [(Scope.each, t.scopeEach), (Scope.family, t.scopeFamily)], onChanged: (v) => setState(() => _scope = v))),
         Btn(t.addTier, onPressed: () async {
-          final name = _name.text.trim(), thr = int.tryParse(_thr.text.trim()) ?? 0;
+          final name = _name.text.trim(), thr = parseDigits(_thr.text) ?? 0;
           if (name.isEmpty || thr < 1) return toast(context, t.errTierInput);
           final ok = await run(context, () => b.addTier(name: name, emoji: _emoji, threshold: thr, period: _period, scope: _scope), ok: t.tierAdded);
           if (ok) _name.clear();

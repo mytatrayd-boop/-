@@ -501,6 +501,30 @@ abstract class L10n {
   /// **'اكتب الاسم وبريداً صحيحاً'**
   String get errNameEmail;
 
+  /// No description provided for @errBadNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رقماً صحيحاً بين {min} و{max}.'**
+  String errBadNumber(String min, String max);
+
+  /// No description provided for @errMissingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الاسم أولاً.'**
+  String get errMissingTitle;
+
+  /// No description provided for @errPersonNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نجد هذا العضو في الأسرة. أضف عضواً أولاً أو حدّث الصفحة.'**
+  String get errPersonNotFound;
+
+  /// No description provided for @errSession.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت الجلسة. اخرج ثم ادخل من جديد.'**
+  String get errSession;
+
   /// No description provided for @errTaskInput.
   ///
   /// In ar, this message translates to:
