@@ -11,13 +11,23 @@ import 'book_builder.dart';
 import 'catalog.dart';
 
 class Issue {
-  Issue(this.where, this.code, this.detail);
+  Issue(this.where, this.code, this.detail, {this.warning = false, this.paragraphId});
   final String where;
   final String code;
   final String detail;
+
+  /// تحذير لا يُفشل التحقق، ويظهر في عيّنة المراجعة ليحكم عليه إنسان.
+  final bool warning;
+  final String? paragraphId;
   @override
-  String toString() => '$where: [$code] $detail';
+  String toString() => '$where: ${warning ? 'تحذير ' : ''}[$code] $detail';
 }
+
+/// رموز تُعدّ تحذيراً لا خطأً: «(١٥)» و«(2)» قد تكون من نص المؤلف (عدد أو ترقيم).
+const warningCodes = {'footnote_paren_number'};
+
+/// استثناءات مراجَعة يدوياً: معرّف فقرة/باب ← رموز مسموح بها فيه.
+typedef ValidationExceptions = Map<String, Set<String>>;
 
 /// أنماط تدل على حاشية أو بقايا ترميز ويكي/HTML داخل نص فقرة.
 final Map<String, RegExp> footnotePatterns = {
@@ -36,12 +46,18 @@ final Map<String, RegExp> footnotePatterns = {
 
 final _bookId = RegExp(r'^[a-z]{2,12}$');
 final _date = RegExp(r'^\d{4}-\d{2}-\d{2}$');
-final _control = RegExp('[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\uE000-\uF8FF]');
+final _control = RegExp('[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u200B\u200D-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\uE000-\uF8FF]');
 
 bool _nonEmptyString(Object? v) => v is String && v.trim().isNotEmpty;
 
 /// يتحقق من بايتات JSON (غير مضغوطة) لكتاب.
-List<Issue> validateBookBytes(List<int> bytes, String where, {String? expectedId, int? expectedVersion}) {
+List<Issue> validateBookBytes(
+  List<int> bytes,
+  String where, {
+  String? expectedId,
+  int? expectedVersion,
+  ValidationExceptions exceptions = const {},
+}) {
   final issues = <Issue>[];
   if (bytes.length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
     issues.add(Issue(where, 'bom', 'الملف يبدأ بـ BOM'));
@@ -61,12 +77,25 @@ List<Issue> validateBookBytes(List<int> bytes, String where, {String? expectedId
   if (json is! Map<String, Object?>) {
     return [...issues, Issue(where, 'json', 'الجذر ليس كائناً')];
   }
-  issues.addAll(validateBook(json, where, expectedId: expectedId, expectedVersion: expectedVersion));
+  issues.addAll(validateBook(json, where,
+      expectedId: expectedId, expectedVersion: expectedVersion, exceptions: exceptions));
   return issues;
 }
 
-List<Issue> validateBook(Map<String, Object?> b, String where, {String? expectedId, int? expectedVersion}) {
+List<Issue> validateBook(
+  Map<String, Object?> b,
+  String where, {
+  String? expectedId,
+  int? expectedVersion,
+  ValidationExceptions exceptions = const {},
+}) {
   final issues = <Issue>[];
+  void text(String t, String id, {bool verse = false}) {
+    final allowed = exceptions[id] ?? const <String>{};
+    issues.addAll(checkParagraphText(t, verse: verse, where: '$where $id', id: id)
+        .where((i) => !allowed.contains(i.code)));
+  }
+
   void err(String code, String detail) => issues.add(Issue(where, code, detail));
 
   if (b['schema'] != 1) err('schema', 'schema يجب أن يكون 1');
@@ -83,7 +112,11 @@ List<Issue> validateBook(Map<String, Object?> b, String where, {String? expected
   }
   for (final k in ['title', 'author']) {
     final v = b[k];
-    if (v is! Map || !_nonEmptyString(v['ar'])) err('missing_field', '$k.ar مطلوب');
+    if (v is! Map || !_nonEmptyString(v['ar'])) {
+      err('missing_field', '$k.ar مطلوب');
+    } else {
+      text(v['ar'] as String, '$k.ar');
+    }
   }
   if (b['author_death_hijri'] is! int) err('missing_field', 'author_death_hijri عدد صحيح مطلوب');
   final src = b['source'];
@@ -107,8 +140,8 @@ List<Issue> validateBook(Map<String, Object?> b, String where, {String? expected
 
   final seen = <String>{};
   final allParagraphIds = <String>{};
-  final chapterRe = RegExp('^${RegExp.escape(id)}-b(\\d{2,3})\$');
-  int? bWidth, pWidth;
+  // عرض الأرقام ثابت لكل الكتب: 3 للباب و5 للفقرة (D17).
+  final chapterRe = RegExp('^${RegExp.escape(id)}-b(\\d{3})\$');
   int? prevLevel;
   for (var ci = 0; ci < chapters.length; ci++) {
     final c = chapters[ci];
@@ -123,10 +156,12 @@ List<Issue> validateBook(Map<String, Object?> b, String where, {String? expected
       continue;
     }
     cid as String;
-    bWidth ??= cm[1]!.length;
-    if (cm[1]!.length != bWidth) err('id_width', 'عرض رقم الباب غير ثابت: $cid');
     if (!seen.add(cid)) err('duplicate_id', 'معرّف مكرر: $cid');
-    if (!_nonEmptyString(c['title'])) err('chapter_title', 'عنوان فارغ: $cid');
+    if (!_nonEmptyString(c['title'])) {
+      err('chapter_title', 'عنوان فارغ: $cid');
+    } else {
+      text(c['title'] as String, cid);
+    }
     final level = c['level'];
     if (level is! int || level < 1 || level > 3) {
       err('level', 'level بين 1 و3: $cid');
@@ -147,7 +182,7 @@ List<Issue> validateBook(Map<String, Object?> b, String where, {String? expected
         err('empty_chapter', 'باب بلا فقرات ولا أبواب فرعية: $cid');
       }
     }
-    final pRe = RegExp('^${RegExp.escape(cid)}-p(\\d{4,5})\$');
+    final pRe = RegExp('^${RegExp.escape(cid)}-p(\\d{5})\$');
     for (final p in paras) {
       if (p is! Map) {
         err('paragraph', 'فقرة ليست كائناً في $cid');
@@ -160,8 +195,6 @@ List<Issue> validateBook(Map<String, Object?> b, String where, {String? expected
         continue;
       }
       pid as String;
-      pWidth ??= pm[1]!.length;
-      if (pm[1]!.length != pWidth) err('id_width', 'عرض رقم الفقرة غير ثابت: $pid');
       if (!seen.add(pid)) err('duplicate_id', 'معرّف مكرر: $pid');
       allParagraphIds.add(pid);
       final kind = p['kind'];
@@ -171,7 +204,7 @@ List<Issue> validateBook(Map<String, Object?> b, String where, {String? expected
         err('empty_text', 'فقرة فارغة: $pid');
         continue;
       }
-      issues.addAll(checkParagraphText(t, verse: kind == 'verse', where: '$where $pid'));
+      text(t, pid, verse: kind == 'verse');
     }
   }
 
@@ -190,9 +223,10 @@ List<Issue> validateBook(Map<String, Object?> b, String where, {String? expected
 }
 
 /// فحوص نص فقرة واحدة.
-List<Issue> checkParagraphText(String t, {required bool verse, required String where}) {
+List<Issue> checkParagraphText(String t, {required bool verse, required String where, String? id}) {
   final issues = <Issue>[];
-  void err(String code, String detail) => issues.add(Issue(where, code, detail));
+  void err(String code, String detail) =>
+      issues.add(Issue(where, code, detail, warning: warningCodes.contains(code), paragraphId: id));
   if (t != t.trim()) err('whitespace', 'مسافات في الطرفين');
   if (_control.hasMatch(t)) err('control_char', 'محرف تحكم أو تنسيق غير مرئي');
   if (!verse && (t.contains('\n') || t.contains('\t'))) err('control_char', '\\n أو \\t في نثر');
@@ -211,12 +245,18 @@ class LibraryReport {
   final List<Issue> issues;
   final int books;
   final int paragraphs;
-  bool get ok => issues.isEmpty;
+  List<Issue> get errors => issues.where((i) => !i.warning).toList();
+  List<Issue> get warnings => issues.where((i) => i.warning).toList();
+  bool get ok => errors.isEmpty;
 }
 
 /// يتحقق من `catalog.json` وكل ملفات `books/` ومطابقة sha256 والأحجام.
-LibraryReport validateLibrary(Directory root) {
+/// [exceptions] لكل كتاب؛ إن غابت تُقرأ من `tools/recipes/*.json` (validation_exceptions).
+LibraryReport validateLibrary(Directory root, {Map<String, ValidationExceptions>? exceptions}) {
+  exceptions ??= loadRecipeExceptions(Directory('${root.path}/tools/recipes'));
   final issues = <Issue>[];
+  // معرّفات الفقرات وredirects لكل كتاب وإصدار، لفحص الاستمرارية بين الإصدارات.
+  final idsByVersion = <String, Map<int, ({Set<String> ids, Set<String> redirected})>>{};
   var books = 0, paragraphs = 0;
   final catFile = File('${root.path}/catalog.json');
   final listed = <String>{};
@@ -318,15 +358,33 @@ LibraryReport validateLibrary(Directory root) {
         issues.add(Issue(rel, 'gzip', 'تعذّر فك الضغط: $e'));
         continue;
       }
-      final bi = validateBookBytes(raw, rel, expectedId: m[1], expectedVersion: int.parse(m[2]!));
+      final bi = validateBookBytes(raw, rel,
+          expectedId: m[1], expectedVersion: int.parse(m[2]!), exceptions: exceptions[m[1]] ?? const {});
       issues.addAll(bi);
       books++;
       try {
-        paragraphs += paragraphsOf(jsonDecode(utf8.decode(raw)) as Map<String, Object?>).length;
+        final book = jsonDecode(utf8.decode(raw)) as Map<String, Object?>;
+        final ids = paragraphsOf(book).map((p) => p['id']! as String).toSet();
+        paragraphs += ids.length;
+        final red = ((book['redirects'] as Map?) ?? const {}).keys.cast<String>().toSet();
+        (idsByVersion[m[1]!] ??= {})[int.parse(m[2]!)] = (ids: ids, redirected: red);
       } on Object {
         // سُجّل الخطأ أعلاه.
       }
     }
+    // ثبات المعرّفات: كل معرّف في الإصدار N-1 موجود في N أو في redirects الخاصة بـ N.
+    idsByVersion.forEach((id, versions) {
+      for (final v in versions.keys) {
+        final prev = versions[v - 1];
+        if (prev == null) continue;
+        final cur = versions[v]!;
+        final lost = prev.ids.difference(cur.ids).difference(cur.redirected).toList()..sort();
+        if (lost.isNotEmpty) {
+          issues.add(Issue('books/$id/$id.v$v.json.gz', 'lost_id',
+              '${lost.length} معرّف من v${v - 1} غير موجود ولا في redirects: ${lost.take(10).join('، ')}'));
+        }
+      }
+    });
     for (final f in latestBookFiles(root)) {
       final id = f.uri.pathSegments.last.split('.').first;
       if (!listed.contains(id) && catFile.existsSync()) {
@@ -335,4 +393,22 @@ LibraryReport validateLibrary(Directory root) {
     }
   }
   return LibraryReport(issues, books, paragraphs);
+}
+
+/// يقرأ validation_exceptions من وصفات الكتب: {كتاب: {معرّف: رموز}}.
+Map<String, ValidationExceptions> loadRecipeExceptions(Directory recipesDir) {
+  final out = <String, ValidationExceptions>{};
+  if (!recipesDir.existsSync()) return out;
+  final files = recipesDir.listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList()
+    ..sort((a, b) => a.path.compareTo(b.path));
+  for (final f in files) {
+    final j = jsonDecode(f.readAsStringSync()) as Map<String, Object?>;
+    final ex = j['validation_exceptions'] as Map?;
+    if (j['id'] is String && ex != null) {
+      out[j['id']! as String] = {
+        for (final e in ex.entries) e.key as String: {...(e.value as List).cast<String>()},
+      };
+    }
+  }
+  return out;
 }

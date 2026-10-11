@@ -68,8 +68,53 @@ void main() {
     expect(Recipe.load(recipeFile).retrieved, '2026-10-11');
   });
 
-  test('خطأ HTTP يُرفع ولا يُنتج نصاً', () async {
+  test('خطأ HTTP يُرفع برسالة عربية ولا يُنتج نصاً', () async {
     final f = WikiFetcher(MockClient((_) async => http.Response('', 403)), 'ar.wikisource.org');
-    expect(f.latest('x'), throwsA(isA<HttpException>()));
+    await expectLater(
+      f.latest('x'),
+      throwsA(isA<WikiFetchException>()
+          .having((e) => e.network, 'network', isFalse)
+          .having((e) => e.message, 'message', contains('HTTP 403'))),
+    );
+  });
+
+  test('انقطاع الشبكة: WikiFetchException(network) برسالة عربية', () async {
+    final f = WikiFetcher(
+        MockClient((_) async => throw http.ClientException('Connection refused')), 'ar.wikisource.org');
+    await expectLater(
+      f.latest('x'),
+      throwsA(isA<WikiFetchException>()
+          .having((e) => e.network, 'network', isTrue)
+          .having((e) => e.message, 'message', contains('تعذّر الاتصال'))),
+    );
+  });
+
+  test('maxlag: إعادة محاولة محدودة بمهلة Retry-After ثم النجاح', () async {
+    var calls = 0;
+    final waits = <Duration>[];
+    final client = MockClient((_) async {
+      calls++;
+      if (calls < 3) {
+        return http.Response.bytes(utf8.encode(jsonEncode({'error': {'code': 'maxlag', 'info': 'lag'}})), 200,
+            headers: {'retry-after': '2'});
+      }
+      return _json({'query': {'pages': [_page('س', 5, 'نص')]}});
+    });
+    final f = WikiFetcher(client, 'ar.wikisource.org', sleep: (d) async => waits.add(d));
+    final r = await f.latest('س');
+    expect(r.revid, 5);
+    expect(calls, 3);
+    expect(waits, [const Duration(seconds: 2), const Duration(seconds: 2)]);
+  });
+
+  test('maxlag مستمر: يتوقف بعد الحد بخطأ', () async {
+    var calls = 0;
+    final client = MockClient((_) async {
+      calls++;
+      return http.Response.bytes(utf8.encode(jsonEncode({'error': {'code': 'maxlag'}})), 503);
+    });
+    final f = WikiFetcher(client, 'ar.wikisource.org', maxRetries: 2, sleep: (_) async {});
+    await expectLater(f.latest('س'), throwsA(isA<WikiFetchException>()));
+    expect(calls, 3);
   });
 }

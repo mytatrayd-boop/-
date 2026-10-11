@@ -102,9 +102,13 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
   }
   if (chapters.isEmpty) throw StateError('لم يُستخرج أي نص من الصفحات.');
 
-  final bWidth = chapters.length < 100 ? 2 : 3;
-  final maxP = chapters.fold<int>(0, (m, c) => c.paragraphs.length > m ? c.paragraphs.length : m);
-  final pWidth = maxP < 10000 ? 4 : 5;
+  // عرض ثابت لكل الكتب والإصدارات (D17): 3 للباب و5 للفقرة، فلا يتغير معرّف
+  // لمجرد أن كتاباً تجاوز 99 باباً أو 9999 فقرة في إصدار لاحق.
+  const bWidth = 3, pWidth = 5;
+  if (chapters.length > 999) throw StateError('أكثر من 999 باباً: يلزم تقسيم الكتاب.');
+  for (final c in chapters) {
+    if (c.paragraphs.length > 99999) throw StateError('باب بأكثر من 99999 فقرة: ${c.title}');
+  }
 
   final outChapters = <Map<String, Object?>>[];
   for (var i = 0; i < chapters.length; i++) {
@@ -144,7 +148,9 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
     'license': recipe.license,
     'removed': recipe.removed,
     'chapters': outChapters,
-    'redirects': <String, String>{},
+    'redirects': {
+      for (final k in (recipe.redirects.keys.toList()..sort())) k: recipe.redirects[k],
+    },
   };
   return BuildResult(book, stats);
 }

@@ -72,6 +72,14 @@ const _droppedLinkPrefixes = {
   'category', 'تصنيف', 'file', 'ملف', 'image', 'صورة', 'media', 'وسائط',
 };
 
+/// رموز لغات روابط اللغات (interlanguage) التي لا تظهر في الصفحة.
+/// قائمة صريحة: البادئات الأخرى (w: وwikt: ...) يبقى نصها الظاهر.
+const interlanguageCodes = {
+  'ar', 'en', 'fr', 'de', 'es', 'it', 'pt', 'ru', 'fa', 'ur', 'tr', 'he',
+  'ku', 'ckb', 'az', 'id', 'ms', 'zh', 'ja', 'ko', 'nl', 'pl', 'sv', 'la',
+  'el', 'hi', 'bn', 'sq', 'bs', 'arz', 'ary', 'mul',
+};
+
 final _letter = RegExp(r'\p{L}', unicode: true);
 
 class WikitextConverter {
@@ -92,6 +100,16 @@ class WikitextConverter {
 
   String _preprocess(String s, RemovalStats stats) {
     s = s.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
+    if (s.contains('<!--')) {
+      throw WikitextException('تعليق <!-- بلا إغلاق: قد يخفي نصاً أو يُظهر ما ليس نصاً.');
+    }
+    final hidden = RegExp(
+      r'''<[a-zA-Z][^>]*\bstyle\s*=\s*["'][^"']*display\s*:\s*none''',
+      caseSensitive: false,
+    ).firstMatch(s);
+    if (hidden != null) {
+      throw WikitextException('عنصر مخفي (display:none) غير مدعوم: ${hidden[0]}');
+    }
     s = s.replaceAll(
       RegExp(r'<includeonly>[\s\S]*?</includeonly>', caseSensitive: false),
       '',
@@ -190,16 +208,23 @@ class WikitextConverter {
       stats.add('قالب: $name');
       return '';
     }
-    final args = parts.skip(1).toList();
-    final positional = [
-      for (final a in args)
-        if (!RegExp(r'^\s*[^=\[\]{}|]+=').hasMatch(a)) a,
-    ];
+    final args = parseTemplateArgs(parts.skip(1).toList());
     if (rules.verse.map(normalizeTemplateName).contains(name)) {
+      if (args.named.isNotEmpty) {
+        throw WikitextException(
+          'قالب بيت «$name» بوسيط مسمّى غير معروف: ${args.named.keys.join('، ')}',
+        );
+      }
+      final keys = args.positional.keys.toList()..sort();
+      if (keys.any((k) => k > 2)) {
+        throw WikitextException('قالب بيت «$name» بأكثر من شطرين: ${parts.join('|')}');
+      }
       final hemis = [
-        for (final a in positional.take(2))
-          _expandTemplatesIn(a, stats, unknown).trim(),
+        for (final k in keys) _expandTemplatesIn(args.positional[k]!, stats, unknown).trim(),
       ].where((h) => h.isNotEmpty).toList();
+      if (hemis.isEmpty) {
+        throw WikitextException('قالب بيت «$name» فارغ.');
+      }
       return '$_verseStart$_verseMark${hemis.join(_hemiSep)}$_verseEnd';
     }
     if (rules.drop.map(normalizeTemplateName).contains(name)) {
@@ -208,9 +233,11 @@ class WikitextConverter {
     }
     for (final e in rules.unwrap.entries) {
       if (normalizeTemplateName(e.key) == name) {
-        final idx = e.value - 1;
-        if (idx < 0 || idx >= positional.length) return '';
-        return _expandTemplatesIn(positional[idx], stats, unknown);
+        final v = args.positional[e.value];
+        if (v == null) {
+          throw WikitextException('قالب «$name» بلا الوسيط ${e.value} المطلوب إبقاؤه: ${parts.join('|')}');
+        }
+        return _expandTemplatesIn(v, stats, unknown);
       }
     }
     unknown.add(name);
@@ -246,12 +273,18 @@ class WikitextConverter {
   String _link(String inner, RemovalStats stats) {
     final parts = splitTopLevel(inner, '|');
     var target = parts.first.trim();
+    // [[:تصنيف:س|نص]] بنقطتين في أوله رابط ظاهر لا تصنيف.
+    final shown = target.startsWith(':');
+    if (shown) target = target.substring(1).trim();
     final colon = target.indexOf(':');
-    if (colon > 0) {
+    if (colon > 0 && !shown) {
       final prefix = target.substring(0, colon).trim().toLowerCase();
-      if (_droppedLinkPrefixes.contains(prefix) ||
-          RegExp(r'^[a-z]{2,3}(-[a-z]+)?$').hasMatch(prefix)) {
-        stats.add('رابط ملف/تصنيف/لغة');
+      if (_droppedLinkPrefixes.contains(prefix)) {
+        stats.add('رابط ملف/تصنيف');
+        return '';
+      }
+      if (interlanguageCodes.contains(prefix) && parts.length == 1) {
+        stats.add('رابط لغة');
         return '';
       }
     }
@@ -266,10 +299,12 @@ class WikitextConverter {
     return s.replaceAllMapped(
       RegExp(r'<poem\b[^>]*>([\s\S]*?)</poem\s*>', caseSensitive: false),
       (m) {
-        final lines = m[1]!.split('\n');
+        // <br> داخل القصيدة فاصل سطر (بيت جديد) كما يعرضه الويكي.
+        final lines = m[1]!
+            .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+            .split('\n');
         final b = StringBuffer('\n');
         for (var line in lines) {
-          line = line.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '');
           if (line.trim().isEmpty) {
             b.write('$_verseBreak\n');
             continue;
@@ -280,7 +315,7 @@ class WikitextConverter {
           }
           line = line.replaceFirst(RegExp(r'^[:\s]+'), '');
           final hemis = line
-              .split(RegExp(r'\t| {3,}|\s+\.\.\.\s+|\s+…\s+'))
+              .split(RegExp(r'\t| {3,}'))
               .map((h) => h.trim())
               .where((h) => h.isNotEmpty);
           b.write('$_verseMark${hemis.join(_hemiSep)}\n');
@@ -388,7 +423,7 @@ class WikitextConverter {
 /// لا يمسّ التشكيل ولا التطويل ولا الحروف.
 String cleanText(String s) {
   s = s.replaceAll(
-    RegExp('[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u00AD]'),
+    RegExp('[\u200B\u200D-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u00AD]'),
     '',
   );
   s = s.replaceAll(RegExp(r'[\x00-\x1F\x7F\uE000-\uE004]'), ' ');
@@ -401,6 +436,45 @@ String cleanText(String s) {
     );
   }
   return arabicNfc(s);
+}
+
+class TemplateArgs {
+  TemplateArgs(this.positional, this.named);
+
+  /// بالرقم (1، 2، ...): الموضعية بالترتيب، أو المسمّاة رقماً صراحة مثل 2=.
+  final Map<int, String> positional;
+  final Map<String, String> named;
+}
+
+/// وسائط القالب كما في ميدياويكي: `اسم=قيمة` مسمّى إن كان الاسم كلمة واحدة
+/// بلا مسافات؛ الاسم الرقمي (1= 2=) موضعي صريح. «=» داخل نص فيه مسافات
+/// قبلها (مثل شطر) لا يجعله مسمّى.
+TemplateArgs parseTemplateArgs(List<String> args) {
+  final positional = <int, String>{};
+  final named = <String, String>{};
+  var next = 1;
+  final namedRe = RegExp(r'^\s*([^\s=\[\]{}|]+)\s*=([\s\S]*)$');
+  for (final a in args) {
+    final eq = _topLevelIndexOf(a, '=');
+    final m = eq >= 0 ? namedRe.firstMatch(a) : null;
+    if (m != null && a.indexOf('=') == eq) {
+      final key = m[1]!;
+      final n = int.tryParse(key);
+      if (n != null && n > 0) {
+        positional[n] = m[2]!;
+      } else {
+        named[key] = m[2]!;
+      }
+    } else {
+      positional[next++] = a;
+    }
+  }
+  return TemplateArgs(positional, named);
+}
+
+int _topLevelIndexOf(String s, String ch) {
+  final parts = splitTopLevel(s, ch);
+  return parts.length > 1 ? parts.first.length : -1;
 }
 
 String normalizeTemplateName(String name) {

@@ -20,13 +20,24 @@ void main(List<String> args) {
       Directory(pos[1]),
       overwrite: args.contains('--overwrite'),
     );
-    final issues = validateBookBytes(out.json, out.file.path, expectedId: recipe.id, expectedVersion: recipe.version);
+    final all = validateBookBytes(out.json, out.file.path,
+        expectedId: recipe.id,
+        expectedVersion: recipe.version,
+        exceptions: {for (final e in recipe.validationExceptions.entries) e.key: e.value.toSet()});
+    final issues = all.where((i) => !i.warning).toList();
+    final warnings = all.where((i) => i.warning).toList();
     stdout.writeln('كُتب ${out.file.path}');
     stdout.writeln('الأبواب: ${out.result.chapters.length}، الفقرات: ${out.result.paragraphCount}، '
         'الحجم: ${out.gz.length} بايت مضغوط / ${out.json.length} غير مضغوط');
     stdout.writeln('المحذوف:');
     for (final l in out.result.stats.lines()) {
       stdout.writeln('  $l');
+    }
+    if (warnings.isNotEmpty) {
+      stdout.writeln('تحذيرات للمراجعة (${warnings.length}، تظهر في العيّنة):');
+      for (final w in warnings.take(50)) {
+        stdout.writeln('  $w');
+      }
     }
     if (issues.isNotEmpty) {
       stderr.writeln('أخطاء التحقق (${issues.length}):');

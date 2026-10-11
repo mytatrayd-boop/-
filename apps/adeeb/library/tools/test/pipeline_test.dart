@@ -45,11 +45,11 @@ void main() {
     final book = decodeGzJson(File('${tmp.path}/books/testbook/testbook.v1.json.gz').readAsBytesSync());
     final chapters = (book['chapters']! as List).cast<Map<String, Object?>>();
     expect(chapters.map((c) => '${c['id']}|${c['level']}|${c['title']}').toList(), [
-      'testbook-b01|1|الباب الأول',
-      'testbook-b02|2|أول الكتاب',
-      'testbook-b03|1|الباب الثاني: في الشعر',
-      'testbook-b04|1|الباب الثالث',
-      'testbook-b05|2|فصل فرعي',
+      'testbook-b001|1|الباب الأول',
+      'testbook-b002|2|أول الكتاب',
+      'testbook-b003|1|الباب الثاني: في الشعر',
+      'testbook-b004|1|الباب الثالث',
+      'testbook-b005|2|فصل فرعي',
     ]);
     final all = paragraphsOf(book).toList();
     final joined = all.map((p) => p['text']).join('\n');
@@ -58,7 +58,7 @@ void main() {
     expect(joined, isNot(contains('عنوان')));
     expect(joined, isNot(contains('تصنيف')));
     expect(all.first, {
-      'id': 'testbook-b02-p0001',
+      'id': 'testbook-b002-p00001',
       'text': 'هذه فقرة تجريبية أولى، كُتبت لاختبار الأداة فقط. وهذا سطر ثانٍ في الفقرة نفسها يُضمّ إليها بمسافة.',
     });
     expect(all[1]['text'], 'نَصٌّ مَشْكُولٌ لِلِاخْتِبَارِ، فيه رابط وصفحة أخرى.');
@@ -119,6 +119,70 @@ void main() {
     final book = decodeGzJson(File('${tmp.path}/books/testbook/testbook.v1.json.gz').readAsBytesSync());
     final a = buildSampleMarkdown(book, count: 5, seed: 7);
     expect(buildSampleMarkdown(book, count: 5, seed: 7), a);
-    expect(RegExp(r'`testbook-b\d\d-p\d{4}`').allMatches(a), hasLength(5));
+    expect(RegExp(r'`testbook-b\d{3}-p\d{5}`').allMatches(a), hasLength(5));
+  });
+
+  test('العيّنة: العدد الافتراضي 20 (أو كل الفقرات إن قلّت) وقسم التحذيرات', () {
+    final texts = fixtureTexts();
+    texts[103] = '${texts[103]}\nمضى من عمره (١٥) سنة.';
+    final book = buildBook(fixtureRecipe(), texts).book;
+    final md = buildSampleMarkdown(book, seed: 1);
+    expect(defaultSampleCount, 20);
+    expect(RegExp(r'^## \d+\. ', multiLine: true).allMatches(md), hasLength(11));
+    expect(md, contains('## تحذيرات للمراجعة (1)'));
+    expect(md, contains('[footnote_paren_number]'));
+    expect(md, contains('فيها تحذير'));
+  });
+
+  test('redirects في الوصفة تُنسخ إلى الكتاب مرتبة', () {
+    final j = jsonDecode(File('${fixtures.path}/recipe.json').readAsStringSync()) as Map<String, Object?>;
+    j['redirects'] = {'testbook-b009-p00001': 'testbook-b002-p00001'};
+    final book = buildBook(Recipe.fromJson(j), fixtureTexts()).book;
+    expect(book['redirects'], {'testbook-b009-p00001': 'testbook-b002-p00001'});
+    expect(validateBook(book, 't'), isEmpty);
+  });
+
+  test('ثبات المعرّفات بين الإصدارات: المفقود من v1 بلا redirect خطأ', () {
+    runOnce(tmp);
+    final j = jsonDecode(File('${fixtures.path}/recipe.json').readAsStringSync()) as Map<String, Object?>;
+    j['version'] = 2;
+    final texts = fixtureTexts();
+    texts[103] = texts[103]!.replaceFirst('فقرة في فصل فرعي.', '');
+    convertToLibrary(Recipe.fromJson(j), texts, tmp);
+    buildCatalog(tmp, date: '2026-10-12');
+    final lost = validateLibrary(tmp).issues.where((i) => i.code == 'lost_id').toList();
+    expect(lost, hasLength(1));
+    expect(lost.single.detail, contains('testbook-b005-p00003'));
+
+    // مع redirects للمعرّف المفقود: لا خطأ.
+    j['redirects'] = {'testbook-b005-p00003': 'testbook-b005-p00002'};
+    convertToLibrary(Recipe.fromJson(j), texts, tmp, overwrite: true);
+    buildCatalog(tmp, date: '2026-10-12');
+    expect(validateLibrary(tmp).issues, isEmpty);
+  });
+
+  test('المقارنة على JSON بعد فك الضغط: gzip مختلف لنفس المحتوى ليس تغييراً', () {
+    runOnce(tmp);
+    final f = File('${tmp.path}/books/testbook/testbook.v1.json.gz');
+    final json = gzip.decode(f.readAsBytesSync());
+    final other = GZipCodec(level: 1).encode(json); // بايتات مضغوطة مختلفة، محتوى واحد
+    f.writeAsBytesSync(other);
+    final out = convertToLibrary(fixtureRecipe(), fixtureTexts(), tmp);
+    expect(out.gz, other, reason: 'لا يُستبدل الملف المنشور ما دام المحتوى نفسه');
+  });
+
+  test('validateLibrary يقرأ validation_exceptions من tools/recipes', () {
+    final texts = fixtureTexts();
+    texts[103] = '${texts[103]}\nانظر باب٢ من هذا الكتاب.';
+    convertToLibrary(fixtureRecipe(), texts, tmp);
+    buildCatalog(tmp, date: '2026-10-11');
+    expect(validateLibrary(tmp).issues.map((i) => i.code), ['footnote_attached_number']);
+    final recipes = Directory('${tmp.path}/tools/recipes')..createSync(recursive: true);
+    final j = jsonDecode(File('${fixtures.path}/recipe.json').readAsStringSync()) as Map<String, Object?>;
+    j['validation_exceptions'] = {
+      'testbook-b006-p00001': ['footnote_attached_number'],
+    };
+    File('${recipes.path}/testbook.json').writeAsStringSync(jsonEncode(j));
+    expect(validateLibrary(tmp).issues, isEmpty);
   });
 }

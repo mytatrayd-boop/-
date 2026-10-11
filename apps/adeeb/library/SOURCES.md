@@ -6,10 +6,10 @@
 ## طريقة الإضافة (من `library/tools/`)
 1. وصفة مسودة `recipes/<id>.json` (البيانات الوصفية + `root_page` بلا `pages`).
 2. `dart run bin/fetch.dart recipes/<id>.json` — يكتشف الصفحات الفرعية بترتيب روابط الصفحة الجذر، ويثبّت `revid` لكل صفحة و`retrieved` في الوصفة، ويخزّن النص في `.cache/` (غير مرفوع).
-3. مراجعة الوصفة: `skip` للصفحات الحديثة، `skip_headings` لأقسام المحقق، وقواعد القوالب (`drop`/`unwrap`/`verse`). القالب أو الوسم المجهول يوقف التحويل بخطأ صريح، فلا يُحذف نص بصمت.
+3. مراجعة الوصفة: `skip` للصفحات الحديثة، `skip_headings` لأقسام المحقق، وقواعد القوالب (`drop`/`unwrap`/`verse`)، و`redirects` عند إصدار جديد يغيّر المعرّفات. القالب أو الوسم المجهول يوقف التحويل بخطأ صريح، فلا يُحذف نص بصمت.
 4. `dart run bin/convert.dart recipes/<id>.json ../` — يكتب `books/<id>/<id>.v<N>.json.gz` ويطبع إحصاء ما حُذف (يُنسخ إلى هذا الملف).
 5. `dart run bin/build_catalog.dart ../ --date YYYY-MM-DD` ثم `dart run bin/validate.dart ../`.
-6. `dart run bin/sample.dart ../books/<id>/<id>.v<N>.json.gz --count 10 --seed <n> > ../SAMPLE_REVIEW.md` لمراجعة المالك.
+6. `dart run bin/sample.dart ../books/<id>/<id>.v<N>.json.gz --seed <n> > ../SAMPLE_REVIEW.md` لمراجعة المالك (20 فقرة افتراضياً، مع قسم التحذيرات مثل «(١٥)»). الأرقام التي يتأكد أنها من نص المؤلف تُضاف بمعرّفها إلى `validation_exceptions` في الوصفة.
 
 ## الكتب
 

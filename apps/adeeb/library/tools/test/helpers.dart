@@ -20,12 +20,12 @@ Map<String, Object?> validBook() => {
       'removed': 'لا شيء',
       'chapters': [
         {
-          'id': 'kalila-b01',
+          'id': 'kalila-b001',
           'title': 'باب',
           'level': 1,
           'paragraphs': [
-            {'id': 'kalila-b01-p0001', 'text': 'فقرة أولى.'},
-            {'id': 'kalila-b01-p0002', 'kind': 'verse', 'text': 'صدر\tعجز\nصدر\tعجز'},
+            {'id': 'kalila-b001-p00001', 'text': 'فقرة أولى.'},
+            {'id': 'kalila-b001-p00002', 'kind': 'verse', 'text': 'صدر\tعجز\nصدر\tعجز'},
           ],
         },
       ],

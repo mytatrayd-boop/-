@@ -102,6 +102,8 @@ class Recipe {
     this.edition,
     this.retrieved,
     this.skipHeadings = const [],
+    this.redirects = const {},
+    this.validationExceptions = const {},
     TemplateRules? templates,
   }) : templates = templates ?? TemplateRules();
 
@@ -131,6 +133,12 @@ class Recipe {
   final List<String> skipHeadings;
   final TemplateRules templates;
 
+  /// معرّف قديم ← معرّف جديد، يُنسخ كما هو إلى `redirects` في ملف الكتاب.
+  final Map<String, String> redirects;
+
+  /// استثناءات مراجَعة يدوياً: معرّف ← رموز تحقق مسموح بها (مثل footnote_attached_number).
+  final Map<String, List<String>> validationExceptions;
+
   String get sourceUrl =>
       'https://$wiki/wiki/${Uri.encodeComponent(rootPage.replaceAll(' ', '_'))}';
 
@@ -152,6 +160,8 @@ class Recipe {
         'removed': removed,
         'skip_headings': skipHeadings,
         'templates': templates.toJson(),
+        if (redirects.isNotEmpty) 'redirects': redirects,
+        if (validationExceptions.isNotEmpty) 'validation_exceptions': validationExceptions,
         'pages': [for (final p in pages) p.toJson()],
       };
 
@@ -175,6 +185,13 @@ class Recipe {
       removed: j['removed']! as String,
       skipHeadings: [...((j['skip_headings'] as List?) ?? const []).cast<String>()],
       templates: TemplateRules.fromJson(j['templates'] as Map<String, Object?>?),
+      redirects: {
+        ...((j['redirects'] as Map?) ?? const {}).map((k, v) => MapEntry(k as String, v as String)),
+      },
+      validationExceptions: {
+        ...((j['validation_exceptions'] as Map?) ?? const {})
+            .map((k, v) => MapEntry(k as String, [...(v as List).cast<String>()])),
+      },
       pages: [
         for (final p in (j['pages']! as List).cast<Map<String, Object?>>())
           RecipePage.fromJson(p),

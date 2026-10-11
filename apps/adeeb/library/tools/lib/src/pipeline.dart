@@ -27,8 +27,9 @@ ConvertOutput convertToLibrary(
   final gz = gzipDeterministic(json);
   final file = File('${libraryRoot.path}/${bookRelativePath(recipe.id, recipe.version)}');
   if (file.existsSync() && !overwrite) {
-    final old = file.readAsBytesSync();
-    if (!_same(old, gz)) {
+    // المقارنة على JSON بعد فك الضغط: اختلاف نسخة zlib لا يُعدّ تغييراً في المحتوى.
+    final old = gzip.decode(file.readAsBytesSync());
+    if (!_same(old, json)) {
       throw StateError(
         '${file.path} موجود بمحتوى مختلف. ارفع version في الوصفة (مع redirects عند تغيّر المعرّفات) '
         'أو استخدم --overwrite لإصدار لم يُنشر بعد.',
@@ -36,6 +37,10 @@ ConvertOutput convertToLibrary(
     }
   }
   file.parent.createSync(recursive: true);
+  if (file.existsSync() && !overwrite) {
+    // المحتوى نفسه: يبقى الملف المنشور كما هو (sha256 في الفهرس لا يتغير).
+    return ConvertOutput(file, result, json, file.readAsBytesSync());
+  }
   file.writeAsBytesSync(gz);
   return ConvertOutput(file, result, json, gz);
 }

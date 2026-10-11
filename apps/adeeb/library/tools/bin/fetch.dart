@@ -27,6 +27,12 @@ Future<void> main(List<String> args) async {
     for (final p in recipe.pages) {
       stdout.writeln('  ${p.skip ? '[تجاهل] ' : ''}${p.title}  revid=${p.revid}');
     }
+  } on WikiFetchException catch (e) {
+    stderr.writeln('فشل الجلب: ${e.message}');
+    stderr.writeln(e.network
+        ? 'تحقق من الاتصال بالإنترنت ومن السماح بالمضيف ${recipe.wiki}، ثم أعد التشغيل. لم يُكتب أي نص.'
+        : 'لم يُكتب أي نص. أعد المحاولة لاحقاً أو راجع الوصفة.');
+    exitCode = e.network ? 69 : 70; // EX_UNAVAILABLE / EX_SOFTWARE
   } finally {
     client.close();
   }

@@ -13,9 +13,10 @@ void main(List<String> args) {
     stderr.writeln(i);
   }
   if (r.ok) {
-    stdout.writeln('OK: ${r.books} كتاب، ${r.paragraphs} فقرة، بلا أخطاء.');
+    stdout.writeln('OK: ${r.books} كتاب، ${r.paragraphs} فقرة، بلا أخطاء'
+        '${r.warnings.isEmpty ? '' : '، ${r.warnings.length} تحذير للمراجعة في العيّنة'}.');
   } else {
-    stderr.writeln('فشل: ${r.issues.length} خطأ.');
+    stderr.writeln('فشل: ${r.errors.length} خطأ، ${r.warnings.length} تحذير.');
     exit(1);
   }
 }

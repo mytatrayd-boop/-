@@ -14,10 +14,24 @@ import 'recipe.dart';
 const userAgent =
     'AdeebLibraryTools/0.1 (https://github.com/mytatrayd-boop/-; heritage text converter)';
 
+/// فشل الجلب برسالة عربية واضحة. [network] = تعذّر الاتصال أصلاً.
+class WikiFetchException implements Exception {
+  WikiFetchException(this.message, {this.network = false});
+  final String message;
+  final bool network;
+  @override
+  String toString() => message;
+}
+
 class WikiFetcher {
-  WikiFetcher(this.client, this.wiki);
+  WikiFetcher(this.client, this.wiki, {this.maxRetries = 3, Future<void> Function(Duration)? sleep})
+      : _sleep = sleep ?? Future<void>.delayed;
   final http.Client client;
   final String wiki;
+
+  /// عدد إعادات المحاولة عند maxlag (تأخر خوادم ويكيميديا) فقط.
+  final int maxRetries;
+  final Future<void> Function(Duration) _sleep;
 
   Future<Map<String, Object?>> _api(Map<String, String> params) async {
     final uri = Uri.https(wiki, '/w/api.php', {
@@ -26,13 +40,39 @@ class WikiFetcher {
       'formatversion': '2',
       'maxlag': '5',
     });
-    final res = await client.get(uri, headers: {'User-Agent': userAgent});
-    if (res.statusCode != 200) {
-      throw HttpException('HTTP ${res.statusCode} من $uri');
+    for (var attempt = 0;; attempt++) {
+      http.Response res;
+      try {
+        res = await client.get(uri, headers: {'User-Agent': userAgent});
+      } on http.ClientException catch (e) {
+        throw WikiFetchException('تعذّر الاتصال بـ $wiki (انقطاع الشبكة أو حجب الوكيل): ${e.message}',
+            network: true);
+      } on SocketException catch (e) {
+        throw WikiFetchException('تعذّر الاتصال بـ $wiki (انقطاع الشبكة): ${e.message}', network: true);
+      }
+      Map<String, Object?>? j;
+      try {
+        j = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, Object?>;
+      } on Object {
+        j = null;
+      }
+      final error = j?['error'];
+      final isMaxlag = error is Map && error['code'] == 'maxlag';
+      if (isMaxlag) {
+        if (attempt >= maxRetries) {
+          throw WikiFetchException('خوادم $wiki مشغولة (maxlag) بعد ${maxRetries + 1} محاولات؛ أعد المحاولة لاحقاً.');
+        }
+        final wait = int.tryParse(res.headers['retry-after'] ?? '') ?? 5;
+        await _sleep(Duration(seconds: wait.clamp(1, 60)));
+        continue;
+      }
+      if (res.statusCode != 200) {
+        throw WikiFetchException('ردّ $wiki بالرمز HTTP ${res.statusCode} للطلب $uri');
+      }
+      if (j == null) throw WikiFetchException('ردّ غير صالح (ليس JSON) من $wiki');
+      if (error != null) throw WikiFetchException('خطأ من واجهة $wiki: $error');
+      return j;
     }
-    final j = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, Object?>;
-    if (j['error'] != null) throw HttpException('خطأ API: ${j['error']}');
-    return j;
   }
 
   /// أحدث مراجعة لصفحة: (revid, wikitext, العنوان بعد التحويلات).
@@ -47,7 +87,7 @@ class WikiFetcher {
     });
     final pages = ((j['query']! as Map)['pages']! as List).cast<Map<String, Object?>>();
     final p = pages.single;
-    if (p['missing'] == true) throw HttpException('الصفحة غير موجودة: $title');
+    if (p['missing'] == true) throw WikiFetchException('الصفحة غير موجودة: $title');
     final rev = (p['revisions']! as List).cast<Map<String, Object?>>().single;
     final slot = (rev['slots']! as Map)['main']! as Map;
     return (revid: rev['revid']! as int, text: slot['content']! as String, title: p['title']! as String);
@@ -73,7 +113,7 @@ class WikiFetcher {
         }
       }
       for (final r in chunk) {
-        if (!out.containsKey(r)) throw HttpException('المراجعة $r غير متاحة');
+        if (!out.containsKey(r)) throw WikiFetchException('المراجعة $r غير متاحة');
       }
     }
     return out;
