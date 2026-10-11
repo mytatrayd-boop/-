@@ -10,6 +10,8 @@ void main() {
         .map((r) => r.values.first as String)
         .toList();
     expect(options, contains('ENABLE_FTS5'));
-    db.execute("CREATE VIRTUAL TABLE t USING fts5(norm, content='', contentless_delete=1)");
+    db.execute(
+      "CREATE VIRTUAL TABLE t USING fts5(norm, content='', contentless_delete=1)",
+    );
   });
 }

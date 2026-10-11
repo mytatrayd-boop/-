@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/formatters.dart';
+import '../reader/reader_providers.dart';
 import '../storage/book_repository.dart';
 import 'book_downloader.dart';
 import 'catalog.dart';
@@ -71,7 +72,7 @@ enum DownloadOutcome { installed, updated, cancelled, failed }
 
 class LibraryItem {
   const LibraryItem({this.entry, this.installed})
-      : assert(entry != null || installed != null);
+    : assert(entry != null || installed != null);
 
   final CatalogBook? entry;
   final InstalledBook? installed;
@@ -79,7 +80,8 @@ class LibraryItem {
   String get id => entry?.id ?? installed!.id;
   LocalizedName get title => entry?.title ?? installed!.title;
   LocalizedName get author => entry?.author ?? installed!.author;
-  int? get authorDeathHijri => entry?.authorDeathHijri ?? installed?.authorDeathHijri;
+  int? get authorDeathHijri =>
+      entry?.authorDeathHijri ?? installed?.authorDeathHijri;
   String get sourceName => entry?.sourceName ?? installed!.sourceName;
   String get license => entry?.license ?? installed!.license;
 
@@ -90,7 +92,9 @@ class LibraryItem {
     final local = installed;
     if (local == null) return BookStatus.notInstalled;
     final remote = entry;
-    if (remote != null && remote.version > local.version) return BookStatus.updateAvailable;
+    if (remote != null && remote.version > local.version) {
+      return BookStatus.updateAvailable;
+    }
     return BookStatus.installed;
   }
 }
@@ -123,13 +127,12 @@ class LibraryState {
     CatalogNotice? notice,
     List<LibraryItem>? items,
     Map<String, BookTask>? tasks,
-  }) =>
-      LibraryState(
-        status: status ?? this.status,
-        notice: notice ?? this.notice,
-        items: items ?? this.items,
-        tasks: tasks ?? this.tasks,
-      );
+  }) => LibraryState(
+    status: status ?? this.status,
+    notice: notice ?? this.notice,
+    items: items ?? this.items,
+    tasks: tasks ?? this.tasks,
+  );
 }
 
 final libraryControllerProvider =
@@ -156,7 +159,10 @@ class LibraryController extends Notifier<LibraryState> {
   Future<void> refresh() async {
     if (!ref.mounted) return;
     if (state.items.isEmpty) {
-      state = state.copyWith(status: CatalogStatus.loading, notice: CatalogNotice.none);
+      state = state.copyWith(
+        status: CatalogStatus.loading,
+        notice: CatalogNotice.none,
+      );
     }
     await _loadInstalled();
     final repo = ref.read(catalogRepositoryProvider);
@@ -170,7 +176,8 @@ class LibraryController extends Notifier<LibraryState> {
       notice = switch (e.failure) {
         CatalogFailure.network => CatalogNotice.offline,
         CatalogFailure.unsupportedSchema => CatalogNotice.updateApp,
-        CatalogFailure.server => _catalog != null ? CatalogNotice.stale : CatalogNotice.error,
+        CatalogFailure.server =>
+          _catalog != null ? CatalogNotice.stale : CatalogNotice.error,
       };
     }
     if (!ref.mounted) return;
@@ -220,7 +227,9 @@ class LibraryController extends Notifier<LibraryState> {
   /// يحمّل الإصدار الذي في الفهرس (تحميل أول أو تحديث).
   Future<DownloadOutcome> download(String id) async {
     final entry = _catalog?.byId(id);
-    final url = entry == null ? null : ref.read(catalogRepositoryProvider).bookUrl(entry);
+    final url = entry == null
+        ? null
+        : ref.read(catalogRepositoryProvider).bookUrl(entry);
     if (entry == null || url == null || _tokens.containsKey(id)) {
       return DownloadOutcome.failed;
     }
@@ -230,7 +239,9 @@ class LibraryController extends Notifier<LibraryState> {
     _setTask(id, const DownloadingTask(0));
     var lastPercent = 0;
     try {
-      final bytes = await ref.read(bookDownloaderProvider).download(
+      final bytes = await ref
+          .read(bookDownloaderProvider)
+          .download(
             url,
             expectedSha256: entry.sha256,
             expectedSize: entry.sizeBytes,
@@ -249,12 +260,16 @@ class LibraryController extends Notifier<LibraryState> {
       await _loadInstalled();
       if (!ref.mounted) return DownloadOutcome.failed;
       ref.invalidate(bookChaptersProvider(id));
+      // المفضلة والموضع نُقلا عبر redirects داخل الاستيراد؛ يُعاد عرضهما.
+      ref.read(installRevisionProvider.notifier).bump();
       final tasks = Map<String, BookTask>.of(state.tasks)..remove(id);
       state = state.copyWith(
         items: _merge(),
         tasks: tasks,
         // نجاح التحميل يعني عودة الاتصال.
-        notice: state.notice == CatalogNotice.offline ? CatalogNotice.none : null,
+        notice: state.notice == CatalogNotice.offline
+            ? CatalogNotice.none
+            : null,
       );
       return wasInstalled ? DownloadOutcome.updated : DownloadOutcome.installed;
     } on DownloadCancelledException {
@@ -300,6 +315,7 @@ class LibraryController extends Notifier<LibraryState> {
     await _loadInstalled();
     if (!ref.mounted) return ok;
     ref.invalidate(bookChaptersProvider(id));
+    ref.read(installRevisionProvider.notifier).bump();
     final tasks = Map<String, BookTask>.of(state.tasks)..remove(id);
     state = state.copyWith(items: _merge(), tasks: tasks);
     return ok;

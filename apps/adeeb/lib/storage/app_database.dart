@@ -5,9 +5,7 @@ library;
 import 'package:sqlite3/sqlite3.dart';
 
 /// الترحيل رقم i ينقل القاعدة من الإصدار i إلى i+1. لا يُعدَّل ترحيل منشور.
-final List<void Function(Database)> migrations = [
-  _v1,
-];
+final List<void Function(Database)> migrations = [_v1, _v2];
 
 int get schemaVersion => migrations.length;
 
@@ -45,7 +43,7 @@ void migrate(Database db) {
 }
 
 /// الإصدار 1 (الميزة 2): الكتب وأبوابها وفقراتها وتحويلات المعرّفات.
-/// فهرس البحث FTS5 والمفضلة والموضع تُضاف بترحيلات لاحقة (الميزتان 3 و4).
+/// فهرس البحث FTS5 يُضاف بترحيل لاحق (الميزة 4).
 void _v1(Database db) {
   db.execute('''
     CREATE TABLE books (
@@ -87,5 +85,24 @@ void _v1(Database db) {
       old_id TEXT PRIMARY KEY,
       book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
       new_id TEXT NOT NULL
+    )''');
+}
+
+/// الإصدار 2 (الميزة 3): المفضلة وآخر موضع قراءة. بلا مفتاح أجنبي إلى
+/// `books` أو `paragraphs` عمداً (D18): حذف الكتاب أو تحديثه لا يمسّهما،
+/// وبعد التحديث تُنقل معرّفاتهما عبر `redirects`.
+void _v2(Database db) {
+  db.execute('''
+    CREATE TABLE favorites (
+      paragraph_id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )''');
+  db.execute('CREATE INDEX favorites_recent ON favorites(created_at)');
+  db.execute('''
+    CREATE TABLE positions (
+      book_id TEXT PRIMARY KEY,
+      paragraph_id TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
     )''');
 }

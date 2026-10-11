@@ -8,19 +8,31 @@ import 'library_text.dart';
 void _snack(ScaffoldMessengerState messenger, String message) {
   messenger
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), duration: const Duration(seconds: 4)));
+    ..showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+    );
 }
 
 /// تحميل أو تحديث، مع رسالة «حُدّث الكتاب» بعد التحديث (DESIGN §7.2).
-Future<void> startDownload(BuildContext context, WidgetRef ref, String bookId) async {
+Future<void> startDownload(
+  BuildContext context,
+  WidgetRef ref,
+  String bookId,
+) async {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
-  final outcome = await ref.read(libraryControllerProvider.notifier).download(bookId);
+  final outcome = await ref
+      .read(libraryControllerProvider.notifier)
+      .download(bookId);
   if (outcome == DownloadOutcome.updated) _snack(messenger, l10n.bookUpdated);
 }
 
 /// حوار التأكيد ثم الحذف (DESIGN §7.2). يعيد true إن حُذف الكتاب.
-Future<bool> confirmAndDelete(BuildContext context, WidgetRef ref, LibraryItem item) async {
+Future<bool> confirmAndDelete(
+  BuildContext context,
+  WidgetRef ref,
+  LibraryItem item,
+) async {
   final l10n = AppLocalizations.of(context);
   final freed = item.installed?.bytes ?? item.displaySize;
   // النصوص تُحسب قبل الحوار: قد تُغلق الصفحة المستدعية أثناء حركة إغلاقه.
@@ -37,7 +49,9 @@ Future<bool> confirmAndDelete(BuildContext context, WidgetRef ref, LibraryItem i
           child: Text(l10n.cancel),
         ),
         TextButton(
-          style: TextButton.styleFrom(foregroundColor: Theme.of(dialogContext).colorScheme.error),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(dialogContext).colorScheme.error,
+          ),
           onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(l10n.delete),
         ),

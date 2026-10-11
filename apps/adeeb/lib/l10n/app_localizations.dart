@@ -409,6 +409,252 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'«{title}»: يُحمَّل… {percent}٪'**
   String downloadAnnouncement(String title, String percent);
+
+  /// No description provided for @startReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ القراءة'**
+  String get startReading;
+
+  /// No description provided for @continueReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع القراءة'**
+  String get continueReading;
+
+  /// No description provided for @reachedPosition.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى: {chapter} — {percent}٪'**
+  String reachedPosition(String chapter, String percent);
+
+  /// No description provided for @youAreHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت هنا'**
+  String get youAreHere;
+
+  /// No description provided for @chapterHereSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'{chapter}، أنت هنا'**
+  String chapterHereSemantics(String chapter);
+
+  /// No description provided for @booksTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتب'**
+  String get booksTab;
+
+  /// No description provided for @favoritesTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'المفضلة'**
+  String get favoritesTab;
+
+  /// No description provided for @favoritesEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد فقرات في المفضلة بعد.'**
+  String get favoritesEmptyTitle;
+
+  /// No description provided for @favoritesEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط مطوّلاً على أي فقرة أثناء القراءة واختر «أضف إلى المفضلة».'**
+  String get favoritesEmptyHint;
+
+  /// No description provided for @favoritesError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر عرض المفضلة.'**
+  String get favoritesError;
+
+  /// No description provided for @remove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة'**
+  String get remove;
+
+  /// No description provided for @addedToFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيفت إلى المفضلة'**
+  String get addedToFavorites;
+
+  /// No description provided for @removedFromFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُزيلت من المفضلة'**
+  String get removedFromFavorites;
+
+  /// No description provided for @undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get undo;
+
+  /// No description provided for @addToFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف إلى المفضلة'**
+  String get addToFavorites;
+
+  /// No description provided for @removeFromFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أزل من المفضلة'**
+  String get removeFromFavorites;
+
+  /// No description provided for @inFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'في المفضلة'**
+  String get inFavorites;
+
+  /// No description provided for @bookNotInstalledShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتاب غير محمّل'**
+  String get bookNotInstalledShort;
+
+  /// No description provided for @bookNotInstalledReader.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكتاب غير محمّل على جهازك.'**
+  String get bookNotInstalledReader;
+
+  /// No description provided for @downloadWithSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميل ({size})'**
+  String downloadWithSize(String size);
+
+  /// No description provided for @unavailableBook.
+  ///
+  /// In ar, this message translates to:
+  /// **'كتاب غير متاح'**
+  String get unavailableBook;
+
+  /// No description provided for @breadcrumb.
+  ///
+  /// In ar, this message translates to:
+  /// **'{book} ‹ {chapter}'**
+  String breadcrumb(String book, String chapter);
+
+  /// No description provided for @passageSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'{source}: {text}'**
+  String passageSemantics(String source, String text);
+
+  /// No description provided for @contents.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفهرس'**
+  String get contents;
+
+  /// No description provided for @displaySettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات العرض'**
+  String get displaySettings;
+
+  /// No description provided for @textSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط'**
+  String get textSize;
+
+  /// No description provided for @decreaseTextLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'أ−'**
+  String get decreaseTextLabel;
+
+  /// No description provided for @increaseTextLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'أ+'**
+  String get increaseTextLabel;
+
+  /// No description provided for @decreaseText.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصغير الخط'**
+  String get decreaseText;
+
+  /// No description provided for @increaseText.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكبير الخط'**
+  String get increaseText;
+
+  /// No description provided for @textSizeLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى {level} من {total}'**
+  String textSizeLevel(String level, String total);
+
+  /// No description provided for @textPreview.
+  ///
+  /// In ar, this message translates to:
+  /// **'هكذا يظهر نص الكتاب بهذا الحجم.'**
+  String get textPreview;
+
+  /// No description provided for @pageColor.
+  ///
+  /// In ar, this message translates to:
+  /// **'لون الصفحة'**
+  String get pageColor;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتح'**
+  String get themeLight;
+
+  /// No description provided for @themePaper.
+  ///
+  /// In ar, this message translates to:
+  /// **'ورق'**
+  String get themePaper;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In ar, this message translates to:
+  /// **'داكن'**
+  String get themeDark;
+
+  /// No description provided for @readerProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباب {chapter} من {total} · {percent}٪'**
+  String readerProgress(String chapter, String total, String percent);
+
+  /// No description provided for @resumedHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابعت من حيث توقفت'**
+  String get resumedHere;
+
+  /// No description provided for @fromStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'من البداية'**
+  String get fromStart;
+
+  /// No description provided for @paragraphNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نجد الفقرة نفسها، فتحنا الباب الذي كانت فيه'**
+  String get paragraphNotFound;
+
+  /// No description provided for @continueReadingSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع القراءة: {source}. {text}'**
+  String continueReadingSemantics(String source, String text);
 }
 
 class _AppLocalizationsDelegate

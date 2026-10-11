@@ -48,11 +48,16 @@ class CatalogRepository {
   Future<Catalog> fetch() async {
     final base = _baseUri;
     if (base == null) {
-      throw const CatalogFetchException(CatalogFailure.server, 'LIBRARY_BASE_URL missing');
+      throw const CatalogFetchException(
+        CatalogFailure.server,
+        'LIBRARY_BASE_URL missing',
+      );
     }
     final http.Response response;
     try {
-      response = await _client.get(base.resolve('catalog.json')).timeout(timeout);
+      response = await _client
+          .get(base.resolve('catalog.json'))
+          .timeout(timeout);
     } catch (e) {
       throw CatalogFetchException(
         isNetworkError(e) ? CatalogFailure.network : CatalogFailure.server,
@@ -60,7 +65,10 @@ class CatalogRepository {
       );
     }
     if (response.statusCode != 200) {
-      throw CatalogFetchException(CatalogFailure.server, 'HTTP ${response.statusCode}');
+      throw CatalogFetchException(
+        CatalogFailure.server,
+        'HTTP ${response.statusCode}',
+      );
     }
     final text = _decodeUtf8(response.bodyBytes);
     final Catalog catalog;
@@ -101,7 +109,10 @@ class CatalogRepository {
     try {
       return const Utf8Decoder().convert(bytes);
     } on FormatException catch (e) {
-      throw CatalogFetchException(CatalogFailure.server, 'not UTF-8: ${e.message}');
+      throw CatalogFetchException(
+        CatalogFailure.server,
+        'not UTF-8: ${e.message}',
+      );
     }
   }
 }

@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
+import '../reader/continue_reading_card.dart';
+import '../reader/favorites_tab.dart';
 import 'book_card.dart';
 import 'library_controller.dart';
 
-/// شاشة المكتبة (DESIGN §7): قائمة الكتب وحالات الفهرس.
+/// شاشة المكتبة (DESIGN §7): تبويبا «الكتب» (مع «تابع القراءة») و«المفضلة».
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
 
@@ -19,65 +21,89 @@ class LibraryScreen extends ConsumerWidget {
     final controller = ref.read(libraryControllerProvider.notifier);
     ref.listen(libraryControllerProvider, (previous, next) {
       for (final message in progressAnnouncements(context, previous, next)) {
-        SemanticsService.sendAnnouncement(View.of(context), message, Directionality.of(context));
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          message,
+          Directionality.of(context),
+        );
       }
     });
 
     final Widget body = switch (state.status) {
       CatalogStatus.loading => const _SkeletonList(),
       CatalogStatus.offlineEmpty => _MessageView(
-          icon: Icons.shelves,
-          title: l10n.offlineFirstRunTitle,
-          body: l10n.offlineFirstRunBody,
-          action: l10n.retry,
-          onAction: controller.refresh,
-        ),
+        icon: Icons.shelves,
+        title: l10n.offlineFirstRunTitle,
+        body: l10n.offlineFirstRunBody,
+        action: l10n.retry,
+        onAction: controller.refresh,
+      ),
       CatalogStatus.errorEmpty => _MessageView(
-          icon: Icons.error_outline,
-          title: null,
-          body: state.notice == CatalogNotice.updateApp ? l10n.updateAppBanner : l10n.catalogError,
-          action: l10n.retry,
-          onAction: controller.refresh,
-        ),
+        icon: Icons.error_outline,
+        title: null,
+        body: state.notice == CatalogNotice.updateApp
+            ? l10n.updateAppBanner
+            : l10n.catalogError,
+        action: l10n.retry,
+        onAction: controller.refresh,
+      ),
       CatalogStatus.ready => RefreshIndicator(
-          onRefresh: controller.refresh,
-          child: ListView(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
-            children: [
-              if (_bannerText(l10n, state.notice) case final text?) ...[
-                _Banner(text: text, offline: state.notice == CatalogNotice.offline),
-                const SizedBox(height: 12),
-              ],
-              if (state.items.isEmpty)
-                Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(vertical: 48),
-                  child: Text(
-                    l10n.emptyLibrary,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
+        onRefresh: controller.refresh,
+        child: ListView(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
+          children: [
+            if (_bannerText(l10n, state.notice) case final text?) ...[
+              _Banner(
+                text: text,
+                offline: state.notice == CatalogNotice.offline,
+              ),
+              const SizedBox(height: 12),
+            ],
+            const ContinueReadingCard(),
+            if (state.items.isEmpty)
+              Padding(
+                padding: const EdgeInsetsDirectional.symmetric(vertical: 48),
+                child: Text(
+                  l10n.emptyLibrary,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
-              for (final item in state.items) ...[
-                BookCard(
-                  key: ValueKey(item.id),
-                  item: item,
-                  task: state.tasks[item.id],
-                  offline: state.isOffline,
-                ),
-                const SizedBox(height: 12),
-              ],
+              ),
+            for (final item in state.items) ...[
+              BookCard(
+                key: ValueKey(item.id),
+                item: item,
+                task: state.tasks[item.id],
+                offline: state.isOffline,
+              ),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ),
+      ),
+    };
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.libraryTitle),
+          bottom: TabBar(
+            tabs: [
+              Tab(height: 48, text: l10n.booksTab),
+              Tab(height: 48, text: l10n.favoritesTab),
             ],
           ),
         ),
-    };
-
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.libraryTitle)),
-      body: SafeArea(child: body),
+        body: SafeArea(
+          child: TabBarView(children: [body, const FavoritesTab()]),
+        ),
+      ),
     );
   }
 
-  static String? _bannerText(AppLocalizations l10n, CatalogNotice notice) => switch (notice) {
+  static String? _bannerText(AppLocalizations l10n, CatalogNotice notice) =>
+      switch (notice) {
         CatalogNotice.none => null,
         CatalogNotice.offline => l10n.offlineBanner,
         CatalogNotice.stale => l10n.staleCatalogBanner,
@@ -87,10 +113,15 @@ class LibraryScreen extends ConsumerWidget {
 }
 
 /// تقدّم التحميل يُعلَن لقارئ الشاشة عند ٢٥ و٥٠ و٧٥ و١٠٠٪ فقط (DESIGN §7.5).
-List<String> progressAnnouncements(BuildContext context, LibraryState? previous, LibraryState next) {
+List<String> progressAnnouncements(
+  BuildContext context,
+  LibraryState? previous,
+  LibraryState next,
+) {
   final l10n = AppLocalizations.of(context);
   final lang = Localizations.localeOf(context).languageCode;
-  int bucket(BookTask? t) => t is DownloadingTask ? percentOf(t.fraction) ~/ 25 : 0;
+  int bucket(BookTask? t) =>
+      t is DownloadingTask ? percentOf(t.fraction) ~/ 25 : 0;
   final messages = <String>[];
   next.tasks.forEach((id, task) {
     final now = bucket(task);
@@ -120,9 +151,14 @@ class _Banner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(offline ? Icons.cloud_off : Icons.info_outline, color: extra.onWarning),
+            Icon(
+              offline ? Icons.cloud_off : Icons.info_outline,
+              color: extra.onWarning,
+            ),
             const SizedBox(width: 8),
-            Expanded(child: Text(text, style: TextStyle(color: extra.onWarning))),
+            Expanded(
+              child: Text(text, style: TextStyle(color: extra.onWarning)),
+            ),
           ],
         ),
       ),
@@ -155,17 +191,29 @@ class _MessageView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ExcludeSemantics(
-              child: Icon(icon, size: 72, color: theme.colorScheme.onSurfaceVariant),
+              child: Icon(
+                icon,
+                size: 72,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             if (title != null) ...[
               Semantics(
                 header: true,
-                child: Text(title!, textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
+                child: Text(
+                  title!,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge,
+                ),
               ),
               const SizedBox(height: 8),
             ],
-            Text(body, textAlign: TextAlign.center, style: theme.textTheme.bodyLarge),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge,
+            ),
             const SizedBox(height: 24),
             OutlinedButton(onPressed: onAction, child: Text(action)),
           ],
@@ -184,14 +232,17 @@ class _SkeletonList extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final block = context.extraColors.surfaceAlt;
     Widget bar(double widthFactor) => FractionallySizedBox(
-          widthFactor: widthFactor,
-          alignment: AlignmentDirectional.centerStart,
-          child: Container(
-            height: 14,
-            margin: const EdgeInsetsDirectional.only(bottom: 10),
-            decoration: BoxDecoration(color: block, borderRadius: BorderRadius.circular(4)),
-          ),
-        );
+      widthFactor: widthFactor,
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        height: 14,
+        margin: const EdgeInsetsDirectional.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: block,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    );
     return Semantics(
       label: l10n.loading,
       liveRegion: true,
@@ -209,7 +260,10 @@ class _SkeletonList extends StatelessWidget {
                   Container(
                     width: 72,
                     height: 96,
-                    decoration: BoxDecoration(color: block, borderRadius: BorderRadius.circular(6)),
+                    decoration: BoxDecoration(
+                      color: block,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

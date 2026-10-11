@@ -22,8 +22,9 @@ void main() {
   });
   tearDown(() => dir.deleteSync(recursive: true));
 
-  Matcher failsWith(CatalogFailure f) =>
-      throwsA(isA<CatalogFetchException>().having((e) => e.failure, 'failure', f));
+  Matcher failsWith(CatalogFailure f) => throwsA(
+    isA<CatalogFetchException>().having((e) => e.failure, 'failure', f),
+  );
 
   test('يجلب الفهرس ويحفظ نسخة محلية', () async {
     expect(repo.readCache(), isNull);
@@ -31,7 +32,10 @@ void main() {
     expect(c.books.single.id, 'mini');
     expect(server.requests.single.toString(), '${testBaseUrl}catalog.json');
     expect(repo.readCache()!.books.single.id, 'mini');
-    expect(repo.bookUrl(c.books.single).toString(), '${testBaseUrl}books/mini/mini.v1.json.gz');
+    expect(
+      repo.bookUrl(c.books.single).toString(),
+      '${testBaseUrl}books/mini/mini.v1.json.gz',
+    );
   });
 
   test('فشل حفظ النسخة المحلية لا يُفشل الجلب', () async {
@@ -67,7 +71,10 @@ void main() {
 
   test('schema أحدث ← unsupportedSchema', () async {
     server.catalog = catalogJson([], schema: 2);
-    await expectLater(repo.fetch(), failsWith(CatalogFailure.unsupportedSchema));
+    await expectLater(
+      repo.fetch(),
+      failsWith(CatalogFailure.unsupportedSchema),
+    );
   });
 
   test('إعداد ناقص ← server بلا طلب', () async {

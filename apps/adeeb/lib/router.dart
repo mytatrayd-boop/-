@@ -2,18 +2,29 @@ import 'package:go_router/go_router.dart';
 
 import 'library/book_page.dart';
 import 'library/library_screen.dart';
+import 'reader/reader_screen.dart';
 
 GoRouter createRouter() => GoRouter(
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const LibraryScreen(),
       routes: [
         GoRoute(
-          path: '/',
-          builder: (context, state) => const LibraryScreen(),
-          routes: [
-            GoRoute(
-              path: 'book/:bookId',
-              builder: (context, state) => BookPage(bookId: state.pathParameters['bookId']!),
-            ),
-          ],
+          path: 'book/:bookId',
+          builder: (context, state) =>
+              BookPage(bookId: state.pathParameters['bookId']!),
+        ),
+        // `/read/<id>?p=<معرّف فقرة>` أو `?c=<معرّف باب>` (ARCHITECTURE §3).
+        GoRoute(
+          path: 'read/:bookId',
+          builder: (context, state) => ReaderScreen(
+            bookId: state.pathParameters['bookId']!,
+            paragraphId: state.uri.queryParameters['p'],
+            chapterId: state.uri.queryParameters['c'],
+          ),
         ),
       ],
-    );
+    ),
+  ],
+);

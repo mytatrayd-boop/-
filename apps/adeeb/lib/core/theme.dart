@@ -41,25 +41,46 @@ class AdeebExtraColors extends ThemeExtension<AdeebExtraColors> {
   AdeebExtraColors copyWith() => this;
 
   @override
-  AdeebExtraColors lerp(AdeebExtraColors? other, double t) => t < 0.5 ? this : (other ?? this);
+  AdeebExtraColors lerp(AdeebExtraColors? other, double t) =>
+      t < 0.5 ? this : (other ?? this);
 }
 
 const uiFont = 'IBMPlexSansArabic';
 const bookFont = 'Amiri';
 
 ThemeData _theme(ColorScheme scheme, AdeebExtraColors extra) {
-  final base = ThemeData(colorScheme: scheme, useMaterial3: true, fontFamily: uiFont);
+  final base = ThemeData(
+    colorScheme: scheme,
+    useMaterial3: true,
+    fontFamily: uiFont,
+  );
   final text = base.textTheme;
   return base.copyWith(
     scaffoldBackgroundColor: scheme.surface,
     extensions: [extra],
     textTheme: text.copyWith(
-      titleLarge: text.titleLarge?.copyWith(fontSize: 22, height: 32 / 22, fontWeight: FontWeight.w600),
-      titleMedium: text.titleMedium?.copyWith(fontSize: 18, height: 28 / 18, fontWeight: FontWeight.w600),
+      titleLarge: text.titleLarge?.copyWith(
+        fontSize: 22,
+        height: 32 / 22,
+        fontWeight: FontWeight.w600,
+      ),
+      titleMedium: text.titleMedium?.copyWith(
+        fontSize: 18,
+        height: 28 / 18,
+        fontWeight: FontWeight.w600,
+      ),
       bodyLarge: text.bodyLarge?.copyWith(fontSize: 16, height: 26 / 16),
       bodyMedium: text.bodyMedium?.copyWith(fontSize: 14, height: 22 / 14),
-      labelLarge: text.labelLarge?.copyWith(fontSize: 16, height: 24 / 16, fontWeight: FontWeight.w500),
-      labelMedium: text.labelMedium?.copyWith(fontSize: 13, height: 20 / 13, fontWeight: FontWeight.w500),
+      labelLarge: text.labelLarge?.copyWith(
+        fontSize: 16,
+        height: 24 / 16,
+        fontWeight: FontWeight.w500,
+      ),
+      labelMedium: text.labelMedium?.copyWith(
+        fontSize: 13,
+        height: 20 / 13,
+        fontWeight: FontWeight.w500,
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -135,5 +156,6 @@ final darkTheme = _theme(
 );
 
 extension AdeebThemeX on BuildContext {
-  AdeebExtraColors get extraColors => Theme.of(this).extension<AdeebExtraColors>()!;
+  AdeebExtraColors get extraColors =>
+      Theme.of(this).extension<AdeebExtraColors>()!;
 }

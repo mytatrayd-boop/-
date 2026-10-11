@@ -9,7 +9,11 @@ import 'dart:typed_data';
 import 'catalog.dart';
 
 class BookParagraph {
-  const BookParagraph({required this.id, required this.kind, required this.text});
+  const BookParagraph({
+    required this.id,
+    required this.kind,
+    required this.text,
+  });
   final String id;
 
   /// `prose` أو `verse`.
@@ -55,8 +59,7 @@ class BookFile {
   final List<BookChapter> chapters;
   final Map<String, String> redirects;
 
-  int get paragraphCount =>
-      chapters.fold(0, (n, c) => n + c.paragraphs.length);
+  int get paragraphCount => chapters.fold(0, (n, c) => n + c.paragraphs.length);
 }
 
 /// يفك gzip ثم يحلل. يرمي [LibraryFormatException] لأي خلل، أو إن تجاوز
@@ -69,12 +72,19 @@ BookFile decodeBookGz(List<int> gz, {int? maxUncompressedBytes}) {
     final input = gzip.decoder.startChunkedConversion(out);
     const chunk = 64 * 1024;
     for (var i = 0; i < gz.length; i += chunk) {
-      input.addSlice(gz, i, i + chunk > gz.length ? gz.length : i + chunk, false);
+      input.addSlice(
+        gz,
+        i,
+        i + chunk > gz.length ? gz.length : i + chunk,
+        false,
+      );
     }
     input.close();
     text = utf8.decode(out.bytes.takeBytes());
   } on FormatException catch (e) {
-    throw LibraryFormatException('ملف الكتاب ليس gzip/UTF-8 صالحاً: ${e.message}');
+    throw LibraryFormatException(
+      'ملف الكتاب ليس gzip/UTF-8 صالحاً: ${e.message}',
+    );
   }
   return parseBook(text);
 }
@@ -88,7 +98,9 @@ class _LimitedSink implements ByteConversionSink {
   void add(List<int> chunk) {
     final max = limit;
     if (max != null && bytes.length + chunk.length > max) {
-      throw const LibraryFormatException('النص المفكوك أكبر من المعلن في الفهرس');
+      throw const LibraryFormatException(
+        'النص المفكوك أكبر من المعلن في الفهرس',
+      );
     }
     bytes.add(chunk);
   }
@@ -183,12 +195,14 @@ BookFile parseBook(String text) {
       }
       paragraphs.add(BookParagraph(id: pid, kind: kind as String, text: ptext));
     }
-    chapters.add(BookChapter(
-      id: cid,
-      title: title,
-      level: level,
-      paragraphs: List.unmodifiable(paragraphs),
-    ));
+    chapters.add(
+      BookChapter(
+        id: cid,
+        title: title,
+        level: level,
+        paragraphs: List.unmodifiable(paragraphs),
+      ),
+    );
   }
 
   final redirects = <String, String>{};
@@ -199,7 +213,9 @@ BookFile parseBook(String text) {
   final redirectKey = RegExp('^$id-b\\d{3}-p\\d{5}\$');
   rawRedirects.forEach((from, to) {
     if (!redirectKey.hasMatch(from) || ids.contains(from)) {
-      throw LibraryFormatException('مفتاح تحويل غير صالح أو لا يخص الكتاب: $from');
+      throw LibraryFormatException(
+        'مفتاح تحويل غير صالح أو لا يخص الكتاب: $from',
+      );
     }
     if (to is! String || !ids.contains(to)) {
       throw LibraryFormatException('تحويل إلى معرّف غير موجود: $from');

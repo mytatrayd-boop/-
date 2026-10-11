@@ -37,7 +37,11 @@ class InstalledBook {
 }
 
 class ChapterInfo {
-  const ChapterInfo({required this.id, required this.title, required this.level});
+  const ChapterInfo({
+    required this.id,
+    required this.title,
+    required this.level,
+  });
   final String id;
   final String title;
   final int level;
@@ -58,7 +62,11 @@ abstract interface class BookRepository {
 class SqliteBookRepository implements BookRepository {
   /// [useIsolate] = false للاختبارات التي تعمل بزمن وهمي. [vacuum] قابل
   /// للاستبدال في الاختبار (دالة عليا حتى تُرسل إلى الـ Isolate).
-  SqliteBookRepository(this.dbPath, {this.useIsolate = true, this.vacuum = vacuumDatabase});
+  SqliteBookRepository(
+    this.dbPath, {
+    this.useIsolate = true,
+    this.vacuum = vacuumDatabase,
+  });
 
   final String dbPath;
   final bool useIsolate;
@@ -93,12 +101,14 @@ class SqliteBookRepository implements BookRepository {
   @override
   Future<void> install(Uint8List gz, CatalogBook entry) {
     final meta = _EntryMeta.from(entry);
-    return _write((db) => importBook(
-          db,
-          decodeBookGz(gz, maxUncompressedBytes: meta.uncompressedBytes),
-          meta.toEntryCheck(),
-          meta.diacritics,
-        ));
+    return _write(
+      (db) => importBook(
+        db,
+        decodeBookGz(gz, maxUncompressedBytes: meta.uncompressedBytes),
+        meta.toEntryCheck(),
+        meta.diacritics,
+      ),
+    );
   }
 
   /// الحذف نفسه في معاملة؛ وVACUUM بعده اختياري: فشله (مثلاً القاعدة مشغولة)
@@ -133,30 +143,40 @@ class _EntryMeta {
   ({String id, int version}) toEntryCheck() => (id: id, version: version);
 }
 
-List<InstalledBook> readInstalled(Database db) => db
-    .select('SELECT * FROM books ORDER BY installed_at, id')
-    .map((r) {
-      final source = jsonDecode(r['source_json'] as String) as Map<String, Object?>;
+List<InstalledBook> readInstalled(Database db) =>
+    db.select('SELECT * FROM books ORDER BY installed_at, id').map((r) {
+      final source =
+          jsonDecode(r['source_json'] as String) as Map<String, Object?>;
       return InstalledBook(
         id: r['id'] as String,
         version: r['version'] as int,
-        title: LocalizedName(ar: r['title_ar'] as String, en: r['title_en'] as String?),
-        author: LocalizedName(ar: r['author_ar'] as String, en: r['author_en'] as String?),
+        title: LocalizedName(
+          ar: r['title_ar'] as String,
+          en: r['title_en'] as String?,
+        ),
+        author: LocalizedName(
+          ar: r['author_ar'] as String,
+          en: r['author_en'] as String?,
+        ),
         authorDeathHijri: r['author_death_hijri'] as int?,
         sourceName: source['name'] as String? ?? '',
         license: r['license'] as String,
         bytes: r['bytes'] as int,
       );
-    })
-    .toList();
+    }).toList();
 
 List<ChapterInfo> readChapters(Database db, String bookId) => db
-    .select('SELECT id, title, level FROM chapters WHERE book_id = ? ORDER BY ord', [bookId])
-    .map((r) => ChapterInfo(
-          id: r['id'] as String,
-          title: r['title'] as String,
-          level: r['level'] as int,
-        ))
+    .select(
+      'SELECT id, title, level FROM chapters WHERE book_id = ? ORDER BY ord',
+      [bookId],
+    )
+    .map(
+      (r) => ChapterInfo(
+        id: r['id'] as String,
+        title: r['title'] as String,
+        level: r['level'] as int,
+      ),
+    )
     .toList();
 
 /// يستورد [book] في معاملة واحدة بعد حذف أي إصدار سابق؛ فشل في المنتصف = لا
@@ -170,11 +190,13 @@ void importBook(
 }) {
   if (book.id != expected.id || book.version != expected.version) {
     throw LibraryFormatException(
-        'الملف (${book.id} v${book.version}) لا يطابق الفهرس (${expected.id} v${expected.version})');
+      'الملف (${book.id} v${book.version}) لا يطابق الفهرس (${expected.id} v${expected.version})',
+    );
   }
   final bytes = book.chapters.fold<int>(
     0,
-    (n, c) => n + c.paragraphs.fold<int>(0, (m, p) => m + utf8.encode(p.text).length),
+    (n, c) =>
+        n + c.paragraphs.fold<int>(0, (m, p) => m + utf8.encode(p.text).length),
   );
   db.execute('BEGIN IMMEDIATE');
   try {
@@ -199,30 +221,92 @@ void importBook(
       ],
     );
     final insertChapter = db.prepare(
-        'INSERT INTO chapters (id, book_id, ord, level, title) VALUES (?, ?, ?, ?, ?)');
+      'INSERT INTO chapters (id, book_id, ord, level, title) VALUES (?, ?, ?, ?, ?)',
+    );
     final insertParagraph = db.prepare(
-        'INSERT INTO paragraphs (id, book_id, chapter_id, ord, kind, text) VALUES (?, ?, ?, ?, ?, ?)');
-    final insertRedirect =
-        db.prepare('INSERT INTO redirects (old_id, book_id, new_id) VALUES (?, ?, ?)');
+      'INSERT INTO paragraphs (id, book_id, chapter_id, ord, kind, text) VALUES (?, ?, ?, ?, ?, ?)',
+    );
+    final insertRedirect = db.prepare(
+      'INSERT INTO redirects (old_id, book_id, new_id) VALUES (?, ?, ?)',
+    );
     try {
       var paragraphOrd = 0;
       for (var c = 0; c < book.chapters.length; c++) {
         final chapter = book.chapters[c];
-        insertChapter.execute([chapter.id, book.id, c, chapter.level, chapter.title]);
+        insertChapter.execute([
+          chapter.id,
+          book.id,
+          c,
+          chapter.level,
+          chapter.title,
+        ]);
         for (final p in chapter.paragraphs) {
-          insertParagraph.execute([p.id, book.id, chapter.id, paragraphOrd++, p.kind, p.text]);
+          insertParagraph.execute([
+            p.id,
+            book.id,
+            chapter.id,
+            paragraphOrd++,
+            p.kind,
+            p.text,
+          ]);
         }
       }
-      book.redirects.forEach((from, to) => insertRedirect.execute([from, book.id, to]));
+      book.redirects.forEach(
+        (from, to) => insertRedirect.execute([from, book.id, to]),
+      );
     } finally {
       insertChapter.close();
       insertParagraph.close();
       insertRedirect.close();
     }
+    applyRedirects(db, book.id);
     db.execute('COMMIT');
   } catch (_) {
     db.execute('ROLLBACK');
     rethrow;
+  }
+}
+
+/// يتبع سلسلة التحويلات من [id] (قد يُحوَّل معرّف إلى معرّف حُوِّل لاحقاً)
+/// حتى معرّف بلا تحويل. يعيد [id] نفسه إن لم يكن له تحويل. الحلقات تتوقف.
+String resolveRedirect(Database db, String id) {
+  var current = id;
+  final seen = <String>{current};
+  while (true) {
+    final rows = db.select('SELECT new_id FROM redirects WHERE old_id = ?', [
+      current,
+    ]);
+    if (rows.isEmpty) return current;
+    final next = rows.first['new_id'] as String;
+    if (!seen.add(next)) return current;
+    current = next;
+  }
+}
+
+/// ينقل المفضلة وآخر موضع لكتاب [bookId] من المعرّفات القديمة إلى الجديدة
+/// عبر جدول `redirects` (ARCHITECTURE §4.2، §5). يُستدعى داخل معاملة
+/// الاستيراد، فيعمل عند التحديث وعند إعادة تحميل كتاب محذوف.
+void applyRedirects(Database db, String bookId) {
+  final redirected = db.select(
+    'SELECT paragraph_id AS id FROM favorites WHERE book_id = ? '
+    'AND paragraph_id IN (SELECT old_id FROM redirects WHERE book_id = ?) '
+    'UNION SELECT paragraph_id FROM positions WHERE book_id = ? '
+    'AND paragraph_id IN (SELECT old_id FROM redirects WHERE book_id = ?)',
+    [bookId, bookId, bookId, bookId],
+  );
+  for (final row in redirected) {
+    final old = row['id'] as String;
+    final target = resolveRedirect(db, old);
+    if (target == old) continue;
+    // فقرتان دُمجتا في واحدة: يبقى صف مفضلة واحد.
+    db.execute(
+      'UPDATE OR REPLACE favorites SET paragraph_id = ? WHERE paragraph_id = ?',
+      [target, old],
+    );
+    db.execute(
+      'UPDATE positions SET paragraph_id = ? WHERE book_id = ? AND paragraph_id = ?',
+      [target, bookId, old],
+    );
   }
 }
 

@@ -11,7 +11,12 @@ import 'library_text.dart';
 
 /// بطاقة كتاب في المكتبة بحالاتها (DESIGN §7.2).
 class BookCard extends ConsumerWidget {
-  const BookCard({super.key, required this.item, required this.task, required this.offline});
+  const BookCard({
+    super.key,
+    required this.item,
+    required this.task,
+    required this.offline,
+  });
 
   final LibraryItem item;
   final BookTask? task;
@@ -39,26 +44,38 @@ class BookCard extends ConsumerWidget {
       label: l10n.bookCardSemantics(item.title.ar, item.author.ar, details),
       excludeSemantics: true,
       child: Column(
-        crossAxisAlignment: vertical ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+        crossAxisAlignment: vertical
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
         children: [
           Text(
             item.title.ar,
             textDirection: TextDirection.rtl,
-            style: const TextStyle(fontFamily: bookFont, fontSize: 20, height: 1.6),
+            style: const TextStyle(
+              fontFamily: bookFont,
+              fontSize: 20,
+              height: 1.6,
+            ),
           ),
           if (isEnglish && item.title.en != null)
             Text(
               [item.title.en!, ?item.author.en].join(' — '),
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           Text(
             l10n.authorLine(context, item.author.ar, item.authorDeathHijri),
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             l10n.size(context, item.displaySize),
-            style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -66,8 +83,9 @@ class BookCard extends ConsumerWidget {
 
     final downloading = task is DownloadingTask;
     final progress = switch (task) {
-      DownloadingTask(:final fraction) =>
-        ExcludeSemantics(child: LinearProgressIndicator(value: fraction)),
+      DownloadingTask(:final fraction) => ExcludeSemantics(
+        child: LinearProgressIndicator(value: fraction),
+      ),
       PreparingTask() => const LinearProgressIndicator(),
       _ => null,
     };
@@ -75,18 +93,20 @@ class BookCard extends ConsumerWidget {
     final statusRow = ExcludeSemantics(
       excluding: downloading,
       child: Row(
-      children: [
-        if (statusText.icon != null) ...[
-          Icon(statusText.icon, size: 20, color: statusText.color),
-          const SizedBox(width: 4),
-        ],
-        Flexible(
-          child: Text(
-            statusText.text,
-            style: theme.textTheme.labelMedium?.copyWith(color: statusText.color),
+        children: [
+          if (statusText.icon != null) ...[
+            Icon(statusText.icon, size: 20, color: statusText.color),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              statusText.text,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: statusText.color,
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
 
@@ -96,7 +116,13 @@ class BookCard extends ConsumerWidget {
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(child: GeneratedCover(bookId: item.id, title: item.title.ar, width: 96)),
+              Center(
+                child: GeneratedCover(
+                  bookId: item.id,
+                  title: item.title.ar,
+                  width: 96,
+                ),
+              ),
               const SizedBox(height: 12),
               info,
               const SizedBox(height: 8),
@@ -117,7 +143,10 @@ class BookCard extends ConsumerWidget {
                   children: [
                     info,
                     const SizedBox(height: 8),
-                    if (progress != null) ...[progress, const SizedBox(height: 4)],
+                    if (progress != null) ...[
+                      progress,
+                      const SizedBox(height: 4),
+                    ],
                     Row(
                       children: [
                         Expanded(child: statusRow),
@@ -138,46 +167,82 @@ class BookCard extends ConsumerWidget {
         onLongPress: status == BookStatus.notInstalled || task != null
             ? null
             : () => _showInstalledMenu(context, ref, l10n),
-        child: Padding(padding: const EdgeInsetsDirectional.all(12), child: body),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.all(12),
+          child: body,
+        ),
       ),
     );
   }
 
-  _StatusText _statusText(BuildContext context, AppLocalizations l10n, BookStatus status) {
+  _StatusText _statusText(
+    BuildContext context,
+    AppLocalizations l10n,
+    BookStatus status,
+  ) {
     final colors = Theme.of(context).colorScheme;
     final extra = context.extraColors;
     final muted = colors.onSurfaceVariant;
     return switch (task) {
-      DownloadingTask(:final fraction) => _StatusText(l10n.percent(context, fraction), muted),
+      DownloadingTask(:final fraction) => _StatusText(
+        l10n.percent(context, fraction),
+        muted,
+      ),
       PreparingTask() => _StatusText(l10n.preparing, muted),
-      FailedTask(failure: TaskFailure.network) =>
-        _StatusText(l10n.downloadInterrupted, colors.error, Icons.error_outline),
-      FailedTask(failure: TaskFailure.integrity) =>
-        _StatusText(l10n.fileCorrupt, colors.error, Icons.error_outline),
-      FailedTask() => _StatusText(l10n.downloadFailed, colors.error, Icons.error_outline),
+      FailedTask(failure: TaskFailure.network) => _StatusText(
+        l10n.downloadInterrupted,
+        colors.error,
+        Icons.error_outline,
+      ),
+      FailedTask(failure: TaskFailure.integrity) => _StatusText(
+        l10n.fileCorrupt,
+        colors.error,
+        Icons.error_outline,
+      ),
+      FailedTask() => _StatusText(
+        l10n.downloadFailed,
+        colors.error,
+        Icons.error_outline,
+      ),
       null => switch (status) {
-          BookStatus.installed => _StatusText(l10n.installed, extra.success, Icons.check_circle),
-          BookStatus.updateAvailable =>
-            _StatusText(l10n.updateAvailable, colors.secondary, Icons.update),
-          BookStatus.notInstalled when offline || item.entry == null =>
-            _StatusText(l10n.needsConnection, muted, Icons.cloud_off),
-          BookStatus.notInstalled => _StatusText(l10n.notInstalled, muted),
-        },
+        BookStatus.installed => _StatusText(
+          l10n.installed,
+          extra.success,
+          Icons.check_circle,
+        ),
+        BookStatus.updateAvailable => _StatusText(
+          l10n.updateAvailable,
+          colors.secondary,
+          Icons.update,
+        ),
+        BookStatus.notInstalled when offline || item.entry == null =>
+          _StatusText(l10n.needsConnection, muted, Icons.cloud_off),
+        BookStatus.notInstalled => _StatusText(l10n.notInstalled, muted),
+      },
     };
   }
 
   Widget? _actionButton(
-      BuildContext context, WidgetRef ref, AppLocalizations l10n, BookStatus status) {
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    BookStatus status,
+  ) {
     final controller = ref.read(libraryControllerProvider.notifier);
     switch (task) {
       case DownloadingTask():
-        return TextButton(onPressed: () => controller.cancel(item.id), child: Text(l10n.cancel));
+        return TextButton(
+          onPressed: () => controller.cancel(item.id),
+          child: Text(l10n.cancel),
+        );
       case PreparingTask():
         return null;
       case FailedTask(:final failure):
         return OutlinedButton(
           onPressed: () => startDownload(context, ref, item.id),
-          child: Text(failure == TaskFailure.integrity ? l10n.redownload : l10n.retry),
+          child: Text(
+            failure == TaskFailure.integrity ? l10n.redownload : l10n.retry,
+          ),
         );
       case null:
         break;
@@ -185,25 +250,33 @@ class BookCard extends ConsumerWidget {
     switch (status) {
       case BookStatus.installed:
         return FilledButton(
-          onPressed: () => context.push('/book/${item.id}'),
+          onPressed: () => context.push('/read/${item.id}'),
           child: Text(l10n.open),
         );
       case BookStatus.updateAvailable:
         return OutlinedButton(
-          onPressed: offline ? null : () => startDownload(context, ref, item.id),
+          onPressed: offline
+              ? null
+              : () => startDownload(context, ref, item.id),
           child: Text(l10n.update),
         );
       case BookStatus.notInstalled:
         final canDownload = !offline && item.entry != null;
         return OutlinedButton.icon(
-          onPressed: canDownload ? () => startDownload(context, ref, item.id) : null,
+          onPressed: canDownload
+              ? () => startDownload(context, ref, item.id)
+              : null,
           icon: const Icon(Icons.download),
           label: Text(l10n.download),
         );
     }
   }
 
-  Future<void> _showInstalledMenu(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+  Future<void> _showInstalledMenu(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -216,14 +289,19 @@ class BookCard extends ConsumerWidget {
               title: Text(l10n.open),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                context.push('/book/${item.id}');
+                context.push('/read/${item.id}');
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete_outline, color: Theme.of(sheetContext).colorScheme.error),
+              leading: Icon(
+                Icons.delete_outline,
+                color: Theme.of(sheetContext).colorScheme.error,
+              ),
               title: Text(
                 l10n.deleteFromDevice,
-                style: TextStyle(color: Theme.of(sheetContext).colorScheme.error),
+                style: TextStyle(
+                  color: Theme.of(sheetContext).colorScheme.error,
+                ),
               ),
               onTap: () {
                 Navigator.of(sheetContext).pop();

@@ -4,8 +4,8 @@ class AppConfig {
   const AppConfig({required this.libraryBaseUrl});
 
   factory AppConfig.fromEnvironment() => const AppConfig(
-        libraryBaseUrl: String.fromEnvironment('LIBRARY_BASE_URL'),
-      );
+    libraryBaseUrl: String.fromEnvironment('LIBRARY_BASE_URL'),
+  );
 
   /// جذر مجلد `library/` على GitHub raw، ينتهي بـ `/`.
   final String libraryBaseUrl;

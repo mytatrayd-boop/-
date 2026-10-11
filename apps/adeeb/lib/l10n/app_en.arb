@@ -51,5 +51,56 @@
   "bookNotFound": "This book isn't in the library.",
   "downloading": "Downloading…",
   "listSeparator": ", ",
-  "downloadAnnouncement": "“{title}”: downloading… {percent}%"
+  "downloadAnnouncement": "“{title}”: downloading… {percent}%",
+  "startReading": "Start reading",
+  "continueReading": "Continue reading",
+  "reachedPosition": "You reached: {chapter} — {percent}%",
+  "youAreHere": "You are here",
+  "chapterHereSemantics": "{chapter}, you are here",
+  "booksTab": "Books",
+  "favoritesTab": "Favorites",
+  "favoritesEmptyTitle": "No favorite passages yet.",
+  "favoritesEmptyHint": "Long-press any passage while reading and choose “Add to favorites”.",
+  "favoritesError": "Couldn't show your favorites.",
+  "remove": "Remove",
+  "addedToFavorites": "Added to favorites",
+  "removedFromFavorites": "Removed from favorites",
+  "undo": "Undo",
+  "addToFavorites": "Add to favorites",
+  "removeFromFavorites": "Remove from favorites",
+  "inFavorites": "In favorites",
+  "bookNotInstalledShort": "Book not downloaded",
+  "bookNotInstalledReader": "This book isn't downloaded on your device.",
+  "downloadWithSize": "Download ({size})",
+  "unavailableBook": "Unavailable book",
+  "breadcrumb": "{book} › {chapter}",
+  "passageSemantics": "{source}: {text}",
+  "contents": "Contents",
+  "displaySettings": "Display settings",
+  "textSize": "Text size",
+  "decreaseTextLabel": "A−",
+  "increaseTextLabel": "A+",
+  "decreaseText": "Decrease text size",
+  "increaseText": "Increase text size",
+  "textSizeLevel": "Level {level} of {total}",
+  "textPreview": "هكذا يظهر نص الكتاب بهذا الحجم.",
+  "pageColor": "Page color",
+  "themeLight": "Light",
+  "themePaper": "Paper",
+  "themeDark": "Dark",
+  "readerProgress": "Chapter {chapter} of {total} · {percent}%",
+  "resumedHere": "Picked up where you left off",
+  "fromStart": "From the beginning",
+  "paragraphNotFound": "We couldn't find that passage, so we opened its chapter",
+  "continueReadingSemantics": "Continue reading: {source}. {text}",
+  "@continueReadingSemantics": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  }
 }

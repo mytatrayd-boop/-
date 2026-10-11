@@ -195,4 +195,145 @@ class AppLocalizationsAr extends AppLocalizations {
   String downloadAnnouncement(String title, String percent) {
     return '«$title»: يُحمَّل… $percent٪';
   }
+
+  @override
+  String get startReading => 'ابدأ القراءة';
+
+  @override
+  String get continueReading => 'تابع القراءة';
+
+  @override
+  String reachedPosition(String chapter, String percent) {
+    return 'وصلت إلى: $chapter — $percent٪';
+  }
+
+  @override
+  String get youAreHere => 'أنت هنا';
+
+  @override
+  String chapterHereSemantics(String chapter) {
+    return '$chapter، أنت هنا';
+  }
+
+  @override
+  String get booksTab => 'الكتب';
+
+  @override
+  String get favoritesTab => 'المفضلة';
+
+  @override
+  String get favoritesEmptyTitle => 'لا توجد فقرات في المفضلة بعد.';
+
+  @override
+  String get favoritesEmptyHint =>
+      'اضغط مطوّلاً على أي فقرة أثناء القراءة واختر «أضف إلى المفضلة».';
+
+  @override
+  String get favoritesError => 'تعذّر عرض المفضلة.';
+
+  @override
+  String get remove => 'إزالة';
+
+  @override
+  String get addedToFavorites => 'أُضيفت إلى المفضلة';
+
+  @override
+  String get removedFromFavorites => 'أُزيلت من المفضلة';
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String get addToFavorites => 'أضف إلى المفضلة';
+
+  @override
+  String get removeFromFavorites => 'أزل من المفضلة';
+
+  @override
+  String get inFavorites => 'في المفضلة';
+
+  @override
+  String get bookNotInstalledShort => 'الكتاب غير محمّل';
+
+  @override
+  String get bookNotInstalledReader => 'هذا الكتاب غير محمّل على جهازك.';
+
+  @override
+  String downloadWithSize(String size) {
+    return 'تحميل ($size)';
+  }
+
+  @override
+  String get unavailableBook => 'كتاب غير متاح';
+
+  @override
+  String breadcrumb(String book, String chapter) {
+    return '$book ‹ $chapter';
+  }
+
+  @override
+  String passageSemantics(String source, String text) {
+    return '$source: $text';
+  }
+
+  @override
+  String get contents => 'الفهرس';
+
+  @override
+  String get displaySettings => 'إعدادات العرض';
+
+  @override
+  String get textSize => 'حجم الخط';
+
+  @override
+  String get decreaseTextLabel => 'أ−';
+
+  @override
+  String get increaseTextLabel => 'أ+';
+
+  @override
+  String get decreaseText => 'تصغير الخط';
+
+  @override
+  String get increaseText => 'تكبير الخط';
+
+  @override
+  String textSizeLevel(String level, String total) {
+    return 'المستوى $level من $total';
+  }
+
+  @override
+  String get textPreview => 'هكذا يظهر نص الكتاب بهذا الحجم.';
+
+  @override
+  String get pageColor => 'لون الصفحة';
+
+  @override
+  String get themeLight => 'فاتح';
+
+  @override
+  String get themePaper => 'ورق';
+
+  @override
+  String get themeDark => 'داكن';
+
+  @override
+  String readerProgress(String chapter, String total, String percent) {
+    return 'الباب $chapter من $total · $percent٪';
+  }
+
+  @override
+  String get resumedHere => 'تابعت من حيث توقفت';
+
+  @override
+  String get fromStart => 'من البداية';
+
+  @override
+  String get paragraphNotFound =>
+      'لم نجد الفقرة نفسها، فتحنا الباب الذي كانت فيه';
+
+  @override
+  String continueReadingSemantics(String source, String text) {
+    return 'تابع القراءة: $source. $text';
+  }
 }

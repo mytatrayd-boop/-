@@ -173,5 +173,123 @@
         "type": "String"
       }
     }
+  },
+  "startReading": "ابدأ القراءة",
+  "continueReading": "تابع القراءة",
+  "reachedPosition": "وصلت إلى: {chapter} — {percent}٪",
+  "@reachedPosition": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "youAreHere": "أنت هنا",
+  "chapterHereSemantics": "{chapter}، أنت هنا",
+  "@chapterHereSemantics": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "booksTab": "الكتب",
+  "favoritesTab": "المفضلة",
+  "favoritesEmptyTitle": "لا توجد فقرات في المفضلة بعد.",
+  "favoritesEmptyHint": "اضغط مطوّلاً على أي فقرة أثناء القراءة واختر «أضف إلى المفضلة».",
+  "favoritesError": "تعذّر عرض المفضلة.",
+  "remove": "إزالة",
+  "addedToFavorites": "أُضيفت إلى المفضلة",
+  "removedFromFavorites": "أُزيلت من المفضلة",
+  "undo": "تراجع",
+  "addToFavorites": "أضف إلى المفضلة",
+  "removeFromFavorites": "أزل من المفضلة",
+  "inFavorites": "في المفضلة",
+  "bookNotInstalledShort": "الكتاب غير محمّل",
+  "bookNotInstalledReader": "هذا الكتاب غير محمّل على جهازك.",
+  "downloadWithSize": "تحميل ({size})",
+  "@downloadWithSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "unavailableBook": "كتاب غير متاح",
+  "breadcrumb": "{book} ‹ {chapter}",
+  "@breadcrumb": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "passageSemantics": "{source}: {text}",
+  "@passageSemantics": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "contents": "الفهرس",
+  "displaySettings": "إعدادات العرض",
+  "textSize": "حجم الخط",
+  "decreaseTextLabel": "أ−",
+  "increaseTextLabel": "أ+",
+  "decreaseText": "تصغير الخط",
+  "increaseText": "تكبير الخط",
+  "textSizeLevel": "المستوى {level} من {total}",
+  "@textSizeLevel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "textPreview": "هكذا يظهر نص الكتاب بهذا الحجم.",
+  "pageColor": "لون الصفحة",
+  "themeLight": "فاتح",
+  "themePaper": "ورق",
+  "themeDark": "داكن",
+  "readerProgress": "الباب {chapter} من {total} · {percent}٪",
+  "@readerProgress": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "resumedHere": "تابعت من حيث توقفت",
+  "fromStart": "من البداية",
+  "paragraphNotFound": "لم نجد الفقرة نفسها، فتحنا الباب الذي كانت فيه",
+  "continueReadingSemantics": "تابع القراءة: {source}. {text}",
+  "@continueReadingSemantics": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
   }
 }

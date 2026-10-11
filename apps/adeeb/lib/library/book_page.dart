@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
+import '../reader/chapter_tile.dart';
+import '../reader/reader_providers.dart';
 import 'book_actions.dart';
 import 'generated_cover.dart';
 import 'library_controller.dart';
 import 'library_providers.dart';
 import 'library_text.dart';
 
-/// صفحة الكتاب (DESIGN §8): الرأس، والتحميل، وأبواب الكتاب المحمّل.
-/// أزرار «ابدأ القراءة» و«استمع» و«ابحث» تأتي مع الميزات 3 و4 و5.
+/// صفحة الكتاب (DESIGN §8): الرأس، والتحميل، و«ابدأ/تابع القراءة» مع
+/// «وصلت إلى»، وأبواب الكتاب المحمّل. «استمع» و«ابحث» تأتيان مع الميزتين 4 و5.
 class BookPage extends ConsumerWidget {
   const BookPage({super.key, required this.bookId});
 
@@ -27,7 +31,10 @@ class BookPage extends ConsumerWidget {
         appBar: AppBar(),
         body: Center(
           child: state.status == CatalogStatus.loading
-              ? Semantics(label: l10n.loading, child: const CircularProgressIndicator())
+              ? Semantics(
+                  label: l10n.loading,
+                  child: const CircularProgressIndicator(),
+                )
               : Text(l10n.bookNotFound),
         ),
       );
@@ -47,7 +54,9 @@ class BookPage extends ConsumerWidget {
                 PopupMenuItem<void>(
                   onTap: () async {
                     final deleted = await confirmAndDelete(context, ref, item);
-                    if (deleted && context.mounted) Navigator.of(context).maybePop();
+                    if (deleted && context.mounted) {
+                      await Navigator.of(context).maybePop();
+                    }
                   },
                   child: Text(l10n.deleteFromDevice),
                 ),
@@ -65,7 +74,11 @@ class BookPage extends ConsumerWidget {
             SliverPadding(
               padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
               sliver: SliverToBoxAdapter(
-                child: _Actions(item: item, task: task, offline: state.isOffline),
+                child: _Actions(
+                  item: item,
+                  task: task,
+                  offline: state.isOffline,
+                ),
               ),
             ),
             if (installed)
@@ -77,8 +90,8 @@ class BookPage extends ConsumerWidget {
                   child: Text(
                     l10n.downloadToSeeChapters,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -97,7 +110,9 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final muted = theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final muted = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     final isEnglish = Localizations.localeOf(context).languageCode == 'en';
     return Column(
       children: [
@@ -109,12 +124,19 @@ class _Header extends StatelessWidget {
             item.title.ar,
             textAlign: TextAlign.center,
             textDirection: TextDirection.rtl,
-            style: const TextStyle(fontFamily: bookFont, fontSize: 26, height: 1.6),
+            style: const TextStyle(
+              fontFamily: bookFont,
+              fontSize: 26,
+              height: 1.6,
+            ),
           ),
         ),
         if (isEnglish && item.title.en != null)
-          Text([item.title.en!, ?item.author.en].join(' — '),
-              textAlign: TextAlign.center, style: muted),
+          Text(
+            [item.title.en!, ?item.author.en].join(' — '),
+            textAlign: TextAlign.center,
+            style: muted,
+          ),
         Text(
           l10n.authorLine(context, item.author.ar, item.authorDeathHijri),
           textAlign: TextAlign.center,
@@ -124,7 +146,9 @@ class _Header extends StatelessWidget {
         Text(
           l10n.sourceLine(item.sourceName, l10n.licenseName(item.license)),
           textAlign: TextAlign.center,
-          style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 16),
       ],
@@ -133,7 +157,11 @@ class _Header extends StatelessWidget {
 }
 
 class _Actions extends ConsumerWidget {
-  const _Actions({required this.item, required this.task, required this.offline});
+  const _Actions({
+    required this.item,
+    required this.task,
+    required this.offline,
+  });
   final LibraryItem item;
   final BookTask? task;
   final bool offline;
@@ -155,12 +183,18 @@ class _Actions extends ConsumerWidget {
                 children: [
                   LinearProgressIndicator(value: fraction),
                   const SizedBox(height: 4),
-                  Text(l10n.percent(context, fraction), style: theme.textTheme.labelMedium),
+                  Text(
+                    l10n.percent(context, fraction),
+                    style: theme.textTheme.labelMedium,
+                  ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            TextButton(onPressed: () => controller.cancel(item.id), child: Text(l10n.cancel)),
+            TextButton(
+              onPressed: () => controller.cancel(item.id),
+              child: Text(l10n.cancel),
+            ),
           ],
         );
       case PreparingTask():
@@ -181,21 +215,20 @@ class _Actions extends ConsumerWidget {
                 Icon(Icons.error_outline, color: theme.colorScheme.error),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    switch (failure) {
-                      TaskFailure.network => l10n.downloadInterrupted,
-                      TaskFailure.integrity => l10n.fileCorrupt,
-                      TaskFailure.other => l10n.downloadFailed,
-                    },
-                    style: TextStyle(color: theme.colorScheme.error),
-                  ),
+                  child: Text(switch (failure) {
+                    TaskFailure.network => l10n.downloadInterrupted,
+                    TaskFailure.integrity => l10n.fileCorrupt,
+                    TaskFailure.other => l10n.downloadFailed,
+                  }, style: TextStyle(color: theme.colorScheme.error)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             OutlinedButton(
               onPressed: () => startDownload(context, ref, item.id),
-              child: Text(failure == TaskFailure.integrity ? l10n.redownload : l10n.retry),
+              child: Text(
+                failure == TaskFailure.integrity ? l10n.redownload : l10n.retry,
+              ),
             ),
           ],
         );
@@ -203,43 +236,83 @@ class _Actions extends ConsumerWidget {
         break;
     }
 
-    switch (item.status) {
-      case BookStatus.notInstalled:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            FilledButton.icon(
-              onPressed: canDownload ? () => startDownload(context, ref, item.id) : null,
-              icon: const Icon(Icons.download),
-              label: Text(l10n.downloadBook(l10n.size(context, item.displaySize))),
+    final status = item.status;
+    if (status == BookStatus.notInstalled) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton.icon(
+            onPressed: canDownload
+                ? () => startDownload(context, ref, item.id)
+                : null,
+            icon: const Icon(Icons.download),
+            label: Text(
+              l10n.downloadBook(l10n.size(context, item.displaySize)),
             ),
-            if (!canDownload) ...[
-              const SizedBox(height: 4),
-              Text(l10n.needsConnection, textAlign: TextAlign.center, style: theme.textTheme.labelMedium),
-            ],
-          ],
-        );
-      case BookStatus.updateAvailable:
-        return Row(
-          children: [
-            Icon(Icons.update, color: theme.colorScheme.secondary),
-            const SizedBox(width: 8),
-            Expanded(child: Text(l10n.updateAvailable)),
-            OutlinedButton(
-              onPressed: offline ? null : () => startDownload(context, ref, item.id),
-              child: Text(l10n.update),
+          ),
+          if (!canDownload) ...[
+            const SizedBox(height: 4),
+            Text(
+              l10n.needsConnection,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelMedium,
             ),
           ],
-        );
-      case BookStatus.installed:
-        return Row(
-          children: [
-            Icon(Icons.check_circle, color: context.extraColors.success),
-            const SizedBox(width: 8),
-            Text(l10n.installed),
-          ],
-        );
+        ],
+      );
     }
+
+    final position = ref.watch(bookPositionProvider(item.id)).value;
+    final lang = Localizations.localeOf(context).languageCode;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (status == BookStatus.updateAvailable)
+          Row(
+            children: [
+              Icon(Icons.update, color: theme.colorScheme.secondary),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l10n.updateAvailable)),
+              OutlinedButton(
+                onPressed: offline
+                    ? null
+                    : () => startDownload(context, ref, item.id),
+                child: Text(l10n.update),
+              ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              Icon(Icons.check_circle, color: context.extraColors.success),
+              const SizedBox(width: 8),
+              Text(l10n.installed),
+            ],
+          ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: () => context.push('/read/${item.id}'),
+          icon: const Icon(Icons.menu_book),
+          label: Text(
+            position == null ? l10n.startReading : l10n.continueReading,
+          ),
+        ),
+        if (position != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            l10n.reachedPosition(
+              position.chapterTitle,
+              formatInt(percentOf(position.fraction), lang),
+            ),
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 4),
+          ExcludeSemantics(
+            child: LinearProgressIndicator(value: position.fraction),
+          ),
+        ],
+      ],
+    );
   }
 }
 
@@ -252,67 +325,78 @@ class _ChapterList extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final chapters = ref.watch(bookChaptersProvider(bookId));
+    final currentChapter = ref
+        .watch(bookPositionProvider(bookId))
+        .value
+        ?.chapterId;
     return switch (chapters) {
       AsyncData(:final value) when value.isNotEmpty => SliverPadding(
-          padding: const EdgeInsetsDirectional.fromSTEB(0, 16, 0, 24),
-          sliver: SliverList.builder(
-            itemCount: value.length + 1,
-            itemBuilder: (context, i) {
-              if (i == 0) {
-                return Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
-                  child: Semantics(
-                    header: true,
-                    child: Text(l10n.chapters, style: theme.textTheme.titleMedium),
-                  ),
-                );
-              }
-              final c = value[i - 1];
-              final number = l10n.number(context, i);
-              return Semantics(
-                header: true,
-                label: l10n.chapterSemantics(number, l10n.number(context, value.length), c.title),
-                excludeSemantics: true,
-                child: ListTile(
-                  contentPadding: EdgeInsetsDirectional.only(start: 16.0 + (c.level - 1) * 16, end: 16),
-                  leading: Text(number, style: theme.textTheme.labelMedium),
-                  title: Text(
-                    c.title,
-                    textDirection: TextDirection.rtl,
-                    style: const TextStyle(fontFamily: bookFont, fontSize: 18, height: 1.6),
+        padding: const EdgeInsetsDirectional.fromSTEB(0, 16, 0, 24),
+        sliver: SliverList.builder(
+          itemCount: value.length + 1,
+          itemBuilder: (context, i) {
+            if (i == 0) {
+              return Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.chapters,
+                    style: theme.textTheme.titleMedium,
                   ),
                 ),
               );
-            },
-          ),
+            }
+            final c = value[i - 1];
+            return ChapterTile(
+              number: i,
+              total: value.length,
+              title: c.title,
+              level: c.level,
+              current: c.id == currentChapter,
+              onTap: () => context.push(
+                Uri(
+                  path: '/read/$bookId',
+                  queryParameters: {'c': c.id},
+                ).toString(),
+              ),
+            );
+          },
         ),
+      ),
       AsyncError() => SliverPadding(
-          padding: const EdgeInsetsDirectional.all(16),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(l10n.bookOpenError, style: TextStyle(color: theme.colorScheme.error)),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: ref.watch(libraryControllerProvider).isOffline
-                      ? null
-                      : () => startDownload(context, ref, bookId),
-                  child: Text(l10n.redownload),
-                ),
-              ],
-            ),
+        padding: const EdgeInsetsDirectional.all(16),
+        sliver: SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.bookOpenError,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: ref.watch(libraryControllerProvider).isOffline
+                    ? null
+                    : () => startDownload(context, ref, bookId),
+                child: Text(l10n.redownload),
+              ),
+            ],
           ),
         ),
+      ),
       AsyncData() => const SliverToBoxAdapter(child: SizedBox.shrink()),
       _ => SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsetsDirectional.all(24),
-            child: Center(
-              child: Semantics(label: l10n.loading, child: const CircularProgressIndicator()),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.all(24),
+          child: Center(
+            child: Semantics(
+              label: l10n.loading,
+              child: const CircularProgressIndicator(),
             ),
           ),
         ),
+      ),
     };
   }
 }

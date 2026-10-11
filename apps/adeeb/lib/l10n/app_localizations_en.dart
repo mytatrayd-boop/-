@@ -196,4 +196,146 @@ class AppLocalizationsEn extends AppLocalizations {
   String downloadAnnouncement(String title, String percent) {
     return '“$title”: downloading… $percent%';
   }
+
+  @override
+  String get startReading => 'Start reading';
+
+  @override
+  String get continueReading => 'Continue reading';
+
+  @override
+  String reachedPosition(String chapter, String percent) {
+    return 'You reached: $chapter — $percent%';
+  }
+
+  @override
+  String get youAreHere => 'You are here';
+
+  @override
+  String chapterHereSemantics(String chapter) {
+    return '$chapter, you are here';
+  }
+
+  @override
+  String get booksTab => 'Books';
+
+  @override
+  String get favoritesTab => 'Favorites';
+
+  @override
+  String get favoritesEmptyTitle => 'No favorite passages yet.';
+
+  @override
+  String get favoritesEmptyHint =>
+      'Long-press any passage while reading and choose “Add to favorites”.';
+
+  @override
+  String get favoritesError => 'Couldn\'t show your favorites.';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get addedToFavorites => 'Added to favorites';
+
+  @override
+  String get removedFromFavorites => 'Removed from favorites';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
+  String get inFavorites => 'In favorites';
+
+  @override
+  String get bookNotInstalledShort => 'Book not downloaded';
+
+  @override
+  String get bookNotInstalledReader =>
+      'This book isn\'t downloaded on your device.';
+
+  @override
+  String downloadWithSize(String size) {
+    return 'Download ($size)';
+  }
+
+  @override
+  String get unavailableBook => 'Unavailable book';
+
+  @override
+  String breadcrumb(String book, String chapter) {
+    return '$book › $chapter';
+  }
+
+  @override
+  String passageSemantics(String source, String text) {
+    return '$source: $text';
+  }
+
+  @override
+  String get contents => 'Contents';
+
+  @override
+  String get displaySettings => 'Display settings';
+
+  @override
+  String get textSize => 'Text size';
+
+  @override
+  String get decreaseTextLabel => 'A−';
+
+  @override
+  String get increaseTextLabel => 'A+';
+
+  @override
+  String get decreaseText => 'Decrease text size';
+
+  @override
+  String get increaseText => 'Increase text size';
+
+  @override
+  String textSizeLevel(String level, String total) {
+    return 'Level $level of $total';
+  }
+
+  @override
+  String get textPreview => 'هكذا يظهر نص الكتاب بهذا الحجم.';
+
+  @override
+  String get pageColor => 'Page color';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themePaper => 'Paper';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String readerProgress(String chapter, String total, String percent) {
+    return 'Chapter $chapter of $total · $percent%';
+  }
+
+  @override
+  String get resumedHere => 'Picked up where you left off';
+
+  @override
+  String get fromStart => 'From the beginning';
+
+  @override
+  String get paragraphNotFound =>
+      'We couldn\'t find that passage, so we opened its chapter';
+
+  @override
+  String continueReadingSemantics(String source, String text) {
+    return 'Continue reading: $source. $text';
+  }
 }

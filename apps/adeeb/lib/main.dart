@@ -8,8 +8,10 @@ import 'library/library_providers.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final storage = await getApplicationSupportDirectory();
-  runApp(ProviderScope(
-    overrides: [storageDirectoryProvider.overrideWithValue(storage)],
-    child: const AdeebApp(),
-  ));
+  runApp(
+    ProviderScope(
+      overrides: [storageDirectoryProvider.overrideWithValue(storage)],
+      child: const AdeebApp(),
+    ),
+  );
 }

@@ -33,7 +33,8 @@ void main() {
     return container.read(libraryControllerProvider);
   }
 
-  LibraryController controller() => container.read(libraryControllerProvider.notifier);
+  LibraryController controller() =>
+      container.read(libraryControllerProvider.notifier);
   LibraryState state() => container.read(libraryControllerProvider);
 
   test('يعرض كتب الفهرس غير محمّلة', () async {
@@ -79,51 +80,72 @@ void main() {
     expect(s.items, isEmpty);
   });
 
-  test('تحميل ناجح ← محمّل، ويبقى متاحاً دون إنترنت بعد إعادة التشغيل', () async {
-    await load();
-    final states = <BookTask?>[];
-    container.listen(libraryControllerProvider, (_, s) => states.add(s.tasks['mini']));
-    expect(await controller().download('mini'), DownloadOutcome.installed);
-    expect(states.whereType<DownloadingTask>(), isNotEmpty);
-    expect(states.whereType<PreparingTask>(), isNotEmpty);
-    expect(state().tasks, isEmpty);
-    expect(state().items.single.status, BookStatus.installed);
+  test(
+    'تحميل ناجح ← محمّل، ويبقى متاحاً دون إنترنت بعد إعادة التشغيل',
+    () async {
+      await load();
+      final states = <BookTask?>[];
+      container.listen(
+        libraryControllerProvider,
+        (_, s) => states.add(s.tasks['mini']),
+      );
+      expect(await controller().download('mini'), DownloadOutcome.installed);
+      expect(states.whereType<DownloadingTask>(), isNotEmpty);
+      expect(states.whereType<PreparingTask>(), isNotEmpty);
+      expect(state().tasks, isEmpty);
+      expect(state().items.single.status, BookStatus.installed);
 
-    // تشغيل جديد دون إنترنت ولا فهرس محفوظ: الكتاب المحمّل يبقى ظاهراً.
-    container.dispose();
-    env.dir.listSync().where((f) => f.path.endsWith('catalog.json')).forEach((f) => f.deleteSync());
-    env.server.offline = true;
-    final s = await load();
-    expect(s.status, CatalogStatus.ready);
-    expect(s.notice, CatalogNotice.offline);
-    expect(s.items.single.status, BookStatus.installed);
-    expect((await container.read(bookChaptersProvider('mini').future)).length, 2);
-  });
+      // تشغيل جديد دون إنترنت ولا فهرس محفوظ: الكتاب المحمّل يبقى ظاهراً.
+      container.dispose();
+      env.dir
+          .listSync()
+          .where((f) => f.path.endsWith('catalog.json'))
+          .forEach((f) => f.deleteSync());
+      env.server.offline = true;
+      final s = await load();
+      expect(s.status, CatalogStatus.ready);
+      expect(s.notice, CatalogNotice.offline);
+      expect(s.items.single.status, BookStatus.installed);
+      expect(
+        (await container.read(bookChaptersProvider('mini').future)).length,
+        2,
+      );
+    },
+  );
 
   test('ملف تالف (sha256) ← FailedTask(integrity) والكتاب غير محمّل', () async {
     env.server.files.updateAll((k, v) => [...v]..[10] ^= 0xff);
     await load();
     expect(await controller().download('mini'), DownloadOutcome.failed);
-    expect((state().tasks['mini']! as FailedTask).failure, TaskFailure.integrity);
+    expect(
+      (state().tasks['mini']! as FailedTask).failure,
+      TaskFailure.integrity,
+    );
     expect(state().items.single.status, BookStatus.notInstalled);
   });
 
-  test('انقطاع أثناء التحميل ← FailedTask(network) ثم إعادة المحاولة تنجح', () async {
-    await load();
-    final stream = StreamController<List<int>>();
-    env.server.bookStream = stream;
-    final future = controller().download('mini');
-    stream
-      ..add([1, 2])
-      ..addError(http.ClientException('reset'));
-    expect(await future, DownloadOutcome.failed);
-    expect((state().tasks['mini']! as FailedTask).failure, TaskFailure.network);
-    await stream.close();
+  test(
+    'انقطاع أثناء التحميل ← FailedTask(network) ثم إعادة المحاولة تنجح',
+    () async {
+      await load();
+      final stream = StreamController<List<int>>();
+      env.server.bookStream = stream;
+      final future = controller().download('mini');
+      stream
+        ..add([1, 2])
+        ..addError(http.ClientException('reset'));
+      expect(await future, DownloadOutcome.failed);
+      expect(
+        (state().tasks['mini']! as FailedTask).failure,
+        TaskFailure.network,
+      );
+      await stream.close();
 
-    env.server.bookStream = null;
-    expect(await controller().download('mini'), DownloadOutcome.installed);
-    expect(state().tasks, isEmpty);
-  });
+      env.server.bookStream = null;
+      expect(await controller().download('mini'), DownloadOutcome.installed);
+      expect(state().tasks, isEmpty);
+    },
+  );
 
   test('الإلغاء يعيد الكتاب إلى «غير محمّل» بلا خطأ', () async {
     await load();
@@ -145,7 +167,9 @@ void main() {
     await controller().download('mini');
     container.dispose();
 
-    env.server.catalog = catalogJson([env.server.addBook(miniBook(version: 2))], catalogVersion: 2);
+    env.server.catalog = catalogJson([
+      env.server.addBook(miniBook(version: 2)),
+    ], catalogVersion: 2);
     await load();
     expect(state().items.single.status, BookStatus.updateAvailable);
     expect(await controller().download('mini'), DownloadOutcome.updated);
@@ -158,7 +182,9 @@ void main() {
     await controller().download('mini');
     container.dispose();
     // مستودع يحذف فعلاً ثم يرمي خطأ (فشل بعد التغيير).
-    container = ProviderContainer(overrides: env.overrides(books: _ThrowAfterDelete(env.books)));
+    container = ProviderContainer(
+      overrides: env.overrides(books: _ThrowAfterDelete(env.books)),
+    );
     container.read(libraryControllerProvider);
     await controller().refresh();
     expect(state().items.single.status, BookStatus.installed);
@@ -166,14 +192,17 @@ void main() {
     expect(state().items.single.status, BookStatus.notInstalled);
   });
 
-  test('فشل الخادم بلا فهرس محفوظ مع كتب محمّلة ← لافتة الخطأ والكتب ظاهرة', () async {
-    await env.preinstall(miniBook());
-    env.server.catalogStatus = 500;
-    final s = await load();
-    expect(s.status, CatalogStatus.ready);
-    expect(s.notice, CatalogNotice.error);
-    expect(s.items.single.status, BookStatus.installed);
-  });
+  test(
+    'فشل الخادم بلا فهرس محفوظ مع كتب محمّلة ← لافتة الخطأ والكتب ظاهرة',
+    () async {
+      await env.preinstall(miniBook());
+      env.server.catalogStatus = 500;
+      final s = await load();
+      expect(s.status, CatalogStatus.ready);
+      expect(s.notice, CatalogNotice.error);
+      expect(s.items.single.status, BookStatus.installed);
+    },
+  );
 
   test('الحذف يعيده إلى «غير محمّل»', () async {
     await load();
@@ -198,7 +227,8 @@ class _ThrowAfterDelete implements BookRepository {
   Future<List<ChapterInfo>> chapters(String bookId) => inner.chapters(bookId);
 
   @override
-  Future<void> install(Uint8List gz, CatalogBook entry) => inner.install(gz, entry);
+  Future<void> install(Uint8List gz, CatalogBook entry) =>
+      inner.install(gz, entry);
 
   @override
   Future<List<InstalledBook>> installed() => inner.installed();

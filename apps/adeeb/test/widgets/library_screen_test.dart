@@ -17,7 +17,10 @@ void main() {
   });
   tearDown(() => env.dispose());
 
-  Future<void> pumpApp(WidgetTester tester, {Locale locale = const Locale('ar')}) async {
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    Locale locale = const Locale('ar'),
+  }) async {
     await tester.pumpWidget(env.app(locale: locale));
     await tester.pumpAndSettle();
   }
@@ -25,7 +28,9 @@ void main() {
   TextDirection directionOf(WidgetTester tester, Finder finder) =>
       Directionality.of(tester.element(finder));
 
-  testWidgets('العربية افتراضياً: الواجهة RTL، والبطاقة بأرقام مشرقية', (tester) async {
+  testWidgets('العربية افتراضياً: الواجهة RTL، والبطاقة بأرقام مشرقية', (
+    tester,
+  ) async {
     await pumpApp(tester);
     expect(find.text('المكتبة'), findsOneWidget);
     expect(directionOf(tester, find.text('المكتبة')), TextDirection.rtl);
@@ -40,12 +45,18 @@ void main() {
     expect(title.right, lessThan(card.right - 72));
     // قارئ الشاشة يقرأ البطاقة وحدة واحدة.
     expect(
-      find.bySemanticsLabel(RegExp('^كتاب اختبار اصطناعي، بيانات اختبار، متوفى ١٠٠ للهجرة، ١ كيلوبايت، غير محمّل\$')),
+      find.bySemanticsLabel(
+        RegExp(
+          '^كتاب اختبار اصطناعي، بيانات اختبار، متوفى ١٠٠ للهجرة، ١ كيلوبايت، غير محمّل\$',
+        ),
+      ),
       findsOneWidget,
     );
   });
 
-  testWidgets('الإنجليزية LTR، ونص الكتاب يبقى RTL مع نقل لاتيني', (tester) async {
+  testWidgets('الإنجليزية LTR، ونص الكتاب يبقى RTL مع نقل لاتيني', (
+    tester,
+  ) async {
     await pumpApp(tester, locale: const Locale('en'));
     expect(find.text('Library'), findsOneWidget);
     expect(directionOf(tester, find.text('Library')), TextDirection.ltr);
@@ -53,7 +64,9 @@ void main() {
     expect(find.text('بيانات اختبار (d. 100 AH)'), findsOneWidget);
     expect(find.text('1 KB'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, 'Download'), findsOneWidget);
-    final titleText = tester.widget<Text>(find.text('كتاب اختبار اصطناعي').last);
+    final titleText = tester.widget<Text>(
+      find.text('كتاب اختبار اصطناعي').last,
+    );
     expect(titleText.textDirection, TextDirection.rtl);
   });
 
@@ -64,12 +77,16 @@ void main() {
     expect(find.bySemanticsLabel('جارٍ التحميل'), findsNothing);
   });
 
-  testWidgets('أول تشغيل دون إنترنت: رسالة واضحة وإعادة المحاولة تعمل', (tester) async {
+  testWidgets('أول تشغيل دون إنترنت: رسالة واضحة وإعادة المحاولة تعمل', (
+    tester,
+  ) async {
     env.server.offline = true;
     await pumpApp(tester);
     expect(find.text('تحتاج اتصالاً لتحميل الكتب'), findsOneWidget);
     expect(
-      find.text('اتصل بالإنترنت مرة واحدة لتحميل قائمة الكتب، وبعدها تقرأ وتبحث وتستمع دون اتصال.'),
+      find.text(
+        'اتصل بالإنترنت مرة واحدة لتحميل قائمة الكتب، وبعدها تقرأ وتبحث وتستمع دون اتصال.',
+      ),
       findsOneWidget,
     );
     env.server.offline = false;
@@ -81,7 +98,10 @@ void main() {
   testWidgets('فشل جلب الفهرس بلا نسخة محفوظة', (tester) async {
     env.server.catalogStatus = 500;
     await pumpApp(tester);
-    expect(find.text('تعذّر تحميل قائمة الكتب. تحقّق من الاتصال وحاول مجدداً.'), findsOneWidget);
+    expect(
+      find.text('تعذّر تحميل قائمة الكتب. تحقّق من الاتصال وحاول مجدداً.'),
+      findsOneWidget,
+    );
     expect(find.text('إعادة المحاولة'), findsOneWidget);
   });
 
@@ -117,7 +137,9 @@ void main() {
     unawaited(stream.close());
   });
 
-  testWidgets('التقدّم يُعلَن عند ٢٥ و٥٠ و١٠٠٪ فقط، وليس في تسمية البطاقة', (tester) async {
+  testWidgets('التقدّم يُعلَن عند ٢٥ و٥٠ و١٠٠٪ فقط، وليس في تسمية البطاقة', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     final stream = StreamController<List<int>>();
     env.server.bookStream = stream;
@@ -139,25 +161,28 @@ void main() {
     }
     unawaited(stream.close());
     await tester.pumpAndSettle();
-    expect(
-      tester.takeAnnouncements().map((a) => a.message),
-      [
-        '«كتاب اختبار اصطناعي»: يُحمَّل… ٢٥٪',
-        '«كتاب اختبار اصطناعي»: يُحمَّل… ٥٠٪',
-        '«كتاب اختبار اصطناعي»: يُحمَّل… ١٠٠٪',
-      ],
-    );
+    expect(tester.takeAnnouncements().map((a) => a.message), [
+      '«كتاب اختبار اصطناعي»: يُحمَّل… ٢٥٪',
+      '«كتاب اختبار اصطناعي»: يُحمَّل… ٥٠٪',
+      '«كتاب اختبار اصطناعي»: يُحمَّل… ١٠٠٪',
+    ]);
     expect(find.text('محمّل'), findsOneWidget);
     semantics.dispose();
   });
 
-  testWidgets('فشل الخادم بلا فهرس محفوظ مع كتاب محمّل: لافتة خطأ والكتاب متاح', (tester) async {
-    await env.preinstall(miniBook());
-    env.server.catalogStatus = 500;
-    await pumpApp(tester);
-    expect(find.text('تعذّر تحميل قائمة الكتب. تحقّق من الاتصال وحاول مجدداً.'), findsOneWidget);
-    expect(find.text('محمّل'), findsOneWidget);
-  });
+  testWidgets(
+    'فشل الخادم بلا فهرس محفوظ مع كتاب محمّل: لافتة خطأ والكتاب متاح',
+    (tester) async {
+      await env.preinstall(miniBook());
+      env.server.catalogStatus = 500;
+      await pumpApp(tester);
+      expect(
+        find.text('تعذّر تحميل قائمة الكتب. تحقّق من الاتصال وحاول مجدداً.'),
+        findsOneWidget,
+      );
+      expect(find.text('محمّل'), findsOneWidget);
+    },
+  );
 
   testWidgets('انقطاع أثناء التحميل: رسالة و«إعادة المحاولة»', (tester) async {
     final stream = StreamController<List<int>>();
@@ -192,7 +217,10 @@ void main() {
     await tester.tap(find.text('حذف من الجهاز'));
     await tester.pumpAndSettle();
     expect(find.text('حذف الكتاب من الجهاز؟'), findsOneWidget);
-    expect(find.textContaining('سيُحذف «كتاب اختبار اصطناعي» من جهازك'), findsOneWidget);
+    expect(
+      find.textContaining('سيُحذف «كتاب اختبار اصطناعي» من جهازك'),
+      findsOneWidget,
+    );
     // «إلغاء» لا يحذف.
     await tester.tap(find.text('إلغاء'));
     await tester.pumpAndSettle();
@@ -209,7 +237,9 @@ void main() {
     expect(await env.books.installed(), isEmpty);
   });
 
-  testWidgets('دون إنترنت مع كتاب محمّل: لافتة، والكتاب غير المحمّل معطّل', (tester) async {
+  testWidgets('دون إنترنت مع كتاب محمّل: لافتة، والكتاب غير المحمّل معطّل', (
+    tester,
+  ) async {
     env.server.catalog = catalogJson([
       env.server.addBook(miniBook()),
       env.server.addBook(miniBook(id: 'other')),
@@ -223,14 +253,19 @@ void main() {
     expect(find.text('محمّل'), findsOneWidget);
     expect(find.text('يحتاج اتصالاً'), findsOneWidget);
     final button = tester.widget<ButtonStyleButton>(
-      find.ancestor(of: find.text('تحميل'), matching: find.bySubtype<ButtonStyleButton>()),
+      find.ancestor(
+        of: find.text('تحميل'),
+        matching: find.bySubtype<ButtonStyleButton>(),
+      ),
     );
     expect(button.onPressed, isNull);
   });
 
   testWidgets('تحديث متاح: شارة وزر، ثم رسالة «حُدّث الكتاب»', (tester) async {
     await env.preinstall(miniBook());
-    env.server.catalog = catalogJson([env.server.addBook(miniBook(version: 2))]);
+    env.server.catalog = catalogJson([
+      env.server.addBook(miniBook(version: 2)),
+    ]);
     await pumpApp(tester);
     expect(find.text('تحديث متاح'), findsOneWidget);
     await tester.tap(find.text('تحديث'));
@@ -245,22 +280,34 @@ void main() {
     await tester.tap(find.text('بيانات اختبار (ت ١٠٠هـ)'));
     await tester.pumpAndSettle();
     expect(find.text('حمّل الكتاب لعرض أبوابه'), findsOneWidget);
-    expect(find.text('المصدر: بيانات اختبار اصطناعية — ملك عام'), findsOneWidget);
+    expect(
+      find.text('المصدر: بيانات اختبار اصطناعية — ملك عام'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('تحميل الكتاب (١ ك.ب)'));
     await tester.pumpAndSettle();
     expect(find.text('الأبواب'), findsOneWidget);
     expect(find.text('الباب الأول: فقرات اختبار'), findsOneWidget);
     expect(find.text('فصل اختبار فرعي'), findsOneWidget);
-    expect(find.bySemanticsLabel('الباب ٢ من ٢: فصل اختبار فرعي'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('الباب ٢ من ٢: فصل اختبار فرعي'),
+      findsOneWidget,
+    );
     // سهم الرجوع في بداية الشريط (يمين في RTL).
     final back = tester.getRect(find.byType(BackButton));
-    expect(back.center.dx, greaterThan(tester.view.physicalSize.width / tester.view.devicePixelRatio / 2));
+    expect(
+      back.center.dx,
+      greaterThan(
+        tester.view.physicalSize.width / tester.view.devicePixelRatio / 2,
+      ),
+    );
   });
 
   testWidgets('صفحة الكتاب: الحذف من القائمة يعود للمكتبة', (tester) async {
     await env.preinstall(miniBook());
     await pumpApp(tester);
-    await tester.tap(find.text('افتح'));
+    // الضغط على البطاقة يفتح صفحة الكتاب، و«افتح» يفتح القارئ.
+    await tester.tap(find.text('بيانات اختبار (ت ١٠٠هـ)'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('خيارات أخرى'));
     await tester.pumpAndSettle();

@@ -72,7 +72,11 @@ class BookDownloader {
     }
 
     unawaited(token.whenCancelled.then((_) => abortRequest()));
-    final request = http.AbortableRequest('GET', url, abortTrigger: abort.future);
+    final request = http.AbortableRequest(
+      'GET',
+      url,
+      abortTrigger: abort.future,
+    );
 
     final http.StreamedResponse response;
     try {
@@ -92,12 +96,18 @@ class BookDownloader {
     if (response.statusCode != 200) {
       // نستهلك الجسم حتى يُغلق الاتصال.
       unawaited(response.stream.drain<void>().catchError((_) {}));
-      throw BookDownloadException(DownloadFailure.server, 'HTTP ${response.statusCode}');
+      throw BookDownloadException(
+        DownloadFailure.server,
+        'HTTP ${response.statusCode}',
+      );
     }
     final declared = response.contentLength;
     if (declared != null && declared > expectedSize) {
       unawaited(response.stream.drain<void>().catchError((_) {}));
-      throw const BookDownloadException(DownloadFailure.integrity, 'larger than catalog');
+      throw const BookDownloadException(
+        DownloadFailure.integrity,
+        'larger than catalog',
+      );
     }
 
     final builder = BytesBuilder(copy: false);
@@ -124,7 +134,12 @@ class BookDownloader {
         builder.add(chunk);
         if (builder.length > expectedSize) {
           unawaited(sub.cancel());
-          fail(const BookDownloadException(DownloadFailure.integrity, 'larger than catalog'));
+          fail(
+            const BookDownloadException(
+              DownloadFailure.integrity,
+              'larger than catalog',
+            ),
+          );
           return;
         }
         onProgress?.call(builder.length, expectedSize);
@@ -140,10 +155,12 @@ class BookDownloader {
       cancelOnError: true,
     );
     armIdle();
-    unawaited(token.whenCancelled.then((_) {
-      unawaited(sub.cancel());
-      fail(const DownloadCancelledException());
-    }));
+    unawaited(
+      token.whenCancelled.then((_) {
+        unawaited(sub.cancel());
+        fail(const DownloadCancelledException());
+      }),
+    );
 
     try {
       await done.future;
@@ -152,10 +169,16 @@ class BookDownloader {
     }
     final bytes = builder.takeBytes();
     if (bytes.length != expectedSize) {
-      throw const BookDownloadException(DownloadFailure.integrity, 'size mismatch');
+      throw const BookDownloadException(
+        DownloadFailure.integrity,
+        'size mismatch',
+      );
     }
     if (sha256.convert(bytes).toString() != expectedSha256) {
-      throw const BookDownloadException(DownloadFailure.integrity, 'sha256 mismatch');
+      throw const BookDownloadException(
+        DownloadFailure.integrity,
+        'sha256 mismatch',
+      );
     }
     return bytes;
   }

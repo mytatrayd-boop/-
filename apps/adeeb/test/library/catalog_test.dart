@@ -14,7 +14,12 @@ void main() {
 
   test('يحلل فهرساً صالحاً بالترتيب', () {
     final other = miniBook(id: 'other');
-    final c = parseCatalog(catalogJson([entry, catalogEntry(other, gzJson(other))], catalogVersion: 3));
+    final c = parseCatalog(
+      catalogJson([
+        entry,
+        catalogEntry(other, gzJson(other)),
+      ], catalogVersion: 3),
+    );
     expect(c.catalogVersion, 3);
     expect(c.books.map((b) => b.id), ['mini', 'other']);
     final b = c.byId('mini')!;
@@ -26,8 +31,10 @@ void main() {
   });
 
   test('schema أحدث ← UnsupportedSchemaException', () {
-    expect(() => parseCatalog(catalogJson([entry], schema: 2)),
-        throwsA(isA<UnsupportedSchemaException>()));
+    expect(
+      () => parseCatalog(catalogJson([entry], schema: 2)),
+      throwsA(isA<UnsupportedSchemaException>()),
+    );
   });
 
   for (final (name, mutate) in <(String, void Function(Map<String, Object?>))>[
@@ -42,13 +49,22 @@ void main() {
     test('يرفض: $name', () {
       final bad = Map<String, Object?>.of(entry);
       mutate(bad);
-      expect(() => parseCatalog(catalogJson([bad])), throwsA(isA<LibraryFormatException>()));
+      expect(
+        () => parseCatalog(catalogJson([bad])),
+        throwsA(isA<LibraryFormatException>()),
+      );
     });
   }
 
   test('يرفض معرّفاً مكرراً وJSON تالفاً', () {
-    expect(() => parseCatalog(catalogJson([entry, entry])), throwsA(isA<LibraryFormatException>()));
+    expect(
+      () => parseCatalog(catalogJson([entry, entry])),
+      throwsA(isA<LibraryFormatException>()),
+    );
     expect(() => parseCatalog('{'), throwsA(isA<LibraryFormatException>()));
-    expect(() => parseCatalog(jsonEncode([1])), throwsA(isA<LibraryFormatException>()));
+    expect(
+      () => parseCatalog(jsonEncode([1])),
+      throwsA(isA<LibraryFormatException>()),
+    );
   });
 }

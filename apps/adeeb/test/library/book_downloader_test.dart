@@ -15,20 +15,28 @@ void main() {
   setUp(() {
     server = FakeLibraryServer();
     entry = server.addBook(miniBook());
-    downloader = BookDownloader(server.client(), timeout: const Duration(seconds: 2));
+    downloader = BookDownloader(
+      server.client(),
+      timeout: const Duration(seconds: 2),
+    );
   });
 
-  Future<List<int>> run({String? sha, int? size, ProgressCallback? onProgress, CancelToken? cancel}) =>
-      downloader.download(
-        url,
-        expectedSha256: sha ?? entry['sha256']! as String,
-        expectedSize: size ?? entry['size_bytes']! as int,
-        onProgress: onProgress,
-        cancel: cancel,
-      );
+  Future<List<int>> run({
+    String? sha,
+    int? size,
+    ProgressCallback? onProgress,
+    CancelToken? cancel,
+  }) => downloader.download(
+    url,
+    expectedSha256: sha ?? entry['sha256']! as String,
+    expectedSize: size ?? entry['size_bytes']! as int,
+    onProgress: onProgress,
+    cancel: cancel,
+  );
 
-  Matcher failsWith(DownloadFailure f) =>
-      throwsA(isA<BookDownloadException>().having((e) => e.failure, 'failure', f));
+  Matcher failsWith(DownloadFailure f) => throwsA(
+    isA<BookDownloadException>().having((e) => e.failure, 'failure', f),
+  );
 
   test('ينزّل ويتحقق من sha256 مع تقدّم متزايد ينتهي بالحجم الكامل', () async {
     final progress = <int>[];
@@ -48,7 +56,10 @@ void main() {
   });
 
   test('ملف أصغر من المعلن ← integrity', () async {
-    await expectLater(run(size: (entry['size_bytes']! as int) + 1), failsWith(DownloadFailure.integrity));
+    await expectLater(
+      run(size: (entry['size_bytes']! as int) + 1),
+      failsWith(DownloadFailure.integrity),
+    );
   });
 
   test('انقطاع الاتصال ← network', () async {
@@ -69,7 +80,10 @@ void main() {
   test('توقف البيانات أطول من المهلة ← network', () async {
     final controller = StreamController<List<int>>();
     server.bookStream = controller;
-    downloader = BookDownloader(server.client(), timeout: const Duration(milliseconds: 50));
+    downloader = BookDownloader(
+      server.client(),
+      timeout: const Duration(milliseconds: 50),
+    );
     final future = run();
     controller.add([1, 2, 3]);
     await expectLater(future, failsWith(DownloadFailure.network));
@@ -78,7 +92,10 @@ void main() {
 
   test('انتهاء مهلة بدء الرد يُجهض الطلب', () async {
     final hanging = _HangingClient();
-    final d = BookDownloader(hanging, timeout: const Duration(milliseconds: 50));
+    final d = BookDownloader(
+      hanging,
+      timeout: const Duration(milliseconds: 50),
+    );
     await expectLater(
       d.download(url, expectedSha256: 'a' * 64, expectedSize: 10),
       failsWith(DownloadFailure.network),
@@ -104,7 +121,11 @@ void main() {
 
   test('رابط غير https يُرفض دون طلب', () async {
     await expectLater(
-      downloader.download(Uri.parse('http://example.test/x'), expectedSha256: 'a' * 64, expectedSize: 1),
+      downloader.download(
+        Uri.parse('http://example.test/x'),
+        expectedSha256: 'a' * 64,
+        expectedSize: 1,
+      ),
       failsWith(DownloadFailure.integrity),
     );
     expect(server.requests, isEmpty);

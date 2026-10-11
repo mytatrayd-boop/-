@@ -28,8 +28,14 @@ void main() {
 
   test('رابط المكتبة: https فقط، ويُضاف / في النهاية', () {
     expect(const AppConfig(libraryBaseUrl: '').libraryBaseUri, isNull);
-    expect(const AppConfig(libraryBaseUrl: 'http://x.test/lib/').libraryBaseUri, isNull);
-    expect(const AppConfig(libraryBaseUrl: 'https://x.test/lib').libraryBaseUri.toString(),
-        'https://x.test/lib/');
+    expect(
+      const AppConfig(libraryBaseUrl: 'http://x.test/lib/').libraryBaseUri,
+      isNull,
+    );
+    expect(
+      const AppConfig(libraryBaseUrl: 'https://x.test/lib').libraryBaseUri
+          .toString(),
+      'https://x.test/lib/',
+    );
   });
 }

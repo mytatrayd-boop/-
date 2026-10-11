@@ -18,14 +18,22 @@ Color coverColorFor(String bookId) {
   final known = coverColors[bookId];
   if (known != null) return known;
   final palette = coverColors.values.toList();
-  final hash = bookId.codeUnits.fold<int>(0, (h, c) => (h * 31 + c) & 0x7fffffff);
+  final hash = bookId.codeUnits.fold<int>(
+    0,
+    (h, c) => (h * 31 + c) & 0x7fffffff,
+  );
   return palette[hash % palette.length];
 }
 
 /// غلاف مرسوم 3:4: لون الكتاب، ونقش نجمة ثمانية متكرر بذهبي شفاف، والعنوان
 /// بخط أميري بلون عاجي داخل إطار. زخرفي فقط: مستبعد من قارئ الشاشة.
 class GeneratedCover extends StatelessWidget {
-  const GeneratedCover({super.key, required this.bookId, required this.title, required this.width});
+  const GeneratedCover({
+    super.key,
+    required this.bookId,
+    required this.title,
+    required this.width,
+  });
 
   final String bookId;
   final String title;
