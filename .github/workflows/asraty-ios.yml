@@ -1,6 +1,6 @@
 name: Asraty — iOS (TestFlight)
 
-# Archives, signs (temporary distribution certificate made with the App Store Connect API key, revoked after upload) and
+# Archives, signs (distribution certificate made with the App Store Connect API key; kept valid so Apple accepts the build, oldest revoked at the account limit) and
 # uploads the build to App Store Connect, where it appears in TestFlight.
 # Required secrets are listed in asraty/docs/RELEASE.md.
 on:
@@ -56,7 +56,7 @@ jobs:
             -authenticationKeyID ${{ secrets.APPSTORE_API_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APPSTORE_API_ISSUER_ID }}
 
-      - name: Revoke temporary certificate
+      - name: Remove local signing keychain
         if: always()
         env:
           ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
