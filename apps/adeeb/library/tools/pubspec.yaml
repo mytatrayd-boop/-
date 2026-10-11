@@ -1,0 +1,14 @@
+name: adeeb_library_tools
+description: أدوات تحويل كتب «الأديب الذكي» من ويكي مصدر إلى JSON المعتمد (schema 1) والتحقق منها.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  crypto: ^3.0.7
+  http: ^1.6.0
+
+dev_dependencies:
+  test: ^1.26.0
