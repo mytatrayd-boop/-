@@ -14,7 +14,7 @@ Hello, thank you for reviewing our app.
 - Full account: tap "دخول مسؤول الأسرة" (Family admin login) and enter any email address you can access. A one-time 6-digit code is sent to that email. There is no password. After you sign in, create a family and add members, tasks and rewards.
 - Account deletion: Settings (الإعدادات) → "حذف حسابي" (Delete my account). This deletes the account and its data. An admin can also delete the whole family.
 
-4. External services: Google Firebase (Authentication, Cloud Firestore database, Cloud Messaging for notifications); our own backend API, which handles sign-in codes and points logic; and Resend, which sends the sign-in code emails. There is no advertising, no analytics SDK, no payment processor, and no AI service.
+4. External services: Google Firebase (Authentication, Cloud Firestore database, Cloud Messaging for notifications); our own backend API, which handles sign-in codes and points logic; and an email service (Gmail SMTP) that sends the sign-in codes. There is no advertising, no analytics SDK, no payment processor, and no AI service.
 
 5. Regional differences: the app works the same way in all regions. The interface is in Arabic.
 
