@@ -489,6 +489,12 @@ abstract class L10n {
   /// **'حدث خطأ غير متوقع. حاول مجدداً.'**
   String get errGeneric;
 
+  /// No description provided for @errGenericCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ غير متوقع ({code}). حاول مجدداً، وإن تكرر أرسل صورة هذه الرسالة.'**
+  String errGenericCode(String code);
+
   /// No description provided for @errNameEmail.
   ///
   /// In ar, this message translates to:

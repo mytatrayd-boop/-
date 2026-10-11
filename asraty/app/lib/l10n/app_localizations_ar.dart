@@ -229,6 +229,11 @@ class L10nAr extends L10n {
   String get errGeneric => 'حدث خطأ غير متوقع. حاول مجدداً.';
 
   @override
+  String errGenericCode(String code) {
+    return 'حدث خطأ غير متوقع ($code). حاول مجدداً، وإن تكرر أرسل صورة هذه الرسالة.';
+  }
+
+  @override
   String get errNameEmail => 'اكتب الاسم وبريداً صحيحاً';
 
   @override

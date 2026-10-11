@@ -108,6 +108,8 @@
   "errOwnerMustDeleteFamily": "أنت المسؤول الرئيسي: احذف الأسرة كاملة بدلاً من حسابك.",
   "errRemoved": "لم تعد ضمن هذه الأسرة.",
   "errGeneric": "حدث خطأ غير متوقع. حاول مجدداً.",
+  "errGenericCode": "حدث خطأ غير متوقع ({code}). حاول مجدداً، وإن تكرر أرسل صورة هذه الرسالة.",
+  "@errGenericCode": {"placeholders": {"code": {"type": "String"}}},
   "errNameEmail": "اكتب الاسم وبريداً صحيحاً",
   "errTaskInput": "اكتب اسم المهمة ونقاطاً أكبر من صفر",
   "errCompTitle": "اكتب اسم المسابقة",

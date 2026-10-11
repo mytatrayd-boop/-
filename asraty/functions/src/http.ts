@@ -31,11 +31,30 @@ function error(kind: string, message: string, details?: Record<string, unknown>)
   return { status: code, body: { error: { status, message, ...(details ? { details } : {}) } } };
 }
 
+const LONG_TYPES = new Set(["type.googleapis.com/google.protobuf.Int64Value", "type.googleapis.com/google.protobuf.UInt64Value"]);
+
+/**
+ * Undoes the callable protocol's special JSON encoding, as Cloud Functions does:
+ * the Android SDK sends Dart/Java longs as {"@type": "...Int64Value", "value": "10"}.
+ */
+export function decode(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(decode);
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    if (typeof o["@type"] === "string" && LONG_TYPES.has(o["@type"])) {
+      const n = parseFloat(String(o.value));
+      return Number.isNaN(n) ? null : n;
+    }
+    return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, decode(x)]));
+  }
+  return v;
+}
+
 export async function handleCall(name: string, method: string, headers: Record<string, string | string[] | undefined>, body: unknown): Promise<HttpResult> {
   const handler = Object.prototype.hasOwnProperty.call(handlers, name) ? handlers[name] : undefined;
   if (!handler) return error("not-found", "not-found");
   if (method !== "POST") return error("invalid-argument", "POST only");
-  const payload = body && typeof body === "object" ? (body as { data?: unknown }).data : undefined;
+  const payload = decode(body && typeof body === "object" ? (body as { data?: unknown }).data : undefined);
 
   const ctx: CallContext = {};
   const fwd = headers["x-forwarded-for"];
@@ -58,6 +77,8 @@ export async function handleCall(name: string, method: string, headers: Record<s
   } catch (e) {
     if (e instanceof ApiError) return error(e.kind, e.code, e.details);
     console.error(`call ${name} failed`, e);
-    return error("internal", "internal");
+    // A short reason lets the app show what went wrong (the family sees it in the error toast).
+    const reason = String((e as Error)?.message ?? e).slice(0, 120);
+    return error("internal", "internal", { code: "internal", op: String((payload as { op?: unknown })?.op ?? name), reason });
   }
 }

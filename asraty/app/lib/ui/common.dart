@@ -20,7 +20,7 @@ void toast(BuildContext context, String msg) {
 }
 
 String errorText(L10n t, Object e) {
-  if (e is! AppError) return t.errGeneric;
+  if (e is! AppError) return t.errGenericCode(e.runtimeType.toString());
   return switch (e.code) {
     'bad-email' => t.errBadEmail,
     'setup-needed' => t.errSetupNeeded,
@@ -46,7 +46,9 @@ String errorText(L10n t, Object e) {
     'removed' => t.errRemoved,
     'bad-name-email' => t.errNameEmail,
     'too-short' => t.errFbShort,
-    _ => t.errGeneric,
+    'bad-title' || 'bad-number' => t.errTaskInput,
+    // Unknown codes show the code (and the server's reason for internal errors) so a screenshot is enough to diagnose.
+    _ => t.errGenericCode([e.code, if (e.details['reason'] is String) e.details['reason'] as String].join(' · ')),
   };
 }
 
@@ -268,8 +270,27 @@ class RowCard extends StatelessWidget {
           border: Border.all(color: context.pal.line),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(children: _spaced(children)),
+        child: _layout(),
       );
+
+  /// Children after the [Expanded] (status tags, buttons) sit on the same line
+  /// while the text fits beside them, and drop to their own line otherwise, so
+  /// narrow screens or large fonts never squeeze the text to one letter wide.
+  Widget _layout() {
+    final i = children.indexWhere((w) => w is Expanded);
+    if (i < 0 || i == children.length - 1) return Row(children: _spaced(children));
+    final main = children[i] as Expanded;
+    return OverflowBar(
+      alignment: MainAxisAlignment.spaceBetween,
+      overflowAlignment: OverflowBarAlignment.end,
+      spacing: 12,
+      overflowSpacing: 8,
+      children: [
+        Row(mainAxisSize: MainAxisSize.min, children: _spaced([...children.take(i), Flexible(child: main.child)])),
+        Row(mainAxisSize: MainAxisSize.min, children: _spaced(children.skip(i + 1).toList())),
+      ],
+    );
+  }
 
   static List<Widget> _spaced(List<Widget> c) => [
         for (var i = 0; i < c.length; i++) ...[if (i > 0) const SizedBox(width: 12), c[i]],

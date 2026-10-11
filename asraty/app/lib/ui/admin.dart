@@ -391,18 +391,24 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
       for (final m in d.members)
         RowCard(children: [
           EditableAvatar(person: m, canEdit: canEditAvatar(me, m), onTap: () => showAvatarPicker(context, ref, m)),
-          Expanded(child: TitleSub(m.name, m.email, subLtr: true)),
-          StateTag(m.active ? t.linked : t.pendingVerification, m.active ? Tone.ok : Tone.wait),
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            if (!m.active)
-              XButton(icon: Icons.refresh, tooltip: t.resendCode, onPressed: () => run(context, () => b.resendInvite(m.id), ok: t.inviteSent(m.email))),
-            XButton(
-              tooltip: t.remove,
-              onPressed: () async {
-                if (await confirm(context, t.confirmRemove(m.name)) && context.mounted) await run(context, () => b.removePerson(m.id));
-              },
-            ),
-          ]),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              TitleSub(m.name, m.email, subLtr: true),
+              const SizedBox(height: 6),
+              Row(children: [
+                StateTag(m.active ? t.linked : t.pendingVerification, m.active ? Tone.ok : Tone.wait),
+                const Spacer(),
+                if (!m.active)
+                  XButton(icon: Icons.refresh, tooltip: t.resendCode, onPressed: () => run(context, () => b.resendInvite(m.id), ok: t.inviteSent(m.email))),
+                XButton(
+                  tooltip: t.remove,
+                  onPressed: () async {
+                    if (await confirm(context, t.confirmRemove(m.name)) && context.mounted) await run(context, () => b.removePerson(m.id));
+                  },
+                ),
+              ]),
+            ]),
+          ),
         ]),
     ]);
   }
