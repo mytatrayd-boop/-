@@ -459,9 +459,14 @@ class _AskScreenState extends ConsumerState<AskScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
+        // كل العناصر مبنية دائماً (المحتوى قصير)، فيبقى الحقل قابلاً للتركيز
+        // من «سؤال جديد» وإن كان خارج الشاشة.
+        child: SingleChildScrollView(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
-          children: children,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
         ),
       ),
     );

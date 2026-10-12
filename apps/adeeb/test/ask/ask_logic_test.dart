@@ -82,7 +82,10 @@ void main() {
 
     test('يقبل الاقتباس بلا تشكيل ويعيده من النص المحلي بتشكيله', () {
       final span = locateQuote('ان الصديق وقت الضيق', text)!;
-      expect(text.substring(span.start, span.end), 'إنّ الصَّدِيقَ وقتَ الضيقِ');
+      expect(
+        text.substring(span.start, span.end),
+        'إنّ الصَّدِيقَ وقتَ الضيقِ',
+      );
     });
 
     test('يرفض نصف كلمة في الطرفين والقصير والمختلق', () {

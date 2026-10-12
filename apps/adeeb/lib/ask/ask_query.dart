@@ -31,6 +31,12 @@ class AskQuery {
         if (w.length < 2 || arabicStopwords.contains(w)) continue;
         // «والكرم» و«فالكرم» بعد حذف السابقة قد تكون كلمة شائعة («وما»).
         if (arabicStopwords.contains(lightStem(w))) continue;
+        // «وما» و«فهل»: واو العطف أو فاؤه قبل كلمة شائعة (الجذع لا يحذفهما
+        // من كلمة قصيرة).
+        if ((w.startsWith('و') || w.startsWith('ف')) &&
+            arabicStopwords.contains(w.substring(1))) {
+          continue;
+        }
         if (seen.add(w)) words.add(w);
         if (words.length == SearchQuery.maxTerms) break;
       }

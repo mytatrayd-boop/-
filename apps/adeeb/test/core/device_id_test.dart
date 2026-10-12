@@ -43,7 +43,8 @@ void main() {
     expect(int.parse(version.group(1)!), clientBuildNumber);
     expect(clientHeader(ios: false), 'adeeb-android/$clientBuildNumber');
     expect(
-      RegExp(r'^adeeb-(android|ios)/(\d{1,9})$').hasMatch(clientHeader(ios: true)),
+      RegExp(r'^adeeb-(android|ios)/(\d{1,9})$')
+          .hasMatch(clientHeader(ios: true)),
       isTrue,
     );
   });

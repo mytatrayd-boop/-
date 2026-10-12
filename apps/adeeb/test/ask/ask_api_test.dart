@@ -27,14 +27,16 @@ void main() {
   late FakeAskServer server;
   final deviceId = generateUuidV4();
 
-  HttpAskApi api({Duration timeout = askTimeout, String base = testAskBaseUrl}) =>
-      HttpAskApi(
-        client: server.client(),
-        baseUri: Uri.parse(base),
-        deviceId: () async => deviceId,
-        clientHeader: 'adeeb-android/1',
-        timeout: timeout,
-      );
+  HttpAskApi api({
+    Duration timeout = askTimeout,
+    String base = testAskBaseUrl,
+  }) => HttpAskApi(
+    client: server.client(),
+    baseUri: Uri.parse(base),
+    deviceId: () async => deviceId,
+    clientHeader: 'adeeb-android/1',
+    timeout: timeout,
+  );
 
   Future<AskReply> ask(HttpAskApi a, {Future<void>? cancel}) => a.ask(
     question: 'سؤال اختبار',
@@ -70,12 +72,17 @@ void main() {
       'lang': 'ar',
       'question': 'سؤال اختبار',
       'passages': [
-        {'id': 'aa-b001-p00001', 'book': 'كتاب', 'chapter': 'باب', 'text': _text},
+        {
+          'id': 'aa-b001-p00001',
+          'book': 'كتاب',
+          'chapter': 'باب',
+          'text': _text,
+        },
       ],
     });
   });
 
-  test('رابط بلا شرطة أخيرة أو بمسار فرعي يُكمل صحيحاً', () async {
+  test('quota: GET على /v1/quota', () async {
     await api().quota();
     expect(server.requests.single.url.toString(), '${testAskBaseUrl}v1/quota');
     expect(server.requests.single.method, 'GET');
@@ -111,7 +118,11 @@ void main() {
 
   group('رموز الأخطاء', () {
     final cases = <(int, String, AskFailure)>[
-      (429, '{"code":"DAILY_LIMIT","remaining":0,"retry_after":3600}', AskFailure.dailyLimit),
+      (
+        429,
+        '{"code":"DAILY_LIMIT","remaining":0,"retry_after":3600}',
+        AskFailure.dailyLimit,
+      ),
       (429, '{"code":"RATE_LIMIT","retry_after":60}', AskFailure.rateLimit),
       (426, '{"code":"UPGRADE_REQUIRED"}', AskFailure.upgradeRequired),
       (400, '{"code":"BAD_REQUEST"}', AskFailure.badRequest),
@@ -132,7 +143,8 @@ void main() {
     }
 
     test('DAILY_LIMIT يحمل remaining=0 وretry_after', () async {
-      server.onAsk = (_) => (429, '{"code":"DAILY_LIMIT","remaining":0,"retry_after":120}');
+      server.onAsk = (_) =>
+          (429, '{"code":"DAILY_LIMIT","remaining":0,"retry_after":120}');
       try {
         await ask(api());
         fail('لم يفشل');

@@ -134,7 +134,7 @@ class HttpAskApi implements AskApi {
   @override
   Future<QuotaInfo> quota() async {
     final body = await _send('GET', _endpoint('v1/quota'));
-    final json = _decodeObject(body.body);
+    final json = _decodeObject(body.bodyBytes);
     final limit = json?['limit'];
     final remaining = json?['remaining'];
     if (body.statusCode != 200 ||
@@ -166,7 +166,7 @@ class HttpAskApi implements AskApi {
       body: payload,
       cancel: cancel,
     );
-    final json = _decodeObject(res.body);
+    final json = _decodeObject(res.bodyBytes);
     if (res.statusCode != 200) throw _failureOf(res.statusCode, json);
     final reply = json == null ? null : parseAskReply(json);
     if (reply == null) throw const AskApiException(AskFailure.unavailable);
@@ -233,9 +233,10 @@ class HttpAskApi implements AskApi {
   }
 }
 
-Map<String, Object?>? _decodeObject(String body) {
+/// يفك JSON بترميز UTF-8 دائماً (العقد)، لا حسب ترويسة الرد.
+Map<String, Object?>? _decodeObject(List<int> bytes) {
   try {
-    final json = jsonDecode(body);
+    final json = jsonDecode(utf8.decode(bytes));
     return json is Map<String, Object?> ? json : null;
   } on FormatException {
     return null;

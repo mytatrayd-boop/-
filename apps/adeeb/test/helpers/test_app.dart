@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:adeeb/app.dart';
+import 'package:adeeb/ask/ask_providers.dart';
 import 'package:adeeb/audio/listening_providers.dart';
 import 'package:adeeb/core/app_config.dart';
 import 'package:adeeb/library/catalog.dart';
@@ -10,6 +11,7 @@ import 'package:adeeb/reader/reader_book.dart';
 import 'package:adeeb/reader/reader_providers.dart';
 import 'package:adeeb/search/search_providers.dart';
 import 'package:adeeb/storage/book_repository.dart';
+import 'package:adeeb/storage/passage_retriever.dart';
 import 'package:adeeb/storage/reading_repository.dart';
 import 'package:adeeb/storage/search_repository.dart';
 import 'package:flutter/widgets.dart';
@@ -17,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'fake_ask_server.dart';
 import 'fake_audio.dart';
 import 'library_fixtures.dart';
 
@@ -30,6 +33,9 @@ class TestEnv {
 
   final Directory dir;
   final server = FakeLibraryServer();
+
+  /// خادم «اسأل الأديب» الوهمي.
+  final ask = FakeAskServer();
 
   /// عند true تفشل كتابات المفضلة (محاكاة قاعدة مشغولة أو تالفة).
   bool failFavoriteWrites = false;
@@ -63,7 +69,14 @@ class TestEnv {
   }) => [
     storageDirectoryProvider.overrideWithValue(dir),
     appConfigProvider.overrideWithValue(
-      const AppConfig(libraryBaseUrl: testBaseUrl),
+      const AppConfig(
+        libraryBaseUrl: testBaseUrl,
+        askApiBaseUrl: testAskBaseUrl,
+      ),
+    ),
+    askHttpClientProvider.overrideWithValue(ask.client()),
+    passageRetrieverProvider.overrideWithValue(
+      SqlitePassageRetriever('${dir.path}/adeeb.db', useIsolate: false),
     ),
     httpClientProvider.overrideWithValue(server.client()),
     bookRepositoryProvider.overrideWithValue(books ?? this.books),
