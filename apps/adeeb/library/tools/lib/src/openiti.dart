@@ -103,6 +103,23 @@ String _applyBrackets(String b, OpenitiBrackets policy, int firstLine, RemovalSt
   int lineOf(int pos) => firstLine + 1 + '\n'.allMatches(b.substring(0, pos)).length;
   final out = StringBuffer();
   var i = 0;
+  // أسطر محذوفة داخل معقوف تُعاد فارغة في نهاية سطر الإغلاق (بعد معالجة بقية معقوفاته).
+  var pendingLines = 0;
+  void write(String seg) {
+    if (pendingLines > 0) {
+      final nl = seg.indexOf('\n');
+      if (nl >= 0) {
+        out
+          ..write(seg.substring(0, nl))
+          ..write('\n' * pendingLines)
+          ..write(seg.substring(nl));
+        pendingLines = 0;
+        return;
+      }
+    }
+    out.write(seg);
+  }
+
   while (true) {
     final s = b.indexOf('[', i);
     if (s < 0) break;
@@ -113,7 +130,7 @@ String _applyBrackets(String b, OpenitiBrackets policy, int firstLine, RemovalSt
       // معقوف داخل عنوان: تعالجه قواعد العناوين، بشرط أن يُغلق في السطر نفسه.
       final lineEnd = b.indexOf('\n', s) < 0 ? b.length : b.indexOf('\n', s);
       if (e < 0 || e > lineEnd) throw OpenitiException('سطر ${lineOf(s)}: معقوف في عنوان لا يُغلق في سطره.');
-      out.write(b.substring(i, e + 1));
+      write(b.substring(i, e + 1));
       i = e + 1;
       continue;
     }
@@ -125,9 +142,8 @@ String _applyBrackets(String b, OpenitiBrackets policy, int firstLine, RemovalSt
     final keep = policy.keep.where((r) => r.pattern.matchAsPrefix(content) != null).firstOrNull;
     if (keep != null) {
       stats.add('معقوف أُبقي نصه بلا المعقوفين: ${keep.name}');
-      out
-        ..write(b.substring(i, s))
-        ..write(content);
+      write(b.substring(i, s));
+      write(content);
       i = e + 1;
       continue;
     }
@@ -138,16 +154,13 @@ String _applyBrackets(String b, OpenitiBrackets policy, int firstLine, RemovalSt
     final k = '\n'.allMatches(content).length;
     if (k > 0) stats.add('معقوف محذوف ممتد على أكثر من سطر');
     final markers = _markerRe.allMatches(content).map((m) => m[0]).join(' ');
-    out
-      ..write(b.substring(i, s))
-      ..write(markers.isEmpty ? '' : ' $markers ');
-    final lineEnd = b.indexOf('\n', e + 1) < 0 ? b.length : b.indexOf('\n', e + 1);
-    out
-      ..write(b.substring(e + 1, lineEnd))
-      ..write('\n' * k);
-    i = lineEnd;
+    write(b.substring(i, s));
+    out.write(markers.isEmpty ? '' : ' $markers ');
+    pendingLines += k;
+    i = e + 1;
   }
-  out.write(b.substring(i));
+  write(b.substring(i));
+  if (pendingLines > 0) out.write('\n' * pendingLines);
   final result = out.toString();
   final stray = RegExp(r'^(?!### ).*\]', multiLine: true).firstMatch(result);
   if (stray != null) {
