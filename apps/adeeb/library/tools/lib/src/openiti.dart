@@ -213,9 +213,9 @@ class OpenitiRecipe {
 
   static OpenitiRecipe fromJson(Map<String, Object?> j) {
     if (!isOpenitiJson(j)) throw OpenitiException('الوصفة ليست بصيغة openiti (format).');
-    final title = j['title']! as Map<String, Object?>;
-    final author = j['author']! as Map<String, Object?>;
-    final o = j['openiti']! as Map<String, Object?>;
+    final title = (j['title']! as Map).cast<String, Object?>();
+    final author = (j['author']! as Map).cast<String, Object?>();
+    final o = (j['openiti']! as Map).cast<String, Object?>();
     final commit = o['commit']! as String;
     if (!RegExp(r'^[0-9a-f]{40}$').hasMatch(commit)) {
       throw OpenitiException('commit يجب أن يكون 40 حرفاً ست عشرياً: $commit');
