@@ -151,9 +151,8 @@ SearchPage searchParagraphs(
           bookTitle: r['title_ar'] as String,
           chapterTitle: r['chapter_title'] as String,
           snippet: snippet,
-          matchedWords: {
-            for (final s in spans) text.substring(s.start, s.end),
-          }.toList(),
+          matchedWords: {for (final s in spans) text.substring(s.start, s.end)}
+              .toList(),
         );
       }(),
   ];

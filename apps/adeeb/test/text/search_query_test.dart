@@ -80,13 +80,7 @@ void main() {
       final q = SearchQuery.parse('NEAR(a* OR b) - ^c:');
       expect(q.toFtsMatch(), isNot(contains('*')));
       expect(q.toFtsMatch(), isNot(contains('^')));
-      expect(q.terms.map((t) => t.words.single), [
-        'near',
-        'a',
-        'or',
-        'b',
-        'c',
-      ]);
+      expect(q.terms.map((t) => t.words.single), ['near', 'a', 'or', 'b', 'c']);
     });
 
     test('الحد الأدنى حرفان، والفارغ والترقيم غير قابلين للبحث', () {
@@ -125,7 +119,10 @@ void main() {
     test('أمثلة القبول: التظليل على الكلمة بتشكيلها', () {
       const text = 'فقرة اختبار: الحِكْمَةُ والأَسَدُ، وأَسَدٌ على التل.';
       expect(mark(text, 'الحكمه'), contains('[الحِكْمَةُ]'));
-      expect(mark(text, 'اسد'), 'فقرة اختبار: الحِكْمَةُ [والأَسَدُ]، [وأَسَدٌ] على التل.');
+      expect(
+        mark(text, 'اسد'),
+        'فقرة اختبار: الحِكْمَةُ [والأَسَدُ]، [وأَسَدٌ] على التل.',
+      );
       expect(mark(text, 'علي'), contains('[على]'));
     });
 
@@ -162,18 +159,25 @@ void main() {
       final spans = findMatches(text, SearchQuery.parse('الحكمه'));
       final s = buildSnippet(text, spans);
       expect(s.text, text);
-      expect(s.text.substring(s.spans.single.start, s.spans.single.end), 'الحكمة');
+      expect(
+        s.text.substring(s.spans.single.start, s.spans.single.end),
+        'الحكمة',
+      );
     });
 
     test('فقرة طويلة: يبدأ قبل التطابق بـ «…» على حد كلمة ويُقطع في آخره', () {
-      final text = '${List.filled(60, 'كلمة').join(' ')} الحِكْمَةُ ${List.filled(80, 'أخرى').join(' ')}';
+      final text =
+          '${List.filled(60, 'كلمة').join(' ')} الحِكْمَةُ ${List.filled(80, 'أخرى').join(' ')}';
       final spans = findMatches(text, SearchQuery.parse('الحكمه'));
       final s = buildSnippet(text, spans, before: 30, maxLength: 120);
       expect(s.text.startsWith(ellipsis), isTrue);
       expect(s.text.endsWith(ellipsis), isTrue);
       expect(s.text.substring(1, 6), 'كلمة ');
       expect(s.text.length, lessThanOrEqualTo(122));
-      expect(s.text.substring(s.spans.single.start, s.spans.single.end), 'الحِكْمَةُ');
+      expect(
+        s.text.substring(s.spans.single.start, s.spans.single.end),
+        'الحِكْمَةُ',
+      );
     });
 
     test('بلا تطابق: أول النص', () {
@@ -186,9 +190,15 @@ void main() {
 
     test('فواصل الشعر تصير مسافات بالطول نفسه', () {
       const text = 'شطر\tالحكمة\nبيت';
-      final s = buildSnippet(text, findMatches(text, SearchQuery.parse('الحكمة')));
+      final s = buildSnippet(
+        text,
+        findMatches(text, SearchQuery.parse('الحكمة')),
+      );
       expect(s.text, 'شطر الحكمة بيت');
-      expect(s.text.substring(s.spans.single.start, s.spans.single.end), 'الحكمة');
+      expect(
+        s.text.substring(s.spans.single.start, s.spans.single.end),
+        'الحكمة',
+      );
     });
   });
 }

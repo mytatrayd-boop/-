@@ -32,7 +32,15 @@ void main() {
     });
 
     test('علامات القرآن الصغيرة (U+0610–U+061A وU+06D6–U+06ED) تُحذف', () {
-      for (final c in [0x0610, 0x0615, 0x061A, 0x06D6, 0x06DA, 0x06E5, 0x06ED]) {
+      for (final c in [
+        0x0610,
+        0x0615,
+        0x061A,
+        0x06D6,
+        0x06DA,
+        0x06E5,
+        0x06ED,
+      ]) {
         expect(
           normalizeArabic('ب${String.fromCharCode(c)}ت'),
           'بت',

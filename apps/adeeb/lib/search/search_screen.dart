@@ -589,10 +589,7 @@ class _Message extends StatelessWidget {
           if (action != null) ...[
             const SizedBox(height: 16),
             Center(
-              child: OutlinedButton(
-                onPressed: onAction,
-                child: Text(action!),
-              ),
+              child: OutlinedButton(onPressed: onAction, child: Text(action!)),
             ),
           ],
         ],

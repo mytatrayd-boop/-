@@ -28,6 +28,5 @@ String lightStem(String word) {
 }
 
 /// جذوع كلمات نص مطبَّع مفصولة بمسافة (قيمة عمود `stem`).
-String stemNormalized(String normalized) => normalized.isEmpty
-    ? ''
-    : normalized.split(' ').map(lightStem).join(' ');
+String stemNormalized(String normalized) =>
+    normalized.isEmpty ? '' : normalized.split(' ').map(lightStem).join(' ');

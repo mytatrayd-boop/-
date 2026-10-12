@@ -107,7 +107,10 @@ void main() {
         isTrue,
       );
       // لوحة المفاتيح تُفتح تلقائياً عند الدخول من المكتبة.
-      expect(tester.widget<TextField>(find.byType(TextField)).autofocus, isTrue);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).autofocus,
+        isTrue,
+      );
 
       await tester.enterText(find.byType(TextField), 'ح');
       await tester.pump();
@@ -131,7 +134,9 @@ void main() {
     },
   );
 
-  testWidgets('اقتراح بالنقر يبحث فوراً، و«اسد» يجد «الأَسَدُ»', (tester) async {
+  testWidgets('اقتراح بالنقر يبحث فوراً، و«اسد» يجد «الأَسَدُ»', (
+    tester,
+  ) async {
     await env.preinstall(miniBook());
     await pumpApp(tester);
     await openSearch(tester);
@@ -177,7 +182,10 @@ void main() {
     // 3 في الكتاب الصغير و60 في الاصطناعي.
     expect(find.text('٦٣ نتيجة في كتابين'), findsOneWidget);
     expect(
-      find.bySemanticsLabel('كتاب اختبار اصطناعي، ٣ نتائج', skipOffstage: false),
+      find.bySemanticsLabel(
+        'كتاب اختبار اصطناعي، ٣ نتائج',
+        skipOffstage: false,
+      ),
       findsOneWidget,
     );
     expect(
@@ -187,7 +195,16 @@ void main() {
     semantics.dispose();
 
     // «عرض المزيد» يجلب الباقي ثم يختفي.
-    await tester.scrollUntilVisible(find.text('عرض المزيد'), 600);
+    await tester.scrollUntilVisible(
+      find.text('عرض المزيد'),
+      600,
+      scrollable: find
+          .descendant(
+            of: find.byType(SearchScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     await tester.tap(find.text('عرض المزيد'));
     await tester.pumpAndSettle();
     expect(find.text('عرض المزيد', skipOffstage: false), findsNothing);
@@ -198,7 +215,11 @@ void main() {
     await pumpApp(tester);
     await openSearch(tester);
     await type(tester, 'اختبار');
-    final cards = find.byType(Card, skipOffstage: false);
+    final cards = find.descendant(
+      of: find.byType(SearchScreen),
+      matching: find.byType(Card, skipOffstage: false),
+      skipOffstage: false,
+    );
     expect(cards, findsNWidgets(3));
     final header = find.byKey(const ValueKey('search-group-mini'));
     await tester.tap(header);
@@ -350,7 +371,14 @@ void main() {
     expect(tester.takeException(), isNull);
     await type(tester, 'اختبار');
     expect(tester.takeException(), isNull);
-    expect(find.byType(Card), findsWidgets);
+    expect(
+      find.descendant(
+        of: find.byType(SearchScreen),
+        matching: find.byType(Card, skipOffstage: false),
+        skipOffstage: false,
+      ),
+      findsWidgets,
+    );
   });
 
   testWidgets('الإنجليزية: نصوص مترجمة وأرقام غربية ونص الكتاب RTL', (
@@ -370,7 +398,12 @@ void main() {
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.textDirection, TextDirection.rtl);
     final snippet = tester.widget<RichText>(
-      find.descendant(of: find.byType(Card).first, matching: find.byType(RichText)).last,
+      find
+          .descendant(
+            of: find.byType(Card).first,
+            matching: find.byType(RichText),
+          )
+          .last,
     );
     expect(snippet.textDirection, TextDirection.rtl);
   });

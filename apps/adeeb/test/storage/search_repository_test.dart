@@ -34,7 +34,10 @@ Map<String, Object?> textBook(
       'level': 1,
       'paragraphs': [
         for (var i = start; i < end; i++)
-          {'id': '$id-b${pad(c, 3)}-p${pad(i - start + 1, 5)}', 'text': texts[i]},
+          {
+            'id': '$id-b${pad(c, 3)}-p${pad(i - start + 1, 5)}',
+            'text': texts[i],
+          },
       ],
     });
   }
@@ -83,11 +86,11 @@ void main() {
   Future<void> install(Map<String, Object?> book) =>
       books.install(gzJson(book), entryFor(book));
 
-  Future<List<String>> ids(String q, {String? bookId}) async => (await search
-          .search(SearchQuery.parse(q), bookId: bookId))
-      .hits
-      .map((h) => h.paragraphId)
-      .toList();
+  Future<List<String>> ids(String q, {String? bookId}) async =>
+      (await search.search(
+        SearchQuery.parse(q),
+        bookId: bookId,
+      )).hits.map((h) => h.paragraphId).toList();
 
   int ftsRows() {
     final db = openAppDatabase(path);
@@ -104,21 +107,32 @@ void main() {
 
     test('«الحكمه» يجد «الحِكْمَةُ» ويظلّلها بتشكيلها', () async {
       final page = await search.search(SearchQuery.parse('الحكمه'));
-      expect(page.hits.map((h) => h.paragraphId), unorderedEquals([
-        'aa-b001-p00001',
-        'aa-b001-p00005',
-      ]));
-      final hit = page.hits.firstWhere((h) => h.paragraphId == 'aa-b001-p00001');
+      expect(
+        page.hits.map((h) => h.paragraphId),
+        unorderedEquals(['aa-b001-p00001', 'aa-b001-p00005']),
+      );
+      final hit = page.hits.firstWhere(
+        (h) => h.paragraphId == 'aa-b001-p00001',
+      );
       final s = hit.snippet;
-      expect(s.text.substring(s.spans.single.start, s.spans.single.end), 'الحِكْمَةُ');
+      expect(
+        s.text.substring(s.spans.single.start, s.spans.single.end),
+        'الحِكْمَةُ',
+      );
       expect(hit.matchedWords, ['الحِكْمَةُ']);
       expect(hit.bookTitle, 'كتاب aa الاصطناعي');
       expect(hit.chapterTitle, 'باب اختبار 1');
     });
 
     test('«اسد» يجد «الأَسَدُ» و«أَسَداً»', () async {
-      expect(await ids('اسد'), unorderedEquals(['aa-b001-p00002', 'aa-b001-p00003']));
-      expect(await ids('أسد'), unorderedEquals(['aa-b001-p00002', 'aa-b001-p00003']));
+      expect(
+        await ids('اسد'),
+        unorderedEquals(['aa-b001-p00002', 'aa-b001-p00003']),
+      );
+      expect(
+        await ids('أسد'),
+        unorderedEquals(['aa-b001-p00002', 'aa-b001-p00003']),
+      );
     });
 
     test('«علي» يجد «على»، و«الي» يجد «إلى»', () async {
@@ -148,17 +162,26 @@ void main() {
     });
   });
 
-  test('النطاق: كتاب واحد أو كل الكتب، والعدد لكل كتاب بترتيب التثبيت', () async {
-    await install(textBook('aa', _sample));
-    await install(textBook('bb', ['الحكمة في كتاب ثانٍ.', 'نص آخر']));
-    final all = await search.search(SearchQuery.parse('الحكمة'));
-    expect(all.counts.map((c) => (c.bookId, c.count)), [('aa', 2), ('bb', 1)]);
-    expect(all.total, 3);
-    expect(all.hits.map((h) => h.bookId), ['aa', 'aa', 'bb']);
-    final one = await search.search(SearchQuery.parse('الحكمة'), bookId: 'bb');
-    expect(one.hits.single.paragraphId, 'bb-b001-p00001');
-    expect(one.counts.single.count, 1);
-  });
+  test(
+    'النطاق: كتاب واحد أو كل الكتب، والعدد لكل كتاب بترتيب التثبيت',
+    () async {
+      await install(textBook('aa', _sample));
+      await install(textBook('bb', ['الحكمة في كتاب ثانٍ.', 'نص آخر']));
+      final all = await search.search(SearchQuery.parse('الحكمة'));
+      expect(all.counts.map((c) => (c.bookId, c.count)), [
+        ('aa', 2),
+        ('bb', 1),
+      ]);
+      expect(all.total, 3);
+      expect(all.hits.map((h) => h.bookId), ['aa', 'aa', 'bb']);
+      final one = await search.search(
+        SearchQuery.parse('الحكمة'),
+        bookId: 'bb',
+      );
+      expect(one.hits.single.paragraphId, 'bb-b001-p00001');
+      expect(one.counts.single.count, 1);
+    },
+  );
 
   test('الصفحات: offset وlimit، والعدد مع الصفحة الأولى فقط', () async {
     await install(
@@ -171,10 +194,10 @@ void main() {
     expect(first.total, 7);
     expect(second.hits, hasLength(2));
     expect(second.counts, isEmpty);
-    expect(
-      {...first.hits.map((h) => h.paragraphId), ...second.hits.map((h) => h.paragraphId)},
-      hasLength(7),
-    );
+    expect({
+      ...first.hits.map((h) => h.paragraphId),
+      ...second.hits.map((h) => h.paragraphId),
+    }, hasLength(7));
   });
 
   test('الحذف يزيل فهرس الكتاب ولا يمس فهرس غيره', () async {
@@ -225,7 +248,8 @@ void main() {
     final gate = Completer<void>();
     final blocker = enqueueWrite(path, () => gate.future);
     var done = false;
-    final installing = install(textBook('aa', _sample)).then((_) => done = true);
+    final installing = install(textBook('aa', _sample))
+        .then((_) => done = true);
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(done, isFalse, reason: 'ينتظر الكاتب السابق في الطابور');
     gate.complete();
@@ -245,9 +269,7 @@ void main() {
       "INSERT INTO books VALUES ('old', 1, 'كتاب قديم', NULL, 'مؤلف', NULL, "
       "NULL, 'full', '{}', 'public-domain', 1, 10)",
     );
-    db.execute(
-      "INSERT INTO chapters VALUES ('old-b001', 'old', 0, 1, 'باب')",
-    );
+    db.execute("INSERT INTO chapters VALUES ('old-b001', 'old', 0, 1, 'باب')");
     db.execute(
       'INSERT INTO paragraphs (id, book_id, chapter_id, ord, kind, text) VALUES '
       "('old-b001-p00001', 'old', 'old-b001', 0, 'prose', 'فيها الحِكْمَةُ'), "
@@ -277,9 +299,31 @@ void main() {
       final rnd = Random(42);
       // مفردات اصطناعية متكررة؛ ليست نصاً تراثياً.
       const vocab = [
-        'قال', 'كان', 'الرجل', 'فقال', 'الكتاب', 'الباب', 'في', 'من', 'على',
-        'إلى', 'الأَسَدُ', 'الحِكْمَةُ', 'والملك', 'بالقلم', 'كلمات', 'حديث',
-        'خبر', 'شعر', 'الناس', 'يومًا', 'ثم', 'إنَّ', 'لم', 'هذا', 'ذلك',
+        'قال',
+        'كان',
+        'الرجل',
+        'فقال',
+        'الكتاب',
+        'الباب',
+        'في',
+        'من',
+        'على',
+        'إلى',
+        'الأَسَدُ',
+        'الحِكْمَةُ',
+        'والملك',
+        'بالقلم',
+        'كلمات',
+        'حديث',
+        'خبر',
+        'شعر',
+        'الناس',
+        'يومًا',
+        'ثم',
+        'إنَّ',
+        'لم',
+        'هذا',
+        'ذلك',
       ];
       final texts = [
         for (var i = 0; i < 30000; i++)
@@ -299,7 +343,14 @@ void main() {
       expect(ftsRows(), 30000);
 
       final timings = <String, int>{};
-      for (final q in ['الحكمه', 'اسد', 'قال', 'رمز29999', 'الحكمه اسد', '"قال الرجل"']) {
+      for (final q in [
+        'الحكمه',
+        'اسد',
+        'قال',
+        'رمز29999',
+        'الحكمه اسد',
+        '"قال الرجل"',
+      ]) {
         sw.reset();
         final page = await search.search(SearchQuery.parse(q));
         timings[q] = sw.elapsedMilliseconds;

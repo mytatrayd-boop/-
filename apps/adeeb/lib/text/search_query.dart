@@ -152,7 +152,9 @@ List<MatchSpan> findMatches(String original, SearchQuery query) {
   for (final s in spans.skip(1)) {
     final last = merged.last;
     if (s.start < last.end) {
-      if (s.end > last.end) merged[merged.length - 1] = MatchSpan(last.start, s.end);
+      if (s.end > last.end) {
+        merged[merged.length - 1] = MatchSpan(last.start, s.end);
+      }
     } else {
       merged.add(s);
     }
@@ -196,7 +198,8 @@ Snippet buildSnippet(
     if (space > firstEnd && space > start) end = space;
   }
   final prefix = start > 0 ? ellipsis : '';
-  final text = '$prefix${flat.substring(start, end)}${end < len ? ellipsis : ''}';
+  final text =
+      '$prefix${flat.substring(start, end)}${end < len ? ellipsis : ''}';
   final shift = prefix.length - start;
   final spans = [
     for (final m in matches)

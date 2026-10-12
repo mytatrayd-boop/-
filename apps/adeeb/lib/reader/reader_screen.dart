@@ -92,6 +92,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final q = raw == null ? null : SearchQuery.parse(raw);
     return q == null || q.isEmpty ? null : q;
   }
+
   String? _searchId;
 
   int _openGeneration = 0;
