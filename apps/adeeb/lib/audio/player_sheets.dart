@@ -9,7 +9,6 @@ import '../reader/reader_book.dart';
 import 'listen_actions.dart';
 import 'listening_player.dart';
 import 'listening_providers.dart';
-import 'tts_engine.dart';
 
 /// «لا يوجد صوت عربي على جهازك» (DESIGN §10.4).
 Future<void> showNoArabicVoiceSheet(BuildContext context, WidgetRef ref) =>
@@ -32,13 +31,9 @@ class _NoArabicVoiceSheetState extends ConsumerState<NoArabicVoiceSheet> {
   bool _showAlternative = false;
 
   Future<void> _openSettings() async {
+    // تبقى الورقة مفتوحة ليجد المستخدم المسار عند عودته.
     final opened = await ref.read(ttsEngineProvider).openInstallSettings();
-    if (!mounted) return;
-    if (opened) {
-      Navigator.of(context).pop();
-    } else {
-      setState(() => _showAlternative = true);
-    }
+    if (mounted && !opened) setState(() => _showAlternative = true);
   }
 
   @override
@@ -53,7 +48,10 @@ class _NoArabicVoiceSheetState extends ConsumerState<NoArabicVoiceSheet> {
         children: [
           Semantics(
             header: true,
-            child: Text(l10n.audioNoVoiceTitle, style: theme.textTheme.titleLarge),
+            child: Text(
+              l10n.audioNoVoiceTitle,
+              style: theme.textTheme.titleLarge,
+            ),
           ),
           const SizedBox(height: 12),
           Text(l10n.audioNoVoiceBody, style: theme.textTheme.bodyLarge),
@@ -126,9 +124,8 @@ class VoicePickerSheet extends ConsumerWidget {
       );
     }
     if (voices.isEmpty) return const NoArabicVoiceSheet();
-    final current = voices
-        .where((v) => v.name == selected)
-        .firstOrNull ?? voices.first;
+    final current =
+        voices.where((v) => v.name == selected).firstOrNull ?? voices.first;
     return ListView(
       shrinkWrap: true,
       padding: const EdgeInsetsDirectional.only(bottom: 16),
@@ -146,9 +143,8 @@ class VoicePickerSheet extends ConsumerWidget {
             selected: v == current,
             onSelect: () =>
                 ref.read(audioSettingsProvider.notifier).setVoice(v),
-            onTry: () => ref
-                .read(listeningPlayerProvider)
-                .preview(v, l10n.audioSample),
+            onTry: () =>
+                ref.read(listeningPlayerProvider).preview(v, l10n.audioSample),
           ),
       ],
     );
@@ -229,116 +225,119 @@ class FullPlayer extends ConsumerWidget {
 
     return SizedBox(
       height: MediaQuery.sizeOf(context).height,
-      child: ListView(
+      child: SingleChildScrollView(
         padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    l10n.audioPlayerTitle,
-                    style: theme.textTheme.titleMedium,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.audioPlayerTitle,
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                tooltip: l10n.audioMinimize,
-                icon: const Icon(Icons.keyboard_arrow_down),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: GeneratedCover(
-              bookId: book.id,
-              title: book.title.ar,
-              width: 140,
+                IconButton(
+                  tooltip: l10n.audioMinimize,
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            book.title.ar,
-            textAlign: TextAlign.center,
-            textDirection: TextDirection.rtl,
-            style: const TextStyle(fontFamily: bookFont, fontSize: 22),
-          ),
-          Text(
-            l10n.authorLine(context, book.author.ar, book.authorDeathHijri),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium,
-          ),
-          if (chapter != null)
+            const SizedBox(height: 8),
+            Center(
+              child: GeneratedCover(
+                bookId: book.id,
+                title: book.title.ar,
+                width: 140,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
-              chapter.title,
+              book.title.ar,
               textAlign: TextAlign.center,
               textDirection: TextDirection.rtl,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.primary,
-              ),
+              style: const TextStyle(fontFamily: bookFont, fontSize: 22),
             ),
-          const SizedBox(height: 16),
-          _ParagraphText(paragraph: paragraph),
-          const SizedBox(height: 16),
-          if (s.status == ListeningStatus.error)
-            _ErrorRow(onRetry: player.play)
-          else
-            _Controls(state: s, player: player),
-          const SizedBox(height: 24),
-          Semantics(
-            header: true,
-            child: Text(l10n.audioSpeed, style: theme.textTheme.titleSmall),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final v in listeningSpeeds)
-                Semantics(
-                  label: l10n.audioSpeedSemantics(formatSpeed(v, lang)),
-                  excludeSemantics: true,
-                  selected: v == speed,
-                  button: true,
-                  child: ChoiceChip(
-                    label: Text(l10n.audioSpeedValue(formatSpeed(v, lang))),
-                    selected: v == speed,
-                    onSelected: (_) =>
-                        ref.read(audioSettingsProvider.notifier).setSpeed(v),
-                  ),
+            Text(
+              l10n.authorLine(context, book.author.ar, book.authorDeathHijri),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium,
+            ),
+            if (chapter != null)
+              Text(
+                chapter.title,
+                textAlign: TextAlign.center,
+                textDirection: TextDirection.rtl,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.primary,
                 ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ListTile(
-            contentPadding: EdgeInsetsDirectional.zero,
-            minTileHeight: 48,
-            leading: const Icon(Icons.record_voice_over),
-            title: Text(
-              l10n.audioVoiceRow(
-                voice == null || voices.isEmpty
-                    ? l10n.audioVoice
-                    : voiceLabel(l10n, voices, voice, lang),
+              ),
+            const SizedBox(height: 16),
+            _ParagraphText(paragraph: paragraph),
+            const SizedBox(height: 16),
+            if (s.status == ListeningStatus.error)
+              _ErrorRow(onRetry: player.play)
+            else
+              _Controls(state: s, player: player),
+            const SizedBox(height: 24),
+            Semantics(
+              header: true,
+              child: Text(l10n.audioSpeed, style: theme.textTheme.titleSmall),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final v in listeningSpeeds)
+                  Semantics(
+                    label: l10n.audioSpeedSemantics(formatSpeed(v, lang)),
+                    excludeSemantics: true,
+                    selected: v == speed,
+                    button: true,
+                    child: ChoiceChip(
+                      label: Text(l10n.audioSpeedValue(formatSpeed(v, lang))),
+                      selected: v == speed,
+                      onSelected: (_) =>
+                          ref.read(audioSettingsProvider.notifier).setSpeed(v),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsetsDirectional.zero,
+              minTileHeight: 48,
+              leading: const Icon(Icons.record_voice_over),
+              title: Text(
+                l10n.audioVoiceRow(
+                  voice == null || voices.isEmpty
+                      ? l10n.audioVoice
+                      : voiceLabel(l10n, voices, voice, lang),
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showVoicePicker(context),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                icon: const Icon(Icons.menu_book),
+                label: Text(l10n.audioGoToText),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onGoToText(s);
+                },
               ),
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => showVoicePicker(context),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
-              icon: const Icon(Icons.menu_book),
-              label: Text(l10n.audioGoToText),
-              onPressed: () {
-                Navigator.of(context).pop();
-                onGoToText(s);
-              },
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -419,7 +418,9 @@ class _Controls extends StatelessWidget {
                         ),
                       )
                     : IconButton.filled(
-                        tooltip: state.playing ? l10n.audioPause : l10n.audioPlay,
+                        tooltip: state.playing
+                            ? l10n.audioPause
+                            : l10n.audioPlay,
                         iconSize: 40,
                         style: IconButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary,

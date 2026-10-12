@@ -22,10 +22,13 @@ class BuildResult {
       );
 }
 
-class _Chapter {
-  _Chapter(this.title, this.level);
+/// باب قيد البناء: عنوان ومستوى وفقرات بلا معرّفات بعد.
+class DraftChapter {
+  DraftChapter(this.title, this.level);
   final String title;
   final int level;
+
+  /// كل فقرة: `text` و`kind` اختياري و`page` اختياري (بلا `id`).
   final List<Map<String, Object?>> paragraphs = [];
 }
 
@@ -37,7 +40,7 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
   final conv = WikitextConverter(recipe.templates);
   final stats = RemovalStats();
   final skip = recipe.skipHeadings.map((h) => cleanText(h)).toSet();
-  final chapters = <_Chapter>[];
+  final chapters = <DraftChapter>[];
 
   for (final page in recipe.pages) {
     if (page.skip) {
@@ -49,7 +52,7 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
       throw StateError('نص المراجعة ${page.revid} (${page.title}) غير موجود في الذاكرة المؤقتة.');
     }
     final blocks = conv.convert(text, stats);
-    var current = _Chapter(page.effectiveChapterTitle, 1);
+    var current = DraftChapter(page.effectiveChapterTitle, 1);
     chapters.add(current);
     int? skippingLevel;
     for (final b in blocks) {
@@ -68,7 +71,7 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
           }
           // لا قفز في المستوى: === مباشرة تحت باب الصفحة تصبح مستوى 2.
           final parent = chapters.last.level;
-          current = _Chapter(text, lvl > parent + 1 ? parent + 1 : lvl);
+          current = DraftChapter(text, lvl > parent + 1 ? parent + 1 : lvl);
           chapters.add(current);
         case ProseBlock(:final text):
           if (skippingLevel != null) {
@@ -86,47 +89,7 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
     }
   }
 
-  // حذف العناوين الفارغة: باب بلا فقرات ولا أبواب فرعية بعده.
-  var changed = true;
-  while (changed) {
-    changed = false;
-    for (var i = 0; i < chapters.length; i++) {
-      final c = chapters[i];
-      final next = i + 1 < chapters.length ? chapters[i + 1] : null;
-      if (c.paragraphs.isEmpty && (next == null || next.level <= c.level)) {
-        chapters.removeAt(i);
-        changed = true;
-        break;
-      }
-    }
-  }
-  if (chapters.isEmpty) throw StateError('لم يُستخرج أي نص من الصفحات.');
-
-  // عرض ثابت لكل الكتب والإصدارات (D17): 3 للباب و5 للفقرة، فلا يتغير معرّف
-  // لمجرد أن كتاباً تجاوز 99 باباً أو 9999 فقرة في إصدار لاحق.
-  const bWidth = 3, pWidth = 5;
-  if (chapters.length > 999) throw StateError('أكثر من 999 باباً: يلزم تقسيم الكتاب.');
-  for (final c in chapters) {
-    if (c.paragraphs.length > 99999) throw StateError('باب بأكثر من 99999 فقرة: ${c.title}');
-  }
-
-  final outChapters = <Map<String, Object?>>[];
-  for (var i = 0; i < chapters.length; i++) {
-    final c = chapters[i];
-    final cid = '${recipe.id}-b${(i + 1).toString().padLeft(bWidth, '0')}';
-    outChapters.add({
-      'id': cid,
-      'title': c.title,
-      'level': c.level,
-      'paragraphs': [
-        for (var j = 0; j < c.paragraphs.length; j++)
-          {
-            'id': '$cid-p${(j + 1).toString().padLeft(pWidth, '0')}',
-            ...c.paragraphs[j],
-          },
-      ],
-    });
-  }
+  final outChapters = finalizeChapters(recipe.id, chapters, stats);
 
   final book = <String, Object?>{
     'schema': 1,
@@ -153,6 +116,59 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
     },
   };
   return BuildResult(book, stats);
+}
+
+/// يحذف الأبواب الفارغة (بلا فقرات ولا أبواب فرعية بعدها) ويعطي المعرّفات الثابتة.
+/// مشترك بين مصدرَي ويكي مصدر وOpenITI حتى تبقى قواعد المعرّفات واحدة.
+List<Map<String, Object?>> finalizeChapters(
+  String bookId,
+  List<DraftChapter> chapters,
+  RemovalStats stats,
+) {
+  // حذف العناوين الفارغة: باب بلا فقرات ولا أبواب فرعية بعده.
+  var changed = true;
+  while (changed) {
+    changed = false;
+    for (var i = 0; i < chapters.length; i++) {
+      final c = chapters[i];
+      final next = i + 1 < chapters.length ? chapters[i + 1] : null;
+      if (c.paragraphs.isEmpty && (next == null || next.level <= c.level)) {
+        stats.add('عنوان بلا نص (حُذف العنوان وحده)');
+        chapters.removeAt(i);
+        changed = true;
+        break;
+      }
+    }
+  }
+  if (chapters.isEmpty) throw StateError('لم يُستخرج أي نص من الصفحات.');
+
+  // عرض ثابت لكل الكتب والإصدارات (D17): 3 للباب و5 للفقرة، فلا يتغير معرّف
+  // لمجرد أن كتاباً تجاوز 99 باباً أو 9999 فقرة في إصدار لاحق.
+  const bWidth = 3, pWidth = 5;
+  if (chapters.length > 999) throw StateError('أكثر من 999 باباً: يلزم تقسيم الكتاب.');
+  for (final c in chapters) {
+    if (c.paragraphs.length > 99999) throw StateError('باب بأكثر من 99999 فقرة: ${c.title}');
+  }
+
+  final outChapters = <Map<String, Object?>>[];
+  for (var i = 0; i < chapters.length; i++) {
+    final c = chapters[i];
+    final cid = '$bookId-b${(i + 1).toString().padLeft(bWidth, '0')}';
+    outChapters.add({
+      'id': cid,
+      'title': c.title,
+      'level': c.level,
+      'paragraphs': [
+        for (var j = 0; j < c.paragraphs.length; j++)
+          {
+            'id': '$cid-p${(j + 1).toString().padLeft(pWidth, '0')}',
+            ...c.paragraphs[j],
+          },
+      ],
+    });
+  }
+
+  return outChapters;
 }
 
 /// JSON مضغوط بلا مسافات، بترتيب المفاتيح كما أُدخلت، وسطر أخير.

@@ -1,0 +1,43 @@
+{
+  "format": "openiti",
+  "id": "adab",
+  "version": 1,
+  "title": {
+    "ar": "أدب الدنيا والدين",
+    "en": "Adab al-Dunya wa al-Din"
+  },
+  "author": {
+    "ar": "الماوردي",
+    "en": "al-Mawardi"
+  },
+  "author_death_hijri": 450,
+  "source_name": "OpenITI",
+  "openiti": {
+    "repo": "OpenITI/0450AH",
+    "commit": "8b80029191e1b7a8809d812ec6186df862e18217",
+    "path": "data/0450AbuHasanMawardi/0450AbuHasanMawardi.AdabDunyaWaDin/0450AbuHasanMawardi.AdabDunyaWaDin.Shamela0000765-ara1",
+    "uri": "0450AbuHasanMawardi.AdabDunyaWaDin.Shamela0000765-ara1",
+    "sha256": "32eeaf6f44978fc6bb3c80ccc2c27909a5c9a39adc1b44f7b78f007dd9de2ba4"
+  },
+  "original_source": "المكتبة الشاملة، الكتاب رقم 765",
+  "edition": "دار مكتبة الحياة، 1986م، بدون طبعة",
+  "retrieved": "2026-10-12",
+  "license": "CC BY-NC-SA 4.0",
+  "removed": "TBD",
+  "merge_page_breaks": true,
+  "skip_headings": [],
+  "drop_lines": [],
+  "rules": [
+    {
+      "name": "قوس بداية الآية «{» (اصطلاح الشاملة) ← «(»",
+      "pattern": "\\{",
+      "with": "("
+    },
+    {
+      "name": "قوس نهاية الآية «}» (اصطلاح الشاملة) ← «)»",
+      "pattern": "\\}",
+      "with": ")"
+    }
+  ],
+  "headings": {}
+}

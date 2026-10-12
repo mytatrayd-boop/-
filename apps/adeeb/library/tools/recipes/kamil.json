@@ -1,0 +1,84 @@
+{
+  "format": "openiti",
+  "id": "kamil",
+  "version": 1,
+  "title": {
+    "ar": "الكامل في اللغة والأدب",
+    "en": "al-Kamil fi al-Lugha wa al-Adab"
+  },
+  "author": {
+    "ar": "المبرد",
+    "en": "al-Mubarrad"
+  },
+  "author_death_hijri": 285,
+  "source_name": "OpenITI",
+  "openiti": {
+    "repo": "OpenITI/0300AH",
+    "commit": "01a1544130e0236850ef2698923ad01575c5bd7c",
+    "path": "data/0285IbnYazidMubarrad/0285IbnYazidMubarrad.KamilFiLugha/0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1.mARkdown",
+    "uri": "0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1",
+    "sha256": "7052d17e8f831a71efca41d764b807e914e5596c98ec908be0375331da8b54c5"
+  },
+  "original_source": "المكتبة الشاملة، الكتاب رقم 8505",
+  "edition": "تحقيق محمد أبو الفضل إبراهيم، دار الفكر العربي، القاهرة، الطبعة الثالثة 1417هـ/1997م (4 أجزاء)",
+  "retrieved": "2026-10-12",
+  "license": "CC BY-NC-SA 4.0",
+  "removed": "TBD",
+  "merge_page_breaks": true,
+  "skip_headings": [],
+  "drop_lines": [
+    {
+      "name": "عنوان المجلد في الطبعة «# المجلد ...» (ليس من نص المؤلف)",
+      "pattern": "# المجلد (الأول|الثاني|الثالث|الرابع)\\s*"
+    },
+    {
+      "name": "سطر «...» وحده (علامة بلا نص)",
+      "pattern": "# *\\.\\.\\.\\s*"
+    }
+  ],
+  "rules": [
+    {
+      "name": "وسم HTML span بلا نص (بقايا تحويل الشاملة)",
+      "pattern": "</?span[^>]*>"
+    },
+    {
+      "name": "رقم حاشية «1» في عنوان «باب 1 اللام»",
+      "pattern": "(### \\| باب) 1 (اللام)",
+      "with": "$1 $2"
+    },
+    {
+      "name": "فاصل * في «[زاد أبو الحسن: * ...]»",
+      "pattern": "(زاد أبو الحسن:) \\* ",
+      "with": "$1 "
+    },
+    {
+      "name": "قوس بداية الآية «{» (اصطلاح الشاملة) ← «(»",
+      "pattern": "\\{",
+      "with": "("
+    },
+    {
+      "name": "قوس نهاية الآية «}» (اصطلاح الشاملة) ← «)»",
+      "pattern": "\\}",
+      "with": ")"
+    },
+    {
+      "name": "%~% خاطئ داخل نثر «ابن أمير ابن أمير %~% قال»",
+      "pattern": "(ابن أمير ابن أمير) %~% (قال: حتى عددت)",
+      "with": "$1 $2"
+    },
+    {
+      "name": "رقم حاشية ملتصق بآخر كلمة (مثل «فلقا2»)",
+      "pattern": "(?<=[ء-ي])[0-9](?![0-9])"
+    },
+    {
+      "name": "إحالة المحقق إلى الآية «[الشعراء: من» (سطرها الأول)",
+      "pattern": " ?\\[الشعراء: من\\s*$"
+    },
+    {
+      "name": "إحالة المحقق إلى الآية «الآية227]» (سطرها الثاني)",
+      "pattern": "^~~الآية227\\] ?",
+      "with": "~~"
+    }
+  ],
+  "headings": {}
+}

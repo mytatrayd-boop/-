@@ -93,7 +93,7 @@ String voiceLabel(
   final region = voice.region;
   final same = voices.where((v) => v.region == region).toList();
   final number = formatInt(
-    same.indexOf(voice) < 0 ? 1 : same.indexOf(voice) + 1,
+    same.contains(voice) ? same.indexOf(voice) + 1 : 1,
     languageCode,
   );
   final regionName = region == null ? '' : l10n.audioRegion(region);

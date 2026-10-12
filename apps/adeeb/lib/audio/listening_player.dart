@@ -109,20 +109,22 @@ enum StartResult {
 /// أحداث لمرة واحدة للواجهة.
 enum ListeningEvent { bookFinished, engineError, openPlayer }
 
-typedef PositionSaver =
-    Future<void> Function(String bookId, String paragraphId);
+typedef PositionSaver = Future<void> Function(
+  String bookId,
+  String paragraphId,
+);
 
 class ListeningPlayer {
   ListeningPlayer({
-    required TtsEngine engine,
+    required this._engine,
     required MediaSession session,
-    required PositionSaver savePosition,
+    required this._savePosition,
     DateTime Function()? clock,
+    Future<void> Function(Duration)? delay,
     this.maxInterruptionToResume = const Duration(minutes: 5),
-  }) : _engine = engine,
-       _session = session,
-       _savePosition = savePosition,
-       _clock = clock ?? DateTime.now {
+  }) : _session = session,
+       _clock = clock ?? DateTime.now,
+       _delay = delay ?? Future<void>.delayed {
     _commands = session.commands.listen(_onCommand);
   }
 
@@ -130,6 +132,9 @@ class ListeningPlayer {
   final MediaSession _session;
   final PositionSaver _savePosition;
   final DateTime Function() _clock;
+
+  /// الوقفات بين شطري البيت وبعده (قابلة للحقن في الاختبار).
+  final Future<void> Function(Duration) _delay;
 
   /// مكالمة أطول من هذا لا يُستأنف بعدها تلقائياً (DESIGN §10.3).
   final Duration maxInterruptionToResume;
@@ -276,13 +281,13 @@ class ListeningPlayer {
           return;
         case SpeakResult.cancelled:
           // أوقفه غيرنا (مثلاً النظام): إيقاف مؤقت لا خطأ.
-          _pauseInternal();
+          unawaited(_pauseInternal());
           return;
         case SpeakResult.done:
           break;
       }
       if (chunk.pauseAfter > Duration.zero) {
-        await Future<void>.delayed(chunk.pauseAfter);
+        await _delay(chunk.pauseAfter);
         if (token != _token) return;
       }
       _chunk++;

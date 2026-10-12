@@ -1,0 +1,58 @@
+{
+  "format": "openiti",
+  "id": "bayan",
+  "version": 1,
+  "title": {
+    "ar": "البيان والتبيين",
+    "en": "al-Bayan wa al-Tabyin"
+  },
+  "author": {
+    "ar": "الجاحظ",
+    "en": "al-Jahiz"
+  },
+  "author_death_hijri": 255,
+  "source_name": "OpenITI",
+  "openiti": {
+    "repo": "OpenITI/0275AH",
+    "commit": "44e1c36738a2bf5c14dafa232a6ae1891e6171cd",
+    "path": "data/0255Jahiz/0255Jahiz.BayanWaTabyin/0255Jahiz.BayanWaTabyin.Shamela0010614-ara1.completed",
+    "uri": "0255Jahiz.BayanWaTabyin.Shamela0010614-ara1",
+    "sha256": "c0dcb20c30a09648f5ec82ef923d0ba4eff2c53976684e1ad3c14306183e4ea2"
+  },
+  "original_source": "المكتبة الشاملة، الكتاب رقم 10614",
+  "edition": "دار ومكتبة الهلال، بيروت، 1423هـ (3 أجزاء)",
+  "retrieved": "2026-10-12",
+  "license": "CC BY-NC-SA 4.0",
+  "removed": "TBD",
+  "merge_page_breaks": true,
+  "skip_headings": [],
+  "drop_lines": [
+    {
+      "name": "فاصل *** بين الأخبار (زخرفة طباعية)",
+      "pattern": "# \\*\\*\\*"
+    }
+  ],
+  "rules": [
+    {
+      "name": "رقم حاشية «N» (الحواشي نفسها حذفها OpenITI)",
+      "pattern": " ?«[0-9٠-٩]+»"
+    },
+    {
+      "name": "وسم HTML span بلا نص (بقايا تحويل الشاملة)",
+      "pattern": "</?span[^>]*>"
+    },
+    {
+      "name": "رقم حاشية (1) بعد بيت «ومن أظفار سبخت»",
+      "pattern": "(ومن أظفار سبخت) \\(1\\)",
+      "with": "$1"
+    }
+  ],
+  "headings": {},
+  "drop_headings": [
+    {
+      "name": "عنوان كله بين معقوفين [..] (أضافه المحقق)",
+      "pattern": "\\[[^\\[\\]]*\\]\\s*\\.?"
+    }
+  ],
+  "preface_title": "الجزء الأول"
+}

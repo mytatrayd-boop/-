@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:adeeb/app.dart';
+import 'package:adeeb/audio/listening_providers.dart';
 import 'package:adeeb/core/app_config.dart';
 import 'package:adeeb/library/catalog.dart';
 import 'package:adeeb/library/library_providers.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'fake_audio.dart';
 import 'library_fixtures.dart';
 
 /// بيئة اختبار: مجلد مؤقت حقيقي، وSQLite حقيقي في الـ isolate نفسه، وخادم وهمي.
@@ -34,6 +36,10 @@ class TestEnv {
 
   /// عند true يفشل حفظ الموضع.
   bool failPositionWrites = false;
+
+  /// محرك النطق وجلسة الوسائط المُحاكيان (لا صوت فعلي ولا إشعار في الاختبار).
+  final tts = FakeTtsEngine();
+  final media = FakeMediaSession();
 
   /// ما أُرسل إلى قائمة المشاركة (بدل share_plus في الاختبار).
   final shared = <(String, String)>[];
@@ -73,6 +79,8 @@ class TestEnv {
       (text, subject) async => shared.add((text, subject)),
     ),
     appLocaleProvider.overrideWithValue(locale),
+    ttsEngineProvider.overrideWithValue(tts),
+    mediaSessionProvider.overrideWithValue(media),
   ];
 
   ProviderContainer container() => ProviderContainer(overrides: overrides());

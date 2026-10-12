@@ -148,6 +148,8 @@ void _v3(Database db) {
 /// إلا إن بقي 4 أحرف، فتُعاد فهرسة كل الفقرات بالجذوع الجديدة حتى لا تبقى
 /// جذوع قديمة («فكرة» ← «كره») في الكتب المثبّتة.
 void _v4(Database db) {
-  db.execute("INSERT INTO paragraphs_fts (paragraphs_fts) VALUES ('delete-all')");
+  db.execute(
+    "INSERT INTO paragraphs_fts (paragraphs_fts) VALUES ('delete-all')",
+  );
   indexAllParagraphs(db);
 }

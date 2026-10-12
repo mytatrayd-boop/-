@@ -4,6 +4,7 @@
 library;
 
 import 'arabic_nfc.dart';
+import 'presentation_forms.dart';
 import 'recipe.dart';
 
 sealed class Block {
@@ -95,6 +96,8 @@ class WikitextConverter {
     s = _tags(s, stats);
     s = s.replaceAll(RegExp(r"'{2,5}"), '');
     s = decodeEntities(s);
+    // بعد فك الكيانات حتى يُفكّ &#xFEFB; أيضاً.
+    s = foldPresentationForms(s, stats);
     return _blocks(s, stats);
   }
 

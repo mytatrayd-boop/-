@@ -6,6 +6,9 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../audio/listen_actions.dart';
+import '../audio/listening_player.dart';
+import '../audio/listening_providers.dart';
 import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
@@ -48,7 +51,7 @@ class ReaderScreen extends ConsumerStatefulWidget {
 
 enum _OpenNotice { none, resumed, notFound }
 
-enum _ParagraphAction { favorite, copy, share }
+enum _ParagraphAction { favorite, copy, share, listen }
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   final _scroll = ScrollController(keepScrollOffset: false);
@@ -97,6 +100,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
   int _openGeneration = 0;
 
+  /// الشاشة تتبع الفقرة المقروءة صوتياً؛ يتوقف التتبع إذا مرّر المستخدم بيده
+  /// ويظهر زر «العودة إلى موضع الاستماع» (DESIGN §9.4).
+  bool _follow = true;
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +114,71 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     ref.listenManual(readerBookProvider(widget.bookId), (previous, next) {
       if (next case AsyncData(:final value?)) _open(value);
     }, fireImmediately: true);
+    ref.listenManual(listeningStateProvider, _onListening);
+    ref.listenManual(followListeningRequestProvider, (_, _) => _resumeFollow());
+  }
+
+  /// الفقرة المقروءة في هذا الكتاب (فهرسها في [_book])، أو null.
+  int? _listeningIndex(ListeningState s) {
+    final book = _book;
+    final id = s.paragraphId;
+    if (book == null || id == null || s.bookId != widget.bookId) return null;
+    return book.paragraphIndexOf(id);
+  }
+
+  void _onListening(ListeningState? previous, ListeningState next) {
+    final index = _listeningIndex(next);
+    if (index == null) return;
+    final started = previous?.bookId != widget.bookId;
+    if (started) _follow = true;
+    if (_follow && (started || previous?.paragraphId != next.paragraphId)) {
+      _scrollToParagraph(index);
+    }
+  }
+
+  void _resumeFollow() {
+    final index = _listeningIndex(ref.read(listeningStateProvider));
+    if (index == null || !mounted) return;
+    setState(() => _follow = true);
+    _scrollToParagraph(index);
+  }
+
+  /// يضع الفقرة قرب أعلى منطقة القراءة: بتمرير إن كانت مبنية، وإلا بالقفز.
+  void _scrollToParagraph(int index) {
+    final book = _book;
+    if (book == null || !mounted) return;
+    final entry = book.entryOfParagraph(index);
+    final ctx = _built[entry];
+    if (ctx != null && ctx.mounted && _scroll.hasClients) {
+      final reduceMotion = MediaQuery.disableAnimationsOf(context);
+      Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.2,
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+      ).then((_) {
+        if (mounted) _scheduleUpdate(save: true);
+      });
+    } else {
+      _jumpToEntry(entry);
+    }
+  }
+
+  /// «استمع من هنا» من الفقرة [index].
+  Future<void> _listenFrom(int index) async {
+    final book = _book;
+    if (book == null || book.paragraphs.isEmpty) return;
+    setState(() => _follow = true);
+    await startListening(
+      context,
+      ref,
+      bookId: widget.bookId,
+      book: book,
+      paragraphId:
+          book.paragraphs[index.clamp(0, book.paragraphs.length - 1)].id,
+    );
   }
 
   @override
@@ -303,6 +375,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   bool _onScroll(ScrollNotification n) {
     if (n.depth != 0) return false;
     if (n is ScrollStartNotification && n.dragDetails != null) {
+      if (_follow &&
+          _listeningIndex(ref.read(listeningStateProvider)) != null) {
+        setState(() => _follow = false);
+      }
       _hideTimer?.cancel();
       _hideTimer = Timer(const Duration(seconds: 3), () {
         if (mounted) setState(() => _barsVisible = false);
@@ -426,6 +502,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               ),
               tile(Icons.copy, l10n.copy, _ParagraphAction.copy),
               tile(Icons.share, l10n.share, _ParagraphAction.share),
+              tile(
+                Icons.headphones,
+                l10n.listenFromHere,
+                _ParagraphAction.listen,
+              ),
             ],
           ),
         );
@@ -440,6 +521,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         await _copy(p);
       case _ParagraphAction.share:
         await _share(p);
+      case _ParagraphAction.listen:
+        final index = _book?.paragraphIndexOf(p.id);
+        if (index != null) await _listenFrom(index);
       case null:
         break;
     }
@@ -543,6 +627,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final anchor = _anchor!;
     final topInset = _topInset(context);
     final chapter = book.chapters.isEmpty ? null : book.chapters[_chapter];
+    final listening = ref.watch(listeningStateProvider);
+    final listeningId = listening.bookId == widget.bookId
+        ? listening.paragraphId
+        : null;
 
     Widget entry(int index) {
       final child = switch (book.entryAt(index)) {
@@ -559,6 +647,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             fontSize: fontSize,
             palette: palette,
             highlighted: p.id == _selectedId || p.id == _flashId,
+            listening: p.id == listeningId,
+            listeningValue: l10n.audioNowReading,
+            listenLabel: l10n.listenFromHere,
+            onListen: () => _listenFrom(paragraphIndex),
             searchQuery: p.id == _searchId ? _search : null,
             animate: !reduceMotion,
             favoriteLabel: isFavorite
@@ -648,17 +740,31 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 onDisplay: _openDisplaySettings,
               ),
             ),
+            // أثناء جلسة استماع يحل المشغّل المصغّر محل الشريط السفلي (§10.1).
+            if (!listening.active)
+              PositionedDirectional(
+                bottom: 0,
+                start: 0,
+                end: 0,
+                child: _BottomBar(
+                  palette: palette,
+                  fraction: fraction,
+                  text: progressText,
+                  onListen: () => _listenFrom(_paragraph),
+                ),
+              ),
+          ],
+          if (listeningId != null && !_follow)
             PositionedDirectional(
-              bottom: 0,
-              start: 0,
-              end: 0,
-              child: _BottomBar(
-                palette: palette,
-                fraction: fraction,
-                text: progressText,
+              bottom: 16 + MediaQuery.paddingOf(context).bottom,
+              end: 16,
+              child: FloatingActionButton.extended(
+                heroTag: null,
+                onPressed: _resumeFollow,
+                icon: const Icon(Icons.my_location),
+                label: Text(l10n.audioBackToListening),
               ),
             ),
-          ],
         ],
       ),
     );
@@ -781,6 +887,10 @@ class _Paragraph extends StatelessWidget {
     required this.fontSize,
     required this.palette,
     required this.highlighted,
+    required this.listening,
+    required this.listeningValue,
+    required this.listenLabel,
+    required this.onListen,
     required this.searchQuery,
     required this.animate,
     required this.favoriteLabel,
@@ -795,6 +905,12 @@ class _Paragraph extends StatelessWidget {
   final double fontSize;
   final ReaderPalette palette;
   final bool highlighted;
+
+  /// الفقرة المقروءة صوتياً الآن: خلفية مع شريط 4dp في جهة البداية (§9.4).
+  final bool listening;
+  final String listeningValue;
+  final String listenLabel;
+  final VoidCallback onListen;
 
   /// كلمات البحث المظلّلة في هذه الفقرة (null = بلا تظليل).
   final SearchQuery? searchQuery;
@@ -856,12 +972,15 @@ class _Paragraph extends StatelessWidget {
     }
 
     // كل فقرة عنصر واحد لقارئ الشاشة، والمفضلة إجراء مخصص (DESIGN §9.6).
+    final value = [?favoriteValue, if (listening) listeningValue].join('، ');
+    final transparent = palette.background.withValues(alpha: 0);
     return MergeSemantics(
       child: Semantics(
-        value: favoriteValue,
+        value: value.isEmpty ? null : value,
         customSemanticsActions: {
           CustomSemanticsAction(label: favoriteLabel): onToggleFavorite,
           CustomSemanticsAction(label: copyLabel): onCopy,
+          CustomSemanticsAction(label: listenLabel): onListen,
         },
         child: GestureDetector(
           onLongPress: onLongPress,
@@ -869,13 +988,19 @@ class _Paragraph extends StatelessWidget {
             duration: animate
                 ? const Duration(milliseconds: 250)
                 : Duration.zero,
-            color: highlighted
-                ? palette.selected
-                : palette.background.withValues(alpha: 0),
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: 20,
-              vertical: 8,
+            decoration: BoxDecoration(
+              color: highlighted || listening ? palette.selected : transparent,
+              // الشريط موجود دائماً (شفافاً) حتى لا يتحرك النص عند التمييز.
+              border: BorderDirectional(
+                start: BorderSide(
+                  width: 4,
+                  color: listening
+                      ? Theme.of(context).colorScheme.primary
+                      : transparent,
+                ),
+              ),
             ),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 20, 8),
             child: Directionality(
               textDirection: TextDirection.rtl,
               child: content,
@@ -958,41 +1083,64 @@ class _BottomBar extends StatelessWidget {
     required this.palette,
     required this.fraction,
     required this.text,
+    required this.onListen,
   });
 
   final ReaderPalette palette;
   final double fraction;
   final String text;
+  final VoidCallback onListen;
 
   @override
   Widget build(BuildContext context) {
+    final progress = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ExcludeSemantics(
+          child: LinearProgressIndicator(
+            value: fraction,
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: palette.background,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: palette.text),
+        ),
+      ],
+    );
+    // زر تشغيل كبير «استمع من هنا» (DESIGN §9.1).
+    final listen = FilledButton.icon(
+      onPressed: onListen,
+      icon: const Icon(Icons.play_arrow),
+      label: Text(AppLocalizations.of(context).listenFromHere),
+    );
+    final large = MediaQuery.textScalerOf(context).scale(10) > 13;
     return Material(
       color: palette.bars,
       elevation: 1,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ExcludeSemantics(
-                child: LinearProgressIndicator(
-                  value: fraction,
-                  color: Theme.of(context).colorScheme.primary,
-                  backgroundColor: palette.background,
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 16, 8),
+          // صف واحد، ويصير عموداً عند تكبير الخط.
+          child: large
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [progress, const SizedBox(height: 8), listen],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: progress),
+                    const SizedBox(width: 16),
+                    listen,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                text,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: palette.text),
-              ),
-            ],
-          ),
         ),
       ),
     );

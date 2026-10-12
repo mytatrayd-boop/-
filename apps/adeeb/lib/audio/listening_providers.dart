@@ -119,7 +119,9 @@ class AudioSettingsController extends AsyncNotifier<AudioSettings> {
   }
 
   Future<void> setVoice(TtsVoice voice) async {
-    state = AsyncData(AudioSettings(speed: _current.speed, voiceName: voice.name));
+    state = AsyncData(
+      AudioSettings(speed: _current.speed, voiceName: voice.name),
+    );
     final player = ref.read(listeningPlayerProvider);
     if (player.state.active) await player.setVoice(voice);
     final prefs = await ref.read(sharedPreferencesProvider.future);

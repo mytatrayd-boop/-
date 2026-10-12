@@ -464,4 +464,153 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get searchInBook => 'ابحث في هذا الكتاب';
+
+  @override
+  String get listen => 'استمع';
+
+  @override
+  String get listenFromHere => 'استمع من هنا';
+
+  @override
+  String get audioPlay => 'تشغيل القراءة الصوتية';
+
+  @override
+  String get audioPause => 'إيقاف مؤقت';
+
+  @override
+  String get audioNext => 'الفقرة التالية';
+
+  @override
+  String get audioPrevious => 'الفقرة السابقة';
+
+  @override
+  String get audioStop => 'إيقاف الاستماع';
+
+  @override
+  String get audioMinimize => 'تصغير';
+
+  @override
+  String get audioOpenPlayer => 'افتح مشغّل الصوت';
+
+  @override
+  String get audioPlayerTitle => 'مشغّل الصوت';
+
+  @override
+  String get audioPreparing => 'يُجهَّز الصوت…';
+
+  @override
+  String get audioSpeed => 'السرعة';
+
+  @override
+  String audioSpeedValue(String speed) {
+    return '$speed×';
+  }
+
+  @override
+  String audioSpeedSemantics(String speed) {
+    return 'السرعة $speed ضعف';
+  }
+
+  @override
+  String get audioVoice => 'الصوت';
+
+  @override
+  String audioVoiceRow(String voice) {
+    return 'الصوت: $voice';
+  }
+
+  @override
+  String audioVoiceWithRegion(String region, String number) {
+    return 'عربي ($region) — صوت $number';
+  }
+
+  @override
+  String audioVoiceNoRegion(String number) {
+    return 'عربي — صوت $number';
+  }
+
+  @override
+  String audioRegion(String code) {
+    String _temp0 = intl.Intl.selectLogic(code, {
+      'EG': 'مصر',
+      'SA': 'السعودية',
+      'AE': 'الإمارات',
+      'JO': 'الأردن',
+      'MA': 'المغرب',
+      'DZ': 'الجزائر',
+      'TN': 'تونس',
+      'LB': 'لبنان',
+      'KW': 'الكويت',
+      'QA': 'قطر',
+      'BH': 'البحرين',
+      'OM': 'عُمان',
+      'SY': 'سوريا',
+      'IQ': 'العراق',
+      'YE': 'اليمن',
+      'LY': 'ليبيا',
+      'SD': 'السودان',
+      'PS': 'فلسطين',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get audioTryVoice => 'جرّب';
+
+  @override
+  String audioTryVoiceSemantics(String voice) {
+    return 'جرّب $voice';
+  }
+
+  @override
+  String get audioSample =>
+      'قال الجاحظ: البيان اسمٌ جامعٌ لكل شيء كشف لك قناع المعنى.';
+
+  @override
+  String get audioGoToText => 'اذهب إلى النص';
+
+  @override
+  String get audioNoVoiceTitle => 'لا يوجد صوت عربي على جهازك';
+
+  @override
+  String get audioNoVoiceBody =>
+      'لتستمع إلى الكتب ثبّت الصوت العربي من إعدادات الهاتف: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.';
+
+  @override
+  String get audioOpenVoiceSettings => 'افتح إعدادات الصوت';
+
+  @override
+  String get later => 'لاحقاً';
+
+  @override
+  String get audioNoVoiceHelp => 'لم تجد الخيار؟';
+
+  @override
+  String get audioNoVoiceAlternative =>
+      'يختلف المسار حسب الشركة المصنّعة. ابحث في إعدادات الهاتف عن «تحويل النص إلى كلام» أو «النطق»، أو ثبّت تطبيق «خدمات Google للنطق» من متجر التطبيقات، ثم نزّل بيانات اللغة العربية واخترها.';
+
+  @override
+  String get audioEngineError => 'توقّف الصوت بسبب خطأ في محرّك القراءة.';
+
+  @override
+  String get audioBookFinished => 'انتهى الكتاب';
+
+  @override
+  String get audioScreenReaderWarning =>
+      'قد يتداخل صوت القراءة مع قارئ الشاشة. استخدم سماعة أو أوقف القراءة الصوتية مؤقتاً عند التنقل.';
+
+  @override
+  String get audioBackToListening => 'العودة إلى موضع الاستماع';
+
+  @override
+  String get audioNowReading => 'يُقرأ الآن';
+
+  @override
+  String get audioChannelName => 'القراءة الصوتية';
+
+  @override
+  String audioNowPlayingSubtitle(String book, String author) {
+    return '$book — $author';
+  }
 }

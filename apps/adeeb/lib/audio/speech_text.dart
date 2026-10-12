@@ -44,7 +44,9 @@ List<SpeechChunk> speechChunks(
   if (kind == 'verse') return _verseChunks(text, maxLength);
   final clean = _collapse(text);
   if (clean.isEmpty) return const [];
-  return [for (final part in splitLongText(clean, maxLength)) SpeechChunk(part)];
+  return [
+    for (final part in splitLongText(clean, maxLength)) SpeechChunk(part),
+  ];
 }
 
 List<SpeechChunk> _verseChunks(String text, int maxLength) {

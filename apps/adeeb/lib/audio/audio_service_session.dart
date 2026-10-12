@@ -34,24 +34,25 @@ class AudioServiceSession implements MediaSession {
   @override
   Stream<MediaCommand> get commands => _commands.stream;
 
-  Future<_Handler> _initHandler() => _handler ??= AudioService.init(
-    builder: () => _Handler(_commands.add),
-    config: AudioServiceConfig(
-      androidNotificationChannelId: 'com.adeebai.adeeb.listening',
-      androidNotificationChannelName: channelName,
-      // يمكن إغلاق الإشعار بالسحب عند الإيقاف المؤقت فقط (DESIGN §10.3).
-      androidNotificationOngoing: false,
-      androidStopForegroundOnPause: true,
-      androidShowNotificationBadge: false,
-    ),
-  ).then((h) {
-    _subscriptions.add(
-      AudioService.notificationClicked.listen((clicked) {
-        if (clicked) _commands.add(MediaCommand.openPlayer);
-      }),
-    );
-    return h;
-  });
+  Future<_Handler> _initHandler() => _handler ??=
+      AudioService.init(
+        builder: () => _Handler(_commands.add),
+        config: AudioServiceConfig(
+          androidNotificationChannelId: 'com.adeebai.adeeb.listening',
+          androidNotificationChannelName: channelName,
+          // يمكن إغلاق الإشعار بالسحب عند الإيقاف المؤقت فقط (DESIGN §10.3).
+          androidNotificationOngoing: false,
+          androidStopForegroundOnPause: true,
+          androidShowNotificationBadge: false,
+        ),
+      ).then((h) {
+        _subscriptions.add(
+          AudioService.notificationClicked.listen((clicked) {
+            if (clicked) _commands.add(MediaCommand.openPlayer);
+          }),
+        );
+        return h;
+      });
 
   Future<AudioSession> _initAudioSession() => _audioSession ??= () async {
     final session = await AudioSession.instance;
@@ -132,12 +133,11 @@ class AudioServiceSession implements MediaSession {
   }
 
   /// الزر الافتراضي بأيقونته مع تسمية من ARB.
-  static MediaControl _control(MediaControl base, String label) =>
-      MediaControl(
-        androidIcon: base.androidIcon,
-        label: label,
-        action: base.action,
-      );
+  static MediaControl _control(MediaControl base, String label) => MediaControl(
+    androidIcon: base.androidIcon,
+    label: label,
+    action: base.action,
+  );
 
   @override
   Future<void> deactivate() async {

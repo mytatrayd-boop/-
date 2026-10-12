@@ -1,0 +1,32 @@
+{
+  "format": "openiti",
+  "id": "kalila",
+  "version": 1,
+  "title": {
+    "ar": "كليلة ودمنة",
+    "en": "Kalila wa Dimna"
+  },
+  "author": {
+    "ar": "ابن المقفع",
+    "en": "Ibn al-Muqaffa'"
+  },
+  "author_death_hijri": 142,
+  "source_name": "OpenITI",
+  "openiti": {
+    "repo": "OpenITI/0150AH",
+    "commit": "f9a52b5bbc3a65673fc73fb32331e7f33811c480",
+    "path": "data/0139IbnMuqaffac/0139IbnMuqaffac.KalilaWaDimna/0139IbnMuqaffac.KalilaWaDimna.Shamela0026537-ara1",
+    "uri": "0139IbnMuqaffac.KalilaWaDimna.Shamela0026537-ara1",
+    "sha256": "0b55371e4c69f44ffb5a1876b11e174398f3f84f400302c24007bdf1004afdc9"
+  },
+  "original_source": "المكتبة الشاملة، الكتاب رقم 26537",
+  "edition": "المطبعة الأميرية ببولاق، القاهرة، الطبعة السابعة عشرة 1355هـ/1936م (1937)، بلا محقق",
+  "retrieved": "2026-10-12",
+  "license": "CC BY-NC-SA 4.0",
+  "removed": "لا حواشي ولا مقدمة محقق في هذه النسخة (طبعة بولاق بلا محقق، منقولة عن الشاملة). حُذفت علامات OpenITI: المعالم ms (148)، وعلامات الصفحات (314) نُقلت إلى حقل page للفقرة، وعنوان «بسم الله الرحمن الرحيم» الذي لا نص تحته. وُصلت 243 فقرة شقّها حدّ الصفحة في النقل عن الشاملة.",
+  "merge_page_breaks": true,
+  "skip_headings": [],
+  "drop_lines": [],
+  "rules": [],
+  "headings": {}
+}

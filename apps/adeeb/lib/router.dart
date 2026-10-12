@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'library/book_page.dart';
@@ -5,7 +6,8 @@ import 'library/library_screen.dart';
 import 'reader/reader_screen.dart';
 import 'search/search_screen.dart';
 
-GoRouter createRouter() => GoRouter(
+GoRouter createRouter({GlobalKey<NavigatorState>? navigatorKey}) => GoRouter(
+  navigatorKey: navigatorKey,
   routes: [
     GoRoute(
       path: '/',

@@ -9,6 +9,7 @@ import 'package:crypto/crypto.dart';
 import 'arabic_nfc.dart';
 import 'book_builder.dart';
 import 'catalog.dart';
+import 'presentation_forms.dart';
 
 class Issue {
   Issue(this.where, this.code, this.detail, {this.warning = false, this.paragraphId});
@@ -23,8 +24,9 @@ class Issue {
   String toString() => '$where: ${warning ? 'تحذير ' : ''}[$code] $detail';
 }
 
-/// رموز تُعدّ تحذيراً لا خطأً: «(١٥)» و«(2)» قد تكون من نص المؤلف (عدد أو ترقيم).
-const warningCodes = {'footnote_paren_number'};
+/// رموز تُعدّ تحذيراً لا خطأً: «(١٥)» و«(2)» قد تكون من نص المؤلف (عدد أو ترقيم)،
+/// و«[...]» قد تكون إضافة محقق أو من النص (تظهر في العيّنة ليحكم عليها إنسان).
+const warningCodes = {'footnote_paren_number', 'square_bracket'};
 
 /// استثناءات مراجَعة يدوياً: معرّف فقرة/باب ← رموز مسموح بها فيه.
 typedef ValidationExceptions = Map<String, Set<String>>;
@@ -32,6 +34,7 @@ typedef ValidationExceptions = Map<String, Set<String>>;
 /// أنماط تدل على حاشية أو بقايا ترميز ويكي/HTML داخل نص فقرة.
 final Map<String, RegExp> footnotePatterns = {
   'footnote_bracket_number': RegExp(r'\[\s*[0-9٠-٩۰-۹]+\s*\]'),
+  'footnote_guillemet_number': RegExp(r'«\s*[0-9٠-٩۰-۹]+\s*»'),
   'footnote_paren_number': RegExp(r'\(\s*[0-9٠-٩۰-۹]+\s*\)'),
   'footnote_superscript': RegExp('[¹²³⁰-⁹]'),
   'footnote_attached_number': RegExp(r'[ء-ي\u064B-\u0652][0-9٠-٩۰-۹]+(?=[\s.,،؛:!؟]|$)'),
@@ -42,7 +45,12 @@ final Map<String, RegExp> footnotePatterns = {
   'html_tag': RegExp(r'</?[a-zA-Z][^>]*>'),
   'html_entity': RegExp(r'&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);'),
   'url': RegExp(r'https?://'),
+  // «[1]» يغطيه footnote_bracket_number (خطأ)؛ هذا لما سواه.
+  'square_bracket': RegExp(r'\[(?!\s*[0-9٠-٩۰-۹]+\s*\])[^\[\]]*\]'),
 };
+
+/// رقم الصفحة في الطبعة الأصلية (اختياري، من علامات OpenITI): مجلد وصفحة.
+final pagePattern = RegExp(r'^V\d{2,}P\d{3,}$');
 
 final _bookId = RegExp(r'^[a-z]{2,12}$');
 final _date = RegExp(r'^\d{4}-\d{2}-\d{2}$');
@@ -205,6 +213,10 @@ List<Issue> validateBook(
         continue;
       }
       text(t, pid, verse: kind == 'verse');
+      final page = p['page'];
+      if (page != null && (page is! String || !pagePattern.hasMatch(page))) {
+        err('page', 'page بصيغة V01P009 إن وُجد: $pid');
+      }
     }
   }
 
@@ -232,6 +244,11 @@ List<Issue> checkParagraphText(String t, {required bool verse, required String w
   if (!verse && (t.contains('\n') || t.contains('\t'))) err('control_char', '\\n أو \\t في نثر');
   if (verse && t.contains('\r')) err('control_char', '\\r في شعر');
   if (unsupportedMarks(t).isNotEmpty) err('nfc', 'علامات دمج غير عربية');
+  final pf = forbiddenArabicChars.firstMatch(t);
+  if (pf != null) {
+    err('presentation_form',
+        'شكل عرض عربي أو حرف غير قياسي U+${pf[0]!.codeUnitAt(0).toRadixString(16).toUpperCase()}');
+  }
   if (!isArabicNfc(t)) err('nfc', 'النص ليس NFC');
   for (final e in footnotePatterns.entries) {
     final m = e.value.firstMatch(t);

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'audio/mini_player.dart';
 import 'core/theme.dart';
 import 'l10n/app_localizations.dart';
 import 'library/library_providers.dart';
@@ -16,7 +17,8 @@ class AdeebApp extends ConsumerStatefulWidget {
 }
 
 class _AdeebAppState extends ConsumerState<AdeebApp> {
-  late final GoRouter _router = createRouter();
+  final _navigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+  late final GoRouter _router = createRouter(navigatorKey: _navigatorKey);
 
   @override
   void dispose() {
@@ -29,6 +31,12 @@ class _AdeebAppState extends ConsumerState<AdeebApp> {
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       routerConfig: _router,
+      // المشغّل المصغّر أسفل كل الشاشات ما دامت هناك جلسة استماع.
+      builder: (context, child) => ListeningHost(
+        navigatorKey: _navigatorKey,
+        router: _router,
+        child: child ?? const SizedBox.shrink(),
+      ),
       locale: ref.watch(appLocaleProvider),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [

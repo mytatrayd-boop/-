@@ -839,6 +839,222 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ابحث في هذا الكتاب'**
   String get searchInBook;
+
+  /// No description provided for @listen.
+  ///
+  /// In ar, this message translates to:
+  /// **'استمع'**
+  String get listen;
+
+  /// No description provided for @listenFromHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'استمع من هنا'**
+  String get listenFromHere;
+
+  /// No description provided for @audioPlay.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيل القراءة الصوتية'**
+  String get audioPlay;
+
+  /// No description provided for @audioPause.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف مؤقت'**
+  String get audioPause;
+
+  /// No description provided for @audioNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفقرة التالية'**
+  String get audioNext;
+
+  /// No description provided for @audioPrevious.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفقرة السابقة'**
+  String get audioPrevious;
+
+  /// No description provided for @audioStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف الاستماع'**
+  String get audioStop;
+
+  /// No description provided for @audioMinimize.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصغير'**
+  String get audioMinimize;
+
+  /// No description provided for @audioOpenPlayer.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح مشغّل الصوت'**
+  String get audioOpenPlayer;
+
+  /// No description provided for @audioPlayerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشغّل الصوت'**
+  String get audioPlayerTitle;
+
+  /// No description provided for @audioPreparing.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُجهَّز الصوت…'**
+  String get audioPreparing;
+
+  /// No description provided for @audioSpeed.
+  ///
+  /// In ar, this message translates to:
+  /// **'السرعة'**
+  String get audioSpeed;
+
+  /// No description provided for @audioSpeedValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'{speed}×'**
+  String audioSpeedValue(String speed);
+
+  /// No description provided for @audioSpeedSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'السرعة {speed} ضعف'**
+  String audioSpeedSemantics(String speed);
+
+  /// No description provided for @audioVoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت'**
+  String get audioVoice;
+
+  /// No description provided for @audioVoiceRow.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت: {voice}'**
+  String audioVoiceRow(String voice);
+
+  /// No description provided for @audioVoiceWithRegion.
+  ///
+  /// In ar, this message translates to:
+  /// **'عربي ({region}) — صوت {number}'**
+  String audioVoiceWithRegion(String region, String number);
+
+  /// No description provided for @audioVoiceNoRegion.
+  ///
+  /// In ar, this message translates to:
+  /// **'عربي — صوت {number}'**
+  String audioVoiceNoRegion(String number);
+
+  /// No description provided for @audioRegion.
+  ///
+  /// In ar, this message translates to:
+  /// **'{code, select, EG{مصر} SA{السعودية} AE{الإمارات} JO{الأردن} MA{المغرب} DZ{الجزائر} TN{تونس} LB{لبنان} KW{الكويت} QA{قطر} BH{البحرين} OM{عُمان} SY{سوريا} IQ{العراق} YE{اليمن} LY{ليبيا} SD{السودان} PS{فلسطين} other{}}'**
+  String audioRegion(String code);
+
+  /// No description provided for @audioTryVoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب'**
+  String get audioTryVoice;
+
+  /// No description provided for @audioTryVoiceSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب {voice}'**
+  String audioTryVoiceSemantics(String voice);
+
+  /// No description provided for @audioSample.
+  ///
+  /// In ar, this message translates to:
+  /// **'قال الجاحظ: البيان اسمٌ جامعٌ لكل شيء كشف لك قناع المعنى.'**
+  String get audioSample;
+
+  /// No description provided for @audioGoToText.
+  ///
+  /// In ar, this message translates to:
+  /// **'اذهب إلى النص'**
+  String get audioGoToText;
+
+  /// No description provided for @audioNoVoiceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد صوت عربي على جهازك'**
+  String get audioNoVoiceTitle;
+
+  /// No description provided for @audioNoVoiceBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لتستمع إلى الكتب ثبّت الصوت العربي من إعدادات الهاتف: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.'**
+  String get audioNoVoiceBody;
+
+  /// No description provided for @audioOpenVoiceSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح إعدادات الصوت'**
+  String get audioOpenVoiceSettings;
+
+  /// No description provided for @later.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحقاً'**
+  String get later;
+
+  /// No description provided for @audioNoVoiceHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تجد الخيار؟'**
+  String get audioNoVoiceHelp;
+
+  /// No description provided for @audioNoVoiceAlternative.
+  ///
+  /// In ar, this message translates to:
+  /// **'يختلف المسار حسب الشركة المصنّعة. ابحث في إعدادات الهاتف عن «تحويل النص إلى كلام» أو «النطق»، أو ثبّت تطبيق «خدمات Google للنطق» من متجر التطبيقات، ثم نزّل بيانات اللغة العربية واخترها.'**
+  String get audioNoVoiceAlternative;
+
+  /// No description provided for @audioEngineError.
+  ///
+  /// In ar, this message translates to:
+  /// **'توقّف الصوت بسبب خطأ في محرّك القراءة.'**
+  String get audioEngineError;
+
+  /// No description provided for @audioBookFinished.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهى الكتاب'**
+  String get audioBookFinished;
+
+  /// No description provided for @audioScreenReaderWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'قد يتداخل صوت القراءة مع قارئ الشاشة. استخدم سماعة أو أوقف القراءة الصوتية مؤقتاً عند التنقل.'**
+  String get audioScreenReaderWarning;
+
+  /// No description provided for @audioBackToListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى موضع الاستماع'**
+  String get audioBackToListening;
+
+  /// No description provided for @audioNowReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُقرأ الآن'**
+  String get audioNowReading;
+
+  /// No description provided for @audioChannelName.
+  ///
+  /// In ar, this message translates to:
+  /// **'القراءة الصوتية'**
+  String get audioChannelName;
+
+  /// No description provided for @audioNowPlayingSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'{book} — {author}'**
+  String audioNowPlayingSubtitle(String book, String author);
 }
 
 class _AppLocalizationsDelegate

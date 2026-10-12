@@ -1,0 +1,746 @@
+/// قارئ صيغة OpenITI mARkdown وتحويلها إلى ملف الكتاب (schema 1) — D21.
+///
+/// نفس مبادئ D17: دالة صافية حتمية من الوصفة ونص المصدر المثبّت (commit + sha256)؛
+/// كل ما يُحذف يُعدّ في الإحصاء؛ أي سطر أو وسم غير معروف يوقف التحويل بخطأ.
+///
+/// الوسوم المدعومة:
+/// - `######OpenITI#` السطر الأول، ثم ترويسة `#META# ...` حتى `#META#Header#End#`.
+/// - `### |` عنوان، وعدد `|` = المستوى (يُقصر على 3). `### |PARATEXT|` و`### |EDITOR|`
+///   قسم ليس من نص المؤلف يُحذف حتى العنوان التالي.
+/// - `# ` بداية فقرة، و`~~` سطر ملحق بالفقرة السابقة.
+/// - `PageV01P009` نهاية الصفحة 9 من المجلد 1 (اصطلاح OpenITI: العلامة في آخر الصفحة)،
+///   داخل السطر أو وحدها في سطر. تُحفظ للفقرة في `page` = صفحة بدايتها.
+/// - `ms12` علامة مَعلَم (كل 300 كلمة تقريباً) تُحذف وتُعدّ.
+/// - `%~%` فاصل الشطرين: الفقرة التي فيها بيت؛ الأبيات المتتالية فقرة شعر واحدة.
+library;
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
+
+import 'book_builder.dart';
+import 'presentation_forms.dart';
+import 'wikitext.dart' show RemovalStats, WikitextException, cleanText;
+
+/// خطأ في صيغة المصدر أو في الوصفة، برقم السطر في ملف OpenITI إن وُجد.
+class OpenitiException extends WikitextException {
+  OpenitiException(super.message);
+}
+
+/// قاعدة نصية من الوصفة تُطبَّق على كل سطر من متن المصدر (بعد الترويسة) بالترتيب.
+/// `with` غائب = حذف المطابقة (ويقبل `$1`…`$9`). كل مطابقة تُعدّ باسم القاعدة.
+class OpenitiRule {
+  OpenitiRule(this.name, this.pattern, this.replacement);
+  final String name;
+  final RegExp pattern;
+  final String replacement;
+
+  static OpenitiRule fromJson(Map<String, Object?> j) => OpenitiRule(
+        j['name']! as String,
+        RegExp(j['pattern']! as String),
+        (j['with'] as String?) ?? '',
+      );
+
+  /// نص الاستبدال لمطابقة، مع `$1`…`$9` للمجموعات.
+  String expand(Match m) => replacement.replaceAllMapped(
+        RegExp(r'\$(\d)'),
+        (g) => m[int.parse(g[1]!)] ?? '',
+      );
+
+  Map<String, Object?> toJson() => {
+        'name': name,
+        'pattern': pattern.pattern,
+        if (replacement.isNotEmpty) 'with': replacement,
+      };
+}
+
+/// تعديل عنوان بعينه (بنصه بعد التنظيف): عنوان بديل و/أو مستوى، أو حذف العنوان وحده.
+class OpenitiHeading {
+  OpenitiHeading({this.title, this.level, this.drop = false});
+  final String? title;
+  final int? level;
+  final bool drop;
+
+  static OpenitiHeading fromJson(Map<String, Object?> j) => OpenitiHeading(
+        title: j['title'] as String?,
+        level: j['level'] as int?,
+        drop: (j['drop'] as bool?) ?? false,
+      );
+
+  Map<String, Object?> toJson() => {
+        if (title != null) 'title': title,
+        if (level != null) 'level': level,
+        if (drop) 'drop': true,
+      };
+}
+
+class OpenitiRecipe {
+  OpenitiRecipe({
+    required this.id,
+    required this.version,
+    required this.titleAr,
+    required this.titleEn,
+    required this.authorAr,
+    required this.authorEn,
+    required this.authorDeathHijri,
+    required this.repo,
+    required this.commit,
+    required this.path,
+    required this.versionUri,
+    required this.license,
+    required this.removed,
+    this.sha256,
+    this.retrieved,
+    this.originalSource,
+    this.edition,
+    this.sourceName = 'OpenITI',
+    this.mergePageBreaks = false,
+    this.prefaceTitle,
+    this.skipHeadings = const [],
+    this.dropLines = const [],
+    this.dropHeadings = const [],
+    this.rules = const [],
+    this.headings = const {},
+    this.redirects = const {},
+    this.validationExceptions = const {},
+  });
+
+  final String id;
+  final int version;
+  final String titleAr;
+  final String titleEn;
+  final String authorAr;
+  final String authorEn;
+  final int authorDeathHijri;
+
+  /// مستودع GitHub مثل `OpenITI/0150AH`.
+  final String repo;
+
+  /// commit مثبّت (40 حرفاً ست عشرياً).
+  final String commit;
+
+  /// مسار الملف داخل المستودع.
+  final String path;
+
+  /// معرّف النسخة في OpenITI (URI) مثل `0139IbnMuqaffac.KalilaWaDimna.Shamela0026537-ara1`.
+  final String versionUri;
+
+  /// sha256 لبايتات ملف المصدر؛ يكتبه أمر الجلب في المسودة ويُتحقق منه دائماً بعدها.
+  String? sha256;
+  String? retrieved;
+
+  /// المصدر الأصلي الذي نقل عنه OpenITI (مثل «المكتبة الشاملة، الكتاب 26537»).
+  final String? originalSource;
+  final String? edition;
+  final String sourceName;
+  final String license;
+  final String removed;
+
+  /// وصل فقرة شقّها حدّ الصفحة: إن بدأ سطر `# ` بعد علامة صفحة مباشرة والفقرة السابقة
+  /// نثر لا تنتهي بعلامة وقف، فهو تتمة لها (أثر نقل الشاملة صفحةً صفحة).
+  final bool mergePageBreaks;
+
+  /// عنوان باب لما يسبق أول عنوان في المصدر (إن وُجد نص قبله)؛ غيابه مع وجود النص خطأ.
+  final String? prefaceTitle;
+
+  /// عناوين تُحذف مع ما تحتها (ومع أبوابها الفرعية الأعمق).
+  final List<String> skipHeadings;
+
+  /// أسطر كاملة تُحذف (مثل فاصل `# ***`)؛ تطابق السطر الخام كله.
+  final List<OpenitiRule> dropLines;
+
+  /// عناوين تُحذف وحدها (يبقى نصها في الباب السابق)، مثل عناوين أضافها المحقق
+  /// بين معقوفين؛ تطابق نص العنوان بعد التنظيف كله.
+  final List<OpenitiRule> dropHeadings;
+
+  /// قواعد حذف/استبدال داخل الأسطر (مثل أرقام حواشٍ «١» بقيت بعد حذف الحواشي).
+  final List<OpenitiRule> rules;
+
+  /// تعديلات عناوين بعينها؛ المفتاح غير المستخدم خطأ (وصفة قديمة).
+  final Map<String, OpenitiHeading> headings;
+  final Map<String, String> redirects;
+  final Map<String, List<String>> validationExceptions;
+
+  String get sourceUrl => 'https://github.com/$repo/blob/$commit/${_encodePath(path)}';
+  String get rawUrl => 'https://raw.githubusercontent.com/$repo/$commit/${_encodePath(path)}';
+
+  bool get isPinned => sha256 != null && retrieved != null;
+
+  static bool isOpenitiJson(Map<String, Object?> j) => j['format'] == 'openiti';
+
+  Map<String, Object?> toJson() => {
+        'format': 'openiti',
+        'id': id,
+        'version': version,
+        'title': {'ar': titleAr, 'en': titleEn},
+        'author': {'ar': authorAr, 'en': authorEn},
+        'author_death_hijri': authorDeathHijri,
+        'source_name': sourceName,
+        'openiti': {
+          'repo': repo,
+          'commit': commit,
+          'path': path,
+          'uri': versionUri,
+          'sha256': sha256,
+        },
+        if (originalSource != null) 'original_source': originalSource,
+        if (edition != null) 'edition': edition,
+        'retrieved': retrieved,
+        'license': license,
+        'removed': removed,
+        'merge_page_breaks': mergePageBreaks,
+        if (prefaceTitle != null) 'preface_title': prefaceTitle,
+        'skip_headings': skipHeadings,
+        'drop_lines': [for (final r in dropLines) r.toJson()],
+        'drop_headings': [for (final r in dropHeadings) r.toJson()],
+        'rules': [for (final r in rules) r.toJson()],
+        'headings': {for (final e in headings.entries) e.key: e.value.toJson()},
+        if (redirects.isNotEmpty) 'redirects': redirects,
+        if (validationExceptions.isNotEmpty) 'validation_exceptions': validationExceptions,
+      };
+
+  static OpenitiRecipe fromJson(Map<String, Object?> j) {
+    if (!isOpenitiJson(j)) throw OpenitiException('الوصفة ليست بصيغة openiti (format).');
+    final title = j['title']! as Map<String, Object?>;
+    final author = j['author']! as Map<String, Object?>;
+    final o = j['openiti']! as Map<String, Object?>;
+    final commit = o['commit']! as String;
+    if (!RegExp(r'^[0-9a-f]{40}$').hasMatch(commit)) {
+      throw OpenitiException('commit يجب أن يكون 40 حرفاً ست عشرياً: $commit');
+    }
+    List<OpenitiRule> rules(String k) => [
+          for (final r in ((j[k] as List?) ?? const []).cast<Map<String, Object?>>()) OpenitiRule.fromJson(r),
+        ];
+    return OpenitiRecipe(
+      id: j['id']! as String,
+      version: j['version']! as int,
+      titleAr: title['ar']! as String,
+      titleEn: title['en']! as String,
+      authorAr: author['ar']! as String,
+      authorEn: author['en']! as String,
+      authorDeathHijri: j['author_death_hijri']! as int,
+      sourceName: (j['source_name'] as String?) ?? 'OpenITI',
+      repo: o['repo']! as String,
+      commit: commit,
+      path: o['path']! as String,
+      versionUri: o['uri']! as String,
+      sha256: o['sha256'] as String?,
+      originalSource: j['original_source'] as String?,
+      edition: j['edition'] as String?,
+      retrieved: j['retrieved'] as String?,
+      license: j['license']! as String,
+      removed: j['removed']! as String,
+      mergePageBreaks: (j['merge_page_breaks'] as bool?) ?? false,
+      prefaceTitle: j['preface_title'] as String?,
+      skipHeadings: [...((j['skip_headings'] as List?) ?? const []).cast<String>()],
+      dropLines: rules('drop_lines'),
+      dropHeadings: rules('drop_headings'),
+      rules: rules('rules'),
+      headings: {
+        for (final e in ((j['headings'] as Map?) ?? const {}).entries)
+          e.key as String: OpenitiHeading.fromJson((e.value as Map).cast<String, Object?>()),
+      },
+      redirects: {
+        ...((j['redirects'] as Map?) ?? const {}).map((k, v) => MapEntry(k as String, v as String)),
+      },
+      validationExceptions: {
+        ...((j['validation_exceptions'] as Map?) ?? const {})
+            .map((k, v) => MapEntry(k as String, [...(v as List).cast<String>()])),
+      },
+    );
+  }
+
+  static OpenitiRecipe load(File f) =>
+      fromJson(jsonDecode(f.readAsStringSync()) as Map<String, Object?>);
+
+  void save(File f) => f.writeAsStringSync(
+        '${const JsonEncoder.withIndent('  ').convert(toJson())}\n',
+      );
+}
+
+String _encodePath(String p) => p.split('/').map(Uri.encodeComponent).join('/');
+
+// ---------------------------------------------------------------------------
+// القراءة
+
+/// عنصر من المتن بعد القراءة: عنوان أو فقرة.
+sealed class OpenitiItem {}
+
+class OpenitiHeadingItem extends OpenitiItem {
+  OpenitiHeadingItem(this.text, this.pipes, this.line);
+  final String text;
+  final int pipes;
+  final int line;
+}
+
+class OpenitiParagraph extends OpenitiItem {
+  OpenitiParagraph(this.line);
+
+  /// رقم السطر في ملف المصدر (من 1) لرسائل الخطأ.
+  final int line;
+  final List<String> pieces = [];
+  final List<int> lines = [];
+
+  /// علامة الصفحة التي تنتهي بها صفحة بداية الفقرة، مثل V01P009.
+  String? page;
+  String get raw => pieces.join(' ');
+}
+
+final _pageRe = RegExp(r'PageV(\d+)P(\d+)');
+final _milestoneRe = RegExp(r'(?<![A-Za-z])ms\d+(?![A-Za-z0-9])');
+final _markerRe = RegExp(r'PageV\d+P\d+|(?<![A-Za-z])ms\d+(?![A-Za-z0-9])');
+final _headingRe = RegExp(r'^### (\|+)(.*)$');
+final _taggedHeadingRe = RegExp(r'^([A-Z_]+)\|\s*(.*)$');
+
+/// محارف لا تظهر في نص عربي نظيف: بقايا وسم OpenITI أو HTML أو ترميز مجهول.
+final _unknownMarkup = RegExp(r'[A-Za-z#|~%@$<>*`_{}\\^=+]');
+
+/// علامات وقف تنهي الفقرة؛ ما بعدها في صفحة جديدة لا يُوصل بها.
+final _terminal = RegExp(r'[.!?؟:»"…]$');
+
+/// أقسام ليست من نص المؤلف بوسم OpenITI صريح.
+const skippedSectionTags = {'PARATEXT', 'EDITOR'};
+
+class OpenitiDocument {
+  OpenitiDocument(this.meta, this.items);
+  final Map<String, String> meta;
+  final List<OpenitiItem> items;
+}
+
+/// يقرأ ملف OpenITI mARkdown إلى عناوين وفقرات خام (قبل تجميع الأبواب).
+OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats stats) {
+  var s = source.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+  if (s.startsWith('﻿')) s = s.substring(1);
+  s = foldPresentationForms(s, stats);
+  final lines = s.split('\n');
+  if (lines.isEmpty || lines.first.trim() != '######OpenITI#') {
+    throw OpenitiException('السطر الأول ليس ######OpenITI#: ليس ملف OpenITI mARkdown.');
+  }
+  final meta = <String, String>{};
+  var i = 1;
+  var headerEnded = false;
+  for (; i < lines.length; i++) {
+    final l = lines[i].trim();
+    if (l.isEmpty) continue;
+    if (l == '#META#Header#End#') {
+      headerEnded = true;
+      i++;
+      break;
+    }
+    final m = RegExp(r'^#META#\s*(\S+)\s*::\s*(.*)$').firstMatch(l);
+    if (m == null) throw OpenitiException('سطر ${i + 1}: سطر ترويسة غير معروف: «$l»');
+    meta[m[1]!] = m[2]!.trim();
+  }
+  if (!headerEnded) throw OpenitiException('لا يوجد #META#Header#End#.');
+
+  final items = <OpenitiItem>[];
+  final pending = <OpenitiParagraph>[];
+  OpenitiParagraph? current;
+  var pageSinceText = false;
+  var sectionSkip = false;
+  final usedHeadings = <String>{};
+
+  // يضيف قطعة نص للفقرة الحالية ويعالج العلامات داخلها بترتيب ظهورها.
+  void addContent(OpenitiParagraph p, String content, int lineNo) {
+    var last = 0;
+    var hasText = false;
+    for (final m in _markerRe.allMatches(content)) {
+      final before = content.substring(last, m.start);
+      if (before.trim().isNotEmpty) {
+        p.pieces.add(before);
+        pageSinceText = false;
+        hasText = true;
+      }
+      _marker(m[0]!, pending, stats, () => pageSinceText = true);
+      last = m.end;
+    }
+    final rest = content.substring(last);
+    if (rest.trim().isNotEmpty) {
+      p.pieces.add(rest);
+      pageSinceText = false;
+      hasText = true;
+    }
+    if (hasText) p.lines.add(lineNo);
+  }
+
+  for (; i < lines.length; i++) {
+    final lineNo = i + 1;
+    var line = lines[i];
+    if (line.trim().isEmpty) continue;
+
+    var dropped = false;
+    for (final r in recipe.dropLines) {
+      if (r.pattern.matchAsPrefix(line)?.end == line.length) {
+        stats.add('سطر محذوف: ${r.name}');
+        dropped = true;
+        break;
+      }
+    }
+    if (dropped) continue;
+    for (final r in recipe.rules) {
+      final n = r.pattern.allMatches(line).length;
+      if (n > 0) {
+        stats.add('قاعدة: ${r.name}', n);
+        line = line.replaceAllMapped(r.pattern, r.expand);
+      }
+    }
+    line = line.trimRight();
+    if (line.trim().isEmpty || RegExp(r'^(~~|#)\s*$').hasMatch(line)) {
+      stats.add('سطر فرغ بعد القواعد');
+      continue;
+    }
+
+    if (line.startsWith('### ')) {
+      final h = _headingRe.firstMatch(line);
+      if (h == null) throw OpenitiException('سطر $lineNo: عنوان بوسم غير مدعوم: «$line»');
+      final pipes = h[1]!.length;
+      var rest = h[2]!;
+      final tagged = _taggedHeadingRe.firstMatch(rest);
+      if (tagged != null && rest.startsWith(tagged[1]!)) {
+        final tag = tagged[1]!;
+        if (!skippedSectionTags.contains(tag)) {
+          throw OpenitiException('سطر $lineNo: وسم قسم مجهول |$tag|');
+        }
+        stats.add('قسم محذوف بوسم OpenITI |$tag|');
+        current = null;
+        sectionSkip = true;
+        continue;
+      }
+      sectionSkip = false;
+      // علامات الصفحة والمعالم داخل سطر العنوان.
+      final probe = OpenitiParagraph(lineNo);
+      addContent(probe, rest, lineNo);
+      rest = cleanText(probe.raw);
+      _checkUnknown(rest, lineNo);
+      current = null;
+      if (rest.isEmpty) {
+        stats.add('عنوان فارغ');
+        continue;
+      }
+      items.add(OpenitiHeadingItem(rest, pipes, lineNo));
+      usedHeadings.add(rest);
+      continue;
+    }
+
+    String content;
+    bool continuation;
+    if (line.startsWith('~~')) {
+      content = line.substring(2);
+      continuation = true;
+    } else if (line == '#' || line.startsWith('# ')) {
+      content = line.length > 2 ? line.substring(2) : '';
+      continuation = false;
+    } else if (RegExp(r'^\s*(PageV\d+P\d+|ms\d+)(\s+(PageV\d+P\d+|ms\d+))*\s*$').hasMatch(line)) {
+      // علامات وحدها في سطر بلا «# » (تظهر في بعض الملفات): لا تغيّر الفقرة.
+      final p = current ?? OpenitiParagraph(lineNo);
+      addContent(p, line, lineNo);
+      continue;
+    } else {
+      throw OpenitiException('سطر $lineNo: بداية سطر غير معروفة في mARkdown: «${_short(line)}»');
+    }
+
+    if (sectionSkip) {
+      stats.add('سطر ضمن قسم PARATEXT/EDITOR');
+      // علامات الصفحات فيه تبقى محسوبة لترقيم ما قبله.
+      for (final m in _markerRe.allMatches(content)) {
+        _marker(m[0]!, pending, stats, () => pageSinceText = true);
+      }
+      continue;
+    }
+
+    final isMarkerOnly = content.replaceAll(_markerRe, '').trim().isEmpty;
+    if (continuation) {
+      if (current == null) {
+        if (isMarkerOnly) {
+          addContent(OpenitiParagraph(lineNo), content, lineNo);
+          continue;
+        }
+        throw OpenitiException('سطر $lineNo: سطر ملحق ~~ بلا فقرة قبله.');
+      }
+      if (!isMarkerOnly && current.raw.contains('%~%') && !content.contains('%~%')) {
+        // البيت سطر واحد في mARkdown؛ نثر ملحق به أثرُ حدّ صفحة أسقط «# »، فهو فقرة جديدة.
+        stats.add('سطر نثر ملحق ~~ بعد بيت (عومل فقرة جديدة)');
+        final p = OpenitiParagraph(lineNo);
+        items.add(p);
+        pending.add(p);
+        current = p;
+        addContent(p, content, lineNo);
+        continue;
+      }
+      addContent(current, content, lineNo);
+      continue;
+    }
+
+    if (isMarkerOnly) {
+      // «# PageV01P010»: علامة صفحة على سطر مستقل؛ لا تبدأ فقرة.
+      addContent(current ?? OpenitiParagraph(lineNo), content, lineNo);
+      continue;
+    }
+
+    final prev = current;
+    if (recipe.mergePageBreaks &&
+        prev != null &&
+        pageSinceText &&
+        !prev.raw.contains('%~%') &&
+        !content.contains('%~%') &&
+        !_terminal.hasMatch(cleanText(prev.raw.replaceAll(_markerRe, '')))) {
+      stats.add('فقرة موصولة عبر حدّ الصفحة');
+      addContent(prev, content, lineNo);
+      continue;
+    }
+    final p = OpenitiParagraph(lineNo);
+    items.add(p);
+    pending.add(p);
+    current = p;
+    addContent(p, content, lineNo);
+  }
+  if (pending.isNotEmpty) stats.add('فقرة بلا علامة صفحة بعدها (بلا page)', pending.length);
+
+  final unused = recipe.headings.keys.where((k) => !usedHeadings.contains(k)).toList()..sort();
+  if (unused.isNotEmpty) {
+    throw OpenitiException('عناوين في الوصفة (headings) غير موجودة في المصدر: ${unused.join('، ')}');
+  }
+  return OpenitiDocument(meta, items);
+}
+
+void _marker(String m, List<OpenitiParagraph> pending, RemovalStats stats, void Function() onPage) {
+  final pm = _pageRe.matchAsPrefix(m);
+  if (pm != null) {
+    // اصطلاح OpenITI: العلامة في نهاية الصفحة، فكل فقرة بدأت منذ العلامة السابقة تبدأ في هذه الصفحة.
+    final page = 'V${pm[1]}P${pm[2]}';
+    for (final p in pending) {
+      p.page = page;
+    }
+    pending.clear();
+    stats.add('علامة صفحة (حُفظت في page)');
+    onPage();
+    return;
+  }
+  if (_milestoneRe.hasMatch(m)) {
+    stats.add('علامة مَعلَم ms (حُذفت)');
+    return;
+  }
+  throw OpenitiException('علامة غير معروفة: $m');
+}
+
+void _checkUnknown(String t, int lineNo) {
+  final m = _unknownMarkup.firstMatch(t);
+  if (m != null) {
+    final start = (m.start - 30).clamp(0, t.length);
+    final end = (m.end + 30).clamp(0, t.length);
+    throw OpenitiException(
+      'سطر $lineNo: وسم أو محرف مجهول «${m[0]}» في: «${t.substring(start, end)}». '
+      'أضف قاعدة صريحة في الوصفة (rules/drop_lines) بعد مراجعته، ولا يُحذف بصمت.',
+    );
+  }
+}
+
+String _short(String s) => s.length > 80 ? '${s.substring(0, 80)}…' : s;
+
+// ---------------------------------------------------------------------------
+// البناء
+
+/// يحوّل نص المصدر إلى ملف الكتاب. [sourceBytes] بايتات الملف كما جُلبت (يُتحقق من sha256).
+BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
+  if (!recipe.isPinned) {
+    throw StateError('الوصفة غير مثبّتة (sha256/retrieved ناقص): شغّل fetch_openiti أولاً.');
+  }
+  final digest = sha256.convert(sourceBytes).toString();
+  if (digest != recipe.sha256) {
+    throw StateError('sha256 للمصدر ($digest) لا يطابق الوصفة (${recipe.sha256}).');
+  }
+  final String source;
+  try {
+    source = const Utf8Decoder(allowMalformed: false).convert(sourceBytes);
+  } on FormatException catch (e) {
+    throw OpenitiException('المصدر ليس UTF-8 صالحاً: ${e.message}');
+  }
+  final stats = RemovalStats();
+  final doc = parseOpeniti(source, recipe, stats);
+
+  final skip = recipe.skipHeadings.map(cleanText).toSet();
+  final chapters = <DraftChapter>[];
+  DraftChapter? current;
+  int? skippingLevel;
+  Map<String, Object?>? openVerse; // آخر فقرة شعر، لتجميع الأبيات المتتالية.
+
+  for (final item in doc.items) {
+    switch (item) {
+      case OpenitiHeadingItem(:final text, :final pipes):
+        openVerse = null;
+        final override = recipe.headings[text];
+        var lvl = override?.level ?? (pipes > 3 ? 3 : pipes);
+        if (skippingLevel != null && lvl > skippingLevel) {
+          stats.add('قسم محذوف (فرعي): $text');
+          continue;
+        }
+        skippingLevel = null;
+        if (skip.contains(text)) {
+          skippingLevel = lvl;
+          stats.add('قسم محذوف: $text');
+          continue;
+        }
+        if (override?.drop ?? false) {
+          stats.add('عنوان محذوف بالوصفة (النص بعده يبقى في الباب السابق): $text');
+          continue;
+        }
+        final dropRule = recipe.dropHeadings
+            .where((r) => r.pattern.matchAsPrefix(text)?.end == text.length)
+            .firstOrNull;
+        if (dropRule != null) {
+          stats.add('عنوان محذوف (نصه يبقى في الباب السابق): ${dropRule.name}');
+          continue;
+        }
+        if (pipes > 3 && override?.level == null) stats.add('عنوان أعمق من 3 مستويات (عومل كمستوى 3)');
+        final parent = chapters.isEmpty ? 0 : chapters.last.level;
+        if (lvl > parent + 1) lvl = parent + 1;
+        current = DraftChapter(override?.title ?? text, lvl);
+        chapters.add(current);
+      case OpenitiParagraph():
+        if (skippingLevel != null) {
+          stats.add('فقرة ضمن قسم محذوف');
+          continue;
+        }
+        final text = cleanText(item.raw);
+        if (text.isEmpty) {
+          stats.add('فقرة فارغة بعد التنظيف');
+          continue;
+        }
+        if (current == null) {
+          if (recipe.prefaceTitle == null) {
+            throw OpenitiException('سطر ${item.line}: نص قبل أول عنوان؛ حدّد preface_title في الوصفة.');
+          }
+          current = DraftChapter(recipe.prefaceTitle!, 1);
+          chapters.add(current);
+        }
+        if (text.contains('%~%')) {
+          if (item.lines.length > 1) {
+            throw OpenitiException('سطر ${item.line}: بيت (%~%) ممتد على أكثر من سطر؛ أصلحه بقاعدة في الوصفة.');
+          }
+          final parts = text.split('%~%').map((p) => p.trim()).toList();
+          final empty = parts.where((p) => p.isEmpty).length;
+          if (empty > 0) stats.add('شطر فارغ حول %~% (بيت بشطر واحد)', empty);
+          final halves = parts.where((p) => p.isNotEmpty).toList();
+          if (halves.isEmpty) {
+            stats.add('فقرة فارغة بعد التنظيف');
+            continue;
+          }
+          if (halves.length > 2) {
+            throw OpenitiException('سطر ${item.line}: أكثر من شطرين في سطر واحد.');
+          }
+          for (final h in halves) {
+            _checkUnknown(h, item.line);
+          }
+          final verseLine = halves.join('\t');
+          if (openVerse != null && identical(current.paragraphs.last, openVerse)) {
+            openVerse['text'] = '${openVerse['text']}\n$verseLine';
+          } else {
+            openVerse = {'kind': 'verse', 'text': verseLine, if (item.page != null) 'page': item.page};
+            current.paragraphs.add(openVerse);
+          }
+          continue;
+        }
+        _checkUnknown(text, item.line);
+        openVerse = null;
+        current.paragraphs.add({'text': text, if (item.page != null) 'page': item.page});
+    }
+  }
+
+  final outChapters = finalizeChapters(recipe.id, chapters, stats);
+  final book = <String, Object?>{
+    'schema': 1,
+    'id': recipe.id,
+    'version': recipe.version,
+    'title': {'ar': recipe.titleAr, 'en': recipe.titleEn},
+    'author': {'ar': recipe.authorAr, 'en': recipe.authorEn},
+    'author_death_hijri': recipe.authorDeathHijri,
+    'source': {
+      'name': recipe.sourceName,
+      'url': recipe.sourceUrl,
+      'retrieved': recipe.retrieved,
+      if (recipe.edition != null) 'edition': recipe.edition,
+      if (recipe.originalSource != null) 'original': recipe.originalSource,
+      'openiti': {
+        'uri': recipe.versionUri,
+        'repo': recipe.repo,
+        'commit': recipe.commit,
+        'path': recipe.path,
+        'sha256': recipe.sha256,
+      },
+    },
+    'license': recipe.license,
+    'removed': recipe.removed,
+    'chapters': outChapters,
+    'redirects': {
+      for (final k in (recipe.redirects.keys.toList()..sort())) k: recipe.redirects[k],
+    },
+  };
+  return BuildResult(book, stats);
+}
+
+// ---------------------------------------------------------------------------
+// الجلب
+
+class OpenitiFetchException implements Exception {
+  OpenitiFetchException(this.message, {this.network = false});
+  final String message;
+  final bool network;
+  @override
+  String toString() => message;
+}
+
+File openitiCacheFile(Directory cacheDir) => File('${cacheDir.path}/openiti.txt');
+
+/// يجلب ملف المصدر من raw.githubusercontent.com بالـ commit المثبّت (أو ينسخه من
+/// مستنسخ محلي [localRepo] على الـ commit نفسه)، ويتحقق من sha256. في المسودة
+/// (بلا sha256) يثبّت sha256 و[today] في الوصفة ويحفظها.
+Future<List<int>> fetchOpeniti({
+  required OpenitiRecipe recipe,
+  required File recipeFile,
+  required Directory cacheDir,
+  required String today,
+  http.Client? client,
+  Directory? localRepo,
+}) async {
+  List<int> bytes;
+  if (localRepo != null) {
+    final head = await Process.run('git', ['-C', localRepo.path, 'rev-parse', 'HEAD']);
+    final sha = (head.stdout as String).trim();
+    if (head.exitCode != 0 || sha != recipe.commit) {
+      throw OpenitiFetchException('المستنسخ المحلي ${localRepo.path} ليس على commit الوصفة '
+          '(${recipe.commit})، بل على «$sha».');
+    }
+    final f = File('${localRepo.path}/${recipe.path}');
+    if (!f.existsSync()) throw OpenitiFetchException('الملف غير موجود في المستنسخ: ${f.path}');
+    bytes = f.readAsBytesSync();
+  } else {
+    final c = client ?? http.Client();
+    try {
+      final res = await c.get(Uri.parse(recipe.rawUrl));
+      if (res.statusCode != 200) {
+        throw OpenitiFetchException('ردّ GitHub بالرمز HTTP ${res.statusCode} لـ ${recipe.rawUrl}');
+      }
+      bytes = res.bodyBytes;
+    } on http.ClientException catch (e) {
+      throw OpenitiFetchException('تعذّر الاتصال بـ raw.githubusercontent.com: ${e.message}', network: true);
+    } on SocketException catch (e) {
+      throw OpenitiFetchException('تعذّر الاتصال (انقطاع الشبكة): ${e.message}', network: true);
+    } finally {
+      if (client == null) c.close();
+    }
+  }
+  final digest = sha256.convert(bytes).toString();
+  if (recipe.sha256 == null) {
+    recipe
+      ..sha256 = digest
+      ..retrieved = today;
+    recipe.save(recipeFile);
+  } else if (digest != recipe.sha256) {
+    throw OpenitiFetchException('sha256 للملف المجلوب ($digest) لا يطابق الوصفة (${recipe.sha256}).');
+  }
+  cacheDir.createSync(recursive: true);
+  openitiCacheFile(cacheDir).writeAsBytesSync(bytes);
+  return bytes;
+}

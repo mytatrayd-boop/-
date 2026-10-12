@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../audio/listen_actions.dart';
 import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
@@ -15,7 +16,8 @@ import 'library_providers.dart';
 import 'library_text.dart';
 
 /// صفحة الكتاب (DESIGN §8): الرأس، والتحميل، و«ابدأ/تابع القراءة» مع
-/// «وصلت إلى»، و«ابحث في هذا الكتاب»، وأبواب الكتاب المحمّل. «استمع» مع الميزة 5.
+/// «وصلت إلى»، و«استمع» (من آخر موضع)، و«ابحث في هذا الكتاب»، وأبواب الكتاب
+/// المحمّل.
 class BookPage extends ConsumerWidget {
   const BookPage({super.key, required this.bookId});
 
@@ -291,25 +293,26 @@ class _Actions extends ConsumerWidget {
             ],
           ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () => context.push('/read/${item.id}'),
-                icon: const Icon(Icons.menu_book),
-                label: Text(
-                  position == null ? l10n.startReading : l10n.continueReading,
-                ),
-              ),
+        _ActionButtons(
+          read: FilledButton.icon(
+            onPressed: () => context.push('/read/${item.id}'),
+            icon: const Icon(Icons.menu_book),
+            label: Text(
+              position == null ? l10n.startReading : l10n.continueReading,
             ),
-            const SizedBox(width: 8),
-            // «ابحث في هذا الكتاب» (DESIGN §8.1): زر أيقونة بتسمية لقارئ الشاشة.
-            IconButton.outlined(
-              tooltip: l10n.searchInBook,
-              icon: const Icon(Icons.search),
-              onPressed: () => context.push(searchLocation(bookId: item.id)),
-            ),
-          ],
+          ),
+          // «استمع» (DESIGN §8.1): يبدأ الاستماع من آخر موضع.
+          listen: OutlinedButton.icon(
+            onPressed: () => startListening(context, ref, bookId: item.id),
+            icon: const Icon(Icons.headphones),
+            label: Text(l10n.listen),
+          ),
+          // «ابحث في هذا الكتاب» (DESIGN §8.1): زر أيقونة بتسمية لقارئ الشاشة.
+          search: IconButton.outlined(
+            tooltip: l10n.searchInBook,
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push(searchLocation(bookId: item.id)),
+          ),
         ),
         if (position != null) ...[
           const SizedBox(height: 12),
@@ -325,6 +328,44 @@ class _Actions extends ConsumerWidget {
             child: LinearProgressIndicator(value: position.fraction),
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// صف واحد، ويصير عموداً عند تكبير الخط (DESIGN §8.1).
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({
+    required this.read,
+    required this.listen,
+    required this.search,
+  });
+
+  final Widget read;
+  final Widget listen;
+  final Widget search;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.textScalerOf(context).scale(10) > 13) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          read,
+          const SizedBox(height: 8),
+          listen,
+          const SizedBox(height: 8),
+          Align(alignment: AlignmentDirectional.centerStart, child: search),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(flex: 3, child: read),
+        const SizedBox(width: 8),
+        Expanded(flex: 2, child: listen),
+        const SizedBox(width: 8),
+        search,
       ],
     );
   }

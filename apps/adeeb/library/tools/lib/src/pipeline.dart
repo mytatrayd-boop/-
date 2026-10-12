@@ -21,11 +21,26 @@ ConvertOutput convertToLibrary(
   Map<int, String> pageTexts,
   Directory libraryRoot, {
   bool overwrite = false,
+}) =>
+    writeBookToLibrary(
+      buildBook(recipe, pageTexts),
+      recipe.id,
+      recipe.version,
+      libraryRoot,
+      overwrite: overwrite,
+    );
+
+/// يكتب نتيجة بناء أي مصدر (ويكي مصدر أو OpenITI) بالقواعد نفسها.
+ConvertOutput writeBookToLibrary(
+  BuildResult result,
+  String id,
+  int version,
+  Directory libraryRoot, {
+  bool overwrite = false,
 }) {
-  final result = buildBook(recipe, pageTexts);
   final json = encodeBookJson(result.book);
   final gz = gzipDeterministic(json);
-  final file = File('${libraryRoot.path}/${bookRelativePath(recipe.id, recipe.version)}');
+  final file = File('${libraryRoot.path}/${bookRelativePath(id, version)}');
   if (file.existsSync() && !overwrite) {
     // المقارنة على JSON بعد فك الضغط: اختلاف نسخة zlib لا يُعدّ تغييراً في المحتوى.
     final old = gzip.decode(file.readAsBytesSync());

@@ -1,0 +1,69 @@
+{
+  "format": "openiti",
+  "id": "uyun",
+  "version": 1,
+  "title": {
+    "ar": "عيون الأخبار",
+    "en": "Uyun al-Akhbar"
+  },
+  "author": {
+    "ar": "ابن قتيبة",
+    "en": "Ibn Qutayba"
+  },
+  "author_death_hijri": 276,
+  "source_name": "OpenITI",
+  "openiti": {
+    "repo": "OpenITI/0300AH",
+    "commit": "01a1544130e0236850ef2698923ad01575c5bd7c",
+    "path": "data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.CuyunAkhbar/0276IbnQutaybaDinawari.CuyunAkhbar.Shamela0023790-ara1.completed",
+    "uri": "0276IbnQutaybaDinawari.CuyunAkhbar.Shamela0023790-ara1",
+    "sha256": "63feaf90aae159bae10e1e371cb1233933f88525599b8fc5af5a11391738bee5"
+  },
+  "original_source": "المكتبة الشاملة، الكتاب رقم 23790",
+  "edition": "دار الكتب العلمية، بيروت، 1418هـ (4 أجزاء)",
+  "retrieved": "2026-10-12",
+  "license": "CC BY-NC-SA 4.0",
+  "removed": "TBD",
+  "merge_page_breaks": true,
+  "skip_headings": [],
+  "drop_lines": [],
+  "rules": [
+    {
+      "name": "رقم حاشية «N» (الحواشي نفسها حذفها OpenITI)",
+      "pattern": " ?«[0-9٠-٩]+»"
+    },
+    {
+      "name": "وسم HTML span بلا نص (بقايا تحويل الشاملة)",
+      "pattern": "</?span[^>]*>"
+    },
+    {
+      "name": "اسم البحر [طويل] (أضافه المحقق)",
+      "pattern": "\\[(من )?(مجزوء |مشطور |منهوك |مخلع )?(ال)?(طويل|بسيط|وافر|وفر|كامل|لكامل|متقارب|رجز|منسرح|منسرج|سريع|خفيف|رمل|هزج|مديد|مضارع|مقتضب|مجتث|متدارك|خبب)[^\\[\\]]*\\] ?"
+    },
+    {
+      "name": "فاصل الشطرين * (يُكتب «...» كبقية أبيات هذه الطبعة)",
+      "pattern": "\\s*\\*\\s*",
+      "with": " ... "
+    },
+    {
+      "name": "رقم حاشية (N) (الحواشي نفسها حذفها OpenITI)",
+      "pattern": " ?\\([0-9]\\)"
+    },
+    {
+      "name": "اسم البحر مقسوم على سطرين: «[من» آخر السطر",
+      "pattern": " ?\\[من\\s*$"
+    },
+    {
+      "name": "اسم البحر مقسوم على سطرين: «الطويل]» أول السطر الملحق",
+      "pattern": "^~~(ال)?(طويل|سريع)\\] ?",
+      "with": "~~"
+    }
+  ],
+  "headings": {},
+  "drop_headings": [
+    {
+      "name": "عنوان كله بين معقوفين [..] (أضافه المحقق)",
+      "pattern": "\\[[^\\[\\]]*\\]\\s*\\.?"
+    }
+  ]
+}

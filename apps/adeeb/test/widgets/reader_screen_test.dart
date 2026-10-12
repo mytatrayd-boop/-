@@ -360,22 +360,26 @@ void main() {
       const add = CustomSemanticsAction(label: 'أضف إلى المفضلة');
       final node = tester.getSemantics(find.text(firstMini));
       const copy = CustomSemanticsAction(label: 'نسخ');
-      expect(node, isSemantics(label: firstMini, customActions: [add, copy]));
+      const listen = CustomSemanticsAction(label: 'استمع من هنا');
+      expect(
+        node,
+        isSemantics(label: firstMini, customActions: [add, copy, listen]),
+      );
       tester.semantics.customAction(find.semantics.byLabel(firstMini), add);
       await tester.pumpAndSettle();
       expect(
         (await env.reading.favorites()).single.paragraphId,
         'mini-b001-p00001',
       );
+      final after = tester.getSemantics(find.text(firstMini));
+      expect(after, isSemantics(value: 'في المفضلة'));
       expect(
-        tester.getSemantics(find.text(firstMini)),
-        isSemantics(
-          value: 'في المفضلة',
-          customActions: [
-            const CustomSemanticsAction(label: 'أزل من المفضلة'),
-            copy,
-          ],
-        ),
+        after
+            .getSemanticsData()
+            .customSemanticsActionIds!
+            .map((id) => CustomSemanticsAction.getAction(id)!.label)
+            .toSet(),
+        {'أزل من المفضلة', 'نسخ', 'استمع من هنا'},
       );
 
       // النقر لا يخفي الأشرطة مع قارئ الشاشة.
