@@ -1,0 +1,5 @@
+# انسخ هذا الملف إلى .dev.vars (غير مرفوع) لـ `npx wrangler dev`.
+# لا تضع هنا مفتاحاً حقيقياً في أي ملف مرفوع. الأسرار في الإنتاج عبر `wrangler secret put`.
+GEMINI_API_KEY=
+DEVICE_SALT=
+IP_SALT=
