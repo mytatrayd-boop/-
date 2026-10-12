@@ -211,6 +211,186 @@ void main() {
     });
   });
 
+  group('الوصل عبر حدّ الصفحة (حالات المراجع)', () {
+    const opts = {'merge_page_breaks': true};
+    List<String> texts(String body) => paras(build(body, opts)).map((p) => p['text']! as String).toList();
+
+    test('bayan-b001-p00225: شطر رجز بعد بيت ثم «وأنشدني» لا يوصلان', () {
+      expect(texts('### | باب\n# قال:\n# نعوذ بالله من الإهمال %~% ومن كلال الغرب في المقال\n# ومن خطيب دائم السعال\n~~PageV01P056\n# وأنشدني ابن الأعرابي:\n'),
+          ['قال:', 'نعوذ بالله من الإهمال\tومن كلال الغرب في المقال', 'ومن خطيب دائم السعال', 'وأنشدني ابن الأعرابي:']);
+    });
+    test('bayan-b049-p00188: «قال الهيثم» بعد الحدّ خبر جديد', () {
+      expect(texts('### | باب\n# فقلت: يا أبا معمر، ليس هذا في الكتاب PageV02P176\n# قال الهيثم بن عدي: كنت قائما.\n'),
+          ['فقلت: يا أبا معمر، ليس هذا في الكتاب', 'قال الهيثم بن عدي: كنت قائما.']);
+    });
+    test('uyun-b007-p00008 وadab-b012-p00232: بيت «صدر ... عجز» لا يوصل بما بعده', () {
+      expect(texts('### | باب\n# أصونك أن أظن عليك ظنا ... لأن الظن مفتاح اليقين\n# PageV01P091\n# وقال الكميت:\n'),
+          ['أصونك أن أظن عليك ظنا ... لأن الظن مفتاح اليقين', 'وقال الكميت:']);
+      expect(texts('### | باب\n# ولم أر في الخطوب أشد هولا ... وأصعب من معاداة الرجال\n# PageV01P181\n# وقال القاضي التنوخي:\n'),
+          ['ولم أر في الخطوب أشد هولا ... وأصعب من معاداة الرجال', 'وقال القاضي التنوخي:']);
+    });
+    test('kamil-b058-p00019: شطر بعد «وقوله:» ثم «يريد» لا يوصلان', () {
+      expect(texts('### | باب\n# وقوله:\n# رميت بأخرى يستدير أميمها PageV01P093\n# يريد يستدير، من الدوار.\n'),
+          ['وقوله:', 'رميت بأخرى يستدير أميمها', 'يريد يستدير، من الدوار.']);
+    });
+    test('يبقى الوصل حين الفقرة السابقة تنتهي بفاصلة أو باسم موصول ولو بدأ التالي بفاتحة خبر', () {
+      expect(texts('### | باب\n# نص طويل فيه وال من أنفسهن،\n# PageV01P001\n# وكان عند هذه الشجرة كهف.\n'),
+          ['نص طويل فيه وال من أنفسهن، وكان عند هذه الشجرة كهف.']);
+      expect(texts('### | باب\n# وإن مثلك مثل التاجر الذي\n# PageV01P001\n# قال: إن أرضا تأكل جرذانها.\n'),
+          ['وإن مثلك مثل التاجر الذي قال: إن أرضا تأكل جرذانها.']);
+    });
+    test('سطر قصير بلا ترقيم بعد نثر (لا بعد بيت أو «:») يوصل', () {
+      expect(texts('### | باب\n# كلام سابق.\n# فانطلق ابن الملك حتى أتى إلى باب\n# PageV01P001\n# المدينة فجلس.\n'),
+          ['كلام سابق.', 'فانطلق ابن الملك حتى أتى إلى باب المدينة فجلس.']);
+    });
+    test('no_merge_before في الوصفة يضيف فواتح', () {
+      final r = paras(build('### | باب\n# جملة ناقصة طويلة بعض الشيء\n~~وتتمتها\n# PageV01P001\n# زعموا أن غرابا.\n', {
+        ...opts,
+        'no_merge_before': [
+          {'name': 'زعموا', 'pattern': 'زعموا'},
+        ],
+      }));
+      expect(r.length, 2);
+    });
+  });
+
+  group('المعقوفات والقواعد الجديدة', () {
+    const policy = {
+      'brackets': {
+        'name': 'معقوف المحقق',
+        'keep': [
+          {'name': 'الأخفش', 'pattern': r'\s*قال أبو الحسن'},
+        ],
+      },
+    };
+    test('يُحذف المعقوف بمحتواه، وتبقى زيادة الأخفش بلا معقوفين، ومعقوفان في سطر واحد', () {
+      final st = RemovalStats();
+      final r = build('### | باب\n# قال [له] زيد [بن مروان] كلاما. [قال أبو الحسن: هو فلان] .\n', policy, st);
+      expect(paras(r).single['text'], 'قال زيد كلاما. قال أبو الحسن: هو فلان .');
+      expect(st.counts['معقوف محذوف بمحتواه: معقوف المحقق'], 2);
+      expect(st.counts['معقوف أُبقي نصه بلا المعقوفين: الأخفش'], 1);
+    });
+    test('معقوف يمتد على عدة فقرات يُحذف وتبقى علامة الصفحة وأرقام الأسطر', () {
+      final r = build('### | باب\n# أول [كذا وقعت\n# صدر %~% عجز PageV01P005\n# قاله ش] . بقية.\n# تالية.\n', policy);
+      expect(paras(r).map((p) => '${p['page']}|${p['text']}'), ['V01P005|أول . بقية.', 'null|تالية.']);
+      // رقم السطر في الخطأ بعد المعقوف يبقى صحيحاً (السطر 9 في الملف).
+      expect(() => build('### | باب\n# أ [ب\n~~ج] د\nسطر بلا وسم\n', policy), throwsOpeniti('سطر 8'));
+    });
+    test('معقوف غير متوازن أو «]» بلا «[» أو طويل: خطأ', () {
+      expect(() => build('### | باب\n# نص [بلا إغلاق\n', policy), throwsOpeniti('غير متوازن'));
+      expect(() => build('### | باب\n# نص [أ [ب] ج]\n', policy), throwsOpeniti('غير متوازن'));
+      expect(() => build('### | باب\n# نص ب] ج\n', policy), throwsOpeniti('«]» بلا «[»'));
+      expect(
+        () => build('### | باب\n# [${'كلمة ' * 10}]\n', {
+          'brackets': {'name': 'م', 'max_chars': 20},
+        }),
+        throwsOpeniti('أطول'),
+      );
+    });
+    test('المعقوف في عنوان يُترك لقواعد العناوين', () {
+      final r = build('### | خطبة [في الآخرة]\n# نص.\n', {
+        ...policy,
+        'heading_rules': [
+          {'name': 'تكميل', 'pattern': r'\s*\[[^\]]*\]\s*', 'with': ' '},
+        ],
+      });
+      expect(toc(r), ['1:خطبة']);
+    });
+    test('فقرة صارت علامة ترقيم وحدها تُحذف وتُعدّ', () {
+      final st = RemovalStats();
+      final r = build('### | باب\n# نص.\n# [تعليق] .\n', policy, st);
+      expect(paras(r).length, 1);
+      expect(st.counts['فقرة بلا حروف بعد التنظيف (علامة ترقيم وحدها)'], 1);
+    });
+    test('drop_spans وdrop_paragraphs وparagraph_rules', () {
+      final st = RemovalStats();
+      final r = build(
+        '### | باب\n# نص أول.\n# بداية تعليق\n# صدر %~% عجز\n# نهاية تعليق\n# ش: تعليق غير معقوف\n~~يمتد.\n# فسدك" ش: معناه لصق" بسارية.\n',
+        {
+          'drop_spans': [
+            {'name': 'تعليق ممتد', 'pattern': '# بداية تعليق', 'end': '# نهاية تعليق'},
+          ],
+          'drop_paragraphs': [
+            {'name': 'ش', 'pattern': r'ش\s*:.*'},
+          ],
+          'paragraph_rules': [
+            {'name': 'شرح مقحم', 'pattern': '" ش: معناه لصق"', 'with': ' '},
+          ],
+        },
+        st,
+      );
+      expect(paras(r).map((p) => p['text']), ['نص أول.', 'فسدك بسارية.']);
+      expect(st.counts['مقطع محذوف: تعليق ممتد'], 1);
+      expect(st.counts['فقرة محذوفة: ش'], 1);
+      expect(() => build('### | باب\n# بداية تعليق\n# نص\n', {
+            'drop_spans': [
+              {'name': 'م', 'pattern': '# بداية تعليق', 'end': '# لا يأتي'},
+            ],
+          }), throwsOpeniti('لم يُغلق'));
+    });
+    test('drop_headings بعدد | وترقيم «باب» بلا اسم (D25)', () {
+      final st = RemovalStats();
+      final r = build('### | باب\n# أ.\n### || عنوان المحقق\n# ب.\n### | باب في التشبيه\n# ج.\n### | باب\n# د.\n', {
+        'drop_headings': [
+          {'name': 'فرعي', 'pattern': '.*', 'pipes': 2},
+        ],
+        'bare_heading': {'text': 'باب', 'format': 'باب {n}'},
+      }, st);
+      expect(toc(r), ['1:باب ١', '1:باب في التشبيه', '1:باب ٣']);
+      expect(paras(r).first['text'], 'أ.');
+      expect(paras(r)[1]['text'], 'ب.');
+      expect(st.counts['عنوان محذوف (نصه يبقى في الباب السابق): فرعي'], 1);
+    });
+  });
+
+  group('تحذيرات المدقق الجديدة', () {
+    List<String> codes(String t) => checkParagraphText(t, verse: false, where: 't').map((i) => i.code).toList();
+    test('معقوف غير متوازن، ورقم بعد قوس أو فاصلة، ونمط «ش»', () {
+      expect(codes('نص [ناقص'), contains('unbalanced_bracket'));
+      expect(codes('(ممن ترضون من الشهداء) 1 وليس'), contains('number_after_punct'));
+      expect(codes('الثقلان) ، الرحمن: 31، و'), contains('number_after_punct'));
+      expect(codes('كذا وقعت الرواية، قاله ش.'), contains('editor_sh'));
+      expect(codes('[ش: هو عبد الله]'), contains('editor_sh'));
+      for (final c in ['unbalanced_bracket', 'number_after_punct', 'editor_sh']) {
+        expect(checkParagraphText('نص [ناقص (أ) 1، قاله ش', verse: false, where: 't').firstWhere((i) => i.code == c).warning,
+            isTrue);
+      }
+      expect(codes('مضى من عمره خمس عشرة سنة، وقال شيخ: نعم.'), isEmpty);
+    });
+  });
+
+  group('انحدار على ملفات المكتبة الفعلية', () {
+    List<String> texts(String id) {
+      final f = File('../books/$id/$id.v1.json.gz');
+      if (!f.existsSync()) return const [];
+      return [for (final p in paragraphsOf(decodeGzJson(f.readAsBytesSync()))) p['text']! as String];
+    }
+
+    // فقرة نثر تحوي [needle] (لا بيت يحويه).
+    String? find(String id, String needle) =>
+        texts(id).where((t) => t.contains(needle) && !t.contains('\t')).firstOrNull;
+
+    test('الحالات الخمس منفصلة عمّا بعدها', () {
+      expect(find('bayan', 'ومن خطيب دائم السعال'), 'ومن خطيب دائم السعال');
+      expect(find('bayan', 'ليس هذا في الكتاب'), endsWith('ليس هذا في الكتاب'));
+      expect(find('uyun', 'لأن الظن مفتاح اليقين'), endsWith('لأن الظن مفتاح اليقين'));
+      expect(find('adab', 'وأصعب من معاداة الرجال'), endsWith('وأصعب من معاداة الرجال'));
+      expect(find('kamil', 'رميت بأخرى يستدير أميمها'), 'رميت بأخرى يستدير أميمها');
+    });
+    test('لا معقوفات ولا تعليقات «ش» ولا أرقام حواشٍ في النصوص', () {
+      for (final id in ['kalila', 'bayan', 'uyun', 'kamil', 'adab']) {
+        final f = File('../books/$id/$id.v1.json.gz');
+        if (!f.existsSync()) continue;
+        for (final p in paragraphsOf(decodeGzJson(f.readAsBytesSync()))) {
+          final t = p['text']! as String;
+          expect(t, isNot(matches(r'[\[\]]')), reason: p['id'] as String);
+          expect(t, isNot(matches(r'قاله ش|(?<![ء-ي])ش\s*:')), reason: p['id'] as String);
+          expect(t, isNot(matches(r'[0-9٠-٩]')), reason: p['id'] as String);
+        }
+      }
+    });
+  });
+
   group('التثبيت والحتمية', () {
     test('sha256 مختلف أو وصفة غير مثبّتة: خطأ', () {
       final r = recipeFor('### | باب\n# نص.\n');
