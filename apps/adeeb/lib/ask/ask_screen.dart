@@ -221,9 +221,13 @@ class _AskScreenState extends ConsumerState<AskScreen> {
         _outcome = outcome;
         if (outcome.remaining case final r?) _remaining = r;
       });
-      await ref
-          .read(lastAnswerProvider.notifier)
-          .set(outcome is AskAnswer ? outcome : null);
+      try {
+        await ref
+            .read(lastAnswerProvider.notifier)
+            .set(outcome is AskAnswer ? outcome : null);
+      } on Object {
+        // فشل حفظ آخر إجابة لا يمنع عرضها؛ تضيع عند العودة فقط.
+      }
       if (!mounted) return;
       _afterOutcome(outcome);
     } on Object catch (e) {

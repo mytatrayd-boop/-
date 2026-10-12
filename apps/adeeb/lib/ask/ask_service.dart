@@ -97,6 +97,8 @@ class AskService {
     Future<void>? cancel,
   }) async {
     final question = cleanQuestion(rawQuestion);
+    var cancelled = false;
+    unawaited(cancel?.then((_) => cancelled = true));
     onStage?.call(AskStage.searching);
     final query = AskQuery.fromQuestion(question);
     final ranked = query.isEmpty
@@ -117,6 +119,8 @@ class AskService {
     // لا نصوص مطابقة: «لم أجد» محلياً بلا طلب ولا استهلاك حصة (§7).
     if (passages.isEmpty) return fallback(FallbackReason.noLocalMatches);
 
+    // أُلغي أثناء البحث المحلي: لا يُرسل شيء ولا تُستهلك حصة.
+    if (cancelled) throw const AskApiException(AskFailure.cancelled);
     onStage?.call(AskStage.answering);
     final AskReply reply;
     try {

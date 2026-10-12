@@ -49,8 +49,14 @@ class AskQuery {
   bool get isEmpty => words.isEmpty;
 
   /// تعبير MATCH: كل كلمة تطابق `norm` أو جذعها `stem`، والكلمات بـ OR.
-  String toFtsMatch() =>
-      words.map((w) => '(norm:"$w" OR stem:"${lightStem(w)}")').join(' OR ');
+  /// والجذع يطابق بادئةً أيضاً («الهند» ← «هندي» في «للهندي»)، لأن الجذع
+  /// الخفيف لا يحذف ياء النسبة (D8، D28).
+  String toFtsMatch() => words
+      .map((w) {
+        final s = lightStem(w);
+        return '(norm:"$w" OR stem:"$s" OR stem:"$s"*)';
+      })
+      .join(' OR ');
 
   /// عدد كلمات السؤال **المختلفة** الموجودة في [text] (الكلمة المطبَّعة أو
   /// جذعها يساوي جذع كلمة في النص)، لإعادة ترتيب المرشحين (D28).
@@ -62,11 +68,17 @@ class AskQuery {
       for (final t in norm.split(' ')) {
         tokens.add(t);
         stems.add(lightStem(t));
+        // حرف جر متصل لا يحذفه الجذع الخفيف («لصديقك»، «لمعاوية»، «بالحلم»
+        // يحذفها الجذع): لإعادة الترتيب فقط، لا للفهرس (D8، D28).
+        if (t.length >= 4 && 'لبك'.contains(t[0])) {
+          stems.add(lightStem(t.substring(1)));
+        }
       }
     }
     var n = 0;
     for (final w in words) {
-      if (tokens.contains(w) || stems.contains(lightStem(w))) n++;
+      final s = lightStem(w);
+      if (tokens.contains(w) || stems.any((t) => t.startsWith(s))) n++;
     }
     return n;
   }
