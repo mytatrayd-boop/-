@@ -88,9 +88,9 @@
       "author_death_hijri": 285,
       "version": 1,
       "file": "books/kamil/kamil.v1.json.gz",
-      "sha256": "eb3cd16f84fc06c59edd64810b8a585247d824358dc13cd5572e23dc452d1cb0",
-      "size_bytes": 580588,
-      "uncompressed_bytes": 2228706,
+      "sha256": "6922ae1f95d8fd7c8f9f2977ef3e5f0d0ad630772e823c97297369f631a34008",
+      "size_bytes": 580561,
+      "uncompressed_bytes": 2228691,
       "paragraph_count": 7264,
       "diacritics": "none",
       "source": {
