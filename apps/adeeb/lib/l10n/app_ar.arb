@@ -313,5 +313,91 @@
     }
   },
   "saveFailed": "تعذّر الحفظ، حاول مجدداً",
-  "paragraphMissing": "لم تعد هذه الفقرة موجودة في الكتاب"
+  "paragraphMissing": "لم تعد هذه الفقرة موجودة في الكتاب",
+  "searchTitle": "البحث",
+  "searchHint": "ابحث في الكتب… مثل: الحكمة",
+  "clearSearch": "مسح",
+  "searchAllBooks": "كل الكتب المحمّلة",
+  "searchHelper": "البحث يتجاهل التشكيل واختلاف الهمزات",
+  "searchMinChars": "اكتب حرفين على الأقل",
+  "searchNoResults": "لا توجد نتائج لـ «{query}»",
+  "@searchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoResultsHint": "جرّب كلمة أقصر أو مرادفاً، أو وسّع البحث إلى كل الكتب.",
+  "searchEverywhere": "ابحث في كل الكتب",
+  "searchNoBooks": "لا توجد كتب على جهازك للبحث فيها.",
+  "goToLibrary": "اذهب إلى المكتبة",
+  "searchError": "حدث خطأ أثناء البحث.",
+  "searchResultCount": "{count, plural, =1{نتيجة واحدة} =2{نتيجتان} few{{countText} نتائج} other{{countText} نتيجة}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "countText": {
+        "type": "String"
+      }
+    }
+  },
+  "searchBookCount": "{count, plural, =1{كتاب واحد} =2{كتابين} few{{countText} كتب} other{{countText} كتاباً}}",
+  "@searchBookCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "countText": {
+        "type": "String"
+      }
+    }
+  },
+  "searchSummary": "{results} في {books}",
+  "@searchSummary": {
+    "placeholders": {
+      "results": {
+        "type": "String"
+      },
+      "books": {
+        "type": "String"
+      }
+    }
+  },
+  "searchSuggestionsTitle": "اقتراحات",
+  "searchSuggestionWords": "الحكمة|البيان|الصديق|الأسد",
+  "searchShowMore": "عرض المزيد",
+  "searchResultSemantics": "{chapter}، {book}. {snippet}. الكلمة المطابقة: {words}",
+  "@searchResultSemantics": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      },
+      "book": {
+        "type": "String"
+      },
+      "snippet": {
+        "type": "String"
+      },
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "searchGroupHeader": "{book}، {count}",
+  "@searchGroupHeader": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "collapse": "طيّ",
+  "expand": "توسيع",
+  "searchInBook": "ابحث في هذا الكتاب"
 }

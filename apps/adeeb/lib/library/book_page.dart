@@ -7,6 +7,7 @@ import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../reader/chapter_tile.dart';
 import '../reader/reader_providers.dart';
+import '../search/search_screen.dart';
 import 'book_actions.dart';
 import 'generated_cover.dart';
 import 'library_controller.dart';
@@ -14,7 +15,7 @@ import 'library_providers.dart';
 import 'library_text.dart';
 
 /// صفحة الكتاب (DESIGN §8): الرأس، والتحميل، و«ابدأ/تابع القراءة» مع
-/// «وصلت إلى»، وأبواب الكتاب المحمّل. «استمع» و«ابحث» تأتيان مع الميزتين 4 و5.
+/// «وصلت إلى»، و«ابحث في هذا الكتاب»، وأبواب الكتاب المحمّل. «استمع» مع الميزة 5.
 class BookPage extends ConsumerWidget {
   const BookPage({super.key, required this.bookId});
 
@@ -290,12 +291,25 @@ class _Actions extends ConsumerWidget {
             ],
           ),
         const SizedBox(height: 12),
-        FilledButton.icon(
-          onPressed: () => context.push('/read/${item.id}'),
-          icon: const Icon(Icons.menu_book),
-          label: Text(
-            position == null ? l10n.startReading : l10n.continueReading,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => context.push('/read/${item.id}'),
+                icon: const Icon(Icons.menu_book),
+                label: Text(
+                  position == null ? l10n.startReading : l10n.continueReading,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // «ابحث في هذا الكتاب» (DESIGN §8.1): زر أيقونة بتسمية لقارئ الشاشة.
+            IconButton.outlined(
+              tooltip: l10n.searchInBook,
+              icon: const Icon(Icons.search),
+              onPressed: () => context.push(searchLocation(bookId: item.id)),
+            ),
+          ],
         ),
         if (position != null) ...[
           const SizedBox(height: 12),

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/formatters.dart';
 import '../core/theme.dart';
@@ -11,7 +12,10 @@ import '../l10n/app_localizations.dart';
 import '../library/book_actions.dart';
 import '../library/library_controller.dart';
 import '../library/library_text.dart';
+import '../search/highlighted_text.dart';
+import '../search/search_screen.dart';
 import '../storage/reading_repository.dart';
+import '../text/search_query.dart';
 import 'chapter_tile.dart';
 import 'display_settings_sheet.dart';
 import 'passage_share.dart';
@@ -22,18 +26,21 @@ import 'reader_settings.dart';
 /// القارئ (DESIGN §9): تمرير عمودي متصل، نص أميري RTL، حفظ الموضع تلقائياً.
 ///
 /// يُفتح على [paragraphId] (من المفضلة أو البحث أو الاقتباس)، أو على أول باب
-/// [chapterId]، أو على آخر موضع محفوظ، أو على أول الكتاب.
+/// [chapterId]، أو على آخر موضع محفوظ، أو على أول الكتاب. [searchQuery] (من
+/// نتيجة بحث) تُظلَّل كلماته في الفقرة المفتوحة حتى مغادرة القارئ (DESIGN §9.4).
 class ReaderScreen extends ConsumerStatefulWidget {
   const ReaderScreen({
     super.key,
     required this.bookId,
     this.paragraphId,
     this.chapterId,
+    this.searchQuery,
   });
 
   final String bookId;
   final String? paragraphId;
   final String? chapterId;
+  final String? searchQuery;
 
   @override
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
@@ -78,6 +85,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   /// الفقرة المختارة بالضغط المطوّل أثناء عرض ورقتها.
   String? _selectedId;
 
+  /// كلمات البحث والفقرة التي تُظلَّل فيها.
+  late final SearchQuery? _search = _parseSearch(widget.searchQuery);
+
+  static SearchQuery? _parseSearch(String? raw) {
+    final q = raw == null ? null : SearchQuery.parse(raw);
+    return q == null || q.isEmpty ? null : q;
+  }
+  String? _searchId;
+
   int _openGeneration = 0;
 
   @override
@@ -111,6 +127,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final previous = _book;
     var notice = _OpenNotice.none;
     String? flash;
+    var searchId = _searchId;
     int entry = 0;
 
     int? paragraphIndex(String id) => book.paragraphIndexOf(id);
@@ -133,6 +150,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       if (index != null) {
         entry = book.entryOfParagraph(index);
         flash = book.paragraphs[index].id;
+        if (_search != null) searchId = flash;
       } else {
         notice = _OpenNotice.notFound;
         final chapterId = ReaderBook.chapterIdOfParagraphId(id);
@@ -155,6 +173,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     if (!mounted || generation != _openGeneration) return;
     _setFlash(flash);
     setState(() {
+      _searchId = searchId;
       _book = book;
       _anchor = entry.clamp(0, book.entryCount == 0 ? 0 : book.entryCount - 1);
       _setCurrentFromEntry(_anchor!);
@@ -539,6 +558,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             fontSize: fontSize,
             palette: palette,
             highlighted: p.id == _selectedId || p.id == _flashId,
+            searchQuery: p.id == _searchId ? _search : null,
             animate: !reduceMotion,
             favoriteLabel: isFavorite
                 ? l10n.removeFromFavorites
@@ -622,6 +642,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     ? book.title.ar
                     : l10n.breadcrumb(book.title.ar, chapter.title),
                 onContents: _openContents,
+                onSearch: () =>
+                    context.push(searchLocation(bookId: widget.bookId)),
                 onDisplay: _openDisplaySettings,
               ),
             ),
@@ -758,6 +780,7 @@ class _Paragraph extends StatelessWidget {
     required this.fontSize,
     required this.palette,
     required this.highlighted,
+    required this.searchQuery,
     required this.animate,
     required this.favoriteLabel,
     required this.favoriteValue,
@@ -771,6 +794,9 @@ class _Paragraph extends StatelessWidget {
   final double fontSize;
   final ReaderPalette palette;
   final bool highlighted;
+
+  /// كلمات البحث المظلّلة في هذه الفقرة (null = بلا تظليل).
+  final SearchQuery? searchQuery;
   final bool animate;
   final String favoriteLabel;
   final String? favoriteValue;
@@ -787,13 +813,28 @@ class _Paragraph extends StatelessWidget {
       height: 2.0,
       color: palette.text,
     );
-    Text text(String s) => Text(
-      s,
-      textDirection: TextDirection.rtl,
-      textAlign: TextAlign.start,
-      textScaler: TextScaler.noScaling,
-      style: style,
-    );
+    final query = searchQuery;
+    Text text(String s) => query == null
+        ? Text(
+            s,
+            textDirection: TextDirection.rtl,
+            textAlign: TextAlign.start,
+            textScaler: TextScaler.noScaling,
+            style: style,
+          )
+        : Text.rich(
+            TextSpan(
+              children: highlightedSpans(
+                s,
+                findMatches(s, query),
+                palette.searchHighlight,
+              ),
+            ),
+            textDirection: TextDirection.rtl,
+            textAlign: TextAlign.start,
+            textScaler: TextScaler.noScaling,
+            style: style,
+          );
 
     final Widget content;
     if (paragraph.isVerse) {
@@ -850,12 +891,14 @@ class _TopBar extends StatelessWidget {
     required this.palette,
     required this.title,
     required this.onContents,
+    required this.onSearch,
     required this.onDisplay,
   });
 
   final ReaderPalette palette;
   final String title;
   final VoidCallback onContents;
+  final VoidCallback onSearch;
   final VoidCallback onDisplay;
 
   @override
@@ -889,6 +932,11 @@ class _TopBar extends StatelessWidget {
                   tooltip: l10n.contents,
                   icon: const Icon(Icons.toc),
                   onPressed: onContents,
+                ),
+                IconButton(
+                  tooltip: l10n.searchInBook,
+                  icon: const Icon(Icons.search),
+                  onPressed: onSearch,
                 ),
                 IconButton(
                   tooltip: l10n.displaySettings,

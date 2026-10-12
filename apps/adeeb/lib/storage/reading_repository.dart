@@ -102,7 +102,15 @@ class SqliteReadingRepository implements ReadingRepository {
   final bool useIsolate;
   final DateTime Function() clock;
 
-  Future<T> _run<T>(T Function(Database db) body, {bool isolate = false}) {
+  Future<T> _run<T>(
+    T Function(Database db) body, {
+    bool isolate = false,
+  }) async {
+    await ensureDatabaseReady(dbPath, useIsolate: useIsolate);
+    return _exec(body, isolate: isolate);
+  }
+
+  Future<T> _exec<T>(T Function(Database db) body, {bool isolate = false}) {
     final path = dbPath;
     T task() {
       final db = openAppDatabase(path);
@@ -117,8 +125,10 @@ class SqliteReadingRepository implements ReadingRepository {
   }
 
   /// الكتابات عبر طابور الكتابة المشترك مع الاستيراد والحذف.
-  Future<T> _write<T>(T Function(Database db) body) =>
-      enqueueWrite(dbPath, () => _run(body));
+  Future<T> _write<T>(T Function(Database db) body) async {
+    await ensureDatabaseReady(dbPath, useIsolate: useIsolate);
+    return enqueueWrite(dbPath, () => _exec(body));
+  }
 
   int get _now => clock().millisecondsSinceEpoch;
 

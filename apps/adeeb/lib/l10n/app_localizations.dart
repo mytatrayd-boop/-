@@ -696,6 +696,149 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لم تعد هذه الفقرة موجودة في الكتاب'**
   String get paragraphMissing;
+
+  /// No description provided for @searchTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'البحث'**
+  String get searchTitle;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في الكتب… مثل: الحكمة'**
+  String get searchHint;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح'**
+  String get clearSearch;
+
+  /// No description provided for @searchAllBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الكتب المحمّلة'**
+  String get searchAllBooks;
+
+  /// No description provided for @searchHelper.
+  ///
+  /// In ar, this message translates to:
+  /// **'البحث يتجاهل التشكيل واختلاف الهمزات'**
+  String get searchHelper;
+
+  /// No description provided for @searchMinChars.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب حرفين على الأقل'**
+  String get searchMinChars;
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج لـ «{query}»'**
+  String searchNoResults(String query);
+
+  /// No description provided for @searchNoResultsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب كلمة أقصر أو مرادفاً، أو وسّع البحث إلى كل الكتب.'**
+  String get searchNoResultsHint;
+
+  /// No description provided for @searchEverywhere.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في كل الكتب'**
+  String get searchEverywhere;
+
+  /// No description provided for @searchNoBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد كتب على جهازك للبحث فيها.'**
+  String get searchNoBooks;
+
+  /// No description provided for @goToLibrary.
+  ///
+  /// In ar, this message translates to:
+  /// **'اذهب إلى المكتبة'**
+  String get goToLibrary;
+
+  /// No description provided for @searchError.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ أثناء البحث.'**
+  String get searchError;
+
+  /// No description provided for @searchResultCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{نتيجة واحدة} =2{نتيجتان} few{{countText} نتائج} other{{countText} نتيجة}}'**
+  String searchResultCount(int count, String countText);
+
+  /// No description provided for @searchBookCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{كتاب واحد} =2{كتابين} few{{countText} كتب} other{{countText} كتاباً}}'**
+  String searchBookCount(int count, String countText);
+
+  /// No description provided for @searchSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'{results} في {books}'**
+  String searchSummary(String results, String books);
+
+  /// No description provided for @searchSuggestionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتراحات'**
+  String get searchSuggestionsTitle;
+
+  /// No description provided for @searchSuggestionWords.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحكمة|البيان|الصديق|الأسد'**
+  String get searchSuggestionWords;
+
+  /// No description provided for @searchShowMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض المزيد'**
+  String get searchShowMore;
+
+  /// No description provided for @searchResultSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'{chapter}، {book}. {snippet}. الكلمة المطابقة: {words}'**
+  String searchResultSemantics(
+    String chapter,
+    String book,
+    String snippet,
+    String words,
+  );
+
+  /// No description provided for @searchGroupHeader.
+  ///
+  /// In ar, this message translates to:
+  /// **'{book}، {count}'**
+  String searchGroupHeader(String book, String count);
+
+  /// No description provided for @collapse.
+  ///
+  /// In ar, this message translates to:
+  /// **'طيّ'**
+  String get collapse;
+
+  /// No description provided for @expand.
+  ///
+  /// In ar, this message translates to:
+  /// **'توسيع'**
+  String get expand;
+
+  /// No description provided for @searchInBook.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في هذا الكتاب'**
+  String get searchInBook;
 }
 
 class _AppLocalizationsDelegate

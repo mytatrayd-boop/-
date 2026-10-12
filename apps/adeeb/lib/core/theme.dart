@@ -13,6 +13,7 @@ class AdeebExtraColors extends ThemeExtension<AdeebExtraColors> {
     required this.success,
     required this.warningContainer,
     required this.onWarning,
+    required this.searchHighlight,
   });
 
   final Color surfaceAlt;
@@ -21,12 +22,16 @@ class AdeebExtraColors extends ThemeExtension<AdeebExtraColors> {
   final Color warningContainer;
   final Color onWarning;
 
+  /// خلفية الكلمة المطابقة في البحث (مع خط سفلي، DESIGN §1).
+  final Color searchHighlight;
+
   static const light = AdeebExtraColors(
     surfaceAlt: Color(0xFFF3EEE3),
     divider: Color(0xFFE2D9C9),
     success: Color(0xFF2E6B2F),
     warningContainer: Color(0xFFFFF1D6),
     onWarning: Color(0xFF6B4A00),
+    searchHighlight: Color(0xFFFFE08A),
   );
 
   static const dark = AdeebExtraColors(
@@ -35,6 +40,7 @@ class AdeebExtraColors extends ThemeExtension<AdeebExtraColors> {
     success: Color(0xFF8BC48C),
     warningContainer: Color(0xFF3A2E10),
     onWarning: Color(0xFFF2D48A),
+    searchHighlight: Color(0xFF5A4A12),
   );
 
   @override

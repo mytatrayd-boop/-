@@ -2,10 +2,15 @@
 /// (ARCHITECTURE §5). Dart صافٍ.
 library;
 
+import 'dart:isolate';
+
 import 'package:sqlite3/sqlite3.dart';
 
+import 'search_index.dart';
+import 'write_queue.dart';
+
 /// الترحيل رقم i ينقل القاعدة من الإصدار i إلى i+1. لا يُعدَّل ترحيل منشور.
-final List<void Function(Database)> migrations = [_v1, _v2];
+final List<void Function(Database)> migrations = [_v1, _v2, _v3];
 
 int get schemaVersion => migrations.length;
 
@@ -20,6 +25,32 @@ Database openAppDatabase(String path) {
     db.close();
     rethrow;
   }
+}
+
+final _ready = <String, Future<void>>{};
+
+/// يفتح القاعدة مرة في كل تشغيل عبر طابور الكتابة فتجري الترحيلات (ومنها
+/// فهرسة الكتب المثبّتة في الترحيل 3) ككاتب واحد لا يتزاحم مع الاستيراد أو
+/// حفظ الموضع. على كل مستودع انتظاره قبل أي فتح، ولا يُستدعى من داخل مهمة
+/// في الطابور نفسه (ينتظر نفسه). الفشل لا يُخزَّن فيُعاد في الطلب التالي.
+Future<void> ensureDatabaseReady(String path, {bool useIsolate = true}) {
+  final existing = _ready[path];
+  if (existing != null) return existing;
+  final ready = enqueueWrite(path, () => _openOnce(path, useIsolate));
+  _ready[path] = ready;
+  ready.then<void>(
+    (_) {},
+    onError: (Object _) {
+      if (identical(_ready[path], ready)) _ready.remove(path);
+    },
+  );
+  return ready;
+}
+
+/// في دالة مستقلة حتى لا يحمل إغلاق الـ Isolate متغيرات غير قابلة للإرسال.
+Future<void> _openOnce(String path, bool useIsolate) {
+  void task() => openAppDatabase(path).close();
+  return useIsolate ? Isolate.run(task) : Future.sync(task);
 }
 
 void migrate(Database db) {
@@ -43,7 +74,6 @@ void migrate(Database db) {
 }
 
 /// الإصدار 1 (الميزة 2): الكتب وأبوابها وفقراتها وتحويلات المعرّفات.
-/// فهرس البحث FTS5 يُضاف بترحيل لاحق (الميزة 4).
 void _v1(Database db) {
   db.execute('''
     CREATE TABLE books (
@@ -105,4 +135,11 @@ void _v2(Database db) {
       paragraph_id TEXT NOT NULL,
       updated_at INTEGER NOT NULL
     )''');
+}
+
+/// الإصدار 3 (الميزة 4): فهرس البحث FTS5، وفهرسة الكتب المثبّتة سابقاً
+/// داخل معاملة الترحيل نفسها.
+void _v3(Database db) {
+  db.execute(createSearchIndexSql);
+  indexAllParagraphs(db);
 }

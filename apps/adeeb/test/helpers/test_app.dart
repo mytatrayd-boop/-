@@ -7,8 +7,10 @@ import 'package:adeeb/library/library_providers.dart';
 import 'package:adeeb/reader/passage_share.dart';
 import 'package:adeeb/reader/reader_book.dart';
 import 'package:adeeb/reader/reader_providers.dart';
+import 'package:adeeb/search/search_providers.dart';
 import 'package:adeeb/storage/book_repository.dart';
 import 'package:adeeb/storage/reading_repository.dart';
+import 'package:adeeb/storage/search_repository.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -42,6 +44,13 @@ class TestEnv {
   SqliteReadingRepository get reading =>
       SqliteReadingRepository('${dir.path}/adeeb.db', useIsolate: false);
 
+  /// بديل لمستودع البحث (مثلاً لمحاكاة خطأ)؛ وإلا SQLite الحقيقي.
+  SearchRepository? searchOverride;
+
+  SearchRepository get search =>
+      searchOverride ??
+      SqliteSearchRepository('${dir.path}/adeeb.db', useIsolate: false);
+
   List<Override> overrides({
     Locale locale = const Locale('ar'),
     BookRepository? books,
@@ -52,6 +61,7 @@ class TestEnv {
     ),
     httpClientProvider.overrideWithValue(server.client()),
     bookRepositoryProvider.overrideWithValue(books ?? this.books),
+    searchRepositoryProvider.overrideWithValue(search),
     readingRepositoryProvider.overrideWithValue(
       FlakyReadingRepository(
         reading,

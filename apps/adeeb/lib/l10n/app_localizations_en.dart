@@ -363,4 +363,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paragraphMissing => 'This passage is no longer in the book';
+
+  @override
+  String get searchTitle => 'Search';
+
+  @override
+  String get searchHint => 'Search books…';
+
+  @override
+  String get clearSearch => 'Clear';
+
+  @override
+  String get searchAllBooks => 'All downloaded books';
+
+  @override
+  String get searchHelper => 'Search ignores diacritics and hamza variations';
+
+  @override
+  String get searchMinChars => 'Type at least two letters';
+
+  @override
+  String searchNoResults(String query) {
+    return 'No results for \"$query\"';
+  }
+
+  @override
+  String get searchNoResultsHint =>
+      'Try a shorter word or a synonym, or search all books.';
+
+  @override
+  String get searchEverywhere => 'Search all books';
+
+  @override
+  String get searchNoBooks => 'There are no books on your device to search.';
+
+  @override
+  String get goToLibrary => 'Go to library';
+
+  @override
+  String get searchError => 'Something went wrong while searching.';
+
+  @override
+  String searchResultCount(int count, String countText) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countText results',
+      one: '1 result',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchBookCount(int count, String countText) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countText books',
+      one: '1 book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchSummary(String results, String books) {
+    return '$results in $books';
+  }
+
+  @override
+  String get searchSuggestionsTitle => 'Suggestions';
+
+  @override
+  String get searchSuggestionWords => 'الحكمة|البيان|الصديق|الأسد';
+
+  @override
+  String get searchShowMore => 'Show more';
+
+  @override
+  String searchResultSemantics(
+    String chapter,
+    String book,
+    String snippet,
+    String words,
+  ) {
+    return '$chapter, $book. $snippet. Matched word: $words';
+  }
+
+  @override
+  String searchGroupHeader(String book, String count) {
+    return '$book, $count';
+  }
+
+  @override
+  String get collapse => 'Collapse';
+
+  @override
+  String get expand => 'Expand';
+
+  @override
+  String get searchInBook => 'Search in this book';
 }

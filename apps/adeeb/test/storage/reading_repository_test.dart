@@ -55,7 +55,7 @@ void main() {
   test('الترحيل 2: جدولا المفضلة والموضع بلا مفتاح أجنبي (D18)', () {
     final db = openAppDatabase('${dir.path}/adeeb.db');
     addTearDown(db.close);
-    expect(db.userVersion, 2);
+    expect(db.userVersion, schemaVersion);
     for (final table in ['favorites', 'positions']) {
       expect(
         db.select('PRAGMA foreign_key_list($table)'),
@@ -81,7 +81,7 @@ void main() {
     await old.install(gzJson(book), entryFor(book));
     final reopened = openAppDatabase(path);
     addTearDown(reopened.close);
-    expect(reopened.userVersion, 2);
+    expect(reopened.userVersion, schemaVersion);
     expect(reopened.select('SELECT id FROM books').single['id'], 'mini');
   });
 

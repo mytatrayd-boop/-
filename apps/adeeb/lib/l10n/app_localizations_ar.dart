@@ -361,4 +361,107 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paragraphMissing => 'لم تعد هذه الفقرة موجودة في الكتاب';
+
+  @override
+  String get searchTitle => 'البحث';
+
+  @override
+  String get searchHint => 'ابحث في الكتب… مثل: الحكمة';
+
+  @override
+  String get clearSearch => 'مسح';
+
+  @override
+  String get searchAllBooks => 'كل الكتب المحمّلة';
+
+  @override
+  String get searchHelper => 'البحث يتجاهل التشكيل واختلاف الهمزات';
+
+  @override
+  String get searchMinChars => 'اكتب حرفين على الأقل';
+
+  @override
+  String searchNoResults(String query) {
+    return 'لا توجد نتائج لـ «$query»';
+  }
+
+  @override
+  String get searchNoResultsHint =>
+      'جرّب كلمة أقصر أو مرادفاً، أو وسّع البحث إلى كل الكتب.';
+
+  @override
+  String get searchEverywhere => 'ابحث في كل الكتب';
+
+  @override
+  String get searchNoBooks => 'لا توجد كتب على جهازك للبحث فيها.';
+
+  @override
+  String get goToLibrary => 'اذهب إلى المكتبة';
+
+  @override
+  String get searchError => 'حدث خطأ أثناء البحث.';
+
+  @override
+  String searchResultCount(int count, String countText) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countText نتيجة',
+      few: '$countText نتائج',
+      two: 'نتيجتان',
+      one: 'نتيجة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchBookCount(int count, String countText) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countText كتاباً',
+      few: '$countText كتب',
+      two: 'كتابين',
+      one: 'كتاب واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchSummary(String results, String books) {
+    return '$results في $books';
+  }
+
+  @override
+  String get searchSuggestionsTitle => 'اقتراحات';
+
+  @override
+  String get searchSuggestionWords => 'الحكمة|البيان|الصديق|الأسد';
+
+  @override
+  String get searchShowMore => 'عرض المزيد';
+
+  @override
+  String searchResultSemantics(
+    String chapter,
+    String book,
+    String snippet,
+    String words,
+  ) {
+    return '$chapter، $book. $snippet. الكلمة المطابقة: $words';
+  }
+
+  @override
+  String searchGroupHeader(String book, String count) {
+    return '$book، $count';
+  }
+
+  @override
+  String get collapse => 'طيّ';
+
+  @override
+  String get expand => 'توسيع';
+
+  @override
+  String get searchInBook => 'ابحث في هذا الكتاب';
 }

@@ -11,6 +11,7 @@ import 'package:sqlite3/sqlite3.dart';
 import '../library/book_file.dart';
 import '../library/catalog.dart';
 import 'app_database.dart';
+import 'search_index.dart';
 import 'write_queue.dart';
 
 class InstalledBook {
@@ -74,10 +75,17 @@ class SqliteBookRepository implements BookRepository {
   final void Function(Database db) vacuum;
 
   /// الكتابة عبر الطابور المشترك مع المفضلة والموضع (write_queue.dart).
-  Future<T> _write<T>(T Function(Database db) body) =>
-      enqueueWrite(dbPath, () => _run(body));
+  Future<T> _write<T>(T Function(Database db) body) async {
+    await ensureDatabaseReady(dbPath, useIsolate: useIsolate);
+    return enqueueWrite(dbPath, () => _exec(body));
+  }
 
-  Future<T> _run<T>(T Function(Database db) body) {
+  Future<T> _run<T>(T Function(Database db) body) async {
+    await ensureDatabaseReady(dbPath, useIsolate: useIsolate);
+    return _exec(body);
+  }
+
+  Future<T> _exec<T>(T Function(Database db) body) {
     final path = dbPath;
     T task() {
       final db = openAppDatabase(path);
@@ -196,6 +204,7 @@ void importBook(
   );
   db.execute('BEGIN IMMEDIATE');
   try {
+    unindexBook(db, book.id);
     db.execute('DELETE FROM books WHERE id = ?', [book.id]);
     db.execute(
       'INSERT INTO books (id, version, title_ar, title_en, author_ar, author_en, '
@@ -225,6 +234,7 @@ void importBook(
     final insertRedirect = db.prepare(
       'INSERT INTO redirects (old_id, book_id, new_id) VALUES (?, ?, ?)',
     );
+    final insertIndex = prepareIndexInsert(db);
     try {
       var paragraphOrd = 0;
       for (var c = 0; c < book.chapters.length; c++) {
@@ -245,6 +255,8 @@ void importBook(
             p.kind,
             p.text,
           ]);
+          // الفهرسة في المعاملة نفسها: فشلها يلغي الاستيراد كله.
+          indexParagraph(insertIndex, db.lastInsertRowId, p.text);
         }
       }
       book.redirects.forEach(
@@ -254,6 +266,7 @@ void importBook(
       insertChapter.close();
       insertParagraph.close();
       insertRedirect.close();
+      insertIndex.close();
     }
     applyRedirects(db, book.id);
     db.execute('COMMIT');
@@ -311,7 +324,9 @@ void vacuumDatabase(Database db) => db.execute('VACUUM');
 void deleteBook(Database db, String bookId) {
   db.execute('BEGIN IMMEDIATE');
   try {
-    // الحذف المتسلسل يزيل الأبواب والفقرات والتحويلات.
+    // الفهرس أولاً (لا يتبع الحذف المتسلسل)، ثم الحذف المتسلسل يزيل
+    // الأبواب والفقرات والتحويلات.
+    unindexBook(db, bookId);
     db.execute('DELETE FROM books WHERE id = ?', [bookId]);
     db.execute('COMMIT');
   } catch (_) {

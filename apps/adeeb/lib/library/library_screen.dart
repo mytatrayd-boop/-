@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../reader/continue_reading_card.dart';
 import '../reader/favorites_tab.dart';
+import '../search/search_screen.dart';
 import 'book_card.dart';
 import 'library_controller.dart';
 
@@ -88,6 +90,14 @@ class LibraryScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.libraryTitle),
+          // الدخول إلى البحث في كل الكتب حتى يُبنى الشريط السفلي (DESIGN §6.1).
+          actions: [
+            IconButton(
+              tooltip: l10n.searchTitle,
+              icon: const Icon(Icons.search),
+              onPressed: () => context.push(searchLocation()),
+            ),
+          ],
           bottom: TabBar(
             tabs: [
               Tab(height: 48, text: l10n.booksTab),

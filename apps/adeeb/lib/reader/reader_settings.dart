@@ -87,6 +87,7 @@ class ReaderPalette {
     required this.secondary,
     required this.rubric,
     required this.selected,
+    required this.searchHighlight,
     required this.brightness,
   });
 
@@ -98,6 +99,9 @@ class ReaderPalette {
 
   /// الفقرة المختارة (الضغط المطوّل) أو المفتوحة من رابط.
   final Color selected;
+
+  /// خلفية كلمة البحث داخل الفقرة المفتوحة من نتيجة (مع خط سفلي).
+  final Color searchHighlight;
   final Brightness brightness;
 
   static const light = ReaderPalette(
@@ -107,6 +111,7 @@ class ReaderPalette {
     secondary: Color(0xFF5C5247),
     rubric: Color(0xFF8A3B1F),
     selected: Color(0xFFE6F0EC),
+    searchHighlight: Color(0xFFFFE08A),
     brightness: Brightness.light,
   );
 
@@ -117,6 +122,7 @@ class ReaderPalette {
     secondary: Color(0xFF6A5638),
     rubric: Color(0xFF7A3E1D),
     selected: Color(0xFFE6D3A8),
+    searchHighlight: Color(0xFFF7C948),
     brightness: Brightness.light,
   );
 
@@ -127,6 +133,7 @@ class ReaderPalette {
     secondary: Color(0xFFB8AE9E),
     rubric: Color(0xFFE59A78),
     selected: Color(0xFF1F3A33),
+    searchHighlight: Color(0xFF5A4A12),
     brightness: Brightness.dark,
   );
 
