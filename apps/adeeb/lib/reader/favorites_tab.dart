@@ -31,8 +31,23 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
     final messenger = ScaffoldMessenger.of(context);
     final screenReader = MediaQuery.accessibleNavigationOf(context);
     final actions = ref.read(readingActionsProvider);
+    void showError() => messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.saveFailed),
+          duration: Duration(seconds: screenReader ? 8 : 4),
+        ),
+      );
     setState(() => _hidden.add(item.paragraphId));
-    await actions.removeFavorite(item.paragraphId);
+    try {
+      await actions.removeFavorite(item.paragraphId);
+    } on Exception {
+      // لم تُحذف: يعود العنصر إلى القائمة مع رسالة.
+      if (mounted) setState(() => _hidden.remove(item.paragraphId));
+      showError();
+      return;
+    }
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -42,11 +57,16 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
           action: SnackBarAction(
             label: l10n.undo,
             onPressed: () async {
-              await actions.addFavorite(
-                item.bookId,
-                item.paragraphId,
-                createdAt: item.createdAt,
-              );
+              try {
+                await actions.addFavorite(
+                  item.bookId,
+                  item.paragraphId,
+                  createdAt: item.createdAt,
+                );
+              } on Exception {
+                showError();
+                return;
+              }
               if (mounted) setState(() => _hidden.remove(item.paragraphId));
             },
           ),
@@ -168,21 +188,24 @@ class _FavoriteCard extends ConsumerWidget {
         ? bookTitle
         : l10n.breadcrumb(bookTitle, item.chapterTitle!);
     final installed = item.bookInstalled;
+    final text = item.text;
+    // الكتاب محمّل لكن الفقرة لم تعد فيه (معرّف بلا تحويل) ≠ كتاب غير محمّل.
+    final status = installed
+        ? l10n.paragraphMissing
+        : l10n.bookNotInstalledShort;
 
     final summary = Semantics(
       button: true,
-      label: installed && item.text != null
-          ? l10n.passageSemantics(source, item.text!)
-          : l10n.passageSemantics(source, l10n.bookNotInstalledShort),
+      label: l10n.passageSemantics(source, text ?? status),
       excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(source, style: muted),
           const SizedBox(height: 4),
-          if (installed && item.text != null)
+          if (text != null)
             Text(
-              item.text!.replaceAll('\t', ' ').replaceAll('\n', ' '),
+              text.replaceAll('\t', ' ').replaceAll('\n', ' '),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textDirection: TextDirection.rtl,
@@ -193,7 +216,7 @@ class _FavoriteCard extends ConsumerWidget {
               ),
             )
           else
-            Text(l10n.bookNotInstalledShort, style: theme.textTheme.bodyMedium),
+            Text(status, style: theme.textTheme.bodyMedium),
         ],
       ),
     );

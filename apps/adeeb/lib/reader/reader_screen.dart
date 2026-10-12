@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -61,7 +62,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   /// الفقرة الحالية (أعلى ما يظهر) وبابها.
   int _paragraph = 0;
   int _chapter = 0;
+  /// آخر معرّف حُفظ فعلاً، والمعرّف الذي تجري كتابته الآن. لا يُعتبر المعرّف
+  /// محفوظاً إلا بعد نجاح الكتابة، فيُعاد الحفظ عند الإخفاء أو الخروج.
   String? _savedId;
+  String? _savingId;
 
   bool _barsVisible = true;
   Timer? _hideTimer;
@@ -117,8 +121,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       return paragraphIndex(redirected);
     }
 
-    if (previous != null && _savedId != null) {
-      final index = await resolve(_savedId!);
+    if (previous != null && previous.paragraphs.isNotEmpty) {
+      final current = previous
+          .paragraphs[_paragraph.clamp(0, previous.paragraphs.length - 1)]
+          .id;
+      final index = await resolve(current);
       entry = index == null ? 0 : book.entryOfParagraph(index);
     } else if (widget.paragraphId case final id?) {
       final index = await resolve(id);
@@ -179,9 +186,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     if (book == null || book.paragraphs.isEmpty) return;
     final id =
         book.paragraphs[_paragraph.clamp(0, book.paragraphs.length - 1)].id;
-    if (id == _savedId) return;
-    _savedId = id;
-    unawaited(_actions.savePosition(book.id, id).catchError((Object _) {}));
+    if (id == _savedId || id == _savingId) return;
+    _savingId = id;
+    unawaited(
+      _actions
+          .savePosition(book.id, id)
+          .then<void>((_) => _savedId = id, onError: (Object _) {})
+          .whenComplete(() {
+            if (_savingId == id) _savingId = null;
+          }),
+    );
   }
 
   void _setFlash(String? id) {
@@ -306,24 +320,48 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     setState(() => _barsVisible = !_barsVisible);
   }
 
+  /// يغيّر حالة المفضلة؛ الفشل (مثلاً القاعدة مشغولة) يظهر برسالة عابرة.
   Future<void> _toggleFavorite(ReaderParagraph p, bool isFavorite) async {
     final l10n = AppLocalizations.of(context);
-    if (isFavorite) {
-      await _actions.removeFavorite(p.id);
-      if (!mounted) return;
-      _showSnack(
-        l10n.removedFromFavorites,
-        actionLabel: l10n.undo,
-        onAction: () => _actions.addFavorite(widget.bookId, p.id),
-      );
-    } else {
-      await _actions.addFavorite(widget.bookId, p.id);
-      if (!mounted) return;
-      _showSnack(
-        l10n.addedToFavorites,
-        actionLabel: l10n.undo,
-        onAction: () => _actions.removeFavorite(p.id),
-      );
+    final createdAt = ref
+        .read(favoritesProvider)
+        .value
+        ?.where((f) => f.paragraphId == p.id)
+        .firstOrNull
+        ?.createdAt;
+    try {
+      if (isFavorite) {
+        await _actions.removeFavorite(p.id);
+      } else {
+        await _actions.addFavorite(widget.bookId, p.id);
+      }
+    } on Exception {
+      if (mounted) _showSnack(l10n.saveFailed);
+      return;
+    }
+    if (!mounted) return;
+    _showSnack(
+      isFavorite ? l10n.removedFromFavorites : l10n.addedToFavorites,
+      actionLabel: l10n.undo,
+      onAction: () => _undoFavorite(p, isFavorite, createdAt),
+    );
+  }
+
+  /// «تراجع»: يعيد الفقرة المزالة بتاريخها الأصلي، أو يزيل المضافة.
+  Future<void> _undoFavorite(
+    ReaderParagraph p,
+    bool wasFavorite,
+    int? createdAt,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    try {
+      if (wasFavorite) {
+        await _actions.addFavorite(widget.bookId, p.id, createdAt: createdAt);
+      } else {
+        await _actions.removeFavorite(p.id);
+      }
+    } on Exception {
+      if (mounted) _showSnack(l10n.saveFailed);
     }
   }
 
@@ -674,7 +712,7 @@ class _ChapterHeading extends StatelessWidget {
               textScaler: TextScaler.noScaling,
               style: TextStyle(
                 fontFamily: bookFont,
-                fontSize: fontSize * 1.3,
+                fontSize: math.min(fontSize * 1.3, maxReaderFontSize),
                 height: 1.8,
                 color: palette.rubric,
               ),

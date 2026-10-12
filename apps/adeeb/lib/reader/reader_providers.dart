@@ -28,16 +28,25 @@ class ReadingRevision extends Notifier<int> {
   }
 }
 
-/// يزيد عند تثبيت كتاب أو تحديثه أو حذفه فقط (لا مع كل حفظ للموضع)، حتى لا
-/// يُعاد تحميل نص الكتاب أثناء القراءة.
-final installRevisionProvider = NotifierProvider<ReadingRevision, int>(
-  ReadingRevision.new,
-);
+/// عدّاد لكل كتاب يزيد عند تثبيته أو تحديثه أو حذفه فقط (لا مع كل حفظ
+/// للموضع)، حتى لا يُعاد تحميل نص الكتاب المفتوح أثناء القراءة ولا عند تغيّر
+/// كتاب آخر.
+final installRevisionProvider =
+    NotifierProvider<InstallRevision, Map<String, int>>(InstallRevision.new);
+
+class InstallRevision extends Notifier<Map<String, int>> {
+  @override
+  Map<String, int> build() => const {};
+
+  void bump(String bookId) {
+    if (ref.mounted) state = {...state, bookId: (state[bookId] ?? 0) + 1};
+  }
+}
 
 /// نص الكتاب للقارئ (null إن لم يكن محمّلاً).
 final readerBookProvider = FutureProvider.autoDispose
     .family<ReaderBook?, String>((ref, bookId) {
-      ref.watch(installRevisionProvider);
+      ref.watch(installRevisionProvider.select((m) => m[bookId] ?? 0));
       return ref.watch(readingRepositoryProvider).loadBook(bookId);
     }, retry: _noRetry);
 

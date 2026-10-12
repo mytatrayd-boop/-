@@ -10,6 +10,7 @@ import '../library/catalog.dart';
 import '../reader/reader_book.dart';
 import 'app_database.dart';
 import 'book_repository.dart';
+import 'write_queue.dart';
 
 /// آخر موضع محفوظ في كتاب محمّل، مع ما يلزم لعرضه («تابع القراءة»، «وصلت إلى»).
 class ReadingPosition {
@@ -115,6 +116,10 @@ class SqliteReadingRepository implements ReadingRepository {
     return useIsolate && isolate ? Isolate.run(task) : Future.sync(task);
   }
 
+  /// الكتابات عبر طابور الكتابة المشترك مع الاستيراد والحذف.
+  Future<T> _write<T>(T Function(Database db) body) =>
+      enqueueWrite(dbPath, () => _run(body));
+
   int get _now => clock().millisecondsSinceEpoch;
 
   @override
@@ -128,7 +133,7 @@ class SqliteReadingRepository implements ReadingRepository {
   @override
   Future<void> savePosition(String bookId, String paragraphId) {
     final now = _now;
-    return _run(
+    return _write(
       (db) => db.execute(
         'INSERT INTO positions (book_id, paragraph_id, updated_at) VALUES (?, ?, ?) '
         'ON CONFLICT(book_id) DO UPDATE SET paragraph_id = excluded.paragraph_id, '
@@ -155,7 +160,7 @@ class SqliteReadingRepository implements ReadingRepository {
     int? createdAt,
   }) {
     final at = createdAt ?? _now;
-    return _run(
+    return _write(
       (db) => db.execute(
         'INSERT OR REPLACE INTO favorites (paragraph_id, book_id, created_at) VALUES (?, ?, ?)',
         [paragraphId, bookId, at],
@@ -164,7 +169,7 @@ class SqliteReadingRepository implements ReadingRepository {
   }
 
   @override
-  Future<void> removeFavorite(String paragraphId) => _run(
+  Future<void> removeFavorite(String paragraphId) => _write(
     (db) => db.execute('DELETE FROM favorites WHERE paragraph_id = ?', [
       paragraphId,
     ]),

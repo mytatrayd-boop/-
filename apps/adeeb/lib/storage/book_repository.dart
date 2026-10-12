@@ -11,6 +11,7 @@ import 'package:sqlite3/sqlite3.dart';
 import '../library/book_file.dart';
 import '../library/catalog.dart';
 import 'app_database.dart';
+import 'write_queue.dart';
 
 class InstalledBook {
   const InstalledBook({
@@ -72,14 +73,9 @@ class SqliteBookRepository implements BookRepository {
   final bool useIsolate;
   final void Function(Database db) vacuum;
 
-  /// طابور واحد لعمليات الكتابة (الاستيراد والحذف): لا تتزاحم معاملتان.
-  Future<void> _writes = Future.value();
-
-  Future<T> _write<T>(T Function(Database db) body) {
-    final result = _writes.then((_) => _run(body));
-    _writes = result.then<void>((_) {}, onError: (Object _) {});
-    return result;
-  }
+  /// الكتابة عبر الطابور المشترك مع المفضلة والموضع (write_queue.dart).
+  Future<T> _write<T>(T Function(Database db) body) =>
+      enqueueWrite(dbPath, () => _run(body));
 
   Future<T> _run<T>(T Function(Database db) body) {
     final path = dbPath;

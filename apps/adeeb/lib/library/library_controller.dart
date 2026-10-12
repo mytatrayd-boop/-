@@ -261,7 +261,7 @@ class LibraryController extends Notifier<LibraryState> {
       if (!ref.mounted) return DownloadOutcome.failed;
       ref.invalidate(bookChaptersProvider(id));
       // المفضلة والموضع نُقلا عبر redirects داخل الاستيراد؛ يُعاد عرضهما.
-      ref.read(installRevisionProvider.notifier).bump();
+      ref.read(installRevisionProvider.notifier).bump(id);
       final tasks = Map<String, BookTask>.of(state.tasks)..remove(id);
       state = state.copyWith(
         items: _merge(),
@@ -315,7 +315,7 @@ class LibraryController extends Notifier<LibraryState> {
     await _loadInstalled();
     if (!ref.mounted) return ok;
     ref.invalidate(bookChaptersProvider(id));
-    ref.read(installRevisionProvider.notifier).bump();
+    ref.read(installRevisionProvider.notifier).bump(id);
     final tasks = Map<String, BookTask>.of(state.tasks)..remove(id);
     state = state.copyWith(items: _merge(), tasks: tasks);
     return ok;

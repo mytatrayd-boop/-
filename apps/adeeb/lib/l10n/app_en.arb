@@ -106,5 +106,7 @@
   "copy": "Copy",
   "share": "Share",
   "textCopied": "Text copied",
-  "passageCitation": "{text}\n— {book}, {author}, {chapter}"
+  "passageCitation": "{text}\n— {book}, {author}, {chapter}",
+  "saveFailed": "Couldn't save, please try again",
+  "paragraphMissing": "This passage is no longer in the book"
 }
