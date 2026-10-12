@@ -61,6 +61,9 @@ Future<void> startListening(
       await showNoArabicVoiceSheet(context, ref);
     case StartResult.failed:
       _snack(messenger, l10n.audioEngineError, screenReader);
+    case StartResult.cancelled:
+      // أُلغي عمداً (✕ أو بدء آخر): لا رسالة.
+      break;
   }
 }
 

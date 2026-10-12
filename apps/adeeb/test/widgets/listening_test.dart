@@ -6,6 +6,7 @@ import 'package:adeeb/audio/mini_player.dart';
 import 'package:adeeb/audio/player_sheets.dart';
 import 'package:adeeb/audio/tts_engine.dart';
 import 'package:adeeb/library/book_card.dart';
+import 'package:adeeb/library/library_controller.dart';
 import 'package:adeeb/library/library_screen.dart';
 import 'package:adeeb/reader/continue_reading_card.dart';
 import 'package:adeeb/reader/reader_screen.dart';
@@ -88,7 +89,7 @@ void main() {
       await listenFromBookPage(tester, 'mini');
 
       expect(env.tts.currentText, secondMini);
-      expect(env.media.activations, 1);
+      expect(env.media.active, isTrue);
       expect(env.media.last!.playing, isTrue);
       expect(
         env.media.last!.nowPlaying.chapterTitle,
@@ -476,5 +477,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(env.tts.currentText, 'شطر اختبار أول');
     expect(find.byType(MiniPlayer), findsOneWidget);
+  });
+
+  testWidgets('أثناء التجهيز: زرّا السابق والتالي معطّلان', (tester) async {
+    final gate = env.media.activateGate = Completer<void>();
+    await env.preinstall(miniBook());
+    await env.reading.savePosition('mini', 'mini-b001-p00002');
+    await pumpApp(tester);
+    await push(tester, '/book/mini');
+    await tester.ensureVisible(find.widgetWithText(OutlinedButton, 'استمع'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'استمع'));
+    await tester.pump();
+    await tester.pump();
+    expect(stateOf(tester).status, ListeningStatus.preparing);
+    env.media.send(MediaCommand.openPlayer);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(FullPlayer), findsOneWidget);
+    for (final t in ['الفقرة السابقة', 'الفقرة التالية']) {
+      final button = tester.widget<IconButton>(
+        find.ancestor(of: find.byTooltip(t), matching: find.byType(IconButton)),
+      );
+      expect(button.onPressed, isNull, reason: t);
+    }
+    expect(find.text('يُجهَّز الصوت…'), findsOneWidget);
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(env.tts.currentText, secondMini);
+    final next = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('الفقرة التالية'),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(next.onPressed, isNotNull);
+  });
+
+  testWidgets('حذف الكتاب المسموع يوقف الاستماع', (tester) async {
+    await env.preinstall(miniBook());
+    await pumpApp(tester);
+    await listenFromBookPage(tester, 'mini');
+    expect(find.byType(MiniPlayer), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(Navigator).first),
+    );
+    await tester.runAsync(
+      () => container.read(libraryControllerProvider.notifier).delete('mini'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(MiniPlayer), findsNothing);
+    expect(env.tts.speaking, isFalse);
+    expect(env.media.active, isFalse);
+    expect(await env.books.installedIds(), isNot(contains('mini')));
   });
 }

@@ -403,7 +403,9 @@ class _Controls extends StatelessWidget {
                 tooltip: l10n.audioPrevious,
                 iconSize: 32,
                 icon: const Icon(Icons.skip_previous),
-                onPressed: state.paragraph > 0 ? player.previous : null,
+                onPressed: !preparing && state.paragraph > 0
+                    ? player.previous
+                    : null,
               ),
               const SizedBox(width: 24),
               SizedBox.square(
@@ -437,7 +439,8 @@ class _Controls extends StatelessWidget {
                 tooltip: l10n.audioNext,
                 iconSize: 32,
                 icon: const Icon(Icons.skip_next),
-                onPressed: state.paragraph + 1 < book.paragraphs.length
+                onPressed:
+                    !preparing && state.paragraph + 1 < book.paragraphs.length
                     ? player.next
                     : null,
               ),

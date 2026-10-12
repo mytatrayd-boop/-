@@ -80,10 +80,10 @@ class AudioServiceSession implements MediaSession {
   }();
 
   @override
-  Future<void> activate() async {
+  Future<bool> activate() async {
     await _initHandler();
     final session = await _initAudioSession();
-    await session.setActive(true);
+    return session.setActive(true);
   }
 
   @override
@@ -105,12 +105,15 @@ class AudioServiceSession implements MediaSession {
         h.playbackState.add(
           PlaybackState(
             controls: [
-              _control(MediaControl.skipToPrevious, labels.previous),
+              // أثناء التجهيز لا سابق ولا تالي (كأزرار التطبيق).
+              if (!state.loading)
+                _control(MediaControl.skipToPrevious, labels.previous),
               if (state.playing)
                 _control(MediaControl.pause, labels.pause)
               else
                 _control(MediaControl.play, labels.play),
-              _control(MediaControl.skipToNext, labels.next),
+              if (!state.loading)
+                _control(MediaControl.skipToNext, labels.next),
             ],
             systemActions: const {
               MediaAction.play,
@@ -121,7 +124,7 @@ class AudioServiceSession implements MediaSession {
               MediaAction.stop,
             },
             // العرض المضغوط: «تشغيل/إيقاف» فقط (DESIGN §10.3).
-            androidCompactActionIndices: const [1],
+            androidCompactActionIndices: [state.loading ? 0 : 1],
             processingState: state.loading
                 ? AudioProcessingState.loading
                 : AudioProcessingState.ready,

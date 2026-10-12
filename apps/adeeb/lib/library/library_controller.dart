@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../audio/listening_providers.dart';
 import '../core/formatters.dart';
 import '../reader/reader_providers.dart';
 import '../storage/book_repository.dart';
@@ -305,6 +306,9 @@ class LibraryController extends Notifier<LibraryState> {
   /// يحذف الكتاب من الجهاز. يعيد true عند النجاح.
   Future<bool> delete(String id) async {
     cancel(id);
+    // الكتاب المسموع يُحذف: يتوقف الاستماع ويُحفظ الموضع قبل الحذف.
+    final player = ref.read(listeningPlayerProvider);
+    if (player.state.bookId == id) await player.stop();
     var ok = true;
     try {
       await _books.delete(id);

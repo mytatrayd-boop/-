@@ -104,6 +104,9 @@ enum StartResult {
 
   /// تعذّر بدء المحرك أو الخدمة.
   failed,
+
+  /// أُلغي البدء عمداً (✕ أو بدء آخر أثناء التجهيز): لا رسالة خطأ.
+  cancelled,
 }
 
 /// أحداث لمرة واحدة للواجهة.
@@ -214,7 +217,7 @@ class ListeningPlayer {
     } on Object {
       return StartResult.failed;
     }
-    if (token != _token) return StartResult.failed;
+    if (token != _token) return StartResult.cancelled;
     if (voices.isEmpty) return StartResult.noArabicVoice;
     final voice = voices.firstWhere(
       (v) => v.name == voiceName,
@@ -235,22 +238,48 @@ class ListeningPlayer {
         voice: voice,
       ),
     );
+    final bool granted;
     try {
       await _engine.configure(voice: voice, speed: rate);
-      if (!_sessionActive) {
-        await _session.activate();
-        _sessionActive = true;
-        _lastSession = null;
-      }
+      granted = await _activate();
     } on Object {
       if (token == _token) _fail();
       return StartResult.failed;
     }
-    if (token != _token) return StartResult.failed;
+    if (token != _token) {
+      // أُلغي أثناء التجهيز: إن انتهت الجلسة (✕) نُنهي الخدمة والإشعار والتركيز
+      // التي بدأت للتو؛ وإن حلّ محلها بدء آخر أو إيقاف مؤقت تبقى.
+      if (!_state.active) await _endSession();
+      _pushSession();
+      return StartResult.cancelled;
+    }
     _savePositionNow();
-    _set(_state.copyWith(status: ListeningStatus.playing));
-    unawaited(_loop(token));
+    _resumeOrHold(token, granted);
     return StartResult.started;
+  }
+
+  /// يبدأ الخدمة إن لم تبدأ ويطلب التركيز الصوتي (في كل تشغيل). false إن
+  /// رُفض التركيز (مثلاً مكالمة جارية).
+  Future<bool> _activate() async {
+    final granted = await _session.activate();
+    if (!_sessionActive) {
+      _sessionActive = true;
+      _lastSession = null;
+    }
+    return granted;
+  }
+
+  /// بعد طلب التركيز: تشغيل إن مُنح، وإلا إيقاف مؤقت كمقاطعة يُستأنف عند
+  /// انتهائها.
+  void _resumeOrHold(int token, bool granted) {
+    if (granted) {
+      _set(_state.copyWith(status: ListeningStatus.playing));
+      unawaited(_loop(token));
+    } else {
+      _token++;
+      _set(_state.copyWith(status: ListeningStatus.paused));
+      _interruptedAt = _clock();
+    }
   }
 
   Future<void> _loop(int token) async {
@@ -332,22 +361,21 @@ class ListeningPlayer {
     if (_state.status == ListeningStatus.preparing) return;
     _interruptedAt = null;
     final token = ++_token;
+    final bool granted;
     try {
-      if (!_sessionActive) {
-        await _session.activate();
-        _sessionActive = true;
-        _lastSession = null;
-      }
       if (_state.status == ListeningStatus.error) {
         await _engine.configure(voice: _state.voice, speed: _state.speed);
       }
+      granted = await _activate();
     } on Object {
       if (token == _token) _fail();
       return;
     }
-    if (token != _token) return;
-    _set(_state.copyWith(status: ListeningStatus.playing));
-    unawaited(_loop(token));
+    if (token != _token) {
+      if (!_state.active) await _endSession();
+      return;
+    }
+    _resumeOrHold(token, granted);
   }
 
   /// إيقاف مؤقت بأمر المستخدم.
@@ -371,15 +399,21 @@ class ListeningPlayer {
 
   Future<void> previous() => _skip(-1);
 
+  /// الفقرة الهدف تُنقل فوراً، فالضغطات السريعة تتراكم (٣ ضغطات = ٣ فقرات).
   Future<void> _skip(int delta) async {
     if (!_state.active) return;
     final target = _state.paragraph + delta;
     if (target < 0 || target >= _state.book!.paragraphs.length) return;
+    if (_state.status == ListeningStatus.preparing) {
+      // لا يُبطل التجهيز: البدء يكمل من الفقرة الجديدة.
+      _moveTo(target);
+      return;
+    }
     final wasPlaying = _state.playing;
     final token = ++_token;
+    _moveTo(target);
     await _engine.stop();
     if (token != _token) return;
-    _moveTo(target);
     if (wasPlaying) unawaited(_loop(token));
   }
 

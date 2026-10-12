@@ -76,11 +76,19 @@ class FakeMediaSession implements MediaSession {
   @override
   Stream<MediaCommand> get commands => _commands.stream;
 
+  /// قيمة طلب التركيز الصوتي (false = مرفوض، مثلاً مكالمة جارية).
+  bool grantFocus = true;
+
+  /// إن وُضع: activate ينتظره (لمحاكاة بطء بدء الخدمة).
+  Completer<void>? activateGate;
+
   @override
-  Future<void> activate() async {
+  Future<bool> activate() async {
     if (failActivate) throw StateError('محاكاة فشل الخدمة');
     activations++;
+    await activateGate?.future;
     active = true;
+    return grantFocus;
   }
 
   @override

@@ -145,8 +145,9 @@ enum MediaCommand {
 }
 
 abstract interface class MediaSession {
-  /// يبدأ الخدمة الأمامية ويطلب التركيز الصوتي. يرمي إن تعذّر.
-  Future<void> activate();
+  /// يبدأ الخدمة الأمامية (مرة) ويطلب التركيز الصوتي (في كل استدعاء). يعيد
+  /// false إن رُفض التركيز (مثلاً مكالمة جارية). يرمي إن تعذّر بدء الخدمة.
+  Future<bool> activate();
 
   /// يحدّث الإشعار وأزرار التحكم.
   void update(MediaSessionState state);

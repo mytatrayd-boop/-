@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adeeb/audio/listening_player.dart';
 import 'package:adeeb/audio/speech_text.dart';
 import 'package:adeeb/audio/tts_engine.dart';
@@ -319,7 +321,10 @@ void main() {
     await player.start(book, 3);
     await settle();
     expect(player.state.paragraphId, 'bk-b002-p00002');
-    expect(media.activations, 1);
+    // التركيز يُطلب مع كل بدء، والخدمة لا تُنهى بينهما.
+    expect(media.activations, 2);
+    expect(media.deactivations, 0);
+    expect(media.active, isTrue);
     expect(tts.currentText, 'فقرة أخيرة.');
   });
 
@@ -328,5 +333,95 @@ void main() {
     expect(player.state.chapterProgress, 1.0);
     await player.previous();
     expect(player.state.chapterProgress, 0.5);
+  });
+
+  group('مراجعة 1', () {
+    test('التالي (من التطبيق أو الإشعار) أثناء التجهيز ينقل الهدف ولا يعلّق البدء',
+        () async {
+      final gate = media.activateGate = Completer<void>();
+      final starting = player.start(book, 0);
+      await settle();
+      expect(player.state.status, ListeningStatus.preparing);
+      await player.next();
+      media.send(MediaCommand.next);
+      await settle();
+      expect(player.state.status, ListeningStatus.preparing);
+      expect(player.state.paragraph, 2);
+      gate.complete();
+      expect(await starting, StartResult.started);
+      await settle();
+      expect(player.state.playing, isTrue);
+      expect(tts.currentText, 'شطر أ');
+      expect(events, isEmpty);
+    });
+
+    test('«✕» أثناء بدء الخدمة: تُنهى الخدمة والتركيز، بلا رسالة خطأ', () async {
+      final gate = media.activateGate = Completer<void>();
+      final starting = player.start(book, 0);
+      await settle();
+      await player.stop();
+      gate.complete();
+      expect(await starting, StartResult.cancelled);
+      await settle();
+      expect(player.state.active, isFalse);
+      expect(media.active, isFalse, reason: 'deactivate بعد activate');
+      expect(media.deactivations, 1);
+      expect(tts.spoken, isEmpty);
+      expect(events, isEmpty);
+    });
+
+    test('إيقاف مؤقت أثناء بدء الخدمة يُبقي الجلسة موقوفة', () async {
+      final gate = media.activateGate = Completer<void>();
+      final starting = player.start(book, 0);
+      await settle();
+      await player.pause();
+      gate.complete();
+      expect(await starting, StartResult.cancelled);
+      await settle();
+      expect(player.state.status, ListeningStatus.paused);
+      expect(media.active, isTrue);
+      expect(media.last!.playing, isFalse);
+      expect(tts.spoken, isEmpty);
+    });
+
+    test('رفض التركيز الصوتي عند البدء أو الاستئناف ← إيقاف مؤقت لا تشغيل',
+        () async {
+      media.grantFocus = false;
+      expect(await player.start(book, 0), StartResult.started);
+      await settle();
+      expect(player.state.status, ListeningStatus.paused);
+      expect(tts.spoken, isEmpty);
+      // انتهاء المقاطعة يستأنف ويطلب التركيز من جديد.
+      media.grantFocus = true;
+      media.send(MediaCommand.interruptionEnded);
+      await settle();
+      expect(player.state.playing, isTrue);
+      expect(media.activations, 2);
+
+      await player.pause();
+      media.grantFocus = false;
+      await player.play();
+      await settle();
+      expect(media.activations, 3, reason: 'التركيز يُطلب مع كل تشغيل');
+      expect(player.state.status, ListeningStatus.paused);
+      expect(tts.speaking, isFalse);
+    });
+
+    test('ضغطات «التالي» السريعة تتراكم', () async {
+      await player.start(book, 0);
+      await settle();
+      unawaited(player.next());
+      unawaited(player.next());
+      unawaited(player.next());
+      await settle();
+      expect(player.state.paragraphId, 'bk-b002-p00002');
+      expect(tts.currentText, 'فقرة أخيرة.');
+      expect(player.state.playing, isTrue);
+      unawaited(player.previous());
+      unawaited(player.previous());
+      await settle();
+      expect(player.state.paragraphId, 'bk-b001-p00002');
+      expect(tts.currentText, 'فقرة ثانية.');
+    });
   });
 }
