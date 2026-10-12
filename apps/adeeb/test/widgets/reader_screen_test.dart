@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:adeeb/library/library_screen.dart';
+import 'package:adeeb/reader/reader_book.dart';
+import 'package:adeeb/reader/reader_providers.dart';
 import 'package:adeeb/reader/reader_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -446,6 +449,14 @@ void main() {
       textOf(tester, find.text(firstMini, skipOffstage: false)).style!.fontSize,
       64,
     );
+    // عنوان الباب (×١٫٣) لا يتجاوز الحد ٦٤ أيضاً.
+    expect(
+      textOf(
+        tester,
+        find.text('الباب الأول: فقرات اختبار', skipOffstage: false).first,
+      ).style!.fontSize,
+      64,
+    );
     Navigator.of(tester.element(find.text('ورق'))).pop();
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('الفهرس'));
@@ -660,5 +671,114 @@ void main() {
     );
     expect(find.text('Text copied'), findsOneWidget);
     handle.dispose();
+  });
+
+  testWidgets(
+    'فشل حفظ المفضلة في القارئ: رسالة «تعذّر الحفظ» ولا تتغير الحالة',
+    (tester) async {
+      await env.preinstall(miniBook());
+      await pumpApp(tester);
+      await openReader(tester, 'كتاب اختبار اصطناعي');
+      env.failFavoriteWrites = true;
+      await tester.longPress(find.text(firstMini));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('أضف إلى المفضلة'));
+      await tester.pumpAndSettle();
+      expect(find.text('تعذّر الحفظ، حاول مجدداً'), findsOneWidget);
+      expect(find.text('أُضيفت إلى المفضلة'), findsNothing);
+      expect(await env.reading.favorites(), isEmpty);
+    },
+  );
+
+  testWidgets('«تراجع» بعد الإزالة في القارئ يعيد الفقرة بتاريخها الأصلي', (
+    tester,
+  ) async {
+    await env.preinstall(miniBook());
+    await env.reading.addFavorite('mini', 'mini-b001-p00001', createdAt: 1000);
+    await env.reading.addFavorite('mini', 'mini-b002-p00001', createdAt: 2000);
+    await pumpApp(tester);
+    await openReader(tester, 'كتاب اختبار اصطناعي');
+    await tester.longPress(find.text(firstMini));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('أزل من المفضلة'));
+    await tester.pumpAndSettle();
+    expect(find.text('أُزيلت من المفضلة'), findsOneWidget);
+    await tester.tap(find.text('تراجع'));
+    await tester.pumpAndSettle();
+    final favorites = await env.reading.favorites();
+    expect(favorites.map((f) => (f.paragraphId, f.createdAt)), [
+      ('mini-b002-p00001', 2000),
+      ('mini-b001-p00001', 1000),
+    ]);
+  });
+
+  testWidgets('فشل الإزالة من تبويب المفضلة يعيد العنصر مع رسالة خطأ', (
+    tester,
+  ) async {
+    await env.preinstall(miniBook());
+    await env.reading.addFavorite('mini', 'mini-b001-p00001');
+    await pumpApp(tester);
+    await tester.tap(find.text('المفضلة'));
+    await tester.pumpAndSettle();
+    env.failFavoriteWrites = true;
+
+    await tester.tap(find.text('إزالة'));
+    await tester.pumpAndSettle();
+    expect(find.text('تعذّر الحفظ، حاول مجدداً'), findsOneWidget);
+    expect(find.text(firstMini), findsOneWidget);
+
+    // السحب أيضاً: يعود العنصر.
+    await tester.drag(find.text(firstMini), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('تعذّر الحفظ، حاول مجدداً'), findsOneWidget);
+    expect(find.text(firstMini), findsOneWidget);
+    expect(await env.reading.favorites(), hasLength(1));
+  });
+
+  testWidgets('فقرة مفضلة لم تعد في كتاب محمّل: وصفها الصحيح', (tester) async {
+    await env.preinstall(miniBook());
+    await env.reading.addFavorite('mini', 'mini-b001-p00099');
+    await pumpApp(tester);
+    await tester.tap(find.text('المفضلة'));
+    await tester.pumpAndSettle();
+    expect(find.text('لم تعد هذه الفقرة موجودة في الكتاب'), findsOneWidget);
+    expect(find.text('الكتاب غير محمّل'), findsNothing);
+    expect(find.widgetWithText(OutlinedButton, 'تحميل'), findsNothing);
+  });
+
+  testWidgets('فشل حفظ الموضع يُعاد عند إخفاء التطبيق', (tester) async {
+    await env.preinstall(syntheticBook());
+    await pumpApp(tester);
+    env.failPositionWrites = true;
+    await push(tester, '/read/big?p=big-b002-p00003');
+    expect(await env.reading.position('big'), isNull);
+
+    env.failPositionWrites = false;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pumpAndSettle();
+    expect((await env.reading.position('big'))!.paragraphId, 'big-b002-p00003');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  test('تثبيت كتاب آخر لا يعيد تحميل الكتاب المفتوح', () async {
+    await env.preinstall(miniBook());
+    final container = env.container();
+    addTearDown(container.dispose);
+    final sub = container.listen(readerBookProvider('mini'), (_, _) {});
+    addTearDown(sub.close);
+    final first = await container.read(readerBookProvider('mini').future);
+    container.read(installRevisionProvider.notifier).bump('big');
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      container.read(readerBookProvider('mini')),
+      isA<AsyncData<ReaderBook?>>(),
+    );
+    expect(container.read(readerBookProvider('mini')).value, same(first));
+
+    container.read(installRevisionProvider.notifier).bump('mini');
+    final second = await container.read(readerBookProvider('mini').future);
+    expect(second, isNot(same(first)));
   });
 }

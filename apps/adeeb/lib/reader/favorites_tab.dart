@@ -26,6 +26,10 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
   /// عناصر سُحبت ولم تُحدَّث القائمة بعد (Dismissible يشترط اختفاءها فوراً).
   final _hidden = <String>{};
 
+  /// يتغير مفتاح Dismissible بعد فشل الإزالة، فيعود العنصر بحجمه الكامل بدل
+  /// حالته المطوية.
+  final _restored = <String, int>{};
+
   Future<void> _remove(FavoriteItem item) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -44,7 +48,12 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
       await actions.removeFavorite(item.paragraphId);
     } on Exception {
       // لم تُحذف: يعود العنصر إلى القائمة مع رسالة.
-      if (mounted) setState(() => _hidden.remove(item.paragraphId));
+      if (mounted) {
+        setState(() {
+          _hidden.remove(item.paragraphId);
+          _restored.update(item.paragraphId, (n) => n + 1, ifAbsent: () => 1);
+        });
+      }
       showError();
       return;
     }
@@ -130,7 +139,10 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
             final item = items[i];
             final libraryItem = library.item(item.bookId);
             return Dismissible(
-              key: ValueKey(item.paragraphId),
+              key: ValueKey((
+                item.paragraphId,
+                _restored[item.paragraphId] ?? 0,
+              )),
               onDismissed: (_) => _remove(item),
               child: _FavoriteCard(
                 item: item,

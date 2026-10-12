@@ -303,19 +303,25 @@ void main() {
     expect((await reading.favorites()).single.paragraphId, 'mini-b001-p00001');
   });
 
-  test('الاستيراد والحفظ المتزامنان (الاستيراد في Isolate) ينجحان معاً', () async {
-    await install(miniBook());
-    final isolated = SqliteBookRepository('${dir.path}/adeeb.db');
-    final big = syntheticBook(chapters: 20, perChapter: 200);
-    final importing = isolated.install(gzJson(big), entryFor(big));
-    final writes = [
-      for (var i = 0; i < 5; i++)
-        reading.savePosition('mini', 'mini-b001-p0000${i % 2 + 1}'),
-      reading.addFavorite('mini', 'mini-b002-p00001'),
-    ];
-    await importing;
-    await Future.wait(writes);
-    expect((await reading.favorites()).single.paragraphId, 'mini-b002-p00001');
-    expect((await reading.loadBook('big'))!.paragraphs, hasLength(4000));
-  });
+  test(
+    'الاستيراد والحفظ المتزامنان (الاستيراد في Isolate) ينجحان معاً',
+    () async {
+      await install(miniBook());
+      final isolated = SqliteBookRepository('${dir.path}/adeeb.db');
+      final big = syntheticBook(chapters: 20, perChapter: 200);
+      final importing = isolated.install(gzJson(big), entryFor(big));
+      final writes = [
+        for (var i = 0; i < 5; i++)
+          reading.savePosition('mini', 'mini-b001-p0000${i % 2 + 1}'),
+        reading.addFavorite('mini', 'mini-b002-p00001'),
+      ];
+      await importing;
+      await Future.wait(writes);
+      expect(
+        (await reading.favorites()).single.paragraphId,
+        'mini-b002-p00001',
+      );
+      expect((await reading.loadBook('big'))!.paragraphs, hasLength(4000));
+    },
+  );
 }
