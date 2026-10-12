@@ -226,9 +226,9 @@ class _AskScreenState extends ConsumerState<AskScreen> {
           .set(outcome is AskAnswer ? outcome : null);
       if (!mounted) return;
       _afterOutcome(outcome);
-    } on AskApiException catch (e) when (e.failure == AskFailure.cancelled) {
-      return;
-    } on Object {
+    } on Object catch (e) {
+      // الإلغاء لا يغيّر الشاشة (أُعيدت حالتها في _cancelAsk).
+      if (e is AskApiException && e.failure == AskFailure.cancelled) return;
       // فشل القاعدة المحلية (الاسترجاع).
       if (!mounted || generation != _generation) return;
       _finish();
@@ -257,7 +257,10 @@ class _AskScreenState extends ConsumerState<AskScreen> {
           ..showSnackBar(
             SnackBar(
               content: Text(
-                l10n.askQuotaBadge(formatInt(r, _lang), formatInt(_limit, _lang)),
+                l10n.askQuotaBadge(
+                  formatInt(r, _lang),
+                  formatInt(_limit, _lang),
+                ),
               ),
               duration: Duration(seconds: screenReader ? 8 : 4),
             ),
@@ -603,14 +606,19 @@ class _QuotaBadge extends StatelessWidget {
     final low = remaining <= 3;
     final text = remaining == 0
         ? l10n.askQuotaExhausted
-        : l10n.askQuotaBadge(formatInt(remaining, lang), formatInt(limit, lang));
+        : l10n.askQuotaBadge(
+            formatInt(remaining, lang),
+            formatInt(limit, lang),
+          );
     return Semantics(
       button: true,
       label: text,
       excludeSemantics: true,
       onTap: onTap,
       child: Material(
-        color: low ? extra.warningContainer : theme.colorScheme.primaryContainer,
+        color: low
+            ? extra.warningContainer
+            : theme.colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
@@ -660,7 +668,10 @@ class _PrivacyBanner extends StatelessWidget {
         child: Row(
           children: [
             ExcludeSemantics(
-              child: Icon(Icons.shield_outlined, color: theme.colorScheme.primary),
+              child: Icon(
+                Icons.shield_outlined,
+                color: theme.colorScheme.primary,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -927,15 +938,12 @@ class _FallbackView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ExcludeSemantics(
-                    child: Icon(
-                      switch (reason) {
-                        FallbackReason.offline => Icons.cloud_off,
-                        FallbackReason.dailyLimit => Icons.hourglass_empty,
-                        _ when notFound => Icons.search_off,
-                        _ => Icons.info_outline,
-                      },
-                      color: warning ? extra.onWarning : null,
-                    ),
+                    child: Icon(switch (reason) {
+                      FallbackReason.offline => Icons.cloud_off,
+                      FallbackReason.dailyLimit => Icons.hourglass_empty,
+                      _ when notFound => Icons.search_off,
+                      _ => Icons.info_outline,
+                    }, color: warning ? extra.onWarning : null),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1140,7 +1148,10 @@ class _ConsentSheet extends StatelessWidget {
           children: [
             Semantics(
               header: true,
-              child: Text(l10n.askConsentTitle, style: theme.textTheme.titleLarge),
+              child: Text(
+                l10n.askConsentTitle,
+                style: theme.textTheme.titleLarge,
+              ),
             ),
             const SizedBox(height: 16),
             line(l10n.askConsentBooks, Icons.menu_book_outlined),

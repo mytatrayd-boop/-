@@ -196,10 +196,14 @@ class HttpAskApi implements AskApi {
       trigger();
     });
     var cancelled = false;
-    cancel?.then((_) {
-      cancelled = true;
-      trigger();
-    });
+    if (cancel != null) {
+      unawaited(
+        cancel.then((_) {
+          cancelled = true;
+          trigger();
+        }),
+      );
+    }
     final request = http.AbortableRequest(
       method,
       url,
