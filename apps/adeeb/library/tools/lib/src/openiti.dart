@@ -69,6 +69,94 @@ class OpenitiRule {
       };
 }
 
+/// سياسة المعقوفات في وصفة OpenITI.
+class OpenitiBrackets {
+  OpenitiBrackets({required this.name, this.keep = const [], this.maxChars = 3000});
+  final String name;
+
+  /// محتوى معقوف يبقى نصه (بلا المعقوفين) إن طابق أوله أحد هذه الأنماط.
+  final List<OpenitiRule> keep;
+
+  /// أطول معقوف يُحذف آلياً؛ الأطول خطأ يحتاج قاعدة صريحة (حماية من معقوف ناقص).
+  final int maxChars;
+
+  static OpenitiBrackets fromJson(Map<String, Object?> j) => OpenitiBrackets(
+        name: j['name']! as String,
+        keep: [
+          for (final r in ((j['keep'] as List?) ?? const []).cast<Map<String, Object?>>())
+            OpenitiRule.fromJson(r),
+        ],
+        maxChars: (j['max_chars'] as int?) ?? 3000,
+      );
+
+  Map<String, Object?> toJson() => {
+        'name': name,
+        'keep': [for (final r in keep) r.toJson()],
+        'max_chars': maxChars,
+      };
+}
+
+/// يطبّق [OpenitiBrackets] على المتن. [firstLine] فهرس أول سطر (لرسائل الخطأ).
+/// المعقوف المحذوف يُستبدل بعلامات الصفحات/المعالم التي فيه، وما بعد «]» في سطره يُلحق
+/// بسطر «[»، وتُضاف أسطر فارغة بعدد الأسطر المحذوفة فتبقى أرقام الأسطر التالية كما هي.
+String _applyBrackets(String b, OpenitiBrackets policy, int firstLine, RemovalStats stats) {
+  int lineOf(int pos) => firstLine + 1 + '\n'.allMatches(b.substring(0, pos)).length;
+  final out = StringBuffer();
+  var i = 0;
+  while (true) {
+    final s = b.indexOf('[', i);
+    if (s < 0) break;
+    final lineStart = b.lastIndexOf('\n', s) + 1;
+    final e = b.indexOf(']', s + 1);
+    final n = b.indexOf('[', s + 1);
+    if (b.startsWith('### ', lineStart)) {
+      // معقوف داخل عنوان: تعالجه قواعد العناوين، بشرط أن يُغلق في السطر نفسه.
+      final lineEnd = b.indexOf('\n', s) < 0 ? b.length : b.indexOf('\n', s);
+      if (e < 0 || e > lineEnd) throw OpenitiException('سطر ${lineOf(s)}: معقوف في عنوان لا يُغلق في سطره.');
+      out.write(b.substring(i, e + 1));
+      i = e + 1;
+      continue;
+    }
+    if (e < 0 || (n >= 0 && n < e)) {
+      throw OpenitiException('سطر ${lineOf(s)}: معقوف غير متوازن أو متداخل؛ أصلحه بقاعدة صريحة في rules.');
+    }
+    final content = b.substring(s + 1, e);
+    if (content.contains('\n### ')) throw OpenitiException('سطر ${lineOf(s)}: معقوف يمتد عبر عنوان.');
+    final keep = policy.keep.where((r) => r.pattern.matchAsPrefix(content) != null).firstOrNull;
+    if (keep != null) {
+      stats.add('معقوف أُبقي نصه بلا المعقوفين: ${keep.name}');
+      out
+        ..write(b.substring(i, s))
+        ..write(content);
+      i = e + 1;
+      continue;
+    }
+    if (content.length > policy.maxChars) {
+      throw OpenitiException('سطر ${lineOf(s)}: معقوف أطول من ${policy.maxChars} حرفاً؛ راجعه وأضف قاعدة صريحة.');
+    }
+    stats.add('معقوف محذوف بمحتواه: ${policy.name}');
+    final k = '\n'.allMatches(content).length;
+    if (k > 0) stats.add('معقوف محذوف ممتد على أكثر من سطر');
+    final markers = _markerRe.allMatches(content).map((m) => m[0]).join(' ');
+    out
+      ..write(b.substring(i, s))
+      ..write(markers.isEmpty ? '' : ' $markers ');
+    final lineEnd = b.indexOf('\n', e + 1) < 0 ? b.length : b.indexOf('\n', e + 1);
+    out
+      ..write(b.substring(e + 1, lineEnd))
+      ..write('\n' * k);
+    i = lineEnd;
+  }
+  out.write(b.substring(i));
+  final result = out.toString();
+  final stray = RegExp(r'^(?!### ).*\]', multiLine: true).firstMatch(result);
+  if (stray != null) {
+    final line = firstLine + 1 + '\n'.allMatches(result.substring(0, stray.start)).length;
+    throw OpenitiException('سطر $line: «]» بلا «[»؛ أصلحه بقاعدة صريحة في rules.');
+  }
+  return result;
+}
+
 /// تعديل عنوان بعينه (بنصه بعد التنظيف): عنوان بديل و/أو مستوى، أو حذف العنوان وحده.
 class OpenitiHeading {
   OpenitiHeading({this.title, this.level, this.drop = false});
@@ -122,6 +210,7 @@ class OpenitiRecipe {
     this.noMergeBefore = const [],
     this.bareHeading,
     this.bareHeadingFormat,
+    this.brackets,
     this.rules = const [],
     this.headings = const {},
     this.redirects = const {},
@@ -200,6 +289,10 @@ class OpenitiRecipe {
   final String? bareHeading;
   final String? bareHeadingFormat;
 
+  /// سياسة المعقوفات [..] في المتن (D17: نص المؤلف فقط): ما طابق `keep` يبقى نصه بلا
+  /// المعقوفين، وكل ما سواه يُحذف بمحتواه ولو امتد على عدة أسطر (تبقى علامات الصفحات فيه).
+  final OpenitiBrackets? brackets;
+
   /// قواعد حذف/استبدال داخل الأسطر (مثل أرقام حواشٍ «١» بقيت بعد حذف الحواشي).
   final List<OpenitiRule> rules;
 
@@ -247,6 +340,7 @@ class OpenitiRecipe {
         'drop_paragraphs': [for (final r in dropParagraphs) r.toJson()],
         'no_merge_before': [for (final r in noMergeBefore) r.toJson()],
         if (bareHeading != null) 'bare_heading': {'text': bareHeading, 'format': bareHeadingFormat},
+        if (brackets != null) 'brackets': brackets!.toJson(),
         'rules': [for (final r in rules) r.toJson()],
         'headings': {for (final e in headings.entries) e.key: e.value.toJson()},
         if (redirects.isNotEmpty) 'redirects': redirects,
@@ -297,6 +391,7 @@ class OpenitiRecipe {
       noMergeBefore: rules('no_merge_before'),
       bareHeading: (j['bare_heading'] as Map?)?['text'] as String?,
       bareHeadingFormat: (j['bare_heading'] as Map?)?['format'] as String?,
+      brackets: j['brackets'] == null ? null : OpenitiBrackets.fromJson((j['brackets']! as Map).cast<String, Object?>()),
       rules: rules('rules'),
       headings: {
         for (final e in ((j['headings'] as Map?) ?? const {}).entries)
@@ -348,6 +443,9 @@ class OpenitiParagraph extends OpenitiItem {
 
   /// نص آخر سطر من المصدر في الفقرة (بلا علامات)، لقرار الوصل عبر حدّ الصفحة.
   String lastLine = '';
+
+  /// الفقرة السابقة لها (بلا عنوان بينهما) بيت أو تنتهي بـ«:»، فهذه قد تكون شطراً منظوماً.
+  bool afterVerseOrColon = false;
   String get raw => pieces.join(' ');
 }
 
@@ -376,7 +474,8 @@ final _openerRe = RegExp('^\\s*(${defaultNoMergeOpeners.join('|')})(?![ء-ي])')
 bool _looksLikeVerse(OpenitiParagraph prev) {
   final last = prev.lastLine;
   if (last.contains(' ... ') || last.contains('...')) return true;
-  if (prev.lines.length == 1 &&
+  if (prev.afterVerseOrColon &&
+      prev.lines.length == 1 &&
       !RegExp(r'[.،,؛;:؟?!«»"()]').hasMatch(last) &&
       last.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length <= 8) {
     return true;
@@ -384,7 +483,29 @@ bool _looksLikeVerse(OpenitiParagraph prev) {
   return false;
 }
 
-bool _startsNewReport(String content, OpenitiRecipe recipe) {
+bool _isVerseOrColon(OpenitiParagraph? p) {
+  if (p == null) return false;
+  final t = p.raw.replaceAll(_markerRe, ' ').trim();
+  return t.contains('%~%') || p.lastLine.contains('...') || t.endsWith(':');
+}
+
+/// كلمات لا تنتهي بها جملة: إن ختمت الفقرة السابقة بإحداها (أو بفاصلة) فما بعد الحدّ تتمة لها
+/// ولو بدأ بفاتحة خبر («مثل التاجر الذي | قال: ...»).
+const _openEndings = {
+  'الذي', 'التي', 'الذين', 'اللذين', 'اللتين', 'اللاتي', 'أن', 'إن', 'من', 'في', 'على', 'إلى', 'عن', 'ما',
+  'لا', 'لم', 'لن', 'قد', 'ثم', 'أو', 'أم', 'بل', 'حتى', 'إذا', 'إذ', 'كي', 'لأن', 'لكن', 'مع', 'بين', 'عند',
+  'و', 'ف', 'ب', 'ل', 'يا', 'هذا', 'هذه', 'ذلك', 'كان', 'فقال', 'وقال', 'قال', 'منه', 'به', 'له',
+};
+
+bool _prevContinues(OpenitiParagraph prev) {
+  final t = cleanText(prev.raw.replaceAll(_markerRe, ' '));
+  if (t.endsWith('،') || t.endsWith('؛') || t.endsWith(',')) return true;
+  final words = t.split(' ');
+  return _openEndings.contains(words.last);
+}
+
+bool _startsNewReport(String content, OpenitiRecipe recipe, OpenitiParagraph prev) {
+  if (_prevContinues(prev)) return false;
   final t = content.replaceAll(_markerRe, ' ').trimLeft();
   if (_openerRe.hasMatch(t)) return true;
   return recipe.noMergeBefore.any((r) => r.pattern.matchAsPrefix(t) != null);
@@ -459,6 +580,31 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
     }
   }
 
+  // تمريرة 1: drop_lines ثم rules لكل سطر (السطر المحذوف يصير فارغاً فتبقى أرقام الأسطر).
+  for (var k = i; k < lines.length; k++) {
+    var line = lines[k];
+    if (line.trim().isEmpty) continue;
+    final dl = recipe.dropLines.where((r) => r.fullMatch(line)).firstOrNull;
+    if (dl != null) {
+      stats.add('سطر محذوف: ${dl.name}');
+      lines[k] = '';
+      continue;
+    }
+    for (final r in recipe.rules) {
+      final n = r.pattern.allMatches(line).length;
+      if (n > 0) {
+        stats.add('قاعدة: ${r.name}', n);
+        line = line.replaceAllMapped(r.pattern, r.expand);
+      }
+    }
+    lines[k] = line;
+  }
+  // تمريرة 2: المعقوفات (إن طلبتها الوصفة) ولو امتدت على عدة أسطر.
+  if (recipe.brackets != null) {
+    final body = _applyBrackets(lines.sublist(i).join('\n'), recipe.brackets!, i, stats);
+    lines.replaceRange(i, lines.length, body.split('\n'));
+  }
+
   for (; i < lines.length; i++) {
     final lineNo = i + 1;
     var line = lines[i];
@@ -484,22 +630,6 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
       continue;
     }
 
-    var dropped = false;
-    for (final r in recipe.dropLines) {
-      if (r.pattern.matchAsPrefix(line)?.end == line.length) {
-        stats.add('سطر محذوف: ${r.name}');
-        dropped = true;
-        break;
-      }
-    }
-    if (dropped) continue;
-    for (final r in recipe.rules) {
-      final n = r.pattern.allMatches(line).length;
-      if (n > 0) {
-        stats.add('قاعدة: ${r.name}', n);
-        line = line.replaceAllMapped(r.pattern, r.expand);
-      }
-    }
     line = line.trimRight();
     if (line.trim().isEmpty || RegExp(r'^(~~|#)\s*$').hasMatch(line)) {
       stats.add('سطر فرغ بعد القواعد');
@@ -602,7 +732,7 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
         !_terminal.hasMatch(cleanText(prev.raw.replaceAll(_markerRe, '')))) {
       if (_looksLikeVerse(prev)) {
         stats.add('لم يُوصل عبر حدّ الصفحة: الفقرة السابقة تنتهي ببيت');
-      } else if (_startsNewReport(content, recipe)) {
+      } else if (_startsNewReport(content, recipe, prev)) {
         stats.add('لم يُوصل عبر حدّ الصفحة: السطر يبدأ بفاتحة خبر');
       } else {
         stats.add('فقرة موصولة عبر حدّ الصفحة');
@@ -610,7 +740,7 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
         continue;
       }
     }
-    final p = OpenitiParagraph(lineNo);
+    final p = OpenitiParagraph(lineNo)..afterVerseOrColon = _isVerseOrColon(prev);
     items.add(p);
     pending.add(p);
     current = p;
@@ -760,6 +890,10 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
         final text = cleanText(raw);
         if (text.isEmpty) {
           stats.add('فقرة فارغة بعد التنظيف');
+          continue;
+        }
+        if (!RegExp('[ء-ي]').hasMatch(text)) {
+          stats.add('فقرة بلا حروف بعد التنظيف (علامة ترقيم وحدها)');
           continue;
         }
         final dropPara = recipe.dropParagraphs.where((r) => r.fullMatch(text)).firstOrNull;

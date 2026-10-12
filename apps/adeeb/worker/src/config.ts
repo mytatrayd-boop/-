@@ -24,6 +24,7 @@ export interface Env {
   MAX_PASSAGES?: string | number;
   MAX_PASSAGE_CHARS?: string | number;
   MAX_PASSAGES_TOTAL_CHARS?: string | number;
+  MAX_ANSWER_CHARS?: string | number;
 }
 
 export interface Config {
@@ -42,6 +43,7 @@ export interface Config {
   maxPassages: number;
   maxPassageChars: number;
   maxPassagesTotalChars: number;
+  maxAnswerChars: number;
 }
 
 export class ConfigError extends Error {}
@@ -77,5 +79,6 @@ export function readConfig(env: Env): Config {
     maxPassages: int(env.MAX_PASSAGES, "MAX_PASSAGES"),
     maxPassageChars: int(env.MAX_PASSAGE_CHARS, "MAX_PASSAGE_CHARS"),
     maxPassagesTotalChars: int(env.MAX_PASSAGES_TOTAL_CHARS, "MAX_PASSAGES_TOTAL_CHARS"),
+    maxAnswerChars: int(env.MAX_ANSWER_CHARS, "MAX_ANSWER_CHARS"),
   };
 }

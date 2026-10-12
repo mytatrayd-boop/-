@@ -8,7 +8,8 @@
 | `src/index.ts` | نقطة الدخول، وتصدير `CounterStore` |
 | `src/app.ts` | المسارات، التحقق، الحجز/الاسترداد، الرد، السجل |
 | `src/validate.ts` | التحقق الصارم من الترويسات والجسم |
-| `src/counters.ts` | Durable Object (SQLite): العدّادات اليومية، قاطع الدائرة، التنظيف |
+| `src/counters.ts` | Durable Object (SQLite): العدّادات اليومية، الحجز برمز والاسترداد متساوي الأثر، قاطع الدائرة، التنظيف |
+| `src/ip.ts` | مفتاح IP للحدود (IPv6 ← /64) |
 | `src/gemini.ts` | تعليمات النظام، مخطط المخرجات، استدعاء Gemini REST، تصنيف 429 |
 | `src/verify.ts` + `src/normalize.ts` | التحقق من الاقتباس بالتطبيع نفسه في `lib/text/arabic_normalizer.dart` |
 | `wrangler.jsonc` | الربط والإعدادات — **بلا أسرار** |
@@ -41,7 +42,7 @@ cp .dev.vars.example .dev.vars && npx wrangler dev   # تشغيل محلي (ام
 | 404 / 405 | `NOT_FOUND` / `METHOD_NOT_ALLOWED` | مسار أو طريقة خاطئة |
 | 426 | `UPGRADE_REQUIRED` | `v` أو رقم البناء في `X-Client` أقدم من `MIN_CLIENT` |
 | 429 | `DAILY_LIMIT` | انتهت حصة الجهاز أو عنوان IP اليوم (`remaining:0`) |
-| 429 | `RATE_LIMIT` | أكثر من 3 طلبات/دقيقة للجهاز أو 10 لعنوان IP |
+| 429 | `RATE_LIMIT` | أكثر من 3 أسئلة/دقيقة للجهاز أو 10 طلبات (ask + quota) لعنوان IP |
 | 503 | `UNAVAILABLE` | الحد الإجمالي، نفاد حصة Gemini (قاطع الدائرة)، عطل Gemini، أو إعداد ناقص. السؤال لا يُخصم |
 
 - `NOT_FOUND`: النموذج لم يجد (أو حجب أمان). `UNVERIFIED`: النموذج أجاب لكن لم يصح أي اقتباس، فلا تُعاد الإجابة. كلاهما يُخصم من الحصة لأن Gemini استُدعي (D24).
@@ -58,8 +59,9 @@ cp .dev.vars.example .dev.vars && npx wrangler dev   # تشغيل محلي (ام
 | `MIN_CLIENT` | 1 | أقل رقم بناء مقبول |
 | `MAX_BODY_BYTES` | 32768 | حجم الجسم (انظر D24) |
 | `MAX_QUESTION_CHARS` / `MAX_PASSAGES` / `MAX_PASSAGE_CHARS` / `MAX_PASSAGES_TOTAL_CHARS` | 500 / 6 / 1500 / 8000 | حدود الطلب |
+| `MAX_ANSWER_CHARS` | 800 | أطول إجابة مقبولة من النموذج؛ الأطول = رد غير صالح (يُسترد السؤال) |
 
-الحد بالدقيقة في `ratelimits` (RL_DEVICE: 3/60ث، RL_IP: 10/60ث).
+الحد بالدقيقة في `ratelimits` (RL_DEVICE: 3/60ث لـ `/v1/ask`، RL_IP: 10/60ث لـ `/v1/ask` و`/v1/quota` معاً). مفتاح IP: IPv4 كاملاً وIPv6 بالبادئة /64.
 **الأسرار** (لا تُكتب في أي ملف مرفوع): `GEMINI_API_KEY`، `DEVICE_SALT`، `IP_SALT`.
 
 ## الخصوصية والسجلات

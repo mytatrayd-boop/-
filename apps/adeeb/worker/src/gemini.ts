@@ -89,9 +89,9 @@ export function buildRequestBody(question: string, passages: Passage[]) {
 }
 
 const SAFETY_FINISH = new Set(["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"]);
-const MAX_MODEL_STRING = 2000;
+const MAX_QUOTE_CHARS = 2000;
 
-function parseOutput(text: string): ModelOutput | null {
+function parseOutput(text: string, maxAnswerChars: number): ModelOutput | null {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
@@ -101,13 +101,13 @@ function parseOutput(text: string): ModelOutput | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   if (typeof o.found !== "boolean" || typeof o.answer !== "string") return null;
-  if (o.answer.length > MAX_MODEL_STRING || !Array.isArray(o.citations)) return null;
+  if (o.answer.length > maxAnswerChars || !Array.isArray(o.citations)) return null;
   const citations: Citation[] = [];
   for (const c of o.citations as unknown[]) {
     if (typeof c !== "object" || c === null) return null;
     const { paragraph_id, quote } = c as Record<string, unknown>;
     if (typeof paragraph_id !== "string" || typeof quote !== "string") return null;
-    if (quote.length > MAX_MODEL_STRING) return null;
+    if (quote.length > MAX_QUOTE_CHARS) return null;
     citations.push({ paragraph_id, quote });
   }
   return { found: o.found, answer: o.answer, citations };
@@ -184,7 +184,8 @@ export async function callGemini(
     .filter((p) => !p.thought && typeof p.text === "string")
     .map((p) => p.text)
     .join("");
-  const output = parseOutput(text);
+  // إجابة أطول من MAX_ANSWER_CHARS = رد غير صالح (يُسترد السؤال).
+  const output = parseOutput(text, config.maxAnswerChars);
   if (!output) return { kind: "error", cause: "GEMINI_INVALID" };
   return { kind: "ok", output };
 }

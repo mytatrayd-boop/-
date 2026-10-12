@@ -33,7 +33,8 @@
     "MAX_QUESTION_CHARS": "500",
     "MAX_PASSAGES": "6",
     "MAX_PASSAGE_CHARS": "1500",
-    "MAX_PASSAGES_TOTAL_CHARS": "8000"
+    "MAX_PASSAGES_TOTAL_CHARS": "8000",
+    "MAX_ANSWER_CHARS": "800"
   },
 
   // السجلات: سطر واحد لكل طلب (المسار، الحالة، الزمن، الرمز). سجلات الاستدعاء

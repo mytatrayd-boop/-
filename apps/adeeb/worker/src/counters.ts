@@ -28,7 +28,7 @@ export interface ReserveInput {
 }
 
 export type ReserveResult =
-  | { ok: true; remaining: number }
+  | { ok: true; remaining: number; token: string }
   | { ok: false; reason: "DEVICE" | "IP" | "GLOBAL" | "EXHAUSTED"; remaining: number };
 
 const GLOBAL_KEY = "*";
@@ -51,6 +51,15 @@ export class CounterStore extends DurableObject<Env> {
     );
     this.sql.exec(
       `CREATE TABLE IF NOT EXISTS flags (name TEXT PRIMARY KEY, value INTEGER NOT NULL)`,
+    );
+    // الحجوزات القائمة: الاسترداد يحذف صفها فلا يتكرر مهما أُعيد الاستدعاء.
+    this.sql.exec(
+      `CREATE TABLE IF NOT EXISTS reservations (
+         token TEXT PRIMARY KEY,
+         day TEXT NOT NULL,
+         device TEXT NOT NULL,
+         ip TEXT NOT NULL
+       )`,
     );
   }
 
@@ -112,20 +121,49 @@ export class CounterStore extends DurableObject<Env> {
       this.bump(day, "device", device, 1);
       this.bump(day, "ip", ip, 1);
       this.bump(day, "global", GLOBAL_KEY, 1);
-      return { ok: true, remaining: deviceLeft - 1 };
+      const token = crypto.randomUUID();
+      this.sql.exec(
+        "INSERT INTO reservations (token, day, device, ip) VALUES (?, ?, ?, ?)",
+        token,
+        day,
+        device,
+        ip,
+      );
+      return { ok: true, remaining: deviceLeft - 1, token };
     });
     if (result.ok) await this.ensureAlarm();
     return result;
   }
 
-  /** استرداد سؤال محجوز (فشل Gemini). يعيد الباقي للجهاز بعد الاسترداد. */
-  refund(input: { day: string; device: string; ip: string; dailyPerDevice: number }): number {
-    const { day, device, ip } = input;
+  /**
+   * استرداد سؤال محجوز (فشل Gemini)، وتشغيل قاطع الدائرة معه إن طُلب، في معاملة
+   * واحدة. **متساوي الأثر:** الحجز يُسترد مرة واحدة فقط مهما تكرر الاستدعاء
+   * بالرمز نفسه (مثلاً إعادة المحاولة بعد انقطاع الرد). يعيد الباقي للجهاز.
+   */
+  refund(input: {
+    token: string;
+    day: string;
+    device: string;
+    dailyPerDevice: number;
+    breakerUntil?: number;
+  }): number {
     return this.ctx.storage.transactionSync(() => {
-      this.bump(day, "device", device, -1);
-      this.bump(day, "ip", ip, -1);
-      this.bump(day, "global", GLOBAL_KEY, -1);
-      return Math.max(input.dailyPerDevice - this.count(day, "device", device), 0);
+      if (input.breakerUntil !== undefined) this.setBreaker(input.breakerUntil);
+      const row = this.sql
+        .exec<{ day: string; device: string; ip: string }>(
+          "SELECT day, device, ip FROM reservations WHERE token = ?",
+          input.token,
+        )
+        .toArray()[0];
+      if (!row) {
+        // استُرد من قبل: لا تغيير، ويُعاد الباقي كما هو.
+        return Math.max(input.dailyPerDevice - this.count(input.day, "device", input.device), 0);
+      }
+      this.sql.exec("DELETE FROM reservations WHERE token = ?", input.token);
+      this.bump(row.day, "device", row.device, -1);
+      this.bump(row.day, "ip", row.ip, -1);
+      this.bump(row.day, "global", GLOBAL_KEY, -1);
+      return Math.max(input.dailyPerDevice - this.count(row.day, "device", row.device), 0);
     });
   }
 
@@ -135,7 +173,7 @@ export class CounterStore extends DurableObject<Env> {
   }
 
   /** قاطع الدائرة: لا استدعاء لـ Gemini قبل [untilMs]. */
-  tripBreaker(untilMs: number): void {
+  private setBreaker(untilMs: number): void {
     this.sql.exec(
       `INSERT INTO flags (name, value) VALUES (?, ?)
        ON CONFLICT (name) DO UPDATE SET value = MAX(value, excluded.value)`,
@@ -147,6 +185,7 @@ export class CounterStore extends DurableObject<Env> {
   /** يحذف عدّادات الأيام السابقة لـ [today] وعلامة القاطع المنتهية. */
   cleanup(today: string, nowMs: number): void {
     this.sql.exec("DELETE FROM counters WHERE day < ?", today);
+    this.sql.exec("DELETE FROM reservations WHERE day < ?", today);
     this.sql.exec("DELETE FROM flags WHERE name = ? AND value <= ?", BREAKER, nowMs);
   }
 

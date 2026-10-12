@@ -62,6 +62,7 @@ export function makeEnv(over: Partial<Record<keyof Env, unknown>> = {}): Env {
     MAX_PASSAGES: base.MAX_PASSAGES,
     MAX_PASSAGE_CHARS: base.MAX_PASSAGE_CHARS,
     MAX_PASSAGES_TOTAL_CHARS: base.MAX_PASSAGES_TOTAL_CHARS,
+    MAX_ANSWER_CHARS: base.MAX_ANSWER_CHARS,
     ...over,
   } as Env;
 }

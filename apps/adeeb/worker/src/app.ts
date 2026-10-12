@@ -1,6 +1,7 @@
 import { ConfigError, readConfig, type Config, type Env } from "./config";
 import { callGemini, type FetchLike } from "./gemini";
 import { hmacHex } from "./hash";
+import { ipLimitKey } from "./ip";
 import { logRequest } from "./log";
 import { nextPacificMidnight, nextUtcMidnight, utcDay } from "./time";
 import { checkClient, readDeviceId, validateAsk } from "./validate";
@@ -93,7 +94,7 @@ function counters(env: Env) {
 async function identify(request: Request, config: Config) {
   const device = readDeviceId(request.headers);
   if (device === null) return null;
-  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  const ip = ipLimitKey(request.headers.get("CF-Connecting-IP"));
   const [deviceKey, ipKey] = await Promise.all([
     hmacHex(config.deviceSalt, device),
     hmacHex(config.ipSalt, ip),
@@ -106,6 +107,10 @@ async function handleQuota(request: Request, env: Env, config: Config, deps: Dep
   if (!client.ok) return client.code === "UPGRADE_REQUIRED" ? fail(426, client.code) : fail(400, client.code);
   const who = await identify(request, config);
   if (!who) return fail(400, "BAD_REQUEST");
+  // حد الدقيقة لكل IP يشمل /v1/quota أيضاً (كل طلب يصل إلى الـ DO).
+  if (!(await env.RL_IP.limit({ key: who.ipKey })).success) {
+    return fail(429, "RATE_LIMIT", { retry_after: 60 });
+  }
   const now = deps.now();
   const used = await counters(env).used(utcDay(now), who.deviceKey);
   return {
@@ -174,15 +179,22 @@ async function handleAsk(request: Request, env: Env, config: Config, deps: Deps)
   }
 
   // من هنا السؤال محجوز: أي فشل قبل الرد يسترده.
-  const refund = () =>
-    store.refund({ day, device: who.deviceKey, ip: who.ipKey, dailyPerDevice: config.dailyPerDevice });
+  // الاسترداد متساوي الأثر في الـ DO (برمز الحجز)، فتكراره في catch آمن.
+  const refund = (breakerUntil?: number) =>
+    store.refund({
+      token: reservation.token,
+      day,
+      device: who.deviceKey,
+      dailyPerDevice: config.dailyPerDevice,
+      breakerUntil,
+    });
   try {
     const result = await callGemini(deps.fetch, config, ask.question, ask.passages);
     switch (result.kind) {
       case "quota": {
-        const remaining = await refund();
         const until = result.daily ? nextPacificMidnight(now) : now + result.retryAfterMs;
-        await store.tripBreaker(until);
+        // الاسترداد والقاطع في معاملة واحدة.
+        const remaining = await refund(until);
         return fail(
           503,
           "UNAVAILABLE",
