@@ -71,11 +71,23 @@ class OpenitiRule {
 
 /// سياسة المعقوفات في وصفة OpenITI.
 class OpenitiBrackets {
-  OpenitiBrackets({required this.name, this.keep = const [], this.maxChars = 3000});
+  OpenitiBrackets({
+    required this.name,
+    this.keep = const [],
+    this.drop = const [],
+    this.keepByDefault = false,
+    this.maxChars = 3000,
+  });
   final String name;
 
   /// محتوى معقوف يبقى نصه (بلا المعقوفين) إن طابق أوله أحد هذه الأنماط.
   final List<OpenitiRule> keep;
+
+  /// محتوى معقوف يُحذف بمحتواه إن طابق أوله أحد هذه الأنماط (شروح المحقق، «ش»، إحالات).
+  final List<OpenitiRule> drop;
+
+  /// ما لا يطابق keep ولا drop: true = يبقى نصه بلا معقوفين (نص قديم أو تكميل)، false = يُحذف.
+  final bool keepByDefault;
 
   /// أطول معقوف يُحذف آلياً؛ الأطول خطأ يحتاج قاعدة صريحة (حماية من معقوف ناقص).
   final int maxChars;
@@ -86,12 +98,19 @@ class OpenitiBrackets {
           for (final r in ((j['keep'] as List?) ?? const []).cast<Map<String, Object?>>())
             OpenitiRule.fromJson(r),
         ],
+        drop: [
+          for (final r in ((j['drop'] as List?) ?? const []).cast<Map<String, Object?>>())
+            OpenitiRule.fromJson(r),
+        ],
+        keepByDefault: j['default'] == 'keep',
         maxChars: (j['max_chars'] as int?) ?? 3000,
       );
 
   Map<String, Object?> toJson() => {
         'name': name,
+        'default': keepByDefault ? 'keep' : 'drop',
         'keep': [for (final r in keep) r.toJson()],
+        'drop': [for (final r in drop) r.toJson()],
         'max_chars': maxChars,
       };
 }
@@ -140,8 +159,9 @@ String _applyBrackets(String b, OpenitiBrackets policy, int firstLine, RemovalSt
     final content = b.substring(s + 1, e);
     if (content.contains('\n### ')) throw OpenitiException('سطر ${lineOf(s)}: معقوف يمتد عبر عنوان.');
     final keep = policy.keep.where((r) => r.pattern.matchAsPrefix(content) != null).firstOrNull;
-    if (keep != null) {
-      stats.add('معقوف أُبقي نصه بلا المعقوفين: ${keep.name}');
+    final dropRule = keep != null ? null : policy.drop.where((r) => r.pattern.matchAsPrefix(content) != null).firstOrNull;
+    if (keep != null || (dropRule == null && policy.keepByDefault)) {
+      stats.add('معقوف أُبقي نصه بلا المعقوفين: ${keep?.name ?? '${policy.name} (الافتراضي)'}');
       write(b.substring(i, s));
       write(content);
       i = e + 1;
@@ -150,7 +170,7 @@ String _applyBrackets(String b, OpenitiBrackets policy, int firstLine, RemovalSt
     if (content.length > policy.maxChars) {
       throw OpenitiException('سطر ${lineOf(s)}: معقوف أطول من ${policy.maxChars} حرفاً؛ راجعه وأضف قاعدة صريحة.');
     }
-    stats.add('معقوف محذوف بمحتواه: ${policy.name}');
+    stats.add('معقوف محذوف بمحتواه: ${dropRule?.name ?? policy.name}');
     final k = '\n'.allMatches(content).length;
     if (k > 0) stats.add('معقوف محذوف ممتد على أكثر من سطر');
     final markers = _markerRe.allMatches(content).map((m) => m[0]).join(' ');
@@ -472,13 +492,14 @@ final _taggedHeadingRe = RegExp(r'^([A-Z_]+)\|\s*(.*)$');
 final _unknownMarkup = RegExp(r'[A-Za-z#|~%@$<>*`_{}\\^=+]');
 
 /// علامات وقف تنهي الفقرة؛ ما بعدها في صفحة جديدة لا يُوصل بها.
-final _terminal = RegExp(r'[.!?؟:»"…]$');
+final _terminal = RegExp(r'[.!?؟:»"…)]$');
 
-/// فواتح خبر جديد: سطر يبدأ بها بعد حدّ الصفحة لا يُوصل بما قبله.
+/// فواتح خبر جديد: سطر يبدأ بها بعد حدّ الصفحة لا يُوصل بما قبله. «قال/فقال/وقال/يقول» ليست
+/// منها: كثيراً ما تأتي تتمةً («أن الشعبي | قال: …»)؛ ما يلزم منها يُضاف بـ no_merge_before في الوصفة.
 const defaultNoMergeOpeners = [
-  'قال', 'وقال', 'فقال', 'قالت', 'وقالت', 'وقالوا', 'أنشد', 'وأنشد', 'أنشدني', 'وأنشدني', 'أنشدنا', 'وأنشدنا',
-  'حدثني', 'وحدثني', 'حدثنا', 'وحدثنا', 'أخبرنا', 'وأخبرنا', 'أخبرني', 'وأخبرني', 'يريد', 'يقول', 'ويقول',
-  'يروى', 'ويروى', 'وكان',
+  'أنشد', 'وأنشد', 'أنشدني', 'وأنشدني', 'أنشدنا', 'وأنشدنا', 'حدثني', 'وحدثني', 'حدثنا', 'وحدثنا',
+  'أخبرنا', 'وأخبرنا', 'أخبرني', 'وأخبرني', 'يريد', 'يروى', 'ويروى', 'روى', 'وروى', 'وكان', 'قيل', 'وقيل',
+  'وسأل',
 ];
 final _openerRe = RegExp('^\\s*(${defaultNoMergeOpeners.join('|')})(?![ء-ي])');
 
@@ -507,12 +528,13 @@ bool _isVerseOrColon(OpenitiParagraph? p) {
 const _openEndings = {
   'الذي', 'التي', 'الذين', 'اللذين', 'اللتين', 'اللاتي', 'أن', 'إن', 'من', 'في', 'على', 'إلى', 'عن', 'ما',
   'لا', 'لم', 'لن', 'قد', 'ثم', 'أو', 'أم', 'بل', 'حتى', 'إذا', 'إذ', 'كي', 'لأن', 'لكن', 'مع', 'بين', 'عند',
-  'و', 'ف', 'ب', 'ل', 'يا', 'هذا', 'هذه', 'ذلك', 'كان', 'فقال', 'وقال', 'قال', 'منه', 'به', 'له',
+  'و', 'ف', 'ب', 'ل', 'يا', 'هذا', 'هذه', 'ذلك', 'كان', 'فقال', 'وقال', 'قال', 'منه', 'به', 'له', 'أنه', 'أنها',
 };
 
 bool _prevContinues(OpenitiParagraph prev) {
   final t = cleanText(prev.raw.replaceAll(_markerRe, ' '));
-  if (t.endsWith('،') || t.endsWith('؛') || t.endsWith(',')) return true;
+  // فاصلة أو شرطة («النبي - صلى الله عليه وسلم -») تعني أن الجملة لم تتم.
+  if (t.endsWith('،') || t.endsWith('؛') || t.endsWith(',') || t.endsWith('-')) return true;
   final words = t.split(' ');
   return _openEndings.contains(words.last);
 }
