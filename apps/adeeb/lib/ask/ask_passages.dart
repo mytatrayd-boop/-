@@ -111,7 +111,11 @@ List<AskPassage> selectPassages(List<LocalParagraph> ranked, AskQuery query) {
       sent = text.trim();
     } else {
       final matches = findMatches(text, highlight);
-      sent = excerptAround(text, matches.isEmpty ? 0 : matches.first.start, cap);
+      sent = excerptAround(
+        text,
+        matches.isEmpty ? 0 : matches.first.start,
+        cap,
+      );
     }
     if (sent.isEmpty) continue;
     out.add(AskPassage(paragraph: p, sentText: sent));

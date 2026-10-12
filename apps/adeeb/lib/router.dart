@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import 'ask/ask_screen.dart';
 import 'library/book_page.dart';
 import 'library/library_screen.dart';
 import 'reader/reader_screen.dart';
@@ -19,7 +20,8 @@ GoRouter createRouter({GlobalKey<NavigatorState>? navigatorKey}) => GoRouter(
               BookPage(bookId: state.pathParameters['bookId']!),
         ),
         // `/read/<id>?p=<معرّف فقرة>` أو `?c=<معرّف باب>` (ARCHITECTURE §3)،
-        // و`&q=<استعلام>` لتظليل كلمات البحث في الفقرة.
+        // و`&q=<استعلام>` لتظليل كلمات البحث في الفقرة، أو `&quote=<نص>`
+        // لتظليل اقتباس «اسأل الأديب».
         GoRoute(
           path: 'read/:bookId',
           builder: (context, state) => ReaderScreen(
@@ -27,7 +29,14 @@ GoRouter createRouter({GlobalKey<NavigatorState>? navigatorKey}) => GoRouter(
             paragraphId: state.uri.queryParameters['p'],
             chapterId: state.uri.queryParameters['c'],
             searchQuery: state.uri.queryParameters['q'],
+            quote: state.uri.queryParameters['quote'],
           ),
+        ),
+        // `/ask` أو `/ask?book=<id>` (نطاق كتاب واحد).
+        GoRoute(
+          path: 'ask',
+          builder: (context, state) =>
+              AskScreen(initialBookId: state.uri.queryParameters['book']),
         ),
         // `/search` (كل الكتب) أو `/search?book=<id>` (كتاب واحد).
         GoRoute(

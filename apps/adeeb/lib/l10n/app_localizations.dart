@@ -1055,6 +1055,336 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{book} — {author}'**
   String audioNowPlayingSubtitle(String book, String author);
+
+  /// No description provided for @askTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل الأديب'**
+  String get askTitle;
+
+  /// No description provided for @askQuotaBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقٍ لك {remaining} من {limit} اليوم'**
+  String askQuotaBadge(String remaining, String limit);
+
+  /// No description provided for @askQuotaExhausted.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت أسئلة اليوم'**
+  String get askQuotaExhausted;
+
+  /// No description provided for @askQuotaExplainTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسئلة اليومية'**
+  String get askQuotaExplainTitle;
+
+  /// No description provided for @askQuotaExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'لكل جهاز {limit} أسئلة يومياً لإبقاء الخدمة مجانية. يتجدد الرصيد كل يوم. ويُحتسب السؤال إذا وصل إلى الأديب حتى لو لم يجد الإجابة في الكتب.'**
+  String askQuotaExplain(String limit);
+
+  /// No description provided for @askQuotaExplainClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسناً'**
+  String get askQuotaExplainClose;
+
+  /// No description provided for @askPrivacyBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تكتب معلومات شخصية في سؤالك'**
+  String get askPrivacyBanner;
+
+  /// No description provided for @askHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل عن شيء في الكتب… مثل: ما تعريف البيان عند الجاحظ؟'**
+  String get askHint;
+
+  /// No description provided for @askFieldLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤالك'**
+  String get askFieldLabel;
+
+  /// No description provided for @askCharCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} / {max}'**
+  String askCharCount(String count, String max);
+
+  /// No description provided for @askTooLong.
+  ///
+  /// In ar, this message translates to:
+  /// **'السؤال أطول من {max} حرف'**
+  String askTooLong(String max);
+
+  /// No description provided for @askTooShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب سؤالاً أوضح'**
+  String get askTooShort;
+
+  /// No description provided for @askButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل'**
+  String get askButton;
+
+  /// No description provided for @askSearchTextsButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في النصوص'**
+  String get askSearchTextsButton;
+
+  /// No description provided for @askExamples.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما تعريف البيان عند الجاحظ؟|ماذا قال ابن المقفع عن الصديق؟|ما آداب المجالسة في أدب الدنيا والدين؟'**
+  String get askExamples;
+
+  /// No description provided for @askExamplesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أمثلة'**
+  String get askExamplesTitle;
+
+  /// No description provided for @askArabicNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجابات بالعربية ومقتبسة من الكتب'**
+  String get askArabicNote;
+
+  /// No description provided for @askStageSearching.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبحث في الكتب…'**
+  String get askStageSearching;
+
+  /// No description provided for @askStageAnswering.
+  ///
+  /// In ar, this message translates to:
+  /// **'يصوغ الإجابة…'**
+  String get askStageAnswering;
+
+  /// No description provided for @askStageVerifying.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتحقق من الاقتباس…'**
+  String get askStageVerifying;
+
+  /// No description provided for @askSlow.
+  ///
+  /// In ar, this message translates to:
+  /// **'يستغرق الأمر وقتاً أطول من المعتاد…'**
+  String get askSlow;
+
+  /// No description provided for @askCancelNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'قد يُحتسب السؤال إذا وصل إلى الخادم'**
+  String get askCancelNote;
+
+  /// No description provided for @askYourQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤالك: {question}'**
+  String askYourQuestion(String question);
+
+  /// No description provided for @askAiLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجابة مولَّدة آلياً من نص الكتاب — راجع الاقتباس'**
+  String get askAiLabel;
+
+  /// No description provided for @askQuoted.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{quote}»'**
+  String askQuoted(String quote);
+
+  /// No description provided for @askQuoteSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتباس: {quote}'**
+  String askQuoteSemantics(String quote);
+
+  /// No description provided for @askOpenSource.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح المصدر: {book}، {chapter}'**
+  String askOpenSource(String book, String chapter);
+
+  /// No description provided for @askNewQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال جديد'**
+  String get askNewQuestion;
+
+  /// No description provided for @askOtherPassages.
+  ///
+  /// In ar, this message translates to:
+  /// **'نصوص مطابقة أخرى ({count})'**
+  String askOtherPassages(String count);
+
+  /// No description provided for @askAnswerArrived.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت الإجابة'**
+  String get askAnswerArrived;
+
+  /// No description provided for @askCopyCitation.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{quote}»\n— {book}، {chapter}'**
+  String askCopyCitation(String quote, String book, String chapter);
+
+  /// No description provided for @askNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم أجد هذا في الكتب المتاحة.'**
+  String get askNotFound;
+
+  /// No description provided for @askNotFoundHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب صياغة أخرى أو اختر كتاباً محدداً.'**
+  String get askNotFoundHint;
+
+  /// No description provided for @askBooksOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجيب الأديب عن محتوى الكتب فقط، ولا يقدّم فتاوى.'**
+  String get askBooksOnly;
+
+  /// No description provided for @askClosestPassages.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقرب النصوص إلى سؤالك'**
+  String get askClosestPassages;
+
+  /// No description provided for @askMatchingPassages.
+  ///
+  /// In ar, this message translates to:
+  /// **'النصوص المطابقة'**
+  String get askMatchingPassages;
+
+  /// No description provided for @askUnverified.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نتمكن من التحقق من الإجابة، فإليك النصوص المطابقة مباشرة.'**
+  String get askUnverified;
+
+  /// No description provided for @askDailyLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت أسئلة اليوم ({limit} من {limit}). يتجدد رصيدك غداً. إليك النصوص المطابقة لسؤالك من الكتب:'**
+  String askDailyLimit(String limit);
+
+  /// No description provided for @askOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت دون إنترنت. الإجابة الذكية تحتاج اتصالاً، وهذه النصوص المطابقة من كتبك المحمّلة:'**
+  String get askOffline;
+
+  /// No description provided for @askUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمة غير متاحة الآن. حاول لاحقاً. إليك النصوص المطابقة:'**
+  String get askUnavailable;
+
+  /// No description provided for @askRateLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسلت أسئلة كثيرة بسرعة. انتظر دقيقة ثم حاول.'**
+  String get askRateLimit;
+
+  /// No description provided for @askUpgrade.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث التطبيق لتستخدم «اسأل الأديب». إليك النصوص المطابقة:'**
+  String get askUpgrade;
+
+  /// No description provided for @askNoBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'حمّل كتاباً واحداً على الأقل ليجيبك الأديب من نصه.'**
+  String get askNoBooks;
+
+  /// No description provided for @askNoLocalMatches.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولم نجد نصوصاً مطابقة لكلمات سؤالك.'**
+  String get askNoLocalMatches;
+
+  /// No description provided for @askBooksError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر قراءة الكتب المحمّلة.'**
+  String get askBooksError;
+
+  /// No description provided for @askConsentTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل أن تسأل'**
+  String get askConsentTitle;
+
+  /// No description provided for @askConsentBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجيب الأديب من نصوص الكتب المحمّلة فقط، ويذكر لك الاقتباس ومصدره.'**
+  String get askConsentBooks;
+
+  /// No description provided for @askConsentGemini.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُرسل سؤالك ومقاطع من الكتب إلى خدمة Gemini من Google لصياغة الإجابة، وقد تستخدمه Google لتحسين خدماتها.'**
+  String get askConsentGemini;
+
+  /// No description provided for @askConsentPersonal.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تكتب معلومات شخصية في سؤالك.'**
+  String get askConsentPersonal;
+
+  /// No description provided for @askConsentNoFatwa.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يجيب الأديب عن الفتاوى ولا عن أسئلة من خارج الكتب.'**
+  String get askConsentNoFatwa;
+
+  /// No description provided for @askConsentAge.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الميزة لمن هم 18 سنة فأكثر.'**
+  String get askConsentAge;
+
+  /// No description provided for @askConsentConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمري 18 سنة فأكثر، فهمت'**
+  String get askConsentConfirm;
+
+  /// No description provided for @askConsentDecline.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس الآن'**
+  String get askConsentDecline;
+
+  /// No description provided for @askAboutThis.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل الأديب عن هذا'**
+  String get askAboutThis;
+
+  /// No description provided for @askQuoteBookNotInstalled.
+  ///
+  /// In ar, this message translates to:
+  /// **'النص المقتبس:'**
+  String get askQuoteBookNotInstalled;
 }
 
 class _AppLocalizationsDelegate

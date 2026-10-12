@@ -14,9 +14,8 @@ const minQuestionChars = 3;
 
 /// يزيل محارف التحكم (عدا السطر الجديد والجدولة) التي يرفضها الخادم، ويحذف
 /// المسافات الطرفية.
-String cleanQuestion(String raw) => raw
-    .replaceAll(RegExp(r'[\u0000-\u0008\u000B-\u001F\u007F]'), ' ')
-    .trim();
+String cleanQuestion(String raw) =>
+    raw.replaceAll(RegExp(r'[\u0000-\u0008\u000B-\u001F\u007F]'), ' ').trim();
 
 class AskQuery {
   const AskQuery._(this.words);
@@ -44,9 +43,8 @@ class AskQuery {
   bool get isEmpty => words.isEmpty;
 
   /// تعبير MATCH: كل كلمة تطابق `norm` أو جذعها `stem`، والكلمات بـ OR.
-  String toFtsMatch() => words
-      .map((w) => '(norm:"$w" OR stem:"${lightStem(w)}")')
-      .join(' OR ');
+  String toFtsMatch() =>
+      words.map((w) => '(norm:"$w" OR stem:"${lightStem(w)}")').join(' OR ');
 
   /// استعلام بحث بالكلمات نفسها لتظليل التطابق في النصوص المعروضة.
   SearchQuery get highlightQuery => SearchQuery.parse(words.join(' '));

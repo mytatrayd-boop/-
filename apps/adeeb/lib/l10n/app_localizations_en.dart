@@ -612,4 +612,206 @@ class AppLocalizationsEn extends AppLocalizations {
   String audioNowPlayingSubtitle(String book, String author) {
     return '$book — $author';
   }
+
+  @override
+  String get askTitle => 'Ask Adeeb';
+
+  @override
+  String askQuotaBadge(String remaining, String limit) {
+    return '$remaining of $limit left today';
+  }
+
+  @override
+  String get askQuotaExhausted => 'No questions left today';
+
+  @override
+  String get askQuotaExplainTitle => 'Daily questions';
+
+  @override
+  String askQuotaExplain(String limit) {
+    return 'Each device gets $limit questions a day to keep the service free. Your balance renews every day. A question counts once it reaches Adeeb, even if the answer isn\'t found in the books.';
+  }
+
+  @override
+  String get askQuotaExplainClose => 'OK';
+
+  @override
+  String get askPrivacyBanner =>
+      'Don\'t include personal information in your question';
+
+  @override
+  String get askHint =>
+      'Ask about something in the books… e.g. ما تعريف البيان عند الجاحظ؟';
+
+  @override
+  String get askFieldLabel => 'Your question';
+
+  @override
+  String askCharCount(String count, String max) {
+    return '$count / $max';
+  }
+
+  @override
+  String askTooLong(String max) {
+    return 'The question is longer than $max characters';
+  }
+
+  @override
+  String get askTooShort => 'Write a clearer question';
+
+  @override
+  String get askButton => 'Ask';
+
+  @override
+  String get askSearchTextsButton => 'Search the texts';
+
+  @override
+  String get askExamples =>
+      'ما تعريف البيان عند الجاحظ؟|ماذا قال ابن المقفع عن الصديق؟|ما آداب المجالسة في أدب الدنيا والدين؟';
+
+  @override
+  String get askExamplesTitle => 'Examples';
+
+  @override
+  String get askArabicNote => 'Answers are in Arabic, quoted from the books';
+
+  @override
+  String get askStageSearching => 'Searching the books…';
+
+  @override
+  String get askStageAnswering => 'Writing the answer…';
+
+  @override
+  String get askStageVerifying => 'Verifying the quote…';
+
+  @override
+  String get askSlow => 'This is taking longer than usual…';
+
+  @override
+  String get askCancelNote => 'The question may count if it reached the server';
+
+  @override
+  String askYourQuestion(String question) {
+    return 'Your question: $question';
+  }
+
+  @override
+  String get askAiLabel => 'AI-generated from the book text — check the quote';
+
+  @override
+  String askQuoted(String quote) {
+    return '«$quote»';
+  }
+
+  @override
+  String askQuoteSemantics(String quote) {
+    return 'Quote: $quote';
+  }
+
+  @override
+  String askOpenSource(String book, String chapter) {
+    return 'Open source: $book, $chapter';
+  }
+
+  @override
+  String get askNewQuestion => 'New question';
+
+  @override
+  String askOtherPassages(String count) {
+    return 'Other matching passages ($count)';
+  }
+
+  @override
+  String get askAnswerArrived => 'The answer has arrived';
+
+  @override
+  String askCopyCitation(String quote, String book, String chapter) {
+    return '«$quote»\n— $book, $chapter';
+  }
+
+  @override
+  String get askNotFound => 'I couldn\'t find this in the available books.';
+
+  @override
+  String get askNotFoundHint => 'Try rephrasing or choose a specific book.';
+
+  @override
+  String get askBooksOnly =>
+      'Adeeb only answers about the books\' content and doesn\'t give religious rulings.';
+
+  @override
+  String get askClosestPassages => 'Passages closest to your question';
+
+  @override
+  String get askMatchingPassages => 'Matching passages';
+
+  @override
+  String get askUnverified =>
+      'We couldn\'t verify the answer, so here are the matching passages directly.';
+
+  @override
+  String askDailyLimit(String limit) {
+    return 'Today\'s questions are used up ($limit of $limit). Your balance renews tomorrow. Here are matching passages:';
+  }
+
+  @override
+  String get askOffline =>
+      'You\'re offline. The AI answer needs a connection; here are matching passages from your downloaded books:';
+
+  @override
+  String get askUnavailable =>
+      'The service isn\'t available right now. Try later. Here are matching passages:';
+
+  @override
+  String get askRateLimit =>
+      'You sent many questions quickly. Wait a minute and try again.';
+
+  @override
+  String get askUpgrade =>
+      'Update the app to use Ask Adeeb. Here are matching passages:';
+
+  @override
+  String get askNoBooks =>
+      'Download at least one book so Adeeb can answer from its text.';
+
+  @override
+  String get askNoLocalMatches =>
+      'And we found no passages matching the words of your question.';
+
+  @override
+  String get askBooksError => 'Couldn\'t read the downloaded books.';
+
+  @override
+  String get askConsentTitle => 'Before you ask';
+
+  @override
+  String get askConsentBooks =>
+      'Adeeb answers only from the text of your downloaded books, and shows you the quote and its source.';
+
+  @override
+  String get askConsentGemini =>
+      'Your question and excerpts from the books are sent to Google\'s Gemini service to write the answer, and Google may use them to improve its services.';
+
+  @override
+  String get askConsentPersonal =>
+      'Don\'t include personal information in your question.';
+
+  @override
+  String get askConsentNoFatwa =>
+      'Adeeb doesn\'t answer religious rulings or questions outside the books.';
+
+  @override
+  String get askConsentAge => 'This feature is for people aged 18 or over.';
+
+  @override
+  String get askConsentConfirm => 'I\'m 18 or over — got it';
+
+  @override
+  String get askConsentDecline => 'Not now';
+
+  @override
+  String get askAboutThis => 'Ask Adeeb about this';
+
+  @override
+  String get askQuoteBookNotInstalled => 'Quoted text:';
 }

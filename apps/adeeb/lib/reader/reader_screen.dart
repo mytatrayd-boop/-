@@ -6,6 +6,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../ask/ask_screen.dart';
+import '../ask/quote_verifier.dart';
 import '../audio/listen_actions.dart';
 import '../audio/listening_player.dart';
 import '../audio/listening_providers.dart';
@@ -31,6 +33,8 @@ import 'reader_settings.dart';
 /// يُفتح على [paragraphId] (من المفضلة أو البحث أو الاقتباس)، أو على أول باب
 /// [chapterId]، أو على آخر موضع محفوظ، أو على أول الكتاب. [searchQuery] (من
 /// نتيجة بحث) تُظلَّل كلماته في الفقرة المفتوحة حتى مغادرة القارئ (DESIGN §9.4).
+/// [quote] (من «اسأل الأديب») يُظلَّل نصه في الفقرة المفتوحة، ويُعرض إن لم
+/// يكن الكتاب محمّلاً (DESIGN §9.5).
 class ReaderScreen extends ConsumerStatefulWidget {
   const ReaderScreen({
     super.key,
@@ -38,12 +42,14 @@ class ReaderScreen extends ConsumerStatefulWidget {
     this.paragraphId,
     this.chapterId,
     this.searchQuery,
+    this.quote,
   });
 
   final String bookId;
   final String? paragraphId;
   final String? chapterId;
   final String? searchQuery;
+  final String? quote;
 
   @override
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
@@ -51,7 +57,7 @@ class ReaderScreen extends ConsumerStatefulWidget {
 
 enum _OpenNotice { none, resumed, notFound }
 
-enum _ParagraphAction { favorite, copy, share, listen }
+enum _ParagraphAction { favorite, copy, share, listen, ask }
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   final _scroll = ScrollController(keepScrollOffset: false);
@@ -223,7 +229,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       if (index != null) {
         entry = book.entryOfParagraph(index);
         flash = book.paragraphs[index].id;
-        if (_search != null) searchId = flash;
+        if (_search != null || widget.quote != null) searchId = flash;
       } else {
         notice = _OpenNotice.notFound;
         final chapterId = ReaderBook.chapterIdOfParagraphId(id);
@@ -265,6 +271,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       case _OpenNotice.none:
         break;
     }
+  }
+
+  /// موضع الاقتباس في الفقرة (على حدود الكلمات كمدقق «اسأل الأديب»).
+  MatchSpan? _quoteSpan(ReaderParagraph p) {
+    final quote = widget.quote;
+    return quote == null ? null : locateQuote(quote, p.text);
   }
 
   void _setCurrentFromEntry(int entry) {
@@ -507,6 +519,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 l10n.listenFromHere,
                 _ParagraphAction.listen,
               ),
+              tile(
+                Icons.question_answer_outlined,
+                l10n.askAboutThis,
+                _ParagraphAction.ask,
+              ),
             ],
           ),
         );
@@ -524,6 +541,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       case _ParagraphAction.listen:
         final index = _book?.paragraphIndexOf(p.id);
         if (index != null) await _listenFrom(index);
+      case _ParagraphAction.ask:
+        await context.push(askLocation(bookId: widget.bookId));
       case null:
         break;
     }
@@ -609,6 +628,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           message: l10n.bookNotInstalledReader,
           bookId: widget.bookId,
           redownload: false,
+          quote: widget.quote,
         ),
       );
     }
@@ -652,6 +672,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             listenLabel: l10n.listenFromHere,
             onListen: () => _listenFrom(paragraphIndex),
             searchQuery: p.id == _searchId ? _search : null,
+            quoteSpan: p.id == _searchId ? _quoteSpan(p) : null,
             animate: !reduceMotion,
             favoriteLabel: isFavorite
                 ? l10n.removeFromFavorites
@@ -892,6 +913,7 @@ class _Paragraph extends StatelessWidget {
     required this.listenLabel,
     required this.onListen,
     required this.searchQuery,
+    required this.quoteSpan,
     required this.animate,
     required this.favoriteLabel,
     required this.favoriteValue,
@@ -914,6 +936,9 @@ class _Paragraph extends StatelessWidget {
 
   /// كلمات البحث المظلّلة في هذه الفقرة (null = بلا تظليل).
   final SearchQuery? searchQuery;
+
+  /// موضع اقتباس «اسأل الأديب» في نص الفقرة الكامل (null = بلا تظليل).
+  final MatchSpan? quoteSpan;
   final bool animate;
   final String favoriteLabel;
   final String? favoriteValue;
@@ -931,7 +956,21 @@ class _Paragraph extends StatelessWidget {
       color: palette.text,
     );
     final query = searchQuery;
-    Text text(String s) => query == null
+    final quote = quoteSpan;
+    // [offset]: موضع الجزء [s] (شطر أو بيت) في نص الفقرة الكامل.
+    List<MatchSpan>? marks(String s, int offset) {
+      if (quote != null) {
+        final start = quote.start - offset;
+        final end = quote.end - offset;
+        if (end <= 0 || start >= s.length) return const [];
+        return [
+          MatchSpan(start < 0 ? 0 : start, end > s.length ? s.length : end),
+        ];
+      }
+      return query == null ? null : findMatches(s, query);
+    }
+
+    Text text(String s, [int offset = 0]) => marks(s, offset) == null
         ? Text(
             s,
             textDirection: TextDirection.rtl,
@@ -943,7 +982,7 @@ class _Paragraph extends StatelessWidget {
             TextSpan(
               children: highlightedSpans(
                 s,
-                findMatches(s, query),
+                marks(s, offset)!,
                 palette.searchHighlight,
               ),
             ),
@@ -955,17 +994,26 @@ class _Paragraph extends StatelessWidget {
 
     final Widget content;
     if (paragraph.isVerse) {
+      final lines = <Widget>[];
+      var offset = 0;
+      for (final line in paragraph.text.split('\n')) {
+        final halves = <Widget>[];
+        for (final half in line.split('\t')) {
+          halves.add(text(half, offset));
+          offset += half.length + 1;
+        }
+        lines.add(
+          Wrap(
+            textDirection: TextDirection.rtl,
+            alignment: WrapAlignment.center,
+            spacing: 32,
+            children: halves,
+          ),
+        );
+      }
       content = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final line in paragraph.text.split('\n'))
-            Wrap(
-              textDirection: TextDirection.rtl,
-              alignment: WrapAlignment.center,
-              spacing: 32,
-              children: [for (final half in line.split('\t')) text(half)],
-            ),
-        ],
+        children: lines,
       );
     } else {
       content = text(paragraph.text);
@@ -1206,11 +1254,15 @@ class _ReaderMessage extends ConsumerWidget {
     required this.message,
     required this.bookId,
     required this.redownload,
+    this.quote,
   });
 
   final String message;
   final String bookId;
   final bool redownload;
+
+  /// نص الاقتباس من «اسأل الأديب» يُعرض وإن لم يكن الكتاب محمّلاً.
+  final String? quote;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1228,6 +1280,23 @@ class _ReaderMessage extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (quote case final q?) ...[
+              Text(
+                l10n.askQuoteBookNotInstalled,
+                style: theme.textTheme.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.askQuoted(q.replaceAll('\t', '    ')),
+                textDirection: TextDirection.rtl,
+                style: const TextStyle(
+                  fontFamily: bookFont,
+                  fontSize: 20,
+                  height: 1.9,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             Semantics(
               liveRegion: true,
               child: Text(

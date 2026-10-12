@@ -613,4 +613,200 @@ class AppLocalizationsAr extends AppLocalizations {
   String audioNowPlayingSubtitle(String book, String author) {
     return '$book — $author';
   }
+
+  @override
+  String get askTitle => 'اسأل الأديب';
+
+  @override
+  String askQuotaBadge(String remaining, String limit) {
+    return 'باقٍ لك $remaining من $limit اليوم';
+  }
+
+  @override
+  String get askQuotaExhausted => 'انتهت أسئلة اليوم';
+
+  @override
+  String get askQuotaExplainTitle => 'الأسئلة اليومية';
+
+  @override
+  String askQuotaExplain(String limit) {
+    return 'لكل جهاز $limit أسئلة يومياً لإبقاء الخدمة مجانية. يتجدد الرصيد كل يوم. ويُحتسب السؤال إذا وصل إلى الأديب حتى لو لم يجد الإجابة في الكتب.';
+  }
+
+  @override
+  String get askQuotaExplainClose => 'حسناً';
+
+  @override
+  String get askPrivacyBanner => 'لا تكتب معلومات شخصية في سؤالك';
+
+  @override
+  String get askHint =>
+      'اسأل عن شيء في الكتب… مثل: ما تعريف البيان عند الجاحظ؟';
+
+  @override
+  String get askFieldLabel => 'سؤالك';
+
+  @override
+  String askCharCount(String count, String max) {
+    return '$count / $max';
+  }
+
+  @override
+  String askTooLong(String max) {
+    return 'السؤال أطول من $max حرف';
+  }
+
+  @override
+  String get askTooShort => 'اكتب سؤالاً أوضح';
+
+  @override
+  String get askButton => 'اسأل';
+
+  @override
+  String get askSearchTextsButton => 'ابحث في النصوص';
+
+  @override
+  String get askExamples =>
+      'ما تعريف البيان عند الجاحظ؟|ماذا قال ابن المقفع عن الصديق؟|ما آداب المجالسة في أدب الدنيا والدين؟';
+
+  @override
+  String get askExamplesTitle => 'أمثلة';
+
+  @override
+  String get askArabicNote => 'الإجابات بالعربية ومقتبسة من الكتب';
+
+  @override
+  String get askStageSearching => 'يبحث في الكتب…';
+
+  @override
+  String get askStageAnswering => 'يصوغ الإجابة…';
+
+  @override
+  String get askStageVerifying => 'يتحقق من الاقتباس…';
+
+  @override
+  String get askSlow => 'يستغرق الأمر وقتاً أطول من المعتاد…';
+
+  @override
+  String get askCancelNote => 'قد يُحتسب السؤال إذا وصل إلى الخادم';
+
+  @override
+  String askYourQuestion(String question) {
+    return 'سؤالك: $question';
+  }
+
+  @override
+  String get askAiLabel => 'إجابة مولَّدة آلياً من نص الكتاب — راجع الاقتباس';
+
+  @override
+  String askQuoted(String quote) {
+    return '«$quote»';
+  }
+
+  @override
+  String askQuoteSemantics(String quote) {
+    return 'اقتباس: $quote';
+  }
+
+  @override
+  String askOpenSource(String book, String chapter) {
+    return 'افتح المصدر: $book، $chapter';
+  }
+
+  @override
+  String get askNewQuestion => 'سؤال جديد';
+
+  @override
+  String askOtherPassages(String count) {
+    return 'نصوص مطابقة أخرى ($count)';
+  }
+
+  @override
+  String get askAnswerArrived => 'وصلت الإجابة';
+
+  @override
+  String askCopyCitation(String quote, String book, String chapter) {
+    return '«$quote»\n— $book، $chapter';
+  }
+
+  @override
+  String get askNotFound => 'لم أجد هذا في الكتب المتاحة.';
+
+  @override
+  String get askNotFoundHint => 'جرّب صياغة أخرى أو اختر كتاباً محدداً.';
+
+  @override
+  String get askBooksOnly => 'يجيب الأديب عن محتوى الكتب فقط، ولا يقدّم فتاوى.';
+
+  @override
+  String get askClosestPassages => 'أقرب النصوص إلى سؤالك';
+
+  @override
+  String get askMatchingPassages => 'النصوص المطابقة';
+
+  @override
+  String get askUnverified =>
+      'لم نتمكن من التحقق من الإجابة، فإليك النصوص المطابقة مباشرة.';
+
+  @override
+  String askDailyLimit(String limit) {
+    return 'انتهت أسئلة اليوم ($limit من $limit). يتجدد رصيدك غداً. إليك النصوص المطابقة لسؤالك من الكتب:';
+  }
+
+  @override
+  String get askOffline =>
+      'أنت دون إنترنت. الإجابة الذكية تحتاج اتصالاً، وهذه النصوص المطابقة من كتبك المحمّلة:';
+
+  @override
+  String get askUnavailable =>
+      'الخدمة غير متاحة الآن. حاول لاحقاً. إليك النصوص المطابقة:';
+
+  @override
+  String get askRateLimit => 'أرسلت أسئلة كثيرة بسرعة. انتظر دقيقة ثم حاول.';
+
+  @override
+  String get askUpgrade =>
+      'حدّث التطبيق لتستخدم «اسأل الأديب». إليك النصوص المطابقة:';
+
+  @override
+  String get askNoBooks => 'حمّل كتاباً واحداً على الأقل ليجيبك الأديب من نصه.';
+
+  @override
+  String get askNoLocalMatches => 'ولم نجد نصوصاً مطابقة لكلمات سؤالك.';
+
+  @override
+  String get askBooksError => 'تعذّر قراءة الكتب المحمّلة.';
+
+  @override
+  String get askConsentTitle => 'قبل أن تسأل';
+
+  @override
+  String get askConsentBooks =>
+      'يجيب الأديب من نصوص الكتب المحمّلة فقط، ويذكر لك الاقتباس ومصدره.';
+
+  @override
+  String get askConsentGemini =>
+      'يُرسل سؤالك ومقاطع من الكتب إلى خدمة Gemini من Google لصياغة الإجابة، وقد تستخدمه Google لتحسين خدماتها.';
+
+  @override
+  String get askConsentPersonal => 'لا تكتب معلومات شخصية في سؤالك.';
+
+  @override
+  String get askConsentNoFatwa =>
+      'لا يجيب الأديب عن الفتاوى ولا عن أسئلة من خارج الكتب.';
+
+  @override
+  String get askConsentAge => 'هذه الميزة لمن هم 18 سنة فأكثر.';
+
+  @override
+  String get askConsentConfirm => 'عمري 18 سنة فأكثر، فهمت';
+
+  @override
+  String get askConsentDecline => 'ليس الآن';
+
+  @override
+  String get askAboutThis => 'اسأل الأديب عن هذا';
+
+  @override
+  String get askQuoteBookNotInstalled => 'النص المقتبس:';
 }

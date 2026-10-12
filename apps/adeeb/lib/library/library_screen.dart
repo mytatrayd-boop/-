@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../ask/ask_screen.dart';
 import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
@@ -96,6 +97,11 @@ class LibraryScreen extends ConsumerWidget {
               tooltip: l10n.searchTitle,
               icon: const Icon(Icons.search),
               onPressed: () => context.push(searchLocation()),
+            ),
+            IconButton(
+              tooltip: l10n.askTitle,
+              icon: const Icon(Icons.question_answer_outlined),
+              onPressed: () => context.push(askLocation()),
             ),
           ],
           bottom: TabBar(
