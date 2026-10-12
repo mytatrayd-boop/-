@@ -26,7 +26,15 @@ class Issue {
 
 /// رموز تُعدّ تحذيراً لا خطأً: «(١٥)» و«(2)» قد تكون من نص المؤلف (عدد أو ترقيم)،
 /// و«[...]» قد تكون إضافة محقق أو من النص (تظهر في العيّنة ليحكم عليها إنسان).
-const warningCodes = {'footnote_paren_number', 'square_bracket'};
+/// وكذلك المعقوف غير المتوازن، والرقم بعد قوس أو فاصلة («) 1»، «: 31،»)، ونمط «قاله ش»/«ش:»
+/// (تعليقات محقق محتملة).
+const warningCodes = {
+  'footnote_paren_number',
+  'square_bracket',
+  'unbalanced_bracket',
+  'number_after_punct',
+  'editor_sh',
+};
 
 /// استثناءات مراجَعة يدوياً: معرّف فقرة/باب ← رموز مسموح بها فيه.
 typedef ValidationExceptions = Map<String, Set<String>>;
@@ -47,6 +55,8 @@ final Map<String, RegExp> footnotePatterns = {
   'url': RegExp(r'https?://'),
   // «[1]» يغطيه footnote_bracket_number (خطأ)؛ هذا لما سواه.
   'square_bracket': RegExp(r'\[(?!\s*[0-9٠-٩۰-۹]+\s*\])[^\[\]]*\]'),
+  'number_after_punct': RegExp(r'[)،,؛;:]\s*[0-9٠-٩۰-۹]+(?=\s*[،,؛;.)]|\s*$)'),
+  'editor_sh': RegExp(r'قاله ش(?![ء-ي])|(?<![ء-ي])ش\s*:|(?<![ء-ي])ش\s*\]'),
 };
 
 /// رقم الصفحة في الطبعة الأصلية (اختياري، من علامات OpenITI): مجلد وصفحة.
@@ -250,6 +260,9 @@ List<Issue> checkParagraphText(String t, {required bool verse, required String w
         'شكل عرض عربي أو حرف غير قياسي U+${pf[0]!.codeUnitAt(0).toRadixString(16).toUpperCase()}');
   }
   if (!isArabicNfc(t)) err('nfc', 'النص ليس NFC');
+  if ('['.allMatches(t).length != ']'.allMatches(t).length) {
+    err('unbalanced_bracket', 'معقوف غير متوازن داخل الفقرة');
+  }
   for (final e in footnotePatterns.entries) {
     final m = e.value.firstMatch(t);
     if (m != null) err(e.key, 'علامة حاشية/ترميز: «${m[0]}»');

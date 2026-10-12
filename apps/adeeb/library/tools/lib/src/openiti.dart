@@ -32,16 +32,27 @@ class OpenitiException extends WikitextException {
 /// قاعدة نصية من الوصفة تُطبَّق على كل سطر من متن المصدر (بعد الترويسة) بالترتيب.
 /// `with` غائب = حذف المطابقة (ويقبل `$1`…`$9`). كل مطابقة تُعدّ باسم القاعدة.
 class OpenitiRule {
-  OpenitiRule(this.name, this.pattern, this.replacement);
+  OpenitiRule(this.name, this.pattern, this.replacement, {this.pipes, this.end});
   final String name;
   final RegExp pattern;
   final String replacement;
+
+  /// في drop_headings: يقصر القاعدة على عناوين بهذا العدد من `|`.
+  final int? pipes;
+
+  /// في drop_spans: نمط السطر الأخير من المقطع المحذوف (يُحذف معه).
+  final RegExp? end;
 
   static OpenitiRule fromJson(Map<String, Object?> j) => OpenitiRule(
         j['name']! as String,
         RegExp(j['pattern']! as String),
         (j['with'] as String?) ?? '',
+        pipes: j['pipes'] as int?,
+        end: j['end'] == null ? null : RegExp(j['end']! as String),
       );
+
+  /// مطابقة النص كله (لا جزء منه).
+  bool fullMatch(String t) => pattern.matchAsPrefix(t)?.end == t.length;
 
   /// نص الاستبدال لمطابقة، مع `$1`…`$9` للمجموعات.
   String expand(Match m) => replacement.replaceAllMapped(
@@ -53,6 +64,8 @@ class OpenitiRule {
         'name': name,
         'pattern': pattern.pattern,
         if (replacement.isNotEmpty) 'with': replacement,
+        if (pipes != null) 'pipes': pipes,
+        if (end != null) 'end': end!.pattern,
       };
 }
 
@@ -103,6 +116,12 @@ class OpenitiRecipe {
     this.dropHeadings = const [],
     this.headingRules = const [],
     this.headingLevels = const [],
+    this.dropSpans = const [],
+    this.paragraphRules = const [],
+    this.dropParagraphs = const [],
+    this.noMergeBefore = const [],
+    this.bareHeading,
+    this.bareHeadingFormat,
     this.rules = const [],
     this.headings = const {},
     this.redirects = const {},
@@ -163,6 +182,24 @@ class OpenitiRecipe {
   /// مستوى العنوان المطابق كله لنمط (`with` = المستوى)؛ يغلب عدد `|`.
   final List<OpenitiRule> headingLevels;
 
+  /// مقاطع أسطر تُحذف كلها: من سطر يطابق `pattern` إلى سطر يطابق `end` (كلاهما مطابقة كاملة).
+  /// لتعليقات محقق تمتد على عدة فقرات.
+  final List<OpenitiRule> dropSpans;
+
+  /// حذف/استبدال داخل نص الفقرة بعد ضم أسطرها (لما يمتد على أكثر من سطر).
+  final List<OpenitiRule> paragraphRules;
+
+  /// فقرات تُحذف كلها إن طابق نصها (بعد paragraph_rules) النمط كله.
+  final List<OpenitiRule> dropParagraphs;
+
+  /// أنماط إضافية لبداية سطر لا يُوصل بما قبله عبر حدّ الصفحة (فوق القائمة الافتراضية).
+  final List<OpenitiRule> noMergeBefore;
+
+  /// عنوان بلا اسم (مثل «باب») يُرقَّم بترتيبه بين أبواب المستوى 1: [bareHeadingFormat]
+  /// مع `{n}` بأرقام عربية مشرقية (مثل «باب ١٢»)، حتى لا يُضاف كلام ليس في المصدر.
+  final String? bareHeading;
+  final String? bareHeadingFormat;
+
   /// قواعد حذف/استبدال داخل الأسطر (مثل أرقام حواشٍ «١» بقيت بعد حذف الحواشي).
   final List<OpenitiRule> rules;
 
@@ -205,6 +242,11 @@ class OpenitiRecipe {
         'drop_headings': [for (final r in dropHeadings) r.toJson()],
         'heading_rules': [for (final r in headingRules) r.toJson()],
         'heading_levels': [for (final r in headingLevels) r.toJson()],
+        'drop_spans': [for (final r in dropSpans) r.toJson()],
+        'paragraph_rules': [for (final r in paragraphRules) r.toJson()],
+        'drop_paragraphs': [for (final r in dropParagraphs) r.toJson()],
+        'no_merge_before': [for (final r in noMergeBefore) r.toJson()],
+        if (bareHeading != null) 'bare_heading': {'text': bareHeading, 'format': bareHeadingFormat},
         'rules': [for (final r in rules) r.toJson()],
         'headings': {for (final e in headings.entries) e.key: e.value.toJson()},
         if (redirects.isNotEmpty) 'redirects': redirects,
@@ -249,6 +291,12 @@ class OpenitiRecipe {
       dropHeadings: rules('drop_headings'),
       headingRules: rules('heading_rules'),
       headingLevels: rules('heading_levels'),
+      dropSpans: rules('drop_spans'),
+      paragraphRules: rules('paragraph_rules'),
+      dropParagraphs: rules('drop_paragraphs'),
+      noMergeBefore: rules('no_merge_before'),
+      bareHeading: (j['bare_heading'] as Map?)?['text'] as String?,
+      bareHeadingFormat: (j['bare_heading'] as Map?)?['format'] as String?,
       rules: rules('rules'),
       headings: {
         for (final e in ((j['headings'] as Map?) ?? const {}).entries)
@@ -297,6 +345,9 @@ class OpenitiParagraph extends OpenitiItem {
 
   /// علامة الصفحة التي تنتهي بها صفحة بداية الفقرة، مثل V01P009.
   String? page;
+
+  /// نص آخر سطر من المصدر في الفقرة (بلا علامات)، لقرار الوصل عبر حدّ الصفحة.
+  String lastLine = '';
   String get raw => pieces.join(' ');
 }
 
@@ -311,6 +362,33 @@ final _unknownMarkup = RegExp(r'[A-Za-z#|~%@$<>*`_{}\\^=+]');
 
 /// علامات وقف تنهي الفقرة؛ ما بعدها في صفحة جديدة لا يُوصل بها.
 final _terminal = RegExp(r'[.!?؟:»"…]$');
+
+/// فواتح خبر جديد: سطر يبدأ بها بعد حدّ الصفحة لا يُوصل بما قبله.
+const defaultNoMergeOpeners = [
+  'قال', 'وقال', 'فقال', 'قالت', 'وقالت', 'وقالوا', 'أنشد', 'وأنشد', 'أنشدني', 'وأنشدني', 'أنشدنا', 'وأنشدنا',
+  'حدثني', 'وحدثني', 'حدثنا', 'وحدثنا', 'أخبرنا', 'وأخبرنا', 'أخبرني', 'وأخبرني', 'يريد', 'يقول', 'ويقول',
+  'يروى', 'ويروى', 'وكان',
+];
+final _openerRe = RegExp('^\\s*(${defaultNoMergeOpeners.join('|')})(?![ء-ي])');
+
+/// آخر سطر في الفقرة السابقة بيت: فيه فاصل الشطرين «...»، أو الفقرة سطر واحد قصير بلا ترقيم
+/// (شطر منظوم). لا يُوصل ما بعده به.
+bool _looksLikeVerse(OpenitiParagraph prev) {
+  final last = prev.lastLine;
+  if (last.contains(' ... ') || last.contains('...')) return true;
+  if (prev.lines.length == 1 &&
+      !RegExp(r'[.،,؛;:؟?!«»"()]').hasMatch(last) &&
+      last.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length <= 8) {
+    return true;
+  }
+  return false;
+}
+
+bool _startsNewReport(String content, OpenitiRecipe recipe) {
+  final t = content.replaceAll(_markerRe, ' ').trimLeft();
+  if (_openerRe.hasMatch(t)) return true;
+  return recipe.noMergeBefore.any((r) => r.pattern.matchAsPrefix(t) != null);
+}
 
 /// أقسام ليست من نص المؤلف بوسم OpenITI صريح.
 const skippedSectionTags = {'PARATEXT', 'EDITOR'};
@@ -353,6 +431,7 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
   var pageSinceText = false;
   var sectionSkip = false;
   final usedHeadings = <String>{};
+  OpenitiRule? openSpan;
 
   // يضيف قطعة نص للفقرة الحالية ويعالج العلامات داخلها بترتيب ظهورها.
   void addContent(OpenitiParagraph p, String content, int lineNo) {
@@ -374,13 +453,36 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
       pageSinceText = false;
       hasText = true;
     }
-    if (hasText) p.lines.add(lineNo);
+    if (hasText) {
+      p.lines.add(lineNo);
+      p.lastLine = content.replaceAll(_markerRe, ' ').trim();
+    }
   }
 
   for (; i < lines.length; i++) {
     final lineNo = i + 1;
     var line = lines[i];
     if (line.trim().isEmpty) continue;
+
+    if (openSpan != null) {
+      stats.add('سطر محذوف ضمن مقطع: ${openSpan.name}');
+      for (final m in _markerRe.allMatches(line)) {
+        _marker(m[0]!, pending, stats, () => pageSinceText = true);
+      }
+      if (openSpan.end!.matchAsPrefix(line)?.end == line.length) openSpan = null;
+      continue;
+    }
+    final span = recipe.dropSpans.where((r) => r.fullMatch(line)).firstOrNull;
+    if (span != null) {
+      if (span.end == null) throw OpenitiException('drop_spans «${span.name}» بلا end.');
+      stats.add('مقطع محذوف: ${span.name}');
+      stats.add('سطر محذوف ضمن مقطع: ${span.name}');
+      for (final m in _markerRe.allMatches(line)) {
+        _marker(m[0]!, pending, stats, () => pageSinceText = true);
+      }
+      if (span.end!.matchAsPrefix(line)?.end != line.length) openSpan = span;
+      continue;
+    }
 
     var dropped = false;
     for (final r in recipe.dropLines) {
@@ -498,9 +600,15 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
         !prev.raw.contains('%~%') &&
         !content.contains('%~%') &&
         !_terminal.hasMatch(cleanText(prev.raw.replaceAll(_markerRe, '')))) {
-      stats.add('فقرة موصولة عبر حدّ الصفحة');
-      addContent(prev, content, lineNo);
-      continue;
+      if (_looksLikeVerse(prev)) {
+        stats.add('لم يُوصل عبر حدّ الصفحة: الفقرة السابقة تنتهي ببيت');
+      } else if (_startsNewReport(content, recipe)) {
+        stats.add('لم يُوصل عبر حدّ الصفحة: السطر يبدأ بفاتحة خبر');
+      } else {
+        stats.add('فقرة موصولة عبر حدّ الصفحة');
+        addContent(prev, content, lineNo);
+        continue;
+      }
     }
     final p = OpenitiParagraph(lineNo);
     items.add(p);
@@ -508,6 +616,7 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
     current = p;
     addContent(p, content, lineNo);
   }
+  if (openSpan != null) throw OpenitiException('مقطع drop_spans «${openSpan.name}» لم يُغلق حتى آخر الملف.');
   if (pending.isNotEmpty) stats.add('فقرة بلا علامة صفحة بعدها (بلا page)', pending.length);
 
   final unused = recipe.headings.keys.where((k) => !usedHeadings.contains(k)).toList()..sort();
@@ -553,6 +662,10 @@ String _short(String s) => s.length > 80 ? '${s.substring(0, 80)}…' : s;
 
 // ---------------------------------------------------------------------------
 // البناء
+
+/// أرقام عربية مشرقية (١٢) لترقيم العناوين.
+String toArabicIndicDigits(int n) =>
+    n.toString().split('').map((d) => String.fromCharCode(0x0660 + int.parse(d))).join();
 
 /// يحوّل نص المصدر إلى ملف الكتاب. [sourceBytes] بايتات الملف كما جُلبت (يُتحقق من sha256).
 BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
@@ -603,9 +716,8 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
           stats.add('عنوان محذوف بالوصفة (النص بعده يبقى في الباب السابق): $text');
           continue;
         }
-        final dropRule = recipe.dropHeadings
-            .where((r) => r.pattern.matchAsPrefix(text)?.end == text.length)
-            .firstOrNull;
+        final dropRule =
+            recipe.dropHeadings.where((r) => (r.pipes == null || r.pipes == pipes) && r.fullMatch(text)).firstOrNull;
         if (dropRule != null) {
           stats.add('عنوان محذوف (نصه يبقى في الباب السابق): ${dropRule.name}');
           continue;
@@ -625,6 +737,11 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
           title = cleanText(title);
           if (title.isEmpty) throw OpenitiException('عنوان «$text» صار فارغاً بعد heading_rules.');
         }
+        if (recipe.bareHeading != null && lvl == 1 && title == recipe.bareHeading) {
+          final n = chapters.where((c) => c.level == 1).length + 1;
+          title = recipe.bareHeadingFormat!.replaceAll('{n}', toArabicIndicDigits(n));
+          stats.add('عنوان «${recipe.bareHeading}» بلا اسم رُقّم بترتيبه');
+        }
         current = DraftChapter(title, lvl);
         chapters.add(current);
       case OpenitiParagraph():
@@ -632,9 +749,22 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
           stats.add('فقرة ضمن قسم محذوف');
           continue;
         }
-        final text = cleanText(item.raw);
+        var raw = item.raw;
+        for (final r in recipe.paragraphRules) {
+          final n = r.pattern.allMatches(raw).length;
+          if (n > 0) {
+            stats.add('قاعدة فقرة: ${r.name}', n);
+            raw = raw.replaceAllMapped(r.pattern, r.expand);
+          }
+        }
+        final text = cleanText(raw);
         if (text.isEmpty) {
           stats.add('فقرة فارغة بعد التنظيف');
+          continue;
+        }
+        final dropPara = recipe.dropParagraphs.where((r) => r.fullMatch(text)).firstOrNull;
+        if (dropPara != null) {
+          stats.add('فقرة محذوفة: ${dropPara.name}');
           continue;
         }
         if (current == null) {
