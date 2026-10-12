@@ -55,7 +55,7 @@ final Map<String, RegExp> footnotePatterns = {
   'url': RegExp(r'https?://'),
   // «[1]» يغطيه footnote_bracket_number (خطأ)؛ هذا لما سواه.
   'square_bracket': RegExp(r'\[(?!\s*[0-9٠-٩۰-۹]+\s*\])[^\[\]]*\]'),
-  'number_after_punct': RegExp(r'[)،,؛;:]\s*[0-9٠-٩۰-۹]+(?=\s*[،,؛;.)]|\s*$)'),
+  'number_after_punct': RegExp(r'[)"،,؛;:]\s*[0-9٠-٩۰-۹]+(?=\s*[،,؛;.)]|\s*$|\s+[ء-ي])'),
   'editor_sh': RegExp(r'قاله ش(?![ء-ي])|(?<![ء-ي])ش\s*:|(?<![ء-ي])ش\s*\]'),
 };
 
