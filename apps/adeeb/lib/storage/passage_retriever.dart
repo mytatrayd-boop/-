@@ -40,6 +40,9 @@ class SqlitePassageRetriever implements PassageRetriever {
   }
 }
 
+/// أفضل [limit] فقرة: [candidateCount] مرشحاً بـ bm25 (OR بين الكلمات)، ثم
+/// إعادة الترتيب بعدد كلمات السؤال المطابقة (D28). الفقرة التمهيدية تحمل
+/// الفقرة التالية في بابها.
 List<LocalParagraph> retrieveParagraphs(
   Database db,
   AskQuery query, {
@@ -49,7 +52,8 @@ List<LocalParagraph> retrieveParagraphs(
   if (query.isEmpty) return const [];
   final scope = bookId == null ? '' : 'AND p.book_id = ? ';
   final rows = db.select(
-    'SELECT p.id, p.book_id, p.text, c.title AS chapter_title, b.title_ar '
+    'SELECT p.id, p.book_id, p.chapter_id, p.ord, p.text, '
+    'c.title AS chapter_title, b.title_ar '
     'FROM paragraphs_fts '
     'JOIN paragraphs p ON p.rowid = paragraphs_fts.rowid '
     'JOIN books b ON b.id = p.book_id '
@@ -57,16 +61,46 @@ List<LocalParagraph> retrieveParagraphs(
     'WHERE paragraphs_fts MATCH ? $scope'
     'ORDER BY bm25(paragraphs_fts), b.installed_at, p.ord '
     'LIMIT ?',
-    [query.toFtsMatch(), ?bookId, limit],
+    [query.toFtsMatch(), ?bookId, candidateCount],
   );
-  return [
-    for (final r in rows)
-      LocalParagraph(
-        id: r['id'] as String,
-        bookId: r['book_id'] as String,
-        bookTitle: r['title_ar'] as String,
-        chapterTitle: r['chapter_title'] as String,
-        text: r['text'] as String,
-      ),
-  ];
+  final nextStmt = db.prepare(
+    'SELECT id, text FROM paragraphs '
+    'WHERE book_id = ? AND chapter_id = ? AND ord > ? ORDER BY ord LIMIT 1',
+  );
+  try {
+    final candidates = [
+      for (final r in rows)
+        () {
+          final text = r['text'] as String;
+          LocalParagraph? next;
+          if (isIntroParagraph(text)) {
+            final n = nextStmt.select([
+              r['book_id'],
+              r['chapter_id'],
+              r['ord'],
+            ]);
+            if (n.isNotEmpty) {
+              next = LocalParagraph(
+                id: n.first['id'] as String,
+                bookId: r['book_id'] as String,
+                bookTitle: r['title_ar'] as String,
+                chapterTitle: r['chapter_title'] as String,
+                text: n.first['text'] as String,
+              );
+            }
+          }
+          return LocalParagraph(
+            id: r['id'] as String,
+            bookId: r['book_id'] as String,
+            bookTitle: r['title_ar'] as String,
+            chapterTitle: r['chapter_title'] as String,
+            text: text,
+            next: next,
+          );
+        }(),
+    ];
+    return rerankCandidates(candidates, query).take(limit).toList();
+  } finally {
+    nextStmt.close();
+  }
 }

@@ -1,6 +1,7 @@
-/// اختيار الفقرات المرسلة إلى الخادم (ARCHITECTURE §7، §8.4): أفضل 6 فقرات
-/// بترتيب bm25، كل فقرة ≤ 1,500 حرف والمجموع ≤ 8,000، والفقرة الطويلة تُقص
-/// على حدود الكلمات حول أول تطابق. Dart صافٍ.
+/// اختيار الفقرات المرسلة إلى الخادم (ARCHITECTURE §7، §8.4، D28): إعادة
+/// ترتيب المرشحين بعدد كلمات السؤال المطابقة ثم bm25، وأفضل 6 فقرات، كل فقرة
+/// ≤ 1,500 حرف والمجموع ≤ 8,000، والفقرة الطويلة تُقص على حدود الكلمات حول
+/// أول تطابق، والفقرة التمهيدية تُرسل معها الفقرة التالية. Dart صافٍ.
 library;
 
 import '../text/search_query.dart';
@@ -16,6 +17,44 @@ const maxTitleChars = 200;
 /// أقل نص يستحق الإرسال حين يضيق ما بقي من المجموع.
 const minPassageChars = 200;
 
+/// عدد الفقرات التي يعيدها المسترجع بعد إعادة الترتيب (الاختيار قد يتخطى
+/// بعضها).
+const retrieveLimit = maxPassages * 2;
+
+/// عدد المرشحين من FTS5 (bm25) قبل إعادة الترتيب (D28).
+const candidateCount = 80;
+
+/// فقرة أقصر من هذا (مثل شطر أو «وقال الشاعر:») لا تُرشَّح وحدها (D28).
+const minCandidateChars = 50;
+
+/// فقرة تمهيدية: تنتهي بنقطتين (أو فاصلة) فقولها في الفقرة التالية، مثل
+/// «وقال الشاعر:» أو «قال بعض الحكماء في ذلك:».
+bool isIntroParagraph(String text) {
+  final t = text.trimRight();
+  return t.endsWith(':') || t.endsWith('،') || t.endsWith(',');
+}
+
+/// يعيد ترتيب [candidates] (مرتبة bm25): عدد كلمات السؤال المختلفة المطابقة
+/// أولاً ثم bm25، ويستبعد القصيرة جداً غير التمهيدية.
+List<LocalParagraph> rerankCandidates(
+  List<LocalParagraph> candidates,
+  AskQuery query,
+) {
+  final scored = <(LocalParagraph, int, int)>[];
+  for (var i = 0; i < candidates.length; i++) {
+    final p = candidates[i];
+    final short = p.text.trim().length < minCandidateChars;
+    if (short && !(isIntroParagraph(p.text) && p.next != null)) continue;
+    // التمهيدية تُقاس مع ما يليها، لأنهما يُرسلان معاً.
+    final text = isIntroParagraph(p.text) && p.next != null
+        ? '${p.text} ${p.next!.text}'
+        : p.text;
+    scored.add((p, query.matchedWords(text), i));
+  }
+  scored.sort((a, b) => a.$2 != b.$2 ? b.$2 - a.$2 : a.$3 - b.$3);
+  return [for (final s in scored) s.$1];
+}
+
 /// فقرة من القاعدة المحلية بنصها الكامل الأصلي (بالتشكيل).
 class LocalParagraph {
   const LocalParagraph({
@@ -24,6 +63,7 @@ class LocalParagraph {
     required this.bookTitle,
     required this.chapterTitle,
     required this.text,
+    this.next,
   });
 
   final String id;
@@ -31,6 +71,9 @@ class LocalParagraph {
   final String bookTitle;
   final String chapterTitle;
   final String text;
+
+  /// الفقرة التالية في الباب نفسه إن كانت هذه تمهيدية (وإلا null).
+  final LocalParagraph? next;
 }
 
 /// فقرة مختارة: الأصل المحلي الكامل، والجزء المرسل منه.
@@ -95,31 +138,50 @@ String excerptAround(String text, int matchStart, int cap) {
 }
 
 /// يختار من [ranked] (مرتبة bm25) ما يُرسل، ويقص الطويل حول أول تطابق.
+/// يختار من [ranked] (بعد [rerankCandidates]) ما يُرسل، ويقص الطويل حول أول
+/// تطابق. الفقرة التمهيدية تُرسل ومعها الفقرة التالية **بمعرّفها هي** فقرةً
+/// مستقلة، فيبقى التحقق من كل اقتباس مقابل الفقرة صاحبة المعرّف (D28).
 List<AskPassage> selectPassages(List<LocalParagraph> ranked, AskQuery query) {
   final highlight = query.highlightQuery;
   final out = <AskPassage>[];
   final ids = <String>{};
   var remaining = maxPassagesTotalChars;
-  for (final p in ranked) {
-    if (out.length == maxPassages) break;
-    if (!ids.add(p.id)) continue;
+
+  String? fit(LocalParagraph p, {required bool aroundMatch}) {
     final cap = remaining < maxPassageChars ? remaining : maxPassageChars;
-    if (cap < minPassageChars) break;
+    if (cap < minPassageChars) return null;
     final text = _clean(p.text);
-    final String sent;
-    if (text.length <= cap) {
-      sent = text.trim();
-    } else {
-      final matches = findMatches(text, highlight);
-      sent = excerptAround(
-        text,
-        matches.isEmpty ? 0 : matches.first.start,
-        cap,
-      );
+    if (text.length <= cap) return text.trim();
+    final matches = aroundMatch
+        ? findMatches(text, highlight)
+        : const <MatchSpan>[];
+    return excerptAround(text, matches.isEmpty ? 0 : matches.first.start, cap);
+  }
+
+  for (final p in ranked) {
+    if (out.length >= maxPassages) break;
+    if (ids.contains(p.id)) continue;
+    final next = isIntroParagraph(p.text) ? p.next : null;
+    // تمهيد بلا مكان لما يليه لا فائدة منه وحده.
+    if (next != null &&
+        !ids.contains(next.id) &&
+        out.length + 2 > maxPassages) {
+      continue;
     }
+    final sent = fit(p, aroundMatch: true);
+    if (sent == null) break;
     if (sent.isEmpty) continue;
+    ids.add(p.id);
     out.add(AskPassage(paragraph: p, sentText: sent));
     remaining -= sent.length;
+    if (next != null && ids.add(next.id)) {
+      // القول يبدأ من أول الفقرة التالية.
+      final more = fit(next, aroundMatch: false);
+      if (more != null && more.isNotEmpty) {
+        out.add(AskPassage(paragraph: next, sentText: more));
+        remaining -= more.length;
+      }
+    }
   }
   return out;
 }

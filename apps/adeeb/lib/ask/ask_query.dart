@@ -52,6 +52,25 @@ class AskQuery {
   String toFtsMatch() =>
       words.map((w) => '(norm:"$w" OR stem:"${lightStem(w)}")').join(' OR ');
 
+  /// عدد كلمات السؤال **المختلفة** الموجودة في [text] (الكلمة المطبَّعة أو
+  /// جذعها يساوي جذع كلمة في النص)، لإعادة ترتيب المرشحين (D28).
+  int matchedWords(String text) {
+    final tokens = <String>{};
+    final stems = <String>{};
+    final norm = normalizeArabic(text);
+    if (norm.isNotEmpty) {
+      for (final t in norm.split(' ')) {
+        tokens.add(t);
+        stems.add(lightStem(t));
+      }
+    }
+    var n = 0;
+    for (final w in words) {
+      if (tokens.contains(w) || stems.contains(lightStem(w))) n++;
+    }
+    return n;
+  }
+
   /// استعلام بحث بالكلمات نفسها لتظليل التطابق في النصوص المعروضة.
   SearchQuery get highlightQuery => SearchQuery.parse(words.join(' '));
 }

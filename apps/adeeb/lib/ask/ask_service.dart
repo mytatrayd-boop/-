@@ -101,7 +101,7 @@ class AskService {
     final query = AskQuery.fromQuestion(question);
     final ranked = query.isEmpty
         ? const <LocalParagraph>[]
-        : await retriever.retrieve(query, bookId: bookId, limit: maxPassages);
+        : await retriever.retrieve(query, bookId: bookId, limit: retrieveLimit);
     final passages = selectPassages(ranked, query);
     final local = [for (final p in passages) p.paragraph];
 
