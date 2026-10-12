@@ -53,7 +53,7 @@ List<LocalParagraph> retrieveParagraphs(
   final scope = bookId == null ? '' : 'AND p.book_id = ? ';
   final rows = db.select(
     'SELECT p.id, p.book_id, p.chapter_id, p.ord, p.text, '
-    'c.title AS chapter_title, b.title_ar '
+    'c.title AS chapter_title, b.title_ar, b.author_ar '
     'FROM paragraphs_fts '
     'JOIN paragraphs p ON p.rowid = paragraphs_fts.rowid '
     'JOIN books b ON b.id = p.book_id '
@@ -95,6 +95,7 @@ List<LocalParagraph> retrieveParagraphs(
             bookTitle: r['title_ar'] as String,
             chapterTitle: r['chapter_title'] as String,
             text: text,
+            bookAuthor: r['author_ar'] as String,
             next: next,
           );
         }(),

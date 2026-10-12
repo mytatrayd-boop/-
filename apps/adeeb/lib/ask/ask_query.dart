@@ -71,6 +71,13 @@ class AskQuery {
     return n;
   }
 
+  /// هل في السؤال كلمة مميّزة من اسم [author] (بلا «ابن» و«أبو» ونحوهما)؟
+  bool mentionsAuthor(String author) {
+    if (author.isEmpty) return false;
+    final names = AskQuery.fromQuestion(author).words;
+    return names.any(words.contains);
+  }
+
   /// استعلام بحث بالكلمات نفسها لتظليل التطابق في النصوص المعروضة.
   SearchQuery get highlightQuery => SearchQuery.parse(words.join(' '));
 }
