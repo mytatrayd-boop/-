@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../audio/listen_actions.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import 'book_actions.dart';
@@ -290,6 +291,15 @@ class BookCard extends ConsumerWidget {
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 context.push('/read/${item.id}');
+              },
+            ),
+            // «استمع» (DESIGN §7.2): من آخر موضع.
+            ListTile(
+              leading: const Icon(Icons.headphones),
+              title: Text(l10n.listen),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                startListening(context, ref, bookId: item.id);
               },
             ),
             ListTile(

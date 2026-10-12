@@ -5,7 +5,9 @@ import 'package:adeeb/audio/listening_providers.dart';
 import 'package:adeeb/audio/mini_player.dart';
 import 'package:adeeb/audio/player_sheets.dart';
 import 'package:adeeb/audio/tts_engine.dart';
+import 'package:adeeb/library/book_card.dart';
 import 'package:adeeb/library/library_screen.dart';
+import 'package:adeeb/reader/continue_reading_card.dart';
 import 'package:adeeb/reader/reader_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -441,5 +443,38 @@ void main() {
       expect(find.text(text, skipOffstage: false), findsOneWidget);
     }
     expect(find.byTooltip('Next paragraph'), findsOneWidget);
+  });
+
+  testWidgets('«استمع» في بطاقة «تابع القراءة» يبدأ من آخر موضع', (
+    tester,
+  ) async {
+    await env.preinstall(miniBook());
+    await env.reading.savePosition('mini', 'mini-b001-p00002');
+    await pumpApp(tester);
+    final card = find.byType(ContinueReadingCard);
+    expect(card, findsOneWidget);
+    await tapVisible(
+      tester,
+      find.descendant(
+        of: card,
+        matching: find.widgetWithText(OutlinedButton, 'استمع'),
+      ),
+    );
+    expect(env.tts.currentText, secondMini);
+    expect(find.byType(MiniPlayer), findsOneWidget);
+  });
+
+  testWidgets('«استمع» في قائمة الضغط المطوّل على الكتاب', (tester) async {
+    await env.preinstall(miniBook());
+    await env.reading.savePosition('mini', 'mini-b002-p00001');
+    await pumpApp(tester);
+    await tester.longPress(
+      find.byWidgetPredicate((w) => w is BookCard && w.item.id == 'mini'),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'استمع'));
+    await tester.pumpAndSettle();
+    expect(env.tts.currentText, 'شطر اختبار أول');
+    expect(find.byType(MiniPlayer), findsOneWidget);
   });
 }

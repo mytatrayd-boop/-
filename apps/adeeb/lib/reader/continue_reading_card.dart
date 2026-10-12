@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../audio/listen_actions.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../library/generated_cover.dart';
 import 'reader_providers.dart';
 
 /// بطاقة «تابع القراءة» أعلى المكتبة (DESIGN §7.1): تظهر فقط إذا وُجد آخر
-/// موضع في كتاب محمّل. زر «استمع» يأتي مع القراءة الصوتية (الميزة 5).
+/// موضع في كتاب محمّل، مع «تابع القراءة» و«استمع» (من آخر موضع).
 class ContinueReadingCard extends ConsumerWidget {
   const ContinueReadingCard({super.key});
 
@@ -77,12 +78,25 @@ class ContinueReadingCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: FilledButton(
-                          onPressed: open,
-                          child: Text(l10n.continueReading),
-                        ),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => startListening(
+                              context,
+                              ref,
+                              bookId: position.bookId,
+                            ),
+                            icon: const Icon(Icons.headphones),
+                            label: Text(l10n.listen),
+                          ),
+                          FilledButton(
+                            onPressed: open,
+                            child: Text(l10n.continueReading),
+                          ),
+                        ],
                       ),
                     ],
                   ),

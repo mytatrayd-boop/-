@@ -101,6 +101,8 @@ class OpenitiRecipe {
     this.skipHeadings = const [],
     this.dropLines = const [],
     this.dropHeadings = const [],
+    this.headingRules = const [],
+    this.headingLevels = const [],
     this.rules = const [],
     this.headings = const {},
     this.redirects = const {},
@@ -155,6 +157,12 @@ class OpenitiRecipe {
   /// بين معقوفين؛ تطابق نص العنوان بعد التنظيف كله.
   final List<OpenitiRule> dropHeadings;
 
+  /// حذف/استبدال داخل نص العنوان (مثل معقوفين حول عنوان من تقسيم المؤلف).
+  final List<OpenitiRule> headingRules;
+
+  /// مستوى العنوان المطابق كله لنمط (`with` = المستوى)؛ يغلب عدد `|`.
+  final List<OpenitiRule> headingLevels;
+
   /// قواعد حذف/استبدال داخل الأسطر (مثل أرقام حواشٍ «١» بقيت بعد حذف الحواشي).
   final List<OpenitiRule> rules;
 
@@ -195,6 +203,8 @@ class OpenitiRecipe {
         'skip_headings': skipHeadings,
         'drop_lines': [for (final r in dropLines) r.toJson()],
         'drop_headings': [for (final r in dropHeadings) r.toJson()],
+        'heading_rules': [for (final r in headingRules) r.toJson()],
+        'heading_levels': [for (final r in headingLevels) r.toJson()],
         'rules': [for (final r in rules) r.toJson()],
         'headings': {for (final e in headings.entries) e.key: e.value.toJson()},
         if (redirects.isNotEmpty) 'redirects': redirects,
@@ -237,6 +247,8 @@ class OpenitiRecipe {
       skipHeadings: [...((j['skip_headings'] as List?) ?? const []).cast<String>()],
       dropLines: rules('drop_lines'),
       dropHeadings: rules('drop_headings'),
+      headingRules: rules('heading_rules'),
+      headingLevels: rules('heading_levels'),
       rules: rules('rules'),
       headings: {
         for (final e in ((j['headings'] as Map?) ?? const {}).entries)
@@ -571,7 +583,12 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
       case OpenitiHeadingItem(:final text, :final pipes):
         openVerse = null;
         final override = recipe.headings[text];
-        var lvl = override?.level ?? (pipes > 3 ? 3 : pipes);
+        final levelRule = recipe.headingLevels
+            .where((r) => r.pattern.matchAsPrefix(text)?.end == text.length)
+            .firstOrNull;
+        final ruleLevel = levelRule == null ? null : int.parse(levelRule.replacement);
+        if (levelRule != null) stats.add('مستوى عنوان بالوصفة: ${levelRule.name}');
+        var lvl = override?.level ?? ruleLevel ?? (pipes > 3 ? 3 : pipes);
         if (skippingLevel != null && lvl > skippingLevel) {
           stats.add('قسم محذوف (فرعي): $text');
           continue;
@@ -593,10 +610,22 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
           stats.add('عنوان محذوف (نصه يبقى في الباب السابق): ${dropRule.name}');
           continue;
         }
-        if (pipes > 3 && override?.level == null) stats.add('عنوان أعمق من 3 مستويات (عومل كمستوى 3)');
+        if (pipes > 3 && override?.level == null && ruleLevel == null) stats.add('عنوان أعمق من 3 مستويات (عومل كمستوى 3)');
         final parent = chapters.isEmpty ? 0 : chapters.last.level;
         if (lvl > parent + 1) lvl = parent + 1;
-        current = DraftChapter(override?.title ?? text, lvl);
+        var title = override?.title ?? text;
+        if (override?.title == null) {
+          for (final r in recipe.headingRules) {
+            final n = r.pattern.allMatches(title).length;
+            if (n > 0) {
+              stats.add('قاعدة عنوان: ${r.name}', n);
+              title = title.replaceAllMapped(r.pattern, r.expand);
+            }
+          }
+          title = cleanText(title);
+          if (title.isEmpty) throw OpenitiException('عنوان «$text» صار فارغاً بعد heading_rules.');
+        }
+        current = DraftChapter(title, lvl);
         chapters.add(current);
       case OpenitiParagraph():
         if (skippingLevel != null) {
