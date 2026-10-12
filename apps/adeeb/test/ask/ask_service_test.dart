@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:adeeb/ask/ask_api.dart';
+import 'package:adeeb/ask/ask_passages.dart';
 import 'package:adeeb/ask/ask_query.dart';
 import 'package:adeeb/ask/ask_service.dart';
 import 'package:adeeb/core/app_config.dart';
@@ -33,7 +35,9 @@ void main() {
     final books = SqliteBookRepository(path, useIsolate: false);
     final aa = textBook('aa', _texts);
     await books.install(gzJson(aa), entryFor(aa));
-    final bb = textBook('bb', ['كتاب آخر يذكر الصديق مرة واحدة فقط هنا.']);
+    final bb = textBook('bb', [
+      'كتاب آخر يذكر الصديق مرة واحدة فقط في هذه الفقرة الاصطناعية.',
+    ]);
     await books.install(gzJson(bb), entryFor(bb));
     retriever = SqlitePassageRetriever(path, useIsolate: false);
     server = FakeAskServer();
@@ -76,6 +80,50 @@ void main() {
       );
       expect(got.map((p) => p.id), ['bb-b001-p00001']);
     });
+  });
+
+  test('بنية واقعية: سطر تمهيد ثم القول، و«قال/ابن» في كل فقرة', () async {
+    final path = '${dir.path}/adeeb.db';
+    final books = SqliteBookRepository(path, useIsolate: false);
+    final cc = textBook('cc', [
+      for (var i = 1; i <= 30; i++)
+        'قال أبو فلان: قال ابن فلان: تكلم رجل في المجلس رقم $i بكلام اختبار آخر.',
+      'حدثنا أبو فلان قال: قال ابن فلان: أوصى رجل من بني تميم ابنه فقال:',
+      'يا بني، الوفاء بالعهد في هذا النص الاصطناعي زينة، والغدر شين.',
+      for (var i = 1; i <= 30; i++)
+        'وقال ابن فلان: قال أبو فلان: هذه فقرة حشو اصطناعية رقم $i عن تميم.',
+    ]);
+    await books.install(gzJson(cc), entryFor(cc));
+    final query = AskQuery.fromQuestion(
+      'ماذا قال ابن فلان في وصية رجل من تميم لابنه؟',
+    );
+    expect(query.words, isNot(contains('قال')));
+    expect(query.words, isNot(contains('ابن')));
+    final ranked = await retriever.retrieve(
+      query,
+      bookId: 'cc',
+      limit: retrieveLimit,
+    );
+    final sent = selectPassages(ranked, query);
+    final ids = sent.map((p) => p.id).toList();
+    // التمهيد أولاً ثم القول بمعرّفه.
+    expect(ids.take(2), ['cc-b001-p00031', 'cc-b001-p00032']);
+    expect(sent[1].sentText, startsWith('يا بني، الوفاء بالعهد'));
+  });
+
+  test('الإلغاء أثناء البحث المحلي: لا طلب إلى الخادم', () async {
+    final cancel = Completer<void>()..complete();
+    await expectLater(
+      service.ask('الصديق', lang: 'ar', cancel: cancel.future),
+      throwsA(
+        isA<AskApiException>().having(
+          (e) => e.failure,
+          'failure',
+          AskFailure.cancelled,
+        ),
+      ),
+    );
+    expect(server.requests, isEmpty);
   });
 
   group('AskService', () {
