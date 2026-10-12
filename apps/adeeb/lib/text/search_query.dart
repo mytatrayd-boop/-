@@ -63,6 +63,23 @@ class SearchQuery {
     return SearchQuery._(raw, List.unmodifiable(terms.take(maxTerms)));
   }
 
+  /// نص الاستعلام للعرض داخل علامتي تنصيص في الرسائل: بلا مسافات طرفية، وبلا
+  /// زوج التنصيص الخارجي إن كتبه المستخدم حول الاستعلام كله، فلا تتكرر
+  /// العلامات («"باب"» ← «باب»).
+  String get displayText {
+    final t = raw.trim();
+    if (t.length >= 2) {
+      const closing = {'"': '"', '«': '»', '“': '”'};
+      final close = closing[t[0]];
+      if (close != null && t.endsWith(close)) {
+        final inner = t.substring(1, t.length - 1);
+        // «"أ" و"ب"» ليست عبارة واحدة محاطة بعلامتين.
+        if (!inner.contains(close)) return inner.trim();
+      }
+    }
+    return t;
+  }
+
   /// حد لعدد الكلمات والعبارات حتى لا يثقل استعلام طويل جداً.
   static const maxTerms = 12;
 

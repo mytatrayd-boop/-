@@ -286,6 +286,54 @@ void main() {
     expect(ftsRows(), 2);
   });
 
+  test('«و/ف» من أصل الكلمة: «كره» لا تجد «فكرة»، «ساد» لا تجد «فساد»، '
+      '«جود» لا تجد «وجود»', () async {
+    await install(
+      textBook('ww', [
+        'فقرة فيها فكرة واحدة.',
+        'فقرة عن الفساد وفساد الرأي.',
+        'فقرة عن وجود الشيء.',
+        'وكتاب جديد.',
+      ]),
+    );
+    expect(await ids('كره'), isEmpty);
+    expect(await ids('ساد'), isEmpty);
+    expect(await ids('جود'), isEmpty);
+    expect(await ids('فكرة'), ['ww-b001-p00001']);
+    expect(await ids('فساد'), ['ww-b001-p00002']);
+    expect(await ids('وجود'), ['ww-b001-p00003']);
+    // السابقة المفردة تُحذف حين يبقى 4 أحرف.
+    expect(await ids('كتاب'), ['ww-b001-p00004']);
+  });
+
+  test('الترحيل 4 يعيد فهرسة الجذوع القديمة', () async {
+    // قاعدة بإصدار 3 فيها صف فهرس بجذع قديم («فكره» ← «كره»).
+    final db = sqlite3.open(path);
+    db.execute('PRAGMA foreign_keys = ON');
+    for (var i = 0; i < 3; i++) {
+      migrations[i](db);
+    }
+    db.userVersion = 3;
+    db.execute(
+      "INSERT INTO books VALUES ('old', 1, 'كتاب قديم', NULL, 'مؤلف', NULL, "
+      "NULL, 'full', '{}', 'public-domain', 1, 10)",
+    );
+    db.execute("INSERT INTO chapters VALUES ('old-b001', 'old', 0, 1, 'باب')");
+    db.execute(
+      'INSERT INTO paragraphs (rowid, id, book_id, chapter_id, ord, kind, text) '
+      "VALUES (1, 'old-b001-p00001', 'old', 'old-b001', 0, 'prose', 'فكرة')",
+    );
+    db.execute(
+      "INSERT INTO paragraphs_fts (rowid, norm, stem) VALUES (1, 'فكره', 'كره')",
+    );
+    db.close();
+
+    await ensureDatabaseReady(path, useIsolate: false);
+    expect(await ids('كره'), isEmpty);
+    expect(await ids('فكرة'), ['old-b001-p00001']);
+    expect(ftsRows(), 1);
+  });
+
   test('البحث في Isolate منفصل يعمل', () async {
     await install(textBook('aa', _sample));
     final isolated = SqliteSearchRepository(path);

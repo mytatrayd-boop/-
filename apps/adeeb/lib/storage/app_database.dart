@@ -10,7 +10,7 @@ import 'search_index.dart';
 import 'write_queue.dart';
 
 /// الترحيل رقم i ينقل القاعدة من الإصدار i إلى i+1. لا يُعدَّل ترحيل منشور.
-final List<void Function(Database)> migrations = [_v1, _v2, _v3];
+final List<void Function(Database)> migrations = [_v1, _v2, _v3, _v4];
 
 int get schemaVersion => migrations.length;
 
@@ -141,5 +141,13 @@ void _v2(Database db) {
 /// داخل معاملة الترحيل نفسها.
 void _v3(Database db) {
   db.execute(createSearchIndexSql);
+  indexAllParagraphs(db);
+}
+
+/// الإصدار 4 (إصلاح مراجعة الميزة 4): الجذع الخفيف صار لا يحذف «و/ف» المفردتين
+/// إلا إن بقي 4 أحرف، فتُعاد فهرسة كل الفقرات بالجذوع الجديدة حتى لا تبقى
+/// جذوع قديمة («فكرة» ← «كره») في الكتب المثبّتة.
+void _v4(Database db) {
+  db.execute("INSERT INTO paragraphs_fts (paragraphs_fts) VALUES ('delete-all')");
   indexAllParagraphs(db);
 }

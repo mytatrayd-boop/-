@@ -12,8 +12,8 @@ void main() {
       'بالقلم': 'قلم',
       'كالبحر': 'بحر',
       'للكتاب': 'كتاب',
-      'وكتب': 'كتب',
-      'فقال': 'قال',
+      'وكتاب': 'كتاب',
+      'فسلام': 'سلام',
       'كتبها': 'كتب',
       'كتبهم': 'كتب',
       'كتبهما': 'كتب',
@@ -37,6 +37,16 @@ void main() {
       expect(lightStem('اسد'), 'اسد');
       expect(lightStem('ها'), 'ها');
       expect(lightStem(''), '');
+    });
+
+    test('«و/ف» المفردتان لا تُحذفان إلا إن بقي 4 أحرف', () {
+      expect(lightStem('فكره'), 'فكره');
+      expect(lightStem('فساد'), 'فساد');
+      expect(lightStem('وجود'), 'وجود');
+      expect(lightStem('وكتب'), 'وكتب');
+      expect(lightStem('فقال'), 'فقال');
+      expect(lightStem('والكتب'), 'كتب');
+      expect(lightStem('وكلمات'), 'كلم');
     });
 
     test('stemNormalized يجذع كل كلمة', () {
@@ -65,6 +75,16 @@ void main() {
         expect(q.terms.single.quoted, isTrue);
         expect(q.toFtsMatch(), 'norm:"الحكمه ضاله"');
       }
+    });
+
+    test('displayText يزيل زوج التنصيص الخارجي فقط', () {
+      expect(SearchQuery.parse('  اسد ').displayText, 'اسد');
+      expect(SearchQuery.parse('"باب الاسد"').displayText, 'باب الاسد');
+      expect(SearchQuery.parse('«باب الاسد»').displayText, 'باب الاسد');
+      expect(SearchQuery.parse('“باب”').displayText, 'باب');
+      expect(SearchQuery.parse('قال «باب»').displayText, 'قال «باب»');
+      expect(SearchQuery.parse('"أ" و"ب"').displayText, '"أ" و"ب"');
+      expect(SearchQuery.parse('"').displayText, '"');
     });
 
     test('عبارة وكلمات معاً، وعلامة بلا إغلاق تُهمل', () {

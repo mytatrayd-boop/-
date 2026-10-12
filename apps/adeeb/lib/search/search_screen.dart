@@ -294,7 +294,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     } else if (_counts.isEmpty) {
       content = [
         _Message(
-          text: l10n.searchNoResults(_query!.raw.trim()),
+          text: l10n.searchNoResults(_query!.displayText),
           detail: l10n.searchNoResultsHint,
           action: _scopeOfResults == null ? null : l10n.searchEverywhere,
           onAction: () => _setScope(null),

@@ -257,6 +257,9 @@ void main() {
       await type(tester, 'اختبار');
       expect(find.text('٣ نتائج في كتاب واحد'), findsOneWidget);
 
+      await type(tester, '«مكرر»');
+      // لا تتكرر علامات التنصيص التي كتبها المستخدم.
+      expect(find.text('لا توجد نتائج لـ «مكرر»'), findsOneWidget);
       await type(tester, 'مكرر');
       expect(find.text('لا توجد نتائج لـ «مكرر»'), findsOneWidget);
       expect(

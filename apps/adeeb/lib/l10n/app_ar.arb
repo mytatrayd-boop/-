@@ -399,5 +399,103 @@
   },
   "collapse": "طيّ",
   "expand": "توسيع",
-  "searchInBook": "ابحث في هذا الكتاب"
+  "searchInBook": "ابحث في هذا الكتاب",
+  "listen": "استمع",
+  "listenFromHere": "استمع من هنا",
+  "audioPlay": "تشغيل القراءة الصوتية",
+  "audioPause": "إيقاف مؤقت",
+  "audioNext": "الفقرة التالية",
+  "audioPrevious": "الفقرة السابقة",
+  "audioStop": "إيقاف الاستماع",
+  "audioMinimize": "تصغير",
+  "audioOpenPlayer": "افتح مشغّل الصوت",
+  "audioPlayerTitle": "مشغّل الصوت",
+  "audioPreparing": "يُجهَّز الصوت…",
+  "audioSpeed": "السرعة",
+  "audioSpeedValue": "{speed}×",
+  "@audioSpeedValue": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "audioSpeedSemantics": "السرعة {speed} ضعف",
+  "@audioSpeedSemantics": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "audioVoice": "الصوت",
+  "audioVoiceRow": "الصوت: {voice}",
+  "@audioVoiceRow": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "audioVoiceWithRegion": "عربي ({region}) — صوت {number}",
+  "@audioVoiceWithRegion": {
+    "placeholders": {
+      "region": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "audioVoiceNoRegion": "عربي — صوت {number}",
+  "@audioVoiceNoRegion": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "audioRegion": "{code, select, EG{مصر} SA{السعودية} AE{الإمارات} JO{الأردن} MA{المغرب} DZ{الجزائر} TN{تونس} LB{لبنان} KW{الكويت} QA{قطر} BH{البحرين} OM{عُمان} SY{سوريا} IQ{العراق} YE{اليمن} LY{ليبيا} SD{السودان} PS{فلسطين} other{}}",
+  "@audioRegion": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTryVoice": "جرّب",
+  "audioTryVoiceSemantics": "جرّب {voice}",
+  "@audioTryVoiceSemantics": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "audioSample": "قال الجاحظ: البيان اسمٌ جامعٌ لكل شيء كشف لك قناع المعنى.",
+  "audioGoToText": "اذهب إلى النص",
+  "audioNoVoiceTitle": "لا يوجد صوت عربي على جهازك",
+  "audioNoVoiceBody": "لتستمع إلى الكتب ثبّت الصوت العربي من إعدادات الهاتف: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.",
+  "audioOpenVoiceSettings": "افتح إعدادات الصوت",
+  "later": "لاحقاً",
+  "audioNoVoiceHelp": "لم تجد الخيار؟",
+  "audioNoVoiceAlternative": "يختلف المسار حسب الشركة المصنّعة. ابحث في إعدادات الهاتف عن «تحويل النص إلى كلام» أو «النطق»، أو ثبّت تطبيق «خدمات Google للنطق» من متجر التطبيقات، ثم نزّل بيانات اللغة العربية واخترها.",
+  "audioEngineError": "توقّف الصوت بسبب خطأ في محرّك القراءة.",
+  "audioBookFinished": "انتهى الكتاب",
+  "audioScreenReaderWarning": "قد يتداخل صوت القراءة مع قارئ الشاشة. استخدم سماعة أو أوقف القراءة الصوتية مؤقتاً عند التنقل.",
+  "audioBackToListening": "العودة إلى موضع الاستماع",
+  "audioNowReading": "يُقرأ الآن",
+  "audioChannelName": "القراءة الصوتية",
+  "audioNowPlayingSubtitle": "{book} — {author}",
+  "@audioNowPlayingSubtitle": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      },
+      "author": {
+        "type": "String"
+      }
+    }
+  }
 }
