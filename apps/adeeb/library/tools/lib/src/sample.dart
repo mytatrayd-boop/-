@@ -18,7 +18,7 @@ String buildSampleMarkdown(
   // التحذيرات (مثل «(١٥)») تُعرض كلها للمراجع البشري، مع أو بلا اختيار عشوائي.
   final warnings = validateBook(book, '', exceptions: exceptions).where((i) => i.warning).toList();
   final warnedIds = {for (final w in warnings) w.paragraphId};
-  final rows = <({String id, String chapter, String text, bool verse})>[];
+  final rows = <({String id, String chapter, String text, bool verse, String? page})>[];
   for (final c in (book['chapters']! as List).cast<Map<String, Object?>>()) {
     for (final p in (c['paragraphs']! as List).cast<Map<String, Object?>>()) {
       rows.add((
@@ -26,6 +26,7 @@ String buildSampleMarkdown(
         chapter: c['title']! as String,
         text: p['text']! as String,
         verse: p['kind'] == 'verse',
+        page: p['page'] as String?,
       ));
     }
   }
@@ -39,7 +40,13 @@ String buildSampleMarkdown(
     ..writeln('المصدر: ${source['url']} (جُلب ${source['retrieved']}). '
         'عدد الفقرات الكلي: ${paragraphsOf(book).length}. '
         'العيّنة: ${picked.length} فقرات عشوائية (بذرة $seed، تُعاد بالأمر نفسه).')
-    ..writeln()
+    ..writeln();
+  if (source['original'] != null || source['edition'] != null) {
+    b
+      ..writeln('الأصل: ${[source['original'], source['edition']].whereType<String>().join('، ')}.')
+      ..writeln();
+  }
+  b
     ..writeln('للمراجعة: هل النص مطابق للمصدر؟ هل فيه حاشية أو تعليق محقق أو رقم حاشية؟ هل التشكيل كما في المصدر؟')
     ..writeln();
   var n = 1;
@@ -47,6 +54,7 @@ String buildSampleMarkdown(
     final r = rows[i];
     b
       ..writeln('## $n. `${r.id}` — ${r.chapter}${r.verse ? ' (شعر)' : ''}'
+          '${r.page != null ? ' — صفحة الطبعة ${r.page}' : ''}'
           '${warnedIds.contains(r.id) ? ' — فيها تحذير' : ''}')
       ..writeln();
     for (final line in r.text.split('\n')) {

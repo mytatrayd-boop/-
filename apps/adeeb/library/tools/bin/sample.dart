@@ -1,5 +1,5 @@
 // الاستخدام (من library/tools):
-// dart run bin/sample.dart ../books/<id>/<id>.v<N>.json.gz [--count 20] [--seed 1] > ../SAMPLE_REVIEW.md
+// dart run bin/sample.dart ../books/<id>/<id>.v<N>.json.gz [كتب أخرى...] [--count 20] [--seed 1] > ../SAMPLE_REVIEW.md
 // العدد الافتراضي 20 (SPEC). استثناءات التحقق تُقرأ من recipes/<id>.json إن وُجدت.
 import 'dart:io';
 
@@ -19,13 +19,17 @@ void main(List<String> args) {
       pos.add(args[i]);
     }
   }
-  if (pos.length != 1) {
-    stderr.writeln('الاستخدام: dart run bin/sample.dart <book.json.gz> [--count 20] [--seed 1]');
+  if (pos.isEmpty) {
+    stderr.writeln('الاستخدام: dart run bin/sample.dart <book.json.gz>... [--count 20] [--seed 1]');
     exit(64);
   }
-  final book = decodeGzJson(File(pos[0]).readAsBytesSync());
   final recipesDir = Directory('${File(Platform.script.toFilePath()).parent.parent.path}/recipes');
-  final ex = loadRecipeExceptions(recipesDir)[book['id']] ?? const {};
-  stdout.write(buildSampleMarkdown(book,
-      count: opt('--count', defaultSampleCount), seed: opt('--seed', 1), exceptions: ex));
+  final allEx = loadRecipeExceptions(recipesDir);
+  // عدة كتب: قسم لكل كتاب بالترتيب المعطى، والبذرة نفسها لكل كتاب.
+  for (var k = 0; k < pos.length; k++) {
+    final book = decodeGzJson(File(pos[k]).readAsBytesSync());
+    if (k > 0) stdout.writeln();
+    stdout.write(buildSampleMarkdown(book,
+        count: opt('--count', defaultSampleCount), seed: opt('--seed', 1), exceptions: allEx[book['id']] ?? const {}));
+  }
 }
