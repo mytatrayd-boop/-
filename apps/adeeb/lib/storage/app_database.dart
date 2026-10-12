@@ -143,4 +143,3 @@ void _v3(Database db) {
   db.execute(createSearchIndexSql);
   indexAllParagraphs(db);
 }
-
