@@ -336,39 +336,44 @@ void main() {
   });
 
   group('مراجعة 1', () {
-    test('التالي (من التطبيق أو الإشعار) أثناء التجهيز ينقل الهدف ولا يعلّق البدء',
-        () async {
-      final gate = media.activateGate = Completer<void>();
-      final starting = player.start(book, 0);
-      await settle();
-      expect(player.state.status, ListeningStatus.preparing);
-      await player.next();
-      media.send(MediaCommand.next);
-      await settle();
-      expect(player.state.status, ListeningStatus.preparing);
-      expect(player.state.paragraph, 2);
-      gate.complete();
-      expect(await starting, StartResult.started);
-      await settle();
-      expect(player.state.playing, isTrue);
-      expect(tts.currentText, 'شطر أ');
-      expect(events, isEmpty);
-    });
+    test(
+      'التالي (من التطبيق أو الإشعار) أثناء التجهيز ينقل الهدف ولا يعلّق البدء',
+      () async {
+        final gate = media.activateGate = Completer<void>();
+        final starting = player.start(book, 0);
+        await settle();
+        expect(player.state.status, ListeningStatus.preparing);
+        await player.next();
+        media.send(MediaCommand.next);
+        await settle();
+        expect(player.state.status, ListeningStatus.preparing);
+        expect(player.state.paragraph, 2);
+        gate.complete();
+        expect(await starting, StartResult.started);
+        await settle();
+        expect(player.state.playing, isTrue);
+        expect(tts.currentText, 'شطر أ');
+        expect(events, isEmpty);
+      },
+    );
 
-    test('«✕» أثناء بدء الخدمة: تُنهى الخدمة والتركيز، بلا رسالة خطأ', () async {
-      final gate = media.activateGate = Completer<void>();
-      final starting = player.start(book, 0);
-      await settle();
-      await player.stop();
-      gate.complete();
-      expect(await starting, StartResult.cancelled);
-      await settle();
-      expect(player.state.active, isFalse);
-      expect(media.active, isFalse, reason: 'deactivate بعد activate');
-      expect(media.deactivations, 1);
-      expect(tts.spoken, isEmpty);
-      expect(events, isEmpty);
-    });
+    test(
+      '«✕» أثناء بدء الخدمة: تُنهى الخدمة والتركيز، بلا رسالة خطأ',
+      () async {
+        final gate = media.activateGate = Completer<void>();
+        final starting = player.start(book, 0);
+        await settle();
+        await player.stop();
+        gate.complete();
+        expect(await starting, StartResult.cancelled);
+        await settle();
+        expect(player.state.active, isFalse);
+        expect(media.active, isFalse, reason: 'deactivate بعد activate');
+        expect(media.deactivations, 1);
+        expect(tts.spoken, isEmpty);
+        expect(events, isEmpty);
+      },
+    );
 
     test('إيقاف مؤقت أثناء بدء الخدمة يُبقي الجلسة موقوفة', () async {
       final gate = media.activateGate = Completer<void>();
@@ -384,28 +389,30 @@ void main() {
       expect(tts.spoken, isEmpty);
     });
 
-    test('رفض التركيز الصوتي عند البدء أو الاستئناف ← إيقاف مؤقت لا تشغيل',
-        () async {
-      media.grantFocus = false;
-      expect(await player.start(book, 0), StartResult.started);
-      await settle();
-      expect(player.state.status, ListeningStatus.paused);
-      expect(tts.spoken, isEmpty);
-      // انتهاء المقاطعة يستأنف ويطلب التركيز من جديد.
-      media.grantFocus = true;
-      media.send(MediaCommand.interruptionEnded);
-      await settle();
-      expect(player.state.playing, isTrue);
-      expect(media.activations, 2);
+    test(
+      'رفض التركيز الصوتي عند البدء أو الاستئناف ← إيقاف مؤقت لا تشغيل',
+      () async {
+        media.grantFocus = false;
+        expect(await player.start(book, 0), StartResult.started);
+        await settle();
+        expect(player.state.status, ListeningStatus.paused);
+        expect(tts.spoken, isEmpty);
+        // انتهاء المقاطعة يستأنف ويطلب التركيز من جديد.
+        media.grantFocus = true;
+        media.send(MediaCommand.interruptionEnded);
+        await settle();
+        expect(player.state.playing, isTrue);
+        expect(media.activations, 2);
 
-      await player.pause();
-      media.grantFocus = false;
-      await player.play();
-      await settle();
-      expect(media.activations, 3, reason: 'التركيز يُطلب مع كل تشغيل');
-      expect(player.state.status, ListeningStatus.paused);
-      expect(tts.speaking, isFalse);
-    });
+        await player.pause();
+        media.grantFocus = false;
+        await player.play();
+        await settle();
+        expect(media.activations, 3, reason: 'التركيز يُطلب مع كل تشغيل');
+        expect(player.state.status, ListeningStatus.paused);
+        expect(tts.speaking, isFalse);
+      },
+    );
 
     test('ضغطات «التالي» السريعة تتراكم', () async {
       await player.start(book, 0);

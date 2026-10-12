@@ -521,13 +521,13 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(Navigator).first),
     );
-    await tester.runAsync(
-      () => container.read(libraryControllerProvider.notifier).delete('mini'),
+    unawaited(
+      container.read(libraryControllerProvider.notifier).delete('mini'),
     );
     await tester.pumpAndSettle();
     expect(find.byType(MiniPlayer), findsNothing);
     expect(env.tts.speaking, isFalse);
     expect(env.media.active, isFalse);
-    expect(await env.books.installedIds(), isNot(contains('mini')));
+    expect((await env.books.installed()).map((b) => b.id), isEmpty);
   });
 }
