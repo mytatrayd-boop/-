@@ -5,6 +5,7 @@ import 'package:adeeb/core/app_config.dart';
 import 'package:adeeb/library/catalog.dart';
 import 'package:adeeb/library/library_providers.dart';
 import 'package:adeeb/reader/passage_share.dart';
+import 'package:adeeb/reader/reader_book.dart';
 import 'package:adeeb/reader/reader_providers.dart';
 import 'package:adeeb/storage/book_repository.dart';
 import 'package:adeeb/storage/reading_repository.dart';
@@ -26,6 +27,12 @@ class TestEnv {
   final Directory dir;
   final server = FakeLibraryServer();
 
+  /// عند true تفشل كتابات المفضلة (محاكاة قاعدة مشغولة أو تالفة).
+  bool failFavoriteWrites = false;
+
+  /// عند true يفشل حفظ الموضع.
+  bool failPositionWrites = false;
+
   /// ما أُرسل إلى قائمة المشاركة (بدل share_plus في الاختبار).
   final shared = <(String, String)>[];
 
@@ -45,7 +52,13 @@ class TestEnv {
     ),
     httpClientProvider.overrideWithValue(server.client()),
     bookRepositoryProvider.overrideWithValue(books ?? this.books),
-    readingRepositoryProvider.overrideWithValue(reading),
+    readingRepositoryProvider.overrideWithValue(
+      FlakyReadingRepository(
+        reading,
+        () => failFavoriteWrites,
+        () => failPositionWrites,
+      ),
+    ),
     shareTextProvider.overrideWithValue(
       (text, subject) async => shared.add((text, subject)),
     ),
@@ -69,4 +82,55 @@ class TestEnv {
   }
 
   void dispose() => dir.deleteSync(recursive: true);
+}
+
+/// يمرّر كل شيء إلى المستودع الحقيقي، ويُفشل كتابات المفضلة عند الطلب.
+class FlakyReadingRepository implements ReadingRepository {
+  FlakyReadingRepository(this._inner, this._fail, this._failPosition);
+
+  final ReadingRepository _inner;
+  final bool Function() _fail;
+  final bool Function() _failPosition;
+
+  void _check() {
+    if (_fail()) throw const FileSystemException('محاكاة فشل الكتابة');
+  }
+
+  @override
+  Future<ReaderBook?> loadBook(String bookId) => _inner.loadBook(bookId);
+
+  @override
+  Future<String> resolveParagraph(String paragraphId) =>
+      _inner.resolveParagraph(paragraphId);
+
+  @override
+  Future<void> savePosition(String bookId, String paragraphId) async {
+    if (_failPosition()) throw const FileSystemException('محاكاة فشل الكتابة');
+    return _inner.savePosition(bookId, paragraphId);
+  }
+
+  @override
+  Future<ReadingPosition?> position(String bookId) => _inner.position(bookId);
+
+  @override
+  Future<ReadingPosition?> latestPosition() => _inner.latestPosition();
+
+  @override
+  Future<List<FavoriteItem>> favorites() => _inner.favorites();
+
+  @override
+  Future<void> addFavorite(
+    String bookId,
+    String paragraphId, {
+    int? createdAt,
+  }) async {
+    _check();
+    return _inner.addFavorite(bookId, paragraphId, createdAt: createdAt);
+  }
+
+  @override
+  Future<void> removeFavorite(String paragraphId) async {
+    _check();
+    return _inner.removeFavorite(paragraphId);
+  }
 }

@@ -355,4 +355,10 @@ class AppLocalizationsAr extends AppLocalizations {
   ) {
     return '$text\n— $book، $author، $chapter';
   }
+
+  @override
+  String get saveFailed => 'تعذّر الحفظ، حاول مجدداً';
+
+  @override
+  String get paragraphMissing => 'لم تعد هذه الفقرة موجودة في الكتاب';
 }

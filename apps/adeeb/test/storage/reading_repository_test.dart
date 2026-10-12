@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:adeeb/library/catalog.dart';
@@ -5,6 +6,7 @@ import 'package:adeeb/reader/reader_book.dart';
 import 'package:adeeb/storage/app_database.dart';
 import 'package:adeeb/storage/book_repository.dart';
 import 'package:adeeb/storage/reading_repository.dart';
+import 'package:adeeb/storage/write_queue.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -269,5 +271,51 @@ void main() {
     final book = (await isolated.loadBook('big'))!;
     expect(book.paragraphs, hasLength(10));
     expect(book.entryCount, 12);
+  });
+
+  test('حفظ الموضع والمفضلة أثناء معاملة كتابة مفتوحة ينتظر ثم ينجح', () async {
+    await install(miniBook());
+    final path = '${dir.path}/adeeb.db';
+    final release = Completer<void>();
+    final locked = Completer<void>();
+    // معاملة طويلة في الطابور (كالاستيراد أو الحذف مع VACUUM).
+    final holding = enqueueWrite(path, () async {
+      final db = openAppDatabase(path);
+      db.execute('BEGIN IMMEDIATE');
+      locked.complete();
+      await release.future;
+      db.execute('COMMIT');
+      db.close();
+    });
+    await locked.future;
+    var saved = false;
+    final save = reading
+        .savePosition('mini', 'mini-b001-p00002')
+        .then((_) => saved = true);
+    final favorite = reading.addFavorite('mini', 'mini-b001-p00001');
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(saved, isFalse);
+    release.complete();
+    await holding;
+    await save;
+    await favorite;
+    expect((await reading.position('mini'))!.paragraphId, 'mini-b001-p00002');
+    expect((await reading.favorites()).single.paragraphId, 'mini-b001-p00001');
+  });
+
+  test('الاستيراد والحفظ المتزامنان (الاستيراد في Isolate) ينجحان معاً', () async {
+    await install(miniBook());
+    final isolated = SqliteBookRepository('${dir.path}/adeeb.db');
+    final big = syntheticBook(chapters: 20, perChapter: 200);
+    final importing = isolated.install(gzJson(big), entryFor(big));
+    final writes = [
+      for (var i = 0; i < 5; i++)
+        reading.savePosition('mini', 'mini-b001-p0000${i % 2 + 1}'),
+      reading.addFavorite('mini', 'mini-b002-p00001'),
+    ];
+    await importing;
+    await Future.wait(writes);
+    expect((await reading.favorites()).single.paragraphId, 'mini-b002-p00001');
+    expect((await reading.loadBook('big'))!.paragraphs, hasLength(4000));
   });
 }

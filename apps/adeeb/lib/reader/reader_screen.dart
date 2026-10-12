@@ -62,6 +62,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   /// الفقرة الحالية (أعلى ما يظهر) وبابها.
   int _paragraph = 0;
   int _chapter = 0;
+
   /// آخر معرّف حُفظ فعلاً، والمعرّف الذي تجري كتابته الآن. لا يُعتبر المعرّف
   /// محفوظاً إلا بعد نجاح الكتابة، فيُعاد الحفظ عند الإخفاء أو الخروج.
   String? _savedId;

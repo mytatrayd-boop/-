@@ -357,4 +357,10 @@ class AppLocalizationsEn extends AppLocalizations {
   ) {
     return '$text\n— $book, $author, $chapter';
   }
+
+  @override
+  String get saveFailed => 'Couldn\'t save, please try again';
+
+  @override
+  String get paragraphMissing => 'This passage is no longer in the book';
 }

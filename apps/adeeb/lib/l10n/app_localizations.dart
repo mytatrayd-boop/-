@@ -684,6 +684,18 @@ abstract class AppLocalizations {
     String author,
     String chapter,
   );
+
+  /// No description provided for @saveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الحفظ، حاول مجدداً'**
+  String get saveFailed;
+
+  /// No description provided for @paragraphMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تعد هذه الفقرة موجودة في الكتاب'**
+  String get paragraphMissing;
 }
 
 class _AppLocalizationsDelegate
