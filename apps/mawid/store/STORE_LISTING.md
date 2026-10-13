@@ -34,3 +34,9 @@
 No account or login. All features are available on launch. Payout dates are computed on-device from the published payout rules; the app is independent and not affiliated with any government entity (stated in the app's Customize tab and in the description). Holiday data is fetched read-only from a public JSON file; notifications are local.
 
 **لقطات الشاشة:** `screenshots/` (1206×2622 — iPhone 6.1"/6.3"، خانة «iPhone with Dynamic Island»). ارفعها بالترتيب.
+
+# Google Play
+- **الوصف القصير (80):** مواعيد الرواتب والضمان وحساب المواطن والدعم السكني والإجازات، مع تنبيه قبل الموعد
+- **الوصف الكامل:** نفس وصف App Store أعلاه.
+- **الصور:** `play/` — أيقونة 512×512، صورة عرض 1024×500، ولقطات 1080×2160.
+- **App content:** Ads لا · Sign in: لا يحتاج دخولاً · Data safety: لا يجمع ولا يشارك بيانات · Government app: لا · Financial features: لا شيء · Health: لا · Target audience: 18+ · الفئة: Finance.
