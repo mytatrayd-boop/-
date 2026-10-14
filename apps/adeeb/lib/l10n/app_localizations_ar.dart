@@ -1026,7 +1026,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get privacyDeviceBody =>
-      'يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط. لا يرتبط بهويتك ولا بمعرّفات النظام، ولا يحفظه الخادم كما هو.';
+      'يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط، ولا يرتبط بهويتك ولا بمعرّفات النظام. يرى خادمنا (على Cloudflare) عنوان IP لجهازك، ويحفظ منه ومن المعرّف قيمة مشفّرة لا تُعكس (HMAC) في عدّادات الحد اليومي ليوم واحد فقط، ثم تُحذف. ولا يحفظ المعرّف ولا عنوان IP كما هما.';
 
   @override
   String get privacyAgeTitle => '«اسأل الأديب» لمن هم 18 سنة فأكثر';
@@ -1071,4 +1071,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get licenseLoadError => 'تعذّر عرض الترخيص.';
+
+  @override
+  String get sourcesOpenItiLink => 'مشروع OpenITI';
+
+  @override
+  String get sourcesLicenseLink => 'نص ترخيص CC BY-NC-SA 4.0';
+
+  @override
+  String sourcesCopyNamedLinkSemantics(String name) {
+    return 'انسخ رابط $name';
+  }
 }

@@ -1785,7 +1785,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyDeviceBody.
   ///
   /// In ar, this message translates to:
-  /// **'يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط. لا يرتبط بهويتك ولا بمعرّفات النظام، ولا يحفظه الخادم كما هو.'**
+  /// **'يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط، ولا يرتبط بهويتك ولا بمعرّفات النظام. يرى خادمنا (على Cloudflare) عنوان IP لجهازك، ويحفظ منه ومن المعرّف قيمة مشفّرة لا تُعكس (HMAC) في عدّادات الحد اليومي ليوم واحد فقط، ثم تُحذف. ولا يحفظ المعرّف ولا عنوان IP كما هما.'**
   String get privacyDeviceBody;
 
   /// No description provided for @privacyAgeTitle.
@@ -1865,6 +1865,24 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر عرض الترخيص.'**
   String get licenseLoadError;
+
+  /// No description provided for @sourcesOpenItiLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشروع OpenITI'**
+  String get sourcesOpenItiLink;
+
+  /// No description provided for @sourcesLicenseLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'نص ترخيص CC BY-NC-SA 4.0'**
+  String get sourcesLicenseLink;
+
+  /// No description provided for @sourcesCopyNamedLinkSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ رابط {name}'**
+  String sourcesCopyNamedLinkSemantics(String name);
 }
 
 class _AppLocalizationsDelegate

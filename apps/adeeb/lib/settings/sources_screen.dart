@@ -49,6 +49,8 @@ class SourcesScreen extends ConsumerWidget {
             Text(l10n.sourcesIntro, style: theme.textTheme.bodyLarge),
             const SizedBox(height: 8),
             Text(l10n.sourcesOpenItiLicense, style: theme.textTheme.bodyMedium),
+            _LinkRow(name: l10n.sourcesOpenItiLink, url: openItiUrl),
+            _LinkRow(name: l10n.sourcesLicenseLink, url: ccLicenseUrl),
             _Section(l10n.sourcesBooks),
             if (items.isEmpty)
               Text(l10n.sourcesNoBooks, style: theme.textTheme.bodyMedium),
@@ -194,12 +196,62 @@ class _BookSourceCard extends StatelessWidget {
     );
   }
 
-  Future<void> _copy(BuildContext context, String url) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final message = AppLocalizations.of(context).sourcesLinkCopied;
-    await Clipboard.setData(ClipboardData(text: url));
-    messenger.showSnackBar(
+  Future<void> _copy(BuildContext context, String url) =>
+      copyLink(context, url);
+}
+
+const openItiUrl = 'https://openiti.org';
+const ccLicenseUrl = 'https://creativecommons.org/licenses/by-nc-sa/4.0/';
+
+/// ينسخ [url] مع رسالة عابرة (لا url_launcher بعد، انظر STATUS).
+Future<void> copyLink(BuildContext context, String url) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final message = AppLocalizations.of(context).sourcesLinkCopied;
+  await Clipboard.setData(ClipboardData(text: url));
+  messenger
+    ..removeCurrentSnackBar()
+    ..showSnackBar(
       SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+    );
+}
+
+/// رابط عام: الاسم والرابط ظاهران، وزر «انسخ الرابط» بوصف لقارئ الشاشة.
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({required this.name, required this.url});
+  final String name;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MergeSemantics(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: theme.textTheme.labelLarge),
+                Text(url, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          Semantics(
+            label: l10n.sourcesCopyNamedLinkSemantics(name),
+            button: true,
+            excludeSemantics: true,
+            onTap: () => copyLink(context, url),
+            child: TextButton.icon(
+              icon: const Icon(Icons.copy),
+              label: Text(l10n.sourcesCopyLink),
+              onPressed: () => copyLink(context, url),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

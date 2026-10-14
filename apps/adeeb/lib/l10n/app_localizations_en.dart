@@ -1034,7 +1034,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyDeviceBody =>
-      'The app creates a random identifier stored on your device and sends it with questions only to count the daily limit. It isn\'t linked to your identity or to system identifiers, and the server doesn\'t store it as is.';
+      'The app creates a random identifier stored on your device and sends it with questions only to count the daily limit; it isn\'t linked to your identity or to system identifiers. Our server (on Cloudflare) sees your device\'s IP address, and from it and the identifier stores an irreversible encrypted value (HMAC) in the daily-limit counters for one day only, after which it is deleted. It never stores the identifier or the IP address as is.';
 
   @override
   String get privacyAgeTitle => 'Ask Adeeb is for people aged 18 or over';
@@ -1079,4 +1079,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenseLoadError => 'Couldn\'t show the license.';
+
+  @override
+  String get sourcesOpenItiLink => 'The OpenITI project';
+
+  @override
+  String get sourcesLicenseLink => 'CC BY-NC-SA 4.0 license text';
+
+  @override
+  String sourcesCopyNamedLinkSemantics(String name) {
+    return 'Copy the link: $name';
+  }
 }

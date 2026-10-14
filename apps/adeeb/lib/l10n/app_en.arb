@@ -289,7 +289,7 @@
   "privacyPersonalTitle": "Don't share personal information",
   "privacyPersonalBody": "Don't include your name, contact details or any personal or confidential information in your question.",
   "privacyDeviceTitle": "A random device identifier",
-  "privacyDeviceBody": "The app creates a random identifier stored on your device and sends it with questions only to count the daily limit. It isn't linked to your identity or to system identifiers, and the server doesn't store it as is.",
+  "privacyDeviceBody": "The app creates a random identifier stored on your device and sends it with questions only to count the daily limit; it isn't linked to your identity or to system identifiers. Our server (on Cloudflare) sees your device's IP address, and from it and the identifier stores an irreversible encrypted value (HMAC) in the daily-limit counters for one day only, after which it is deleted. It never stores the identifier or the IP address as is.",
   "privacyAgeTitle": "Ask Adeeb is for people aged 18 or over",
   "privacyAgeBody": "Gemini's terms require users to be 18 or over, so you're asked to confirm your age before your first question. Reading, search and listening are available to everyone.",
   "privacyNetworkTitle": "Connections",
@@ -302,5 +302,8 @@
   "aboutLogoLabel": "Adeeb AI logo",
   "aboutDescription": "Read, search and listen to classical Arabic literature offline, with Ask Adeeb answering from the books' text with a quote and its source.",
   "aboutFree": "Free, with no ads, no subscriptions and no account.",
-  "licenseLoadError": "Couldn't show the license."
+  "licenseLoadError": "Couldn't show the license.",
+  "sourcesOpenItiLink": "The OpenITI project",
+  "sourcesLicenseLink": "CC BY-NC-SA 4.0 license text",
+  "sourcesCopyNamedLinkSemantics": "Copy the link: {name}"
 }

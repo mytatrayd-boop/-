@@ -228,8 +228,30 @@ void main() {
         null,
       ),
     );
-    await tapText(tester, 'انسخ الرابط');
-    expect(copied, ['https://example.invalid/mini']);
+    expect(find.text('https://openiti.org'), findsOneWidget);
+    expect(
+      find.text('https://creativecommons.org/licenses/by-nc-sa/4.0/'),
+      findsOneWidget,
+    );
+    final copyButtons = find.widgetWithText(TextButton, 'انسخ الرابط');
+    await tester.tap(copyButtons.at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(copyButtons.at(1));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('https://example.invalid/mini'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -150));
+    await tester.pumpAndSettle();
+    await tester.tap(copyButtons.last);
+    await tester.pumpAndSettle();
+    expect(copied, [
+      'https://openiti.org',
+      'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+      'https://example.invalid/mini',
+    ]);
     expect(find.text('نُسخ الرابط'), findsOneWidget);
 
     await tester.scrollUntilVisible(
@@ -274,6 +296,12 @@ void main() {
     expect(find.text('لا حساب'), findsOneWidget);
     expect(find.textContaining('Gemini'), findsWidgets);
     expect(find.textContaining('مراجعون بشريون'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.textContaining('HMAC'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.textContaining('ليوم واحد فقط'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('لا إعلانات ولا تتبع'),
       200,
@@ -340,6 +368,19 @@ void main() {
       find.text('Free, with no ads, no subscriptions and no account.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('روابط OpenITI والترخيص موصوفة لقارئ الشاشة', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openSettings(tester);
+    await tapText(tester, 'المصادر والتراخيص');
+    expect(find.bySemanticsLabel('انسخ رابط مشروع OpenITI'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('انسخ رابط نص ترخيص CC BY-NC-SA 4.0'),
+      findsOneWidget,
+    );
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    semantics.dispose();
   });
 
   testWidgets('أهداف اللمس 48dp وتسميات قارئ الشاشة في الإعدادات', (
