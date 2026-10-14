@@ -6,6 +6,10 @@ import 'library/book_page.dart';
 import 'library/library_screen.dart';
 import 'reader/reader_screen.dart';
 import 'search/search_screen.dart';
+import 'settings/about_screen.dart';
+import 'settings/privacy_screen.dart';
+import 'settings/settings_screen.dart';
+import 'settings/sources_screen.dart';
 
 GoRouter createRouter({GlobalKey<NavigatorState>? navigatorKey}) => GoRouter(
   navigatorKey: navigatorKey,
@@ -43,6 +47,24 @@ GoRouter createRouter({GlobalKey<NavigatorState>? navigatorKey}) => GoRouter(
           path: 'search',
           builder: (context, state) =>
               SearchScreen(initialBookId: state.uri.queryParameters['book']),
+        ),
+        GoRoute(
+          path: 'settings',
+          builder: (context, state) => const SettingsScreen(),
+          routes: [
+            GoRoute(
+              path: 'sources',
+              builder: (context, state) => const SourcesScreen(),
+            ),
+            GoRoute(
+              path: 'privacy',
+              builder: (context, state) => const PrivacyScreen(),
+            ),
+            GoRoute(
+              path: 'about',
+              builder: (context, state) => const AboutScreen(),
+            ),
+          ],
         ),
       ],
     ),

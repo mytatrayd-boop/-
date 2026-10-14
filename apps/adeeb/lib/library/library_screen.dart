@@ -91,7 +91,7 @@ class LibraryScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.libraryTitle),
-          // الدخول إلى البحث في كل الكتب حتى يُبنى الشريط السفلي (DESIGN §6.1).
+          // البحث واسأل الأديب والإعدادات هنا حتى يُبنى الشريط السفلي (DESIGN §6.1).
           actions: [
             IconButton(
               tooltip: l10n.searchTitle,
@@ -102,6 +102,11 @@ class LibraryScreen extends ConsumerWidget {
               tooltip: l10n.askTitle,
               icon: const Icon(Icons.question_answer_outlined),
               onPressed: () => context.push(askLocation()),
+            ),
+            IconButton(
+              tooltip: l10n.settingsTitle,
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => context.push('/settings'),
             ),
           ],
           bottom: TabBar(

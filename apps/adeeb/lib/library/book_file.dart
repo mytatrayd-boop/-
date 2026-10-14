@@ -46,6 +46,9 @@ class BookFile {
     required this.license,
     required this.chapters,
     required this.redirects,
+    this.edition,
+    this.original,
+    this.removed,
   });
 
   final String id;
@@ -56,6 +59,12 @@ class BookFile {
   final String sourceName;
   final String sourceUrl;
   final String license;
+
+  /// الطبعة الأصلية والمصدر الأصلي (مثل رقم الشاملة) وما حُذف، اختيارية
+  /// (`source.edition`، `source.original`، `removed`) لشاشة المصادر.
+  final String? edition;
+  final String? original;
+  final String? removed;
   final List<BookChapter> chapters;
   final Map<String, String> redirects;
 
@@ -232,7 +241,13 @@ BookFile parseBook(String text) {
     sourceName: source['name']! as String,
     sourceUrl: source['url']! as String,
     license: license,
+    edition: _optionalString(source['edition']),
+    original: _optionalString(source['original']),
+    removed: _optionalString(decoded['removed']),
     chapters: List.unmodifiable(chapters),
     redirects: Map.unmodifiable(redirects),
   );
 }
+
+String? _optionalString(Object? value) =>
+    value is String && value.trim().isNotEmpty ? value : null;

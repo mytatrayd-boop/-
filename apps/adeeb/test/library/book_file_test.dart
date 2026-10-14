@@ -19,6 +19,22 @@ void main() {
     expect(book.chapters[0].paragraphs.first.kind, 'prose');
   });
 
+  test('تفاصيل المصدر الاختيارية: الطبعة والأصل وما حُذف (شاشة المصادر)', () {
+    final map = miniBook();
+    (map['source']! as Map<String, Object?>)['original'] = 'أصل اختبار';
+    final book = decodeBookGz(gzJson(map));
+    expect(book.edition, 'لا توجد');
+    expect(book.original, 'أصل اختبار');
+    expect(book.removed, startsWith('لا شيء'));
+
+    final bare = miniBook()..remove('removed');
+    (bare['source']! as Map<String, Object?>).remove('edition');
+    final plain = decodeBookGz(gzJson(bare));
+    expect(plain.edition, isNull);
+    expect(plain.original, isNull);
+    expect(plain.removed, isNull);
+  });
+
   test('يقبل redirects إلى معرّف موجود', () {
     final map = miniBook()
       ..['redirects'] = {'mini-b001-p00009': 'mini-b001-p00001'};

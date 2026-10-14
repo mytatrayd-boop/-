@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import '../reader/passage_share.dart';
 import '../search/highlighted_text.dart';
 import '../search/search_providers.dart';
+import '../settings/privacy_screen.dart';
 import '../storage/book_repository.dart';
 import '../text/search_query.dart';
 import 'ask_api.dart';
@@ -1177,6 +1178,12 @@ class _ConsentSheet extends StatelessWidget {
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(l10n.askConsentDecline),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
+              ),
+              child: Text(l10n.askConsentPrivacy),
             ),
           ],
         ),

@@ -63,9 +63,11 @@ class TestEnv {
       searchOverride ??
       SqliteSearchRepository('${dir.path}/adeeb.db', useIsolate: false);
 
+  /// [followSettings] = true: اللغة من الإعدادات المحفوظة لا [locale] ثابتة.
   List<Override> overrides({
     Locale locale = const Locale('ar'),
     BookRepository? books,
+    bool followSettings = false,
   }) => [
     storageDirectoryProvider.overrideWithValue(dir),
     appConfigProvider.overrideWithValue(
@@ -91,15 +93,18 @@ class TestEnv {
     shareTextProvider.overrideWithValue(
       (text, subject) async => shared.add((text, subject)),
     ),
-    appLocaleProvider.overrideWithValue(locale),
+    if (!followSettings) appLocaleProvider.overrideWithValue(locale),
     ttsEngineProvider.overrideWithValue(tts),
     mediaSessionProvider.overrideWithValue(media),
   ];
 
   ProviderContainer container() => ProviderContainer(overrides: overrides());
 
-  Widget app({Locale locale = const Locale('ar')}) => ProviderScope(
-    overrides: overrides(locale: locale),
+  Widget app({
+    Locale locale = const Locale('ar'),
+    bool followSettings = false,
+  }) => ProviderScope(
+    overrides: overrides(locale: locale, followSettings: followSettings),
     child: const AdeebApp(),
   );
 

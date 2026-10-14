@@ -1385,6 +1385,486 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'النص المقتبس:'**
   String get askQuoteBookNotInstalled;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsGeneral.
+  ///
+  /// In ar, this message translates to:
+  /// **'العامة'**
+  String get settingsGeneral;
+
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللغة'**
+  String get settingsLanguage;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسب الجهاز'**
+  String get languageSystem;
+
+  /// No description provided for @languageArabic.
+  ///
+  /// In ar, this message translates to:
+  /// **'العربية'**
+  String get languageArabic;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In ar, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageChanged.
+  ///
+  /// In ar, this message translates to:
+  /// **'صارت الواجهة بالعربية'**
+  String get languageChanged;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In ar, this message translates to:
+  /// **'المظهر'**
+  String get settingsAppearance;
+
+  /// No description provided for @appearanceLight.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتح'**
+  String get appearanceLight;
+
+  /// No description provided for @appearanceDark.
+  ///
+  /// In ar, this message translates to:
+  /// **'داكن'**
+  String get appearanceDark;
+
+  /// No description provided for @appearanceSystem.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسب الجهاز'**
+  String get appearanceSystem;
+
+  /// No description provided for @settingsReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'القراءة'**
+  String get settingsReading;
+
+  /// No description provided for @settingsTextSizeAndColor.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط ولون الصفحة'**
+  String get settingsTextSizeAndColor;
+
+  /// No description provided for @settingsListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستماع'**
+  String get settingsListening;
+
+  /// No description provided for @settingsVoiceDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'تلقائي'**
+  String get settingsVoiceDefault;
+
+  /// No description provided for @settingsResetAge.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة ضبط تأكيد العمر'**
+  String get settingsResetAge;
+
+  /// No description provided for @settingsResetAgeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُطلب التأكيد مرة أخرى عند فتح «اسأل الأديب»'**
+  String get settingsResetAgeHint;
+
+  /// No description provided for @settingsResetAgeQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة ضبط تأكيد العمر؟'**
+  String get settingsResetAgeQuestion;
+
+  /// No description provided for @settingsReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الضبط'**
+  String get settingsReset;
+
+  /// No description provided for @settingsResetAgeDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُعيد ضبط تأكيد العمر'**
+  String get settingsResetAgeDone;
+
+  /// No description provided for @settingsClearAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح آخر إجابة'**
+  String get settingsClearAnswer;
+
+  /// No description provided for @settingsClearAnswerHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر إجابة فقط محفوظة على جهازك'**
+  String get settingsClearAnswerHint;
+
+  /// No description provided for @settingsNoAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا إجابة محفوظة'**
+  String get settingsNoAnswer;
+
+  /// No description provided for @settingsClearAnswerDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُسحت آخر إجابة'**
+  String get settingsClearAnswerDone;
+
+  /// No description provided for @settingsAbout.
+  ///
+  /// In ar, this message translates to:
+  /// **'عن التطبيق'**
+  String get settingsAbout;
+
+  /// No description provided for @sourcesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصادر والتراخيص'**
+  String get sourcesTitle;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الخصوصية'**
+  String get privacyTitle;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عن الأديب الذكي'**
+  String get aboutTitle;
+
+  /// No description provided for @sourcesIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'نصوص الكتب من الملك العام، مأخوذة من مشروع OpenITI (Open Islamicate Texts Initiative) الذي نقلها عن المكتبة الشاملة. حذفنا منها الحواشي ومقدمات المحققين المعاصرين وتعليقاتهم، ونذكر لكل كتاب طبعته وما حُذف منه.'**
+  String get sourcesIntro;
+
+  /// No description provided for @sourcesOpenItiLicense.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملفات OpenITI منشورة بترخيص CC BY-NC-SA 4.0 (نسبة العمل إلى صاحبه، غير تجاري، المشاركة بالمثل)، ونعيد نشر الملفات المحوّلة بالترخيص نفسه.'**
+  String get sourcesOpenItiLicense;
+
+  /// No description provided for @sourcesBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتب'**
+  String get sourcesBooks;
+
+  /// No description provided for @sourcesNoBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر الكتب هنا بعد تحميل قائمتها.'**
+  String get sourcesNoBooks;
+
+  /// No description provided for @sourcesSourceLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصدر'**
+  String get sourcesSourceLabel;
+
+  /// No description provided for @sourcesOriginalLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصل'**
+  String get sourcesOriginalLabel;
+
+  /// No description provided for @sourcesEditionLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطبعة'**
+  String get sourcesEditionLabel;
+
+  /// No description provided for @sourcesRemovedLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما حُذف'**
+  String get sourcesRemovedLabel;
+
+  /// No description provided for @sourcesLicenseLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترخيص'**
+  String get sourcesLicenseLabel;
+
+  /// No description provided for @sourcesFileVersionLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إصدار الملف'**
+  String get sourcesFileVersionLabel;
+
+  /// No description provided for @sourcesLinkLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرابط'**
+  String get sourcesLinkLabel;
+
+  /// No description provided for @sourcesDetailsAfterDownload.
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر الطبعة وما حُذف بعد تحميل الكتاب.'**
+  String get sourcesDetailsAfterDownload;
+
+  /// No description provided for @sourcesCopyLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ الرابط'**
+  String get sourcesCopyLink;
+
+  /// No description provided for @sourcesCopyLinkSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ رابط مصدر {book}'**
+  String sourcesCopyLinkSemantics(String book);
+
+  /// No description provided for @sourcesLinkCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نُسخ الرابط'**
+  String get sourcesLinkCopied;
+
+  /// No description provided for @sourcesFonts.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخطوط'**
+  String get sourcesFonts;
+
+  /// No description provided for @fontAmiri.
+  ///
+  /// In ar, this message translates to:
+  /// **'Amiri'**
+  String get fontAmiri;
+
+  /// No description provided for @fontIbmPlex.
+  ///
+  /// In ar, this message translates to:
+  /// **'IBM Plex Sans Arabic'**
+  String get fontIbmPlex;
+
+  /// No description provided for @sourcesFontLicense.
+  ///
+  /// In ar, this message translates to:
+  /// **'SIL Open Font License 1.1'**
+  String get sourcesFontLicense;
+
+  /// No description provided for @sourcesViewLicense.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الترخيص'**
+  String get sourcesViewLicense;
+
+  /// No description provided for @sourcesViewLicenseSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض ترخيص خط {font}'**
+  String sourcesViewLicenseSemantics(String font);
+
+  /// No description provided for @fontLicenseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترخيص {font}'**
+  String fontLicenseTitle(String font);
+
+  /// No description provided for @sourcesServices.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمات'**
+  String get sourcesServices;
+
+  /// No description provided for @sourcesServiceAi.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجابات الذكية: Gemini من Google عبر خادم وسيط'**
+  String get sourcesServiceAi;
+
+  /// No description provided for @sourcesServiceTts.
+  ///
+  /// In ar, this message translates to:
+  /// **'القراءة الصوتية: محرّك الصوت في جهازك'**
+  String get sourcesServiceTts;
+
+  /// No description provided for @sourcesServiceHosting.
+  ///
+  /// In ar, this message translates to:
+  /// **'استضافة الكتب: GitHub'**
+  String get sourcesServiceHosting;
+
+  /// No description provided for @sourcesLibraries.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكتبات البرمجية'**
+  String get sourcesLibraries;
+
+  /// No description provided for @sourcesViewLibraries.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض تراخيص المكتبات'**
+  String get sourcesViewLibraries;
+
+  /// No description provided for @privacyIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلاصة ما يحدث لبياناتك في «الأديب الذكي»، بلغة بسيطة.'**
+  String get privacyIntro;
+
+  /// No description provided for @privacyAccountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا حساب'**
+  String get privacyAccountTitle;
+
+  /// No description provided for @privacyAccountBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يطلب التطبيق حساباً ولا اسماً ولا بريداً ولا رقم هاتف.'**
+  String get privacyAccountBody;
+
+  /// No description provided for @privacyLocalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك على جهازك'**
+  String get privacyLocalTitle;
+
+  /// No description provided for @privacyLocalBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتب المحمّلة والمفضلة وآخر موضع قراءة وإعداداتك وآخر إجابة من «اسأل الأديب» محفوظة على جهازك فقط. القراءة والبحث والاستماع تعمل دون إنترنت، والقراءة الصوتية بمحرّك الصوت في جهازك.'**
+  String get privacyLocalBody;
+
+  /// No description provided for @privacyAskTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة «اسأل الأديب»'**
+  String get privacyAskTitle;
+
+  /// No description provided for @privacyAskBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندما تسأل، يُرسل سؤالك ومقاطع من الكتب المحمّلة إلى خادمنا، ثم إلى خدمة Gemini من Google لصياغة الإجابة. قد تستخدم Google ما يُرسل إليها لتحسين خدماتها، وقد يراجعه مراجعون بشريون. خادمنا لا يحفظ نص سؤالك.'**
+  String get privacyAskBody;
+
+  /// No description provided for @privacyPersonalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تكتب معلومات شخصية'**
+  String get privacyPersonalTitle;
+
+  /// No description provided for @privacyPersonalBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تكتب في سؤالك اسمك أو بيانات تواصلك أو أي معلومة شخصية أو سرية.'**
+  String get privacyPersonalBody;
+
+  /// No description provided for @privacyDeviceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرّف عشوائي للجهاز'**
+  String get privacyDeviceTitle;
+
+  /// No description provided for @privacyDeviceBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط. لا يرتبط بهويتك ولا بمعرّفات النظام، ولا يحفظه الخادم كما هو.'**
+  String get privacyDeviceBody;
+
+  /// No description provided for @privacyAgeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'«اسأل الأديب» لمن هم 18 سنة فأكثر'**
+  String get privacyAgeTitle;
+
+  /// No description provided for @privacyAgeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط خدمة Gemini تشترط 18 سنة فأكثر، فيُطلب تأكيد العمر قبل أول سؤال. القراءة والبحث والاستماع متاحة للجميع.'**
+  String get privacyAgeBody;
+
+  /// No description provided for @privacyNetworkTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاتصالات'**
+  String get privacyNetworkTitle;
+
+  /// No description provided for @privacyNetworkBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتصل التطبيق بـ GitHub لتحميل قائمة الكتب وملفاتها، وبخادمنا عند استخدام «اسأل الأديب» فقط، وكل ذلك عبر HTTPS.'**
+  String get privacyNetworkBody;
+
+  /// No description provided for @privacyAdsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا إعلانات ولا تتبع'**
+  String get privacyAdsTitle;
+
+  /// No description provided for @privacyAdsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا إعلانات ولا تحليلات ولا تقارير أعطال ولا أي تتبع.'**
+  String get privacyAdsBody;
+
+  /// No description provided for @privacyControlTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحكم في بياناتك'**
+  String get privacyControlTitle;
+
+  /// No description provided for @privacyControlBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'من الإعدادات يمكنك مسح آخر إجابة وإعادة ضبط تأكيد العمر. وحذف التطبيق يحذف كل بياناته من جهازك.'**
+  String get privacyControlBody;
+
+  /// No description provided for @askConsentPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقرأ سياسة الخصوصية'**
+  String get askConsentPrivacy;
+
+  /// No description provided for @aboutLogoLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'شعار الأديب الذكي'**
+  String get aboutLogoLabel;
+
+  /// No description provided for @aboutDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة كتب الأدب العربي التراثي والبحث فيها والاستماع إليها دون إنترنت، مع «اسأل الأديب» الذي يجيب من نصوص الكتب باقتباس ومصدر.'**
+  String get aboutDescription;
+
+  /// No description provided for @aboutFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجاني بلا إعلانات ولا اشتراكات ولا حساب.'**
+  String get aboutFree;
+
+  /// No description provided for @licenseLoadError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر عرض الترخيص.'**
+  String get licenseLoadError;
 }
 
 class _AppLocalizationsDelegate

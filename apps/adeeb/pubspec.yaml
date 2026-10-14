@@ -33,6 +33,11 @@ flutter:
   uses-material-design: true
   generate: true
 
+  assets:
+    - assets/branding/logo_full.png
+    - assets/fonts/amiri/OFL.txt
+    - assets/fonts/ibm_plex_sans_arabic/OFL.txt
+
   fonts:
     - family: IBMPlexSansArabic
       fonts:

@@ -5,12 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../core/app_config.dart';
+import '../settings/app_settings.dart';
 import '../storage/book_repository.dart';
 import 'book_downloader.dart';
 import 'catalog_repository.dart';
 
-/// لغة الواجهة. العربية أولاً؛ التبديل يأتي مع الإعدادات (الميزة 8).
-final appLocaleProvider = Provider<Locale>((ref) => const Locale('ar'));
+/// لغة الواجهة الفعلية من الإعدادات (DESIGN §13.1). قبل قراءة الإعدادات
+/// تُفترض «حسب الجهاز».
+final appLocaleProvider = Provider<Locale>(
+  (ref) => resolveAppLocale(
+    ref.watch(appSettingsProvider).value?.language ?? AppLanguage.system,
+    WidgetsBinding.instance.platformDispatcher.locale,
+  ),
+);
 
 final appConfigProvider = Provider<AppConfig>(
   (ref) => AppConfig.fromEnvironment(),

@@ -24,6 +24,10 @@ class InstalledBook {
     required this.sourceName,
     required this.license,
     required this.bytes,
+    this.sourceUrl,
+    this.edition,
+    this.original,
+    this.removed,
   });
 
   final String id;
@@ -33,6 +37,13 @@ class InstalledBook {
   final int? authorDeathHijri;
   final String sourceName;
   final String license;
+
+  /// تفاصيل المصدر من ملف الكتب (شاشة المصادر). قد تغيب في الكتب المثبّتة
+  /// قبل الميزة 8 حتى يُعاد تحميلها.
+  final String? sourceUrl;
+  final String? edition;
+  final String? original;
+  final String? removed;
 
   /// حجم نص الكتاب غير المضغوط (تقدير المساحة التي يحررها الحذف).
   final int bytes;
@@ -166,6 +177,10 @@ List<InstalledBook> readInstalled(Database db) =>
         sourceName: source['name'] as String? ?? '',
         license: r['license'] as String,
         bytes: r['bytes'] as int,
+        sourceUrl: source['url'] as String?,
+        edition: source['edition'] as String?,
+        original: source['original'] as String?,
+        removed: source['removed'] as String?,
       );
     }).toList();
 
@@ -219,7 +234,13 @@ void importBook(
         book.author.en,
         book.authorDeathHijri,
         diacritics,
-        jsonEncode({'name': book.sourceName, 'url': book.sourceUrl}),
+        jsonEncode({
+          'name': book.sourceName,
+          'url': book.sourceUrl,
+          'edition': ?book.edition,
+          'original': ?book.original,
+          'removed': ?book.removed,
+        }),
         book.license,
         (now ?? DateTime.now()).millisecondsSinceEpoch,
         bytes,

@@ -73,6 +73,13 @@ class AgeConfirmed extends AsyncNotifier<bool> {
     final prefs = await ref.read(sharedPreferencesProvider.future);
     await prefs.setBool(ageConfirmedKey, true);
   }
+
+  /// من الإعدادات: يعود تنبيه أول استخدام وتأكيد العمر عند الفتح التالي.
+  Future<void> reset() async {
+    state = const AsyncData(false);
+    final prefs = await ref.read(sharedPreferencesProvider.future);
+    await prefs.remove(ageConfirmedKey);
+  }
 }
 
 /// آخر إجابة فقط (لا سجل): تُعرض عند العودة إلى الشاشة.

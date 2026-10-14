@@ -809,4 +809,266 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get askQuoteBookNotInstalled => 'النص المقتبس:';
+
+  @override
+  String get settingsTitle => 'الإعدادات';
+
+  @override
+  String get settingsGeneral => 'العامة';
+
+  @override
+  String get settingsLanguage => 'اللغة';
+
+  @override
+  String get languageSystem => 'حسب الجهاز';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChanged => 'صارت الواجهة بالعربية';
+
+  @override
+  String get settingsAppearance => 'المظهر';
+
+  @override
+  String get appearanceLight => 'فاتح';
+
+  @override
+  String get appearanceDark => 'داكن';
+
+  @override
+  String get appearanceSystem => 'حسب الجهاز';
+
+  @override
+  String get settingsReading => 'القراءة';
+
+  @override
+  String get settingsTextSizeAndColor => 'حجم الخط ولون الصفحة';
+
+  @override
+  String get settingsListening => 'الاستماع';
+
+  @override
+  String get settingsVoiceDefault => 'تلقائي';
+
+  @override
+  String get settingsResetAge => 'إعادة ضبط تأكيد العمر';
+
+  @override
+  String get settingsResetAgeHint =>
+      'يُطلب التأكيد مرة أخرى عند فتح «اسأل الأديب»';
+
+  @override
+  String get settingsResetAgeQuestion => 'إعادة ضبط تأكيد العمر؟';
+
+  @override
+  String get settingsReset => 'إعادة الضبط';
+
+  @override
+  String get settingsResetAgeDone => 'أُعيد ضبط تأكيد العمر';
+
+  @override
+  String get settingsClearAnswer => 'مسح آخر إجابة';
+
+  @override
+  String get settingsClearAnswerHint => 'آخر إجابة فقط محفوظة على جهازك';
+
+  @override
+  String get settingsNoAnswer => 'لا إجابة محفوظة';
+
+  @override
+  String get settingsClearAnswerDone => 'مُسحت آخر إجابة';
+
+  @override
+  String get settingsAbout => 'عن التطبيق';
+
+  @override
+  String get sourcesTitle => 'المصادر والتراخيص';
+
+  @override
+  String get privacyTitle => 'سياسة الخصوصية';
+
+  @override
+  String get aboutTitle => 'عن الأديب الذكي';
+
+  @override
+  String get sourcesIntro =>
+      'نصوص الكتب من الملك العام، مأخوذة من مشروع OpenITI (Open Islamicate Texts Initiative) الذي نقلها عن المكتبة الشاملة. حذفنا منها الحواشي ومقدمات المحققين المعاصرين وتعليقاتهم، ونذكر لكل كتاب طبعته وما حُذف منه.';
+
+  @override
+  String get sourcesOpenItiLicense =>
+      'ملفات OpenITI منشورة بترخيص CC BY-NC-SA 4.0 (نسبة العمل إلى صاحبه، غير تجاري، المشاركة بالمثل)، ونعيد نشر الملفات المحوّلة بالترخيص نفسه.';
+
+  @override
+  String get sourcesBooks => 'الكتب';
+
+  @override
+  String get sourcesNoBooks => 'تظهر الكتب هنا بعد تحميل قائمتها.';
+
+  @override
+  String get sourcesSourceLabel => 'المصدر';
+
+  @override
+  String get sourcesOriginalLabel => 'الأصل';
+
+  @override
+  String get sourcesEditionLabel => 'الطبعة';
+
+  @override
+  String get sourcesRemovedLabel => 'ما حُذف';
+
+  @override
+  String get sourcesLicenseLabel => 'الترخيص';
+
+  @override
+  String get sourcesFileVersionLabel => 'إصدار الملف';
+
+  @override
+  String get sourcesLinkLabel => 'الرابط';
+
+  @override
+  String get sourcesDetailsAfterDownload =>
+      'تظهر الطبعة وما حُذف بعد تحميل الكتاب.';
+
+  @override
+  String get sourcesCopyLink => 'انسخ الرابط';
+
+  @override
+  String sourcesCopyLinkSemantics(String book) {
+    return 'انسخ رابط مصدر $book';
+  }
+
+  @override
+  String get sourcesLinkCopied => 'نُسخ الرابط';
+
+  @override
+  String get sourcesFonts => 'الخطوط';
+
+  @override
+  String get fontAmiri => 'Amiri';
+
+  @override
+  String get fontIbmPlex => 'IBM Plex Sans Arabic';
+
+  @override
+  String get sourcesFontLicense => 'SIL Open Font License 1.1';
+
+  @override
+  String get sourcesViewLicense => 'عرض الترخيص';
+
+  @override
+  String sourcesViewLicenseSemantics(String font) {
+    return 'عرض ترخيص خط $font';
+  }
+
+  @override
+  String fontLicenseTitle(String font) {
+    return 'ترخيص $font';
+  }
+
+  @override
+  String get sourcesServices => 'الخدمات';
+
+  @override
+  String get sourcesServiceAi =>
+      'الإجابات الذكية: Gemini من Google عبر خادم وسيط';
+
+  @override
+  String get sourcesServiceTts => 'القراءة الصوتية: محرّك الصوت في جهازك';
+
+  @override
+  String get sourcesServiceHosting => 'استضافة الكتب: GitHub';
+
+  @override
+  String get sourcesLibraries => 'المكتبات البرمجية';
+
+  @override
+  String get sourcesViewLibraries => 'عرض تراخيص المكتبات';
+
+  @override
+  String get privacyIntro =>
+      'خلاصة ما يحدث لبياناتك في «الأديب الذكي»، بلغة بسيطة.';
+
+  @override
+  String get privacyAccountTitle => 'لا حساب';
+
+  @override
+  String get privacyAccountBody =>
+      'لا يطلب التطبيق حساباً ولا اسماً ولا بريداً ولا رقم هاتف.';
+
+  @override
+  String get privacyLocalTitle => 'بياناتك على جهازك';
+
+  @override
+  String get privacyLocalBody =>
+      'الكتب المحمّلة والمفضلة وآخر موضع قراءة وإعداداتك وآخر إجابة من «اسأل الأديب» محفوظة على جهازك فقط. القراءة والبحث والاستماع تعمل دون إنترنت، والقراءة الصوتية بمحرّك الصوت في جهازك.';
+
+  @override
+  String get privacyAskTitle => 'أسئلة «اسأل الأديب»';
+
+  @override
+  String get privacyAskBody =>
+      'عندما تسأل، يُرسل سؤالك ومقاطع من الكتب المحمّلة إلى خادمنا، ثم إلى خدمة Gemini من Google لصياغة الإجابة. قد تستخدم Google ما يُرسل إليها لتحسين خدماتها، وقد يراجعه مراجعون بشريون. خادمنا لا يحفظ نص سؤالك.';
+
+  @override
+  String get privacyPersonalTitle => 'لا تكتب معلومات شخصية';
+
+  @override
+  String get privacyPersonalBody =>
+      'لا تكتب في سؤالك اسمك أو بيانات تواصلك أو أي معلومة شخصية أو سرية.';
+
+  @override
+  String get privacyDeviceTitle => 'معرّف عشوائي للجهاز';
+
+  @override
+  String get privacyDeviceBody =>
+      'يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط. لا يرتبط بهويتك ولا بمعرّفات النظام، ولا يحفظه الخادم كما هو.';
+
+  @override
+  String get privacyAgeTitle => '«اسأل الأديب» لمن هم 18 سنة فأكثر';
+
+  @override
+  String get privacyAgeBody =>
+      'شروط خدمة Gemini تشترط 18 سنة فأكثر، فيُطلب تأكيد العمر قبل أول سؤال. القراءة والبحث والاستماع متاحة للجميع.';
+
+  @override
+  String get privacyNetworkTitle => 'الاتصالات';
+
+  @override
+  String get privacyNetworkBody =>
+      'يتصل التطبيق بـ GitHub لتحميل قائمة الكتب وملفاتها، وبخادمنا عند استخدام «اسأل الأديب» فقط، وكل ذلك عبر HTTPS.';
+
+  @override
+  String get privacyAdsTitle => 'لا إعلانات ولا تتبع';
+
+  @override
+  String get privacyAdsBody =>
+      'لا إعلانات ولا تحليلات ولا تقارير أعطال ولا أي تتبع.';
+
+  @override
+  String get privacyControlTitle => 'التحكم في بياناتك';
+
+  @override
+  String get privacyControlBody =>
+      'من الإعدادات يمكنك مسح آخر إجابة وإعادة ضبط تأكيد العمر. وحذف التطبيق يحذف كل بياناته من جهازك.';
+
+  @override
+  String get askConsentPrivacy => 'اقرأ سياسة الخصوصية';
+
+  @override
+  String get aboutLogoLabel => 'شعار الأديب الذكي';
+
+  @override
+  String get aboutDescription =>
+      'قراءة كتب الأدب العربي التراثي والبحث فيها والاستماع إليها دون إنترنت، مع «اسأل الأديب» الذي يجيب من نصوص الكتب باقتباس ومصدر.';
+
+  @override
+  String get aboutFree => 'مجاني بلا إعلانات ولا اشتراكات ولا حساب.';
+
+  @override
+  String get licenseLoadError => 'تعذّر عرض الترخيص.';
 }

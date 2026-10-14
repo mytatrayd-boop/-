@@ -8,6 +8,7 @@ import 'core/theme.dart';
 import 'l10n/app_localizations.dart';
 import 'library/library_providers.dart';
 import 'router.dart';
+import 'settings/app_settings.dart';
 
 class AdeebApp extends ConsumerStatefulWidget {
   const AdeebApp({super.key});
@@ -46,6 +47,8 @@ class _AdeebAppState extends ConsumerState<AdeebApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: lightTheme,
+      themeMode:
+          ref.watch(appSettingsProvider).value?.themeMode ?? ThemeMode.system,
       darkTheme: darkTheme,
       debugShowCheckedModeBanner: false,
     );

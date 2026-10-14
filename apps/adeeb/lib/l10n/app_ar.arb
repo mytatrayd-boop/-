@@ -644,5 +644,106 @@
   "askConsentConfirm": "عمري 18 سنة فأكثر، فهمت",
   "askConsentDecline": "ليس الآن",
   "askAboutThis": "اسأل الأديب عن هذا",
-  "askQuoteBookNotInstalled": "النص المقتبس:"
+  "askQuoteBookNotInstalled": "النص المقتبس:",
+  "settingsTitle": "الإعدادات",
+  "settingsGeneral": "العامة",
+  "settingsLanguage": "اللغة",
+  "languageSystem": "حسب الجهاز",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "languageChanged": "صارت الواجهة بالعربية",
+  "settingsAppearance": "المظهر",
+  "appearanceLight": "فاتح",
+  "appearanceDark": "داكن",
+  "appearanceSystem": "حسب الجهاز",
+  "settingsReading": "القراءة",
+  "settingsTextSizeAndColor": "حجم الخط ولون الصفحة",
+  "settingsListening": "الاستماع",
+  "settingsVoiceDefault": "تلقائي",
+  "settingsResetAge": "إعادة ضبط تأكيد العمر",
+  "settingsResetAgeHint": "يُطلب التأكيد مرة أخرى عند فتح «اسأل الأديب»",
+  "settingsResetAgeQuestion": "إعادة ضبط تأكيد العمر؟",
+  "settingsReset": "إعادة الضبط",
+  "settingsResetAgeDone": "أُعيد ضبط تأكيد العمر",
+  "settingsClearAnswer": "مسح آخر إجابة",
+  "settingsClearAnswerHint": "آخر إجابة فقط محفوظة على جهازك",
+  "settingsNoAnswer": "لا إجابة محفوظة",
+  "settingsClearAnswerDone": "مُسحت آخر إجابة",
+  "settingsAbout": "عن التطبيق",
+  "sourcesTitle": "المصادر والتراخيص",
+  "privacyTitle": "سياسة الخصوصية",
+  "aboutTitle": "عن الأديب الذكي",
+  "sourcesIntro": "نصوص الكتب من الملك العام، مأخوذة من مشروع OpenITI (Open Islamicate Texts Initiative) الذي نقلها عن المكتبة الشاملة. حذفنا منها الحواشي ومقدمات المحققين المعاصرين وتعليقاتهم، ونذكر لكل كتاب طبعته وما حُذف منه.",
+  "sourcesOpenItiLicense": "ملفات OpenITI منشورة بترخيص CC BY-NC-SA 4.0 (نسبة العمل إلى صاحبه، غير تجاري، المشاركة بالمثل)، ونعيد نشر الملفات المحوّلة بالترخيص نفسه.",
+  "sourcesBooks": "الكتب",
+  "sourcesNoBooks": "تظهر الكتب هنا بعد تحميل قائمتها.",
+  "sourcesSourceLabel": "المصدر",
+  "sourcesOriginalLabel": "الأصل",
+  "sourcesEditionLabel": "الطبعة",
+  "sourcesRemovedLabel": "ما حُذف",
+  "sourcesLicenseLabel": "الترخيص",
+  "sourcesFileVersionLabel": "إصدار الملف",
+  "sourcesLinkLabel": "الرابط",
+  "sourcesDetailsAfterDownload": "تظهر الطبعة وما حُذف بعد تحميل الكتاب.",
+  "sourcesCopyLink": "انسخ الرابط",
+  "sourcesCopyLinkSemantics": "انسخ رابط مصدر {book}",
+  "@sourcesCopyLinkSemantics": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      }
+    }
+  },
+  "sourcesLinkCopied": "نُسخ الرابط",
+  "sourcesFonts": "الخطوط",
+  "fontAmiri": "Amiri",
+  "fontIbmPlex": "IBM Plex Sans Arabic",
+  "sourcesFontLicense": "SIL Open Font License 1.1",
+  "sourcesViewLicense": "عرض الترخيص",
+  "sourcesViewLicenseSemantics": "عرض ترخيص خط {font}",
+  "@sourcesViewLicenseSemantics": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      }
+    }
+  },
+  "fontLicenseTitle": "ترخيص {font}",
+  "@fontLicenseTitle": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      }
+    }
+  },
+  "sourcesServices": "الخدمات",
+  "sourcesServiceAi": "الإجابات الذكية: Gemini من Google عبر خادم وسيط",
+  "sourcesServiceTts": "القراءة الصوتية: محرّك الصوت في جهازك",
+  "sourcesServiceHosting": "استضافة الكتب: GitHub",
+  "sourcesLibraries": "المكتبات البرمجية",
+  "sourcesViewLibraries": "عرض تراخيص المكتبات",
+  "privacyIntro": "خلاصة ما يحدث لبياناتك في «الأديب الذكي»، بلغة بسيطة.",
+  "privacyAccountTitle": "لا حساب",
+  "privacyAccountBody": "لا يطلب التطبيق حساباً ولا اسماً ولا بريداً ولا رقم هاتف.",
+  "privacyLocalTitle": "بياناتك على جهازك",
+  "privacyLocalBody": "الكتب المحمّلة والمفضلة وآخر موضع قراءة وإعداداتك وآخر إجابة من «اسأل الأديب» محفوظة على جهازك فقط. القراءة والبحث والاستماع تعمل دون إنترنت، والقراءة الصوتية بمحرّك الصوت في جهازك.",
+  "privacyAskTitle": "أسئلة «اسأل الأديب»",
+  "privacyAskBody": "عندما تسأل، يُرسل سؤالك ومقاطع من الكتب المحمّلة إلى خادمنا، ثم إلى خدمة Gemini من Google لصياغة الإجابة. قد تستخدم Google ما يُرسل إليها لتحسين خدماتها، وقد يراجعه مراجعون بشريون. خادمنا لا يحفظ نص سؤالك.",
+  "privacyPersonalTitle": "لا تكتب معلومات شخصية",
+  "privacyPersonalBody": "لا تكتب في سؤالك اسمك أو بيانات تواصلك أو أي معلومة شخصية أو سرية.",
+  "privacyDeviceTitle": "معرّف عشوائي للجهاز",
+  "privacyDeviceBody": "يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط. لا يرتبط بهويتك ولا بمعرّفات النظام، ولا يحفظه الخادم كما هو.",
+  "privacyAgeTitle": "«اسأل الأديب» لمن هم 18 سنة فأكثر",
+  "privacyAgeBody": "شروط خدمة Gemini تشترط 18 سنة فأكثر، فيُطلب تأكيد العمر قبل أول سؤال. القراءة والبحث والاستماع متاحة للجميع.",
+  "privacyNetworkTitle": "الاتصالات",
+  "privacyNetworkBody": "يتصل التطبيق بـ GitHub لتحميل قائمة الكتب وملفاتها، وبخادمنا عند استخدام «اسأل الأديب» فقط، وكل ذلك عبر HTTPS.",
+  "privacyAdsTitle": "لا إعلانات ولا تتبع",
+  "privacyAdsBody": "لا إعلانات ولا تحليلات ولا تقارير أعطال ولا أي تتبع.",
+  "privacyControlTitle": "التحكم في بياناتك",
+  "privacyControlBody": "من الإعدادات يمكنك مسح آخر إجابة وإعادة ضبط تأكيد العمر. وحذف التطبيق يحذف كل بياناته من جهازك.",
+  "askConsentPrivacy": "اقرأ سياسة الخصوصية",
+  "aboutLogoLabel": "شعار الأديب الذكي",
+  "aboutDescription": "قراءة كتب الأدب العربي التراثي والبحث فيها والاستماع إليها دون إنترنت، مع «اسأل الأديب» الذي يجيب من نصوص الكتب باقتباس ومصدر.",
+  "aboutFree": "مجاني بلا إعلانات ولا اشتراكات ولا حساب.",
+  "licenseLoadError": "تعذّر عرض الترخيص."
 }

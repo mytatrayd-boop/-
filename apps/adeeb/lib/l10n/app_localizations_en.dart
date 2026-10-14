@@ -814,4 +814,269 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get askQuoteBookNotInstalled => 'Quoted text:';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsGeneral => 'General';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get languageSystem => 'Device language';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChanged => 'The app is now in English';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get appearanceLight => 'Light';
+
+  @override
+  String get appearanceDark => 'Dark';
+
+  @override
+  String get appearanceSystem => 'System';
+
+  @override
+  String get settingsReading => 'Reading';
+
+  @override
+  String get settingsTextSizeAndColor => 'Text size and page color';
+
+  @override
+  String get settingsListening => 'Listening';
+
+  @override
+  String get settingsVoiceDefault => 'Automatic';
+
+  @override
+  String get settingsResetAge => 'Reset age confirmation';
+
+  @override
+  String get settingsResetAgeHint =>
+      'You\'ll be asked to confirm again when you open Ask Adeeb';
+
+  @override
+  String get settingsResetAgeQuestion => 'Reset age confirmation?';
+
+  @override
+  String get settingsReset => 'Reset';
+
+  @override
+  String get settingsResetAgeDone => 'Age confirmation was reset';
+
+  @override
+  String get settingsClearAnswer => 'Clear last answer';
+
+  @override
+  String get settingsClearAnswerHint =>
+      'Only the last answer is kept on your device';
+
+  @override
+  String get settingsNoAnswer => 'No saved answer';
+
+  @override
+  String get settingsClearAnswerDone => 'Last answer cleared';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get sourcesTitle => 'Sources & licenses';
+
+  @override
+  String get privacyTitle => 'Privacy policy';
+
+  @override
+  String get aboutTitle => 'About Adeeb AI';
+
+  @override
+  String get sourcesIntro =>
+      'The book texts are in the public domain, taken from the OpenITI project (Open Islamicate Texts Initiative), which transcribed them from al-Maktaba al-Shamela. We removed the footnotes, introductions and comments of modern editors, and list each book\'s edition and what was removed.';
+
+  @override
+  String get sourcesOpenItiLicense =>
+      'OpenITI files are published under CC BY-NC-SA 4.0 (Attribution, NonCommercial, ShareAlike), and we republish the converted files under the same license.';
+
+  @override
+  String get sourcesBooks => 'Books';
+
+  @override
+  String get sourcesNoBooks =>
+      'Books appear here once the book list has loaded.';
+
+  @override
+  String get sourcesSourceLabel => 'Source';
+
+  @override
+  String get sourcesOriginalLabel => 'Original';
+
+  @override
+  String get sourcesEditionLabel => 'Edition';
+
+  @override
+  String get sourcesRemovedLabel => 'Removed';
+
+  @override
+  String get sourcesLicenseLabel => 'License';
+
+  @override
+  String get sourcesFileVersionLabel => 'File version';
+
+  @override
+  String get sourcesLinkLabel => 'Link';
+
+  @override
+  String get sourcesDetailsAfterDownload =>
+      'The edition and what was removed appear after you download the book.';
+
+  @override
+  String get sourcesCopyLink => 'Copy link';
+
+  @override
+  String sourcesCopyLinkSemantics(String book) {
+    return 'Copy the source link for $book';
+  }
+
+  @override
+  String get sourcesLinkCopied => 'Link copied';
+
+  @override
+  String get sourcesFonts => 'Fonts';
+
+  @override
+  String get fontAmiri => 'Amiri';
+
+  @override
+  String get fontIbmPlex => 'IBM Plex Sans Arabic';
+
+  @override
+  String get sourcesFontLicense => 'SIL Open Font License 1.1';
+
+  @override
+  String get sourcesViewLicense => 'View license';
+
+  @override
+  String sourcesViewLicenseSemantics(String font) {
+    return 'View the license for the $font font';
+  }
+
+  @override
+  String fontLicenseTitle(String font) {
+    return '$font license';
+  }
+
+  @override
+  String get sourcesServices => 'Services';
+
+  @override
+  String get sourcesServiceAi =>
+      'AI answers: Google Gemini through our proxy server';
+
+  @override
+  String get sourcesServiceTts =>
+      'Listening: your device\'s text-to-speech engine';
+
+  @override
+  String get sourcesServiceHosting => 'Book hosting: GitHub';
+
+  @override
+  String get sourcesLibraries => 'Open-source libraries';
+
+  @override
+  String get sourcesViewLibraries => 'View library licenses';
+
+  @override
+  String get privacyIntro =>
+      'A plain-language summary of what happens to your data in Adeeb AI.';
+
+  @override
+  String get privacyAccountTitle => 'No account';
+
+  @override
+  String get privacyAccountBody =>
+      'The app asks for no account, name, email or phone number.';
+
+  @override
+  String get privacyLocalTitle => 'Your data stays on your device';
+
+  @override
+  String get privacyLocalBody =>
+      'Downloaded books, favorites, your last reading position, your settings and the last Ask Adeeb answer are stored only on your device. Reading, search and listening work offline, and listening uses your device\'s text-to-speech engine.';
+
+  @override
+  String get privacyAskTitle => 'Ask Adeeb questions';
+
+  @override
+  String get privacyAskBody =>
+      'When you ask, your question and excerpts from your downloaded books are sent to our server and then to Google\'s Gemini service to write the answer. Google may use what it receives to improve its services, and human reviewers may read it. Our server doesn\'t store the text of your question.';
+
+  @override
+  String get privacyPersonalTitle => 'Don\'t share personal information';
+
+  @override
+  String get privacyPersonalBody =>
+      'Don\'t include your name, contact details or any personal or confidential information in your question.';
+
+  @override
+  String get privacyDeviceTitle => 'A random device identifier';
+
+  @override
+  String get privacyDeviceBody =>
+      'The app creates a random identifier stored on your device and sends it with questions only to count the daily limit. It isn\'t linked to your identity or to system identifiers, and the server doesn\'t store it as is.';
+
+  @override
+  String get privacyAgeTitle => 'Ask Adeeb is for people aged 18 or over';
+
+  @override
+  String get privacyAgeBody =>
+      'Gemini\'s terms require users to be 18 or over, so you\'re asked to confirm your age before your first question. Reading, search and listening are available to everyone.';
+
+  @override
+  String get privacyNetworkTitle => 'Connections';
+
+  @override
+  String get privacyNetworkBody =>
+      'The app connects to GitHub to download the book list and book files, and to our server only when you use Ask Adeeb, always over HTTPS.';
+
+  @override
+  String get privacyAdsTitle => 'No ads, no tracking';
+
+  @override
+  String get privacyAdsBody =>
+      'No ads, no analytics, no crash reports and no tracking of any kind.';
+
+  @override
+  String get privacyControlTitle => 'Controlling your data';
+
+  @override
+  String get privacyControlBody =>
+      'In Settings you can clear the last answer and reset the age confirmation. Uninstalling the app deletes all of its data from your device.';
+
+  @override
+  String get askConsentPrivacy => 'Read the privacy policy';
+
+  @override
+  String get aboutLogoLabel => 'Adeeb AI logo';
+
+  @override
+  String get aboutDescription =>
+      'Read, search and listen to classical Arabic literature offline, with Ask Adeeb answering from the books\' text with a quote and its source.';
+
+  @override
+  String get aboutFree => 'Free, with no ads, no subscriptions and no account.';
+
+  @override
+  String get licenseLoadError => 'Couldn\'t show the license.';
 }
