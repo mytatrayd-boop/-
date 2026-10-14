@@ -1,1 +1,1 @@
-{"generatedAt":"2026-10-09T21:56:21.549Z","day":"2026-10-09","source":"yahoo","universe":5278,"scanned":5121,"params":{"entry":"open","hold":3,"stop":true,"volMult":20,"minChange":0.2,"minPrice":0.5,"maxPrice":20},"signals":[]}
+{"generatedAt":"2026-10-13T22:08:50.351Z","day":"2026-10-13","source":"yahoo","universe":5281,"scanned":5115,"params":{"entry":"open","hold":3,"stop":true,"volMult":20,"minChange":0.2,"minPrice":0.5,"maxPrice":20},"signals":[]}

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-10-10T08:25:14.440Z",
+  "generatedAt": "2026-10-14T12:16:47.449Z",
   "source": "yahoo",
   "dataFrom": "2026-07-10",
-  "dataTo": "2026-10-09",
+  "dataTo": "2026-10-13",
   "defaults": {
     "pivotK": 3,
     "lookbackBars": 156,
@@ -52,63 +52,63 @@
         "volMult": 0,
         "rr": 1.5
       },
-      "trades": 148,
-      "winRate": 0.3649,
-      "avgR": -0.057,
-      "returnPct": 0.872,
-      "maxDD": 3.115
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.05,
-        "volMult": 0,
-        "rr": 2
-      },
-      "trades": 129,
-      "winRate": 0.2868,
-      "avgR": -0.1215,
-      "returnPct": -2.478,
-      "maxDD": 5.102
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.05,
-        "volMult": 0,
-        "rr": 3
-      },
-      "trades": 111,
-      "winRate": 0.2523,
-      "avgR": -0.0275,
-      "returnPct": -0.228,
-      "maxDD": 4.825
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.05,
-        "volMult": 1.2,
-        "rr": 1.5
-      },
-      "trades": 174,
-      "winRate": 0.3908,
-      "avgR": 0.0081,
-      "returnPct": -2.538,
-      "maxDD": 3.815
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.05,
-        "volMult": 1.2,
-        "rr": 2
-      },
       "trades": 155,
-      "winRate": 0.2903,
-      "avgR": -0.1246,
-      "returnPct": -4.772,
-      "maxDD": 5.176
+      "winRate": 0.3742,
+      "avgR": -0.0322,
+      "returnPct": 1.479,
+      "maxDD": 3.214
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.05,
+        "volMult": 0,
+        "rr": 2
+      },
+      "trades": 137,
+      "winRate": 0.2993,
+      "avgR": -0.0628,
+      "returnPct": -1.608,
+      "maxDD": 5.211
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.05,
+        "volMult": 0,
+        "rr": 3
+      },
+      "trades": 118,
+      "winRate": 0.2373,
+      "avgR": -0.0858,
+      "returnPct": -1.15,
+      "maxDD": 4.887
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.05,
+        "volMult": 1.2,
+        "rr": 1.5
+      },
+      "trades": 177,
+      "winRate": 0.3672,
+      "avgR": -0.0623,
+      "returnPct": -2.981,
+      "maxDD": 4.334
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.05,
+        "volMult": 1.2,
+        "rr": 2
+      },
+      "trades": 159,
+      "winRate": 0.2767,
+      "avgR": -0.1783,
+      "returnPct": -5.117,
+      "maxDD": 5.853
     },
     {
       "params": {
@@ -117,11 +117,11 @@
         "volMult": 1.2,
         "rr": 3
       },
-      "trades": 143,
-      "winRate": 0.2098,
-      "avgR": -0.2414,
-      "returnPct": -5.353,
-      "maxDD": 6.257
+      "trades": 149,
+      "winRate": 0.2013,
+      "avgR": -0.3068,
+      "returnPct": -5.961,
+      "maxDD": 7.179
     },
     {
       "params": {
@@ -130,11 +130,11 @@
         "volMult": 1.8,
         "rr": 1.5
       },
-      "trades": 158,
-      "winRate": 0.3797,
-      "avgR": -0.0052,
-      "returnPct": -4.486,
-      "maxDD": 4.486
+      "trades": 164,
+      "winRate": 0.3659,
+      "avgR": -0.0468,
+      "returnPct": -5.157,
+      "maxDD": 5.257
     },
     {
       "params": {
@@ -143,11 +143,11 @@
         "volMult": 1.8,
         "rr": 2
       },
-      "trades": 141,
-      "winRate": 0.2979,
-      "avgR": -0.1453,
-      "returnPct": -5.993,
-      "maxDD": 7.003
+      "trades": 148,
+      "winRate": 0.2703,
+      "avgR": -0.2306,
+      "returnPct": -6.904,
+      "maxDD": 7.168
     },
     {
       "params": {
@@ -156,102 +156,102 @@
         "volMult": 1.8,
         "rr": 3
       },
-      "trades": 130,
-      "winRate": 0.2,
-      "avgR": -0.2477,
-      "returnPct": -7.084,
-      "maxDD": 7.399
+      "trades": 139,
+      "winRate": 0.1871,
+      "avgR": -0.3108,
+      "returnPct": -7.747,
+      "maxDD": 7.922
     },
     {
       "params": {
         "pivotK": 2,
         "breakBufAtr": 0.1,
         "volMult": 0,
-        "rr": 1.5
-      },
-      "trades": 145,
-      "winRate": 0.3448,
-      "avgR": -0.0951,
-      "returnPct": -0.445,
-      "maxDD": 4.394
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.1,
-        "volMult": 0,
-        "rr": 2
-      },
-      "trades": 127,
-      "winRate": 0.2677,
-      "avgR": -0.1865,
-      "returnPct": -3.554,
-      "maxDD": 6.06
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.1,
-        "volMult": 0,
-        "rr": 3
-      },
-      "trades": 111,
-      "winRate": 0.2252,
-      "avgR": -0.1309,
-      "returnPct": -1.483,
-      "maxDD": 5.775
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.1,
-        "volMult": 1.2,
-        "rr": 1.5
-      },
-      "trades": 167,
-      "winRate": 0.3772,
-      "avgR": -0.0621,
-      "returnPct": -3.122,
-      "maxDD": 4.075
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.1,
-        "volMult": 1.2,
-        "rr": 2
-      },
-      "trades": 153,
-      "winRate": 0.2876,
-      "avgR": -0.18,
-      "returnPct": -6.257,
-      "maxDD": 6.485
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.1,
-        "volMult": 1.2,
-        "rr": 3
-      },
-      "trades": 143,
-      "winRate": 0.2238,
-      "avgR": -0.1485,
-      "returnPct": -4.907,
-      "maxDD": 5.699
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.1,
-        "volMult": 1.8,
         "rr": 1.5
       },
       "trades": 152,
       "winRate": 0.3618,
-      "avgR": -0.0295,
-      "returnPct": -4.561,
-      "maxDD": 4.561
+      "avgR": -0.0403,
+      "returnPct": 0.389,
+      "maxDD": 4.455
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.1,
+        "volMult": 0,
+        "rr": 2
+      },
+      "trades": 134,
+      "winRate": 0.2761,
+      "avgR": -0.1564,
+      "returnPct": -2.808,
+      "maxDD": 6.053
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.1,
+        "volMult": 0,
+        "rr": 3
+      },
+      "trades": 118,
+      "winRate": 0.2203,
+      "avgR": -0.1314,
+      "returnPct": -2.214,
+      "maxDD": 5.772
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 1.5
+      },
+      "trades": 172,
+      "winRate": 0.3663,
+      "avgR": -0.1167,
+      "returnPct": -4.149,
+      "maxDD": 4.976
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 2
+      },
+      "trades": 159,
+      "winRate": 0.2767,
+      "avgR": -0.2362,
+      "returnPct": -6.948,
+      "maxDD": 7.609
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 3
+      },
+      "trades": 149,
+      "winRate": 0.2215,
+      "avgR": -0.1664,
+      "returnPct": -5.151,
+      "maxDD": 6.371
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 1.5
+      },
+      "trades": 156,
+      "winRate": 0.3526,
+      "avgR": -0.0597,
+      "returnPct": -5.1,
+      "maxDD": 5.242
     },
     {
       "params": {
@@ -260,141 +260,141 @@
         "volMult": 1.8,
         "rr": 2
       },
-      "trades": 136,
-      "winRate": 0.2794,
-      "avgR": -0.1835,
-      "returnPct": -6.099,
-      "maxDD": 6.635
+      "trades": 142,
+      "winRate": 0.2535,
+      "avgR": -0.2648,
+      "returnPct": -7.004,
+      "maxDD": 7.087
     },
     {
       "params": {
         "pivotK": 2,
         "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 3
+      },
+      "trades": 134,
+      "winRate": 0.1791,
+      "avgR": -0.3277,
+      "returnPct": -7.789,
+      "maxDD": 8.008
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 0,
+        "rr": 1.5
+      },
+      "trades": 144,
+      "winRate": 0.3611,
+      "avgR": 0.0068,
+      "returnPct": 1.571,
+      "maxDD": 4.455
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 0,
+        "rr": 2
+      },
+      "trades": 126,
+      "winRate": 0.2937,
+      "avgR": -0.1278,
+      "returnPct": -2.89,
+      "maxDD": 5.619
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 0,
+        "rr": 3
+      },
+      "trades": 115,
+      "winRate": 0.2174,
+      "avgR": -0.1085,
+      "returnPct": -2.562,
+      "maxDD": 5.673
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 1.2,
+        "rr": 1.5
+      },
+      "trades": 171,
+      "winRate": 0.3684,
+      "avgR": -0.0746,
+      "returnPct": -3.494,
+      "maxDD": 4.746
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 1.2,
+        "rr": 2
+      },
+      "trades": 153,
+      "winRate": 0.281,
+      "avgR": -0.2107,
+      "returnPct": -6.163,
+      "maxDD": 6.815
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 1.2,
+        "rr": 3
+      },
+      "trades": 142,
+      "winRate": 0.2535,
+      "avgR": -0.0352,
+      "returnPct": -3.708,
+      "maxDD": 4.897
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 1.8,
+        "rr": 1.5
+      },
+      "trades": 144,
+      "winRate": 0.3472,
+      "avgR": -0.1041,
+      "returnPct": -5.178,
+      "maxDD": 5.49
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
+        "volMult": 1.8,
+        "rr": 2
+      },
+      "trades": 133,
+      "winRate": 0.2782,
+      "avgR": -0.212,
+      "returnPct": -6.088,
+      "maxDD": 6.624
+    },
+    {
+      "params": {
+        "pivotK": 2,
+        "breakBufAtr": 0.25,
         "volMult": 1.8,
         "rr": 3
       },
       "trades": 125,
-      "winRate": 0.184,
-      "avgR": -0.2952,
-      "returnPct": -7.267,
-      "maxDD": 7.564
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 0,
-        "rr": 1.5
-      },
-      "trades": 133,
-      "winRate": 0.3459,
-      "avgR": 0.0033,
-      "returnPct": 1.199,
-      "maxDD": 4.163
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 0,
-        "rr": 2
-      },
-      "trades": 119,
-      "winRate": 0.2857,
-      "avgR": -0.1481,
-      "returnPct": -3.646,
-      "maxDD": 5.577
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 0,
-        "rr": 3
-      },
-      "trades": 108,
-      "winRate": 0.2222,
-      "avgR": -0.1157,
-      "returnPct": -1.851,
-      "maxDD": 5.406
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 1.2,
-        "rr": 1.5
-      },
-      "trades": 164,
-      "winRate": 0.3354,
-      "avgR": -0.1383,
-      "returnPct": -4.021,
-      "maxDD": 4.687
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 1.2,
-        "rr": 2
-      },
-      "trades": 147,
-      "winRate": 0.2653,
-      "avgR": -0.2428,
-      "returnPct": -6.4,
-      "maxDD": 6.4
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 1.2,
-        "rr": 3
-      },
-      "trades": 136,
-      "winRate": 0.2353,
-      "avgR": -0.1097,
-      "returnPct": -4.426,
-      "maxDD": 5.023
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 1.8,
-        "rr": 1.5
-      },
-      "trades": 139,
-      "winRate": 0.3453,
-      "avgR": -0.1121,
-      "returnPct": -5.274,
-      "maxDD": 5.274
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 1.8,
-        "rr": 2
-      },
-      "trades": 127,
-      "winRate": 0.2756,
-      "avgR": -0.2283,
-      "returnPct": -6.167,
-      "maxDD": 6.524
-    },
-    {
-      "params": {
-        "pivotK": 2,
-        "breakBufAtr": 0.25,
-        "volMult": 1.8,
-        "rr": 3
-      },
-      "trades": 119,
-      "winRate": 0.1933,
-      "avgR": -0.2788,
-      "returnPct": -6.518,
-      "maxDD": 6.816
+      "winRate": 0.208,
+      "avgR": -0.2128,
+      "returnPct": -5.706,
+      "maxDD": 6.696
     },
     {
       "params": {
@@ -403,11 +403,11 @@
         "volMult": 0,
         "rr": 1.5
       },
-      "trades": 118,
-      "winRate": 0.3983,
-      "avgR": 0.0776,
-      "returnPct": -0.139,
-      "maxDD": 2.384
+      "trades": 124,
+      "winRate": 0.4355,
+      "avgR": 0.182,
+      "returnPct": 1.491,
+      "maxDD": 2.125
     },
     {
       "params": {
@@ -416,11 +416,11 @@
         "volMult": 0,
         "rr": 2
       },
-      "trades": 99,
-      "winRate": 0.3535,
-      "avgR": 0.129,
-      "returnPct": -1.52,
-      "maxDD": 2.398
+      "trades": 105,
+      "winRate": 0.3905,
+      "avgR": 0.2834,
+      "returnPct": 0.257,
+      "maxDD": 1.78
     },
     {
       "params": {
@@ -429,11 +429,11 @@
         "volMult": 0,
         "rr": 3
       },
-      "trades": 92,
-      "winRate": 0.2283,
-      "avgR": -0.0686,
-      "returnPct": -4.217,
-      "maxDD": 5.199
+      "trades": 98,
+      "winRate": 0.2245,
+      "avgR": -0.102,
+      "returnPct": -4.574,
+      "maxDD": 5.583
     },
     {
       "params": {
@@ -442,544 +442,544 @@
         "volMult": 1.2,
         "rr": 1.5
       },
-      "trades": 138,
-      "winRate": 0.3188,
-      "avgR": -0.2561,
-      "returnPct": -4.238,
-      "maxDD": 4.759
+      "trades": 145,
+      "winRate": 0.3241,
+      "avgR": -0.2325,
+      "returnPct": -3.909,
+      "maxDD": 4.157
     },
     {
       "params": {
         "pivotK": 3,
         "breakBufAtr": 0.05,
-        "volMult": 1.2,
-        "rr": 2
-      },
-      "trades": 119,
-      "winRate": 0.2941,
-      "avgR": -0.144,
-      "returnPct": -1.872,
-      "maxDD": 3.344
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.05,
-        "volMult": 1.2,
-        "rr": 3
-      },
-      "trades": 110,
-      "winRate": 0.2273,
-      "avgR": -0.1552,
-      "returnPct": -2.414,
-      "maxDD": 3.583
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.05,
-        "volMult": 1.8,
-        "rr": 1.5
-      },
-      "trades": 130,
-      "winRate": 0.3462,
-      "avgR": -0.1814,
-      "returnPct": -4.997,
-      "maxDD": 5.157
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.05,
-        "volMult": 1.8,
-        "rr": 2
-      },
-      "trades": 121,
-      "winRate": 0.2975,
-      "avgR": -0.1102,
-      "returnPct": -3.796,
-      "maxDD": 4.479
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.05,
-        "volMult": 1.8,
-        "rr": 3
-      },
-      "trades": 110,
-      "winRate": 0.2,
-      "avgR": -0.2314,
-      "returnPct": -5.285,
-      "maxDD": 5.285
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.1,
-        "volMult": 0,
-        "rr": 1.5
-      },
-      "trades": 107,
-      "winRate": 0.3645,
-      "avgR": -0.0711,
-      "returnPct": -2.438,
-      "maxDD": 3.882
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.1,
-        "volMult": 0,
-        "rr": 2
-      },
-      "trades": 97,
-      "winRate": 0.3505,
-      "avgR": 0.1282,
-      "returnPct": -1.32,
-      "maxDD": 2.724
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.1,
-        "volMult": 0,
-        "rr": 3
-      },
-      "trades": 92,
-      "winRate": 0.2391,
-      "avgR": -0.0244,
-      "returnPct": -3.619,
-      "maxDD": 5.303
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.1,
-        "volMult": 1.2,
-        "rr": 1.5
-      },
-      "trades": 142,
-      "winRate": 0.3099,
-      "avgR": -0.281,
-      "returnPct": -4.766,
-      "maxDD": 5.465
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.1,
         "volMult": 1.2,
         "rr": 2
       },
       "trades": 125,
       "winRate": 0.288,
-      "avgR": -0.2036,
-      "returnPct": -3.99,
-      "maxDD": 5.476
+      "avgR": -0.1576,
+      "returnPct": -1.925,
+      "maxDD": 2.827
     },
     {
       "params": {
         "pivotK": 3,
-        "breakBufAtr": 0.1,
+        "breakBufAtr": 0.05,
         "volMult": 1.2,
         "rr": 3
       },
-      "trades": 110,
-      "winRate": 0.2182,
-      "avgR": -0.2538,
-      "returnPct": -4.585,
-      "maxDD": 5.805
+      "trades": 118,
+      "winRate": 0.2373,
+      "avgR": -0.1098,
+      "returnPct": -1.657,
+      "maxDD": 3.331
     },
     {
       "params": {
         "pivotK": 3,
-        "breakBufAtr": 0.1,
+        "breakBufAtr": 0.05,
         "volMult": 1.8,
         "rr": 1.5
       },
-      "trades": 126,
-      "winRate": 0.3571,
-      "avgR": -0.1551,
-      "returnPct": -4.741,
-      "maxDD": 5.147
+      "trades": 138,
+      "winRate": 0.3478,
+      "avgR": -0.1706,
+      "returnPct": -5.044,
+      "maxDD": 5.237
     },
     {
       "params": {
         "pivotK": 3,
-        "breakBufAtr": 0.1,
+        "breakBufAtr": 0.05,
         "volMult": 1.8,
         "rr": 2
       },
-      "trades": 118,
-      "winRate": 0.322,
-      "avgR": -0.0367,
-      "returnPct": -2.969,
-      "maxDD": 4.411
+      "trades": 130,
+      "winRate": 0.2846,
+      "avgR": -0.1467,
+      "returnPct": -4.235,
+      "maxDD": 4.696
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.05,
+        "volMult": 1.8,
+        "rr": 3
+      },
+      "trades": 120,
+      "winRate": 0.1917,
+      "avgR": -0.2605,
+      "returnPct": -5.328,
+      "maxDD": 5.491
     },
     {
       "params": {
         "pivotK": 3,
         "breakBufAtr": 0.1,
-        "volMult": 1.8,
-        "rr": 3
-      },
-      "trades": 108,
-      "winRate": 0.2222,
-      "avgR": -0.1561,
-      "returnPct": -4.246,
-      "maxDD": 5.178
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
         "volMult": 0,
         "rr": 1.5
       },
-      "trades": 120,
-      "winRate": 0.4167,
-      "avgR": 0.1407,
-      "returnPct": 4.169,
-      "maxDD": 2.561
+      "trades": 112,
+      "winRate": 0.3839,
+      "avgR": -0.0061,
+      "returnPct": -1.471,
+      "maxDD": 3.654
     },
     {
       "params": {
         "pivotK": 3,
-        "breakBufAtr": 0.25,
+        "breakBufAtr": 0.1,
         "volMult": 0,
         "rr": 2
       },
       "trades": 104,
-      "winRate": 0.375,
-      "avgR": 0.2505,
-      "returnPct": 4.345,
-      "maxDD": 1.833
+      "winRate": 0.3846,
+      "avgR": 0.2724,
+      "returnPct": 0.212,
+      "maxDD": 2.351
     },
     {
       "params": {
         "pivotK": 3,
-        "breakBufAtr": 0.25,
-        "volMult": 0,
-        "rr": 3
-      },
-      "trades": 95,
-      "winRate": 0.2632,
-      "avgR": 0.1047,
-      "returnPct": -1.262,
-      "maxDD": 4.619
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
-        "volMult": 1.2,
-        "rr": 1.5
-      },
-      "trades": 146,
-      "winRate": 0.3219,
-      "avgR": -0.2151,
-      "returnPct": -3.932,
-      "maxDD": 7.349
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
-        "volMult": 1.2,
-        "rr": 2
-      },
-      "trades": 131,
-      "winRate": 0.2901,
-      "avgR": -0.1593,
-      "returnPct": -3.491,
-      "maxDD": 6.868
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
-        "volMult": 1.2,
-        "rr": 3
-      },
-      "trades": 115,
-      "winRate": 0.2174,
-      "avgR": -0.2919,
-      "returnPct": -5.728,
-      "maxDD": 8.01
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
-        "volMult": 1.8,
-        "rr": 1.5
-      },
-      "trades": 121,
-      "winRate": 0.3554,
-      "avgR": -0.1277,
-      "returnPct": -3.923,
-      "maxDD": 4.439
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
-        "volMult": 1.8,
-        "rr": 2
-      },
-      "trades": 113,
-      "winRate": 0.3097,
-      "avgR": -0.0568,
-      "returnPct": -2.402,
-      "maxDD": 3.85
-    },
-    {
-      "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
-        "volMult": 1.8,
-        "rr": 3
-      },
-      "trades": 105,
-      "winRate": 0.2095,
-      "avgR": -0.2166,
-      "returnPct": -3.675,
-      "maxDD": 5.251
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 0,
-        "rr": 1.5
-      },
-      "trades": 127,
-      "winRate": 0.378,
-      "avgR": -0.0244,
-      "returnPct": 0.958,
-      "maxDD": 2.235
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 0,
-        "rr": 2
-      },
-      "trades": 112,
-      "winRate": 0.3393,
-      "avgR": 0.0031,
-      "returnPct": 0.569,
-      "maxDD": 2.651
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 0,
-        "rr": 3
-      },
-      "trades": 102,
-      "winRate": 0.2745,
-      "avgR": 0.0628,
-      "returnPct": 2.128,
-      "maxDD": 3.671
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 1.2,
-        "rr": 1.5
-      },
-      "trades": 131,
-      "winRate": 0.2977,
-      "avgR": -0.2782,
-      "returnPct": -6.413,
-      "maxDD": 7.476
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 1.2,
-        "rr": 2
-      },
-      "trades": 124,
-      "winRate": 0.2742,
-      "avgR": -0.1195,
-      "returnPct": -3.902,
-      "maxDD": 5.721
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 1.2,
-        "rr": 3
-      },
-      "trades": 118,
-      "winRate": 0.1864,
-      "avgR": -0.3678,
-      "returnPct": -7.045,
-      "maxDD": 8.545
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 1.8,
-        "rr": 1.5
-      },
-      "trades": 116,
-      "winRate": 0.4138,
-      "avgR": 0.1891,
-      "returnPct": -0.776,
-      "maxDD": 2.975
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 1.8,
-        "rr": 2
-      },
-      "trades": 110,
-      "winRate": 0.3364,
-      "avgR": 0.1373,
-      "returnPct": -0.638,
-      "maxDD": 2.953
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.05,
-        "volMult": 1.8,
-        "rr": 3
-      },
-      "trades": 97,
-      "winRate": 0.2165,
-      "avgR": -0.1169,
-      "returnPct": -2.483,
-      "maxDD": 3.869
-    },
-    {
-      "params": {
-        "pivotK": 5,
         "breakBufAtr": 0.1,
         "volMult": 0,
-        "rr": 1.5
-      },
-      "trades": 126,
-      "winRate": 0.3889,
-      "avgR": 0.055,
-      "returnPct": 0.839,
-      "maxDD": 2.326
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 0,
-        "rr": 2
-      },
-      "trades": 115,
-      "winRate": 0.3304,
-      "avgR": 0.0084,
-      "returnPct": -0.412,
-      "maxDD": 2.863
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 0,
-        "rr": 3
-      },
-      "trades": 101,
-      "winRate": 0.2772,
-      "avgR": 0.0937,
-      "returnPct": 0.531,
-      "maxDD": 4.16
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 1.2,
-        "rr": 1.5
-      },
-      "trades": 134,
-      "winRate": 0.2985,
-      "avgR": -0.268,
-      "returnPct": -5.931,
-      "maxDD": 7.672
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 1.2,
-        "rr": 2
-      },
-      "trades": 126,
-      "winRate": 0.2698,
-      "avgR": -0.1254,
-      "returnPct": -3.459,
-      "maxDD": 5.986
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 1.2,
-        "rr": 3
-      },
-      "trades": 120,
-      "winRate": 0.175,
-      "avgR": -0.4031,
-      "returnPct": -6.803,
-      "maxDD": 8.664
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 1.8,
-        "rr": 1.5
-      },
-      "trades": 115,
-      "winRate": 0.4174,
-      "avgR": 0.154,
-      "returnPct": -1.091,
-      "maxDD": 3.025
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 1.8,
-        "rr": 2
-      },
-      "trades": 108,
-      "winRate": 0.3426,
-      "avgR": 0.1112,
-      "returnPct": -0.797,
-      "maxDD": 2.99
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.1,
-        "volMult": 1.8,
         "rr": 3
       },
       "trades": 98,
       "winRate": 0.2245,
-      "avgR": -0.1129,
-      "returnPct": -2.39,
-      "maxDD": 4.377
+      "avgR": -0.1021,
+      "returnPct": -4.564,
+      "maxDD": 6.264
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 1.5
+      },
+      "trades": 147,
+      "winRate": 0.3197,
+      "avgR": -0.2204,
+      "returnPct": -3.901,
+      "maxDD": 4.889
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 2
+      },
+      "trades": 130,
+      "winRate": 0.2923,
+      "avgR": -0.1544,
+      "returnPct": -2.944,
+      "maxDD": 4.388
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 3
+      },
+      "trades": 117,
+      "winRate": 0.2479,
+      "avgR": -0.1261,
+      "returnPct": -3.347,
+      "maxDD": 5.205
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 1.5
+      },
+      "trades": 131,
+      "winRate": 0.3664,
+      "avgR": -0.126,
+      "returnPct": -4.411,
+      "maxDD": 5.227
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 2
+      },
+      "trades": 125,
+      "winRate": 0.312,
+      "avgR": -0.0646,
+      "returnPct": -3.065,
+      "maxDD": 4.664
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 3
+      },
+      "trades": 116,
+      "winRate": 0.2241,
+      "avgR": -0.1464,
+      "returnPct": -3.726,
+      "maxDD": 5.345
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 0,
+        "rr": 1.5
+      },
+      "trades": 130,
+      "winRate": 0.4308,
+      "avgR": 0.1831,
+      "returnPct": 5.55,
+      "maxDD": 2.063
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 0,
+        "rr": 2
+      },
+      "trades": 112,
+      "winRate": 0.3839,
+      "avgR": 0.2765,
+      "returnPct": 5.416,
+      "maxDD": 1.646
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 0,
+        "rr": 3
+      },
+      "trades": 103,
+      "winRate": 0.2427,
+      "avgR": 0.0334,
+      "returnPct": -1.948,
+      "maxDD": 5.312
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 1.2,
+        "rr": 1.5
+      },
+      "trades": 153,
+      "winRate": 0.3333,
+      "avgR": -0.1542,
+      "returnPct": -3.39,
+      "maxDD": 7.087
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 1.2,
+        "rr": 2
+      },
+      "trades": 136,
+      "winRate": 0.2941,
+      "avgR": -0.1322,
+      "returnPct": -3.494,
+      "maxDD": 7.136
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 1.2,
+        "rr": 3
+      },
+      "trades": 121,
+      "winRate": 0.2479,
+      "avgR": -0.1544,
+      "returnPct": -4.844,
+      "maxDD": 8.029
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 1.8,
+        "rr": 1.5
+      },
+      "trades": 126,
+      "winRate": 0.3492,
+      "avgR": -0.1381,
+      "returnPct": -3.747,
+      "maxDD": 4.433
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 1.8,
+        "rr": 2
+      },
+      "trades": 120,
+      "winRate": 0.3,
+      "avgR": -0.0846,
+      "returnPct": -2.404,
+      "maxDD": 3.968
+    },
+    {
+      "params": {
+        "pivotK": 3,
+        "breakBufAtr": 0.25,
+        "volMult": 1.8,
+        "rr": 3
+      },
+      "trades": 111,
+      "winRate": 0.2162,
+      "avgR": -0.1881,
+      "returnPct": -3.262,
+      "maxDD": 5.466
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 0,
+        "rr": 1.5
+      },
+      "trades": 139,
+      "winRate": 0.3885,
+      "avgR": 0.0163,
+      "returnPct": 1.656,
+      "maxDD": 2.194
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 0,
+        "rr": 2
+      },
+      "trades": 120,
+      "winRate": 0.3667,
+      "avgR": 0.1335,
+      "returnPct": 1.735,
+      "maxDD": 2.654
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 0,
+        "rr": 3
+      },
+      "trades": 111,
+      "winRate": 0.2613,
+      "avgR": 0.0228,
+      "returnPct": 1.213,
+      "maxDD": 3.695
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 1.2,
+        "rr": 1.5
+      },
+      "trades": 139,
+      "winRate": 0.3381,
+      "avgR": -0.1395,
+      "returnPct": -5.269,
+      "maxDD": 6.831
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 1.2,
+        "rr": 2
+      },
+      "trades": 130,
+      "winRate": 0.3231,
+      "avgR": 0.0609,
+      "returnPct": -2.218,
+      "maxDD": 4.824
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 1.2,
+        "rr": 3
+      },
+      "trades": 124,
+      "winRate": 0.2177,
+      "avgR": -0.2213,
+      "returnPct": -5.857,
+      "maxDD": 7.638
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 1.8,
+        "rr": 1.5
+      },
+      "trades": 125,
+      "winRate": 0.408,
+      "avgR": 0.1314,
+      "returnPct": -1.037,
+      "maxDD": 2.828
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 1.8,
+        "rr": 2
+      },
+      "trades": 119,
+      "winRate": 0.3613,
+      "avgR": 0.2029,
+      "returnPct": 0.379,
+      "maxDD": 1.793
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
+        "volMult": 1.8,
+        "rr": 3
+      },
+      "trades": 104,
+      "winRate": 0.2212,
+      "avgR": -0.096,
+      "returnPct": -2.131,
+      "maxDD": 3.343
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 0,
+        "rr": 1.5
+      },
+      "trades": 139,
+      "winRate": 0.3957,
+      "avgR": 0.0187,
+      "returnPct": 0.83,
+      "maxDD": 2.341
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 0,
+        "rr": 2
+      },
+      "trades": 127,
+      "winRate": 0.3386,
+      "avgR": -0.0151,
+      "returnPct": -0.391,
+      "maxDD": 2.879
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 0,
+        "rr": 3
+      },
+      "trades": 110,
+      "winRate": 0.2727,
+      "avgR": 0.0872,
+      "returnPct": -0.127,
+      "maxDD": 4.15
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 1.5
+      },
+      "trades": 141,
+      "winRate": 0.3404,
+      "avgR": -0.1272,
+      "returnPct": -4.669,
+      "maxDD": 7.04
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 2
+      },
+      "trades": 131,
+      "winRate": 0.3206,
+      "avgR": 0.0644,
+      "returnPct": -1.589,
+      "maxDD": 5.101
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 1.2,
+        "rr": 3
+      },
+      "trades": 124,
+      "winRate": 0.2097,
+      "avgR": -0.2458,
+      "returnPct": -5.6,
+      "maxDD": 7.767
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 1.5
+      },
+      "trades": 123,
+      "winRate": 0.4146,
+      "avgR": 0.1361,
+      "returnPct": -0.861,
+      "maxDD": 2.656
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 2
+      },
+      "trades": 116,
+      "winRate": 0.3621,
+      "avgR": 0.1642,
+      "returnPct": 0.168,
+      "maxDD": 1.84
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.1,
+        "volMult": 1.8,
+        "rr": 3
+      },
+      "trades": 104,
+      "winRate": 0.2308,
+      "avgR": -0.0837,
+      "returnPct": -2.025,
+      "maxDD": 3.714
     },
     {
       "params": {
@@ -988,10 +988,10 @@
         "volMult": 0,
         "rr": 1.5
       },
-      "trades": 110,
-      "winRate": 0.4273,
-      "avgR": 0.1105,
-      "returnPct": 2.853,
+      "trades": 121,
+      "winRate": 0.4545,
+      "avgR": 0.202,
+      "returnPct": 3.916,
       "maxDD": 1.504
     },
     {
@@ -1001,10 +1001,10 @@
         "volMult": 0,
         "rr": 2
       },
-      "trades": 102,
-      "winRate": 0.3824,
-      "avgR": 0.1841,
-      "returnPct": 1.489,
+      "trades": 111,
+      "winRate": 0.4054,
+      "avgR": 0.3014,
+      "returnPct": 2.738,
       "maxDD": 1.291
     },
     {
@@ -1014,11 +1014,11 @@
         "volMult": 0,
         "rr": 3
       },
-      "trades": 92,
-      "winRate": 0.3261,
-      "avgR": 0.3599,
-      "returnPct": 2.798,
-      "maxDD": 2.61
+      "trades": 104,
+      "winRate": 0.3269,
+      "avgR": 0.3678,
+      "returnPct": 2.55,
+      "maxDD": 2.532
     },
     {
       "params": {
@@ -1027,11 +1027,11 @@
         "volMult": 1.2,
         "rr": 1.5
       },
-      "trades": 129,
-      "winRate": 0.3256,
-      "avgR": -0.2307,
-      "returnPct": -4.777,
-      "maxDD": 6.414
+      "trades": 138,
+      "winRate": 0.3551,
+      "avgR": -0.1372,
+      "returnPct": -3.92,
+      "maxDD": 6.219
     },
     {
       "params": {
@@ -1040,11 +1040,11 @@
         "volMult": 1.2,
         "rr": 2
       },
-      "trades": 120,
-      "winRate": 0.2833,
-      "avgR": -0.2093,
-      "returnPct": -3.577,
-      "maxDD": 5.658
+      "trades": 126,
+      "winRate": 0.3095,
+      "avgR": -0.1076,
+      "returnPct": -2.571,
+      "maxDD": 5.557
     },
     {
       "params": {
@@ -1053,11 +1053,11 @@
         "volMult": 1.2,
         "rr": 3
       },
-      "trades": 113,
-      "winRate": 0.2124,
-      "avgR": -0.2746,
-      "returnPct": -4.119,
-      "maxDD": 7.119
+      "trades": 119,
+      "winRate": 0.2353,
+      "avgR": -0.1911,
+      "returnPct": -3.622,
+      "maxDD": 7.109
     },
     {
       "params": {
@@ -1066,11 +1066,11 @@
         "volMult": 1.8,
         "rr": 1.5
       },
-      "trades": 100,
-      "winRate": 0.46,
-      "avgR": 0.4597,
-      "returnPct": 2.995,
-      "maxDD": 2.075
+      "trades": 107,
+      "winRate": 0.4579,
+      "avgR": 0.4116,
+      "returnPct": 2.478,
+      "maxDD": 2.211
     },
     {
       "params": {
@@ -1078,25 +1078,25 @@
         "breakBufAtr": 0.25,
         "volMult": 1.8,
         "rr": 2
+      },
+      "trades": 104,
+      "winRate": 0.4327,
+      "avgR": 0.5358,
+      "returnPct": 4.175,
+      "maxDD": 1.579
+    },
+    {
+      "params": {
+        "pivotK": 5,
+        "breakBufAtr": 0.25,
+        "volMult": 1.8,
+        "rr": 3
       },
       "trades": 97,
-      "winRate": 0.433,
-      "avgR": 0.5736,
-      "returnPct": 4.145,
-      "maxDD": 1.648
-    },
-    {
-      "params": {
-        "pivotK": 5,
-        "breakBufAtr": 0.25,
-        "volMult": 1.8,
-        "rr": 3
-      },
-      "trades": 90,
-      "winRate": 0.3,
-      "avgR": 0.3571,
-      "returnPct": 2.105,
-      "maxDD": 3.119
+      "winRate": 0.3093,
+      "avgR": 0.3665,
+      "returnPct": 2.317,
+      "maxDD": 2.604
     }
   ],
   "walkForward": {
@@ -1109,45 +1109,45 @@
     },
     "outSample": {
       "from": "2026-08-24",
-      "to": "2026-10-05",
-      "weeks": 7
+      "to": "2026-10-12",
+      "weeks": 8
     },
     "chosen": {
       "params": {
-        "pivotK": 3,
-        "breakBufAtr": 0.25,
+        "pivotK": 5,
+        "breakBufAtr": 0.05,
         "volMult": 0,
-        "rr": 1.5
+        "rr": 3
       },
       "inSample": {
-        "trades": 55,
-        "winRate": 0.4545,
-        "avgR": 0.4581,
-        "returnPct": 5.095,
-        "maxDD": 0.87
+        "trades": 49,
+        "winRate": 0.3878,
+        "avgR": 0.621,
+        "returnPct": 5.096,
+        "maxDD": 0.993
       },
       "outSample": {
-        "trades": 65,
-        "winRate": 0.3846,
-        "avgR": -0.1279,
-        "returnPct": -0.933,
-        "maxDD": 2.63
+        "trades": 62,
+        "winRate": 0.1613,
+        "avgR": -0.45,
+        "returnPct": -3.622,
+        "maxDD": 3.622
       }
     },
     "defaults": {
       "inSample": {
-        "trades": 61,
-        "winRate": 0.2131,
-        "avgR": -0.4285,
-        "returnPct": -3.459,
-        "maxDD": 4.377
+        "trades": 60,
+        "winRate": 0.2333,
+        "avgR": -0.2717,
+        "returnPct": -2.349,
+        "maxDD": 4.383
       },
       "outSample": {
-        "trades": 64,
-        "winRate": 0.3594,
-        "avgR": 0.0108,
-        "returnPct": -0.444,
-        "maxDD": 2.535
+        "trades": 70,
+        "winRate": 0.3429,
+        "avgR": -0.0538,
+        "returnPct": -0.537,
+        "maxDD": 2.537
       }
     }
   }
