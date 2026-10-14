@@ -1,0 +1,19 @@
+# أسرار وإعدادات محلية — لا تُرفع أبداً
+.env
+.env.*
+!.env.example
+config/app_config.json
+worker/.dev.vars
+worker/.wrangler/
+worker/node_modules/
+*.keystore
+*.jks
+key.properties
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+library/tools/.dart_tool/
+.idea/
+*.iml

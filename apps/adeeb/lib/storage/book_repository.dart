@@ -1,0 +1,357 @@
+/// الكتب المحمّلة في SQLite: الاستيراد (في معاملة واحدة)، والحذف، والقراءة.
+/// الاستيراد والحذف في Isolate منفصل حتى لا تتجمد الواجهة (ARCHITECTURE §5).
+library;
+
+import 'dart:convert';
+import 'dart:isolate';
+import 'dart:typed_data';
+
+import 'package:sqlite3/sqlite3.dart';
+
+import '../library/book_file.dart';
+import '../library/catalog.dart';
+import 'app_database.dart';
+import 'search_index.dart';
+import 'write_queue.dart';
+
+class InstalledBook {
+  const InstalledBook({
+    required this.id,
+    required this.version,
+    required this.title,
+    required this.author,
+    required this.authorDeathHijri,
+    required this.sourceName,
+    required this.license,
+    required this.bytes,
+    this.sourceUrl,
+    this.edition,
+    this.original,
+    this.removed,
+  });
+
+  final String id;
+  final int version;
+  final LocalizedName title;
+  final LocalizedName author;
+  final int? authorDeathHijri;
+  final String sourceName;
+  final String license;
+
+  /// تفاصيل المصدر من ملف الكتب (شاشة المصادر). قد تغيب في الكتب المثبّتة
+  /// قبل الميزة 8 حتى يُعاد تحميلها.
+  final String? sourceUrl;
+  final String? edition;
+  final String? original;
+  final String? removed;
+
+  /// حجم نص الكتاب غير المضغوط (تقدير المساحة التي يحررها الحذف).
+  final int bytes;
+}
+
+class ChapterInfo {
+  const ChapterInfo({
+    required this.id,
+    required this.title,
+    required this.level,
+  });
+  final String id;
+  final String title;
+  final int level;
+}
+
+abstract interface class BookRepository {
+  Future<List<InstalledBook>> installed();
+
+  /// يفك الملف ويتحقق من مطابقته لـ [entry] ثم يستورده بدلاً من أي إصدار
+  /// سابق. يرمي [LibraryFormatException] إن كان الملف غير سليم.
+  Future<void> install(Uint8List gz, CatalogBook entry);
+
+  Future<void> delete(String bookId);
+
+  Future<List<ChapterInfo>> chapters(String bookId);
+}
+
+class SqliteBookRepository implements BookRepository {
+  /// [useIsolate] = false للاختبارات التي تعمل بزمن وهمي. [vacuum] قابل
+  /// للاستبدال في الاختبار (دالة عليا حتى تُرسل إلى الـ Isolate).
+  SqliteBookRepository(
+    this.dbPath, {
+    this.useIsolate = true,
+    this.vacuum = vacuumDatabase,
+  });
+
+  final String dbPath;
+  final bool useIsolate;
+  final void Function(Database db) vacuum;
+
+  /// الكتابة عبر الطابور المشترك مع المفضلة والموضع (write_queue.dart).
+  Future<T> _write<T>(T Function(Database db) body) async {
+    await ensureDatabaseReady(dbPath, useIsolate: useIsolate);
+    return enqueueWrite(dbPath, () => _exec(body));
+  }
+
+  Future<T> _run<T>(T Function(Database db) body) async {
+    await ensureDatabaseReady(dbPath, useIsolate: useIsolate);
+    return _exec(body);
+  }
+
+  Future<T> _exec<T>(T Function(Database db) body) {
+    final path = dbPath;
+    T task() {
+      final db = openAppDatabase(path);
+      try {
+        return body(db);
+      } finally {
+        db.close();
+      }
+    }
+
+    return useIsolate ? Isolate.run(task) : Future.sync(task);
+  }
+
+  @override
+  Future<List<InstalledBook>> installed() => _run(readInstalled);
+
+  @override
+  Future<void> install(Uint8List gz, CatalogBook entry) {
+    final meta = _EntryMeta.from(entry);
+    return _write(
+      (db) => importBook(
+        db,
+        decodeBookGz(gz, maxUncompressedBytes: meta.uncompressedBytes),
+        meta.toEntryCheck(),
+        meta.diacritics,
+      ),
+    );
+  }
+
+  /// الحذف نفسه في معاملة؛ وVACUUM بعده اختياري: فشله (مثلاً القاعدة مشغولة)
+  /// لا يُفشل الحذف، والمساحة تُستعاد في حذف لاحق.
+  @override
+  Future<void> delete(String bookId) {
+    final compact = vacuum;
+    return _write((db) {
+      deleteBook(db, bookId);
+      try {
+        compact(db);
+      } on SqliteException {
+        // اختياري.
+      }
+    });
+  }
+
+  @override
+  Future<List<ChapterInfo>> chapters(String bookId) =>
+      _run((db) => readChapters(db, bookId));
+}
+
+/// نسخة صغيرة قابلة للإرسال بين الـ Isolates من بيانات الفهرس اللازمة.
+class _EntryMeta {
+  _EntryMeta(this.id, this.version, this.diacritics, this.uncompressedBytes);
+  factory _EntryMeta.from(CatalogBook e) =>
+      _EntryMeta(e.id, e.version, e.diacritics, e.uncompressedBytes);
+  final String id;
+  final int version;
+  final String diacritics;
+  final int uncompressedBytes;
+  ({String id, int version}) toEntryCheck() => (id: id, version: version);
+}
+
+List<InstalledBook> readInstalled(Database db) =>
+    db.select('SELECT * FROM books ORDER BY installed_at, id').map((r) {
+      final source =
+          jsonDecode(r['source_json'] as String) as Map<String, Object?>;
+      return InstalledBook(
+        id: r['id'] as String,
+        version: r['version'] as int,
+        title: LocalizedName(
+          ar: r['title_ar'] as String,
+          en: r['title_en'] as String?,
+        ),
+        author: LocalizedName(
+          ar: r['author_ar'] as String,
+          en: r['author_en'] as String?,
+        ),
+        authorDeathHijri: r['author_death_hijri'] as int?,
+        sourceName: source['name'] as String? ?? '',
+        license: r['license'] as String,
+        bytes: r['bytes'] as int,
+        sourceUrl: source['url'] as String?,
+        edition: source['edition'] as String?,
+        original: source['original'] as String?,
+        removed: source['removed'] as String?,
+      );
+    }).toList();
+
+List<ChapterInfo> readChapters(Database db, String bookId) => db
+    .select(
+      'SELECT id, title, level FROM chapters WHERE book_id = ? ORDER BY ord',
+      [bookId],
+    )
+    .map(
+      (r) => ChapterInfo(
+        id: r['id'] as String,
+        title: r['title'] as String,
+        level: r['level'] as int,
+      ),
+    )
+    .toList();
+
+/// يستورد [book] في معاملة واحدة بعد حذف أي إصدار سابق؛ فشل في المنتصف = لا
+/// تغيير. يرفض الملف إن لم يطابق معرّف الكتاب وإصداره في الفهرس.
+void importBook(
+  Database db,
+  BookFile book,
+  ({String id, int version}) expected,
+  String diacritics, {
+  DateTime? now,
+}) {
+  if (book.id != expected.id || book.version != expected.version) {
+    throw LibraryFormatException(
+      'الملف (${book.id} v${book.version}) لا يطابق الفهرس (${expected.id} v${expected.version})',
+    );
+  }
+  final bytes = book.chapters.fold<int>(
+    0,
+    (n, c) =>
+        n + c.paragraphs.fold<int>(0, (m, p) => m + utf8.encode(p.text).length),
+  );
+  db.execute('BEGIN IMMEDIATE');
+  try {
+    unindexBook(db, book.id);
+    db.execute('DELETE FROM books WHERE id = ?', [book.id]);
+    db.execute(
+      'INSERT INTO books (id, version, title_ar, title_en, author_ar, author_en, '
+      'author_death_hijri, diacritics, source_json, license, installed_at, bytes) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        book.id,
+        book.version,
+        book.title.ar,
+        book.title.en,
+        book.author.ar,
+        book.author.en,
+        book.authorDeathHijri,
+        diacritics,
+        jsonEncode({
+          'name': book.sourceName,
+          'url': book.sourceUrl,
+          'edition': ?book.edition,
+          'original': ?book.original,
+          'removed': ?book.removed,
+        }),
+        book.license,
+        (now ?? DateTime.now()).millisecondsSinceEpoch,
+        bytes,
+      ],
+    );
+    final insertChapter = db.prepare(
+      'INSERT INTO chapters (id, book_id, ord, level, title) VALUES (?, ?, ?, ?, ?)',
+    );
+    final insertParagraph = db.prepare(
+      'INSERT INTO paragraphs (id, book_id, chapter_id, ord, kind, text) VALUES (?, ?, ?, ?, ?, ?)',
+    );
+    final insertRedirect = db.prepare(
+      'INSERT INTO redirects (old_id, book_id, new_id) VALUES (?, ?, ?)',
+    );
+    final insertIndex = prepareIndexInsert(db);
+    try {
+      var paragraphOrd = 0;
+      for (var c = 0; c < book.chapters.length; c++) {
+        final chapter = book.chapters[c];
+        insertChapter.execute([
+          chapter.id,
+          book.id,
+          c,
+          chapter.level,
+          chapter.title,
+        ]);
+        for (final p in chapter.paragraphs) {
+          insertParagraph.execute([
+            p.id,
+            book.id,
+            chapter.id,
+            paragraphOrd++,
+            p.kind,
+            p.text,
+          ]);
+          // الفهرسة في المعاملة نفسها: فشلها يلغي الاستيراد كله.
+          indexParagraph(insertIndex, db.lastInsertRowId, p.text);
+        }
+      }
+      book.redirects.forEach(
+        (from, to) => insertRedirect.execute([from, book.id, to]),
+      );
+    } finally {
+      insertChapter.close();
+      insertParagraph.close();
+      insertRedirect.close();
+      insertIndex.close();
+    }
+    applyRedirects(db, book.id);
+    db.execute('COMMIT');
+  } catch (_) {
+    db.execute('ROLLBACK');
+    rethrow;
+  }
+}
+
+/// يتبع سلسلة التحويلات من [id] (قد يُحوَّل معرّف إلى معرّف حُوِّل لاحقاً)
+/// حتى معرّف بلا تحويل. يعيد [id] نفسه إن لم يكن له تحويل. الحلقات تتوقف.
+String resolveRedirect(Database db, String id) {
+  var current = id;
+  final seen = <String>{current};
+  while (true) {
+    final rows = db.select('SELECT new_id FROM redirects WHERE old_id = ?', [
+      current,
+    ]);
+    if (rows.isEmpty) return current;
+    final next = rows.first['new_id'] as String;
+    if (!seen.add(next)) return current;
+    current = next;
+  }
+}
+
+/// ينقل المفضلة وآخر موضع لكتاب [bookId] من المعرّفات القديمة إلى الجديدة
+/// عبر جدول `redirects` (ARCHITECTURE §4.2، §5). يُستدعى داخل معاملة
+/// الاستيراد، فيعمل عند التحديث وعند إعادة تحميل كتاب محذوف.
+void applyRedirects(Database db, String bookId) {
+  final redirected = db.select(
+    'SELECT paragraph_id AS id FROM favorites WHERE book_id = ? '
+    'AND paragraph_id IN (SELECT old_id FROM redirects WHERE book_id = ?) '
+    'UNION SELECT paragraph_id FROM positions WHERE book_id = ? '
+    'AND paragraph_id IN (SELECT old_id FROM redirects WHERE book_id = ?)',
+    [bookId, bookId, bookId, bookId],
+  );
+  for (final row in redirected) {
+    final old = row['id'] as String;
+    final target = resolveRedirect(db, old);
+    if (target == old) continue;
+    // فقرتان دُمجتا في واحدة: يبقى صف مفضلة واحد.
+    db.execute(
+      'UPDATE OR REPLACE favorites SET paragraph_id = ? WHERE paragraph_id = ?',
+      [target, old],
+    );
+    db.execute(
+      'UPDATE positions SET paragraph_id = ? WHERE book_id = ? AND paragraph_id = ?',
+      [target, bookId, old],
+    );
+  }
+}
+
+void vacuumDatabase(Database db) => db.execute('VACUUM');
+
+void deleteBook(Database db, String bookId) {
+  db.execute('BEGIN IMMEDIATE');
+  try {
+    // الفهرس أولاً (لا يتبع الحذف المتسلسل)، ثم الحذف المتسلسل يزيل
+    // الأبواب والفقرات والتحويلات.
+    unindexBook(db, bookId);
+    db.execute('DELETE FROM books WHERE id = ?', [bookId]);
+    db.execute('COMMIT');
+  } catch (_) {
+    db.execute('ROLLBACK');
+    rethrow;
+  }
+}

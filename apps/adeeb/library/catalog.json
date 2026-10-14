@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "catalog_version": 1,
+  "updated": "2026-10-12",
+  "books": [
+    {
+      "id": "adab",
+      "title": {
+        "ar": "أدب الدنيا والدين",
+        "en": "Adab al-Dunya wa al-Din"
+      },
+      "author": {
+        "ar": "الماوردي",
+        "en": "al-Mawardi"
+      },
+      "author_death_hijri": 450,
+      "version": 1,
+      "file": "books/adab/adab.v1.json.gz",
+      "sha256": "4cd01d092db9eff9f14dec038a08dc56709cbd9df8f9a738edbc7e16c68b1154",
+      "size_bytes": 257241,
+      "uncompressed_bytes": 1012969,
+      "paragraph_count": 3070,
+      "diacritics": "none",
+      "source": {
+        "name": "OpenITI",
+        "url": "https://github.com/OpenITI/0450AH/blob/8b80029191e1b7a8809d812ec6186df862e18217/data/0450AbuHasanMawardi/0450AbuHasanMawardi.AdabDunyaWaDin/0450AbuHasanMawardi.AdabDunyaWaDin.Shamela0000765-ara1"
+      },
+      "license": "CC BY-NC-SA 4.0"
+    },
+    {
+      "id": "bayan",
+      "title": {
+        "ar": "البيان والتبيين",
+        "en": "al-Bayan wa al-Tabyin"
+      },
+      "author": {
+        "ar": "الجاحظ",
+        "en": "al-Jahiz"
+      },
+      "author_death_hijri": 255,
+      "version": 1,
+      "file": "books/bayan/bayan.v1.json.gz",
+      "sha256": "97ff085ecbf97a1e49f75eeb31c67730c218cb3f788418145fe95c5d0085a649",
+      "size_bytes": 512782,
+      "uncompressed_bytes": 1944305,
+      "paragraph_count": 6903,
+      "diacritics": "none",
+      "source": {
+        "name": "OpenITI",
+        "url": "https://github.com/OpenITI/0275AH/blob/44e1c36738a2bf5c14dafa232a6ae1891e6171cd/data/0255Jahiz/0255Jahiz.BayanWaTabyin/0255Jahiz.BayanWaTabyin.Shamela0010614-ara1.completed"
+      },
+      "license": "CC BY-NC-SA 4.0"
+    },
+    {
+      "id": "kalila",
+      "title": {
+        "ar": "كليلة ودمنة",
+        "en": "Kalila wa Dimna"
+      },
+      "author": {
+        "ar": "ابن المقفع",
+        "en": "Ibn al-Muqaffa'"
+      },
+      "author_death_hijri": 142,
+      "version": 1,
+      "file": "books/kalila/kalila.v1.json.gz",
+      "sha256": "86e8c38011eddc53bb203c70af057bff11d9e57682635bb85bbef98f7d22f3e6",
+      "size_bytes": 119900,
+      "uncompressed_bytes": 428417,
+      "paragraph_count": 175,
+      "diacritics": "none",
+      "source": {
+        "name": "OpenITI",
+        "url": "https://github.com/OpenITI/0150AH/blob/f9a52b5bbc3a65673fc73fb32331e7f33811c480/data/0139IbnMuqaffac/0139IbnMuqaffac.KalilaWaDimna/0139IbnMuqaffac.KalilaWaDimna.Shamela0026537-ara1"
+      },
+      "license": "CC BY-NC-SA 4.0"
+    },
+    {
+      "id": "kamil",
+      "title": {
+        "ar": "الكامل في اللغة والأدب",
+        "en": "al-Kamil fi al-Lugha wa al-Adab"
+      },
+      "author": {
+        "ar": "المبرد",
+        "en": "al-Mubarrad"
+      },
+      "author_death_hijri": 285,
+      "version": 1,
+      "file": "books/kamil/kamil.v1.json.gz",
+      "sha256": "61a9acfcdfb62aab13c8cd5e4afefd9758d166b348f8376b417822d87ef95b92",
+      "size_bytes": 569581,
+      "uncompressed_bytes": 2170449,
+      "paragraph_count": 7283,
+      "diacritics": "none",
+      "source": {
+        "name": "OpenITI",
+        "url": "https://github.com/OpenITI/0300AH/blob/01a1544130e0236850ef2698923ad01575c5bd7c/data/0285IbnYazidMubarrad/0285IbnYazidMubarrad.KamilFiLugha/0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1.mARkdown"
+      },
+      "license": "CC BY-NC-SA 4.0"
+    },
+    {
+      "id": "uyun",
+      "title": {
+        "ar": "عيون الأخبار",
+        "en": "Uyun al-Akhbar"
+      },
+      "author": {
+        "ar": "ابن قتيبة",
+        "en": "Ibn Qutayba"
+      },
+      "author_death_hijri": 276,
+      "version": 1,
+      "file": "books/uyun/uyun.v1.json.gz",
+      "sha256": "c1f170666425bfe25f3467ee32de5bd24c6170a6218ed3220aa0b4706ada0545",
+      "size_bytes": 672355,
+      "uncompressed_bytes": 2571361,
+      "paragraph_count": 10189,
+      "diacritics": "none",
+      "source": {
+        "name": "OpenITI",
+        "url": "https://github.com/OpenITI/0300AH/blob/01a1544130e0236850ef2698923ad01575c5bd7c/data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.CuyunAkhbar/0276IbnQutaybaDinawari.CuyunAkhbar.Shamela0023790-ara1.completed"
+      },
+      "license": "CC BY-NC-SA 4.0"
+    }
+  ]
+}

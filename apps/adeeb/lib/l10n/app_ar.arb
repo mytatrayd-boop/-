@@ -1,0 +1,759 @@
+{
+  "@@locale": "ar",
+  "appTitle": "الأديب الذكي",
+  "libraryTitle": "المكتبة",
+  "download": "تحميل",
+  "downloadingPercent": "يُحمَّل… {percent}٪",
+  "@downloadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "إلغاء",
+  "retry": "إعادة المحاولة",
+  "redownload": "إعادة التحميل",
+  "open": "افتح",
+  "installed": "محمّل",
+  "notInstalled": "غير محمّل",
+  "updateAvailable": "تحديث متاح",
+  "update": "تحديث",
+  "preparing": "يُجهَّز للبحث…",
+  "downloadFailed": "تعذّر التحميل",
+  "downloadInterrupted": "انقطع الاتصال أثناء التحميل",
+  "fileCorrupt": "الملف غير سليم. أعد تحميله.",
+  "needsConnection": "يحتاج اتصالاً",
+  "offlineBanner": "أنت دون إنترنت — الكتب المحمّلة متاحة",
+  "staleCatalogBanner": "قد لا تكون القائمة محدّثة",
+  "updateAppBanner": "قائمة الكتب بصيغة أحدث من هذا الإصدار. حدّث التطبيق لرؤية الكتب الجديدة.",
+  "offlineFirstRunTitle": "تحتاج اتصالاً لتحميل الكتب",
+  "offlineFirstRunBody": "اتصل بالإنترنت مرة واحدة لتحميل قائمة الكتب، وبعدها تقرأ وتبحث وتستمع دون اتصال.",
+  "catalogError": "تعذّر تحميل قائمة الكتب. تحقّق من الاتصال وحاول مجدداً.",
+  "emptyLibrary": "لا توجد كتب متاحة بعد.",
+  "loading": "جارٍ التحميل",
+  "deleteFromDevice": "حذف من الجهاز",
+  "deleteDialogTitle": "حذف الكتاب من الجهاز؟",
+  "deleteDialogBody": "سيُحذف «{title}» من جهازك ويتحرّر {size}. تبقى المفضلة وآخر موضع، ويمكنك تحميله مجدداً في أي وقت.",
+  "@deleteDialogBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "حذف",
+  "bookDeleted": "حُذف الكتاب",
+  "deleteFailed": "تعذّر حذف الكتاب",
+  "bookUpdated": "حُدّث الكتاب",
+  "sizeMb": "{size} م.ب",
+  "@sizeMb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeKb": "{size} ك.ب",
+  "@sizeKb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeMbSpoken": "{size} ميغابايت",
+  "@sizeMbSpoken": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeKbSpoken": "{size} كيلوبايت",
+  "@sizeKbSpoken": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "deathHijri": "ت {year}هـ",
+  "@deathHijri": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "deathHijriSpoken": "متوفى {year} للهجرة",
+  "@deathHijriSpoken": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "authorWithDeath": "{author} ({death})",
+  "@authorWithDeath": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "death": {
+        "type": "String"
+      }
+    }
+  },
+  "bookCardSemantics": "{title}، {author}، {details}",
+  "@bookCardSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "author": {
+        "type": "String"
+      },
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "moreOptions": "خيارات أخرى",
+  "sourceLine": "المصدر: {source} — {license}",
+  "@sourceLine": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "license": {
+        "type": "String"
+      }
+    }
+  },
+  "licensePublicDomain": "ملك عام",
+  "downloadBook": "تحميل الكتاب ({size})",
+  "@downloadBook": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "chapters": "الأبواب",
+  "downloadToSeeChapters": "حمّل الكتاب لعرض أبوابه",
+  "bookOpenError": "تعذّر فتح الكتاب. أعد تحميله.",
+  "chapterSemantics": "الباب {number} من {total}: {title}",
+  "@chapterSemantics": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "bookNotFound": "هذا الكتاب غير موجود في المكتبة.",
+  "downloading": "يُحمَّل…",
+  "listSeparator": "، ",
+  "downloadAnnouncement": "«{title}»: يُحمَّل… {percent}٪",
+  "@downloadAnnouncement": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "startReading": "ابدأ القراءة",
+  "continueReading": "تابع القراءة",
+  "reachedPosition": "وصلت إلى: {chapter} — {percent}٪",
+  "@reachedPosition": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "youAreHere": "أنت هنا",
+  "chapterHereSemantics": "{chapter}، أنت هنا",
+  "@chapterHereSemantics": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "booksTab": "الكتب",
+  "favoritesTab": "المفضلة",
+  "favoritesEmptyTitle": "لا توجد فقرات في المفضلة بعد.",
+  "favoritesEmptyHint": "اضغط مطوّلاً على أي فقرة أثناء القراءة واختر «أضف إلى المفضلة».",
+  "favoritesError": "تعذّر عرض المفضلة.",
+  "remove": "إزالة",
+  "addedToFavorites": "أُضيفت إلى المفضلة",
+  "removedFromFavorites": "أُزيلت من المفضلة",
+  "undo": "تراجع",
+  "addToFavorites": "أضف إلى المفضلة",
+  "removeFromFavorites": "أزل من المفضلة",
+  "inFavorites": "في المفضلة",
+  "bookNotInstalledShort": "الكتاب غير محمّل",
+  "bookNotInstalledReader": "هذا الكتاب غير محمّل على جهازك.",
+  "downloadWithSize": "تحميل ({size})",
+  "@downloadWithSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "unavailableBook": "كتاب غير متاح",
+  "breadcrumb": "{book} ‹ {chapter}",
+  "@breadcrumb": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "passageSemantics": "{source}: {text}",
+  "@passageSemantics": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "contents": "الفهرس",
+  "displaySettings": "إعدادات العرض",
+  "textSize": "حجم الخط",
+  "decreaseTextLabel": "أ−",
+  "increaseTextLabel": "أ+",
+  "decreaseText": "تصغير الخط",
+  "increaseText": "تكبير الخط",
+  "textSizeLevel": "المستوى {level} من {total}",
+  "@textSizeLevel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "textPreview": "هكذا يظهر نص الكتاب بهذا الحجم.",
+  "pageColor": "لون الصفحة",
+  "themeLight": "فاتح",
+  "themePaper": "ورق",
+  "themeDark": "داكن",
+  "readerProgress": "الباب {chapter} من {total} · {percent}٪",
+  "@readerProgress": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "resumedHere": "تابعت من حيث توقفت",
+  "fromStart": "من البداية",
+  "paragraphNotFound": "لم نجد الفقرة نفسها، فتحنا الباب الذي كانت فيه",
+  "continueReadingSemantics": "تابع القراءة: {source}. {text}",
+  "@continueReadingSemantics": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "copy": "نسخ",
+  "share": "مشاركة",
+  "textCopied": "نُسخ النص",
+  "passageCitation": "{text}\n— {book}، {author}، {chapter}",
+  "@passageCitation": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "book": {
+        "type": "String"
+      },
+      "author": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFailed": "تعذّر الحفظ، حاول مجدداً",
+  "paragraphMissing": "لم تعد هذه الفقرة موجودة في الكتاب",
+  "searchTitle": "البحث",
+  "searchHint": "ابحث في الكتب… مثل: الحكمة",
+  "clearSearch": "مسح",
+  "searchAllBooks": "كل الكتب المحمّلة",
+  "searchHelper": "البحث يتجاهل التشكيل واختلاف الهمزات",
+  "searchMinChars": "اكتب حرفين على الأقل",
+  "searchNoResults": "لا توجد نتائج لـ «{query}»",
+  "@searchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoResultsHint": "جرّب كلمة أقصر أو مرادفاً، أو وسّع البحث إلى كل الكتب.",
+  "searchEverywhere": "ابحث في كل الكتب",
+  "searchNoBooks": "لا توجد كتب على جهازك للبحث فيها.",
+  "goToLibrary": "اذهب إلى المكتبة",
+  "searchError": "حدث خطأ أثناء البحث.",
+  "searchResultCount": "{count, plural, =1{نتيجة واحدة} =2{نتيجتان} few{{countText} نتائج} other{{countText} نتيجة}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "countText": {
+        "type": "String"
+      }
+    }
+  },
+  "searchBookCount": "{count, plural, =1{كتاب واحد} =2{كتابين} few{{countText} كتب} other{{countText} كتاباً}}",
+  "@searchBookCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "countText": {
+        "type": "String"
+      }
+    }
+  },
+  "searchSummary": "{results} في {books}",
+  "@searchSummary": {
+    "placeholders": {
+      "results": {
+        "type": "String"
+      },
+      "books": {
+        "type": "String"
+      }
+    }
+  },
+  "searchSuggestionsTitle": "اقتراحات",
+  "searchSuggestionWords": "الحكمة|البيان|الصديق|الأسد",
+  "searchShowMore": "عرض المزيد",
+  "searchResultSemantics": "{chapter}، {book}. {snippet}. الكلمة المطابقة: {words}",
+  "@searchResultSemantics": {
+    "placeholders": {
+      "chapter": {
+        "type": "String"
+      },
+      "book": {
+        "type": "String"
+      },
+      "snippet": {
+        "type": "String"
+      },
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "searchGroupHeader": "{book}، {count}",
+  "@searchGroupHeader": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "collapse": "طيّ",
+  "expand": "توسيع",
+  "searchInBook": "ابحث في هذا الكتاب",
+  "listen": "استمع",
+  "listenFromHere": "استمع من هنا",
+  "audioPlay": "تشغيل القراءة الصوتية",
+  "audioPause": "إيقاف مؤقت",
+  "audioNext": "الفقرة التالية",
+  "audioPrevious": "الفقرة السابقة",
+  "audioStop": "إيقاف الاستماع",
+  "audioMinimize": "تصغير",
+  "audioOpenPlayer": "افتح مشغّل الصوت",
+  "audioPlayerTitle": "مشغّل الصوت",
+  "audioPreparing": "يُجهَّز الصوت…",
+  "audioSpeed": "السرعة",
+  "audioSpeedValue": "{speed}×",
+  "@audioSpeedValue": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "audioSpeedSemantics": "السرعة {speed} ضعف",
+  "@audioSpeedSemantics": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "audioVoice": "الصوت",
+  "audioVoiceRow": "الصوت: {voice}",
+  "@audioVoiceRow": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "audioVoiceWithRegion": "عربي ({region}) — صوت {number}",
+  "@audioVoiceWithRegion": {
+    "placeholders": {
+      "region": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "audioVoiceNoRegion": "عربي — صوت {number}",
+  "@audioVoiceNoRegion": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "audioRegion": "{code, select, EG{مصر} SA{السعودية} AE{الإمارات} JO{الأردن} MA{المغرب} DZ{الجزائر} TN{تونس} LB{لبنان} KW{الكويت} QA{قطر} BH{البحرين} OM{عُمان} SY{سوريا} IQ{العراق} YE{اليمن} LY{ليبيا} SD{السودان} PS{فلسطين} other{}}",
+  "@audioRegion": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTryVoice": "جرّب",
+  "audioTryVoiceSemantics": "جرّب {voice}",
+  "@audioTryVoiceSemantics": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "audioSample": "قال الجاحظ: البيان اسمٌ جامعٌ لكل شيء كشف لك قناع المعنى.",
+  "audioGoToText": "اذهب إلى النص",
+  "audioNoVoiceTitle": "لا يوجد صوت عربي على جهازك",
+  "audioNoVoiceBody": "لتستمع إلى الكتب ثبّت الصوت العربي من إعدادات الهاتف: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.",
+  "audioOpenVoiceSettings": "افتح إعدادات الصوت",
+  "later": "لاحقاً",
+  "audioNoVoiceHelp": "لم تجد الخيار؟",
+  "audioNoVoiceAlternative": "يختلف المسار حسب الشركة المصنّعة. ابحث في إعدادات الهاتف عن «تحويل النص إلى كلام» أو «النطق»، أو ثبّت تطبيق «خدمات Google للنطق» من متجر التطبيقات، ثم نزّل بيانات اللغة العربية واخترها.",
+  "audioEngineError": "توقّف الصوت بسبب خطأ في محرّك القراءة.",
+  "audioBookFinished": "انتهى الكتاب",
+  "audioScreenReaderWarning": "قد يتداخل صوت القراءة مع قارئ الشاشة. استخدم سماعة أو أوقف القراءة الصوتية مؤقتاً عند التنقل.",
+  "audioBackToListening": "العودة إلى موضع الاستماع",
+  "audioNowReading": "يُقرأ الآن",
+  "audioChannelName": "القراءة الصوتية",
+  "audioNowPlayingSubtitle": "{book} — {author}",
+  "@audioNowPlayingSubtitle": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      },
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "askTitle": "اسأل الأديب",
+  "askQuotaBadge": "باقٍ لك {remaining} من {limit} اليوم",
+  "@askQuotaBadge": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "askQuotaExhausted": "انتهت أسئلة اليوم",
+  "askQuotaExplainTitle": "الأسئلة اليومية",
+  "askQuotaExplain": "لكل جهاز {limit} أسئلة يومياً لإبقاء الخدمة مجانية. يتجدد الرصيد كل يوم. ويُحتسب السؤال إذا وصل إلى الأديب حتى لو لم يجد الإجابة في الكتب.",
+  "@askQuotaExplain": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "askQuotaExplainClose": "حسناً",
+  "askPrivacyBanner": "لا تكتب معلومات شخصية في سؤالك",
+  "askHint": "اسأل عن شيء في الكتب… مثل: ما تعريف البيان عند الجاحظ؟",
+  "askFieldLabel": "سؤالك",
+  "askCharCount": "{count} / {max}",
+  "@askCharCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "askTooLong": "السؤال أطول من {max} حرف",
+  "@askTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "askTooShort": "اكتب سؤالاً أوضح",
+  "askButton": "اسأل",
+  "askSearchTextsButton": "ابحث في النصوص",
+  "askExamples": "ما تعريف البيان عند الجاحظ؟|ماذا قال ابن المقفع عن الصديق؟|ما آداب المجالسة في أدب الدنيا والدين؟",
+  "askExamplesTitle": "أمثلة",
+  "askArabicNote": "الإجابات بالعربية ومقتبسة من الكتب",
+  "askStageSearching": "يبحث في الكتب…",
+  "askStageAnswering": "يصوغ الإجابة…",
+  "askStageVerifying": "يتحقق من الاقتباس…",
+  "askSlow": "يستغرق الأمر وقتاً أطول من المعتاد…",
+  "askCancelNote": "قد يُحتسب السؤال إذا وصل إلى الخادم",
+  "askYourQuestion": "سؤالك: {question}",
+  "@askYourQuestion": {
+    "placeholders": {
+      "question": {
+        "type": "String"
+      }
+    }
+  },
+  "askAiLabel": "إجابة مولَّدة آلياً من نص الكتاب — راجع الاقتباس",
+  "askQuoted": "«{quote}»",
+  "@askQuoted": {
+    "placeholders": {
+      "quote": {
+        "type": "String"
+      }
+    }
+  },
+  "askQuoteSemantics": "اقتباس: {quote}",
+  "@askQuoteSemantics": {
+    "placeholders": {
+      "quote": {
+        "type": "String"
+      }
+    }
+  },
+  "askOpenSource": "افتح المصدر: {book}، {chapter}",
+  "@askOpenSource": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "askNewQuestion": "سؤال جديد",
+  "askOtherPassages": "نصوص مطابقة أخرى ({count})",
+  "@askOtherPassages": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "askAnswerArrived": "وصلت الإجابة",
+  "askCopyCitation": "«{quote}»\n— {book}، {chapter}",
+  "@askCopyCitation": {
+    "placeholders": {
+      "quote": {
+        "type": "String"
+      },
+      "book": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
+    }
+  },
+  "askNotFound": "لم أجد هذا في الكتب المتاحة.",
+  "askNotFoundHint": "جرّب صياغة أخرى أو اختر كتاباً محدداً.",
+  "askBooksOnly": "يجيب الأديب عن محتوى الكتب فقط، ولا يقدّم فتاوى.",
+  "askClosestPassages": "أقرب النصوص إلى سؤالك",
+  "askMatchingPassages": "النصوص المطابقة",
+  "askUnverified": "لم نتمكن من التحقق من الإجابة، فإليك النصوص المطابقة مباشرة.",
+  "askDailyLimit": "انتهت أسئلة اليوم ({limit} من {limit}). يتجدد رصيدك غداً. إليك النصوص المطابقة لسؤالك من الكتب:",
+  "@askDailyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "askOffline": "أنت دون إنترنت. الإجابة الذكية تحتاج اتصالاً، وهذه النصوص المطابقة من كتبك المحمّلة:",
+  "askUnavailable": "الخدمة غير متاحة الآن. حاول لاحقاً. إليك النصوص المطابقة:",
+  "askRateLimit": "أرسلت أسئلة كثيرة بسرعة. انتظر دقيقة ثم حاول.",
+  "askUpgrade": "حدّث التطبيق لتستخدم «اسأل الأديب». إليك النصوص المطابقة:",
+  "askNoBooks": "حمّل كتاباً واحداً على الأقل ليجيبك الأديب من نصه.",
+  "askNoLocalMatches": "ولم نجد نصوصاً مطابقة لكلمات سؤالك.",
+  "askBooksError": "تعذّر قراءة الكتب المحمّلة.",
+  "askConsentTitle": "قبل أن تسأل",
+  "askConsentBooks": "يجيب الأديب من نصوص الكتب المحمّلة فقط، ويذكر لك الاقتباس ومصدره.",
+  "askConsentGemini": "يُرسل سؤالك ومقاطع من الكتب إلى خدمة Gemini من Google لصياغة الإجابة، وقد تستخدمه Google لتحسين خدماتها.",
+  "askConsentPersonal": "لا تكتب معلومات شخصية في سؤالك.",
+  "askConsentNoFatwa": "لا يجيب الأديب عن الفتاوى ولا عن أسئلة من خارج الكتب.",
+  "askConsentAge": "هذه الميزة لمن هم 18 سنة فأكثر.",
+  "askConsentConfirm": "عمري 18 سنة فأكثر، فهمت",
+  "askConsentDecline": "ليس الآن",
+  "askAboutThis": "اسأل الأديب عن هذا",
+  "askQuoteBookNotInstalled": "النص المقتبس:",
+  "settingsTitle": "الإعدادات",
+  "settingsGeneral": "العامة",
+  "settingsLanguage": "اللغة",
+  "languageSystem": "حسب الجهاز",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "languageChanged": "صارت الواجهة بالعربية",
+  "settingsAppearance": "المظهر",
+  "appearanceLight": "فاتح",
+  "appearanceDark": "داكن",
+  "appearanceSystem": "حسب الجهاز",
+  "settingsReading": "القراءة",
+  "settingsTextSizeAndColor": "حجم الخط ولون الصفحة",
+  "settingsListening": "الاستماع",
+  "settingsVoiceDefault": "تلقائي",
+  "settingsResetAge": "إعادة ضبط تأكيد العمر",
+  "settingsResetAgeHint": "يُطلب التأكيد مرة أخرى عند فتح «اسأل الأديب»",
+  "settingsResetAgeQuestion": "إعادة ضبط تأكيد العمر؟",
+  "settingsReset": "إعادة الضبط",
+  "settingsResetAgeDone": "أُعيد ضبط تأكيد العمر",
+  "settingsClearAnswer": "مسح آخر إجابة",
+  "settingsClearAnswerHint": "آخر إجابة فقط محفوظة على جهازك",
+  "settingsNoAnswer": "لا إجابة محفوظة",
+  "settingsClearAnswerDone": "مُسحت آخر إجابة",
+  "settingsAbout": "عن التطبيق",
+  "sourcesTitle": "المصادر والتراخيص",
+  "privacyTitle": "سياسة الخصوصية",
+  "aboutTitle": "عن الأديب الذكي",
+  "sourcesIntro": "نصوص الكتب من الملك العام، مأخوذة من مشروع OpenITI (Open Islamicate Texts Initiative) الذي نقلها عن المكتبة الشاملة. حذفنا منها الحواشي ومقدمات المحققين المعاصرين وتعليقاتهم، ونذكر لكل كتاب طبعته وما حُذف منه.",
+  "sourcesOpenItiLicense": "ملفات OpenITI منشورة بترخيص CC BY-NC-SA 4.0 (نسبة العمل إلى صاحبه، غير تجاري، المشاركة بالمثل)، ونعيد نشر الملفات المحوّلة بالترخيص نفسه.",
+  "sourcesBooks": "الكتب",
+  "sourcesNoBooks": "تظهر الكتب هنا بعد تحميل قائمتها.",
+  "sourcesSourceLabel": "المصدر",
+  "sourcesOriginalLabel": "الأصل",
+  "sourcesEditionLabel": "الطبعة",
+  "sourcesRemovedLabel": "ما حُذف",
+  "sourcesLicenseLabel": "الترخيص",
+  "sourcesFileVersionLabel": "إصدار الملف",
+  "sourcesLinkLabel": "الرابط",
+  "sourcesDetailsAfterDownload": "تظهر الطبعة وما حُذف بعد تحميل الكتاب.",
+  "sourcesCopyLink": "انسخ الرابط",
+  "sourcesCopyLinkSemantics": "انسخ رابط مصدر {book}",
+  "@sourcesCopyLinkSemantics": {
+    "placeholders": {
+      "book": {
+        "type": "String"
+      }
+    }
+  },
+  "sourcesLinkCopied": "نُسخ الرابط",
+  "sourcesFonts": "الخطوط",
+  "fontAmiri": "Amiri",
+  "fontIbmPlex": "IBM Plex Sans Arabic",
+  "sourcesFontLicense": "SIL Open Font License 1.1",
+  "sourcesViewLicense": "عرض الترخيص",
+  "sourcesViewLicenseSemantics": "عرض ترخيص خط {font}",
+  "@sourcesViewLicenseSemantics": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      }
+    }
+  },
+  "fontLicenseTitle": "ترخيص {font}",
+  "@fontLicenseTitle": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      }
+    }
+  },
+  "sourcesServices": "الخدمات",
+  "sourcesServiceAi": "الإجابات الذكية: Gemini من Google عبر خادم وسيط",
+  "sourcesServiceTts": "القراءة الصوتية: محرّك الصوت في جهازك",
+  "sourcesServiceHosting": "استضافة الكتب: GitHub",
+  "sourcesLibraries": "المكتبات البرمجية",
+  "sourcesViewLibraries": "عرض تراخيص المكتبات",
+  "privacyIntro": "خلاصة ما يحدث لبياناتك في «الأديب الذكي»، بلغة بسيطة.",
+  "privacyAccountTitle": "لا حساب",
+  "privacyAccountBody": "لا يطلب التطبيق حساباً ولا اسماً ولا بريداً ولا رقم هاتف.",
+  "privacyLocalTitle": "بياناتك على جهازك",
+  "privacyLocalBody": "الكتب المحمّلة والمفضلة وآخر موضع قراءة وإعداداتك وآخر إجابة من «اسأل الأديب» محفوظة على جهازك فقط. القراءة والبحث والاستماع تعمل دون إنترنت، والقراءة الصوتية بمحرّك الصوت في جهازك.",
+  "privacyAskTitle": "أسئلة «اسأل الأديب»",
+  "privacyAskBody": "عندما تسأل، يُرسل سؤالك ومقاطع من الكتب المحمّلة إلى خادمنا، ثم إلى خدمة Gemini من Google لصياغة الإجابة. قد تستخدم Google ما يُرسل إليها لتحسين خدماتها، وقد يراجعه مراجعون بشريون. خادمنا لا يحفظ نص سؤالك.",
+  "privacyPersonalTitle": "لا تكتب معلومات شخصية",
+  "privacyPersonalBody": "لا تكتب في سؤالك اسمك أو بيانات تواصلك أو أي معلومة شخصية أو سرية.",
+  "privacyDeviceTitle": "معرّف عشوائي للجهاز",
+  "privacyDeviceBody": "يُنشئ التطبيق معرّفاً عشوائياً يُحفظ على جهازك، ويُرسل مع الأسئلة لحساب الحد اليومي فقط، ولا يرتبط بهويتك ولا بمعرّفات النظام. يرى خادمنا (على Cloudflare) عنوان IP لجهازك، ويحفظ منه ومن المعرّف قيمة مشفّرة لا تُعكس (HMAC) في عدّادات الحد اليومي ليوم واحد فقط، ثم تُحذف. ولا يحفظ المعرّف ولا عنوان IP كما هما.",
+  "privacyAgeTitle": "«اسأل الأديب» لمن هم 18 سنة فأكثر",
+  "privacyAgeBody": "شروط خدمة Gemini تشترط 18 سنة فأكثر، فيُطلب تأكيد العمر قبل أول سؤال. القراءة والبحث والاستماع متاحة للجميع.",
+  "privacyNetworkTitle": "الاتصالات",
+  "privacyNetworkBody": "يتصل التطبيق بـ GitHub لتحميل قائمة الكتب وملفاتها، وبخادمنا عند استخدام «اسأل الأديب» فقط، وكل ذلك عبر HTTPS.",
+  "privacyAdsTitle": "لا إعلانات ولا تتبع",
+  "privacyAdsBody": "لا إعلانات ولا تحليلات ولا تقارير أعطال ولا أي تتبع.",
+  "privacyControlTitle": "التحكم في بياناتك",
+  "privacyControlBody": "من الإعدادات يمكنك مسح آخر إجابة وإعادة ضبط تأكيد العمر. وحذف التطبيق يحذف كل بياناته من جهازك.",
+  "askConsentPrivacy": "اقرأ سياسة الخصوصية",
+  "aboutLogoLabel": "شعار الأديب الذكي",
+  "aboutDescription": "قراءة كتب الأدب العربي التراثي والبحث فيها والاستماع إليها دون إنترنت، مع «اسأل الأديب» الذي يجيب من نصوص الكتب باقتباس ومصدر.",
+  "aboutFree": "مجاني بلا إعلانات ولا اشتراكات ولا حساب.",
+  "licenseLoadError": "تعذّر عرض الترخيص.",
+  "sourcesOpenItiLink": "مشروع OpenITI",
+  "sourcesLicenseLink": "نص ترخيص CC BY-NC-SA 4.0",
+  "sourcesCopyNamedLinkSemantics": "انسخ رابط {name}",
+  "@sourcesCopyNamedLinkSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+}

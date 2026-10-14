@@ -1,0 +1,94 @@
+name: Adeeb — deploy worker
+
+# Deploys the «الأديب الذكي» proxy (apps/adeeb/worker) to Cloudflare Workers.
+# Manual only: running this workflow is the owner's approval to deploy.
+# Secrets (repo → Settings → Secrets and variables → Actions) — see apps/adeeb/worker/README.md:
+#   CLOUDFLARE_API_TOKEN   dash.cloudflare.com → My Profile → API Tokens → template "Edit Cloudflare Workers"
+#   CLOUDFLARE_ACCOUNT_ID  dash.cloudflare.com → Workers & Pages → Account ID (right column)
+#   ADEEB_GEMINI_API_KEY   aistudio.google.com/apikey (project without billing)
+#   ADEEB_DEVICE_SALT      optional: long random text; if absent a fresh random salt is generated
+#   ADEEB_IP_SALT          optional: same (a new salt only resets that day's counters)
+on:
+  workflow_dispatch:
+
+concurrency: { group: adeeb-worker-deploy, cancel-in-progress: false }
+
+permissions: { contents: read }
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/adeeb/worker } }
+    steps:
+      - name: Check secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADEEB_GEMINI_API_KEY: ${{ secrets.ADEEB_GEMINI_API_KEY }}
+          ADEEB_DEVICE_SALT: ${{ secrets.ADEEB_DEVICE_SALT }}
+          ADEEB_IP_SALT: ${{ secrets.ADEEB_IP_SALT }}
+        working-directory: .
+        run: |
+          missing=0
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ADEEB_GEMINI_API_KEY; do
+            [ -n "${!v}" ] || { echo "::error::Missing secret $v (see apps/adeeb/worker/README.md)"; missing=1; }
+          done
+          exit $missing
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: lts/*, cache: npm, cache-dependency-path: apps/adeeb/worker/package-lock.json }
+
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npm test
+
+      # wrangler comes from package-lock.json (npm ci), not a floating version.
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          npx wrangler deploy 2>&1 | tee "$RUNNER_TEMP/deploy.txt"
+          url=$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' "$RUNNER_TEMP/deploy.txt" | head -1)
+          [ -n "$url" ] || { echo "::error::Deployed, but no workers.dev URL found in wrangler output"; exit 1; }
+          echo "WORKER_URL=$url" >> "$GITHUB_ENV"
+          echo "Worker URL: $url"
+
+      # After deploy so the first run also works (the Worker must exist). The JSON is
+      # built by jq from the environment and piped to stdin: values never appear in
+      # argv, files, or the log.
+      - name: Upload Worker secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADEEB_GEMINI_API_KEY: ${{ secrets.ADEEB_GEMINI_API_KEY }}
+          ADEEB_DEVICE_SALT: ${{ secrets.ADEEB_DEVICE_SALT }}
+          ADEEB_IP_SALT: ${{ secrets.ADEEB_IP_SALT }}
+        run: |
+          set -o pipefail
+          # Salts are optional: generate random ones if the secrets are not set.
+          [ -n "$ADEEB_DEVICE_SALT" ] || ADEEB_DEVICE_SALT=$(openssl rand -hex 32)
+          [ -n "$ADEEB_IP_SALT" ] || ADEEB_IP_SALT=$(openssl rand -hex 32)
+          export ADEEB_DEVICE_SALT ADEEB_IP_SALT
+          jq -n 'env | {GEMINI_API_KEY: .ADEEB_GEMINI_API_KEY, DEVICE_SALT: .ADEEB_DEVICE_SALT, IP_SALT: .ADEEB_IP_SALT}' \
+            | npx wrangler secret bulk
+
+      - name: Health check
+        run: |
+          echo "Worker URL: $WORKER_URL"
+          # A brand-new workers.dev subdomain can take a minute to resolve.
+          for i in $(seq 1 12); do
+            out=$(curl -sS --max-time 10 "$WORKER_URL/v1/health" || true)
+            if echo "$out" | grep -q '"ok":true'; then
+              echo "health: $out"
+              echo "### Adeeb worker: $WORKER_URL" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "attempt $i: ${out:-no response}"; sleep 10
+          done
+          echo "::error::$WORKER_URL/v1/health did not return {\"ok\":true}"
+          exit 1
