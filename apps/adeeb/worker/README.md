@@ -89,5 +89,15 @@ cp .dev.vars.example .dev.vars && npx wrangler dev   # تشغيل محلي (ام
 
 تغيير ملح `DEVICE_SALT` أو `IP_SALT` لاحقاً يصفّر عدّادات اليوم فقط. لتغيير النموذج أو الحدود: عدّل `wrangler.jsonc` ثم `npx wrangler deploy`.
 
+## النشر عبر GitHub Actions (بلا طرفية)
+بديل الخطوة 3 أعلاه. الملف: `.github/workflows/adeeb-worker-deploy.yml` — يعمل يدوياً فقط، وتشغيله هو موافقتك على النشر.
+1. في المستودع على GitHub: Settings ← Secrets and variables ← Actions ← New repository secret، وأضف:
+   - `CLOUDFLARE_API_TOKEN`: من Cloudflare ← My Profile ← API Tokens ← Create Token ← قالب «Edit Cloudflare Workers».
+   - `CLOUDFLARE_ACCOUNT_ID`: من Cloudflare ← Workers & Pages (العمود الأيمن «Account ID»).
+   - `ADEEB_GEMINI_API_KEY`: مفتاح Gemini (الخطوة 2).
+   - `ADEEB_DEVICE_SALT` و`ADEEB_IP_SALT`: نصّان عشوائيان طويلان مختلفان (مثلاً 64 حرفاً من مولّد كلمات مرور).
+2. Actions ← «Adeeb — deploy worker» ← Run workflow.
+3. يفحص وجود الأسرار (ويذكر اسم الناقص فقط)، ثم `tsc` والاختبارات، ثم ينشر، ويرفع الأسرار عبر stdin دون طباعتها، ويطبع رابط الـ Worker، ويتحقق من `/v1/health`. الرابط يظهر في ملخص التشغيل؛ ضعه في `config/app_config.json` (الخطوة 5).
+
 ## ما لم يُختبر هنا
 النشر الفعلي على Cloudflare، واستدعاء Gemini الحقيقي (المخطط `responseSchema` و`format: "enum"` وشكل رد 429 الفعلي، وصحة اسم النموذج)، وحد CPU 10ms على الخطة المجانية، وسلوك Rate Limiting الموزّع (يُحسب لكل موقع Cloudflare)، وموقع التنفيذ مقابل الدول المدعومة في Gemini.
