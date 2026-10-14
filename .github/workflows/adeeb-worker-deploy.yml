@@ -6,8 +6,8 @@ name: Adeeb — deploy worker
 #   CLOUDFLARE_API_TOKEN   dash.cloudflare.com → My Profile → API Tokens → template "Edit Cloudflare Workers"
 #   CLOUDFLARE_ACCOUNT_ID  dash.cloudflare.com → Workers & Pages → Account ID (right column)
 #   ADEEB_GEMINI_API_KEY   aistudio.google.com/apikey (project without billing)
-#   ADEEB_DEVICE_SALT      any long random text (e.g. 64 hex chars)
-#   ADEEB_IP_SALT          another, different long random text
+#   ADEEB_DEVICE_SALT      optional: long random text; if absent a fresh random salt is generated
+#   ADEEB_IP_SALT          optional: same (a new salt only resets that day's counters)
 on:
   workflow_dispatch:
 
@@ -30,7 +30,7 @@ jobs:
         working-directory: .
         run: |
           missing=0
-          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ADEEB_GEMINI_API_KEY ADEEB_DEVICE_SALT ADEEB_IP_SALT; do
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ADEEB_GEMINI_API_KEY; do
             [ -n "${!v}" ] || { echo "::error::Missing secret $v (see apps/adeeb/worker/README.md)"; missing=1; }
           done
           exit $missing
@@ -70,6 +70,10 @@ jobs:
           ADEEB_IP_SALT: ${{ secrets.ADEEB_IP_SALT }}
         run: |
           set -o pipefail
+          # Salts are optional: generate random ones if the secrets are not set.
+          [ -n "$ADEEB_DEVICE_SALT" ] || ADEEB_DEVICE_SALT=$(openssl rand -hex 32)
+          [ -n "$ADEEB_IP_SALT" ] || ADEEB_IP_SALT=$(openssl rand -hex 32)
+          export ADEEB_DEVICE_SALT ADEEB_IP_SALT
           jq -n 'env | {GEMINI_API_KEY: .ADEEB_GEMINI_API_KEY, DEVICE_SALT: .ADEEB_DEVICE_SALT, IP_SALT: .ADEEB_IP_SALT}' \
             | npx wrangler secret bulk
 
