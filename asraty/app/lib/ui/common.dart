@@ -35,6 +35,7 @@ String errorText(L10n t, Object e) {
   return switch (e.code) {
     'bad-email' => t.errBadEmail,
     'setup-needed' => t.errSetupNeeded,
+    'no-account-yet' => t.errNoAccountYet,
     'registered-as-member' => t.errRegisteredAsMember,
     'registered-as-admin' => t.errRegisteredAsAdmin,
     'not-invited' => t.errNotInvited,
@@ -77,6 +78,9 @@ Future<bool> run(BuildContext context, Future<void> Function() action, {String? 
     return false;
   }
 }
+
+/// Local clock time, e.g. "٤:٣٠ م".
+String clockTime(BuildContext context, DateTime at) => MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(at.toLocal()));
 
 String ago(L10n t, DateTime at, DateTime now) {
   final m = now.difference(at).inMinutes;
@@ -678,4 +682,41 @@ Future<bool> confirm(BuildContext context, String message, {String? ok, bool dan
     ),
   );
   return r ?? false;
+}
+
+/// Alerts addressed to the signed-in person, newest first. Timed alerts that
+/// ended move to a dimmed "ended" list (the server deletes them a day later).
+class NoticeList extends StatelessWidget {
+  const NoticeList(this.notices, {super.key, required this.now});
+  final List<Notice> notices;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t, ns = notices;
+    if (ns.isEmpty) return EmptyState('🔔', t.noNotices);
+    final active = ns.where((n) => n.activeAt(now)).toList(), ended = ns.where((n) => !n.activeAt(now)).take(5).toList();
+    Widget card(Notice n) => OutlineCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Text(n.title, style: const TextStyle(fontWeight: FontWeight.w700))),
+              Muted(ago(t, n.createdAt, now)),
+            ]),
+            const SizedBox(height: 6),
+            Text(n.body),
+            if (n.expiresAt != null) ...[
+              const SizedBox(height: 6),
+              n.activeAt(now) ? StateTag(t.endsAt(clockTime(context, n.expiresAt!)), Tone.wait) : StateTag(t.alertEnded, Tone.off),
+            ],
+          ]),
+        );
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      if (active.isEmpty) EmptyState('🔔', t.noNotices),
+      for (final n in active) card(n),
+      if (ended.isNotEmpty) ...[
+        H3(t.endedAlerts),
+        for (final n in ended) Opacity(opacity: .55, child: card(n)),
+      ],
+    ]);
+  }
 }

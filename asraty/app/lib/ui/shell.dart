@@ -137,31 +137,42 @@ class _Header extends ConsumerWidget {
                 children: [for (final p in data.people) NameRing(person: p)],
               ),
               const SizedBox(height: 12),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Semantics(
-                  button: true,
-                  label: t.changeMyAvatar,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(999),
-                    onTap: () => showAvatarPicker(context, ref, me),
-                    child: Container(
-                      padding: const EdgeInsetsDirectional.fromSTEB(4, 4, 12, 4),
-                      decoration: BoxDecoration(color: const Color(0x1FFFFFFF), borderRadius: BorderRadius.circular(999)),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        AvatarView(me.avatar, size: 30),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text('${me.name} · ${roleLabel(t, me.role)}',
-                              overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14)),
+              Row(children: [
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Semantics(
+                      button: true,
+                      label: t.changeMyAvatar,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: () => showAvatarPicker(context, ref, me),
+                        child: Container(
+                          padding: const EdgeInsetsDirectional.fromSTEB(4, 4, 12, 4),
+                          decoration: BoxDecoration(color: const Color(0x1FFFFFFF), borderRadius: BorderRadius.circular(999)),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            AvatarView(me.avatar, size: 30),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text('${me.name} · ${roleLabel(t, me.role)}',
+                                  overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.edit, size: 14, color: Colors.white),
+                          ]),
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.edit, size: 14, color: Colors.white),
-                      ]),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                // Sign-out in plain sight next to the signed-in name (testers could not find it in the settings).
+                hb('🚪 ${t.signOut}', t.signOut, () async {
+                  final router = GoRouter.of(context);
+                  if (!await confirm(context, t.signOutConfirm, ok: t.signOut)) return;
+                  await ref.read(backendProvider.notifier).signOut();
+                  router.go('/');
+                }),
+              ]),
               if (backend.isDemo) ...[
                 const SizedBox(height: 8),
                 Align(

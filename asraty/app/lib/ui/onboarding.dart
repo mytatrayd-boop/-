@@ -12,6 +12,9 @@ enum _Step { choose, email, code }
 
 final _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
+/// Last email that signed in on this device, to pre-fill the next sign-in.
+const _lastEmailKey = 'lastEmail';
+
 class Onboarding extends ConsumerStatefulWidget {
   const Onboarding({super.key});
   @override
@@ -23,7 +26,17 @@ class _OnboardingState extends ConsumerState<Onboarding> {
   var _role = Role.member;
   String? _err;
   var _busy = false;
+  // Admin: sign in to an existing family (email only) or create a new one.
+  var _newFamily = false;
   final _fam = TextEditingController(), _name = TextEditingController(), _email = TextEditingController(), _code = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _email.text = ref.read(prefsProvider).getString(_lastEmailKey) ?? '';
+    // A returning device logs in; a fresh install most likely creates a family.
+    _newFamily = _email.text.isEmpty;
+  }
 
   @override
   void dispose() {
@@ -53,14 +66,25 @@ class _OnboardingState extends ConsumerState<Onboarding> {
         final t = context.t;
         final email = _email.text.trim().toLowerCase();
         if (!_emailRe.hasMatch(email)) throw AppError('bad-email');
-        final fam = _fam.text.trim(), name = _name.text.trim();
-        final sent = await _b.requestCode(
-          email: email,
-          role: _role,
-          familyName: fam.isEmpty ? null : fam,
-          name: name.isEmpty ? null : name,
-          resend: resend,
-        );
+        final setup = _role == Role.admin && _newFamily;
+        final fam = setup ? _fam.text.trim() : '', name = setup ? _name.text.trim() : '';
+        final bool sent;
+        try {
+          sent = await _b.requestCode(
+            email: email,
+            role: _role,
+            familyName: fam.isEmpty ? null : fam,
+            name: name.isEmpty ? null : name,
+            resend: resend,
+          );
+        } on AppError catch (e) {
+          // No account for this email yet: offer to create the family instead.
+          if (e.code == 'setup-needed' && !setup && mounted) {
+            setState(() => _newFamily = true);
+            throw AppError('no-account-yet');
+          }
+          rethrow;
+        }
         if (!mounted) return;
         toast(context, sent ? t.codeSent(email) : t.codeAlreadySent);
         setState(() => _step = _Step.code);
@@ -68,10 +92,23 @@ class _OnboardingState extends ConsumerState<Onboarding> {
 
   Future<void> _verify() => _guard(() async {
         final t = context.t;
-        final r = await _b.verifyCode(email: _email.text.trim().toLowerCase(), code: _code.text.trim());
+        final email = _email.text.trim().toLowerCase();
+        final r = await _b.verifyCode(email: email, code: _code.text.trim());
+        if (!_b.isDemo) await ref.read(prefsProvider).setString(_lastEmailKey, email);
         if (!mounted) return;
         toast(context, r.first ? t.linkedTo(r.familyName) : t.hello(r.name.isEmpty ? r.familyName : r.name));
       });
+
+  /// Pastes a 6-digit code copied from the email and verifies it right away.
+  Future<void> _paste() async {
+    final t = context.t;
+    final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text ?? '';
+    final m = RegExp(r'(?<!\d)\d{6}(?!\d)').firstMatch(text);
+    if (!mounted) return;
+    if (m == null) return toast(context, t.noCodeInClipboard);
+    _code.text = m[0]!;
+    await _verify();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,17 +130,28 @@ class _OnboardingState extends ConsumerState<Onboarding> {
           ),
           const SizedBox(height: 6),
           Muted(t.demoNote, align: TextAlign.center),
+          const SizedBox(height: 14),
+          NoteBox('🔐 ${t.stayLoggedIn}'),
         ]);
       case _Step.email:
         final demoNoFamily = _b.isDemo && _b.current.session == null;
-        final setup = _role == Role.admin;
+        final admin = _role == Role.admin, setup = admin && _newFamily;
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           _Back(() => setState(() {
                 _step = _Step.choose;
                 _err = null;
               })),
-          H2(_role == Role.admin ? t.loginAdmin : t.loginMember),
-          Muted(setup ? t.hintSetup : t.hintMember),
+          H2(admin ? t.loginAdmin : t.loginMember),
+          if (admin)
+            SegTabs<bool>(
+              tabs: [(false, t.adminHaveAccount, 0), (true, t.adminNewFamily, 0)],
+              value: _newFamily,
+              onChanged: (v) => setState(() {
+                _newFamily = v;
+                _err = null;
+              }),
+            ),
+          Muted(setup ? t.hintSetup : admin ? t.hintAdminLogin : t.hintMember),
           FormBox(children: [
             if (setup) ...[
               TextField(controller: _fam, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: t.familyNameHint)),
@@ -145,10 +193,15 @@ class _OnboardingState extends ConsumerState<Onboarding> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: const TextStyle(fontSize: 24, letterSpacing: 8),
               onSubmitted: (_) => _verify(),
+              // The sixth digit verifies right away.
+              onChanged: (v) {
+                if (v.length == 6 && !_busy) _verify();
+              },
               decoration: InputDecoration(hintText: '••••••', counterText: '', semanticCounterText: t.codeFromEmail),
             ),
             ?err,
             Btn(t.verify, onPressed: _busy ? null : _verify),
+            Btn('📋 ${t.pasteCode}', kind: BtnKind.ghost, onPressed: _busy ? null : _paste),
             Btn(t.resendCode, kind: BtnKind.ghost, onPressed: _busy ? null : () => _requestCode(resend: true)),
           ]),
           if (_b.isDemo) NoteBox(t.demoCodeNote),

@@ -8,6 +8,7 @@ import '../core/logic.dart';
 import '../core/models.dart';
 import 'common.dart';
 import 'competitions.dart';
+import 'honor.dart';
 import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
@@ -60,14 +61,14 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
     final done = ts.where((x) => d.completionOf(x, now)?.status == Status.approved).length;
     final pct = ts.isEmpty ? 0.0 : done / ts.length;
     final notes = d.noticesFor(u);
-    final unread = notes.where((n) => !n.readBy.contains(u.id)).length;
+    final unread = notes.where((n) => n.activeAt(now) && !n.readBy.contains(u.id)).length;
     final openC = d.competitions.where((x) => x.activeAt(now) && !x.entries.containsKey(u.id)).length;
 
     final body = switch (_tab) {
       MTab.tasks => _tasks(context, ts, now),
       MTab.comps => _comps(context, now),
       MTab.rewards => _rewards(context),
-      MTab.notes => _notes(context, notes, now),
+      MTab.notes => NoticeList(notes, now: now),
     };
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -157,9 +158,10 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
     final out = <Widget>[];
     for (final p in Period.values) {
       for (final s in Scope.values) {
-        if (!d.tiers.any((x) => x.period == p && x.scope == s)) continue;
+        // Only general rewards and this member's private ones.
+        if (!d.tiers.any((x) => x.period == p && x.scope == s && tierFor(x, u.id))) continue;
         final pts = s == Scope.each ? d.earned(u.id, p) : d.familyEarned(p);
-        final cur = tierOf(d.tiers, pts, p, s), nx = nextTier(d.tiers, pts, p, s);
+        final cur = tierOf(d.tiers, pts, p, s, personId: u.id), nx = nextTier(d.tiers, pts, p, s, personId: u.id);
         out.addAll([
           H3('${p == Period.daily ? t.rewardToday : t.rewardWeek}${s == Scope.family ? t.forWholeFamily : ''}'),
           TierBox(
@@ -176,25 +178,29 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
         ]);
       }
     }
-    if (out.isEmpty) return EmptyState('🎁', t.noRewardsYet);
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: out);
-  }
-
-  Widget _notes(BuildContext context, List<Notice> ns, DateTime now) {
-    final t = context.t;
-    if (ns.isEmpty) return EmptyState('🔔', t.noNotices);
+    // Private rewards set by the parents for this member only, each with its own progress.
+    final mine = d.tiers.where((x) => x.personId == u.id).toList()..sort((a, b) => a.threshold.compareTo(b.threshold));
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      for (final n in ns)
-        OutlineCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text(n.title, style: const TextStyle(fontWeight: FontWeight.w700))),
-              Muted(ago(t, n.createdAt, now)),
-            ]),
-            const SizedBox(height: 6),
-            Text(n.body),
-          ]),
-        ),
+      if (out.isEmpty && mine.isEmpty) EmptyState('🎁', t.noRewardsYet) else ...out,
+      if (mine.isNotEmpty) ...[
+        H3('🔒 ${t.yourPrivateRewards}'),
+        for (final x in mine)
+          Builder(builder: (context) {
+            final pts = d.earned(u.id, x.period);
+            return TierBox(
+              emoji: x.emoji,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(x.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Muted('${x.period == Period.daily ? t.rewardToday : t.rewardWeek}: $pts / ${x.threshold}'),
+                ProgressBar(pts / x.threshold),
+              ]),
+            );
+          }),
+      ],
+      H2('🏆 ${t.tileHonor}'),
+      HonorBoard(widget.c, title: false),
     ]);
   }
+
+
 }

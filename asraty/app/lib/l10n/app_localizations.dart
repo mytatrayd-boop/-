@@ -240,7 +240,7 @@ abstract class L10n {
   /// No description provided for @hintSetup.
   ///
   /// In ar, this message translates to:
-  /// **'أنشئ أسرتك الآن، وسنرسل كود تحقق إلى بريدك. إذا كنت مسؤولاً مضافاً في أسرة، اترك الاسمين فارغين.'**
+  /// **'أنشئ أسرتك الآن: اكتب اسم الأسرة واسمك وبريدك، وسنرسل كود تحقق إلى بريدك. هذا مرة واحدة فقط.'**
   String get hintSetup;
 
   /// No description provided for @hintAdmin.
@@ -362,6 +362,12 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'اكتب اسم الأسرة واسمك.'**
   String get errSetupNeeded;
+
+  /// No description provided for @errNoAccountYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أسرة بهذا البريد بعد. لإنشاء أسرة جديدة اكتب اسم الأسرة واسمك ثم أرسل الكود.'**
+  String get errNoAccountYet;
 
   /// No description provided for @errRegisteredAsMember.
   ///
@@ -1832,6 +1838,264 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'{when} · {points} نقطة'**
   String memberTaskMeta(String when, String points);
+
+  /// No description provided for @signOutConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكود التحقق.'**
+  String get signOutConfirm;
+
+  /// No description provided for @adminHaveAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'لدي حساب'**
+  String get adminHaveAccount;
+
+  /// No description provided for @adminNewFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسرة جديدة'**
+  String get adminNewFamily;
+
+  /// No description provided for @hintAdminLogin.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب بريدك فقط وسنرسل لك كود تحقق. لا حاجة لاسم الأسرة ولا لاسمك مرة أخرى.'**
+  String get hintAdminLogin;
+
+  /// No description provided for @stayLoggedIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج الكود مرة أخرى إلا إذا سجّلت الخروج.'**
+  String get stayLoggedIn;
+
+  /// No description provided for @pasteCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'لصق الكود'**
+  String get pasteCode;
+
+  /// No description provided for @noCodeInClipboard.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ الكود المكوّن من 6 أرقام من الإيميل أولاً'**
+  String get noCodeInClipboard;
+
+  /// No description provided for @tileHonor.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة الشرف'**
+  String get tileHonor;
+
+  /// No description provided for @tabHonor.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشرف'**
+  String get tabHonor;
+
+  /// No description provided for @thisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الشهر'**
+  String get thisMonth;
+
+  /// No description provided for @thisYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه السنة'**
+  String get thisYear;
+
+  /// No description provided for @honorSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب نقاط الأبناء في الشهر والسنة، وأهداف الأسرة.'**
+  String get honorSub;
+
+  /// No description provided for @honorEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا نقاط بعد في هذه الفترة.'**
+  String get honorEmpty;
+
+  /// No description provided for @honorNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبدأ عدّ الشهر والسنة من هذا التحديث.'**
+  String get honorNote;
+
+  /// No description provided for @familyGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأهداف'**
+  String get familyGoals;
+
+  /// No description provided for @goalTitleHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف، مثل: قراءة 12 كتاباً'**
+  String get goalTitleHint;
+
+  /// No description provided for @goalTarget.
+  ///
+  /// In ar, this message translates to:
+  /// **'العدد المطلوب'**
+  String get goalTarget;
+
+  /// No description provided for @goalFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمن؟'**
+  String get goalFor;
+
+  /// No description provided for @goalPeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة'**
+  String get goalPeriod;
+
+  /// No description provided for @monthlyGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الشهر'**
+  String get monthlyGoal;
+
+  /// No description provided for @yearlyGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه السنة'**
+  String get yearlyGoal;
+
+  /// No description provided for @addGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة الهدف'**
+  String get addGoal;
+
+  /// No description provided for @goalAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف الهدف'**
+  String get goalAdded;
+
+  /// No description provided for @errGoalInput.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الهدف والعدد المطلوب'**
+  String get errGoalInput;
+
+  /// No description provided for @noGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا أهداف بعد. أضف هدفاً للأسرة لهذا الشهر أو لهذه السنة.'**
+  String get noGoals;
+
+  /// No description provided for @noGoalsMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا أهداف بعد.'**
+  String get noGoalsMember;
+
+  /// No description provided for @goalReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحقق 🎉'**
+  String get goalReached;
+
+  /// No description provided for @goalPlus.
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة التقدم'**
+  String get goalPlus;
+
+  /// No description provided for @goalMinus.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنقاص التقدم'**
+  String get goalMinus;
+
+  /// No description provided for @alertDuration.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدة التنبيه'**
+  String get alertDuration;
+
+  /// No description provided for @durNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون انتهاء'**
+  String get durNone;
+
+  /// No description provided for @dur30m.
+  ///
+  /// In ar, this message translates to:
+  /// **'نصف ساعة'**
+  String get dur30m;
+
+  /// No description provided for @dur1h.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعة'**
+  String get dur1h;
+
+  /// No description provided for @dur3h.
+  ///
+  /// In ar, this message translates to:
+  /// **'3 ساعات'**
+  String get dur3h;
+
+  /// No description provided for @dur1d.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم'**
+  String get dur1d;
+
+  /// No description provided for @alertEnded.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهٍ'**
+  String get alertEnded;
+
+  /// No description provided for @endedAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات منتهية'**
+  String get endedAlerts;
+
+  /// No description provided for @alertDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذف التنبيه'**
+  String get alertDeleted;
+
+  /// No description provided for @yourPrivateRewards.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافآت خاصة بك'**
+  String get yourPrivateRewards;
+
+  /// No description provided for @privateRewardsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكافأة الخاصة لا تظهر إلا للابن المحدد ولمسؤولي الأسرة.'**
+  String get privateRewardsNote;
+
+  /// No description provided for @endsAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ينتهي الساعة {time}'**
+  String endsAt(String time);
+
+  /// No description provided for @privateFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} فقط'**
+  String privateFor(String name);
+
+  /// No description provided for @goalForName.
+  ///
+  /// In ar, this message translates to:
+  /// **'لـ{name}'**
+  String goalForName(String name);
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

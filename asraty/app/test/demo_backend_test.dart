@@ -95,4 +95,39 @@ void main() {
     expect(b.current.me!.role, Role.owner);
     expect(periodKey(Period.weekly, clock), 'w2026-09-27');
   });
+
+  test('honor board: month/year points and family goals', () async {
+    final b = DemoBackend(clock: () => clock);
+    final d = b.current.data!;
+    expect(d.honorRanking(Honor.monthly).first.points, 15);
+    expect(d.honorRanking(Honor.yearly).fold(0, (a, r) => a + r.points), 30);
+    final goal = d.goals.firstWhere((g) => g.personId == 'family');
+    for (var i = 0; i < 20; i++) {
+      await b.goalProgress(goal.id, 1);
+    }
+    final after = b.current.data!.goals.firstWhere((g) => g.id == goal.id);
+    expect(after.progress, after.target, reason: 'capped at the target');
+    expect(b.current.data!.notices.where((n) => n.title == '🎉 تحقق الهدف').length, 1);
+
+    await login(b, 'aseel@demo.sa', Role.member);
+    await expectLater(b.addGoal(title: 'x', target: 3, personId: 'family', period: Honor.monthly),
+        throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+  });
+
+  test('timed alerts end, and removing a member removes their alerts and private rewards', () async {
+    var now = clock;
+    final b = DemoBackend(clock: () => now);
+    final lama = b.current.data!.members.firstWhere((m) => m.name == 'لمى');
+    await b.sendAlert(lama.id, 'العشاء جاهز', minutes: 30);
+    final alert = b.current.data!.notices.first;
+    expect(alert.activeAt(now), isTrue);
+    now = now.add(const Duration(minutes: 31));
+    expect(alert.activeAt(now), isFalse);
+    expect(b.current.data!.tiers.where((t) => t.personId == lama.id), isNotEmpty);
+
+    await b.removePerson(lama.id);
+    final d = b.current.data!;
+    expect(d.notices.where((n) => n.to == lama.id), isEmpty);
+    expect(d.tiers.where((t) => t.personId == lama.id), isEmpty);
+  });
 }

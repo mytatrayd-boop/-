@@ -35,6 +35,16 @@ export function weekKey(ms: number): string {
   return "w" + dayKey(sunday - RIYADH_OFFSET_MS);
 }
 
+/** Month key for the honor board: "m" + Riyadh YYYY-MM. */
+export function monthKey(ms: number): string {
+  return "m" + dayKey(ms).slice(0, 7);
+}
+
+/** Year key for the honor board: "y" + Riyadh year. */
+export function yearKey(ms: number): string {
+  return "y" + dayKey(ms).slice(0, 4);
+}
+
 export function periodKey(period: Period, ms: number): string {
   return period === "daily" ? dayKey(ms) : weekKey(ms);
 }
@@ -43,6 +53,14 @@ export function can(person: { role: Role; perms?: Perms } | undefined, perm: Per
   if (!person) return false;
   if (person.role === "owner") return true;
   return person.role === "admin" && !!person.perms?.[perm];
+}
+
+/**
+ * Who gets a push for a family notice: everyone it is addressed to ("all" or one
+ * person), delegated admins included, except whoever sent it.
+ */
+export function noticeTargets<P extends { id: string }>(people: P[], to: string, senderId: string): P[] {
+  return people.filter((p) => p.id !== senderId && (to === "all" || p.id === to));
 }
 
 /** Points for the n-th finisher (1-based) of a competition. */
@@ -57,12 +75,14 @@ export interface Tier {
   threshold: number;
   period: Period;
   scope: Scope;
+  /** Private reward: only this member can earn (and see) it. */
+  personId?: string | null;
 }
 
-/** Highest tier whose threshold is reached, within the same period and scope. */
-export function tierOf(tiers: Tier[], pts: number, period: Period, scope: Scope): Tier | undefined {
+/** Highest tier whose threshold is reached, within the same period and scope (and person, for private rewards). */
+export function tierOf(tiers: Tier[], pts: number, period: Period, scope: Scope, personId?: string): Tier | undefined {
   return tiers
-    .filter((t) => t.period === period && t.scope === scope && pts >= t.threshold)
+    .filter((t) => t.period === period && t.scope === scope && pts >= t.threshold && (!t.personId || t.personId === personId))
     .sort((a, b) => b.threshold - a.threshold)[0];
 }
 

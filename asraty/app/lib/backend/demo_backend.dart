@@ -45,6 +45,7 @@ class DemoBackend extends Backend {
   final _tiers = <Tier>[];
   final _delivered = <String>{};
   final _notices = <Notice>[];
+  final _goals = <Goal>[];
   final _log = <_Log>[];
   final _codes = <String, _Code>{};
   final _photos = <String, Uint8List>{};
@@ -67,11 +68,11 @@ class DemoBackend extends Backend {
       return;
     }
     final now = _now;
-    Map<String, PeriodSum> sums(Period p) {
-      final key = periodKey(p, now);
+    Map<String, PeriodSum> sums(String Function(DateTime) keyOf) {
+      final key = keyOf(now);
       final m = <String, PeriodSum>{};
       for (final l in _log) {
-        if (l.delta <= 0 || periodKey(p, l.at) != key) continue;
+        if (l.delta <= 0 || keyOf(l.at) != key) continue;
         final s = m[l.personId];
         m[l.personId] = PeriodSum((s?.points ?? 0) + l.delta, (s?.count ?? 0) + 1);
       }
@@ -87,10 +88,13 @@ class DemoBackend extends Backend {
         completions: List.of(_completions),
         competitions: List.of(_comps),
         tiers: List.of(_tiers),
+        goals: _goals.where((g) => g.periodKey == honorKey(g.period, now)).toList(),
         deliveries: Set.of(_delivered),
         notices: me.role == Role.member ? _notices.where((n) => n.to == 'all' || n.to == me.id).toList() : List.of(_notices),
-        daily: sums(Period.daily),
-        weekly: sums(Period.weekly),
+        daily: sums(dayKey),
+        weekly: sums(weekKey),
+        monthly: sums(monthKey),
+        yearly: sums(yearKey),
       ),
     ));
   }
@@ -113,8 +117,17 @@ class DemoBackend extends Backend {
     if (_mail.length > 40) _mail.removeLast();
   }
 
-  void _note(String to, String title, String body) {
-    _notices.insert(0, Notice(id: _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now));
+  void _note(String to, String title, String body, {DateTime? expiresAt}) {
+    _notices.insert(0, Notice(id: _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now, expiresAt: expiresAt));
+  }
+
+  /// What the server's removePersonData deletes along with the person.
+  void _dropPerson(Person p) {
+    _people.remove(p);
+    _tasks.removeWhere((t) => t.personId == p.id);
+    _notices.removeWhere((n) => n.to == p.id);
+    _tiers.removeWhere((t) => t.personId == p.id);
+    _goals.removeWhere((g) => g.personId == p.id);
   }
 
   void _addLog(String personId, int delta) => _log.insert(0, _Log(personId, delta, _now));
@@ -151,6 +164,11 @@ class DemoBackend extends Backend {
       Tier(id: _uid(), name: 'نزهة عائلية', emoji: '🏞️', threshold: 66, period: Period.weekly, scope: Scope.each),
       Tier(id: _uid(), name: 'وجبة خارجية', emoji: '🍔', threshold: 30, period: Period.weekly, scope: Scope.each),
       Tier(id: _uid(), name: 'ساعة ألعاب إضافية', emoji: '🎮', threshold: 15, period: Period.daily, scope: Scope.each),
+      Tier(id: _uid(), name: 'كتاب تختاره', emoji: '📚', threshold: 40, period: Period.weekly, scope: Scope.each, personId: k2.id),
+    ]);
+    _goals.addAll([
+      Goal(id: _uid(), title: 'قراءة 12 كتاباً', target: 12, progress: 3, personId: 'family', period: Honor.yearly, periodKey: yearKey(now)),
+      Goal(id: _uid(), title: 'حفظ سورة الملك', target: 30, progress: 18, personId: k1.id, period: Honor.monthly, periodKey: monthKey(now)),
     ]);
     _codes[k3.email] = _Code('482915', now);
     _mail.add(DemoMail(k3.email, 'دعوة للانضمام إلى أسرة آل محمد',
@@ -257,8 +275,7 @@ class DemoBackend extends Backend {
     final p = _person(personId);
     if (p.role == Role.owner) _fail('cannot-remove-owner');
     p.role == Role.member ? _need(Perm.addMembers) : _need(null, true);
-    _people.remove(p);
-    _tasks.removeWhere((t) => t.personId == personId);
+    _dropPerson(p);
     _publish();
   }
 
@@ -377,9 +394,10 @@ class DemoBackend extends Backend {
 
   // ---------------------------------------------------------------- rewards
   @override
-  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope}) async {
+  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope, String? personId}) async {
     _need(null, true);
-    _tiers.add(Tier(id: _uid(), name: name, emoji: emoji, threshold: threshold, period: period, scope: scope));
+    if (personId != null && _person(personId).role != Role.member) _fail('person-not-found');
+    _tiers.add(Tier(id: _uid(), name: name, emoji: emoji, threshold: threshold, period: period, scope: personId != null ? Scope.each : scope, personId: personId));
     _publish();
   }
 
@@ -399,9 +417,44 @@ class DemoBackend extends Backend {
 
   // ---------------------------------------------------------------- notices
   @override
-  Future<void> sendAlert(String to, String body) async {
+  Future<void> sendAlert(String to, String body, {int minutes = 0}) async {
     final me = _need(null, true);
-    _note(to, '🔔 تنبيه من ${me.name}', body);
+    _note(to, '🔔 تنبيه من ${me.name}', body, expiresAt: minutes > 0 ? _now.add(Duration(minutes: minutes)) : null);
+    _publish();
+  }
+
+  @override
+  Future<void> deleteAlert(String noticeId) async {
+    _need(null, true);
+    _notices.removeWhere((n) => n.id == noticeId);
+    _publish();
+  }
+
+  // ---------------------------------------------------------------- goals
+  @override
+  Future<void> addGoal({required String title, required int target, required String personId, required Honor period}) async {
+    _need(Perm.tasks);
+    if (personId != 'family' && _person(personId).role != Role.member) _fail('person-not-found');
+    _goals.add(Goal(id: _uid(), title: title, target: target, progress: 0, personId: personId, period: period, periodKey: honorKey(period, _now)));
+    final who = personId == 'family' ? 'للأسرة' : 'لـ${_person(personId).name}';
+    _note(personId == 'family' ? 'all' : personId, '🎯 هدف جديد', '$title ($target) $who ${period == Honor.yearly ? 'هذه السنة' : 'هذا الشهر'}');
+    _publish();
+  }
+
+  @override
+  Future<void> goalProgress(String goalId, int delta) async {
+    _need(Perm.tasks);
+    final g = _goals.where((g) => g.id == goalId).firstOrNull ?? _fail('not-found');
+    final was = g.reached;
+    g.progress = (g.progress + delta).clamp(0, g.target);
+    if (g.reached && !was) _note(g.personId == 'family' ? 'all' : g.personId, '🎉 تحقق الهدف', '${g.title} (${g.target})');
+    _publish();
+  }
+
+  @override
+  Future<void> deleteGoal(String goalId) async {
+    _need(Perm.tasks);
+    _goals.removeWhere((g) => g.id == goalId);
     _publish();
   }
 
@@ -429,8 +482,7 @@ class DemoBackend extends Backend {
   Future<void> deleteAccount() async {
     final me = _need();
     if (me.role == Role.owner) _fail('owner-must-delete-family');
-    _people.remove(me);
-    _tasks.removeWhere((t) => t.personId == me.id);
+    _dropPerson(me);
     _me = null;
     _publish();
   }
@@ -439,7 +491,7 @@ class DemoBackend extends Backend {
   Future<void> deleteFamily() async {
     _need(null, true);
     _familyName = null;
-    for (final l in [_people, _tasks, _completions, _comps, _tiers, _notices, _log]) {
+    for (final l in [_people, _tasks, _completions, _comps, _tiers, _notices, _goals, _log]) {
       l.clear();
     }
     _delivered.clear();
