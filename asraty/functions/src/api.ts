@@ -4,7 +4,7 @@ import {
 } from "./db";
 import {
   AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope,
-  can, cleanPerms, cleanText, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
+  can, cleanPerms, cleanText, noticeTargets, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
 
@@ -46,10 +46,10 @@ async function person(fid: string, id: unknown): Promise<Person> {
   return { id: snap.id, ...(snap.data() as Omit<Person, "id">) };
 }
 
-async function notify(fid: string, to: string, title: string, body: string, from: string, expiresAt: Timestamp | null = null) {
+async function notify(fid: string, to: string, title: string, body: string, sender: Person, expiresAt: Timestamp | null = null) {
   const coll = fam(fid).collection("notifications");
   await coll.add({
-    to, title, body, from, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt,
+    to, title, body, from: sender.name, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt,
   });
   // Keep the list small (members load it without ordering): drop notices older than
   // 60 days, and timed alerts one day after they end (the app shows them as ended until then).
@@ -64,7 +64,7 @@ async function notify(fid: string, to: string, title: string, body: string, from
     await b.commit();
   }
   const all = await getPeople(fid);
-  const targets = all.filter((p) => p.role === "member" && (to === "all" || p.id === to));
+  const targets = noticeTargets(all, to, sender.id);
   await push(fid, targets, title, body);
 }
 
@@ -284,7 +284,7 @@ const ops: Record<string, Handler> = {
       ended: false, createdAt: FieldValue.serverTimestamp(), entries: {}, entryCount: 0, createdBy: c.me.id,
     });
     await notify(c.fid, "all", "🏁 مسابقة جديدة",
-      `${title}\nأول من ينجز يحصل على ${start} نقطة، والتالي أقل بنقطة.${minutes > 0 ? `\nالوقت المتاح: ${minutes} دقيقة.` : ""}`, c.me.name);
+      `${title}\nأول من ينجز يحصل على ${start} نقطة، والتالي أقل بنقطة.${minutes > 0 ? `\nالوقت المتاح: ${minutes} دقيقة.` : ""}`, c.me);
     return {};
   },
 
@@ -391,7 +391,7 @@ const ops: Record<string, Handler> = {
     });
     const who = personId === "family" ? "للأسرة" : `لـ${(await person(c.fid, personId)).name}`;
     await notify(c.fid, personId === "family" ? "all" : personId, "🎯 هدف جديد",
-      `${title} (${target}) ${who} ${yearly ? "هذه السنة" : "هذا الشهر"}`, c.me.name);
+      `${title} (${target}) ${who} ${yearly ? "هذه السنة" : "هذا الشهر"}`, c.me);
     return {};
   },
 
@@ -407,7 +407,7 @@ const ops: Record<string, Handler> = {
       return { reached: progress >= g.target && (g.progress ?? 0) < g.target, g };
     });
     if (r.reached) {
-      await notify(c.fid, r.g.personId === "family" ? "all" : r.g.personId, "🎉 تحقق الهدف", `${r.g.title} (${r.g.target})`, c.me.name);
+      await notify(c.fid, r.g.personId === "family" ? "all" : r.g.personId, "🎉 تحقق الهدف", `${r.g.title} (${r.g.target})`, c.me);
     }
     return {};
   },
@@ -427,7 +427,7 @@ const ops: Record<string, Handler> = {
     // Optional duration: the alert shows as active until then, then as ended.
     const minutes = c.data.minutes ? int(c.data.minutes, 0, 7 * 24 * 60) : 0;
     const expiresAt = minutes > 0 ? Timestamp.fromMillis(Date.now() + minutes * 60000) : null;
-    await notify(c.fid, to, `🔔 تنبيه من ${c.me.name}`, body, c.me.name, expiresAt);
+    await notify(c.fid, to, `🔔 تنبيه من ${c.me.name}`, body, c.me, expiresAt);
     return {};
   },
 
@@ -448,7 +448,7 @@ const ops: Record<string, Handler> = {
       members.map((m) => ({ name: m.name, points: byId.get(m.id)?.points ?? 0, count: byId.get(m.id)?.count ?? 0 })),
       Date.now(),
     );
-    await notify(c.fid, "all", "🏆 ترتيب إنجاز اليوم", text, c.me.name);
+    await notify(c.fid, "all", "🏆 ترتيب إنجاز اليوم", text, c.me);
     return {};
   },
 

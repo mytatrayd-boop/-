@@ -70,4 +70,23 @@ void main() {
     expect(find.text('تنبيهات منتهية'), findsNothing);
     await tester.pump(const Duration(seconds: 4));
   });
+
+  testWidgets('delegated admin gets the family alerts in their own inbox', (tester) async {
+    final c = await openAs(tester, 'abu@demo.sa', Role.admin);
+    final b = c.read(backendProvider) as DemoBackend;
+    final mom = b.current.data!.people.firstWhere((p) => p.role == Role.admin);
+    await b.sendAlert('all', 'اجتماع الأسرة بعد العشاء');
+    await b.sendAlert(mom.id, 'رسالة خاصة للأم');
+    await b.signOut();
+    await b.requestCode(email: 'um@demo.sa', role: Role.admin, resend: true);
+    await b.verifyCode(email: 'um@demo.sa', code: RegExp(r'كود التحقق: (\d{6})').firstMatch(b.outbox.first.body)!.group(1)!);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.scrollUntilVisible(find.text('التنبيهات'), 200);
+    await tester.tap(find.text('التنبيهات'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('اجتماع الأسرة بعد العشاء'), findsOneWidget);
+    expect(find.text('رسالة خاصة للأم'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+  });
 }

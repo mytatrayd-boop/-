@@ -55,6 +55,14 @@ export function can(person: { role: Role; perms?: Perms } | undefined, perm: Per
   return person.role === "admin" && !!person.perms?.[perm];
 }
 
+/**
+ * Who gets a push for a family notice: everyone it is addressed to ("all" or one
+ * person), delegated admins included, except whoever sent it.
+ */
+export function noticeTargets<P extends { id: string }>(people: P[], to: string, senderId: string): P[] {
+  return people.filter((p) => p.id !== senderId && (to === "all" || p.id === to));
+}
+
 /** Points for the n-th finisher (1-based) of a competition. */
 export function competitionPoints(startPoints: number, rank: number): number {
   return Math.max(startPoints - (rank - 1), 1);

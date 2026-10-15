@@ -35,6 +35,7 @@ class AdminHome extends ConsumerWidget {
     final t = context.t, me = c.me, d = c.data;
     final now = ref.watch(clockProvider).value ?? DateTime.now();
     final owner = me.role == Role.owner;
+    final unread = d.noticesFor(me).where((n) => n.activeAt(now) && !n.readBy.contains(me.id)).length;
     final tiles = [
       _Tile('approvals', '✅', t.tileApprovals, can(me, Perm.approve), d.pendingCount()),
       _Tile('addAdmin', '🛡️', t.tileAddAdmin, owner),
@@ -44,6 +45,8 @@ class AdminHome extends ConsumerWidget {
       _Tile('honor', '🏆', t.tileHonor, true),
       _Tile('tasks', '📝', t.tileTasks, true),
       _Tile('alerts', '🔔', t.tileAlerts, owner),
+      // Delegated admins get the family's alerts too (the owner sees them all under "send alert").
+      _Tile('inbox', '📬', t.tabNotices, !owner, unread),
       _Tile('comps', '🏁', t.tileComps, can(me, Perm.comps)),
       _Tile('rewards', '🎁', t.tileRewards, owner),
     ].where((x) => x.visible);
@@ -133,6 +136,7 @@ class AdminPage extends ConsumerWidget {
       'comps' => CompsPage(c),
       'rewards' => RewardsPage(c),
       'honor' => HonorBoard(c),
+      'inbox' => InboxPage(c),
       _ => const SizedBox(),
     };
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -658,14 +662,15 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
   Widget build(BuildContext context) {
     final t = context.t, d = widget.c.data;
     final now = ref.watch(clockProvider).value ?? DateTime.now();
-    if (_to != 'all' && !d.members.any((m) => m.id == _to)) _to = 'all';
+    final others = d.people.where((p) => p.id != widget.c.me.id).toList();
+    if (_to != 'all' && !others.any((m) => m.id == _to)) _to = 'all';
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.tileAlerts),
       FormBox(children: [
         Select<String>(
           value: _to,
           label: t.to,
-          items: [('all', t.allMembers), for (final m in d.members) (m.id, m.name)],
+          items: [('all', t.allMembers), for (final m in others) (m.id, m.role == Role.member ? m.name : '${m.name} · ${roleLabel(t, m.role)}')],
           onChanged: (v) => setState(() => _to = v),
         ),
         TextField(controller: _body, minLines: 3, maxLines: 6, maxLength: 500, decoration: InputDecoration(hintText: t.alertBodyHint, counterText: '')),
@@ -705,6 +710,31 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
             ]),
           ]),
         ),
+    ]);
+  }
+}
+
+/// Alerts addressed to a delegated admin (or to everyone); opening it marks them read.
+class InboxPage extends ConsumerStatefulWidget {
+  const InboxPage(this.c, {super.key});
+  final Ctx c;
+  @override
+  ConsumerState<InboxPage> createState() => _InboxPageState();
+}
+
+class _InboxPageState extends ConsumerState<InboxPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(backendProvider).markRead().ignore());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = ref.watch(clockProvider).value ?? DateTime.now();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      H2(context.t.tabNotices),
+      NoticeList(widget.c.data.noticesFor(widget.c.me), now: now),
     ]);
   }
 }
