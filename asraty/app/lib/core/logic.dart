@@ -21,6 +21,11 @@ String weekKey(DateTime t) {
   return 'w${sunday.year}-${_pad(sunday.month)}-${_pad(sunday.day)}';
 }
 
+/// Honor board keys: "m" + Riyadh YYYY-MM and "y" + Riyadh year.
+String monthKey(DateTime t) => 'm${dayKey(t).substring(0, 7)}';
+String yearKey(DateTime t) => 'y${dayKey(t).substring(0, 4)}';
+String honorKey(Honor h, DateTime t) => h == Honor.monthly ? monthKey(t) : yearKey(t);
+
 String periodKey(Period p, DateTime t) => p == Period.daily ? dayKey(t) : weekKey(t);
 
 bool can(Person? p, Perm perm) {
@@ -31,14 +36,17 @@ bool can(Person? p, Perm perm) {
 
 int competitionPoints(int start, int rank) => (start - (rank - 1)).clamp(1, 1 << 30);
 
-Tier? tierOf(List<Tier> tiers, int pts, Period p, Scope s) {
-  final ok = tiers.where((t) => t.period == p && t.scope == s && pts >= t.threshold).toList()
+/// Rewards that apply to [personId]: everyone's, plus their own private ones.
+bool tierFor(Tier t, String? personId) => t.personId == null || t.personId == personId;
+
+Tier? tierOf(List<Tier> tiers, int pts, Period p, Scope s, {String? personId}) {
+  final ok = tiers.where((t) => t.period == p && t.scope == s && pts >= t.threshold && tierFor(t, personId)).toList()
     ..sort((a, b) => b.threshold.compareTo(a.threshold));
   return ok.isEmpty ? null : ok.first;
 }
 
-Tier? nextTier(List<Tier> tiers, int pts, Period p, Scope s) {
-  final ok = tiers.where((t) => t.period == p && t.scope == s && pts < t.threshold).toList()
+Tier? nextTier(List<Tier> tiers, int pts, Period p, Scope s, {String? personId}) {
+  final ok = tiers.where((t) => t.period == p && t.scope == s && pts < t.threshold && tierFor(t, personId)).toList()
     ..sort((a, b) => a.threshold.compareTo(b.threshold));
   return ok.isEmpty ? null : ok.first;
 }
@@ -65,6 +73,12 @@ extension SnapshotLogic on FamilySnapshot {
   int earned(String personId, Period p) => (p == Period.daily ? daily : weekly)[personId]?.points ?? 0;
   int earnedCount(String personId, Period p) => (p == Period.daily ? daily : weekly)[personId]?.count ?? 0;
   int familyEarned(Period p) => members.fold(0, (a, m) => a + earned(m.id, p));
+
+  /// Honor board ranking for this month or year.
+  List<RankRow> honorRanking(Honor h) {
+    final m = h == Honor.monthly ? monthly : yearly;
+    return members.map((x) => RankRow(x, m[x.id]?.points ?? 0, m[x.id]?.count ?? 0)).toList()..sort((a, b) => b.points.compareTo(a.points));
+  }
 
   List<RankRow> ranking(Period p) =>
       members.map((m) => RankRow(m, earned(m.id, p), earnedCount(m.id, p))).toList()

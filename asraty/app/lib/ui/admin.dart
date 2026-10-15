@@ -6,6 +6,7 @@ import '../core/logic.dart';
 import '../core/models.dart';
 import 'common.dart';
 import 'competitions.dart';
+import 'honor.dart';
 import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
@@ -39,7 +40,8 @@ class AdminHome extends ConsumerWidget {
       _Tile('addAdmin', '🛡️', t.tileAddAdmin, owner),
       _Tile('addMember', '➕', t.tileAddMember, can(me, Perm.addMembers)),
       _Tile('reports', '📊', t.tileReports, can(me, Perm.viewReports) || can(me, Perm.report)),
-      _Tile('sendReport', '🏆', t.tileSendReport, can(me, Perm.report)),
+      _Tile('sendReport', '📣', t.tileSendReport, can(me, Perm.report)),
+      _Tile('honor', '🏆', t.tileHonor, true),
       _Tile('tasks', '📝', t.tileTasks, true),
       _Tile('alerts', '🔔', t.tileAlerts, owner),
       _Tile('comps', '🏁', t.tileComps, can(me, Perm.comps)),
@@ -130,6 +132,7 @@ class AdminPage extends ConsumerWidget {
       'alerts' => AlertsPage(c),
       'comps' => CompsPage(c),
       'rewards' => RewardsPage(c),
+      'honor' => HonorBoard(c),
       _ => const SizedBox(),
     };
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -454,7 +457,7 @@ class _ReportsPageState extends State<ReportsPage> {
       if (r.isEmpty) EmptyState('📊', t.reportsEmpty),
       for (var i = 0; i < r.length; i++)
         Builder(builder: (context) {
-          final x = r[i], tier = tierOf(d.tiers, x.points, _p, Scope.each);
+          final x = r[i], tier = tierOf(d.tiers, x.points, _p, Scope.each, personId: x.person.id);
           return RowCard(children: [
             MedalText(medal(i)),
             AvatarView(x.person.avatar),
@@ -642,6 +645,7 @@ class AlertsPage extends ConsumerStatefulWidget {
 
 class _AlertsPageState extends ConsumerState<AlertsPage> {
   var _to = 'all';
+  var _minutes = 0;
   final _body = TextEditingController();
 
   @override
@@ -665,10 +669,18 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
           onChanged: (v) => setState(() => _to = v),
         ),
         TextField(controller: _body, minLines: 3, maxLines: 6, maxLength: 500, decoration: InputDecoration(hintText: t.alertBodyHint, counterText: '')),
+        Labeled(
+          t.alertDuration,
+          Select<int>(
+            value: _minutes,
+            items: [(0, t.durNone), (30, t.dur30m), (60, t.dur1h), (180, t.dur3h), (1440, t.dur1d)],
+            onChanged: (v) => setState(() => _minutes = v),
+          ),
+        ),
         Btn(t.sendAlert, onPressed: () async {
           final body = _body.text.trim();
           if (body.isEmpty) return toast(context, t.errAlertBody);
-          final ok = await run(context, () => ref.read(backendProvider).sendAlert(_to, body),
+          final ok = await run(context, () => ref.read(backendProvider).sendAlert(_to, body, minutes: _minutes),
               ok: _to == 'all' ? t.alertSentAll : t.alertSentTo(d.person(_to)?.name ?? ''));
           if (ok) _body.clear();
         }),
@@ -681,11 +693,16 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
             Row(children: [
               Expanded(child: Text(n.title, style: const TextStyle(fontWeight: FontWeight.w700))),
               Muted(n.to == 'all' ? t.toAll : t.toName(d.person(n.to)?.name ?? '—')),
+              XButton(tooltip: t.delete, onPressed: () => run(context, () => ref.read(backendProvider).deleteAlert(n.id), ok: t.alertDeleted)),
             ]),
             const SizedBox(height: 6),
             Muted(n.body),
             const SizedBox(height: 4),
-            Muted(ago(t, n.createdAt, now)),
+            Row(children: [
+              Expanded(child: Muted(ago(t, n.createdAt, now))),
+              if (n.expiresAt != null)
+                n.activeAt(now) ? StateTag(t.endsAt(clockTime(context, n.expiresAt!)), Tone.wait) : StateTag(t.alertEnded, Tone.off),
+            ]),
           ]),
         ),
     ]);
@@ -756,7 +773,8 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
   final _name = TextEditingController(), _thr = TextEditingController(text: '66');
   var _emoji = rewardEmoji.first;
   var _period = Period.weekly;
-  var _scope = Scope.each;
+  // 'each', 'family', or a member id for a private reward.
+  var _for = 'each';
 
   @override
   void dispose() {
@@ -769,16 +787,20 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
   Widget build(BuildContext context) {
     final t = context.t, d = widget.c.data, b = ref.read(backendProvider);
     final now = DateTime.now();
+    if (_for != 'each' && _for != 'family' && !d.members.any((m) => m.id == _for)) _for = 'each';
+    // Groups: general rewards per period and scope, then each member's private ones.
+    final owners = <String?>[null, for (final m in d.members) m.id];
     final groups = [
-      for (final p in Period.values)
-        for (final s in Scope.values)
-          if (d.tiers.any((x) => x.period == p && x.scope == s))
-            (p, s, d.tiers.where((x) => x.period == p && x.scope == s).toList()..sort((a, b) => b.threshold.compareTo(a.threshold))),
+      for (final who in owners)
+        for (final p in Period.values)
+          for (final s in Scope.values)
+            if (d.tiers.any((x) => x.period == p && x.scope == s && x.personId == who))
+              (p, s, who, d.tiers.where((x) => x.period == p && x.scope == s && x.personId == who).toList()..sort((a, b) => b.threshold.compareTo(a.threshold))),
     ];
     final due = <({String who, Tier tier, String whoKey, String pk})>[];
     for (final p in Period.values) {
       for (final m in d.members) {
-        final tier = tierOf(d.tiers, d.earned(m.id, p), p, Scope.each);
+        final tier = tierOf(d.tiers, d.earned(m.id, p), p, Scope.each, personId: m.id);
         if (tier != null) due.add((who: m.name, tier: tier, whoKey: m.id, pk: periodKey(p, now)));
       }
       final ft = tierOf(d.tiers, d.familyEarned(p), p, Scope.family);
@@ -796,17 +818,31 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
           Labeled(t.minPoints, TextField(controller: _thr, keyboardType: TextInputType.number)),
           Labeled(t.period, Select<Period>(value: _period, items: [(Period.weekly, t.weeklyF), (Period.daily, t.dailyF)], onChanged: (v) => setState(() => _period = v))),
         ),
-        Labeled(t.countedFor, Select<Scope>(value: _scope, items: [(Scope.each, t.scopeEach), (Scope.family, t.scopeFamily)], onChanged: (v) => setState(() => _scope = v))),
+        Labeled(
+          t.countedFor,
+          Select<String>(
+            value: _for,
+            items: [('each', t.scopeEach), ('family', t.scopeFamily), for (final m in d.members) (m.id, t.privateFor(m.name))],
+            onChanged: (v) => setState(() => _for = v),
+          ),
+        ),
+        if (_for != 'each' && _for != 'family') Muted(t.privateRewardsNote),
         Btn(t.addTier, onPressed: () async {
           final name = _name.text.trim(), thr = parseDigits(_thr.text) ?? 0;
           if (name.isEmpty || thr < 1) return toast(context, t.errTierInput);
-          final ok = await run(context, () => b.addTier(name: name, emoji: _emoji, threshold: thr, period: _period, scope: _scope), ok: t.tierAdded);
+          final private = _for != 'each' && _for != 'family';
+          final ok = await run(
+              context,
+              () => b.addTier(
+                  name: name, emoji: _emoji, threshold: thr, period: _period,
+                  scope: _for == 'family' ? Scope.family : Scope.each, personId: private ? _for : null),
+              ok: t.tierAdded);
           if (ok) _name.clear();
         }),
       ]),
       if (groups.isEmpty) EmptyState('🎁', t.noTiers),
-      for (final (p, s, tiers) in groups) ...[
-        H3('${p == Period.daily ? t.dailyF : t.weeklyF} · ${s == Scope.each ? t.groupEach : t.groupFamily}'),
+      for (final (p, s, who, tiers) in groups) ...[
+        H3('${p == Period.daily ? t.dailyF : t.weeklyF} · ${who != null ? '🔒 ${t.privateFor(d.person(who)?.name ?? '—')}' : s == Scope.each ? t.groupEach : t.groupFamily}'),
         for (final x in tiers)
           RowCard(children: [
             EmojiCircle(x.emoji),

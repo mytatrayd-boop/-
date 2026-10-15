@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { can, competitionPoints, dayKey, periodKey, reportText, tierOf, weekKey, cleanPerms, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
+import { can, competitionPoints, dayKey, monthKey, yearKey, periodKey, reportText, tierOf, weekKey, cleanPerms, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
 
 const riyadh = (iso: string) => Date.parse(iso + "+03:00");
 
@@ -20,6 +20,21 @@ test("weekKey starts on Sunday", () => {
   // month / year boundaries
   assert.equal(weekKey(riyadh("2027-01-01T10:00:00")), "w2026-12-27");
   assert.equal(periodKey("daily", riyadh("2027-01-01T10:00:00")), "2027-01-01");
+});
+
+test("month and year keys use Riyadh time", () => {
+  assert.equal(monthKey(riyadh("2026-10-31T23:59:00")), "m2026-10");
+  assert.equal(monthKey(Date.parse("2026-10-31T22:00:00Z")), "m2026-11");
+  assert.equal(yearKey(Date.parse("2026-12-31T21:30:00Z")), "y2027");
+});
+
+test("private rewards only count for their member", () => {
+  const tiers: Tier[] = [
+    { id: "all", name: "وجبة", emoji: "🍔", threshold: 10, period: "weekly", scope: "each" },
+    { id: "lama", name: "دراجة", emoji: "🎁", threshold: 20, period: "weekly", scope: "each", personId: "lama" },
+  ];
+  assert.equal(tierOf(tiers, 25, "weekly", "each", "lama")?.id, "lama");
+  assert.equal(tierOf(tiers, 25, "weekly", "each", "aseel")?.id, "all");
 });
 
 test("competition points decrease by one with a floor of 1", () => {

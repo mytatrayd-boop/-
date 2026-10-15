@@ -8,6 +8,9 @@ enum Scope { each, family }
 
 enum Status { pending, approved, rejected }
 
+/// Honor board periods (separate from [Period], which drives tasks and rewards).
+enum Honor { monthly, yearly }
+
 T _enum<T extends Enum>(List<T> values, Object? v, T fallback) {
   for (final e in values) {
     if (e.name == v) return e;
@@ -116,17 +119,34 @@ class Competition {
 }
 
 class Tier {
-  Tier({required this.id, required this.name, required this.emoji, required this.threshold, required this.period, required this.scope});
+  Tier({required this.id, required this.name, required this.emoji, required this.threshold, required this.period, required this.scope, this.personId});
   final String id;
   final String name;
   final String emoji;
   final int threshold;
   final Period period;
   final Scope scope;
+
+  /// Private reward: only this member earns it and sees it.
+  final String? personId;
+}
+
+/// A family goal on the honor board (e.g. read 12 books this year).
+class Goal {
+  Goal({required this.id, required this.title, required this.target, required this.progress, required this.personId, required this.period, required this.periodKey});
+  final String id;
+  final String title;
+  final int target;
+  int progress;
+  final String personId; // 'family' or a member id
+  final Honor period;
+  final String periodKey;
+
+  bool get reached => progress >= target;
 }
 
 class Notice {
-  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, List<String>? readBy})
+  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy})
       : readBy = readBy ?? [];
   final String id;
   final String to; // 'all' or personId
@@ -134,7 +154,12 @@ class Notice {
   final String body;
   final String from;
   final DateTime createdAt;
+
+  /// Timed alert: active until then, shown as ended afterwards (and removed by the server a day later).
+  final DateTime? expiresAt;
   final List<String> readBy;
+
+  bool activeAt(DateTime now) => expiresAt == null || now.isBefore(expiresAt!);
 }
 
 class PeriodSum {
@@ -172,6 +197,9 @@ class FamilySnapshot {
     required this.notices,
     required this.daily,
     required this.weekly,
+    this.monthly = const {},
+    this.yearly = const {},
+    this.goals = const [],
   });
 
   final String familyName;
@@ -184,4 +212,7 @@ class FamilySnapshot {
   final List<Notice> notices;
   final Map<String, PeriodSum> daily; // personId -> today's points
   final Map<String, PeriodSum> weekly; // personId -> this week's points
+  final Map<String, PeriodSum> monthly; // personId -> this month's points (honor board)
+  final Map<String, PeriodSum> yearly; // personId -> this year's points (honor board)
+  final List<Goal> goals;
 }

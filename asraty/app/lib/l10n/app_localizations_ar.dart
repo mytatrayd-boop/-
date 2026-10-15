@@ -87,7 +87,7 @@ class L10nAr extends L10n {
 
   @override
   String get hintSetup =>
-      'أنشئ أسرتك الآن، وسنرسل كود تحقق إلى بريدك. إذا كنت مسؤولاً مضافاً في أسرة، اترك الاسمين فارغين.';
+      'أنشئ أسرتك الآن: اكتب اسم الأسرة واسمك وبريدك، وسنرسل كود تحقق إلى بريدك. هذا مرة واحدة فقط.';
 
   @override
   String get hintAdmin => 'أدخل بريدك المسجّل كمسؤول وسنرسل لك كود تحقق.';
@@ -156,6 +156,10 @@ class L10nAr extends L10n {
 
   @override
   String get errSetupNeeded => 'اكتب اسم الأسرة واسمك.';
+
+  @override
+  String get errNoAccountYet =>
+      'لا توجد أسرة بهذا البريد بعد. لإنشاء أسرة جديدة اكتب اسم الأسرة واسمك ثم أرسل الكود.';
 
   @override
   String get errRegisteredAsMember =>
@@ -975,5 +979,146 @@ class L10nAr extends L10n {
   @override
   String memberTaskMeta(String when, String points) {
     return '$when · $points نقطة';
+  }
+
+  @override
+  String get signOutConfirm =>
+      'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكود التحقق.';
+
+  @override
+  String get adminHaveAccount => 'لدي حساب';
+
+  @override
+  String get adminNewFamily => 'أسرة جديدة';
+
+  @override
+  String get hintAdminLogin =>
+      'اكتب بريدك فقط وسنرسل لك كود تحقق. لا حاجة لاسم الأسرة ولا لاسمك مرة أخرى.';
+
+  @override
+  String get stayLoggedIn =>
+      'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج الكود مرة أخرى إلا إذا سجّلت الخروج.';
+
+  @override
+  String get pasteCode => 'لصق الكود';
+
+  @override
+  String get noCodeInClipboard =>
+      'انسخ الكود المكوّن من 6 أرقام من الإيميل أولاً';
+
+  @override
+  String get tileHonor => 'لوحة الشرف';
+
+  @override
+  String get tabHonor => 'الشرف';
+
+  @override
+  String get thisMonth => 'هذا الشهر';
+
+  @override
+  String get thisYear => 'هذه السنة';
+
+  @override
+  String get honorSub => 'ترتيب نقاط الأبناء في الشهر والسنة، وأهداف الأسرة.';
+
+  @override
+  String get honorEmpty => 'لا نقاط بعد في هذه الفترة.';
+
+  @override
+  String get honorNote => 'يبدأ عدّ الشهر والسنة من هذا التحديث.';
+
+  @override
+  String get familyGoals => 'الأهداف';
+
+  @override
+  String get goalTitleHint => 'الهدف، مثل: قراءة 12 كتاباً';
+
+  @override
+  String get goalTarget => 'العدد المطلوب';
+
+  @override
+  String get goalFor => 'لمن؟';
+
+  @override
+  String get goalPeriod => 'المدة';
+
+  @override
+  String get monthlyGoal => 'هذا الشهر';
+
+  @override
+  String get yearlyGoal => 'هذه السنة';
+
+  @override
+  String get addGoal => 'إضافة الهدف';
+
+  @override
+  String get goalAdded => 'أُضيف الهدف';
+
+  @override
+  String get errGoalInput => 'اكتب الهدف والعدد المطلوب';
+
+  @override
+  String get noGoals =>
+      'لا أهداف بعد. أضف هدفاً للأسرة لهذا الشهر أو لهذه السنة.';
+
+  @override
+  String get noGoalsMember => 'لا أهداف بعد.';
+
+  @override
+  String get goalReached => 'تحقق 🎉';
+
+  @override
+  String get goalPlus => 'زيادة التقدم';
+
+  @override
+  String get goalMinus => 'إنقاص التقدم';
+
+  @override
+  String get alertDuration => 'مدة التنبيه';
+
+  @override
+  String get durNone => 'بدون انتهاء';
+
+  @override
+  String get dur30m => 'نصف ساعة';
+
+  @override
+  String get dur1h => 'ساعة';
+
+  @override
+  String get dur3h => '3 ساعات';
+
+  @override
+  String get dur1d => 'يوم';
+
+  @override
+  String get alertEnded => 'منتهٍ';
+
+  @override
+  String get endedAlerts => 'تنبيهات منتهية';
+
+  @override
+  String get alertDeleted => 'حُذف التنبيه';
+
+  @override
+  String get yourPrivateRewards => 'مكافآت خاصة بك';
+
+  @override
+  String get privateRewardsNote =>
+      'المكافأة الخاصة لا تظهر إلا للابن المحدد ولمسؤولي الأسرة.';
+
+  @override
+  String endsAt(String time) {
+    return 'ينتهي الساعة $time';
+  }
+
+  @override
+  String privateFor(String name) {
+    return '$name فقط';
+  }
+
+  @override
+  String goalForName(String name) {
+    return 'لـ$name';
   }
 }

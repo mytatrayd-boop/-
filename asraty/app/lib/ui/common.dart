@@ -35,6 +35,7 @@ String errorText(L10n t, Object e) {
   return switch (e.code) {
     'bad-email' => t.errBadEmail,
     'setup-needed' => t.errSetupNeeded,
+    'no-account-yet' => t.errNoAccountYet,
     'registered-as-member' => t.errRegisteredAsMember,
     'registered-as-admin' => t.errRegisteredAsAdmin,
     'not-invited' => t.errNotInvited,
@@ -77,6 +78,9 @@ Future<bool> run(BuildContext context, Future<void> Function() action, {String? 
     return false;
   }
 }
+
+/// Local clock time, e.g. "٤:٣٠ م".
+String clockTime(BuildContext context, DateTime at) => MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(at.toLocal()));
 
 String ago(L10n t, DateTime at, DateTime now) {
   final m = now.difference(at).inMinutes;

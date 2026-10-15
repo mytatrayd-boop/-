@@ -83,14 +83,22 @@ abstract class Backend {
   Future<void> decideEntry(String compId, String personId, bool approve);
 
   // ---- rewards
-  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope});
+  /// [personId] makes it a private reward for that member only.
+  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope, String? personId});
   Future<void> deleteTier(String tierId);
   Future<void> deliver(String tierId, String who, String periodKey);
 
   // ---- notices
-  Future<void> sendAlert(String to, String body);
+  /// [minutes] > 0 makes a timed alert that ends after that many minutes.
+  Future<void> sendAlert(String to, String body, {int minutes = 0});
+  Future<void> deleteAlert(String noticeId);
   Future<void> sendReport();
   Future<void> markRead();
+
+  // ---- honor board goals
+  Future<void> addGoal({required String title, required int target, required String personId, required Honor period});
+  Future<void> goalProgress(String goalId, int delta);
+  Future<void> deleteGoal(String goalId);
 
   // ---- account
   Future<void> deleteAccount();

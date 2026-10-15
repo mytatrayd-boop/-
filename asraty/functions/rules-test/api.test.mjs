@@ -106,7 +106,8 @@ test("task → completion → approval → points in summaries", async () => {
   assert.equal((await db.doc(`families/${fid}/proofs/${comp.id}`).get()).exists, false, "proof deleted after decision");
 
   const sums = (await db.collection(`families/${fid}/summaries`).where("personId", "==", kid.personId).get()).docs.map((d) => d.data());
-  assert.equal(sums.length, 2); // today + this week
+  assert.equal(sums.length, 4); // today + this week + this month + this year (honor board)
+  assert.ok(sums.some((s) => s.periodKey.startsWith("m")) && sums.some((s) => s.periodKey.startsWith("y")));
   assert.ok(sums.every((s) => s.points === 5 && s.count === 1));
   const ledger = await db.collection(`families/${fid}/ledger`).get();
   assert.equal(ledger.size, 1);
@@ -151,10 +152,42 @@ test("competition ranks are unique under simultaneous taps", async () => {
   if (late) await rejects(call("api", { op: "enterCompetition", compId }, late.idToken), "comp-over");
 });
 
+test("family goals, timed alerts and private rewards", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  await rejects(call("api", { op: "addGoal", title: "x", target: 3 }, kid.idToken), "no-permission");
+  await call("api", { op: "addGoal", title: "قراءة كتب", target: 3, period: "yearly", personId: "family" }, owner.idToken);
+  const goal = (await db.collection(`families/${fid}/goals`).get()).docs[0];
+  assert.equal(goal.data().periodKey[0], "y");
+  for (let i = 0; i < 5; i++) await call("api", { op: "goalProgress", goalId: goal.id, delta: 1 }, owner.idToken);
+  assert.equal((await goal.ref.get()).data().progress, 3, "progress is capped at the target");
+  const reached = await db.collection(`families/${fid}/notifications`).where("title", "==", "🎉 تحقق الهدف").get();
+  assert.equal(reached.size, 1, "one notice when the goal is reached");
+  await call("api", { op: "deleteGoal", goalId: goal.id }, owner.idToken);
+  assert.equal((await goal.ref.get()).exists, false);
+
+  await call("api", { op: "sendAlert", to: kid.personId, body: "العشاء جاهز", minutes: 30 }, owner.idToken);
+  const alert = (await db.collection(`families/${fid}/notifications`).where("body", "==", "العشاء جاهز").get()).docs[0];
+  const left = alert.data().expiresAt.toMillis() - Date.now();
+  assert.ok(left > 29 * 60000 && left <= 30 * 60000);
+  await rejects(call("api", { op: "deleteAlert", noticeId: alert.id }, kid.idToken), "no-permission");
+  await call("api", { op: "deleteAlert", noticeId: alert.id }, owner.idToken);
+  assert.equal((await alert.ref.get()).exists, false);
+
+  await call("api", { op: "addTier", name: "دراجة", emoji: "🎁", threshold: 50, period: "weekly", scope: "family", personId: kid.personId }, owner.idToken);
+  const priv = (await db.collection(`families/${fid}/tiers`).where("name", "==", "دراجة").get()).docs[0].data();
+  assert.equal(priv.personId, kid.personId);
+  assert.equal(priv.scope, "each", "a private reward always counts the member's own points");
+});
+
 test("removed member loses access; account deletion", async () => {
   await clearRate();
   const kid = await login("kid3@test.sa", "member");
+  await call("api", { op: "sendAlert", to: kid.personId, body: "تنبيه خاص" }, owner.idToken);
+  await call("api", { op: "addTier", name: "هدية خاصة", threshold: 5, period: "daily", personId: kid.personId }, owner.idToken);
   await call("api", { op: "removePerson", personId: kid.personId }, owner.idToken);
+  assert.equal((await db.collection(`families/${fid}/notifications`).where("to", "==", kid.personId).get()).size, 0, "their alerts are removed");
+  assert.equal((await db.collection(`families/${fid}/tiers`).where("personId", "==", kid.personId).get()).size, 0, "their private rewards are removed");
   // Rejected either at token verification (auth user deleted) or by the people-doc check.
   await assert.rejects(call("api", { op: "markRead" }, kid.idToken), (e) => ["removed", "unauthenticated"].includes(e.code));
   assert.equal((await db.doc("emailIndex/kid3@test.sa").get()).exists, false);

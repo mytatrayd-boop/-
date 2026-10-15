@@ -17,6 +17,22 @@ void main() {
     expect(weekKey(riyadh('2027-01-01T10:00:00')), 'w2026-12-27');
   });
 
+  test('month and year keys match the server', () {
+    expect(monthKey(riyadh('2026-10-31T23:59:00')), 'm2026-10');
+    expect(monthKey(DateTime.parse('2026-10-31T22:00:00Z')), 'm2026-11');
+    expect(yearKey(DateTime.parse('2026-12-31T21:30:00Z')), 'y2027');
+  });
+
+  test('private rewards only count for their member', () {
+    final tiers = [
+      Tier(id: 'all', name: 'وجبة', emoji: '🍔', threshold: 10, period: Period.weekly, scope: Scope.each),
+      Tier(id: 'lama', name: 'دراجة', emoji: '🎁', threshold: 20, period: Period.weekly, scope: Scope.each, personId: 'lama'),
+    ];
+    expect(tierOf(tiers, 25, Period.weekly, Scope.each, personId: 'lama')?.id, 'lama');
+    expect(tierOf(tiers, 25, Period.weekly, Scope.each, personId: 'aseel')?.id, 'all');
+    expect(nextTier(tiers, 12, Period.weekly, Scope.each, personId: 'aseel'), isNull);
+  });
+
   test('tierOf picks the highest reached tier only within period and scope', () {
     Tier tier(String id, int thr, Period p) => Tier(id: id, name: id, emoji: '🎁', threshold: thr, period: p, scope: Scope.each);
     final tiers = [tier('trip', 66, Period.weekly), tier('meal', 30, Period.weekly), tier('games', 15, Period.daily)];

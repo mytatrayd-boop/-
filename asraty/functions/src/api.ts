@@ -4,7 +4,7 @@ import {
 } from "./db";
 import {
   AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope,
-  can, cleanPerms, cleanText, competitionPoints, dayKey, normalizeEmail, periodKey, reportText, weekKey,
+  can, cleanPerms, cleanText, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
 
@@ -46,15 +46,21 @@ async function person(fid: string, id: unknown): Promise<Person> {
   return { id: snap.id, ...(snap.data() as Omit<Person, "id">) };
 }
 
-async function notify(fid: string, to: string, title: string, body: string, from: string) {
-  await fam(fid).collection("notifications").add({
-    to, title, body, from, createdAt: FieldValue.serverTimestamp(), readBy: [],
+async function notify(fid: string, to: string, title: string, body: string, from: string, expiresAt: Timestamp | null = null) {
+  const coll = fam(fid).collection("notifications");
+  await coll.add({
+    to, title, body, from, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt,
   });
-  // Keep the list small (members load it without ordering): drop notices older than 60 days.
-  const old = await fam(fid).collection("notifications").where("createdAt", "<", Timestamp.fromMillis(Date.now() - 60 * 86400e3)).limit(100).get();
-  if (!old.empty) {
+  // Keep the list small (members load it without ordering): drop notices older than
+  // 60 days, and timed alerts one day after they end (the app shows them as ended until then).
+  const [old, ended] = await Promise.all([
+    coll.where("createdAt", "<", Timestamp.fromMillis(Date.now() - 60 * 86400e3)).limit(100).get(),
+    coll.where("expiresAt", "<", Timestamp.fromMillis(Date.now() - 86400e3)).limit(100).get(),
+  ]);
+  const stale = [...old.docs, ...ended.docs];
+  if (stale.length) {
     const b = db.batch();
-    old.docs.forEach((d) => b.delete(d.ref));
+    new Map(stale.map((d) => [d.id, d.ref])).forEach((ref) => b.delete(ref));
     await b.commit();
   }
   const all = await getPeople(fid);
@@ -69,7 +75,8 @@ function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: str
   tx.set(f.collection("ledger").doc(), {
     personId, delta, reason, source, createdAt: FieldValue.serverTimestamp(), dayKey: dayKey(now), weekKey: weekKey(now),
   });
-  for (const key of [dayKey(now), weekKey(now)]) {
+  // Day and week drive rewards; month and year drive the honor board.
+  for (const key of [dayKey(now), weekKey(now), monthKey(now), yearKey(now)]) {
     tx.set(f.collection("summaries").doc(`${personId}_${key}`), {
       personId, periodKey: key, points: FieldValue.increment(delta), count: FieldValue.increment(1),
     }, { merge: true });
@@ -90,8 +97,14 @@ async function removePersonData(fid: string, p: Person) {
   const batch = db.batch();
   batch.delete(f.collection("people").doc(p.id));
   batch.delete(db.collection("emailIndex").doc(p.email));
-  const tasks = await f.collection("tasks").where("personId", "==", p.id).get();
-  tasks.docs.forEach((d) => batch.delete(d.ref));
+  // Their tasks, the alerts sent to them, and their private rewards and goals go with them.
+  const owned = await Promise.all([
+    f.collection("tasks").where("personId", "==", p.id).get(),
+    f.collection("notifications").where("to", "==", p.id).get(),
+    f.collection("tiers").where("personId", "==", p.id).get(),
+    f.collection("goals").where("personId", "==", p.id).get(),
+  ]);
+  owned.forEach((q) => q.docs.forEach((d) => batch.delete(d.ref)));
   await batch.commit();
   const comps = await f.collection("completions").where("personId", "==", p.id).get();
   await Promise.all(comps.docs.filter((d) => d.data().hasPhoto).map((d) => proofRef(fid, d.id).delete()));
@@ -329,7 +342,16 @@ const ops: Record<string, Handler> = {
     const threshold = int(c.data.threshold, 1, 100000);
     if (!name) fail("bad-title", {}, "invalid-argument");
     const emoji = REWARD_EMOJI.includes(String(c.data.emoji)) ? String(c.data.emoji) : "🎁";
-    await fam(c.fid).collection("tiers").add({ name, emoji, threshold, period: period(c.data.period), scope: scope(c.data.scope) });
+    // Private reward for one member: only they earn it (and see it in the app).
+    let personId: string | null = null;
+    if (c.data.personId) {
+      const p = await person(c.fid, c.data.personId);
+      if (p.role !== "member") fail("person-not-found", {}, "not-found");
+      personId = p.id;
+    }
+    await fam(c.fid).collection("tiers").add({
+      name, emoji, threshold, period: period(c.data.period), scope: personId ? "each" : scope(c.data.scope), personId,
+    });
     return {};
   },
 
@@ -349,13 +371,69 @@ const ops: Record<string, Handler> = {
     return {};
   },
 
+  // ---------- family goals (honor board)
+  async addGoal(c) {
+    need(c, "tasks");
+    const title = str(c.data.title, 80);
+    if (!title) fail("bad-title", {}, "invalid-argument");
+    const target = int(c.data.target, 1, 100000);
+    const yearly = c.data.period === "yearly";
+    let personId = "family";
+    if (c.data.personId && c.data.personId !== "family") {
+      const p = await person(c.fid, c.data.personId);
+      if (p.role !== "member") fail("person-not-found", {}, "not-found");
+      personId = p.id;
+    }
+    await fam(c.fid).collection("goals").add({
+      title, target, personId, period: yearly ? "yearly" : "monthly",
+      periodKey: yearly ? yearKey(Date.now()) : monthKey(Date.now()),
+      progress: 0, createdBy: c.me.id, createdAt: FieldValue.serverTimestamp(),
+    });
+    const who = personId === "family" ? "للأسرة" : `لـ${(await person(c.fid, personId)).name}`;
+    await notify(c.fid, personId === "family" ? "all" : personId, "🎯 هدف جديد",
+      `${title} (${target}) ${who} ${yearly ? "هذه السنة" : "هذا الشهر"}`, c.me.name);
+    return {};
+  },
+
+  async goalProgress(c) {
+    need(c, "tasks");
+    const delta = int(c.data.delta, -1000, 1000);
+    const ref = fam(c.fid).collection("goals").doc(String(c.data.goalId ?? ""));
+    const r = await db.runTransaction(async (tx) => {
+      const g = (await tx.get(ref)).data();
+      if (!g) fail("not-found", {}, "not-found");
+      const progress = Math.min(Math.max((g.progress ?? 0) + delta, 0), g.target);
+      tx.update(ref, { progress });
+      return { reached: progress >= g.target && (g.progress ?? 0) < g.target, g };
+    });
+    if (r.reached) {
+      await notify(c.fid, r.g.personId === "family" ? "all" : r.g.personId, "🎉 تحقق الهدف", `${r.g.title} (${r.g.target})`, c.me.name);
+    }
+    return {};
+  },
+
+  async deleteGoal(c) {
+    need(c, "tasks");
+    await fam(c.fid).collection("goals").doc(String(c.data.goalId ?? "")).delete();
+    return {};
+  },
+
   // ---------- notifications & reports
   async sendAlert(c) {
     need(c, "owner");
     const body = str(c.data.body, 500);
     if (!body) fail("bad-body", {}, "invalid-argument");
     const to = c.data.to === "all" ? "all" : (await person(c.fid, c.data.to)).id;
-    await notify(c.fid, to, `🔔 تنبيه من ${c.me.name}`, body, c.me.name);
+    // Optional duration: the alert shows as active until then, then as ended.
+    const minutes = c.data.minutes ? int(c.data.minutes, 0, 7 * 24 * 60) : 0;
+    const expiresAt = minutes > 0 ? Timestamp.fromMillis(Date.now() + minutes * 60000) : null;
+    await notify(c.fid, to, `🔔 تنبيه من ${c.me.name}`, body, c.me.name, expiresAt);
+    return {};
+  },
+
+  async deleteAlert(c) {
+    need(c, "owner");
+    await fam(c.fid).collection("notifications").doc(String(c.data.noticeId ?? "")).delete();
     return {};
   },
 

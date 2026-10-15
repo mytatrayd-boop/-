@@ -50,7 +50,8 @@ class FirebaseBackend extends Backend {
   List<Tier> _tiers = [];
   Set<String> _deliveries = {};
   List<Notice> _notices = [];
-  Map<String, PeriodSum> _daily = {}, _weekly = {};
+  Map<String, PeriodSum> _daily = {}, _weekly = {}, _monthly = {}, _yearly = {};
+  List<Goal> _goals = [];
 
   @override
   bool get isDemo => false;
@@ -167,7 +168,9 @@ class FirebaseBackend extends Backend {
     on(f.collection('tiers').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _tiers = q.docs.map((d) {
         final x = d.data();
-        return Tier(id: d.id, name: x['name'] ?? '', emoji: x['emoji'] ?? '🎁', threshold: _int(x['threshold']), period: periodFrom(x['period']), scope: scopeFrom(x['scope']));
+        return Tier(
+            id: d.id, name: x['name'] ?? '', emoji: x['emoji'] ?? '🎁', threshold: _int(x['threshold']), period: periodFrom(x['period']),
+            scope: scopeFrom(x['scope']), personId: x['personId'] as String?);
       }).toList();
     });
     on(f.collection('deliveries').where('periodKey', whereIn: [_dayKey, wk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
@@ -183,18 +186,31 @@ class FirebaseBackend extends Backend {
         final x = d.data();
         return Notice(
           id: d.id, to: x['to'] ?? 'all', title: x['title'] ?? '', body: x['body'] ?? '', from: x['from'] ?? '',
-          createdAt: _ts(x['createdAt']), readBy: List<String>.from(x['readBy'] ?? const []));
+          createdAt: _ts(x['createdAt']), expiresAt: x['expiresAt'] is Timestamp ? (x['expiresAt'] as Timestamp).toDate() : null,
+          readBy: List<String>.from(x['readBy'] ?? const []));
       }).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
-    on(f.collection('summaries').where('periodKey', whereIn: [_dayKey, wk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+    final mk = monthKey(now), yk = yearKey(now);
+    on(f.collection('summaries').where('periodKey', whereIn: [_dayKey, wk, mk, yk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _daily = {};
       _weekly = {};
+      _monthly = {};
+      _yearly = {};
+      final byKey = {_dayKey: _daily, wk: _weekly, mk: _monthly, yk: _yearly};
       for (final d in q.docs) {
         final x = d.data();
-        final sum = PeriodSum(_int(x['points']), _int(x['count']));
-        (x['periodKey'] == _dayKey ? _daily : _weekly)[x['personId'] as String] = sum;
+        byKey[x['periodKey']]?[x['personId'] as String] = PeriodSum(_int(x['points']), _int(x['count']));
       }
+    });
+    on(f.collection('goals').where('periodKey', whereIn: [mk, yk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+      _goals = q.docs.map((d) {
+        final x = d.data();
+        return Goal(
+            id: d.id, title: x['title'] ?? '', target: _int(x['target']), progress: _int(x['progress']), personId: x['personId'] ?? 'family',
+            period: x['period'] == 'yearly' ? Honor.yearly : Honor.monthly, periodKey: x['periodKey'] ?? '');
+      }).toList()
+        ..sort((a, b) => a.period.index.compareTo(b.period.index));
     });
   }
 
@@ -209,7 +225,8 @@ class FirebaseBackend extends Backend {
       session: s,
       data: FamilySnapshot(
         familyName: _famName!, people: _people!, tasks: _tasks, completions: _completions, competitions: _comps,
-        tiers: _tiers, deliveries: _deliveries, notices: _notices, daily: _daily, weekly: _weekly),
+        tiers: _tiers, deliveries: _deliveries, notices: _notices, daily: _daily, weekly: _weekly,
+        monthly: _monthly, yearly: _yearly, goals: _goals),
     ));
   }
 
@@ -340,8 +357,8 @@ class FirebaseBackend extends Backend {
 
   // ---------------------------------------------------------------- rewards
   @override
-  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope}) =>
-      _op('addTier', {'name': name, 'emoji': emoji, 'threshold': threshold, 'period': period.name, 'scope': scope.name});
+  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope, String? personId}) =>
+      _op('addTier', {'name': name, 'emoji': emoji, 'threshold': threshold, 'period': period.name, 'scope': scope.name, 'personId': ?personId});
 
   @override
   Future<void> deleteTier(String tierId) => _op('deleteTier', {'tierId': tierId});
@@ -351,7 +368,21 @@ class FirebaseBackend extends Backend {
 
   // ---------------------------------------------------------------- notices
   @override
-  Future<void> sendAlert(String to, String body) => _op('sendAlert', {'to': to, 'body': body});
+  Future<void> sendAlert(String to, String body, {int minutes = 0}) => _op('sendAlert', {'to': to, 'body': body, 'minutes': minutes});
+
+  @override
+  Future<void> deleteAlert(String noticeId) => _op('deleteAlert', {'noticeId': noticeId});
+
+  // ---------------------------------------------------------------- goals
+  @override
+  Future<void> addGoal({required String title, required int target, required String personId, required Honor period}) =>
+      _op('addGoal', {'title': title, 'target': target, 'personId': personId, 'period': period.name});
+
+  @override
+  Future<void> goalProgress(String goalId, int delta) => _op('goalProgress', {'goalId': goalId, 'delta': delta});
+
+  @override
+  Future<void> deleteGoal(String goalId) => _op('deleteGoal', {'goalId': goalId});
 
   @override
   Future<void> sendReport() => _op('sendReport');
