@@ -1,5 +1,5 @@
 {
-  "LIBRARY_BASE_URL": "https://raw.githubusercontent.com/mytatrayd-boop/-/main/apps/adeeb/library/",
-  "ASK_API_BASE_URL": "",
+  "LIBRARY_BASE_URL": "https://raw.githubusercontent.com/mytatrayd-boop/-/claude/mobile-app-design-gxh65v/apps/adeeb/library/",
+  "ASK_API_BASE_URL": "https://adeeb-worker.mytatrayd.workers.dev/",
   "PRIVACY_POLICY_URL": ""
 }

@@ -10,6 +10,11 @@ name: Adeeb — deploy worker
 #   ADEEB_IP_SALT          optional: same (a new salt only resets that day's counters)
 on:
   workflow_dispatch:
+    inputs:
+      smoke:
+        description: "After the health check, ask one real question via /v1/ask (uses 1 Gemini request)"
+        type: boolean
+        default: true
 
 concurrency: { group: adeeb-worker-deploy, cancel-in-progress: false }
 
@@ -92,3 +97,82 @@ jobs:
           done
           echo "::error::$WORKER_URL/v1/health did not return {\"ok\":true}"
           exit 1
+
+      # Optional end-to-end check: one real question (eval q04) with a real paragraph
+      # from library/ (not text typed here), shaped exactly like the app's request
+      # (lib/ask/ask_api.dart) and worker/src/validate.ts: headers X-Client and a fresh
+      # random UUID v4 X-Device-Id, body {v, lang, question, passages[{id, book,
+      # chapter, text}]} with no extra keys. Uses one Gemini request.
+      # Fails only when the Worker says our request or itself is broken (400/426/500
+      # and other unexpected statuses). Quota or overload (429/503) and network
+      # errors are warnings: the deploy itself already succeeded.
+      # Prints only the status, the response code, and a short answer excerpt.
+      - name: Smoke test /v1/ask
+        if: inputs.smoke
+        run: |
+          set -euo pipefail
+          body="$RUNNER_TEMP/ask-body.json"
+          out="$RUNNER_TEMP/ask-response.json"
+          rm -f "$out"
+          python3 - "$body" <<'PY'
+          import gzip, json, sys
+          lib = "../library/"
+          question = next(q for q in json.load(open(lib + "eval/questions.json", encoding="utf-8"))["questions"] if q["id"] == "q04")
+          target = question["expected"][0]                # e.g. bayan-b002-p00002
+          book_id = target.split("-")[0]
+          entry = next(b for b in json.load(open(lib + "catalog.json", encoding="utf-8"))["books"] if b["id"] == book_id)
+          book = json.load(gzip.open(lib + entry["file"], "rt", encoding="utf-8"))
+          passages = []
+          for chapter in book["chapters"]:
+              paras = chapter.get("paragraphs", [])
+              for i, p in enumerate(paras):
+                  if p["id"] == target:
+                      # The target plus the paragraph before it, as the retriever might send.
+                      for q in paras[max(i - 1, 0):i + 1]:
+                          passages.append({
+                              "id": q["id"],
+                              "book": book["title"]["ar"][:200],
+                              "chapter": chapter["title"][:200],
+                              "text": q["text"][:1500],         # MAX_PASSAGE_CHARS
+                          })
+          assert passages, f"paragraph {target} not found"
+          json.dump({"v": 1, "lang": "ar", "question": question["question"], "passages": passages},
+                    open(sys.argv[1], "w", encoding="utf-8"), ensure_ascii=False)
+          print("question:", question["question"], "| passages:", ", ".join(p["id"] for p in passages))
+          PY
+          build=$(sed -nE 's/^const clientBuildNumber = ([0-9]+);.*/\1/p' ../lib/core/client_info.dart)
+          device=$(python3 -c 'import uuid; print(uuid.uuid4())')
+          status=$(curl -sS --max-time 45 -o "$out" -w '%{http_code}' -X POST "$WORKER_URL/v1/ask" \
+            -H 'Content-Type: application/json; charset=utf-8' -H 'Accept: application/json' \
+            -H "X-Client: adeeb-android/${build:-1}" -H "X-Device-Id: $device" \
+            --data-binary @"$body") || status=000
+          echo "HTTP status: $status"
+          python3 - "$out" <<'PY' || true
+          import json, sys
+          try:
+              r = json.load(open(sys.argv[1], encoding="utf-8"))
+          except Exception:
+              print("response: not JSON"); sys.exit(0)
+          if "found" in r:
+              print("found:", r.get("found"), "| citations:", len(r.get("citations") or []),
+                    "| remaining:", r.get("remaining"), "| reason:", r.get("reason", "-"))
+              print("answer:", (r.get("answer") or "")[:240])
+              for c in (r.get("citations") or [])[:3]:
+                  print("  cite", c.get("paragraph_id"), ":", (c.get("quote") or "")[:80])
+          else:
+              print("code:", r.get("code"), "| retry_after:", r.get("retry_after", "-"), "| remaining:", r.get("remaining", "-"))
+          PY
+          case "$status" in
+            200)
+              python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); sys.exit(0 if isinstance(r.get("found"), bool) and isinstance(r.get("citations"), list) else 1)' "$out" \
+                || { echo "::error::200 but the body is not {found, answer, citations, remaining}"; exit 1; }
+              echo "### Smoke /v1/ask: HTTP 200" >> "$GITHUB_STEP_SUMMARY" ;;
+            429|503)
+              echo "::warning::/v1/ask returned $status (Gemini quota/overload or Worker limit). Not a request-shape problem; deploy is fine."
+              echo "### Smoke /v1/ask: HTTP $status (quota/unavailable, not failed)" >> "$GITHUB_STEP_SUMMARY" ;;
+            000)
+              echo "::warning::/v1/ask: no response (network/timeout)." ;;
+            *)
+              echo "::error::/v1/ask returned $status: the request shape (400/426) or the Worker (500 etc.) is wrong."
+              exit 1 ;;
+          esac

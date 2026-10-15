@@ -1,0 +1,80 @@
+name: Adeeb — Android test APK
+
+# يبني APK تجريبياً لـ «الأديب الذكي» موقّعاً بمفتاح debug (كما في
+# android/app/build.gradle.kts). ليس للمتجر ولا للنشر العام (ARCHITECTURE §15).
+# - كل push على apps/adeeb/** (عدا worker/): فحص + اختبارات + بناء + رفع الملف كـ artifact
+#   (يظهر لمن له صلاحية على المستودع).
+# - نشر Release تجريبي (prerelease) يحدث فقط عند التشغيل اليدوي مع اختيار publish_prerelease،
+#   لأن المستودع عام والـ Release رابط تحميل علني.
+# لا رفع لأي متجر، ولا دعوة مختبرين، ولا keystore هنا. لا أسرار في التطبيق: الإعداد عناوين عامة فقط.
+on:
+  push:
+    paths:
+      - 'apps/adeeb/**'
+      - '!apps/adeeb/worker/**'
+      - '.github/workflows/adeeb-android.yml'
+  workflow_dispatch:
+    inputs:
+      publish_prerelease:
+        description: "انشر الملف كـ GitHub prerelease تجريبي (رابط عام)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/adeeb } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+
+      - name: Write build config
+        # config/app_config.json مستثنى من git: من secret اختياري، وإلا من الملف المثال.
+        env: { ADEEB_APP_CONFIG_JSON: "${{ secrets.ADEEB_APP_CONFIG_JSON }}" }
+        run: |
+          if [ -n "$ADEEB_APP_CONFIG_JSON" ]; then
+            printf '%s' "$ADEEB_APP_CONFIG_JSON" > config/app_config.json
+          else
+            cp config/app_config.example.json config/app_config.json
+          fi
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Validate library/
+        working-directory: apps/adeeb/library/tools
+        run: |
+          dart pub get
+          dart run bin/validate.dart ../
+
+      - name: Build APK (debug-signed)
+        run: flutter build apk --release --dart-define-from-file=config/app_config.json --build-number=${{ github.run_number }}
+      - run: cp build/app/outputs/flutter-apk/app-release.apk adeeb-test.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "adeeb-test-apk-${{ github.run_number }}"
+          path: apps/adeeb/adeeb-test.apk
+
+  prerelease:
+    needs: apk
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_prerelease
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: "adeeb-test-apk-${{ github.run_number }}" }
+      - name: Publish test prerelease
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release create "adeeb-test-v${{ github.run_number }}" adeeb-test.apk \
+            --repo "${{ github.repository }}" --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title "الأديب الذكي — نسخة تجريبية ${{ github.run_number }}" \
+            --notes "نسخة تجريبية للاختبار فقط، موقّعة بمفتاح debug. ليست للمتجر ولا للاستخدام العام."

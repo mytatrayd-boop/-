@@ -295,6 +295,7 @@ apps/adeeb/
 
 **الآن:** مجلد `apps/adeeb/library/` داخل هذا المستودع (عام، `mytatrayd-boop/-`). روابط raw تُبنى من إعداد التطبيق:
 `LIBRARY_BASE_URL = https://raw.githubusercontent.com/mytatrayd-boop/-/<ref>/apps/adeeb/library/`
+حالياً `<ref>` هو الفرع الافتراضي `claude/mobile-app-design-gxh65v` (لا يوجد فرع `main`)، كما في `config/app_config.example.json`.
 **قبل الإطلاق (بموافقة المالك):** نقل `library/` كما هو إلى مستودع عام منفصل `arabic-heritage-library` (كما في IDEA.md) وتغيير `LIBRARY_BASE_URL` فقط.
 
 السبب: البدء داخل المشروع يعني مراجعة واحدة لكل تغيير (كود + بيانات) وCI واحد، بلا انتظار حساب أو مستودع جديد. والانتقال لاحقاً مفيد لأن: تحديث الكتب لا يمر بتاريخ كود التطبيق، ورابط المستودع العام ثابت ومفهوم للقراء، وترخيص البيانات (ملك عام) منفصل عن ترخيص الكود. التصميم لا يتغير بالنقل لأن المسار كله في الإعداد.
