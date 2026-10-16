@@ -1085,4 +1085,85 @@ class AppLocalizationsAr extends AppLocalizations {
   String sourcesCopyNamedLinkSemantics(String name) {
     return 'انسخ رابط $name';
   }
+
+  @override
+  String get downloadedTab => 'المحمّلة';
+
+  @override
+  String get catalogSearchHint => 'ابحث بالعنوان أو المؤلف';
+
+  @override
+  String get catalogFilterAll => 'الكل';
+
+  @override
+  String get catalogCategoryLabel => 'التصنيف';
+
+  @override
+  String get catalogEraLabel => 'العصر';
+
+  @override
+  String catalogSortValue(String sort) {
+    return 'الترتيب: $sort';
+  }
+
+  @override
+  String get catalogSortDeath => 'سنة الوفاة';
+
+  @override
+  String get catalogSortTitle => 'العنوان';
+
+  @override
+  String get catalogSortSize => 'الحجم';
+
+  @override
+  String get catalogNoMatches => 'لا كتب تطابق البحث أو التصفية.';
+
+  @override
+  String catalogCategory(String category) {
+    String _temp0 = intl.Intl.selectLogic(category, {
+      'ayyam': 'أيام العرب والأنساب',
+      'poetry': 'الشعر والدواوين',
+      'lexicon': 'اللغة والمعاجم',
+      'grammar': 'النحو والصرف والعروض',
+      'rhetoric': 'البلاغة والنقد',
+      'adab': 'الأدب والأخبار والنوادر',
+      'history': 'التاريخ',
+      'biography': 'التراجم والطبقات',
+      'travel': 'البلدان والرحلات',
+      'other': 'أخرى',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String catalogEra(String era) {
+    String _temp0 = intl.Intl.selectLogic(era, {
+      'jahili': 'الجاهلي وصدر الإسلام',
+      'umayyad': 'الأموي',
+      'abbasid': 'العباسي',
+      'late': 'المماليك والمتأخرون',
+      'other': 'أخرى',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get noDownloadedBooks =>
+      'لم تحمّل أي كتاب بعد. حمّل كتاباً من تبويب «الكتب» لتقرأه وتبحث فيه دون إنترنت.';
+
+  @override
+  String get settingsBooks => 'الكتب';
+
+  @override
+  String get manageBooks => 'إدارة الكتب المحمّلة';
+
+  @override
+  String booksUsage(String size) {
+    return 'تستخدم الكتب $size';
+  }
+
+  @override
+  String deleteBookSemantics(String title) {
+    return 'حذف «$title» من الجهاز';
+  }
 }

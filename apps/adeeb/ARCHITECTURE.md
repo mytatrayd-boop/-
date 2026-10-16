@@ -300,6 +300,7 @@ apps/adeeb/
 `LIBRARY_BASE_URL = https://raw.githubusercontent.com/mytatrayd-boop/-/<ref>/apps/adeeb/library/`
 حالياً `<ref>` هو الفرع الافتراضي `claude/mobile-app-design-gxh65v` (لا يوجد فرع `main`)، كما في `config/app_config.example.json`.
 **قبل الإطلاق (بموافقة المالك):** نقل `library/` كما هو إلى مستودع عام منفصل `arabic-heritage-library` (كما في IDEA.md) وتغيير `LIBRARY_BASE_URL` فقط.
+**منذ 6.5 (2026-10-16):** `LIBRARY_BASE_URL = https://raw.githubusercontent.com/mytatrayd-boop/arabic-heritage-library/main/` والتطبيق يقرأ `catalog/v2/catalog.json.gz` والمسارات المقسّمة (§18، D36).
 
 السبب: البدء داخل المشروع يعني مراجعة واحدة لكل تغيير (كود + بيانات) وCI واحد، بلا انتظار حساب أو مستودع جديد. والانتقال لاحقاً مفيد لأن: تحديث الكتب لا يمر بتاريخ كود التطبيق، ورابط المستودع العام ثابت ومفهوم للقراء، وترخيص البيانات (ملك عام) منفصل عن ترخيص الكود. التصميم لا يتغير بالنقل لأن المسار كله في الإعداد.
 

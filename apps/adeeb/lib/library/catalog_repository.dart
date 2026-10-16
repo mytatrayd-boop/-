@@ -1,13 +1,14 @@
-/// جلب `catalog.json` من GitHub raw مع مهلة، وحفظ آخر نسخة صالحة محلياً
-/// لتُعرض دون إنترنت (ARCHITECTURE §4.1). Dart صافٍ.
+/// جلب فهرس schema 2 من GitHub raw مع مهلة و`ETag` (ARCHITECTURE §18.5).
+/// آخر نسخة صالحة تُحفظ في SQLite (catalog_store.dart) لتُعرض دون إنترنت.
+/// Dart صافٍ.
 library;
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
 import '../core/network_errors.dart';
+import 'book_file.dart';
 import 'catalog.dart';
 
 enum CatalogFailure {
@@ -29,23 +30,45 @@ class CatalogFetchException implements Exception {
   String toString() => 'CatalogFetchException(${failure.name}: $detail)';
 }
 
+/// نتيجة الجلب: فهرس جديد مع `ETag`، أو «لم يتغير» (HTTP 304).
+sealed class CatalogFetchResult {
+  const CatalogFetchResult();
+}
+
+class CatalogFetched extends CatalogFetchResult {
+  const CatalogFetched(this.catalog, this.etag);
+  final Catalog catalog;
+  final String? etag;
+}
+
+class CatalogNotModified extends CatalogFetchResult {
+  const CatalogNotModified();
+}
+
+/// أقصى حجم للفهرس بعد الفك (نحو 0.5 م.ب متوقعاً لـ 1,400 كتاب، §18.5).
+const maxCatalogBytes = 16 * 1024 * 1024;
+
 class CatalogRepository {
   CatalogRepository({
     required this._client,
     required this._baseUri,
-    required this._cacheFile,
+    required this._legacyCacheFile,
     this.timeout = const Duration(seconds: 15),
   });
 
   final http.Client _client;
   final Uri? _baseUri;
-  final File _cacheFile;
+
+  /// نسخة `catalog.json` (schema 1) التي حفظتها الإصدارات السابقة؛ تُقرأ مرة
+  /// للترحيل ثم تُحذف بعد أول استيراد لفهرس schema 2.
+  final File _legacyCacheFile;
   final Duration timeout;
 
   Uri? bookUrl(CatalogBook book) => _baseUri?.resolve(book.file);
 
-  /// يجلب الفهرس ويحفظه. يرمي [CatalogFetchException].
-  Future<Catalog> fetch() async {
+  /// يجلب `catalog/v2/catalog.json.gz`؛ مع [etag] يرسل `If-None-Match`.
+  /// يرمي [CatalogFetchException].
+  Future<CatalogFetchResult> fetch({String? etag}) async {
     final base = _baseUri;
     if (base == null) {
       throw const CatalogFetchException(
@@ -56,7 +79,7 @@ class CatalogRepository {
     final http.Response response;
     try {
       response = await _client
-          .get(base.resolve('catalog.json'))
+          .get(base.resolve(catalogV2Path), headers: {'If-None-Match': ?etag})
           .timeout(timeout);
     } catch (e) {
       throw CatalogFetchException(
@@ -64,55 +87,66 @@ class CatalogRepository {
         e.toString(),
       );
     }
+    if (response.statusCode == 304 && etag != null) {
+      return const CatalogNotModified();
+    }
     if (response.statusCode != 200) {
       throw CatalogFetchException(
         CatalogFailure.server,
         'HTTP ${response.statusCode}',
       );
     }
-    final text = _decodeUtf8(response.bodyBytes);
-    final Catalog catalog;
     try {
-      catalog = parseCatalog(text);
+      final text = gunzipUtf8(response.bodyBytes, maxBytes: maxCatalogBytes);
+      return CatalogFetched(parseCatalog(text), response.headers['etag']);
     } on UnsupportedSchemaException catch (e) {
       throw CatalogFetchException(CatalogFailure.unsupportedSchema, '$e');
     } on LibraryFormatException catch (e) {
       throw CatalogFetchException(CatalogFailure.server, e.message);
     }
-    try {
-      _writeCache(text);
-    } on FileSystemException {
-      // الحفظ للعمل دون إنترنت لاحقاً فقط؛ فشله (مساحة ممتلئة مثلاً) لا يُفشل الجلب.
-    }
-    return catalog;
   }
 
-  /// آخر فهرس صالح محفوظ، أو null.
-  /// الملف صغير (بضعة كيلوبايت) فالقراءة والكتابة متزامنتان عمداً.
-  Catalog? readCache() {
+  /// الفهرس القديم المحفوظ (schema 1) بمسارات مقسّمة، أو null. الملف صغير
+  /// (بضعة كيلوبايت) فالقراءة متزامنة عمداً.
+  Catalog? readLegacyCache() {
     try {
-      if (!_cacheFile.existsSync()) return null;
-      return parseCatalog(_cacheFile.readAsStringSync());
+      if (!_legacyCacheFile.existsSync()) return null;
+      final old = parseCatalog(_legacyCacheFile.readAsStringSync());
+      if (old.schema != 1) return null;
+      return Catalog(
+        schema: 1,
+        catalogVersion: old.catalogVersion,
+        updated: old.updated,
+        books: [
+          for (final b in old.books)
+            CatalogBook(
+              id: b.id,
+              title: b.title,
+              author: b.author,
+              authorDeathHijri: b.authorDeathHijri,
+              version: b.version,
+              file: shardedBookPath(b.id, b.version),
+              sha256: b.sha256,
+              sizeBytes: b.sizeBytes,
+              uncompressedBytes: b.uncompressedBytes,
+              paragraphCount: b.paragraphCount,
+              diacritics: b.diacritics,
+              sourceName: b.sourceName,
+              sourceUrl: b.sourceUrl,
+              license: b.license,
+            ),
+        ],
+      );
     } on Exception {
       return null;
     }
   }
 
-  void _writeCache(String text) {
-    _cacheFile.parent.createSync(recursive: true);
-    final tmp = File('${_cacheFile.path}.tmp');
-    tmp.writeAsStringSync(text, flush: true);
-    tmp.renameSync(_cacheFile.path);
-  }
-
-  static String _decodeUtf8(List<int> bytes) {
+  void deleteLegacyCache() {
     try {
-      return const Utf8Decoder().convert(bytes);
-    } on FormatException catch (e) {
-      throw CatalogFetchException(
-        CatalogFailure.server,
-        'not UTF-8: ${e.message}',
-      );
+      if (_legacyCacheFile.existsSync()) _legacyCacheFile.deleteSync();
+    } on FileSystemException {
+      // يُعاد في الاستيراد التالي.
     }
   }
 }

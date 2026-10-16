@@ -7,6 +7,7 @@ import 'library/library_screen.dart';
 import 'reader/reader_screen.dart';
 import 'search/search_screen.dart';
 import 'settings/about_screen.dart';
+import 'settings/downloaded_books_screen.dart';
 import 'settings/privacy_screen.dart';
 import 'settings/settings_screen.dart';
 import 'settings/sources_screen.dart';
@@ -52,6 +53,10 @@ GoRouter createRouter({GlobalKey<NavigatorState>? navigatorKey}) => GoRouter(
           path: 'settings',
           builder: (context, state) => const SettingsScreen(),
           routes: [
+            GoRoute(
+              path: 'books',
+              builder: (context, state) => const DownloadedBooksScreen(),
+            ),
             GoRoute(
               path: 'sources',
               builder: (context, state) => const SourcesScreen(),

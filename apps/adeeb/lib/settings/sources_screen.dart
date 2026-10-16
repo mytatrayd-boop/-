@@ -40,50 +40,62 @@ class SourcesScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final items = ref.watch(libraryControllerProvider).items;
 
+    final before = <Widget>[
+      Text(l10n.sourcesIntro, style: theme.textTheme.bodyLarge),
+      const SizedBox(height: 8),
+      Text(l10n.sourcesOpenItiLicense, style: theme.textTheme.bodyMedium),
+      _LinkRow(name: l10n.sourcesOpenItiLink, url: openItiUrl),
+      _LinkRow(name: l10n.sourcesLicenseLink, url: ccLicenseUrl),
+      _Section(l10n.sourcesBooks),
+      if (items.isEmpty)
+        Text(l10n.sourcesNoBooks, style: theme.textTheme.bodyMedium),
+    ];
+    final after = <Widget>[
+      _Section(l10n.sourcesFonts),
+      for (final (name, asset, _) in appFonts)
+        _FontRow(name: name(l10n), asset: asset),
+      _Section(l10n.sourcesServices),
+      for (final s in [
+        l10n.sourcesServiceAi,
+        l10n.sourcesServiceTts,
+        l10n.sourcesServiceHosting,
+      ])
+        Padding(
+          padding: const EdgeInsetsDirectional.only(bottom: 8),
+          child: Text(s, style: theme.textTheme.bodyMedium),
+        ),
+      _Section(l10n.sourcesLibraries),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: OutlinedButton(
+          onPressed: () => showLicensePage(
+            context: context,
+            applicationName: l10n.appTitle,
+            applicationLegalese: l10n.aboutFree,
+          ),
+          child: Text(l10n.sourcesViewLibraries),
+        ),
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.sourcesTitle)),
       body: SafeArea(
-        child: ListView(
+        // كسولة: قد يكون في الفهرس مئات الكتب (§18.5).
+        child: ListView.builder(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
-          children: [
-            Text(l10n.sourcesIntro, style: theme.textTheme.bodyLarge),
-            const SizedBox(height: 8),
-            Text(l10n.sourcesOpenItiLicense, style: theme.textTheme.bodyMedium),
-            _LinkRow(name: l10n.sourcesOpenItiLink, url: openItiUrl),
-            _LinkRow(name: l10n.sourcesLicenseLink, url: ccLicenseUrl),
-            _Section(l10n.sourcesBooks),
-            if (items.isEmpty)
-              Text(l10n.sourcesNoBooks, style: theme.textTheme.bodyMedium),
-            for (final item in items) ...[
-              _BookSourceCard(item: item),
-              const SizedBox(height: 12),
-            ],
-            _Section(l10n.sourcesFonts),
-            for (final (name, asset, _) in appFonts)
-              _FontRow(name: name(l10n), asset: asset),
-            _Section(l10n.sourcesServices),
-            for (final s in [
-              l10n.sourcesServiceAi,
-              l10n.sourcesServiceTts,
-              l10n.sourcesServiceHosting,
-            ])
-              Padding(
-                padding: const EdgeInsetsDirectional.only(bottom: 8),
-                child: Text(s, style: theme.textTheme.bodyMedium),
-              ),
-            _Section(l10n.sourcesLibraries),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: OutlinedButton(
-                onPressed: () => showLicensePage(
-                  context: context,
-                  applicationName: l10n.appTitle,
-                  applicationLegalese: l10n.aboutFree,
-                ),
-                child: Text(l10n.sourcesViewLibraries),
-              ),
-            ),
-          ],
+          itemCount: before.length + items.length + after.length,
+          itemBuilder: (context, index) {
+            if (index < before.length) return before[index];
+            index -= before.length;
+            if (index < items.length) {
+              return Padding(
+                padding: const EdgeInsetsDirectional.only(bottom: 12),
+                child: _BookSourceCard(item: items[index]),
+              );
+            }
+            return after[index - items.length];
+          },
         ),
       ),
     );
@@ -113,7 +125,11 @@ class _BookSourceCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final installed = item.installed;
-    final url = item.entry?.sourceUrl ?? installed?.sourceUrl;
+    // فهرس schema 2 بلا رابط (معرّف OpenITI فقط)؛ الرابط من ملف الكتاب المحمّل.
+    final url = [
+      installed?.sourceUrl,
+      item.entry?.sourceUrl,
+    ].firstWhere((u) => u != null && u.isNotEmpty, orElse: () => null);
     final version = item.entry?.version ?? installed!.version;
 
     // تسمية بلغة الواجهة، والقيمة العربية من ملف الكتاب RTL دائماً.

@@ -1,12 +1,39 @@
-/// نماذج الفهرس `catalog.json` (ARCHITECTURE §4.1) وتحليله. Dart صافٍ.
+/// نماذج الفهرس وتحليله: schema 1 (`catalog.json`، ARCHITECTURE §4.1، للترحيل
+/// من النسخة المحفوظة القديمة فقط) وschema 2 (`catalog/v2/catalog.json.gz`،
+/// §18.5). Dart صافٍ.
 library;
 
 import 'dart:convert';
 
-/// أعلى `schema` يفهمه هذا الإصدار من التطبيق.
+/// أعلى `schema` للفهرس يفهمه هذا الإصدار من التطبيق.
+const supportedCatalogSchema = 2;
+
+/// أعلى `schema` لملف الكتاب (الصيغة 2 هي JSON الكتاب schema 1 نفسه).
 const supportedSchema = 1;
 
-final bookIdPattern = RegExp(r'^[a-z]{2,12}$');
+/// مسار فهرس schema 2 داخل جذر المكتبة.
+const catalogV2Path = 'catalog/v2/catalog.json.gz';
+
+/// معرّف الكتاب: الخمسة القديمة (`kalila`) والآلية (`o00412`) (§18.5).
+final bookIdPattern = RegExp(r'^[a-z][a-z0-9]{1,11}$');
+
+/// المسار المقسّم لملف الكتاب (§18.4): `books/<آخر حرفين>/<id>/<id>.v<N>.json.gz`.
+String shardedBookPath(String id, int version) =>
+    'books/${id.substring(id.length - 2)}/$id/$id.v$version.json.gz';
+
+/// التصنيفات التسعة والعصور الأربعة بترتيب العرض (§18.5)؛ الأسماء في ARB.
+const catalogCategories = [
+  'ayyam',
+  'poetry',
+  'lexicon',
+  'grammar',
+  'rhetoric',
+  'adab',
+  'history',
+  'biography',
+  'travel',
+];
+const catalogEras = ['jahili', 'umayyad', 'abbasid', 'late'];
 final _sha256Pattern = RegExp(r'^[0-9a-f]{64}$');
 
 /// الفهرس أو الكتاب بصيغة لا يفهمها التطبيق أو تالف.
@@ -49,6 +76,8 @@ class CatalogBook {
     required this.sourceName,
     required this.sourceUrl,
     required this.license,
+    this.category,
+    this.era,
   });
 
   final String id;
@@ -57,7 +86,7 @@ class CatalogBook {
   final int? authorDeathHijri;
   final int version;
 
-  /// مسار نسبي داخل `library/`: `books/<id>/<id>.v<N>.json.gz`.
+  /// مسار نسبي داخل جذر المكتبة: المقسّم في schema 2.
   final String file;
   final String sha256;
   final int sizeBytes;
@@ -67,6 +96,10 @@ class CatalogBook {
   final String sourceName;
   final String sourceUrl;
   final String license;
+
+  /// معرّف التصنيف والعصر (schema 2)؛ null في فهرس schema 1.
+  final String? category;
+  final String? era;
 }
 
 class Catalog {
@@ -121,8 +154,13 @@ Catalog parseCatalog(String text) {
     throw const LibraryFormatException('الفهرس ليس كائن JSON');
   }
   final schema = _field<int>(decoded, 'schema', 'catalog');
-  if (schema > supportedSchema) throw UnsupportedSchemaException(schema);
+  if (schema > supportedCatalogSchema) {
+    throw UnsupportedSchemaException(schema);
+  }
   if (schema < 1) throw const LibraryFormatException('schema غير صالح');
+  final license = schema == 2
+      ? _field<String>(decoded, 'license', 'catalog')
+      : '';
   final rawBooks = _field<List<Object?>>(decoded, 'books', 'catalog');
   final seen = <String>{};
   final books = <CatalogBook>[];
@@ -130,7 +168,7 @@ Catalog parseCatalog(String text) {
     if (raw is! Map<String, Object?>) {
       throw const LibraryFormatException('عنصر كتاب غير صالح');
     }
-    final book = _parseBook(raw);
+    final book = schema == 2 ? _parseBookV2(raw, license) : _parseBook(raw);
     if (!seen.add(book.id)) {
       throw LibraryFormatException('معرّف مكرر: ${book.id}');
     }
@@ -185,5 +223,58 @@ CatalogBook _parseBook(Map<String, Object?> m) {
     sourceName: _field<String>(source, 'name', '$where source'),
     sourceUrl: _field<String>(source, 'url', '$where source'),
     license: _field<String>(m, 'license', where),
+  );
+}
+
+/// مدخل schema 2 بحقوله المختصرة (§18.5، D35).
+CatalogBook _parseBookV2(Map<String, Object?> m, String license) {
+  final id = _field<String>(m, 'id', 'book');
+  if (!bookIdPattern.hasMatch(id)) {
+    throw LibraryFormatException('معرّف كتاب غير صالح: $id');
+  }
+  final where = 'book $id';
+  final version = _field<int>(m, 'v', where);
+  final file = _field<String>(m, 'f', where);
+  // المسار ثابت الصيغة: يمنع أي مسار خارج مجلد الكتاب أو رابط خارجي.
+  if (version < 1 || file != shardedBookPath(id, version)) {
+    throw LibraryFormatException('$where: مسار الملف غير مطابق للإصدار');
+  }
+  final sha = _field<String>(m, 'sha', where);
+  if (!_sha256Pattern.hasMatch(sha)) {
+    throw LibraryFormatException('$where: sha256 غير صالح');
+  }
+  final size = _field<int>(m, 'sz', where);
+  final uncompressed = _field<int>(m, 'u', where);
+  if (size <= 0 || uncompressed <= 0) {
+    throw LibraryFormatException('$where: حجم غير صالح');
+  }
+  final title = _field<String>(m, 't', where);
+  final author = _field<String>(m, 'a', where);
+  if (title.trim().isEmpty || author.trim().isEmpty) {
+    throw LibraryFormatException('$where: عنوان أو مؤلف فارغ');
+  }
+  final death = m['d'];
+  if (death != null && death is! int) {
+    throw LibraryFormatException('$where: سنة الوفاة غير صالحة');
+  }
+  final src = m['src'];
+  return CatalogBook(
+    id: id,
+    title: LocalizedName(ar: title),
+    author: LocalizedName(ar: author),
+    authorDeathHijri: death as int?,
+    version: version,
+    file: file,
+    sha256: sha,
+    sizeBytes: size,
+    uncompressedBytes: uncompressed,
+    paragraphCount: _field<int>(m, 'n', where),
+    diacritics: _field<String>(m, 'dia', where),
+    sourceName: 'OpenITI',
+    // `src` معرّف OpenITI لا رابط؛ الرابط الكامل في ملف الكتاب بعد تحميله.
+    sourceUrl: src is String && src.startsWith('https://') ? src : '',
+    license: license,
+    category: m['c'] is String ? m['c']! as String : null,
+    era: m['e'] is String ? m['e']! as String : null,
   );
 }

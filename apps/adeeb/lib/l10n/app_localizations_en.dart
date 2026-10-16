@@ -1093,4 +1093,85 @@ class AppLocalizationsEn extends AppLocalizations {
   String sourcesCopyNamedLinkSemantics(String name) {
     return 'Copy the link: $name';
   }
+
+  @override
+  String get downloadedTab => 'Downloaded';
+
+  @override
+  String get catalogSearchHint => 'Search by title or author';
+
+  @override
+  String get catalogFilterAll => 'All';
+
+  @override
+  String get catalogCategoryLabel => 'Category';
+
+  @override
+  String get catalogEraLabel => 'Era';
+
+  @override
+  String catalogSortValue(String sort) {
+    return 'Sort: $sort';
+  }
+
+  @override
+  String get catalogSortDeath => 'Year of death';
+
+  @override
+  String get catalogSortTitle => 'Title';
+
+  @override
+  String get catalogSortSize => 'Size';
+
+  @override
+  String get catalogNoMatches => 'No books match your search or filters.';
+
+  @override
+  String catalogCategory(String category) {
+    String _temp0 = intl.Intl.selectLogic(category, {
+      'ayyam': 'Days of the Arabs & genealogy',
+      'poetry': 'Poetry & diwans',
+      'lexicon': 'Language & lexicons',
+      'grammar': 'Grammar, morphology & prosody',
+      'rhetoric': 'Rhetoric & criticism',
+      'adab': 'Adab, reports & anecdotes',
+      'history': 'History',
+      'biography': 'Biographies & generations',
+      'travel': 'Geography & travel',
+      'other': 'Other',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String catalogEra(String era) {
+    String _temp0 = intl.Intl.selectLogic(era, {
+      'jahili': 'Pre-Islamic & early Islam',
+      'umayyad': 'Umayyad',
+      'abbasid': 'Abbasid',
+      'late': 'Mamluk & later',
+      'other': 'Other',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get noDownloadedBooks =>
+      'You haven\'t downloaded any books yet. Download one from the Books tab to read and search it offline.';
+
+  @override
+  String get settingsBooks => 'Books';
+
+  @override
+  String get manageBooks => 'Manage downloaded books';
+
+  @override
+  String booksUsage(String size) {
+    return 'Books use $size';
+  }
+
+  @override
+  String deleteBookSemantics(String title) {
+    return 'Remove “$title” from device';
+  }
 }

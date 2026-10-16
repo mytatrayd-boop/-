@@ -11,6 +11,7 @@ import '../audio/listening_player.dart';
 import '../audio/listening_providers.dart';
 import '../audio/player_sheets.dart';
 import '../l10n/app_localizations.dart';
+import '../library/library_controller.dart';
 import '../library/library_text.dart';
 import '../reader/display_settings_sheet.dart';
 import '../reader/reader_settings.dart';
@@ -75,6 +76,18 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => showVoicePicker(context),
             ),
             _SpeedChoices(selected: audio.speed),
+            _Header(l10n.settingsBooks),
+            _SettingTile(
+              icon: Icons.download_done_outlined,
+              title: l10n.manageBooks,
+              value: l10n.booksUsage(
+                l10n.size(
+                  context,
+                  ref.watch(libraryControllerProvider).installedBytes,
+                ),
+              ),
+              onTap: () => context.push('/settings/books'),
+            ),
             _Header(l10n.askTitle),
             _SettingTile(
               icon: Icons.person_outline,

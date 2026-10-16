@@ -1889,6 +1889,108 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'انسخ رابط {name}'**
   String sourcesCopyNamedLinkSemantics(String name);
+
+  /// No description provided for @downloadedTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحمّلة'**
+  String get downloadedTab;
+
+  /// No description provided for @catalogSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث بالعنوان أو المؤلف'**
+  String get catalogSearchHint;
+
+  /// No description provided for @catalogFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get catalogFilterAll;
+
+  /// No description provided for @catalogCategoryLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get catalogCategoryLabel;
+
+  /// No description provided for @catalogEraLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'العصر'**
+  String get catalogEraLabel;
+
+  /// No description provided for @catalogSortValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترتيب: {sort}'**
+  String catalogSortValue(String sort);
+
+  /// No description provided for @catalogSortDeath.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة الوفاة'**
+  String get catalogSortDeath;
+
+  /// No description provided for @catalogSortTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العنوان'**
+  String get catalogSortTitle;
+
+  /// No description provided for @catalogSortSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجم'**
+  String get catalogSortSize;
+
+  /// No description provided for @catalogNoMatches.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا كتب تطابق البحث أو التصفية.'**
+  String get catalogNoMatches;
+
+  /// No description provided for @catalogCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'{category, select, ayyam{أيام العرب والأنساب} poetry{الشعر والدواوين} lexicon{اللغة والمعاجم} grammar{النحو والصرف والعروض} rhetoric{البلاغة والنقد} adab{الأدب والأخبار والنوادر} history{التاريخ} biography{التراجم والطبقات} travel{البلدان والرحلات} other{أخرى}}'**
+  String catalogCategory(String category);
+
+  /// No description provided for @catalogEra.
+  ///
+  /// In ar, this message translates to:
+  /// **'{era, select, jahili{الجاهلي وصدر الإسلام} umayyad{الأموي} abbasid{العباسي} late{المماليك والمتأخرون} other{أخرى}}'**
+  String catalogEra(String era);
+
+  /// No description provided for @noDownloadedBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحمّل أي كتاب بعد. حمّل كتاباً من تبويب «الكتب» لتقرأه وتبحث فيه دون إنترنت.'**
+  String get noDownloadedBooks;
+
+  /// No description provided for @settingsBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتب'**
+  String get settingsBooks;
+
+  /// No description provided for @manageBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة الكتب المحمّلة'**
+  String get manageBooks;
+
+  /// No description provided for @booksUsage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تستخدم الكتب {size}'**
+  String booksUsage(String size);
+
+  /// No description provided for @deleteBookSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف «{title}» من الجهاز'**
+  String deleteBookSemantics(String title);
 }
 
 class _AppLocalizationsDelegate

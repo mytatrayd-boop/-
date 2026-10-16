@@ -6,11 +6,12 @@ import 'dart:isolate';
 
 import 'package:sqlite3/sqlite3.dart';
 
+import 'catalog_store.dart';
 import 'search_index.dart';
 import 'write_queue.dart';
 
 /// الترحيل رقم i ينقل القاعدة من الإصدار i إلى i+1. لا يُعدَّل ترحيل منشور.
-final List<void Function(Database)> migrations = [_v1, _v2, _v3, _v4];
+final List<void Function(Database)> migrations = [_v1, _v2, _v3, _v4, _v5];
 
 int get schemaVersion => migrations.length;
 
@@ -149,3 +150,7 @@ void _v3(Database db) {
 void _v4(Database db) {
   db.execute('ALTER TABLE paragraphs ADD COLUMN tts TEXT');
 }
+
+/// الإصدار 5 (6.5): الفهرس الكبير (schema 2) مع FTS للعنوان والمؤلف. لا يمسّ
+/// الكتب المحمّلة ولا المفضلة ولا المواضع.
+void _v5(Database db) => createCatalogTables(db);

@@ -7,6 +7,7 @@ import 'package:adeeb/reader/display_settings_sheet.dart';
 import 'package:adeeb/reader/reader_settings.dart';
 import 'package:adeeb/settings/about_screen.dart';
 import 'package:adeeb/settings/app_settings.dart';
+import 'package:adeeb/settings/downloaded_books_screen.dart';
 import 'package:adeeb/settings/privacy_screen.dart';
 import 'package:adeeb/settings/settings_screen.dart';
 import 'package:adeeb/settings/sources_screen.dart';
@@ -50,6 +51,15 @@ void main() {
   }
 
   Future<void> tapText(WidgetTester tester, String text) async {
+    if (find.text(text).evaluate().isEmpty) {
+      // من أعلى القائمة ثم نزولاً.
+      await tester.fling(
+        find.byType(Scrollable).first,
+        const Offset(0, 3000),
+        3000,
+      );
+      await tester.pumpAndSettle();
+    }
     if (find.text(text).evaluate().isEmpty) {
       await tester.scrollUntilVisible(
         find.text(text),
@@ -279,7 +289,7 @@ void main() {
       await openSettings(tester);
       await tapText(tester, 'المصادر والتراخيص');
       expect(find.text('كتاب اختبار اصطناعي'), findsOneWidget);
-      expect(find.text('بيانات اختبار اصطناعية'), findsOneWidget);
+      expect(find.text('OpenITI'), findsOneWidget);
       expect(
         find.text('تظهر الطبعة وما حُذف بعد تحميل الكتاب.'),
         findsOneWidget,
@@ -422,5 +432,38 @@ void main() {
       await back(tester);
       await tester.pumpAndSettle();
     }
+  });
+
+  testWidgets('إدارة الكتب المحمّلة: المساحة الكلية والحذف بعد التأكيد', (
+    tester,
+  ) async {
+    final other = miniBook(id: 'other');
+    env.server.catalog = catalogJson([
+      env.server.addBook(miniBook()),
+      env.server.addBook(other),
+    ]);
+    await env.preinstall(miniBook());
+    await env.preinstall(other);
+    final total = (await env.books.installed()).fold<int>(
+      0,
+      (n, b) => n + b.bytes,
+    );
+    expect(total, greaterThan(0));
+    await openSettings(tester);
+    await tapText(tester, 'إدارة الكتب المحمّلة');
+    expect(find.byType(DownloadedBooksScreen), findsOneWidget);
+    expect(find.text('تستخدم الكتب ١ ك.ب'), findsOneWidget);
+    expect(find.text('كتاب اختبار اصطناعي'), findsNWidgets(2));
+
+    await tester.tap(
+      find.byTooltip('حذف «كتاب اختبار اصطناعي» من الجهاز').first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('حذف الكتاب من الجهاز؟'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'حذف'));
+    await tester.pumpAndSettle();
+    expect(find.text('حُذف الكتاب'), findsOneWidget);
+    expect(find.text('كتاب اختبار اصطناعي'), findsOneWidget);
+    expect(await env.books.installed(), hasLength(1));
   });
 }

@@ -12,6 +12,7 @@ import '../reader/reader_providers.dart';
 import '../storage/book_repository.dart';
 import 'book_downloader.dart';
 import 'catalog.dart';
+import '../storage/catalog_store.dart';
 import 'catalog_repository.dart';
 import 'library_providers.dart';
 
@@ -79,8 +80,14 @@ class LibraryItem {
   final InstalledBook? installed;
 
   String get id => entry?.id ?? installed!.id;
-  LocalizedName get title => entry?.title ?? installed!.title;
-  LocalizedName get author => entry?.author ?? installed!.author;
+
+  /// العربي من الفهرس، والنقل اللاتيني منه أو من ملف الكتاب المحمّل (فهرس
+  /// schema 2 بلا أسماء إنجليزية).
+  LocalizedName get title => _name(entry?.title, installed?.title);
+  LocalizedName get author => _name(entry?.author, installed?.author);
+
+  static LocalizedName _name(LocalizedName? remote, LocalizedName? local) =>
+      LocalizedName(ar: remote?.ar ?? local!.ar, en: remote?.en ?? local?.en);
   int? get authorDeathHijri =>
       entry?.authorDeathHijri ?? installed?.authorDeathHijri;
   String get sourceName => entry?.sourceName ?? installed!.sourceName;
@@ -105,23 +112,35 @@ class LibraryState {
     required this.status,
     this.notice = CatalogNotice.none,
     this.items = const [],
+    this.byId = const {},
     this.tasks = const {},
+    this.catalogRevision = 0,
   });
 
   final CatalogStatus status;
   final CatalogNotice notice;
+
+  /// كل كتب الفهرس مدموجة مع المحمّلة (المحمّل غير الموجود في الفهرس في
+  /// آخرها). الشاشة تعرض صفحات من استعلام SQLite وتأخذ العنصر من [byId].
   final List<LibraryItem> items;
+  final Map<String, LibraryItem> byId;
   final Map<String, BookTask> tasks;
+
+  /// يزيد كلما تغيّر الفهرس أو الكتب المحمّلة: قوائم الصفحات تعيد الاستعلام.
+  final int catalogRevision;
+
+  /// الكتب المحمّلة (تبويب «المحمّلة» وإدارة الكتب في الإعدادات).
+  List<LibraryItem> get installedItems =>
+      items.where((i) => i.installed != null).toList();
+
+  /// حجم نصوص الكتب المحمّلة كلها.
+  int get installedBytes =>
+      items.fold(0, (n, i) => n + (i.installed?.bytes ?? 0));
 
   /// التحميل يحتاج اتصالاً: يُعطَّل زر الكتب غير المحمّلة عند الانقطاع.
   bool get isOffline => notice == CatalogNotice.offline;
 
-  LibraryItem? item(String id) {
-    for (final i in items) {
-      if (i.id == id) return i;
-    }
-    return null;
-  }
+  LibraryItem? item(String id) => byId[id];
 
   LibraryState copyWith({
     CatalogStatus? status,
@@ -132,16 +151,22 @@ class LibraryState {
     status: status ?? this.status,
     notice: notice ?? this.notice,
     items: items ?? this.items,
+    byId: items == null ? byId : {for (final i in items) i.id: i},
     tasks: tasks ?? this.tasks,
+    catalogRevision: items == null ? catalogRevision : catalogRevision + 1,
   );
 }
 
 final libraryControllerProvider =
     NotifierProvider<LibraryController, LibraryState>(LibraryController.new);
 
+/// أقل مدة بين جلبين تلقائيين للفهرس عند فتح المكتبة (§18.5).
+const catalogRefreshInterval = Duration(hours: 6);
+
 class LibraryController extends Notifier<LibraryState> {
   final _tokens = <String, CancelToken>{};
-  Catalog? _catalog;
+  final _entries = <String, CatalogBook>{};
+  List<CatalogBook> _catalogBooks = const [];
   List<InstalledBook> _installed = const [];
 
   @override
@@ -151,13 +176,16 @@ class LibraryController extends Notifier<LibraryState> {
         t.cancel();
       }
     });
-    Future.microtask(refresh);
+    Future.microtask(() => refresh(force: false));
     return const LibraryState(status: CatalogStatus.loading);
   }
 
   BookRepository get _books => ref.read(bookRepositoryProvider);
 
-  Future<void> refresh() async {
+  /// يعرض الفهرس المحفوظ في SQLite فوراً ثم يجلب الجديد. [force] = false
+  /// (عند فتح المكتبة) لا يجلب إن مرّ على آخر جلب أقل من 6 ساعات؛ السحب
+  /// للتحديث و«إعادة المحاولة» يجلبان دائماً.
+  Future<void> refresh({bool force = true}) async {
     if (!ref.mounted) return;
     if (state.items.isEmpty) {
       state = state.copyWith(
@@ -166,25 +194,78 @@ class LibraryController extends Notifier<LibraryState> {
       );
     }
     await _loadInstalled();
+    final store = ref.read(catalogStoreProvider);
     final repo = ref.read(catalogRepositoryProvider);
+    final now = ref.read(clockProvider)().millisecondsSinceEpoch;
+    var snapshot = await _loadSnapshot(store);
+    if (snapshot == null) {
+      // ترحيل: نسخة catalog.json القديمة تُعرض حتى يصل فهرس schema 2.
+      final legacy = repo.readLegacyCache();
+      if (legacy != null) {
+        try {
+          await store.replace(legacy, fetchedAt: 0);
+        } on Exception {
+          // العرض من الذاكرة يكفي.
+        }
+        snapshot = CatalogSnapshot(catalog: legacy, etag: null, fetchedAt: 0);
+      }
+    }
+    _setCatalog(snapshot?.catalog);
+    if (!ref.mounted) return;
+
+    final current = snapshot != null && snapshot.catalog.schema == 2;
+    final fresh =
+        current &&
+        now - snapshot.fetchedAt < catalogRefreshInterval.inMilliseconds;
+    if (!force && fresh) {
+      state = state.copyWith(
+        status: CatalogStatus.ready,
+        notice: CatalogNotice.none,
+        items: _merge(),
+      );
+      return;
+    }
+    if (snapshot != null) {
+      // يُعرض المحفوظ أثناء الجلب.
+      state = state.copyWith(status: CatalogStatus.ready, items: _merge());
+    }
+
     var notice = CatalogNotice.none;
     CatalogFailure? failure;
     try {
-      _catalog = await repo.fetch();
+      final result = await repo.fetch(etag: current ? snapshot.etag : null);
+      switch (result) {
+        case CatalogFetched(:final catalog, :final etag):
+          _setCatalog(catalog);
+          try {
+            await store.replace(catalog, etag: etag, fetchedAt: now);
+            repo.deleteLegacyCache();
+          } on Exception {
+            // يُعرض من الذاكرة؛ يُعاد الحفظ في الجلب التالي.
+          }
+        case CatalogNotModified():
+          try {
+            await store.touch(now);
+          } on Exception {
+            // اختياري.
+          }
+      }
     } on CatalogFetchException catch (e) {
       failure = e.failure;
-      _catalog = repo.readCache();
       notice = switch (e.failure) {
         CatalogFailure.network => CatalogNotice.offline,
         CatalogFailure.unsupportedSchema => CatalogNotice.updateApp,
         CatalogFailure.server =>
-          _catalog != null ? CatalogNotice.stale : CatalogNotice.error,
+          snapshot != null ? CatalogNotice.stale : CatalogNotice.error,
       };
     }
     if (!ref.mounted) return;
     final items = _merge();
     final CatalogStatus status;
-    if (_catalog == null && items.isEmpty && failure != null) {
+    if (_catalogBooks.isEmpty &&
+        snapshot == null &&
+        items.isEmpty &&
+        failure != null) {
       status = failure == CatalogFailure.network
           ? CatalogStatus.offlineEmpty
           : CatalogStatus.errorEmpty;
@@ -192,6 +273,21 @@ class LibraryController extends Notifier<LibraryState> {
       status = CatalogStatus.ready;
     }
     state = state.copyWith(status: status, notice: notice, items: items);
+  }
+
+  Future<CatalogSnapshot?> _loadSnapshot(CatalogStore store) async {
+    try {
+      return await store.load();
+    } on Exception {
+      return null;
+    }
+  }
+
+  void _setCatalog(Catalog? catalog) {
+    _catalogBooks = catalog?.books ?? const [];
+    _entries
+      ..clear()
+      ..addEntries(_catalogBooks.map((b) => MapEntry(b.id, b)));
   }
 
   Future<void> _loadInstalled() async {
@@ -205,7 +301,7 @@ class LibraryController extends Notifier<LibraryState> {
   List<LibraryItem> _merge() {
     final local = {for (final b in _installed) b.id: b};
     final items = <LibraryItem>[];
-    for (final e in _catalog?.books ?? const <CatalogBook>[]) {
+    for (final e in _catalogBooks) {
       items.add(LibraryItem(entry: e, installed: local.remove(e.id)));
     }
     for (final b in local.values) {
@@ -227,7 +323,7 @@ class LibraryController extends Notifier<LibraryState> {
 
   /// يحمّل الإصدار الذي في الفهرس (تحميل أول أو تحديث).
   Future<DownloadOutcome> download(String id) async {
-    final entry = _catalog?.byId(id);
+    final entry = _entries[id];
     final url = entry == null
         ? null
         : ref.read(catalogRepositoryProvider).bookUrl(entry);

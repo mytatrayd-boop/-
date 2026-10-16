@@ -10,7 +10,7 @@ void main() {
   late FakeLibraryServer server;
   late Map<String, Object?> entry;
   late BookDownloader downloader;
-  final url = Uri.parse('${testBaseUrl}books/mini/mini.v1.json.gz');
+  final url = Uri.parse('${testBaseUrl}books/ni/mini/mini.v1.json.gz');
 
   setUp(() {
     server = FakeLibraryServer();
@@ -28,8 +28,8 @@ void main() {
     CancelToken? cancel,
   }) => downloader.download(
     url,
-    expectedSha256: sha ?? entry['sha256']! as String,
-    expectedSize: size ?? entry['size_bytes']! as int,
+    expectedSha256: sha ?? entry['sha']! as String,
+    expectedSize: size ?? entry['sz']! as int,
     onProgress: onProgress,
     cancel: cancel,
   );
@@ -41,10 +41,10 @@ void main() {
   test('ينزّل ويتحقق من sha256 مع تقدّم متزايد ينتهي بالحجم الكامل', () async {
     final progress = <int>[];
     final bytes = await run(onProgress: (r, t) => progress.add(r));
-    expect(bytes, server.files['books/mini/mini.v1.json.gz']);
+    expect(bytes, server.files['books/ni/mini/mini.v1.json.gz']);
     expect(progress.length, greaterThan(1));
     expect(progress, orderedEquals([...progress]..sort()));
-    expect(progress.last, entry['size_bytes']);
+    expect(progress.last, entry['sz']);
   });
 
   test('sha256 لا يطابق ← integrity', () async {
@@ -57,7 +57,7 @@ void main() {
 
   test('ملف أصغر من المعلن ← integrity', () async {
     await expectLater(
-      run(size: (entry['size_bytes']! as int) + 1),
+      run(size: (entry['sz']! as int) + 1),
       failsWith(DownloadFailure.integrity),
     );
   });
