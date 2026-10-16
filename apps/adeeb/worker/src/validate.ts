@@ -18,7 +18,7 @@ export interface AskRequest {
 export type Validation<T> = { ok: true; value: T } | { ok: false; code: "BAD_REQUEST" | "UPGRADE_REQUIRED" };
 
 /** معرّف الفقرة (ARCHITECTURE §4.2): `<book>-b\d{3}-p\d{5}`. */
-export const PARAGRAPH_ID = /^[a-z]{2,12}-b\d{3}-p\d{5}$/;
+export const PARAGRAPH_ID = /^(?:[a-z]{2,12}|o\d{5})-b\d{3,4}-p\d{5}$/;
 const DEVICE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CLIENT = /^adeeb-(android|ios)\/(\d{1,9})$/;
 const MAX_TITLE_CHARS = 200;
