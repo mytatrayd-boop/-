@@ -8,4 +8,5 @@ android/
 assets/*
 !assets/README.md
 build_model/
+build_cmp/
 out/
