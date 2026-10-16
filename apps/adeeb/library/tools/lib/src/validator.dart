@@ -64,6 +64,10 @@ final Map<String, RegExp> footnotePatterns = {
 final pagePattern = RegExp(r'^V\d{2,}P\d{3,}$');
 
 final _bookId = RegExp(r'^[a-z]{2,12}$');
+
+/// معرّف كتاب الخط الآلي (ARCHITECTURE §18.5): `o00412`، ويقبل معرّفات الكتب الخمسة أيضاً.
+/// يُستعمل مع `autoIds` فقط؛ تدقيق المكتبة الحالية (schema 1) لا يتغير.
+final autoBookIdPattern = RegExp(r'^[a-z][a-z0-9]{1,11}$');
 final _date = RegExp(r'^\d{4}-\d{2}-\d{2}$');
 final _control = RegExp('[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u200B\u200D-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\uE000-\uF8FF]');
 
@@ -76,6 +80,7 @@ List<Issue> validateBookBytes(
   String? expectedId,
   int? expectedVersion,
   ValidationExceptions exceptions = const {},
+  bool autoIds = false,
 }) {
   final issues = <Issue>[];
   if (bytes.length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
@@ -97,7 +102,7 @@ List<Issue> validateBookBytes(
     return [...issues, Issue(where, 'json', 'الجذر ليس كائناً')];
   }
   issues.addAll(validateBook(json, where,
-      expectedId: expectedId, expectedVersion: expectedVersion, exceptions: exceptions));
+      expectedId: expectedId, expectedVersion: expectedVersion, exceptions: exceptions, autoIds: autoIds));
   return issues;
 }
 
@@ -107,6 +112,7 @@ List<Issue> validateBook(
   String? expectedId,
   int? expectedVersion,
   ValidationExceptions exceptions = const {},
+  bool autoIds = false,
 }) {
   final issues = <Issue>[];
   void text(String t, String id, {bool verse = false}) {
@@ -119,7 +125,7 @@ List<Issue> validateBook(
 
   if (b['schema'] != 1) err('schema', 'schema يجب أن يكون 1');
   final id = b['id'];
-  if (id is! String || !_bookId.hasMatch(id)) {
+  if (id is! String || !(autoIds ? autoBookIdPattern : _bookId).hasMatch(id)) {
     err('book_id', 'معرّف الكتاب غير صالح: $id');
     return issues;
   }
@@ -160,7 +166,7 @@ List<Issue> validateBook(
   final seen = <String>{};
   final allParagraphIds = <String>{};
   // عرض الأرقام ثابت لكل الكتب: 3 للباب و5 للفقرة (D17).
-  final chapterRe = RegExp('^${RegExp.escape(id)}-b(\\d{3})\$');
+  final chapterRe = RegExp('^${RegExp.escape(id)}-b(\\d{${autoIds ? '3,4' : '3'}})\$');
   int? prevLevel;
   for (var ci = 0; ci < chapters.length; ci++) {
     final c = chapters[ci];

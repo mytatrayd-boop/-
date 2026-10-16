@@ -248,7 +248,12 @@ class OpenitiRecipe {
     this.headings = const {},
     this.redirects = const {},
     this.validationExceptions = const {},
+    this.lenient = false,
   });
+
+  /// الوضع الآلي (`convert --auto`، ARCHITECTURE §18.3): الوسم أو السطر المجهول لا يوقف التحويل
+  /// بل يُعدّ بالبادئة [autoUnknownPrefix] ويدخل بوابات الجودة. لا يُكتب في الوصفة.
+  final bool lenient;
 
   final String id;
   final int version;
@@ -380,7 +385,7 @@ class OpenitiRecipe {
         if (validationExceptions.isNotEmpty) 'validation_exceptions': validationExceptions,
       };
 
-  static OpenitiRecipe fromJson(Map<String, Object?> j) {
+  static OpenitiRecipe fromJson(Map<String, Object?> j, {bool lenient = false}) {
     if (!isOpenitiJson(j)) throw OpenitiException('الوصفة ليست بصيغة openiti (format).');
     final title = (j['title']! as Map).cast<String, Object?>();
     final author = (j['author']! as Map).cast<String, Object?>();
@@ -437,6 +442,7 @@ class OpenitiRecipe {
         ...((j['validation_exceptions'] as Map?) ?? const {})
             .map((k, v) => MapEntry(k as String, [...(v as List).cast<String>()])),
       },
+      lenient: lenient,
     );
   }
 
@@ -549,6 +555,47 @@ bool _startsNewReport(String content, OpenitiRecipe recipe, OpenitiParagraph pre
 /// أقسام ليست من نص المؤلف بوسم OpenITI صريح.
 const skippedSectionTags = {'PARATEXT', 'EDITOR'};
 
+/// بادئة إحصاءات ما عدّه الوضع الآلي مجهولاً (يُجمع في بوابة «محارف مجهولة/وسوم متبقية»).
+const autoUnknownPrefix = 'مجهول (آلي): ';
+
+/// الوضع الآلي: يحذف كل معقوف لا يقابله آخر (أو يتداخل أو يمتد عبر عنوان أو يبقى مفتوحاً في
+/// سطر عنوان) ويعدّه، فيبقى ما سواه لسياسة المعقوفات العادية.
+String _dropUnmatchedBrackets(String b, RemovalStats stats) {
+  final drop = <int>{};
+  int? open;
+  var openOnHeading = false;
+  var lineIsHeading = b.startsWith('### ');
+  for (var k = 0; k < b.length; k++) {
+    final c = b.codeUnitAt(k);
+    if (c == 0x0A) {
+      final nextHeading = b.startsWith('### ', k + 1);
+      if (open != null && (openOnHeading || nextHeading)) {
+        drop.add(open);
+        open = null;
+      }
+      lineIsHeading = nextHeading;
+    } else if (c == 0x5B) {
+      if (open != null) drop.add(open);
+      open = k;
+      openOnHeading = lineIsHeading;
+    } else if (c == 0x5D) {
+      if (open == null) {
+        drop.add(k);
+      } else {
+        open = null;
+      }
+    }
+  }
+  if (open != null) drop.add(open);
+  if (drop.isEmpty) return b;
+  stats.add('${autoUnknownPrefix}معقوف بلا مقابل (حُذف المعقوف وحده)', drop.length);
+  final out = StringBuffer();
+  for (var k = 0; k < b.length; k++) {
+    if (!drop.contains(k)) out.writeCharCode(b.codeUnitAt(k));
+  }
+  return out.toString();
+}
+
 class OpenitiDocument {
   OpenitiDocument(this.meta, this.items);
   final Map<String, String> meta;
@@ -576,6 +623,11 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
       break;
     }
     final m = RegExp(r'^#META#\s*(\S+)\s*::\s*(.*)$').firstMatch(l);
+    if (m == null && recipe.lenient) {
+      // ترويسات أقدم بصيغة «#META# key: value» شائعة في الإصدار؛ لا تدخل النص.
+      stats.add(l.startsWith('#META#') ? 'سطر ترويسة بصيغة أخرى (تُجوهل)' : '${autoUnknownPrefix}سطر ترويسة غير معروف (تُجوهل)');
+      continue;
+    }
     if (m == null) throw OpenitiException('سطر ${i + 1}: سطر ترويسة غير معروف: «$l»');
     meta[m[1]!] = m[2]!.trim();
   }
@@ -636,7 +688,9 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
   }
   // تمريرة 2: المعقوفات (إن طلبتها الوصفة) ولو امتدت على عدة أسطر.
   if (recipe.brackets != null) {
-    final body = _applyBrackets(lines.sublist(i).join('\n'), recipe.brackets!, i, stats);
+    var raw = lines.sublist(i).join('\n');
+    if (recipe.lenient) raw = _dropUnmatchedBrackets(raw, stats);
+    final body = _applyBrackets(raw, recipe.brackets!, i, stats);
     lines.replaceRange(i, lines.length, body.split('\n'));
   }
 
@@ -671,6 +725,13 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
       continue;
     }
 
+    if (recipe.lenient && line.startsWith('### ') && _headingRe.firstMatch(line) == null) {
+      // وسوم OpenITI للتراجم والأحداث (`### $`، `### $$`، `### @`) بداية فقرة؛ وغيرها يُعدّ مجهولاً.
+      stats.add(RegExp(r'^### (\$+|@)').hasMatch(line)
+          ? 'وسم ترجمة/حدث OpenITI (### \$ أو @) عومل بداية فقرة'
+          : '${autoUnknownPrefix}عنوان بوسم غير مدعوم (عومل فقرة)');
+      line = '# ${line.substring(4).replaceFirst(RegExp(r'^[^ء-ي]*'), '')}';
+    }
     if (line.startsWith('### ')) {
       final h = _headingRe.firstMatch(line);
       if (h == null) throw OpenitiException('سطر $lineNo: عنوان بوسم غير مدعوم: «$line»');
@@ -679,20 +740,24 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
       final tagged = _taggedHeadingRe.firstMatch(rest);
       if (tagged != null && rest.startsWith(tagged[1]!)) {
         final tag = tagged[1]!;
-        if (!skippedSectionTags.contains(tag)) {
-          throw OpenitiException('سطر $lineNo: وسم قسم مجهول |$tag|');
+        if (!skippedSectionTags.contains(tag) && recipe.lenient) {
+          stats.add('${autoUnknownPrefix}وسم قسم مجهول |$tag| (عومل عنواناً)');
+          rest = tagged[2]!;
+        } else {
+          if (!skippedSectionTags.contains(tag)) {
+            throw OpenitiException('سطر $lineNo: وسم قسم مجهول |$tag|');
+          }
+          stats.add('قسم محذوف بوسم OpenITI |$tag|');
+          current = null;
+          sectionSkip = true;
+          continue;
         }
-        stats.add('قسم محذوف بوسم OpenITI |$tag|');
-        current = null;
-        sectionSkip = true;
-        continue;
       }
       sectionSkip = false;
       // علامات الصفحة والمعالم داخل سطر العنوان.
       final probe = OpenitiParagraph(lineNo);
       addContent(probe, rest, lineNo);
-      rest = cleanText(probe.raw);
-      _checkUnknown(rest, lineNo);
+      rest = _checkUnknown(cleanText(probe.raw), lineNo, recipe, stats);
       current = null;
       if (rest.isEmpty) {
         stats.add('عنوان فارغ');
@@ -716,6 +781,10 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
       final p = current ?? OpenitiParagraph(lineNo);
       addContent(p, line, lineNo);
       continue;
+    } else if (recipe.lenient) {
+      stats.add('${autoUnknownPrefix}سطر بلا وسم بداية (عومل فقرة)');
+      content = line;
+      continuation = false;
     } else {
       throw OpenitiException('سطر $lineNo: بداية سطر غير معروفة في mARkdown: «${_short(line)}»');
     }
@@ -734,6 +803,15 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
       if (current == null) {
         if (isMarkerOnly) {
           addContent(OpenitiParagraph(lineNo), content, lineNo);
+          continue;
+        }
+        if (recipe.lenient) {
+          stats.add('${autoUnknownPrefix}سطر ملحق ~~ بلا فقرة (عومل فقرة)');
+          final p = OpenitiParagraph(lineNo);
+          items.add(p);
+          pending.add(p);
+          current = p;
+          addContent(p, content, lineNo);
           continue;
         }
         throw OpenitiException('سطر $lineNo: سطر ملحق ~~ بلا فقرة قبله.');
@@ -811,7 +889,17 @@ void _marker(String m, List<OpenitiParagraph> pending, RemovalStats stats, void 
   throw OpenitiException('علامة غير معروفة: $m');
 }
 
-void _checkUnknown(String t, int lineNo) {
+/// محارف الوسم التي يحذفها الوضع الآلي (ويعدّها)؛ الحروف اللاتينية تبقى لتقيسها بوابتها.
+final _unknownSymbols = RegExp(r'[#|~%@$<>*`_{}\\^=+]');
+
+/// يعيد النص كما هو، أو يرمي خطأ عند وسم مجهول؛ وفي الوضع الآلي يحذف رموز الوسم ويعدّها.
+String _checkUnknown(String t, int lineNo, OpenitiRecipe recipe, RemovalStats stats) {
+  if (recipe.lenient) {
+    final n = _unknownSymbols.allMatches(t).length;
+    if (n == 0) return t;
+    stats.add('${autoUnknownPrefix}رمز وسم متبقٍّ (حُذف)', n);
+    return cleanText(t.replaceAll(_unknownSymbols, ' '));
+  }
   final m = _unknownMarkup.firstMatch(t);
   if (m != null) {
     final start = (m.start - 30).clamp(0, t.length);
@@ -821,6 +909,7 @@ void _checkUnknown(String t, int lineNo) {
       'أضف قاعدة صريحة في الوصفة (rules/drop_lines) بعد مراجعته، ولا يُحذف بصمت.',
     );
   }
+  return t;
 }
 
 String _short(String s) => s.length > 80 ? '${s.substring(0, 80)}…' : s;
@@ -833,7 +922,15 @@ String toArabicIndicDigits(int n) =>
     n.toString().split('').map((d) => String.fromCharCode(0x0660 + int.parse(d))).join();
 
 /// يحوّل نص المصدر إلى ملف الكتاب. [sourceBytes] بايتات الملف كما جُلبت (يُتحقق من sha256).
-BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
+///
+/// [restructure] (الوضع الآلي) يعيد ترتيب العناصر بعد القراءة (كشف البنية). [wideChapterIds]
+/// يسمح بأربعة أرقام للباب في كتاب فيه أكثر من 999 باباً (ARCHITECTURE §18.3).
+BuildResult buildOpenitiBook(
+  OpenitiRecipe recipe,
+  List<int> sourceBytes, {
+  List<OpenitiItem> Function(List<OpenitiItem> items, RemovalStats stats)? restructure,
+  bool wideChapterIds = false,
+}) {
   if (!recipe.isPinned) {
     throw StateError('الوصفة غير مثبّتة (sha256/retrieved ناقص): شغّل fetch_openiti أولاً.');
   }
@@ -849,6 +946,7 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
   }
   final stats = RemovalStats();
   final doc = parseOpeniti(source, recipe, stats);
+  final items = restructure == null ? doc.items : restructure(doc.items, stats);
 
   final skip = recipe.skipHeadings.map(cleanText).toSet();
   final chapters = <DraftChapter>[];
@@ -856,7 +954,7 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
   int? skippingLevel;
   Map<String, Object?>? openVerse; // آخر فقرة شعر، لتجميع الأبيات المتتالية.
 
-  for (final item in doc.items) {
+  for (final item in items) {
     switch (item) {
       case OpenitiHeadingItem(:final text, :final pipes):
         openVerse = null;
@@ -900,6 +998,10 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
             }
           }
           title = cleanText(title);
+          if (title.isEmpty && recipe.lenient) {
+            stats.add('${autoUnknownPrefix}عنوان فرغ بعد القواعد (حُذف)');
+            continue;
+          }
           if (title.isEmpty) throw OpenitiException('عنوان «$text» صار فارغاً بعد heading_rules.');
         }
         if (recipe.bareHeading != null && lvl == 1 && title == recipe.bareHeading) {
@@ -922,7 +1024,7 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
             raw = raw.replaceAllMapped(r.pattern, r.expand);
           }
         }
-        final text = cleanText(raw);
+        var text = cleanText(raw);
         if (text.isEmpty) {
           stats.add('فقرة فارغة بعد التنظيف');
           continue;
@@ -943,6 +1045,11 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
           current = DraftChapter(recipe.prefaceTitle!, 1);
           chapters.add(current);
         }
+        if (recipe.lenient && text.contains('%~%') &&
+            (item.lines.length > 1 || text.split('%~%').where((p) => p.trim().isNotEmpty).length > 2)) {
+          stats.add('${autoUnknownPrefix}بيت ممتد على أكثر من سطر أو بأكثر من شطرين (عومل نثراً)');
+          text = cleanText(text.replaceAll('%~%', ' ... '));
+        }
         if (text.contains('%~%')) {
           if (item.lines.length > 1) {
             throw OpenitiException('سطر ${item.line}: بيت (%~%) ممتد على أكثر من سطر؛ أصلحه بقاعدة في الوصفة.');
@@ -958,10 +1065,14 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
           if (halves.length > 2) {
             throw OpenitiException('سطر ${item.line}: أكثر من شطرين في سطر واحد.');
           }
-          for (final h in halves) {
-            _checkUnknown(h, item.line);
+          final cleanHalves = [
+            for (final h in halves) _checkUnknown(h, item.line, recipe, stats),
+          ].where((h) => h.isNotEmpty).toList();
+          if (cleanHalves.isEmpty) {
+            stats.add('فقرة فارغة بعد التنظيف');
+            continue;
           }
-          final verseLine = halves.join('\t');
+          final verseLine = cleanHalves.join('\t');
           if (openVerse != null && identical(current.paragraphs.last, openVerse)) {
             openVerse['text'] = '${openVerse['text']}\n$verseLine';
           } else {
@@ -970,13 +1081,17 @@ BuildResult buildOpenitiBook(OpenitiRecipe recipe, List<int> sourceBytes) {
           }
           continue;
         }
-        _checkUnknown(text, item.line);
+        text = _checkUnknown(text, item.line, recipe, stats);
+        if (text.isEmpty || !RegExp('[ء-ي]').hasMatch(text)) {
+          stats.add('فقرة فارغة بعد التنظيف');
+          continue;
+        }
         openVerse = null;
         current.paragraphs.add({'text': text, if (item.page != null) 'page': item.page});
     }
   }
 
-  final outChapters = finalizeChapters(recipe.id, chapters, stats);
+  final outChapters = finalizeChapters(recipe.id, chapters, stats, allowWide: wideChapterIds);
   final book = <String, Object?>{
     'schema': 1,
     'id': recipe.id,

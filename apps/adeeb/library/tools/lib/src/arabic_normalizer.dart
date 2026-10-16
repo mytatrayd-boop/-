@@ -1,0 +1,1 @@
+../../../../lib/text/arabic_normalizer.dart

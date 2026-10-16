@@ -1,0 +1,87 @@
+# نطاق المكتبة الكبيرة (D30، ARCHITECTURE §18.2) وحدود بوابات الجودة (§18.3).
+# يقرؤه bin/select.dart وbin/convert.dart --auto. كل تعديل هنا مراجَع في git.
+#
+# القاعدة: status=pri، language=ara، uncorrected_OCR=False، المؤلف توفي ≤ 1300هـ،
+# وفي الوسوم وسم من include_tags وليس فيها وسم من exclude_tags.
+# كل وسم يُحسم وحده بالإدراج أولاً: «Shamela@الغريب والمعاجم ولغة الفقه» وسم لغة لا فقه.
+# المختلط (وسم إدراج + وسم استبعاد) يُستبعد بسبب «mixed» حتى يُحسم بالاسم في include_books/exclude_books.
+# الأنماط تعابير نمطية (Dart RegExp) تطابق الوسم كاملاً كما في TSV، مثل «JK@كتب التاريخ».
+
+release:
+  repo: OpenITI/RELEASE
+  tag: v2025.1.9
+  commit: cfc4157a3cf2054c0888f133970a4eaa3e22e58c
+  metadata: metadata/OpenITI_metadata_2025-1-9.tsv
+  metadata_sha256: 10a025fcfc1bf96d218096f0dfe1d9416f9ff277f092c42622cb012cc4da2a61
+
+filters:
+  status: pri
+  language: ara
+  uncorrected_ocr: false
+  max_death_hijri: 1300
+
+include_tags:
+  # الأدب والبلاغة والنقد والأمثال والطرائف
+  - '@(.*[ ])?(ال)?أدب([ ]|$)'
+  - '@.*(البلاغة|الفصاحة|الأمثال|الطرائف|القصص|النوادر)'
+  # الشعر والدواوين والعروض
+  - '@.*(الشعر|دواوين|الدواوين|العروض)'
+  - '^_SHICR'
+  - '^GAL@(poetry|prose|philology|literature-popular|adab)$'
+  # اللغة والمعاجم والغريب والنحو والصرف
+  - '@.*(النحو|الصرف|نحوية|اللغة|اللغوي|الغريب)'
+  - '@(ال)?معاجم'
+  - '^KITAB@lexicographical'
+  - '^GAL@(grammar|lexicography)$'
+  # التاريخ والأخبار والتراجم والطبقات والأنساب والسيرة العامة
+  - '@.*(التاريخ|تاريخية|التواريخ|تواريخ|الأخبار|التراجم|الطبقات|الوفيات|الأنساب|السيرة|سيرة|السير والتاريخ)'
+  - '^GAL@(history|historiography|history-local|history-universal|biography|biography-collective|genealogy)$'
+  # البلدان والجغرافيا والرحلات وأيام العرب
+  - '@.*(البلدان|الجغرافيا|الرحلات|رحلة|أيام العرب)'
+  - '^GAL@(geography|cosmography)$'
+
+exclude_tags:
+  # الحديث ورجاله
+  - '@.*(حديث|الرواة|رجال|الضعفاء|الضعيفة|الثقات|العلل|السؤالات|التخريج|الزوائد|المسانيد|السنن|المصنفات والآثار|مصطلح|مصطح|المسندة|مسندة|الأمالي)'
+  # الفقه وأصوله والفتاوى والقضاء
+  - '@.*(فقه|فقهية|أصول|الفتاوى|فتاوى|القضاء|السياسة الشرعية)'
+  # التفسير وعلوم القرآن والقراءات
+  - '@.*(التفسير|التفاسير|القرآن|القراءات)'
+  # العقيدة والفرق والردود
+  - '@.*(العقيدة|العقائد|عقدية|التوحيد|الفرق والملل|الردود|ردود)'
+  # الرقائق والأذكار والتصوف والسلوك
+  - '@.*(الرقاق|الأذكار|الأدعية|التصوف|السلوك|التزكية|الأخلاق)'
+  # مجموعات مؤلفين خارج النطاق
+  - '@.*(ابن تيمية|ابن القيم|الألباني|ابن أبي الدنيا)'
+  - '^GAL@(fiqh|hadith|hadith-sciences|sciences-hadith|cilm-rijal|quran|quran-sciences|tafsir|dogmatics|theology|sufism|mysticism|usul)$'
+
+# كتب مختلطة حُسمت بالاسم: URI الكتاب ← السبب.
+include_books: {}
+exclude_books: {}
+
+# URI الكتاب ← URI النسخة المختارة بدل pri (استثناء يدوي).
+version_overrides: {}
+
+# حدود بوابات الجودة (ARCHITECTURE §18.3)، ضُبطت على الكتب الخمسة المراجَعة يدوياً.
+gates:
+  unknown_per_10k_reject: 5
+  unknown_per_10k_review: 1
+  footnote_per_10k_reject: 20
+  footnote_per_10k_review: 3
+  removed_ratio_reject: 0.15
+  removed_ratio_review: 0.05
+  latin_ratio_reject: 0.01
+  latin_ratio_review: 0.002
+  duplicate_ratio_reject: 0.03
+  duplicate_ratio_review: 0.015   # البيان 1.15%: أبيات وأخبار يكررها الجاحظ نفسه
+  # الفقرات الأقصر من هذا لا تُعدّ في بوابة التكرار (لازمة أو شطر يتكرر في نص المؤلف).
+  duplicate_min_chars: 40
+  max_paragraph_chars: 20000
+  min_words: 1000
+  # أول 2% من النص يُبحث فيه عن أثر مقدمة محقق أو ناشر.
+  editor_head_ratio: 0.02
+  # «تحقيق» وحدها كلمة عامة («تحقيق الفقهاء» في مقدمة الماوردي)؛ المطلوب صيغ الطبعات.
+  editor_words: '(?<![ء-ي])(تحقيق\s*[:،/]|بتحقيق|تحقيق ودراسة|دراسة وتحقيق|حققه|وحققه|قدم له|وقدم له|الطبعة)(?![ء-ي])'
+  # كشف البنية: أقل من هذا لكل 100 ألف كلمة ← أبواب مولّدة (الجزء/القسم).
+  min_headings_per_100k_words: 2
+  generated_section_paragraphs: 150
