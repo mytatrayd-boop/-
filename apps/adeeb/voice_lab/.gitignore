@@ -10,3 +10,4 @@ assets/*
 build_model/
 build_cmp/
 out/
+__pycache__/
