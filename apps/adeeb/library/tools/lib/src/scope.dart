@@ -228,7 +228,9 @@ Selection _classify(Scope scope, MetadataRow r, Registry registry) {
   if (d > scope.maxDeathHijri) return no('date: $d > ${scope.maxDeathHijri}');
 
   final existing = registry.idOf(book);
-  if (existing != null) return Selection(r, Decision.existing, 'existing: في registry.tsv بالمعرّف $existing', existingId: existing);
+  // «موجودة» للكتب ذات الوصفات اليدوية فقط (D33)؛ الكتاب الآلي المسجّل يبقى مدرجاً فيُعاد تحويله
+  // بمعرّفه نفسه في الدفعات اللاحقة.
+  if (existing != null && !RegExp(r'^o\d{5}$').hasMatch(existing)) return Selection(r, Decision.existing, 'existing: في registry.tsv بالمعرّف $existing', existingId: existing);
 
   if (scope.excludeBooks.containsKey(book)) return no('name: ${scope.excludeBooks[book]}');
   if (scope.includeBooks.containsKey(book)) {
@@ -255,7 +257,7 @@ Selection _classify(Scope scope, MetadataRow r, Registry registry) {
 /// ملف الاختيار TSV (مدخل `convert --auto`): الأعمدة بالترتيب أدناه.
 const selectionColumns = [
   'decision', 'reason', 'version_uri', 'book_uri', 'existing_id', 'date', 'tok_length', 'title_ar', 'author_ar',
-  'title_lat', 'author_lat', 'local_path',
+  'title_lat', 'author_lat', 'local_path', 'tags',
 ];
 
 String _cell(String s) => s.replaceAll(RegExp(r'[\t\n\r]'), ' ');
@@ -266,7 +268,7 @@ String selectionToTsv(List<Selection> sel) {
     final r = s.row;
     b.writeln([
       s.decision.name, s.reason, r.versionUri, r.bookUri, s.existingId ?? '', '${r.deathHijri ?? ''}',
-      '${r.tokLength}', r.titleAr, r.authorAr, r.titleLat, r.authorLat, r.localPath,
+      '${r.tokLength}', r.titleAr, r.authorAr, r.titleLat, r.authorLat, r.localPath, r.tags.join('::'),
     ].map(_cell).join('\t'));
   }
   return b.toString();
@@ -285,6 +287,12 @@ class SelectedBook {
   String get titleLat => f['title_lat']!;
   String get authorLat => f['author_lat']!;
   String get localPath => f['local_path']!;
+
+  /// وسوم المصدر (للتصنيف في الفهرس)؛ فارغة في ملف اختيار قديم بلا العمود.
+  List<String> get tags => [
+        for (final t in (f['tags'] ?? '').split('::'))
+          if (t.trim().isNotEmpty) t.trim(),
+      ];
 }
 
 List<SelectedBook> parseSelectionTsv(String text) {

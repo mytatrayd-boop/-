@@ -72,15 +72,24 @@ List<String> idsOf(Map<String, Object?> b) => [
         for (final p in (c['paragraphs']! as List).cast<Map<String, Object?>>()) p['id']! as String,
     ];
 
+/// سجل المكتبة بالكتب الخمسة وحدها (أول ستة أسطر)، فلا تتأثر الاختبارات بالكتب الآلية المسجلة بعدها.
+String fiveRegistry() => '${File('../registry.tsv').readAsLinesSync().take(6).join('\n')}\n';
+
 void main() {
   group('scope.yaml والاختيار (6.1)', () {
     final rows = parseMetadataTsv(File('test/fixtures/openiti_metadata_sample.tsv').readAsStringSync());
-    final registry = Registry.load(File('../registry.tsv'));
+    final registry = Registry.parse(fiveRegistry());
     final sel = selectBooks(scope, rows, registry);
     String decisionOf(String uri) {
       final s = sel.firstWhere((s) => s.row.versionUri == uri);
       return '${s.decision.name}|${s.reason.split(':').first}';
     }
+
+    test('الكتاب الآلي المسجّل يبقى مدرجاً (لا «موجودة»)', () {
+      final reg = Registry.parse('${fiveRegistry()}0001AwsIbnHajar.Diwan\to00001\t1\t0001AwsIbnHajar.Diwan.JK007502-ara1\n');
+      final s = selectBooks(scope, rows, reg).firstWhere((s) => s.row.versionUri == '0001AwsIbnHajar.Diwan.JK007502-ara1');
+      expect(s.decision, Decision.include);
+    });
 
     test('scope.yaml يُقرأ ويثبّت إصدار 2025.1.9', () {
       expect(scope.releaseCommit, 'cfc4157a3cf2054c0888f133970a4eaa3e22e58c');
@@ -169,7 +178,7 @@ void main() {
 
   group('registry.tsv', () {
     test('سجل المكتبة: الخمسة بمعرّفاتها', () {
-      final r = Registry.load(File('../registry.tsv'));
+      final r = Registry.parse(fiveRegistry());
       expect(r.idOf('0139IbnMuqaffac.KalilaWaDimna'), 'kalila');
       expect(r.idOf('0450AbuHasanMawardi.AdabDunyaWaDin'), 'adab');
       expect(r.nextId(), 'o00001');
@@ -177,7 +186,7 @@ void main() {
 
     test('إلحاقي: معرّف جديد بالترتيب، وثابت عند إعادة الطلب، والملف القديم بادئة للجديد', () {
       final dir = Directory.systemTemp.createTempSync('reg');
-      final f = File('${dir.path}/registry.tsv')..writeAsStringSync(File('../registry.tsv').readAsStringSync());
+      final f = File('${dir.path}/registry.tsv')..writeAsStringSync(fiveRegistry());
       final before = f.readAsStringSync();
       final r = Registry.load(f);
       expect(r.assign('0300A.B', '0300A.B.X-ara1'), 'o00001');
@@ -341,7 +350,7 @@ void main() {
       final dir = Directory.systemTemp.createTempSync('batch');
       final src = Directory('${dir.path}/src')..createSync();
       final out = Directory('${dir.path}/out');
-      final reg = File('${dir.path}/registry.tsv')..writeAsStringSync(File('../registry.tsv').readAsStringSync());
+      final reg = File('${dir.path}/registry.tsv')..writeAsStringSync(fiveRegistry());
       String row(String uri) => [
             'include', 'tags: x', uri, bookUriOf(uri), '', '300', '1000', 'كتاب', 'مؤلف', 'Kitab', 'Author', 'data/$uri',
           ].join('\t');
@@ -377,6 +386,9 @@ void main() {
       final f1 = File('${out.path}/books/01/o00001/o00001.v1.json.gz');
       expect(f1.existsSync(), isTrue);
       final bytes = f1.readAsBytesSync();
+      // الصيغة 2: أعضاء gzip لكل باب وفهرس جانبي صحيح.
+      final ix = jsonDecode(File(indexPathFor(f1.path)).readAsStringSync()) as Map<String, Object?>;
+      expect(checkBookV2Index(bytes, ix, decodeGzJson(bytes)), isEmpty);
 
       // التشغيل مرة ثانية بالمصدر نفسه: لا إصدار جديد ولا تغيير ولا معرّف جديد.
       final r2 = run();

@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'auto_convert.dart';
-import 'book_builder.dart';
+import 'book_v2.dart';
 import 'registry.dart';
 import 'scope.dart';
 
@@ -166,9 +166,8 @@ BatchReport runAutoBatch({
     if (prev != null && _sameContent(prev.$2, out.json!)) {
       v = prev.$1; // المحتوى نفسه: لا إصدار جديد.
     } else {
-      final f = File('${outDir.path}/${autoBookRelativePath(id, v)}');
-      f.parent.createSync(recursive: true);
-      f.writeAsBytesSync(gzipDeterministic(out.json!));
+      // الصيغة 2: عضو gzip لكل باب وفهرس جانبي بالإزاحات (§18.4، §19).
+      writeBookV2(outDir, autoBookRelativePath(id, v), jsonDecode(utf8.decode(out.json!)) as Map<String, Object?>);
     }
     reports.add(BookReport(s.versionUri, s.titleAr, out.decision, out.reasons, out.metrics,
         id: id, version: v, file: autoBookRelativePath(id, v), generated: out.generated, unknown: out.unknown));
