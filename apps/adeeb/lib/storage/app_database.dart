@@ -10,7 +10,7 @@ import 'search_index.dart';
 import 'write_queue.dart';
 
 /// الترحيل رقم i ينقل القاعدة من الإصدار i إلى i+1. لا يُعدَّل ترحيل منشور.
-final List<void Function(Database)> migrations = [_v1, _v2, _v3];
+final List<void Function(Database)> migrations = [_v1, _v2, _v3, _v4];
 
 int get schemaVersion => migrations.length;
 
@@ -142,4 +142,10 @@ void _v2(Database db) {
 void _v3(Database db) {
   db.execute(createSearchIndexSql);
   indexAllParagraphs(db);
+}
+
+/// الإصدار 4: نص النطق المشكول `tts` (اختياري) للفقرة؛ للصوت فقط.
+/// الكتب المثبّتة قبله بلا tts حتى يُحدَّث الكتاب.
+void _v4(Database db) {
+  db.execute('ALTER TABLE paragraphs ADD COLUMN tts TEXT');
 }

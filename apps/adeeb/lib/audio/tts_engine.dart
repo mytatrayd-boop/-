@@ -68,6 +68,10 @@ abstract interface class TtsEngine {
 
   /// يفتح إعدادات «تحويل النص إلى كلام» في النظام. false إن تعذّر.
   Future<bool> openInstallSettings();
+
+  /// يفتح صفحة محرّك Google للنطق (com.google.android.tts) في المتجر،
+  /// وإلا في المتصفح. false إن تعذّر.
+  Future<bool> openVoiceStore();
 }
 
 /// ما يُعرض في الإشعار وشاشة القفل.

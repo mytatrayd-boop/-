@@ -1,0 +1,13 @@
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+# يُولَّد في CI بـ flutter create
+android/
+.metadata
+# النموذج والكتب تُنسخ في CI وقت البناء
+assets/*
+!assets/README.md
+build_model/
+build_cmp/
+out/
+__pycache__/

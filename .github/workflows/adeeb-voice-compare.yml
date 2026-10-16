@@ -1,0 +1,67 @@
+name: Adeeb — voice comparison WAVs (T0b)
+
+# بعد استماع المالك لـ MMS («أخطاء لغوية كثيرة»): الفقرات الأربع نفسها بأربعة متغيرات
+# A=MMS، B=CATT ثم MMS، C=miro، D=CATT ثم miro. artifact واحد فيه WAV ونص المدخلات.
+# بلا APK. نموذج MMS من cache سير adeeb-voice-lab.yml (المفتاح نفسه)؛ إن انتهى الـ cache
+# شغّل ذلك السير أولاً. D29 (تعديل).
+on:
+  push:
+    paths:
+      - 'apps/adeeb/voice_lab/tools/compare_tts.py'
+      - '.github/workflows/adeeb-voice-compare.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CATT_URL: https://github.com/abjadai/catt/releases/download/v2/ed_model_onnx.zip
+  CATT_SHA256: 75d2a6360725c7e0bbb238b5a950f621fb8e30b21ad7c65e91e0f36759bcb3ce
+  MIRO_URL: https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_miro-high.tar.bz2
+  MIRO_SHA256: 2933174b5ca4e4d12690c3970e1c4a3828e9edf3df85b4cff189c34b1519866a
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/adeeb/voice_lab } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.10' }
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: apps/adeeb/voice_lab/build_model/out
+          key: voice-ara-mms-int8-${{ hashFiles('apps/adeeb/voice_lab/tools/convert_mms.py') }}
+          fail-on-cache-miss: true
+
+      - name: Download CATT (ED, ONNX) and miro
+        run: |
+          mkdir -p build_cmp/dl && cd build_cmp/dl
+          curl -fsSL --retry 5 --retry-all-errors -o catt.zip "$CATT_URL"
+          curl -fsSL --retry 5 --retry-all-errors -o miro.tar.bz2 "$MIRO_URL"
+          echo "$CATT_SHA256  catt.zip" | sha256sum -c
+          echo "$MIRO_SHA256  miro.tar.bz2" | sha256sum -c
+          unzip -q catt.zip -d ../catt && tar xjf miro.tar.bz2 -C ..
+          ls -l ../catt ../vits-piper-ar_JO-SA_miro-high
+
+      - name: Install deps
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q "numpy<2" tqdm onnx==1.16.2 onnxruntime==1.22.1 sherpa-onnx==1.13.8 soundfile
+          # catt-tashkeel (Apache-2.0) pins onnxruntime-gpu; the CPU build is enough here.
+          pip install -q --no-deps catt-tashkeel==1.0.2
+
+      - name: Generate p1..p4 x A..D
+        run: |
+          mkdir -p build_cmp/out
+          python -I tools/compare_tts.py build_model/out build_cmp/vits-piper-ar_JO-SA_miro-high \
+            build_cmp/catt ../library/books build_cmp/out | tee build_cmp/out/run.log
+          ls -l build_cmp/out
+          { echo '## Voice comparison (A=MMS, B=CATT+MMS, C=miro, D=CATT+miro)'; echo '```'; cat build_cmp/out/run.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-compare-wav
+          path: apps/adeeb/voice_lab/build_cmp/out/
+          if-no-files-found: error

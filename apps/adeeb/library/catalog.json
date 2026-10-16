@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "catalog_version": 1,
-  "updated": "2026-10-12",
+  "catalog_version": 2,
+  "updated": "2026-10-16",
   "books": [
     {
       "id": "adab",
@@ -14,11 +14,11 @@
         "en": "al-Mawardi"
       },
       "author_death_hijri": 450,
-      "version": 1,
-      "file": "books/adab/adab.v1.json.gz",
-      "sha256": "4cd01d092db9eff9f14dec038a08dc56709cbd9df8f9a738edbc7e16c68b1154",
-      "size_bytes": 257241,
-      "uncompressed_bytes": 1012969,
+      "version": 2,
+      "file": "books/adab/adab.v2.json.gz",
+      "sha256": "fe79f42d3cdb5707e44140486d4f9bf1c6322764d169aedfb1cfc6c9698173bf",
+      "size_bytes": 637377,
+      "uncompressed_bytes": 2498788,
       "paragraph_count": 3070,
       "diacritics": "none",
       "source": {
@@ -38,11 +38,11 @@
         "en": "al-Jahiz"
       },
       "author_death_hijri": 255,
-      "version": 1,
-      "file": "books/bayan/bayan.v1.json.gz",
-      "sha256": "97ff085ecbf97a1e49f75eeb31c67730c218cb3f788418145fe95c5d0085a649",
-      "size_bytes": 512782,
-      "uncompressed_bytes": 1944305,
+      "version": 2,
+      "file": "books/bayan/bayan.v2.json.gz",
+      "sha256": "a9df31b572fcd69d5dbd7e66e82e27f98c6f9be84863fa20a39887b961993d20",
+      "size_bytes": 1256753,
+      "uncompressed_bytes": 4642003,
       "paragraph_count": 6903,
       "diacritics": "none",
       "source": {
@@ -62,11 +62,11 @@
         "en": "Ibn al-Muqaffa'"
       },
       "author_death_hijri": 142,
-      "version": 1,
-      "file": "books/kalila/kalila.v1.json.gz",
-      "sha256": "86e8c38011eddc53bb203c70af057bff11d9e57682635bb85bbef98f7d22f3e6",
-      "size_bytes": 119900,
-      "uncompressed_bytes": 428417,
+      "version": 2,
+      "file": "books/kalila/kalila.v2.json.gz",
+      "sha256": "4495c3efeaaec371ed6be72d217795c9553e626a43b505c7a13e5edf00141cdb",
+      "size_bytes": 303701,
+      "uncompressed_bytes": 1146968,
       "paragraph_count": 175,
       "diacritics": "none",
       "source": {
@@ -86,11 +86,11 @@
         "en": "al-Mubarrad"
       },
       "author_death_hijri": 285,
-      "version": 1,
-      "file": "books/kamil/kamil.v1.json.gz",
-      "sha256": "61a9acfcdfb62aab13c8cd5e4afefd9758d166b348f8376b417822d87ef95b92",
-      "size_bytes": 569581,
-      "uncompressed_bytes": 2170449,
+      "version": 2,
+      "file": "books/kamil/kamil.v2.json.gz",
+      "sha256": "7928beeb62c69c8a12b2007641b75d1c3b0333db29e0d1b3f293dca2a7921f81",
+      "size_bytes": 1396159,
+      "uncompressed_bytes": 5221326,
       "paragraph_count": 7283,
       "diacritics": "none",
       "source": {
@@ -110,11 +110,11 @@
         "en": "Ibn Qutayba"
       },
       "author_death_hijri": 276,
-      "version": 1,
-      "file": "books/uyun/uyun.v1.json.gz",
-      "sha256": "c1f170666425bfe25f3467ee32de5bd24c6170a6218ed3220aa0b4706ada0545",
-      "size_bytes": 672355,
-      "uncompressed_bytes": 2571361,
+      "version": 2,
+      "file": "books/uyun/uyun.v2.json.gz",
+      "sha256": "ec3a33bcfe835793f6235b6992c1561855fd434f1da570ed6e2b809854a45649",
+      "size_bytes": 1641889,
+      "uncompressed_bytes": 6103094,
       "paragraph_count": 10189,
       "diacritics": "none",
       "source": {

@@ -575,7 +575,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get audioNoVoiceBody =>
-      'لتستمع إلى الكتب ثبّت الصوت العربي من إعدادات الهاتف: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.';
+      'لتستمع إلى الكتب ثبّت محرّك Google للنطق: اضغط «ثبّت صوت قوقل من المتجر» وثبّت «Speech Recognition & Synthesis from Google»، ثم افتح إعدادات الصوت: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.';
+
+  @override
+  String get audioInstallGoogleVoice => 'ثبّت صوت قوقل من المتجر';
 
   @override
   String get audioOpenVoiceSettings => 'افتح إعدادات الصوت';

@@ -1,0 +1,32 @@
+name: adeeb_voice_lab
+description: "تجربة T0 للصوت العربي المدمج (sherpa_onnx + MMS). ليست جزءاً من التطبيق."
+publish_to: 'none'
+version: 0.0.1+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  path_provider: ^2.1.6
+  sherpa_onnx: 1.13.8
+  just_audio: ^0.10.6
+  # تقسيم النطق نفسه الذي سيستخدمه المشغّل (lib/audio/speech_text.dart).
+  adeeb:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  # يملؤه سير CI (adeeb-voice-lab.yml): model.int8.onnx وtokens.txt والكتب الخمسة.
+  assets:
+    - assets/

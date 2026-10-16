@@ -25,24 +25,28 @@ ReaderBook testBook() => ReaderBook.fromRows(
       chapterId: 'bk-b001',
       kind: 'prose',
       text: 'فقرة أولى.',
+      tts: null,
     ),
     (
       id: 'bk-b001-p00002',
       chapterId: 'bk-b001',
       kind: 'prose',
       text: 'فقرة ثانية.',
+      tts: null,
     ),
     (
       id: 'bk-b002-p00001',
       chapterId: 'bk-b002',
       kind: 'verse',
       text: 'شطر أ\tشطر ب',
+      tts: null,
     ),
     (
       id: 'bk-b002-p00002',
       chapterId: 'bk-b002',
       kind: 'prose',
       text: 'فقرة أخيرة.',
+      tts: null,
     ),
   ],
 );
@@ -143,6 +147,39 @@ void main() {
     expect(player.state.active, isFalse);
     expect(media.activations, 0);
     expect(tts.spoken, isEmpty);
+  });
+
+  test('يُنطق tts المشكول إن وُجد، والنص المعروض يبقى الأصل', () async {
+    final withTts = ReaderBook.fromRows(
+      id: 'bk',
+      title: const LocalizedName(ar: 'كتاب الاختبار'),
+      author: const LocalizedName(ar: 'مؤلف الاختبار'),
+      authorDeathHijri: 100,
+      rawChapters: const [(id: 'bk-b001', title: 'الباب الأول', level: 1)],
+      rawParagraphs: const [
+        (
+          id: 'bk-b001-p00001',
+          chapterId: 'bk-b001',
+          kind: 'prose',
+          text: 'فقرة أولى.',
+          tts: 'فِقْرَةٌ أُولَى.',
+        ),
+        (
+          id: 'bk-b001-p00002',
+          chapterId: 'bk-b001',
+          kind: 'verse',
+          text: 'شطر أ\tشطر ب',
+          tts: 'شَطْرُ أ\tشَطْرُ ب',
+        ),
+      ],
+    );
+    await player.start(withTts, 0);
+    await settle();
+    expect(tts.spoken, ['فِقْرَةٌ أُولَى.']);
+    expect(player.state.current!.text, 'فقرة أولى.');
+    tts.finish();
+    await settle();
+    expect(tts.spoken.last, 'شَطْرُ أ');
   });
 
   test('إيقاف مؤقت ثم استئناف من بداية المقطع، والموضع يُحفظ', () async {

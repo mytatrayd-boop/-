@@ -1,0 +1,157 @@
+name: Adeeb — voice lab APK (T0)
+
+# بوابة الصوت T0 (ARCHITECTURE §17، D29). تجربة لا ميزة، ولا تمس adeeb-android.yml.
+# 1) model: يحوّل facebook/mms-tts (ara) إلى ONNX ويكمّمه int8، ويفشل إن لم يكن
+#    tokens.txt بحروف عربية، ثم اختبار دخان بـ sherpa-onnx على CPU الـ CI (ملفا WAV).
+#    النتيجة مخزنة (cache) فلا يُعاد التحويل ما لم يتغير convert_mms.py.
+#    k2-fsa لا تنشر vits-mms-ara جاهزاً في tts-models (فُحص 2026-10-16: 404).
+# 2) apk: تطبيق التجربة voice_lab/ والنموذج والكتب الخمسة مضمَّنة فيه، موقّع بمفتاح
+#    debug، artifact فقط (لا Release ولا نشر).
+on:
+  push:
+    paths:
+      - 'apps/adeeb/voice_lab/**'
+      - '.github/workflows/adeeb-voice-lab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # jaywalnut310/vits (MIT)، الكود الأصلي لنماذج MMS-TTS.
+  VITS_COMMIT: 2e561ba58618d021b5b8323d3765880f7e0ecfdb
+  MMS_URL: https://huggingface.co/facebook/mms-tts/resolve/main/models/ara
+
+jobs:
+  model:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/adeeb/voice_lab } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.10' }
+
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: apps/adeeb/voice_lab/build_model/out
+          key: voice-ara-mms-int8-${{ hashFiles('apps/adeeb/voice_lab/tools/convert_mms.py') }}
+
+      - name: Install converter deps
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install -q "numpy<2" scipy onnx==1.16.2 onnxruntime==1.19.2
+
+      - name: Download MMS ara checkpoint
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p build_model/src && cd build_model/src
+          for f in G_100000.pth config.json vocab.txt; do
+            curl -fsSL --retry 5 --retry-all-errors -o "$f" "$MMS_URL/$f"
+          done
+          ls -l
+          echo "--- vocab.txt"; cat vocab.txt | tr '\n' ' '; echo
+
+      - name: Fetch VITS code (pinned)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git init -q build_model/vits && cd build_model/vits
+          git fetch -q --depth 1 https://github.com/jaywalnut310/vits.git "$VITS_COMMIT"
+          git checkout -q FETCH_HEAD
+          # monotonic_align (Cython) يُستعمل في التدريب فقط؛ بديل بلا بناء للتصدير.
+          printf 'def maximum_path(neg_cent, mask):\n    raise NotImplementedError("training only")\n' > monotonic_align/__init__.py
+
+      - name: Convert to ONNX + int8 (fails if tokens.txt is not Arabic)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          python tools/convert_mms.py --src build_model/src --vits build_model/vits --out build_model/out
+          rm -f build_model/out/model.onnx
+
+      - name: Tokens gate (Arabic script)
+        run: python -I tools/convert_mms.py --check-tokens build_model/out/tokens.txt
+
+      - name: Smoke test with sherpa-onnx (CI CPU)
+        run: |
+          pip install -q sherpa-onnx==1.13.8 soundfile
+          python -I tools/smoke_tts.py build_model/out ../library/books build_model/smoke | tee build_model/smoke.log
+
+      - name: Package model + summary
+        run: |
+          cd build_model/out
+          cat > README.md <<'EOF'
+          Arabic MMS-TTS voice for sherpa-onnx (T0 test build).
+          Source: facebook/mms-tts, models/ara (Meta MMS), https://huggingface.co/facebook/mms-tts
+          License: CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/).
+          Converted to ONNX and quantized to int8 (onnxruntime dynamic quantization) by the Adeeb project.
+          EOF
+          sha256sum model.int8.onnx tokens.txt > SHA256SUMS
+          size=$(stat -c %s model.int8.onnx)
+          gate=$([ "$size" -le 80000000 ] && echo PASS || echo FAIL)
+          {
+            echo "## T0 voice model (mms-tts ara, int8)"
+            echo "- model.int8.onnx: $((size / 1000000)) MB — size gate ≤ 80 MB: **$gate**"
+            echo "- tokens.txt gate: **PASS** (Arabic script)"
+            echo '```'; cat SHA256SUMS; cat ../smoke.log; echo '```'
+            echo "RTF above is on the CI CPU; the phone numbers come from the lab APK."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-ara-mms-int8
+          path: |
+            apps/adeeb/voice_lab/build_model/out/model.int8.onnx
+            apps/adeeb/voice_lab/build_model/out/tokens.txt
+            apps/adeeb/voice_lab/build_model/out/README.md
+            apps/adeeb/voice_lab/build_model/out/SHA256SUMS
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-smoke-wav
+          path: apps/adeeb/voice_lab/build_model/smoke/
+
+  apk:
+    needs: model
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/adeeb/voice_lab } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: voice-ara-mms-int8
+          path: apps/adeeb/voice_lab/assets
+      - name: Bundle the five books
+        run: |
+          cp ../library/books/*/*.json.gz assets/
+          ls -l assets
+
+      - name: Generate Android project
+        # android/ غير مرفوع: قالب Flutter القياسي، معرّف مختلف عن التطبيق فيُثبَّتان معاً.
+        run: flutter create --platforms=android --org com.adeebai --project-name adeeb_voice_lab .
+
+      - name: Build APKs (debug-signed)
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64,android-arm --build-number=${{ github.run_number }}
+
+      - run: |
+          mkdir -p out
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk out/adeeb-voice-lab-arm64.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk out/adeeb-voice-lab-armv7.apk
+          ls -l out
+          echo "## Voice lab APK: install adeeb-voice-lab-arm64.apk (armv7 only for old phones)" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "adeeb-voice-lab-apk-${{ github.run_number }}"
+          path: apps/adeeb/voice_lab/out/
+          if-no-files-found: error

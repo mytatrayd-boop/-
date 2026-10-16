@@ -12,6 +12,7 @@ on:
     paths:
       - 'apps/adeeb/**'
       - '!apps/adeeb/worker/**'
+      - '!apps/adeeb/voice_lab/**'
       - '.github/workflows/adeeb-android.yml'
   workflow_dispatch:
     inputs:

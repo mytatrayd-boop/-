@@ -13,12 +13,16 @@ class BookParagraph {
     required this.id,
     required this.kind,
     required this.text,
+    this.tts,
   });
   final String id;
 
   /// `prose` أو `verse`.
   final String kind;
   final String text;
+
+  /// نص النطق المشكول (اختياري): للصوت فقط؛ العرض والبحث والاقتباس على [text].
+  final String? tts;
 }
 
 class BookChapter {
@@ -202,7 +206,18 @@ BookFile parseBook(String text) {
       if (kind != 'prose' && kind != 'verse') {
         throw LibraryFormatException('نوع فقرة غير معروف: $pid');
       }
-      paragraphs.add(BookParagraph(id: pid, kind: kind as String, text: ptext));
+      final tts = rp['tts'];
+      if (tts != null && tts is! String) {
+        throw LibraryFormatException('tts غير صالح: $pid');
+      }
+      paragraphs.add(
+        BookParagraph(
+          id: pid,
+          kind: kind as String,
+          text: ptext,
+          tts: _optionalString(tts),
+        ),
+      );
     }
     chapters.add(
       BookChapter(

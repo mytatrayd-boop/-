@@ -205,7 +205,7 @@ ReaderBook? readReaderBook(Database db, String bookId) {
       .toList();
   final paragraphs = db
       .select(
-        'SELECT id, chapter_id, kind, text FROM paragraphs WHERE book_id = ? ORDER BY ord',
+        'SELECT id, chapter_id, kind, text, tts FROM paragraphs WHERE book_id = ? ORDER BY ord',
         [bookId],
       )
       .map(
@@ -214,6 +214,7 @@ ReaderBook? readReaderBook(Database db, String bookId) {
           chapterId: r['chapter_id'] as String,
           kind: r['kind'] as String,
           text: r['text'] as String,
+          tts: r['tts'] as String?,
         ),
       )
       .toList();

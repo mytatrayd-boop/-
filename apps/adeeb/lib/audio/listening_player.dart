@@ -287,7 +287,7 @@ class ListeningPlayer {
       final s = _state;
       final book = s.book!;
       final p = book.paragraphs[s.paragraph];
-      final chunks = _chunks ??= speechChunks(p.text, p.kind);
+      final chunks = _chunks ??= speechChunks(p.speechText, p.kind);
       if (_chunk >= chunks.length) {
         if (s.paragraph + 1 >= book.paragraphs.length) {
           _finish();
