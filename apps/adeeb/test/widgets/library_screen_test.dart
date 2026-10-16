@@ -60,10 +60,13 @@ void main() {
     await pumpApp(tester, locale: const Locale('en'));
     expect(find.text('Library'), findsOneWidget);
     expect(directionOf(tester, find.text('Library')), TextDirection.ltr);
-    expect(find.text('Synthetic Test Book — Test Data'), findsOneWidget);
+    // فهرس schema 2 بلا أسماء لاتينية: النقل من ملف الكتاب بعد تحميله.
+    expect(find.text('Synthetic Test Book — Test Data'), findsNothing);
     expect(find.text('بيانات اختبار (d. 100 AH)'), findsOneWidget);
     expect(find.text('1 KB'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Download'), findsOneWidget);
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Download'));
+    await tester.pumpAndSettle();
+    expect(find.text('Synthetic Test Book — Test Data'), findsOneWidget);
     final titleText = tester.widget<Text>(
       find.text('كتاب اختبار اصطناعي').last,
     );
@@ -247,6 +250,8 @@ void main() {
     await pumpApp(tester); // يحفظ نسخة من الفهرس
     await env.preinstall(miniBook());
     env.server.offline = true;
+    // بعد 6 ساعات يُعاد الجلب تلقائياً عند فتح المكتبة فيظهر الانقطاع.
+    env.now = env.now.add(const Duration(hours: 7));
     await tester.pumpWidget(const SizedBox());
     await pumpApp(tester);
     expect(find.text('أنت دون إنترنت — الكتب المحمّلة متاحة'), findsOneWidget);
@@ -280,10 +285,7 @@ void main() {
     await tester.tap(find.text('بيانات اختبار (ت ١٠٠هـ)'));
     await tester.pumpAndSettle();
     expect(find.text('حمّل الكتاب لعرض أبوابه'), findsOneWidget);
-    expect(
-      find.text('المصدر: بيانات اختبار اصطناعية — ملك عام'),
-      findsOneWidget,
-    );
+    expect(find.text('المصدر: OpenITI — ملك عام'), findsOneWidget);
     await tester.tap(find.text('تحميل الكتاب (١ ك.ب)'));
     await tester.pumpAndSettle();
     expect(find.text('الأبواب'), findsOneWidget);
@@ -327,5 +329,174 @@ void main() {
     final cover = tester.getRect(find.byType(BookCard)).top;
     final button = tester.getRect(find.text('تحميل'));
     expect(button.top, greaterThan(cover + 128));
+  });
+
+  group('المكتبة الكبيرة (6.5)', () {
+    Map<String, Object?> titled(String id, String title, String author) {
+      final book = miniBook(id: id);
+      (book['title']! as Map<String, Object?>)['ar'] = title;
+      (book['author']! as Map<String, Object?>)['ar'] = author;
+      return book;
+    }
+
+    testWidgets('البحث بالعنوان والمؤلف، وشرائح التصنيف والعصر', (
+      tester,
+    ) async {
+      env.server.catalog = catalogJson([
+        env.server.addBook(
+          titled('o00001', 'كتاب البخلاء', 'الجاحظ')
+            ..['author_death_hijri'] = 50,
+        ),
+        env.server.addBook(
+          titled('o00002', 'ديوان اصطناعي', 'شاعر اختبار')
+            ..['author_death_hijri'] = 60,
+          category: 'poetry',
+          era: 'jahili',
+        ),
+        env.server.addBook(
+          titled('o00003', 'تاريخ اصطناعي', 'مؤرخ اختبار'),
+          category: 'history',
+          era: 'late',
+        ),
+      ]);
+      await pumpApp(tester);
+      expect(find.text('كتاب البخلاء'), findsWidgets);
+      expect(find.text('ديوان اصطناعي'), findsWidgets);
+      expect(find.text('تاريخ اصطناعي'), findsNothing); // خارج الشاشة بعد
+      // الشرائح بأسمائها العربية من ملف الترجمة.
+      expect(
+        find.widgetWithText(ChoiceChip, 'الشعر والدواوين'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(ChoiceChip, 'العباسي'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'بخلاء');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+      expect(find.text('كتاب البخلاء'), findsWidgets);
+      expect(find.text('ديوان اصطناعي'), findsNothing);
+
+      await tester.enterText(find.byType(TextField), 'غير موجود');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+      expect(find.text('لا كتب تطابق البحث أو التصفية.'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('مسح'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'الشعر والدواوين'));
+      await tester.pumpAndSettle();
+      expect(find.text('ديوان اصطناعي'), findsWidgets);
+      expect(find.text('كتاب البخلاء'), findsNothing);
+      final chip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'الشعر والدواوين'),
+      );
+      expect(chip.selected, isTrue);
+
+      // التصنيف «الكل» ثم العصر.
+      await tester.tap(find.widgetWithText(ChoiceChip, 'الكل').first);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.widgetWithText(ChoiceChip, 'المماليك والمتأخرون'),
+      );
+      await tester.tap(find.widgetWithText(ChoiceChip, 'المماليك والمتأخرون'));
+      await tester.pumpAndSettle();
+      expect(find.text('تاريخ اصطناعي'), findsWidgets);
+      expect(find.text('ديوان اصطناعي'), findsNothing);
+    });
+
+    testWidgets('الترتيب بالحجم من قائمة الترتيب', (tester) async {
+      env.server.catalog = catalogJson([
+        env.server.addBook(titled('o00001', 'كتاب ألف', 'مؤلف')),
+        env.server.addBook(
+          titled('o00002', 'كتاب باء', 'مؤلف')
+            ..['chapters'] = syntheticBook(id: 'o00002')['chapters'],
+        ),
+      ]);
+      await pumpApp(tester);
+      await tester.tap(find.byTooltip('الترتيب: سنة الوفاة'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('الحجم').last);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('الترتيب: الحجم'), findsOneWidget);
+      final first = tester.getRect(find.text('كتاب ألف').first).top;
+      final second = tester.getRect(find.text('كتاب باء').first).top;
+      expect(first, lessThan(second));
+    });
+
+    testWidgets('صفحات من 50: القائمة كسولة وتجلب الصفحة التالية بالتمرير', (
+      tester,
+    ) async {
+      final entries = [
+        for (var i = 0; i < 120; i++)
+          env.server.addBook(
+            titled(
+              'o${i.toString().padLeft(5, '0')}',
+              'كتاب رقم ${i + 1}',
+              'مؤلف',
+            )..['author_death_hijri'] = i + 1,
+          ),
+      ];
+      env.server.catalog = catalogJson(entries);
+      await pumpApp(tester);
+      // كسولة: لا تُبنى إلا البطاقات الظاهرة.
+      expect(find.byType(BookCard).evaluate().length, lessThan(10));
+      final list = find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      for (
+        var i = 0;
+        i < 20 && find.text('كتاب رقم 120').evaluate().isEmpty;
+        i++
+      ) {
+        await tester.drag(list, const Offset(0, -3000));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('كتاب رقم 120'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('تبويب «المحمّلة» يعرض الكتب المحمّلة فقط', (tester) async {
+      env.server.catalog = catalogJson([
+        env.server.addBook(miniBook()),
+        env.server.addBook(titled('o00002', 'كتاب غير محمّل', 'مؤلف')),
+      ]);
+      await pumpApp(tester);
+      await tester.tap(find.text('المحمّلة'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('لم تحمّل أي كتاب بعد'), findsOneWidget);
+      await env.preinstall(miniBook());
+      await tester.tap(find.text('الكتب'));
+      await tester.pumpAndSettle();
+      await tester.fling(
+        find
+            .descendant(
+              of: find.byType(CustomScrollView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+        const Offset(0, 500),
+        2000,
+      );
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.tap(find.text('المحمّلة'));
+      await tester.pumpAndSettle();
+      expect(find.text('كتاب اختبار اصطناعي'), findsWidgets);
+      expect(find.text('كتاب غير محمّل'), findsNothing);
+      expect(find.widgetWithText(FilledButton, 'افتح'), findsOneWidget);
+    });
+
+    testWidgets('الإنجليزية: أسماء الشرائح والتبويب مترجمة', (tester) async {
+      await pumpApp(tester, locale: const Locale('en'));
+      expect(find.text('Downloaded'), findsOneWidget);
+      expect(
+        find.widgetWithText(ChoiceChip, 'Poetry & diwans'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(ChoiceChip, 'Umayyad'), findsOneWidget);
+      expect(find.text('Search by title or author'), findsOneWidget);
+    });
   });
 }

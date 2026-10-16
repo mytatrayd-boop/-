@@ -123,8 +123,9 @@ BuildResult buildBook(Recipe recipe, Map<int, String> pageTexts) {
 List<Map<String, Object?>> finalizeChapters(
   String bookId,
   List<DraftChapter> chapters,
-  RemovalStats stats,
-) {
+  RemovalStats stats, {
+  bool allowWide = false,
+}) {
   // حذف العناوين الفارغة: باب بلا فقرات ولا أبواب فرعية بعده.
   var changed = true;
   while (changed) {
@@ -144,8 +145,10 @@ List<Map<String, Object?>> finalizeChapters(
 
   // عرض ثابت لكل الكتب والإصدارات (D17): 3 للباب و5 للفقرة، فلا يتغير معرّف
   // لمجرد أن كتاباً تجاوز 99 باباً أو 9999 فقرة في إصدار لاحق.
-  const bWidth = 3, pWidth = 5;
-  if (chapters.length > 999) throw StateError('أكثر من 999 باباً: يلزم تقسيم الكتاب.');
+  // الوضع الآلي ([allowWide]): أربعة أرقام للباب في كتاب فيه أكثر من 999 باباً (ARCHITECTURE §18.3).
+  final bWidth = allowWide && chapters.length > 999 ? 4 : 3;
+  const pWidth = 5;
+  if (chapters.length > (bWidth == 4 ? 9999 : 999)) throw StateError('أكثر من ${bWidth == 4 ? 9999 : 999} باباً: يلزم تقسيم الكتاب.');
   for (final c in chapters) {
     if (c.paragraphs.length > 99999) throw StateError('باب بأكثر من 99999 فقرة: ${c.title}');
   }

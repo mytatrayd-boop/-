@@ -756,5 +756,57 @@
         "type": "String"
       }
     }
+  },
+  "downloadedTab": "المحمّلة",
+  "catalogSearchHint": "ابحث بالعنوان أو المؤلف",
+  "catalogFilterAll": "الكل",
+  "catalogCategoryLabel": "التصنيف",
+  "catalogEraLabel": "العصر",
+  "catalogSortValue": "الترتيب: {sort}",
+  "@catalogSortValue": {
+    "placeholders": {
+      "sort": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogSortDeath": "سنة الوفاة",
+  "catalogSortTitle": "العنوان",
+  "catalogSortSize": "الحجم",
+  "catalogNoMatches": "لا كتب تطابق البحث أو التصفية.",
+  "catalogCategory": "{category, select, ayyam{أيام العرب والأنساب} poetry{الشعر والدواوين} lexicon{اللغة والمعاجم} grammar{النحو والصرف والعروض} rhetoric{البلاغة والنقد} adab{الأدب والأخبار والنوادر} history{التاريخ} biography{التراجم والطبقات} travel{البلدان والرحلات} other{أخرى}}",
+  "@catalogCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogEra": "{era, select, jahili{الجاهلي وصدر الإسلام} umayyad{الأموي} abbasid{العباسي} late{المماليك والمتأخرون} other{أخرى}}",
+  "@catalogEra": {
+    "placeholders": {
+      "era": {
+        "type": "String"
+      }
+    }
+  },
+  "noDownloadedBooks": "لم تحمّل أي كتاب بعد. حمّل كتاباً من تبويب «الكتب» لتقرأه وتبحث فيه دون إنترنت.",
+  "settingsBooks": "الكتب",
+  "manageBooks": "إدارة الكتب المحمّلة",
+  "booksUsage": "تستخدم الكتب {size}",
+  "@booksUsage": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteBookSemantics": "حذف «{title}» من الجهاز",
+  "@deleteBookSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   }
 }

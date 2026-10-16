@@ -67,7 +67,7 @@ void main() {
   });
 
   test('schema أحدث بلا شيء محفوظ ← errorEmpty مع updateApp', () async {
-    env.server.catalog = catalogJson([], schema: 2);
+    env.server.catalog = catalogJson([], schema: 3);
     final s = await load();
     expect(s.status, CatalogStatus.errorEmpty);
     expect(s.notice, CatalogNotice.updateApp);

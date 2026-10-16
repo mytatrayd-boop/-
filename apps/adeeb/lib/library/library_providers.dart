@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../core/app_config.dart';
 import '../settings/app_settings.dart';
 import '../storage/book_repository.dart';
+import '../storage/catalog_store.dart';
 import 'book_downloader.dart';
 import 'catalog_repository.dart';
 
@@ -39,9 +40,21 @@ final catalogRepositoryProvider = Provider<CatalogRepository>(
   (ref) => CatalogRepository(
     client: ref.watch(httpClientProvider),
     baseUri: ref.watch(appConfigProvider).libraryBaseUri,
-    cacheFile: File('${ref.watch(storageDirectoryProvider).path}/catalog.json'),
+    legacyCacheFile: File(
+      '${ref.watch(storageDirectoryProvider).path}/catalog.json',
+    ),
   ),
 );
+
+/// الفهرس المستورد في SQLite (§18.5).
+final catalogStoreProvider = Provider<CatalogStore>(
+  (ref) => SqliteCatalogStore(
+    '${ref.watch(storageDirectoryProvider).path}/adeeb.db',
+  ),
+);
+
+/// الساعة (قابلة للاستبدال في الاختبار) لتقليل جلب الفهرس.
+final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 
 final bookDownloaderProvider = Provider<BookDownloader>(
   (ref) => BookDownloader(ref.watch(httpClientProvider)),

@@ -7,13 +7,13 @@ import '../ask/ask_screen.dart';
 import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
-import '../reader/continue_reading_card.dart';
 import '../reader/favorites_tab.dart';
 import '../search/search_screen.dart';
-import 'book_card.dart';
+import 'catalog_list.dart';
 import 'library_controller.dart';
 
-/// شاشة المكتبة (DESIGN §7): تبويبا «الكتب» (مع «تابع القراءة») و«المفضلة».
+/// شاشة المكتبة (DESIGN §7، §18.5): «الكتب» (مع «تابع القراءة» والبحث
+/// والتصفية والصفحات)، و«المحمّلة»، و«المفضلة».
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
 
@@ -50,44 +50,19 @@ class LibraryScreen extends ConsumerWidget {
         action: l10n.retry,
         onAction: controller.refresh,
       ),
-      CatalogStatus.ready => RefreshIndicator(
-        onRefresh: controller.refresh,
-        child: ListView(
-          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
-          children: [
-            if (_bannerText(l10n, state.notice) case final text?) ...[
-              _Banner(
-                text: text,
-                offline: state.notice == CatalogNotice.offline,
-              ),
-              const SizedBox(height: 12),
-            ],
-            const ContinueReadingCard(),
-            if (state.items.isEmpty)
-              Padding(
-                padding: const EdgeInsetsDirectional.symmetric(vertical: 48),
-                child: Text(
-                  l10n.emptyLibrary,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-            for (final item in state.items) ...[
-              BookCard(
-                key: ValueKey(item.id),
-                item: item,
-                task: state.tasks[item.id],
-                offline: state.isOffline,
-              ),
-              const SizedBox(height: 12),
-            ],
-          ],
-        ),
+      CatalogStatus.ready => CatalogTab(
+        banner: switch (_bannerText(l10n, state.notice)) {
+          final text? => _Banner(
+            text: text,
+            offline: state.notice == CatalogNotice.offline,
+          ),
+          null => null,
+        },
       ),
     };
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.libraryTitle),
@@ -112,12 +87,15 @@ class LibraryScreen extends ConsumerWidget {
           bottom: TabBar(
             tabs: [
               Tab(height: 48, text: l10n.booksTab),
+              Tab(height: 48, text: l10n.downloadedTab),
               Tab(height: 48, text: l10n.favoritesTab),
             ],
           ),
         ),
         body: SafeArea(
-          child: TabBarView(children: [body, const FavoritesTab()]),
+          child: TabBarView(
+            children: [body, const DownloadedTab(), const FavoritesTab()],
+          ),
         ),
       ),
     );

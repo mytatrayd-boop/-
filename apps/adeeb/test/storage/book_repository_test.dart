@@ -192,7 +192,7 @@ void main() {
     final repo = SqliteBookRepository('${dir.path}/u.db', useIsolate: false);
     final book = miniBook();
     final gz = gzJson(book);
-    final entryMap = catalogEntry(book, gz)..['uncompressed_bytes'] = 100;
+    final entryMap = catalogEntry(book, gz)..['u'] = 100;
     final entry = parseCatalog(catalogJson([entryMap])).books.single;
     await expectLater(
       repo.install(gz, entry),

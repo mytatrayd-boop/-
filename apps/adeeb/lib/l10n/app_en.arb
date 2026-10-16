@@ -306,5 +306,22 @@
   "licenseLoadError": "Couldn't show the license.",
   "sourcesOpenItiLink": "The OpenITI project",
   "sourcesLicenseLink": "CC BY-NC-SA 4.0 license text",
-  "sourcesCopyNamedLinkSemantics": "Copy the link: {name}"
+  "sourcesCopyNamedLinkSemantics": "Copy the link: {name}",
+  "downloadedTab": "Downloaded",
+  "catalogSearchHint": "Search by title or author",
+  "catalogFilterAll": "All",
+  "catalogCategoryLabel": "Category",
+  "catalogEraLabel": "Era",
+  "catalogSortValue": "Sort: {sort}",
+  "catalogSortDeath": "Year of death",
+  "catalogSortTitle": "Title",
+  "catalogSortSize": "Size",
+  "catalogNoMatches": "No books match your search or filters.",
+  "catalogCategory": "{category, select, ayyam{Days of the Arabs & genealogy} poetry{Poetry & diwans} lexicon{Language & lexicons} grammar{Grammar, morphology & prosody} rhetoric{Rhetoric & criticism} adab{Adab, reports & anecdotes} history{History} biography{Biographies & generations} travel{Geography & travel} other{Other}}",
+  "catalogEra": "{era, select, jahili{Pre-Islamic & early Islam} umayyad{Umayyad} abbasid{Abbasid} late{Mamluk & later} other{Other}}",
+  "noDownloadedBooks": "You haven't downloaded any books yet. Download one from the Books tab to read and search it offline.",
+  "settingsBooks": "Books",
+  "manageBooks": "Manage downloaded books",
+  "booksUsage": "Books use {size}",
+  "deleteBookSemantics": "Remove “{title}” from device"
 }

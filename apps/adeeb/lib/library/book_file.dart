@@ -77,11 +77,16 @@ class BookFile {
 
 /// يفك gzip ثم يحلل. يرمي [LibraryFormatException] لأي خلل، أو إن تجاوز
 /// النص المفكوك [maxUncompressedBytes] (`uncompressed_bytes` في الفهرس)،
-/// ويتوقف الفك فور التجاوز فلا يُستهلك الذاكرة ملف مضغوط خبيث.
-BookFile decodeBookGz(List<int> gz, {int? maxUncompressedBytes}) {
-  final String text;
+/// ويتوقف الفك فور التجاوز فلا يُستهلك الذاكرة ملف مضغوط خبيث. الصيغة 2
+/// (عضو gzip لكل باب، D35) تُفك كاملة لأن مفكك gzip يتابع الأعضاء المتتالية.
+BookFile decodeBookGz(List<int> gz, {int? maxUncompressedBytes}) =>
+    parseBook(gunzipUtf8(gz, maxBytes: maxUncompressedBytes));
+
+/// يفك gzip (عضواً واحداً أو أعضاء متتالية) إلى نص UTF-8، ويتوقف إن تجاوز
+/// الناتج [maxBytes]. يرمي [LibraryFormatException].
+String gunzipUtf8(List<int> gz, {int? maxBytes}) {
   try {
-    final out = _LimitedSink(maxUncompressedBytes);
+    final out = _LimitedSink(maxBytes);
     final input = gzip.decoder.startChunkedConversion(out);
     const chunk = 64 * 1024;
     for (var i = 0; i < gz.length; i += chunk) {
@@ -93,13 +98,10 @@ BookFile decodeBookGz(List<int> gz, {int? maxUncompressedBytes}) {
       );
     }
     input.close();
-    text = utf8.decode(out.bytes.takeBytes());
+    return utf8.decode(out.bytes.takeBytes());
   } on FormatException catch (e) {
-    throw LibraryFormatException(
-      'ملف الكتاب ليس gzip/UTF-8 صالحاً: ${e.message}',
-    );
+    throw LibraryFormatException('الملف ليس gzip/UTF-8 صالحاً: ${e.message}');
   }
-  return parseBook(text);
 }
 
 class _LimitedSink implements ByteConversionSink {
@@ -161,7 +163,7 @@ BookFile parseBook(String text) {
     throw const LibraryFormatException('سنة الوفاة غير صالحة');
   }
 
-  final chapterPattern = RegExp('^$id-b\\d{3}\$');
+  final chapterPattern = RegExp('^$id-b\\d{3,4}\$');
   final ids = <String>{};
   final rawChapters = decoded['chapters'];
   if (rawChapters is! List<Object?> || rawChapters.isEmpty) {
@@ -234,7 +236,7 @@ BookFile parseBook(String text) {
   if (rawRedirects is! Map<String, Object?>) {
     throw const LibraryFormatException('redirects غير صالح');
   }
-  final redirectKey = RegExp('^$id-b\\d{3}-p\\d{5}\$');
+  final redirectKey = RegExp('^$id-b\\d{3,4}-p\\d{5}\$');
   rawRedirects.forEach((from, to) {
     if (!redirectKey.hasMatch(from) || ids.contains(from)) {
       throw LibraryFormatException(

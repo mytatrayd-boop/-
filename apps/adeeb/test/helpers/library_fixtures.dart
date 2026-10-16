@@ -25,7 +25,62 @@ Map<String, Object?> miniBook({String id = 'mini', int version = 1}) {
 Uint8List gzJson(Map<String, Object?> map) =>
     Uint8List.fromList(gzip.encode(utf8.encode(jsonEncode(map))));
 
-Map<String, Object?> catalogEntry(Map<String, Object?> book, List<int> gz) {
+/// الصيغة 2 (D35): JSON الكتاب نفسه بأعضاء gzip متتالية: رأس حتى
+/// `"chapters":[`، وعضو لكل باب، وذيل.
+Uint8List gzV2(Map<String, Object?> map) {
+  final full = jsonEncode(map);
+  const marker = '"chapters":[';
+  final headerEnd = full.indexOf(marker) + marker.length;
+  final parts = <String>[full.substring(0, headerEnd)];
+  var pos = headerEnd;
+  final chapters = map['chapters']! as List<Object?>;
+  for (var i = 0; i < chapters.length; i++) {
+    final part = jsonEncode(chapters[i]) + (i < chapters.length - 1 ? ',' : '');
+    if (!full.startsWith(part, pos)) throw StateError('تقسيم غير مطابق');
+    parts.add(part);
+    pos += part.length;
+  }
+  parts.add(full.substring(pos));
+  return Uint8List.fromList([
+    for (final part in parts) ...gzip.encode(utf8.encode(part)),
+  ]);
+}
+
+String shardedPath(String id, int version) =>
+    'books/${id.substring(id.length - 2)}/$id/$id.v$version.json.gz';
+
+/// مدخل فهرس schema 2 (§18.5) لكتاب وملفه المضغوط.
+Map<String, Object?> catalogEntry(
+  Map<String, Object?> book,
+  List<int> gz, {
+  String category = 'adab',
+  String era = 'abbasid',
+}) {
+  final id = book['id']! as String;
+  final version = book['version']! as int;
+  return {
+    'id': id,
+    't': (book['title']! as Map)['ar'],
+    'a': (book['author']! as Map)['ar'],
+    'd': book['author_death_hijri'],
+    'c': category,
+    'e': era,
+    'v': version,
+    'f': shardedPath(id, version),
+    'sha': sha256.convert(gz).toString(),
+    'sz': gz.length,
+    'u': gzip.decode(gz).length,
+    'n': 3,
+    'dia': 'none',
+    'src': 'https://example.invalid/$id',
+  };
+}
+
+/// مدخل فهرس schema 1 القديم (للترحيل من النسخة المحفوظة).
+Map<String, Object?> legacyCatalogEntry(
+  Map<String, Object?> book,
+  List<int> gz,
+) {
   final id = book['id']! as String;
   final version = book['version']! as int;
   return {
@@ -50,12 +105,17 @@ Map<String, Object?> catalogEntry(Map<String, Object?> book, List<int> gz) {
 
 String catalogJson(
   List<Map<String, Object?>> entries, {
-  int schema = 1,
+  int schema = 2,
   int catalogVersion = 1,
 }) => jsonEncode({
   'schema': schema,
   'catalog_version': catalogVersion,
   'updated': '2026-10-11',
+  if (schema != 1) ...{
+    'license': 'public-domain',
+    'categories': ['adab'],
+    'eras': ['abbasid'],
+  },
   'books': entries,
 });
 
@@ -63,8 +123,12 @@ String catalogJson(
 class FakeLibraryServer {
   FakeLibraryServer();
 
+  /// نص JSON الفهرس (schema 2)؛ يُقدَّم مضغوطاً في `catalog/v2/catalog.json.gz`.
   String? catalog;
   final files = <String, List<int>>{};
+
+  /// يرد بـ ETag ويحترم If-None-Match (304).
+  bool etags = true;
   bool offline = false;
   int catalogStatus = 200;
 
@@ -72,11 +136,15 @@ class FakeLibraryServer {
   StreamController<List<int>>? bookStream;
   final requests = <Uri>[];
 
-  /// يضيف كتاباً ويعيد مدخل الفهرس.
-  Map<String, Object?> addBook(Map<String, Object?> book) {
-    final gz = gzJson(book);
-    final entry = catalogEntry(book, gz);
-    files[entry['file']! as String] = gz;
+  /// يضيف كتاباً بالصيغة 2 (أعضاء gzip) ويعيد مدخل الفهرس.
+  Map<String, Object?> addBook(
+    Map<String, Object?> book, {
+    String category = 'adab',
+    String era = 'abbasid',
+  }) {
+    final gz = gzV2(book);
+    final entry = catalogEntry(book, gz, category: category, era: era);
+    files[entry['f']! as String] = gz;
     return entry;
   }
 
@@ -84,7 +152,7 @@ class FakeLibraryServer {
     requests.add(request.url);
     if (offline) throw http.ClientException('offline', request.url);
     final path = request.url.toString().replaceFirst(testBaseUrl, '');
-    if (path == 'catalog.json') {
+    if (path == 'catalog/v2/catalog.json.gz') {
       final body = catalog;
       if (body == null || catalogStatus != 200) {
         return http.StreamedResponse(
@@ -92,11 +160,16 @@ class FakeLibraryServer {
           catalogStatus == 200 ? 404 : catalogStatus,
         );
       }
-      final bytes = utf8.encode(body);
+      final etag = '"${sha256.convert(utf8.encode(body))}"';
+      if (etags && request.headers['If-None-Match'] == etag) {
+        return http.StreamedResponse(Stream.value(const <int>[]), 304);
+      }
+      final bytes = gzip.encode(utf8.encode(body));
       return http.StreamedResponse(
         Stream.value(bytes),
         200,
         contentLength: bytes.length,
+        headers: {if (etags) 'etag': etag},
       );
     }
     final stream = bookStream;

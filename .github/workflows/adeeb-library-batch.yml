@@ -1,0 +1,76 @@
+name: Adeeb — library auto batch (6.1 + 6.2, no publish)
+
+# المكتبة الكبيرة (D30، D31، ARCHITECTURE §18): الاختيار من بيانات OpenITI 2025.1.9 الوصفية
+# ثم التحويل الآلي لدفعة أولى (100 كتاب موزّعة على القائمة) بالبوابات، وتقرير artifact فيه
+# أعداد القبول/المراجعة/الرفض وأسبابها. لا ينشر شيئاً ولا يكتب في المستودع: السجل نسخة مؤقتة.
+# قبله: الكتب الخمسة بالوضع الآلي (test/auto_five_test.dart) بعد جلب مصادرها المثبّتة.
+on:
+  push:
+    paths:
+      - '.github/workflows/adeeb-library-batch.yml'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "عدد كتب الدفعة"
+        default: '100'
+
+permissions:
+  contents: read
+
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults: { run: { working-directory: apps/adeeb/library/tools } }
+    env:
+      LIMIT: ${{ inputs.limit || '100' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with: { sdk: stable }
+      - run: dart pub get
+
+      - name: Fetch the five books' pinned sources (for the auto-mode acceptance test)
+        run: for r in recipes/*.json; do dart run bin/fetch_openiti.dart "$r"; done
+
+      - name: dart test + validator
+        run: |
+          dart test
+          dart test test/auto_five_test.dart -r expanded | grep -o '^[a-z]*: [a-z]* \[[^]]*\]\|match=[0-9.]*%' | paste -sd' ' > "$RUNNER_TEMP/five.txt"
+          echo "::notice title=five books (auto mode)::$(cat "$RUNNER_TEMP/five.txt")"
+          dart run bin/validate.dart ../
+
+      - name: Select (6.1)
+        run: |
+          OUT="$RUNNER_TEMP/report" && mkdir -p "$OUT"
+          META=$(sed -n 's/^  metadata: //p' scope.yaml)
+          COMMIT=$(sed -n 's/^  commit: //p' scope.yaml)
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/metadata.tsv" \
+            "https://raw.githubusercontent.com/OpenITI/RELEASE/$COMMIT/$META"
+          dart run bin/select.dart "$RUNNER_TEMP/metadata.tsv" --out "$OUT/selection.tsv" \
+            --sample 50 --seed 2028 | tee "$OUT/select.txt"
+          echo "::notice title=select::$(sed -n '1,/^$/p' "$OUT/select.txt" | paste -sd';')"
+
+      - name: Fetch batch texts from the pinned release
+        run: |
+          dart run bin/fetch_release.dart "$RUNNER_TEMP/report/selection.tsv" "$RUNNER_TEMP/src" \
+            --limit "$LIMIT" --spread
+          cp "$RUNNER_TEMP/src/SHA256SUMS" "$RUNNER_TEMP/report/"
+
+      - name: convert --auto (6.2)
+        run: |
+          OUT="$RUNNER_TEMP/report"
+          cp ../registry.tsv "$OUT/registry.tsv"
+          dart run bin/convert.dart --auto "$OUT/selection.tsv" "$RUNNER_TEMP/src" "$RUNNER_TEMP/books" \
+            --date "$(date -u +%F)" --registry "$OUT/registry.tsv" --limit "$LIMIT" --spread | tee "$OUT/convert.txt"
+          cp "$RUNNER_TEMP/books/report.json" "$RUNNER_TEMP/books/report.md" "$OUT/"
+          head -n 30 "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=convert --auto::$(paste -sd';' "$OUT/convert.txt")"
+          # سبب أول لكل كتاب (للقراءة دون تنزيل الـ artifact).
+          echo "::notice title=per-book::$(grep -E '^\| (accept|review|reject) ' "$OUT/report.md" | cut -d'|' -f2,3,4,8 | cut -c1-160 | paste -sd'~' | sed 's/~/%0A/g')"
+          git -C "$GITHUB_WORKSPACE" diff --exit-code
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adeeb-library-batch-${{ github.run_number }}
+          path: ${{ runner.temp }}/report

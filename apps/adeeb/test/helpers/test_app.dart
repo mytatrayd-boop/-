@@ -11,10 +11,12 @@ import 'package:adeeb/reader/reader_book.dart';
 import 'package:adeeb/reader/reader_providers.dart';
 import 'package:adeeb/search/search_providers.dart';
 import 'package:adeeb/storage/book_repository.dart';
+import 'package:adeeb/storage/catalog_store.dart';
 import 'package:adeeb/storage/passage_retriever.dart';
 import 'package:adeeb/storage/reading_repository.dart';
 import 'package:adeeb/storage/search_repository.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,6 +36,10 @@ class TestEnv {
   final Directory dir;
   final server = FakeLibraryServer();
 
+  /// ساعة التطبيق في الاختبار؛ تقديمها 6 ساعات يسمح بجلب الفهرس تلقائياً
+  /// مجدداً عند فتح المكتبة (§18.5).
+  DateTime now = DateTime(2026, 10, 16, 12);
+
   /// خادم «اسأل الأديب» الوهمي.
   final ask = FakeAskServer();
 
@@ -52,6 +58,9 @@ class TestEnv {
 
   SqliteBookRepository get books =>
       SqliteBookRepository('${dir.path}/adeeb.db', useIsolate: false);
+
+  SqliteCatalogStore get catalogStore =>
+      SqliteCatalogStore('${dir.path}/adeeb.db', useIsolate: false);
 
   SqliteReadingRepository get reading =>
       SqliteReadingRepository('${dir.path}/adeeb.db', useIsolate: false);
@@ -82,6 +91,8 @@ class TestEnv {
     ),
     httpClientProvider.overrideWithValue(server.client()),
     bookRepositoryProvider.overrideWithValue(books ?? this.books),
+    catalogStoreProvider.overrideWithValue(catalogStore),
+    clockProvider.overrideWithValue(() => now),
     searchRepositoryProvider.overrideWithValue(search),
     readingRepositoryProvider.overrideWithValue(
       FlakyReadingRepository(
@@ -110,7 +121,7 @@ class TestEnv {
 
   /// يثبّت كتاباً مباشرة في القاعدة (كأنه حُمّل سابقاً).
   Future<void> preinstall(Map<String, Object?> book) {
-    final gz = gzJson(book);
+    final gz = gzV2(book);
     final entry = parseCatalog(catalogJson([catalogEntry(book, gz)]))
         .books
         .single;
@@ -169,4 +180,20 @@ class FlakyReadingRepository implements ReadingRepository {
     _check();
     return _inner.removeFavorite(paragraphId);
   }
+}
+
+/// يمرّر قائمة كتب المكتبة (كسولة) حتى يظهر [finder].
+Future<void> scrollLibraryTo(WidgetTester tester, Finder finder) async {
+  if (finder.hitTestable().evaluate().isNotEmpty) return;
+  await tester.scrollUntilVisible(
+    finder,
+    600,
+    scrollable: find
+        .descendant(
+          of: find.byType(CustomScrollView),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.pumpAndSettle();
 }

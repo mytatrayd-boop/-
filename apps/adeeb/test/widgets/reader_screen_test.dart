@@ -42,6 +42,7 @@ void main() {
 
   /// يفتح القارئ من زر «افتح» في بطاقة الكتاب (كتاب محمّل واحد في كل اختبار).
   Future<void> openReader(WidgetTester tester, String title) async {
+    await scrollLibraryTo(tester, find.widgetWithText(FilledButton, 'افتح'));
     expect(find.text(title), findsWidgets);
     await tester.tap(find.widgetWithText(FilledButton, 'افتح'));
     await tester.pumpAndSettle();
@@ -436,6 +437,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await env.preinstall(miniBook());
     await pumpApp(tester);
+    await scrollLibraryTo(tester, find.widgetWithText(FilledButton, 'افتح'));
     await tester.tap(find.widgetWithText(FilledButton, 'افتح'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
