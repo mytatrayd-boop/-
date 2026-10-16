@@ -85,6 +85,20 @@ void main() {
     expect(reopened.select('SELECT id FROM books').single['id'], 'mini');
   });
 
+  test('tts يُحفظ ويُقرأ للصوت، والنص المعروض كما هو', () async {
+    final map = miniBook();
+    final p =
+        (((map['chapters']! as List).first as Map)['paragraphs']! as List).first
+            as Map<String, Object?>;
+    p['tts'] = 'هَذِهِ فقرة';
+    await install(map);
+    final book = (await reading.loadBook('mini'))!;
+    expect(book.paragraphs[0].speechText, 'هَذِهِ فقرة');
+    expect(book.paragraphs[0].text, startsWith('هذه فقرة'));
+    expect(book.paragraphs[1].tts, isNull);
+    expect(book.paragraphs[1].speechText, book.paragraphs[1].text);
+  });
+
   test('نص الكتاب للقارئ: أبواب وفقرات ومدخلات مسطّحة', () async {
     await install(miniBook());
     final book = (await reading.loadBook('mini'))!;

@@ -987,8 +987,14 @@ abstract class AppLocalizations {
   /// No description provided for @audioNoVoiceBody.
   ///
   /// In ar, this message translates to:
-  /// **'لتستمع إلى الكتب ثبّت الصوت العربي من إعدادات الهاتف: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.'**
+  /// **'لتستمع إلى الكتب ثبّت محرّك Google للنطق: اضغط «ثبّت صوت قوقل من المتجر» وثبّت «Speech Recognition & Synthesis from Google»، ثم افتح إعدادات الصوت: الإعدادات ← النظام ← اللغة والإدخال ← تحويل النص إلى كلام ← محرّك Google ← تثبيت بيانات الصوت ← العربية.'**
   String get audioNoVoiceBody;
+
+  /// No description provided for @audioInstallGoogleVoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثبّت صوت قوقل من المتجر'**
+  String get audioInstallGoogleVoice;
 
   /// No description provided for @audioOpenVoiceSettings.
   ///

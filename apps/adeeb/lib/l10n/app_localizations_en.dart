@@ -573,7 +573,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioNoVoiceBody =>
-      'To listen to books, install the Arabic voice from your phone settings: Settings → System → Languages & input → Text-to-speech output → Google engine → Install voice data → Arabic.';
+      'To listen to books, install the Google speech engine: tap “Install Google voice from the store” and install “Speech Recognition & Synthesis from Google”, then open voice settings: Settings → System → Languages & input → Text-to-speech output → Google engine → Install voice data → Arabic.';
+
+  @override
+  String get audioInstallGoogleVoice => 'Install Google voice from the store';
 
   @override
   String get audioOpenVoiceSettings => 'Open voice settings';

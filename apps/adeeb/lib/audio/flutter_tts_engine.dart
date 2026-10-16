@@ -106,10 +106,15 @@ class FlutterTtsEngine implements TtsEngine {
   }
 
   @override
-  Future<bool> openInstallSettings() async {
+  Future<bool> openInstallSettings() => _invoke('open');
+
+  @override
+  Future<bool> openVoiceStore() => _invoke('openStore');
+
+  Future<bool> _invoke(String method) async {
     if (!Platform.isAndroid) return false;
     try {
-      return await _settings.invokeMethod<bool>('open') ?? false;
+      return await _settings.invokeMethod<bool>(method) ?? false;
     } on PlatformException {
       return false;
     } on MissingPluginException {

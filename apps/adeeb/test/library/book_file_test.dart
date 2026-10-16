@@ -35,6 +35,23 @@ void main() {
     expect(plain.removed, isNull);
   });
 
+  test('tts اختياري: يُقرأ إن وُجد، ويُرفض غير النصي', () {
+    final map = miniBook();
+    final p =
+        (((map['chapters']! as List).first as Map)['paragraphs']! as List).first
+            as Map<String, Object?>;
+    p['tts'] = 'هَذِهِ فقرة';
+    final book = decodeBookGz(gzJson(map));
+    expect(book.chapters[0].paragraphs[0].tts, 'هَذِهِ فقرة');
+    expect(book.chapters[0].paragraphs[0].text, startsWith('هذه فقرة'));
+    expect(book.chapters[0].paragraphs[1].tts, isNull);
+    p['tts'] = 3;
+    expect(
+      () => decodeBookGz(gzJson(map)),
+      throwsA(isA<LibraryFormatException>()),
+    );
+  });
+
   test('يقبل redirects إلى معرّف موجود', () {
     final map = miniBook()
       ..['redirects'] = {'mini-b001-p00009': 'mini-b001-p00001'};

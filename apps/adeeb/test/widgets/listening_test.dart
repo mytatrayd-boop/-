@@ -222,7 +222,7 @@ void main() {
   });
 
   testWidgets(
-    'لا صوت عربي: ورقة الإرشادات مع «افتح إعدادات الصوت» و«لم تجد الخيار؟»',
+    'لا صوت عربي: ورقة الإرشادات مع «ثبّت صوت قوقل» و«افتح إعدادات الصوت» و«لم تجد الخيار؟»',
     (tester) async {
       env.tts.voices = [];
       await env.preinstall(miniBook());
@@ -234,6 +234,16 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(MiniPlayer), findsNothing);
+
+      // الزر الأساسي: صفحة محرّك Google في المتجر.
+      await tester.tap(find.text('ثبّت صوت قوقل من المتجر'));
+      await tester.pumpAndSettle();
+      expect(env.tts.storeOpened, 1);
+      expect(find.text('لا يوجد صوت عربي على جهازك'), findsOneWidget);
+      expect(
+        find.textContaining('يختلف المسار حسب الشركة المصنّعة'),
+        findsNothing,
+      );
 
       await tester.tap(find.text('افتح إعدادات الصوت'));
       await tester.pumpAndSettle();

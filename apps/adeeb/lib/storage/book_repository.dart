@@ -250,7 +250,7 @@ void importBook(
       'INSERT INTO chapters (id, book_id, ord, level, title) VALUES (?, ?, ?, ?, ?)',
     );
     final insertParagraph = db.prepare(
-      'INSERT INTO paragraphs (id, book_id, chapter_id, ord, kind, text) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO paragraphs (id, book_id, chapter_id, ord, kind, text, tts) VALUES (?, ?, ?, ?, ?, ?, ?)',
     );
     final insertRedirect = db.prepare(
       'INSERT INTO redirects (old_id, book_id, new_id) VALUES (?, ?, ?)',
@@ -275,6 +275,7 @@ void importBook(
             paragraphOrd++,
             p.kind,
             p.text,
+            p.tts,
           ]);
           // الفهرسة في المعاملة نفسها: فشلها يلغي الاستيراد كله.
           indexParagraph(insertIndex, db.lastInsertRowId, p.text);

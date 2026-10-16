@@ -10,6 +10,7 @@ import 'arabic_nfc.dart';
 import 'book_builder.dart';
 import 'catalog.dart';
 import 'presentation_forms.dart';
+import 'tts.dart';
 
 class Issue {
   Issue(this.where, this.code, this.detail, {this.warning = false, this.paragraphId});
@@ -223,6 +224,17 @@ List<Issue> validateBook(
         continue;
       }
       text(t, pid, verse: kind == 'verse');
+      // نص النطق (اختياري): حروفه حروف الأصل نفسها، لا يزيد إلا التشكيل.
+      final tts = p['tts'];
+      if (tts != null) {
+        if (tts is! String || tts.trim().isEmpty) {
+          err('tts', 'tts نص غير فارغ إن وُجد: $pid');
+        } else if (!ttsMatchesText(tts, t)) {
+          err('tts', 'tts بعد حذف التشكيل لا يطابق النص: $pid');
+        } else if (!isArabicNfc(tts)) {
+          err('tts', 'tts ليس NFC: $pid');
+        }
+      }
       final page = p['page'];
       if (page != null && (page is! String || !pagePattern.hasMatch(page))) {
         err('page', 'page بصيغة V01P009 إن وُجد: $pid');

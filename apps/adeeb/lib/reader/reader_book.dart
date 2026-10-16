@@ -30,6 +30,7 @@ class ReaderParagraph {
     required this.chapterIndex,
     required this.kind,
     required this.text,
+    this.tts,
   });
 
   final String id;
@@ -38,6 +39,12 @@ class ReaderParagraph {
   /// `prose` أو `verse` (الأبيات بـ `\n` والشطران بـ `\t`).
   final String kind;
   final String text;
+
+  /// نص النطق المشكول إن وُجد (للصوت فقط).
+  final String? tts;
+
+  /// ما يُنطق: [tts] إن وُجد وإلا [text].
+  String get speechText => tts ?? text;
 
   bool get isVerse => kind == 'verse';
 }
@@ -80,14 +87,16 @@ class ReaderBook {
   }
 
   /// يبني الأبواب والفقرات من صفوف مرتّبة. [rawChapters]: (id, title, level)،
-  /// و[rawParagraphs]: (id, chapterId, kind, text) بترتيب الكتاب.
+  /// و[rawParagraphs]: (id, chapterId, kind, text, tts) بترتيب الكتاب.
   factory ReaderBook.fromRows({
     required String id,
     required LocalizedName title,
     required LocalizedName author,
     required int? authorDeathHijri,
     required List<({String id, String title, int level})> rawChapters,
-    required List<({String id, String chapterId, String kind, String text})>
+    required List<
+      ({String id, String chapterId, String kind, String text, String? tts})
+    >
     rawParagraphs,
   }) {
     final chapterIndex = {
@@ -121,6 +130,7 @@ class ReaderBook {
             chapterIndex: c,
             kind: p.kind,
             text: p.text,
+            tts: p.tts,
           ),
         );
       }

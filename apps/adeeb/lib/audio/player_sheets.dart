@@ -36,6 +36,11 @@ class _NoArabicVoiceSheetState extends ConsumerState<NoArabicVoiceSheet> {
     if (mounted && !opened) setState(() => _showAlternative = true);
   }
 
+  Future<void> _openStore() async {
+    final opened = await ref.read(ttsEngineProvider).openVoiceStore();
+    if (mounted && !opened) setState(() => _showAlternative = true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -73,6 +78,11 @@ class _NoArabicVoiceSheetState extends ConsumerState<NoArabicVoiceSheet> {
             ),
           const SizedBox(height: 16),
           FilledButton(
+            onPressed: _openStore,
+            child: Text(l10n.audioInstallGoogleVoice),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.tonal(
             onPressed: _openSettings,
             child: Text(l10n.audioOpenVoiceSettings),
           ),

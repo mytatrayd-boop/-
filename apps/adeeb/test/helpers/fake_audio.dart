@@ -14,6 +14,8 @@ class FakeTtsEngine implements TtsEngine {
   Completer<SpeakResult>? _current;
   int stops = 0;
   int settingsOpened = 0;
+  int storeOpened = 0;
+  bool storeResult = true;
   bool settingsResult = false;
   bool failConfigure = false;
 
@@ -57,6 +59,12 @@ class FakeTtsEngine implements TtsEngine {
   Future<bool> openInstallSettings() async {
     settingsOpened++;
     return settingsResult;
+  }
+
+  @override
+  Future<bool> openVoiceStore() async {
+    storeOpened++;
+    return storeResult;
   }
 }
 

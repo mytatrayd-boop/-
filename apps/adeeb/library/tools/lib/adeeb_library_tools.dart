@@ -10,5 +10,6 @@ export 'src/pipeline.dart';
 export 'src/presentation_forms.dart' show foldPresentationForms, forbiddenArabicChars;
 export 'src/recipe.dart';
 export 'src/sample.dart';
+export 'src/tts.dart';
 export 'src/validator.dart';
 export 'src/wikitext.dart';
