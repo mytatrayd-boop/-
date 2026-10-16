@@ -36,6 +36,8 @@ jobs:
       - name: dart test + validator
         run: |
           dart test
+          dart test test/auto_five_test.dart -r expanded | grep -o '^[a-z]*: [a-z]* \[[^]]*\]\|match=[0-9.]*%' | paste -sd' ' > "$RUNNER_TEMP/five.txt"
+          echo "::notice title=five books (auto mode)::$(cat "$RUNNER_TEMP/five.txt")"
           dart run bin/validate.dart ../
 
       - name: Select (6.1)
@@ -47,6 +49,7 @@ jobs:
             "https://raw.githubusercontent.com/OpenITI/RELEASE/$COMMIT/$META"
           dart run bin/select.dart "$RUNNER_TEMP/metadata.tsv" --out "$OUT/selection.tsv" \
             --sample 50 --seed 2028 | tee "$OUT/select.txt"
+          echo "::notice title=select::$(sed -n '1,/^$/p' "$OUT/select.txt" | paste -sd';')"
 
       - name: Fetch batch texts from the pinned release
         run: |
@@ -62,6 +65,9 @@ jobs:
             --date "$(date -u +%F)" --registry "$OUT/registry.tsv" --limit "$LIMIT" --spread | tee "$OUT/convert.txt"
           cp "$RUNNER_TEMP/books/report.json" "$RUNNER_TEMP/books/report.md" "$OUT/"
           head -n 30 "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=convert --auto::$(paste -sd';' "$OUT/convert.txt")"
+          # سبب أول لكل كتاب (للقراءة دون تنزيل الـ artifact).
+          echo "::notice title=per-book::$(grep -E '^\| (accept|review|reject) ' "$OUT/report.md" | cut -d'|' -f2,3,4,8 | cut -c1-160 | paste -sd'~' | sed 's/~/%0A/g')"
           git -C "$GITHUB_WORKSPACE" diff --exit-code
 
       - uses: actions/upload-artifact@v4
