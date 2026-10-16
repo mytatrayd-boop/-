@@ -21,6 +21,7 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
 import 'book_builder.dart';
+import 'auto_markup.dart';
 import 'presentation_forms.dart';
 import 'wikitext.dart' show RemovalStats, WikitextException, cleanText;
 
@@ -667,6 +668,9 @@ OpenitiDocument parseOpeniti(String source, OpenitiRecipe recipe, RemovalStats s
     }
   }
 
+  // الوضع الآلي: أبيات JK «% صدر % عجز %» و«( صدر % عجز )» ← «صدر %~% عجز» (auto_markup.dart).
+  if (recipe.lenient) lines.replaceRange(i, lines.length, normalizeAutoMarkup(lines.sublist(i), stats));
+
   // تمريرة 1: drop_lines ثم rules لكل سطر (السطر المحذوف يصير فارغاً فتبقى أرقام الأسطر).
   for (var k = i; k < lines.length; k++) {
     var line = lines[k];
@@ -895,9 +899,12 @@ final _unknownSymbols = RegExp(r'[#|~%@$<>*`_{}\\^=+]');
 /// يعيد النص كما هو، أو يرمي خطأ عند وسم مجهول؛ وفي الوضع الآلي يحذف رموز الوسم ويعدّها.
 String _checkUnknown(String t, int lineNo, OpenitiRecipe recipe, RemovalStats stats) {
   if (recipe.lenient) {
-    final n = _unknownSymbols.allMatches(t).length;
-    if (n == 0) return t;
-    stats.add('${autoUnknownPrefix}رمز وسم متبقٍّ (حُذف)', n);
+    final found = _unknownSymbols.allMatches(t).toList();
+    if (found.isEmpty) return t;
+    // مفتاح لكل رمز ليُحصى نوعه في تقرير الدفعة.
+    for (final m in found) {
+      stats.add('${autoUnknownPrefix}رمز وسم متبقٍّ «${m[0]}» (حُذف)');
+    }
     return cleanText(t.replaceAll(_unknownSymbols, ' '));
   }
   final m = _unknownMarkup.firstMatch(t);

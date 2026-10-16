@@ -30,6 +30,8 @@
 - `dart run bin/select.dart <metadata.tsv> --out selection.tsv [--sample 50 --seed 2028]` ← قرار وسبب لكل نسخة.
 - `dart run bin/fetch_release.dart selection.tsv <src> --limit 100 --spread` ← نصوص الدفعة من raw بالـ commit المثبّت.
 - `dart run bin/convert.dart --auto selection.tsv <src> <out> --date YYYY-MM-DD --limit 100 --spread` ← الكتب المقبولة والمحالة للمراجعة في `<out>/books/<آخر رقمين>/<id>/` و`report.json`/`report.md`. السجل `library/registry.tsv` إلحاقي.
+- الوضع الآلي وحده (`lib/src/auto_markup.dart` وقواعد `defaultAutoRules`) يحوّل وسوماً شائعة في الإصدار اختيرت بإحصاء الوسم المجهول في تقرير الدفعة (`report.md`، قسم «الوسم المجهول»): أبيات JK `# % صدر % عجز % 12` (أو `% %`) وأبيات `( صدر % عجز )` ← بيت `kind: verse` ويُحذف رقم البيت؛ الفاصل `|` ← فقرة جديدة ويُحذف رقم الطبعة بعده؛ `@QB@`/`@QE@` ← قوسا الآية، وإحالة `+ ( السورة N ) +` تُحذف؛ `@QUR@01`، `@HAD04`، `@YY360`، و`#` بعد علامة صفحة داخل السطر تُحذف؛ اسم البحر بين `+` يُحذف إلا بعد «من» فيبقى نصه. `+ + + …` في «ديوان الحماسة» (JK) تحلّ محل حروف ضائعة فتبقى مجهولة وتُرفض.
+- الاختيار يستبعد أيضاً بالعنوان (`exclude_titles` في `scope.yaml`: رجال، حديث، أذكار/مناقب/شمائل، فقه، تفسير) وبوسم `_HADITH`؛ كتب الغريب وإعراب الحديث وطبقات الفقهاء تبقى (لغة وتراجم).
 - سير `adeeb-library-batch.yml` يشغّلها في CI ويرفع التقرير فقط. **لا نشر** قبل 6.3/6.4 وموافقة المالك على العيّنات.
 
 ### ما يفعله قارئ OpenITI mARkdown (`lib/src/openiti.dart`)

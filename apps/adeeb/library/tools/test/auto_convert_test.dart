@@ -105,10 +105,43 @@ void main() {
       expect(decisionOf('1301AdibIshaq.Andromak.Hindawi094742841-ara1'), 'exclude|date');
     });
 
+    test('تسريبات الدفعة الأولى مستبعدة: رجال، حديث، أذكار، فقه؛ وكتب اللغة والتاريخ باقية', () {
+      // رجال (نقد الرواة) بوسوم التراجم وحدها: يكشفها العنوان.
+      expect(decisionOf('0385Daraqutni.TacliqatCalaMajruhin.Shamela0010843-ara1'), 'exclude|title');
+      expect(decisionOf('0744IbnCabdHadi.TabaqatCulama.Sham19Y0001994-ara1'), 'exclude|title');
+      expect(decisionOf('0748Dhahabi.MucjamShuyukh.Shamela0012531-ara1'), 'exclude|title');
+      // فقه بوسم «الغريب والمعاجم ولغة الفقه».
+      expect(decisionOf('0909IbnMabrid.DurrNaqi.Sham19Y0131003-ara1'), 'exclude|title');
+      // صلوات على النبي.
+      expect(decisionOf('0902Sakhawi.QawlBadic.Shamela0001391-ara1'), 'exclude|title');
+      // وسم الحديث الموضوعي _HADITH مع وسم تراجم ← مختلط.
+      expect(decisionOf('0303Nasai.DhikrMudallisin.Shamela0025868-ara1'), 'exclude|mixed');
+      // «فقه اللغة» ليس فقهاً؛ و«فضائل مصر» تاريخ محسوم بالاسم.
+      expect(decisionOf('0395IbnFarisQazwini.Sahibi.JK010092-ara1'), 'include|tags');
+      expect(decisionOf('0350MuhammadKindi.FadailMisr.Shamela0000405-ara1'), 'include|name');
+    });
+
+    test('exclude_titles: كل فئة تطابق عنوانها ولا تطابق عناوين الأدب', () {
+      String? cat(String title) =>
+          scope.excludeTitles.entries.where((e) => e.value.hasMatch(title)).map((e) => e.key).firstOrNull;
+      expect(cat('ديوان الضعفاء والمتروكين'), 'rijal');
+      expect(cat('المسند'), 'hadith');
+      expect(cat('الأربعين في الحديث'), 'hadith');
+      expect(cat('دلائل الأذكار'), 'devotional');
+      expect(cat('مناقب الإمام أحمد'), 'devotional');
+      expect(cat('مختصر الفقه'), 'fiqh');
+      expect(cat('تسمية شيوخ أبي داود'), 'rijal');
+      expect(cat('المعلم بشيوخ البخاري ومسلم'), 'rijal');
+      expect(cat('أسباب النزول'), 'tafsir');
+      for (final t in ['الصاحبي في فقه اللغة', 'المناقب المزيدية', 'غريب الحديث', 'البيان والتبيين', 'تفسير أبيات المعاني']) {
+        expect(cat(t), isNull, reason: t);
+      }
+    });
+
     test('المختلط يُحسم بالاسم، والنسخة تُستبدل بالاسم', () {
       final y = File('scope.yaml').readAsStringSync();
       final s2 = Scope.parse(y
-          .replaceFirst('include_books: {}', "include_books:\n  0110HasanBasri.FadailMakka: 'اختبار'")
+          .replaceFirst('include_books:\n', "include_books:\n  0110HasanBasri.FadailMakka: 'اختبار'\n")
           .replaceFirst('version_overrides: {}',
               'version_overrides:\n  0001AbuTalibCabdManaf.Diwan: 0001AbuTalibCabdManaf.Diwan.ShamAY0037822-ara1'));
       final sel2 = selectBooks(s2, rows, registry);

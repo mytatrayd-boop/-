@@ -69,6 +69,7 @@ class Scope {
     required this.excludeTags,
     required this.includeBooks,
     required this.excludeBooks,
+    this.excludeTitles = const {},
     required this.versionOverrides,
     required this.gates,
   });
@@ -88,6 +89,10 @@ class Scope {
   /// كتب مختلطة (إدراج + استبعاد) حُسمت بالاسم: URI الكتاب ← سبب.
   final Map<String, String> includeBooks;
   final Map<String, String> excludeBooks;
+
+  /// أنماط عناوين خارج النطاق (حديث، رجال، أذكار/مناقب، فقه، تفسير) لا تكشفها الوسوم:
+  /// اسم الفئة ← نمط على `title_ar`. `include_books` يتقدّم عليها.
+  final Map<String, RegExp> excludeTitles;
 
   /// URI الكتاب ← URI النسخة المختارة بدل `pri` (استثناء يدوي).
   final Map<String, String> versionOverrides;
@@ -119,6 +124,7 @@ class Scope {
       excludeTags: res('exclude_tags'),
       includeBooks: books('include_books'),
       excludeBooks: books('exclude_books'),
+      excludeTitles: {for (final e in books('exclude_titles').entries) e.key: RegExp(e.value)},
       versionOverrides: books('version_overrides'),
       gates: GateLimits(y['gates']! as Map<String, Object?>),
     );
@@ -240,6 +246,9 @@ Selection _classify(Scope scope, MetadataRow r, Registry registry) {
   }
   if (inc.isEmpty) return no('scope: لا وسم إدراج');
   if (exc.isNotEmpty) return no('mixed: ${inc.first} + ${exc.first}');
+  for (final e in scope.excludeTitles.entries) {
+    if (e.value.hasMatch(r.titleAr)) return no('title: ${e.key}');
+  }
   return Selection(r, Decision.include, 'tags: ${inc.first}');
 }
 

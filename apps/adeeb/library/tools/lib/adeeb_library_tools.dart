@@ -4,6 +4,7 @@ library;
 export 'src/arabic_nfc.dart';
 export 'src/auto_batch.dart';
 export 'src/auto_convert.dart';
+export 'src/auto_markup.dart';
 export 'src/book_builder.dart';
 export 'src/catalog.dart';
 export 'src/fetcher.dart';

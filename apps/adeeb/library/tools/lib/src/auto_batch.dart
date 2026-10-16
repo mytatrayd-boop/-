@@ -12,7 +12,7 @@ import 'scope.dart';
 
 class BookReport {
   BookReport(this.versionUri, this.title, this.decision, this.reasons, this.metrics,
-      {this.id, this.version, this.file, this.generated = false});
+      {this.id, this.version, this.file, this.generated = false, this.unknown = const {}});
   final String versionUri;
   final String title;
   final GateDecision decision;
@@ -22,6 +22,9 @@ class BookReport {
   final int? version;
   final String? file;
   final bool generated;
+
+  /// أنواع الوسم المجهول وأعدادها.
+  final Map<String, int> unknown;
 
   Map<String, Object?> toJson() => {
         'version_uri': versionUri,
@@ -33,6 +36,7 @@ class BookReport {
         'structure': generated ? 'generated' : 'source',
         'reasons': reasons,
         'metrics': metrics,
+        if (unknown.isNotEmpty) 'unknown': {for (final k in unknown.keys.toList()..sort()) k: unknown[k]},
       };
 }
 
@@ -52,11 +56,25 @@ class BatchReport {
     return m;
   }
 
+  /// مجموع أنواع الوسم المجهول في الدفعة: النوع ← (العدد، عدد الكتب)، الأكثر أولاً.
+  List<(String, int, int)> unknownTally() {
+    final n = <String, int>{}, books = <String, int>{};
+    for (final x in this.books) {
+      x.unknown.forEach((k, v) {
+        n[k] = (n[k] ?? 0) + v;
+        books[k] = (books[k] ?? 0) + 1;
+      });
+    }
+    final keys = n.keys.toList()..sort((a, b) => n[b] != n[a] ? n[b]!.compareTo(n[a]!) : a.compareTo(b));
+    return [for (final k in keys) (k, n[k]!, books[k]!)];
+  }
+
   String toJson() => '${const JsonEncoder.withIndent('  ').convert({
         'accept': count(GateDecision.accept),
         'review': count(GateDecision.review),
         'reject': count(GateDecision.reject),
         'reasons': {for (final d in GateDecision.values) d.name: reasonCounts(d)},
+        'unknown': [for (final (k, n, b) in unknownTally()) {'kind': k, 'count': n, 'books': b}],
         'books': [for (final b in books) b.toJson()],
       })}\n';
 
@@ -76,6 +94,16 @@ class BatchReport {
       b.writeln('## أسباب ${d.name}');
       for (final k in rc.keys.toList()..sort()) {
         b.writeln('- $k: ${rc[k]}');
+      }
+      b.writeln();
+    }
+    final tally = unknownTally();
+    if (tally.isNotEmpty) {
+      b
+        ..writeln('## الوسم المجهول (النوع: العدد في عدد الكتب)')
+        ..writeln();
+      for (final (k, n, books) in tally) {
+        b.writeln('- $k: $n في $books');
       }
       b.writeln();
     }
@@ -129,7 +157,8 @@ BatchReport runAutoBatch({
       previous: prev?.$2,
     );
     if (out.decision == GateDecision.reject) {
-      reports.add(BookReport(s.versionUri, s.titleAr, out.decision, out.reasons, out.metrics, generated: out.generated));
+      reports.add(BookReport(s.versionUri, s.titleAr, out.decision, out.reasons, out.metrics,
+          generated: out.generated, unknown: out.unknown));
       continue;
     }
     registry.assign(s.bookUri, s.versionUri);
@@ -142,7 +171,7 @@ BatchReport runAutoBatch({
       f.writeAsBytesSync(gzipDeterministic(out.json!));
     }
     reports.add(BookReport(s.versionUri, s.titleAr, out.decision, out.reasons, out.metrics,
-        id: id, version: v, file: autoBookRelativePath(id, v), generated: out.generated));
+        id: id, version: v, file: autoBookRelativePath(id, v), generated: out.generated, unknown: out.unknown));
   }
   return BatchReport(reports);
 }

@@ -18,6 +18,8 @@ import 'wikitext.dart' show RemovalStats, WikitextException;
 
 /// الوصفة الافتراضية: القواعد التي تكررت في وصفات الكتب الخمسة (ARCHITECTURE §18.3).
 /// الوصفات اليدوية في `recipes/` تبقى وتتقدّم عليها.
+const _meters = '(طويل|بسيط|وافر|كامل|متقارب|رجز|منسرح|سريع|خفيف|رمل|هزج|مديد|مضارع|مقتضب|مجتث|متدارك|خبب)';
+
 const Map<String, Object?> defaultAutoRules = {
   'merge_page_breaks': true,
   'preface_title': 'صدر الكتاب',
@@ -66,6 +68,25 @@ const Map<String, Object?> defaultAutoRules = {
     {
       'name': 'اسم البحر [طويل] (أضافه المحقق)',
       'pattern': r'\[(من )?(مجزوء |مشطور |منهوك |مخلع )?(ال)?(طويل|بسيط|وافر|وفر|كامل|لكامل|متقارب|رجز|منسرح|منسرج|سريع|خفيف|رمل|هزج|مديد|مضارع|مقتضب|مجتث|متدارك|خبب)[^\[\]]*\] ?',
+    },
+    // وسوم JK وغيرها شائعة في الإصدار (أكثرها في تقرير الدفعة الأولى)؛ لا تطابق الكتب الخمسة.
+    {'name': 'إحالة آية JK «+ ( الكهف 6 ) +» (من الناشر)', 'pattern': r'\s*\+\s*\(\s*[ء-ي ]+\s*[0-9٠-٩]+(\s*[/،,-]\s*[0-9٠-٩]+)*\s*\)\s*\+'},
+    {'name': 'وسم السنة OpenITI @YY360 في عنوان الحوليات', 'pattern': r'\s*@YY[0-9]+'},
+    {'name': 'بداية آية JK @QB@ ← «(»', 'pattern': r'@QB@', 'with': '('},
+    {'name': 'نهاية آية JK @QE@ ← «)»', 'pattern': r'@QE@', 'with': ')'},
+    {'name': 'وسم آية/حديث @QUR@01 و@HAD04 (Masaha)', 'pattern': r'@(QUR|HAD)@?[0-9]*'},
+    {'name': 'وسم «#» بعد علامة صفحة داخل السطر (Shamela19)', 'pattern': r'(PageV[0-9]+P[0-9]+)\s*#(?=\s|$)', 'with': r'$1'},
+    // «+ + + …» في JK (الحماسة) يحلّ محل حروف ضائعة من الشرح، فيبقى مجهولاً تقيسه البوابة.
+    {'name': 'رقم بعد اسم البحر «البحر : طويل 1» (JK)', 'pattern': r'^(# البحر\s*:[^0-9\n]{1,30}?)\s*[0-9]+\s*$', 'with': r'$1'},
+    {
+      'name': 'اسم البحر بعد «من» بين «+» (من نص المؤلف: يبقى بلا «+»)',
+      'pattern': r'\+\s*(من (مجزوء |مشطور |منهوك |مخلع )?(ال)?' '$_meters' r'[^+\n]{0,20}?)\s*\+',
+      'with': r' $1 ',
+    },
+    {
+      'name': 'اسم البحر وحده بين «+» (أضافه الناشر)',
+      'pattern': r'\+\s*(مجزوء |مشطور |منهوك |مخلع )?(ال)?' '$_meters' r'[^+\n]{0,20}?\s*\+',
+      'with': ' ',
     },
     {'name': 'فاصل الشطرين * ← «...»', 'pattern': r'\s*\*\s*', 'with': ' ... '},
     {
@@ -199,7 +220,8 @@ List<OpenitiItem> Function(List<OpenitiItem>, RemovalStats) structureDetector(
 enum GateDecision { accept, review, reject }
 
 class AutoOutcome {
-  AutoOutcome(this.decision, this.reasons, this.metrics, {this.result, this.json, this.generated = false, this.error});
+  AutoOutcome(this.decision, this.reasons, this.metrics,
+      {this.result, this.json, this.generated = false, this.error, this.unknown = const {}});
   final GateDecision decision;
   final List<String> reasons;
   final Map<String, num> metrics;
@@ -209,6 +231,9 @@ class AutoOutcome {
   final List<int>? json;
   final bool generated;
   final String? error;
+
+  /// أنواع الوسم المجهول وأعدادها ([unknownKinds]).
+  final Map<String, int> unknown;
 }
 
 final _arabicLetter = RegExp('[ء-ي]');
@@ -220,6 +245,12 @@ final _footnoteMarks = [
   RegExp(r'«\s*[0-9٠-٩۰-۹]+\s*»'),
   RegExp(r'\[\s*[0-9٠-٩۰-۹]+\s*\]'),
 ];
+
+/// أنواع الوسم المجهول وأعدادها (المفتاح بلا البادئة)، لتقرير الدفعة.
+Map<String, int> unknownKinds(RemovalStats stats) => {
+      for (final e in stats.counts.entries)
+        if (e.key.startsWith(autoUnknownPrefix)) e.key.substring(autoUnknownPrefix.length): e.value,
+    };
 
 double _r(double x) => (x * 10000).round() / 10000;
 
@@ -238,9 +269,7 @@ double _r(double x) => (x * 10000).round() / 10000;
   final words = texts.fold<int>(0, (n, t) => n + t.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length);
   final per10k = words == 0 ? 0.0 : 10000 / words;
 
-  final unknown = r.stats.counts.entries
-      .where((e) => e.key.startsWith(autoUnknownPrefix))
-      .fold<int>(0, (n, e) => n + e.value);
+  final unknown = unknownKinds(r.stats).values.fold<int>(0, (n, v) => n + v);
   var footnotes = 0;
   for (final t in texts) {
     for (final re in _footnoteMarks) {
@@ -364,7 +393,8 @@ AutoOutcome autoConvert({
     id: id,
     version: version,
   );
-  return AutoOutcome(d, reasons, metrics, result: r, json: json, generated: generated);
+  return AutoOutcome(d, reasons, metrics,
+      result: r, json: json, generated: generated, unknown: unknownKinds(r.stats));
 }
 
 int _chapterWidth(Map<String, Object?> book) {
