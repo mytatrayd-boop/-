@@ -188,21 +188,6 @@ const $ = (id) => document.getElementById(id);
 
 // ── الملفات المقسّمة: الصفحة تعيد تجميعها عند الطلب ─────────────────────────
 const manifest = await (await fetch("assets/manifest.json")).json();
-const nativeFetch = window.fetch.bind(window);
-window.fetch = async (input, init) => {
-  const url = typeof input === "string" ? input : input.url;
-  for (const [key, info] of Object.entries(manifest)) {
-    if (url.endsWith(key)) {
-      const bufs = await Promise.all(info.parts.map((p) => nativeFetch(new URL(p, location.href)).then((r) => {
-        if (!r.ok) throw new Error(`تعذر تحميل ${p}`);
-        return r.arrayBuffer();
-      })));
-      const type = key.endsWith(".wasm") ? "application/wasm" : "application/octet-stream";
-      return new Response(new Blob(bufs, { type }), { headers: { "Content-Type": type, "Content-Length": String(info.size) } });
-    }
-  }
-  return nativeFetch(input, init);
-};
 
 // ── المصحف والخطوط ──────────────────────────────────────────────────────────
 const QURAN = await (await fetch("assets/quran.json")).json(); // [[الاسم، [الآيات]]]
@@ -255,16 +240,17 @@ function bigrams() {
 }
 
 // ── الصوت ────────────────────────────────────────────────────────────────────
-let audioBuffer = null, audio16 = null, audioName = "";
+let audioFile = null, audioDuration = 0, audio16 = null;
+// يُقرأ الصوت بمعدل 16 ألف عينة/ث (ما يحتاجه التعرف) لتوفير ذاكرة الجوال؛ الجودة الكاملة تُقرأ وقت الإنتاج فقط
+async function decodeAt(file, rate, channels) {
+  const ctx = new OfflineAudioContext(channels, 1, rate);
+  return ctx.decodeAudioData(await file.arrayBuffer());
+}
 async function decodeAudio(file) {
-  const buf = await file.arrayBuffer();
-  const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-  const decoded = await ctx.decodeAudioData(buf.slice(0));
-  ctx.close();
-  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
-  const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
-  const r = await off.startRendering();
-  return [decoded, r.getChannelData(0)];
+  const d = await decodeAt(file, 16000, 1);
+  const mono = new Float32Array(d.length);
+  for (let c = 0; c < d.numberOfChannels; c++) { const x = d.getChannelData(c); for (let i = 0; i < x.length; i++) mono[i] += x[i] / d.numberOfChannels; }
+  return [d.duration, mono];
 }
 
 // فترات الصمت: أهدأ من ذروة التلاوة بـ 32 ديسيبل، أو قريبة من أرضية الضجيج إن كان في التسجيل أصوات محيطة
@@ -306,24 +292,74 @@ function breathUnits(a) {
 }
 
 // ── التعرف الصوتي (Whisper المدرّب على القرآن، داخل المتصفح) ─────────────────
+// يعمل في خيط منفصل (Worker) حتى تبقى الصفحة تستجيب، ويجمع أجزاء الملفات في ذاكرة واحدة بلا نسخ زائدة
+const WORKER_SRC = `
 let asr = null;
-async function loadAsr(onProgress) {
-  if (asr) return asr;
-  const T = await import(TJS + "transformers.min.js");
-  T.env.allowRemoteModels = false; T.env.allowLocalModels = true; T.env.useBrowserCache = false;
-  T.env.localModelPath = new URL("./", location.href).href;
-  T.env.backends.onnx.wasm.wasmPaths = { mjs: TJS + "ort-wasm-simd-threaded.jsep.mjs", wasm: new URL("assets/ort.wasm", location.href).href };
-  T.env.backends.onnx.wasm.numThreads = 1;
-  const files = {};
-  asr = await T.pipeline("automatic-speech-recognition", "model", {
-    dtype: "q8", device: "wasm",
-    progress_callback: (p) => {
-      if (p.status === "progress" && p.total) { files[p.file] = [p.loaded, p.total]; }
-      const v = Object.values(files), l = v.reduce((s, x) => s + x[0], 0), tt = v.reduce((s, x) => s + x[1], 0);
-      if (tt) onProgress(l / tt);
-    },
+const post = (m) => self.postMessage(m);
+self.onmessage = async (e) => {
+  const m = e.data;
+  try {
+    if (m.type === "load") {
+      const nativeFetch = self.fetch.bind(self);
+      self.fetch = async (input, init) => {
+        const url = typeof input === "string" ? input : input.url;
+        for (const [key, info] of Object.entries(m.manifest)) {
+          if (url.endsWith(key)) {
+            const buf = new Uint8Array(info.size); let off = 0;
+            for (const p of info.parts) {
+              const r = await nativeFetch(m.base + p);
+              if (!r.ok) throw new Error("تعذر تحميل " + p);
+              const b = new Uint8Array(await r.arrayBuffer()); buf.set(b, off); off += b.length;
+            }
+            const type = key.endsWith(".wasm") ? "application/wasm" : "application/octet-stream";
+            return new Response(buf, { headers: { "Content-Type": type, "Content-Length": String(info.size) } });
+          }
+        }
+        return nativeFetch(input, init);
+      };
+      const T = await import(m.tjs + "transformers.min.js");
+      T.env.allowRemoteModels = false; T.env.allowLocalModels = true; T.env.useBrowserCache = false;
+      T.env.localModelPath = m.base;
+      T.env.backends.onnx.wasm.wasmPaths = { mjs: m.tjs + "ort-wasm-simd-threaded.jsep.mjs", wasm: m.base + "assets/ort.wasm" };
+      T.env.backends.onnx.wasm.numThreads = 1;
+      const files = {};
+      asr = await T.pipeline("automatic-speech-recognition", "model", { dtype: "q8", device: "wasm",
+        progress_callback: (p) => {
+          if (p.status === "progress" && p.total) files[p.file] = [p.loaded, p.total];
+          const v = Object.values(files), l = v.reduce((s, x) => s + x[0], 0), t = v.reduce((s, x) => s + x[1], 0);
+          if (t) post({ type: "progress", value: l / t });
+        } });
+      post({ type: "loaded" });
+    } else if (m.type === "asr") {
+      const out = await asr(m.audio, { language: "arabic", task: "transcribe" });
+      post({ type: "text", id: m.id, text: out.text });
+    }
+  } catch (err) { post({ type: "error", id: m.id, message: String((err && err.message) || err) }); }
+};`;
+let worker = null, workerReady = null;
+const pending = new Map(); let nextId = 1, onLoadProgress = () => {};
+function startWorker() {
+  if (workerReady) return workerReady;
+  worker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: "text/javascript" })), { type: "module" });
+  workerReady = new Promise((resolve, reject) => {
+    worker.onmessage = (e) => {
+      const m = e.data;
+      if (m.type === "progress") onLoadProgress(m.value);
+      else if (m.type === "loaded") resolve();
+      else if (m.type === "text") { pending.get(m.id)?.resolve(m.text); pending.delete(m.id); }
+      else if (m.type === "error") {
+        if (m.id && pending.has(m.id)) { pending.get(m.id).reject(new Error(m.message)); pending.delete(m.id); }
+        else { workerReady = null; worker.terminate(); reject(new Error(m.message)); }
+      }
+    };
+    worker.onerror = (e) => { workerReady = null; reject(new Error(e.message || "تعذر تشغيل التعرف الصوتي")); };
   });
-  return asr;
+  worker.postMessage({ type: "load", manifest, tjs: TJS, base: new URL("./", location.href).href });
+  return workerReady;
+}
+function transcribe(audio) {
+  const id = nextId++;
+  return new Promise((resolve, reject) => { pending.set(id, { resolve, reject }); worker.postMessage({ type: "asr", id, audio }, [audio.buffer]); });
 }
 
 // ── المطابقة مع المصحف ────────────────────────────────────────────────────────
@@ -429,13 +465,14 @@ function buildSegments(units, unitWords, match, lo) {
 
 async function autoSync(progress) {
   progress("تنزيل نموذج التعرف الصوتي…", 0);
-  const model = await loadAsr((p) => progress("تنزيل نموذج التعرف الصوتي…", p * 0.3));
+  onLoadProgress = (p) => progress("تنزيل نموذج التعرف الصوتي…", p * 0.3);
+  await startWorker();
   const units = breathUnits(audio16), unitWords = [];
   for (let u = 0; u < units.length; u++) {
     progress(`التعرف على الصوت: ${u + 1} من ${units.length}`, 0.3 + 0.65 * u / units.length);
     const [s, e] = units[u];
-    const out = await model(audio16.subarray(Math.floor(s * 16000), Math.ceil(e * 16000)), { language: "arabic", task: "transcribe" });
-    unitWords.push(out.text.trim().split(/\s+/).filter(Boolean));
+    const text = await transcribe(audio16.slice(Math.floor(s * 16000), Math.ceil(e * 16000)));
+    unitWords.push(text.trim().split(/\s+/).filter(Boolean));
   }
   progress("المطابقة مع المصحف…", 0.96);
   const an = unitWords.flat().map(norm);
@@ -488,8 +525,8 @@ function wrap(text, font, maxW) {
 
 function shadowed(ctx, strength) { ctx.shadowColor = `rgba(0,0,0,${strength})`; ctx.shadowBlur = strength > 0 ? 16 : 0; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 4; }
 
-function textLayer(text) {
-  const c = new OffscreenCanvas(W, H), ctx = c.getContext("2d");
+function textLayer(text, c = new OffscreenCanvas(W, H)) {
+  const ctx = c.getContext("2d"); ctx.clearRect(0, 0, W, H);
   const font = `${st.fontSize}px Hafs`, maxW = W * st.width, lines = wrap(text, font, maxW);
   const step = Math.round(st.fontSize * st.lineGap); let y = Math.round(H * st.textY - step * lines.length / 2);
   ctx.font = font; ctx.direction = "rtl"; ctx.fillStyle = st.color; ctx.textBaseline = "top"; shadowed(ctx, st.shadow);
@@ -514,8 +551,8 @@ function glyph(ctx, ch, font, width, y, color) {
   return h;
 }
 
-function headerLayer(name, basmala) {
-  const c = new OffscreenCanvas(W, H), ctx = c.getContext("2d");
+function headerLayer(name, basmala, c = new OffscreenCanvas(W, H)) {
+  const ctx = c.getContext("2d"); ctx.clearRect(0, 0, W, H);
   if (!name && !basmala) return c;
   shadowed(ctx, st.shadow);
   let y = H * st.headerY; const scale = st.headerSize / 46, font = `${st.headerSize}px Hafs`;
@@ -658,6 +695,7 @@ function validSegs() { return segs.filter((g) => g.text && g.end > g.start).sort
 function fontTexts(list) { const s = +surahSel.value; return textsForFont(list.map((g) => g.text), nextWord(s, +$("toAyah").value)); }
 
 let pvTimer = null, pvBusy = false;
+const pvHeader = new OffscreenCanvas(W, H), pvText = new OffscreenCanvas(W, H); // تُستعمل نفسها في كل معاينة
 function schedulePreview() { clearTimeout(pvTimer); pvTimer = setTimeout(drawPreview, 120); }
 async function drawPreview() {
   if (pvBusy) { schedulePreview(); return; }
@@ -670,8 +708,8 @@ async function drawPreview() {
     const t = list.length ? (list[idx].start + list[idx].end) / 2 : 0;
     ctx.clearRect(0, 0, W, H);
     await drawBackground(ctx, bgs, points, t, duration);
-    ctx.drawImage(headerLayer(...headerTexts()), 0, 0);
-    if (list.length) ctx.drawImage(textLayer(fontTexts(list)[idx]), 0, 0);
+    ctx.drawImage(headerLayer(...headerTexts(), pvHeader), 0, 0);
+    if (list.length) ctx.drawImage(textLayer(fontTexts(list)[idx], pvText), 0, 0);
   } finally { pvBusy = false; }
 }
 
@@ -681,10 +719,10 @@ $("audioFile").addEventListener("change", async () => {
   const f = $("audioFile").files[0]; if (!f) return;
   status($("syncStatus"), "قراءة الملف…");
   try {
-    [audioBuffer, audio16] = await decodeAudio(f); audioName = f.name;
-    $("audioInfo").textContent = `${f.name} — ${Math.floor(audioBuffer.duration / 60)}:${String(Math.round(audioBuffer.duration % 60)).padStart(2, "0")}`;
+    [audioDuration, audio16] = await decodeAudio(f); audioFile = f;
+    $("audioInfo").textContent = `${f.name} — ${Math.floor(audioDuration / 60)}:${String(Math.round(audioDuration % 60)).padStart(2, "0")}`;
     $("syncBtn").disabled = false; status($("syncStatus"), "");
-    if (!segs.length) distribute(0, audioBuffer.duration);
+    if (!segs.length) distribute(0, audioDuration);
   } catch (e) { status($("syncStatus"), "تعذرت قراءة الملف الصوتي. جرّب ملف mp3 أو m4a.", "bad"); }
 });
 
@@ -701,7 +739,7 @@ $("syncBtn").addEventListener("click", async () => {
   } finally { $("syncBtn").disabled = false; prog.hidden = true; }
 });
 
-$("distBtn").addEventListener("click", () => distribute(0, audioBuffer ? audioBuffer.duration : 5 * (+$("toAyah").value - +$("fromAyah").value + 1)));
+$("distBtn").addEventListener("click", () => distribute(0, audioFile ? audioDuration : 5 * (+$("toAyah").value - +$("fromAyah").value + 1)));
 $("addRow").addEventListener("click", () => { const last = segs.at(-1); segs.push({ text: last ? last.text : "", start: last ? last.end + 0.2 : 0, end: last ? last.end + 4 : 4 }); renderTable(); });
 surahSel.addEventListener("change", () => { $("fromAyah").value = 1; $("toAyah").value = Math.min(5, QURAN[+surahSel.value - 1][1].length); clampAyat(); schedulePreview(); });
 ["fromAyah", "toAyah"].forEach((id) => $(id).addEventListener("change", clampAyat));
@@ -790,6 +828,8 @@ async function renderVideo(onProgress) {
   const list = validSegs(); if (!list.length) throw new Error("لا توجد مقاطع صالحة في الجدول");
   const texts = fontTexts(list), duration = list.at(-1).end + 0.8;
   const v = await pickVideoCodec(); if (!v) throw new Error("متصفحك لا يدعم ترميز الفيديو");
+  onProgress(0, "قراءة الصوت بجودته الكاملة…");
+  let audioBuffer = await decodeAt(audioFile, 48000, 2);
   const ch = Math.min(audioBuffer.numberOfChannels, 2), rate = audioBuffer.sampleRate;
   const a = await pickAudioCodec(rate, ch);
   const target = new Mp4Muxer.ArrayBufferTarget();
@@ -811,6 +851,7 @@ async function renderVideo(onProgress) {
     }
     await aenc.flush(); aenc.close();
   }
+  audioBuffer = null; // لا حاجة له بعد ترميز الصوت
   const bgs = await bgList(), points = schedule(bgs.length, duration, list);
   const header = headerLayer(...headerTexts());
   const layers = new Map(), canvas = new OffscreenCanvas(W, H), ctx = canvas.getContext("2d");
@@ -841,12 +882,12 @@ async function renderVideo(onProgress) {
 }
 
 $("renderBtn").addEventListener("click", async () => {
-  if (!audioBuffer) { status($("renderStatus"), "ارفع ملف التلاوة أولاً.", "bad"); return; }
+  if (!audioFile) { status($("renderStatus"), "ارفع ملف التلاوة أولاً.", "bad"); return; }
   $("renderBtn").disabled = true; $("saveBtn").hidden = true; const prog = $("renderProg"); prog.hidden = false;
   const t0 = performance.now();
   try {
-    const { blob, noAudio } = await renderVideo((p) => {
-      prog.value = p; const el = (performance.now() - t0) / 1000, left = p > 0.02 ? el / p - el : 0;
+    const { blob, noAudio } = await renderVideo((p, msg) => {
+      prog.value = p; if (msg) { status($("renderStatus"), msg); return; } const el = (performance.now() - t0) / 1000, left = p > 0.02 ? el / p - el : 0;
       status($("renderStatus"), `جارٍ الإنتاج… ${Math.round(p * 100)}%` + (left ? ` (باقٍ نحو ${Math.ceil(left / 60)} دقيقة)` : ""));
     });
     outBlob = blob;
