@@ -1,0 +1,84 @@
+diff --git a/apps/tilawa/web/tilawa.html b/apps/tilawa/web/tilawa.html
+index ee6e016..788f49e 100644
+--- a/apps/tilawa/web/tilawa.html
++++ b/apps/tilawa/web/tilawa.html
+@@ -65,6 +65,18 @@ td button { padding: 4px 8px; font-size: 12px; }
+ .preview canvas { width: 100%; max-width: 270px; aspect-ratio: 9 / 16; border-radius: 6px; background: #000; }
+ .preview video { width: 100%; max-width: 270px; border-radius: 6px; }
+ details > summary { cursor: pointer; font-weight: 600; }
++.editor { display: grid; gap: 10px; }
++.tl-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--bg); touch-action: none; }
++#tl { display: block; width: 100%; height: 168px; cursor: pointer; }
++.tl-bar, .btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
++.time { font-variant-numeric: tabular-nums; direction: ltr; font-size: 14px; color: var(--muted); min-width: 64px; text-align: center; }
++.sel { border: 1px solid var(--accent); border-radius: 8px; padding: 10px; display: grid; gap: 8px; }
++.sel-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
++.sel textarea { font: 20px/1.9 "Amiri Quran", "Noto Naskh Arabic", var(--ui); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; width: 100%; box-sizing: border-box; resize: vertical; }
++.words { display: flex; flex-wrap: wrap; gap: 6px; direction: rtl; }
++.words button { font: 18px "Amiri Quran", var(--ui); padding: 2px 10px; }
++.words button.guess { border-color: var(--accent); }
++button.on { background: var(--warn); color: var(--accent-ink); border-color: var(--warn); }
+ .seg-pick { width: 100%; }
+ @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+ </style>
+@@ -98,12 +110,45 @@ details > summary { cursor: pointer; font-weight: 600; }
+           <label>إلى آية <input id="toAyah" type="number" min="1" value="5"></label>
+           <button id="distBtn">توزيع تقريبي</button>
+         </div>
+-        <p class="note">الجدول يملؤه التعرف التلقائي. عدّل النص أو الأوقات بالثواني، أو أضف صفاً لتكرار مقطع أعاده القارئ.</p>
+-        <div class="tablebox"><table>
+-          <thead><tr><th>النص</th><th>البداية</th><th>النهاية</th><th></th></tr></thead>
+-          <tbody id="segBody"></tbody>
+-        </table></div>
+-        <div class="row"><button id="addRow">+ صف</button></div>
++        <div class="editor">
++          <div class="tl-wrap" dir="ltr"><canvas id="tl" aria-label="الخط الزمني: موجة الصوت والمقاطع"></canvas></div>
++          <div class="tl-bar">
++            <button id="playBtn" class="primary" aria-label="تشغيل">▶</button>
++            <span id="timeV" class="time">0:00.0</span>
++            <button id="zoomOut" aria-label="تصغير">−</button><button id="zoomIn" aria-label="تكبير">+</button>
++            <button id="undoBtn" disabled>↶ تراجع</button>
++            <button id="tapBtn">🎯 مزامنة بالنقر</button>
++          </div>
++          <p class="note" id="tlHint">اضغط على الموجة لتحريك المؤشر، واسحبها للتنقل، وكبّر بإصبعين أو بالزرين. اضغط مقطعاً لتحديده، ثم اسحب طرفيه أو اسحبه كله.</p>
++          <div class="sel" id="selBox" hidden>
++            <div class="sel-head"><strong id="selTitle">المقطع</strong><span class="time" id="selTimes"></span></div>
++            <textarea id="selText" rows="2" dir="rtl" aria-label="نص المقطع"></textarea>
++            <div class="btns">
++              <button id="setStart">⇤ البداية هنا</button><button id="setEnd">النهاية هنا ⇥</button>
++              <button id="splitBtn">✂️ قسّم عند المؤشر</button><button id="mergeBtn">⧉ ادمج مع التالي</button>
++              <button id="dupBtn">🔁 كرّر</button><button id="delBtn">🗑 احذف</button>
++            </div>
++            <div id="splitBox" hidden>
++              <p class="note">اختر الكلمة التي يبدأ بها الجزء الثاني:</p>
++              <div class="words" id="splitWords"></div>
++            </div>
++          </div>
++          <div class="btns">
++            <button id="trimStartBtn">✂️ احذف ما قبل المؤشر</button><button id="trimEndBtn">احذف ما بعد المؤشر ✂️</button>
++            <button id="trimReset" hidden>إلغاء القص</button>
++          </div>
++          <div class="row">
++            <label>إضافة آية عند المؤشر <input id="addAyahN" type="number" min="1" value="1"></label>
++            <button id="addAyahBtn">+ أضف</button>
++          </div>
++        </div>
++        <details><summary>قائمة المقاطع بالأرقام</summary>
++          <div class="tablebox" style="margin-top:10px"><table>
++            <thead><tr><th>النص</th><th>البداية</th><th>النهاية</th><th></th></tr></thead>
++            <tbody id="segBody"></tbody>
++          </table></div>
++          <div class="row" style="margin-top:8px"><button id="addRow">+ صف</button></div>
++        </details>
+       </section>
+ 
+       <section class="card" aria-labelledby="h3">
+@@ -173,7 +218,7 @@ details > summary { cursor: pointer; font-weight: 600; }
+       <div class="preview">
+         <strong>معاينة</strong>
+         <canvas id="pv" width="1080" height="1920"></canvas>
+-        <label class="seg-pick">المقطع المعروض: <span id="segV">1</span><input id="segPick" type="range" min="0" max="0" value="0"></label>
++        <p class="note">المعاينة عند موضع المؤشر في الخط الزمني.</p>
+         <video id="outVideo" controls playsinline hidden></video>
+       </div>
+     </aside>
