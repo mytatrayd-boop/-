@@ -27,7 +27,7 @@ def split(data, out, folder, name, manifest):
     """يكتب الملف أجزاءً (أسماؤها بالنسبة لجذر الصفحة) ويسجلها في manifest تحت مساره الأصلي."""
     parts = []
     for i in range(0, len(data), PART):
-        p = f"{folder}/{name}.{i // PART:02d}.bin"
+        p = f"{folder}/{name}.{i // PART:02d}.wasm"  # امتداد يقبله النشر؛ المحتوى بايتات خام
         (out / p).write_bytes(data[i:i + PART])
         parts.append(p)
     manifest[f"{folder}/{name}"] = {"parts": parts, "size": len(data)}

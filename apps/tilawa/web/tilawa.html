@@ -377,28 +377,47 @@ function align(an, qn, jump = 2.5) {
 const letters = (t) => t.replace(MARKS, "").replace(/[\s٠-٩]/g, "").length || 1;
 
 // المقاطع: كل وحدة نَفَس مقطع، تُقسم عند نهاية الآية وعند رجوع القارئ للخلف
+const sameAyah = (x, y) => QW[x][0] === QW[y][0] && QW[x][1] === QW[y][1];
 function buildSegments(units, unitWords, match, lo) {
-  const segs = []; let w = 0;
+  const runs = []; let w = 0;
   units.forEach(([us, ue], u) => {
     const qs = [];
     for (let k = 0; k < unitWords[u].length; k++, w++) if (match[w] !== null) qs.push(match[w] + lo);
     if (!qs.length) return;
-    const runs = [[qs[0], qs[0]]];
-    for (const q of qs.slice(1)) { const r = runs.at(-1); if (q > r[1]) r[1] = q; else if (q < r[0] || q < r[1] - 1) runs.push([q, q]); }
-    const pieces = [];
-    for (const [a, b] of runs) {
+    let r = { a: qs[0], b: qs[0], us, ue, unit: u };
+    runs.push(r);
+    for (const q of qs.slice(1)) {
+      if (q > r.b) r.b = q;
+      else if (q < r.a || q < r.b - 1) { r = { a: q, b: q, us, ue, unit: u }; runs.push(r); }
+    }
+  });
+  // كلمات قليلة فاتت التعرف بين مقطعين متتاليين تُكمل من المصحف (أول الآية أو آخرها)
+  for (let k = 1; k < runs.length; k++) {
+    const p = runs[k - 1], c = runs[k], gap = c.a - p.b - 1;
+    if (gap < 1 || gap > 4) continue;
+    if (sameAyah(p.b, c.a)) { if (p.unit !== c.unit) c.a = p.b + 1; else p.b = c.a - 1; }
+    else {
+      while (p.b + 1 < c.a && sameAyah(p.b, p.b + 1)) p.b++;
+      while (c.a - 1 > p.b && sameAyah(c.a, c.a - 1)) c.a--;
+    }
+  }
+  const segs = [];
+  const byUnit = new Map(); runs.forEach((r) => (byUnit.get(r.unit) || byUnit.set(r.unit, []).get(r.unit)).push(r));
+  for (const list of byUnit.values()) {
+    const { us, ue } = list[0], pieces = [];
+    for (const { a, b } of list) {
       let s = a;
-      for (let x = a; x <= b; x++) if (x === b || QW[x + 1][1] !== QW[x][1] || QW[x + 1][0] !== QW[x][0]) { pieces.push([s, x]); s = x + 1; }
+      for (let x = a; x <= b; x++) if (x === b || !sameAyah(x, x + 1)) { pieces.push([s, x]); s = x + 1; }
     }
     const lens = pieces.map(([a, b]) => QW.slice(a, b + 1).reduce((s, x) => s + letters(x[2]), 0));
     const total = lens.reduce((s, x) => s + x, 0); let t = us;
     pieces.forEach(([a, b], k) => {
       const ws = QW.slice(a, b + 1), [s, ay] = ws.at(-1);
-      const end = b + 1 >= QW.length || QW[b + 1][1] !== ay || QW[b + 1][0] !== s;
+      const end = b + 1 >= QW.length || !sameAyah(b, b + 1);
       segs.push({ text: ws.map((x) => x[2]).join(" ") + (end ? " " + arNum(ay) : ""), start: t, surah: s, ayah: ay, unitEnd: ue });
       t += (ue - us) * lens[k] / total;
     });
-  });
+  }
   segs.forEach((g, k) => { g.end = k + 1 < segs.length ? Math.max(g.start + 0.3, segs[k + 1].start - 0.15) : g.unitEnd + 0.6; });
   return segs;
 }
