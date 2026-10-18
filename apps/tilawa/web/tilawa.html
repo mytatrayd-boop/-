@@ -1,0 +1,832 @@
+<title>تلاوة</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;600&display=swap">
+<style>
+/* أداة عمل بعمود واحد على الجوال وعمودين على الشاشة الواسعة: الإعدادات يميناً والمعاينة ثابتة يساراً */
+:root {
+  --bg: #f3f1ea; --panel: #fffdf7; --ink: #1d2320; --muted: #5d665f; --line: #dcd8cb;
+  --accent: #1f6b55; --accent-ink: #ffffff; --warn: #9a5b12; --bad: #a3322a; --good: #1f6b55;
+  --ui: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --display: "Reem Kufi", "IBM Plex Sans Arabic", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #101614; --panel: #17201d; --ink: #e8ece6; --muted: #9aa69f; --line: #2a3632;
+  --accent: #4fb08e; --accent-ink: #0b1210; --warn: #d9a25a; --bad: #e0776c; --good: #4fb08e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #101614; --panel: #17201d; --ink: #e8ece6; --muted: #9aa69f; --line: #2a3632;
+  --accent: #4fb08e; --accent-ink: #0b1210; --warn: #d9a25a; --bad: #e0776c; --good: #4fb08e; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--ui); direction: rtl;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+header h1 { font: 600 30px/1.2 var(--display); margin: 0; letter-spacing: 0; }
+header p { margin: 4px 0 0; color: var(--muted); }
+.layout { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr) 320px; }
+  .side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); } }
+.steps { display: grid; gap: 14px; min-width: 0; }
+section.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+section.card h2 { margin: 0; font: 600 18px/1.3 var(--ui); display: flex; gap: 8px; align-items: baseline; }
+section.card h2 .n { font-family: var(--display); color: var(--accent); }
+.row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.row > * { min-width: 0; }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+label.inline { display: flex; gap: 6px; align-items: center; color: var(--ink); font-size: 14px; }
+input[type=number], select, input[type=text] { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=color] { width: 44px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: none; padding: 2px; }
+.grid2 { display: grid; gap: 10px 16px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+button { font: 600 14px var(--ui); border-radius: 8px; padding: 9px 14px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 6px; justify-items: start; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.status { font-size: 14px; padding: 8px 10px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); }
+.status.bad { color: var(--bad); border-color: var(--bad); }
+.status.good { color: var(--good); border-color: var(--good); }
+progress { width: 100%; height: 8px; accent-color: var(--accent); }
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; max-height: 420px; overflow-y: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: middle; }
+th { position: sticky; top: 0; background: var(--panel); font-weight: 600; color: var(--muted); font-size: 12px; z-index: 1; }
+td.txt { min-width: 260px; font-family: "Amiri Quran", "Noto Naskh Arabic", var(--ui); font-size: 19px; line-height: 2; }
+td.txt div { outline: none; padding: 2px 4px; border-radius: 4px; }
+td.txt div:focus { background: var(--bg); }
+td input[type=number] { width: 78px; font-variant-numeric: tabular-nums; direction: ltr; text-align: center; }
+td button { padding: 4px 8px; font-size: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 4px; font-size: 13px; background: var(--bg); }
+.chip img { width: 26px; height: 40px; object-fit: cover; border-radius: 999px; }
+.chip button { border: 0; padding: 0 4px; background: none; color: var(--muted); font-size: 16px; }
+.preview { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 10px; justify-items: center; }
+.preview canvas { width: 100%; max-width: 270px; aspect-ratio: 9 / 16; border-radius: 6px; background: #000; }
+.preview video { width: 100%; max-width: 270px; border-radius: 6px; }
+details > summary { cursor: pointer; font-weight: 600; }
+.seg-pick { width: 100%; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>تلاوة</h1>
+    <p>ارفع تلاوة، فتتعرف الصفحة على الآيات وتوقّتها، ثم تنتج فيديو 1080×1920 جاهزاً للنشر. كل المعالجة داخل جهازك.</p>
+  </header>
+  <div class="layout">
+    <div class="steps">
+      <section class="card" aria-labelledby="h1">
+        <h2 id="h1"><span class="n">١</span> التلاوة</h2>
+        <div class="drop">
+          <input id="audioFile" type="file" accept="audio/*,video/mp4,.mp3,.m4a,.wav,.aac,.ogg,.mp4">
+          <p class="note" id="audioInfo">ملف صوت أو فيديو.</p>
+        </div>
+        <div class="row">
+          <button class="primary" id="syncBtn" disabled>🔎 تعرّف على الآيات ووقّتها</button>
+        </div>
+        <progress id="syncProg" value="0" max="1" hidden></progress>
+        <div class="status" id="syncStatus" hidden></div>
+        <p class="note">أول مرة تنزّل الصفحة نموذج التعرف الصوتي (نحو 100 ميجا)، ثم يبقى في المتصفح.</p>
+      </section>
+
+      <section class="card" aria-labelledby="h2">
+        <h2 id="h2"><span class="n">٢</span> الآيات والتوقيت</h2>
+        <div class="row">
+          <label>السورة <select id="surah"></select></label>
+          <label>من آية <input id="fromAyah" type="number" min="1" value="1"></label>
+          <label>إلى آية <input id="toAyah" type="number" min="1" value="5"></label>
+          <button id="distBtn">توزيع تقريبي</button>
+        </div>
+        <p class="note">الجدول يملؤه التعرف التلقائي. عدّل النص أو الأوقات بالثواني، أو أضف صفاً لتكرار مقطع أعاده القارئ.</p>
+        <div class="tablebox"><table>
+          <thead><tr><th>النص</th><th>البداية</th><th>النهاية</th><th></th></tr></thead>
+          <tbody id="segBody"></tbody>
+        </table></div>
+        <div class="row"><button id="addRow">+ صف</button></div>
+      </section>
+
+      <section class="card" aria-labelledby="h3">
+        <h2 id="h3"><span class="n">٣</span> الخلفية</h2>
+        <label>خلفيات جاهزة</label>
+        <div class="chips" id="presetChips"></div>
+        <div class="drop">
+          <input id="bgFiles" type="file" accept="image/*,video/*" multiple>
+          <p class="note">أو ارفع صوراً أو فيديوهات، واحدة أو أكثر. تُقص إلى 9:16، والفيديو القصير يتكرر.</p>
+        </div>
+        <div class="chips" id="bgChips"></div>
+        <div class="grid2" id="bgMulti">
+          <label>متى تتبدّل
+            <select id="bgChange"><option value="time">كل عدد من الثواني</option><option value="segment">مع كل مقطع</option></select></label>
+          <label id="everyBox">كل (ثانية): <span id="everyV">8</span><input id="bgEvery" type="range" min="3" max="30" value="8"></label>
+          <label>الانتقال
+            <select id="transition"><option value="fade">تلاشٍ</option><option value="fadeblack">تلاشٍ عبر الأسود</option>
+              <option value="slideright">انزلاق</option><option value="circleopen">دائرة</option><option value="none">بلا انتقال</option></select></label>
+          <label>مدة الانتقال: <span id="tdV">1.0</span> ث<input id="transDur" type="range" min="0.3" max="2" step="0.1" value="1"></label>
+          <label class="inline"><input id="shuffle" type="checkbox"> ترتيب عشوائي</label>
+        </div>
+        <div class="grid2">
+          <label>تعتيم: <span id="dimV">0.25</span><input id="dim" type="range" min="0" max="0.8" step="0.05" value="0.25"></label>
+          <label>تضبيب: <span id="blurV">0</span><input id="blur" type="range" min="0" max="20" value="0"></label>
+          <label class="inline"><input id="zoom" type="checkbox" checked> تقريب بطيء للصور</label>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h4">
+        <h2 id="h4"><span class="n">٤</span> النص والترويسة</h2>
+        <div class="grid2">
+          <label>حجم الخط: <span id="fsV">60</span><input id="fontSize" type="range" min="30" max="120" value="60"></label>
+          <label>الموضع العمودي: <span id="tyV">0.40</span><input id="textY" type="range" min="0.15" max="0.9" step="0.01" value="0.40"></label>
+          <label>عرض السطر: <span id="wV">0.85</span><input id="width" type="range" min="0.5" max="0.95" step="0.01" value="0.85"></label>
+          <label>تباعد الأسطر: <span id="lgV">1.9</span><input id="lineGap" type="range" min="1.3" max="2.6" step="0.1" value="1.9"></label>
+          <label>قوة الظل: <span id="shV">0.85</span><input id="shadow" type="range" min="0" max="1" step="0.05" value="0.85"></label>
+          <label>مدة الظهور والاختفاء: <span id="fdV">0.35</span> ث<input id="fade" type="range" min="0" max="1" step="0.05" value="0.35"></label>
+          <label>المحاذاة <select id="align"><option value="center">توسيط</option><option value="right">يمين</option><option value="left">يسار</option></select></label>
+          <label class="inline">لون النص <input id="color" type="color" value="#ffffff"></label>
+        </div>
+        <details open><summary>الترويسة (ثابتة طوال المقطع)</summary>
+          <div class="grid2" style="margin-top:10px">
+            <label>الشكل <select id="headerMode"><option value="mushaf">إطار المصحف وبسملة مزخرفة</option>
+              <option value="basmala">بسملة مزخرفة</option><option value="plain">نص عادي</option></select></label>
+            <label class="inline"><input id="showName" type="checkbox" checked> اسم السورة</label>
+            <label class="inline"><input id="showBasmala" type="checkbox" checked> البسملة</label>
+            <label>حجم الترويسة: <span id="hsV">46</span><input id="headerSize" type="range" min="24" max="90" value="46"></label>
+            <label>موضع الترويسة: <span id="hyV">0.09</span><input id="headerY" type="range" min="0.03" max="0.4" step="0.01" value="0.09"></label>
+            <label class="inline">لون الترويسة <input id="headerColor" type="color" value="#ebebeb"></label>
+          </div>
+        </details>
+      </section>
+
+      <section class="card" aria-labelledby="h5">
+        <h2 id="h5"><span class="n">٥</span> الإنتاج</h2>
+        <div class="row"><button class="primary" id="renderBtn">🎬 أنتج الفيديو</button><button id="saveBtn" hidden>⬇️ حفظ الفيديو</button></div>
+        <progress id="renderProg" value="0" max="1" hidden></progress>
+        <div class="status" id="renderStatus" hidden></div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <div class="preview">
+        <strong>معاينة</strong>
+        <canvas id="pv" width="1080" height="1920"></canvas>
+        <label class="seg-pick">المقطع المعروض: <span id="segV">1</span><input id="segPick" type="range" min="0" max="0" value="0"></label>
+        <video id="outVideo" controls playsinline hidden></video>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.js"></script>
+<script type="module">
+const W = 1080, H = 1920, FPS = 30;
+const TJS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5/dist/";
+const $ = (id) => document.getElementById(id);
+
+// ── الملفات المقسّمة: الصفحة تعيد تجميعها عند الطلب ─────────────────────────
+const manifest = await (await fetch("assets/manifest.json")).json();
+const nativeFetch = window.fetch.bind(window);
+window.fetch = async (input, init) => {
+  const url = typeof input === "string" ? input : input.url;
+  for (const [key, info] of Object.entries(manifest)) {
+    if (url.endsWith(key)) {
+      const bufs = await Promise.all(info.parts.map((p) => nativeFetch(new URL(p, location.href)).then((r) => {
+        if (!r.ok) throw new Error(`تعذر تحميل ${p}`);
+        return r.arrayBuffer();
+      })));
+      const type = key.endsWith(".wasm") ? "application/wasm" : "application/octet-stream";
+      return new Response(new Blob(bufs, { type }), { headers: { "Content-Type": type, "Content-Length": String(info.size) } });
+    }
+  }
+  return nativeFetch(input, init);
+};
+
+// ── المصحف والخطوط ──────────────────────────────────────────────────────────
+const QURAN = await (await fetch("assets/quran.json")).json(); // [[الاسم، [الآيات]]]
+async function loadFont(name, path) {
+  const f = new FontFace(name, await (await fetch(path)).arrayBuffer());
+  await f.load(); document.fonts.add(f);
+}
+await Promise.all([loadFont("Hafs", "assets/hafs.otf"), loadFont("Bsml", "assets/bsml.ttf")]);
+
+const DIGITS = "٠١٢٣٤٥٦٧٨٩";
+const arNum = (n) => String(n).split("").map((d) => DIGITS[+d]).join("");
+const BASMALA = "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ";
+const MARKS = /[ؐ-ًؚ-ٰٟۖ-ۭ࣓-ࣿـ]/g;
+const FOLD = { "أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي", "ة": "ه", "ؤ": "و", "ئ": "ي" };
+// هيكل الكلمة للمطابقة: بلا تشكيل، والألفات والهمزات موحّدة ومحذوفة (الرسم العثماني يحذف ألفات كثيرة)
+const norm = (w) => w.replace(MARKS, "").replace(/[أإآٱىةؤئ]/g, (c) => FOLD[c]).replace(/[^ء-ي]/g, "").replace(/[اء]/g, "");
+
+// Tanzil يرمز بعض العلامات بغير ترميز خط المجمع (QPC)؛ بدون التحويل تظهر دائرة منقطة مكانها
+const STAGGERED = { "ً": "ٗ", "ٌ": "ٞ", "ٍ": "ٖ" };
+const QPC = { "۟": "ْ", "ْ": "ۡ", "۪": "ٜ", "۫": "۬", "ۣ": "ۜ" };
+function forHafs(word, next) {
+  const iqlab = next.replace(/^ـ+/, "").startsWith("ب");
+  return word.replace(/([ًٌٍ])[ۭۢ]/g, (_, t) => (iqlab ? t + "ۢ" : STAGGERED[t]))
+    .replace(/[ْ۪ۣ۟۫]/g, (c) => QPC[c]);
+}
+const isNum = (w) => /^[٠-٩]+$/.test(w);
+function textsForFont(texts, tail = "") {
+  const split = texts.map((t) => t.split(/\s+/).filter(Boolean));
+  const flat = split.flat().concat([tail]);
+  const real = flat.map((w, i) => i).filter((i) => flat[i] && !isNum(flat[i]));
+  const conv = flat.slice();
+  real.forEach((i, k) => { conv[i] = forHafs(flat[i], k + 1 < real.length ? flat[real[k + 1]] : ""); });
+  let pos = 0;
+  return split.map((ws) => { const s = conv.slice(pos, pos + ws.length).join(" "); pos += ws.length; return s; });
+}
+const nextWord = (s, a) => (QURAN[s - 1][1][a] || "").split(" ")[0] || "";
+
+// كل كلمات المصحف بالترتيب وفهرس الكلمات الثنائية
+const QW = [], QN = [];
+QURAN.forEach(([_, ayat], si) => ayat.forEach((t, ai) => t.split(" ").forEach((w) => { QW.push([si + 1, ai + 1, w]); QN.push(norm(w)); })));
+let BIGRAMS = null;
+function bigrams() {
+  if (BIGRAMS) return BIGRAMS;
+  BIGRAMS = new Map();
+  for (let j = 0; j < QN.length - 1; j++) {
+    const k = QN[j] + " " + QN[j + 1];
+    const l = BIGRAMS.get(k); if (l) { if (l.length <= 50) l.push(j); } else BIGRAMS.set(k, [j]);
+  }
+  return BIGRAMS;
+}
+
+// ── الصوت ────────────────────────────────────────────────────────────────────
+let audioBuffer = null, audio16 = null, audioName = "";
+async function decodeAudio(file) {
+  const buf = await file.arrayBuffer();
+  const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+  const decoded = await ctx.decodeAudioData(buf.slice(0));
+  ctx.close();
+  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+  const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
+  const r = await off.startRendering();
+  return [decoded, r.getChannelData(0)];
+}
+
+// فترات الصمت: أهدأ من ذروة التلاوة بـ 32 ديسيبل، أو قريبة من أرضية الضجيج إن كان في التسجيل أصوات محيطة
+function silences(a, frame = 0.02, minLen = 0.25) {
+  const n = Math.round(16000 * frame), m = Math.floor(a.length / n), db = new Float32Array(m);
+  for (let k = 0; k < m; k++) { let s = 0; for (let i = k * n; i < (k + 1) * n; i++) s += a[i] * a[i]; db[k] = 10 * Math.log10(s / n + 1e-10); }
+  const sorted = Float32Array.from(db).sort(), pct = (p) => sorted[Math.min(m - 1, Math.floor(p / 100 * (m - 1)))];
+  const low = pct(5), high = pct(95), th = Math.max(high - 32, low + 0.3 * (high - low));
+  const out = []; let st = -1;
+  for (let k = 0; k <= m; k++) {
+    const q = k < m && db[k] < th;
+    if (q && st < 0) st = k;
+    else if (!q && st >= 0) { if ((k - st) * frame >= minLen) out.push([st * frame, k * frame]); st = -1; }
+  }
+  return { out, db, frame };
+}
+
+// وحدات النَّفَس: ما بين وقفتين. القصيرة تُضم لما قبلها، والطويلة جداً (حد Whisper 30 ث) تُقسم عند أهدأ لحظة
+function breathUnits(a) {
+  const { out: q, db, frame } = silences(a), total = a.length / 16000;
+  let units = [], t = 0;
+  for (const [s, e] of q) { if (s - t > 0.05) units.push([t, s]); t = e; }
+  if (total - t > 0.05) units.push([t, total]);
+  const merged = [];
+  for (const u of units) {
+    if (merged.length && (u[1] - u[0] < 0.6 || u[0] - merged.at(-1)[1] < 0.12) && u[1] - merged.at(-1)[0] < 28) merged.at(-1)[1] = u[1];
+    else merged.push(u.slice());
+  }
+  const final = [];
+  for (let [s, e] of merged) {
+    while (e - s > 28) {
+      let best = s + 20, bv = 1e9;
+      for (let x = s + 10; x < s + 28; x += frame) { const v = db[Math.floor(x / frame)]; if (v < bv) { bv = v; best = x; } }
+      final.push([s, best]); s = best;
+    }
+    final.push([s, e]);
+  }
+  return final;
+}
+
+// ── التعرف الصوتي (Whisper المدرّب على القرآن، داخل المتصفح) ─────────────────
+let asr = null;
+async function loadAsr(onProgress) {
+  if (asr) return asr;
+  const T = await import(TJS + "transformers.min.js");
+  T.env.allowRemoteModels = false; T.env.allowLocalModels = true; T.env.useBrowserCache = false;
+  T.env.localModelPath = new URL("./", location.href).href;
+  T.env.backends.onnx.wasm.wasmPaths = { mjs: TJS + "ort-wasm-simd-threaded.jsep.mjs", wasm: new URL("assets/ort.wasm", location.href).href };
+  T.env.backends.onnx.wasm.numThreads = 1;
+  const files = {};
+  asr = await T.pipeline("automatic-speech-recognition", "model", {
+    dtype: "q8", device: "wasm",
+    progress_callback: (p) => {
+      if (p.status === "progress" && p.total) { files[p.file] = [p.loaded, p.total]; }
+      const v = Object.values(files), l = v.reduce((s, x) => s + x[0], 0), tt = v.reduce((s, x) => s + x[1], 0);
+      if (tt) onProgress(l / tt);
+    },
+  });
+  return asr;
+}
+
+// ── المطابقة مع المصحف ────────────────────────────────────────────────────────
+function locate(an) {
+  const idx = bigrams(), votes = new Map();
+  for (let i = 0; i < an.length - 1; i++) {
+    const hits = idx.get(an[i] + " " + an[i + 1]);
+    if (hits && hits.length <= 50) for (const j of hits) { const d = j - i; (votes.get(d) || votes.set(d, []).get(d)).push(j); }
+  }
+  if (!votes.size) return null;
+  let best = null, bs = -1;
+  for (const d of votes.keys()) { let s = 0; for (let k = -15; k <= 15; k++) s += (votes.get(d + k) || []).length; if (s > bs) { bs = s; best = d; } }
+  const hits = []; for (let k = -15; k <= 15; k++) hits.push(...(votes.get(best + k) || []));
+  hits.sort((x, y) => x - y);
+  let lo = Math.max(hits[0] - 3, 0), hi = Math.min(hits.at(-1) + 4, QW.length - 1);
+  const same = (x, y) => QW[x][0] === QW[y][0] && QW[x][1] === QW[y][1];
+  while (lo > 0 && same(lo - 1, lo)) lo--;
+  while (hi < QW.length - 1 && same(hi + 1, hi)) hi++;
+  return [lo, hi];
+}
+
+function sim(a, b) {
+  if (!a || !b) return 0; if (a === b) return 1;
+  // نسبة التشابه (ضعف أطول تسلسل مشترك ÷ مجموع الطولين)
+  const m = a.length, n = b.length, dp = new Uint16Array((m + 1) * (n + 1));
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)
+    dp[i * (n + 1) + j] = a[i - 1] === b[j - 1] ? dp[(i - 1) * (n + 1) + j - 1] + 1 : Math.max(dp[(i - 1) * (n + 1) + j], dp[i * (n + 1) + j - 1]);
+  return 2 * dp[m * (n + 1) + n] / (m + n);
+}
+
+// محاذاة كلمات التعرف مع كلمات المصحف؛ يُسمح بالرجوع للخلف (القارئ يعيد مقطعاً)
+function align(an, qn, jump = 2.5) {
+  const n = an.length, m = qn.length, M = m + 1, NEG = -1e9;
+  const score = new Float64Array((n + 1) * M).fill(NEG), bi = new Int32Array((n + 1) * M).fill(-1), bj = new Int32Array((n + 1) * M), bq = new Int32Array((n + 1) * M).fill(-1);
+  const set = (i, j, v, pi, pj, q) => { const k = i * M + j; if (v > score[k]) { score[k] = v; bi[k] = pi; bj[k] = pj; bq[k] = q; } };
+  const skips = (i) => { for (let j = 1; j <= m; j++) set(i, j, score[i * M + j - 1] - 0.6, i, j - 1, -1); };
+  const jumps = (i) => { let best = NEG, arg = -1; for (let j = m; j >= 0; j--) { set(i, j, best - jump, i, arg, -1); if (score[i * M + j] > best) { best = score[i * M + j]; arg = j; } } };
+  score[0] = 0; skips(0);
+  for (let i = 1; i <= n; i++) {
+    for (let j = 0; j <= m; j++) {
+      set(i, j, score[(i - 1) * M + j] - 0.7, i - 1, j, -1);
+      if (j) set(i, j, score[(i - 1) * M + j - 1] + 2 * sim(an[i - 1], qn[j - 1]) - 1, i - 1, j - 1, j - 1);
+    }
+    skips(i); jumps(i); skips(i);
+  }
+  const match = new Array(n).fill(null);
+  let i = n, j = 0; for (let x = 1; x <= m; x++) if (score[n * M + x] > score[n * M + j]) j = x;
+  while (bi[i * M + j] >= 0) {
+    const k = i * M + j, pi = bi[k], pj = bj[k];
+    if (pi === i - 1 && bq[k] >= 0) match[i - 1] = bq[k];
+    i = pi; j = pj;
+  }
+  return match;
+}
+
+const letters = (t) => t.replace(MARKS, "").replace(/[\s٠-٩]/g, "").length || 1;
+
+// المقاطع: كل وحدة نَفَس مقطع، تُقسم عند نهاية الآية وعند رجوع القارئ للخلف
+function buildSegments(units, unitWords, match, lo) {
+  const segs = []; let w = 0;
+  units.forEach(([us, ue], u) => {
+    const qs = [];
+    for (let k = 0; k < unitWords[u].length; k++, w++) if (match[w] !== null) qs.push(match[w] + lo);
+    if (!qs.length) return;
+    const runs = [[qs[0], qs[0]]];
+    for (const q of qs.slice(1)) { const r = runs.at(-1); if (q > r[1]) r[1] = q; else if (q < r[0] || q < r[1] - 1) runs.push([q, q]); }
+    const pieces = [];
+    for (const [a, b] of runs) {
+      let s = a;
+      for (let x = a; x <= b; x++) if (x === b || QW[x + 1][1] !== QW[x][1] || QW[x + 1][0] !== QW[x][0]) { pieces.push([s, x]); s = x + 1; }
+    }
+    const lens = pieces.map(([a, b]) => QW.slice(a, b + 1).reduce((s, x) => s + letters(x[2]), 0));
+    const total = lens.reduce((s, x) => s + x, 0); let t = us;
+    pieces.forEach(([a, b], k) => {
+      const ws = QW.slice(a, b + 1), [s, ay] = ws.at(-1);
+      const end = b + 1 >= QW.length || QW[b + 1][1] !== ay || QW[b + 1][0] !== s;
+      segs.push({ text: ws.map((x) => x[2]).join(" ") + (end ? " " + arNum(ay) : ""), start: t, surah: s, ayah: ay, unitEnd: ue });
+      t += (ue - us) * lens[k] / total;
+    });
+  });
+  segs.forEach((g, k) => { g.end = k + 1 < segs.length ? Math.max(g.start + 0.3, segs[k + 1].start - 0.15) : g.unitEnd + 0.6; });
+  return segs;
+}
+
+async function autoSync(progress) {
+  progress("تنزيل نموذج التعرف الصوتي…", 0);
+  const model = await loadAsr((p) => progress("تنزيل نموذج التعرف الصوتي…", p * 0.3));
+  const units = breathUnits(audio16), unitWords = [];
+  for (let u = 0; u < units.length; u++) {
+    progress(`التعرف على الصوت: ${u + 1} من ${units.length}`, 0.3 + 0.65 * u / units.length);
+    const [s, e] = units[u];
+    const out = await model(audio16.subarray(Math.floor(s * 16000), Math.ceil(e * 16000)), { language: "arabic", task: "transcribe" });
+    unitWords.push(out.text.trim().split(/\s+/).filter(Boolean));
+  }
+  progress("المطابقة مع المصحف…", 0.96);
+  const an = unitWords.flat().map(norm);
+  const span = locate(an);
+  if (!span) throw new Error("لم أتعرف على الآيات في هذا المقطع");
+  const [lo, hi] = span;
+  const segs = buildSegments(units, unitWords, align(an, QN.slice(lo, hi + 1)), lo);
+  if (!segs.length) throw new Error("لم أتعرف على الآيات في هذا المقطع");
+  const count = {}; segs.forEach((g) => count[g.surah] = (count[g.surah] || 0) + 1);
+  const surah = +Object.keys(count).sort((a, b) => count[b] - count[a])[0];
+  const mine = segs.filter((g) => g.surah === surah);
+  return { surah, from: Math.min(...mine.map((g) => g.ayah)), to: Math.max(...mine.map((g) => g.ayah)),
+    segs: mine.map(({ text, start, end }) => ({ text, start: +start.toFixed(2), end: +end.toFixed(2) })) };
+}
+
+// ── الرسم ────────────────────────────────────────────────────────────────────
+const st = {};
+function readStyle() {
+  Object.assign(st, {
+    fontSize: +$("fontSize").value, textY: +$("textY").value, width: +$("width").value, lineGap: +$("lineGap").value,
+    shadow: +$("shadow").value, fade: +$("fade").value, align: $("align").value, color: $("color").value,
+    headerMode: $("headerMode").value, headerSize: +$("headerSize").value, headerY: +$("headerY").value, headerColor: $("headerColor").value,
+    dim: +$("dim").value, blur: +$("blur").value, zoom: $("zoom").checked, bgChange: $("bgChange").value,
+    bgEvery: +$("bgEvery").value, transition: $("transition").value, transDur: +$("transDur").value, bgMin: 3,
+  });
+  [["fsV", "fontSize"], ["tyV", "textY", 2], ["wV", "width", 2], ["lgV", "lineGap", 1], ["shV", "shadow", 2], ["fdV", "fade", 2],
+   ["hsV", "headerSize"], ["hyV", "headerY", 2], ["dimV", "dim", 2], ["blurV", "blur"], ["everyV", "bgEvery"], ["tdV", "transDur", 1]]
+    .forEach(([o, i, d]) => { $(o).textContent = d ? (+$(i).value).toFixed(d) : $(i).value; });
+}
+
+const measure = document.createElement("canvas").getContext("2d");
+function tokens(text) { const out = []; for (const w of text.split(/\s+/).filter(Boolean)) { if (out.length && isNum(w)) out[out.length - 1] += " " + w; else out.push(w); } return out; }
+// أقل عدد من الأسطر، موزّعة بأطوال متقاربة (لا يبقى سطر أخير بكلمة واحدة، ورقم الآية مع آخر كلمة)
+function wrap(text, font, maxW) {
+  const words = tokens(text); if (!words.length) return [];
+  measure.font = font; measure.direction = "rtl";
+  const width = (i, j) => measure.measureText(words.slice(i, j).join(" ")).width;
+  let count = 1, cur = "";
+  for (const w of words) { const t = cur ? cur + " " + w : w; if (cur && measure.measureText(t).width > maxW) { count++; cur = w; } else cur = t; }
+  const n = words.length, best = new Map([["0,0", [0, -1]]]);
+  for (let k = 1; k <= count; k++) for (let j = k; j <= n; j++) {
+    let opt = null;
+    for (let i = k - 1; i < j; i++) { const p = best.get(`${k - 1},${i}`); if (!p) continue; const v = Math.max(p[0], width(i, j)); if (!opt || v < opt[0]) opt = [v, i]; }
+    if (opt) best.set(`${k},${j}`, opt);
+  }
+  const lines = []; let j = n;
+  for (let k = count; k > 0; k--) { const i = best.get(`${k},${j}`)[1]; lines.unshift(words.slice(i, j).join(" ")); j = i; }
+  return lines;
+}
+
+function shadowed(ctx, strength) { ctx.shadowColor = `rgba(0,0,0,${strength})`; ctx.shadowBlur = strength > 0 ? 16 : 0; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 4; }
+
+function textLayer(text) {
+  const c = new OffscreenCanvas(W, H), ctx = c.getContext("2d");
+  const font = `${st.fontSize}px Hafs`, maxW = W * st.width, lines = wrap(text, font, maxW);
+  const step = Math.round(st.fontSize * st.lineGap); let y = Math.round(H * st.textY - step * lines.length / 2);
+  ctx.font = font; ctx.direction = "rtl"; ctx.fillStyle = st.color; ctx.textBaseline = "top"; shadowed(ctx, st.shadow);
+  const margin = (W - maxW) / 2;
+  for (const ln of lines) {
+    const tw = ctx.measureText(ln).width;
+    const xRight = st.align === "right" ? W - margin : st.align === "left" ? margin + tw : (W + tw) / 2;
+    ctx.textAlign = "right"; ctx.fillText(ln, xRight, y + st.fontSize * 0.25); y += step;
+  }
+  return c;
+}
+
+// رمز واحد من خط الترويسة في المنتصف بعرض محدد؛ يرجع ارتفاعه
+function glyph(ctx, ch, font, width, y, color) {
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.direction = "ltr";
+  ctx.font = `100px ${font}`; let m = ctx.measureText(ch);
+  const size = Math.max(8, 100 * width / Math.max(m.actualBoundingBoxLeft + m.actualBoundingBoxRight, 1));
+  ctx.font = `${size}px ${font}`; m = ctx.measureText(ch);
+  const w = m.actualBoundingBoxLeft + m.actualBoundingBoxRight, h = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+  ctx.fillStyle = color;
+  ctx.fillText(ch, (W - w) / 2 + m.actualBoundingBoxLeft, y + m.actualBoundingBoxAscent);
+  return h;
+}
+
+function headerLayer(name, basmala) {
+  const c = new OffscreenCanvas(W, H), ctx = c.getContext("2d");
+  if (!name && !basmala) return c;
+  shadowed(ctx, st.shadow);
+  let y = H * st.headerY; const scale = st.headerSize / 46, font = `${st.headerSize}px Hafs`;
+  const plainText = (t, yy) => { ctx.font = font; ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = st.headerColor; ctx.fillText(t, W / 2, yy); };
+  if (name) {
+    if (st.headerMode === "mushaf") {
+      const h = glyph(ctx, "ò", "Bsml", W * Math.min(0.86 * scale, 0.98), y, st.headerColor);
+      plainText(name, y + h / 2); y += h + st.headerSize * 0.6;
+    } else { plainText(name, y + st.headerSize * 0.6); y += st.headerSize * 1.8; }
+  }
+  if (basmala) {
+    if (st.headerMode === "plain") plainText(basmala, y + st.headerSize * 0.6);
+    else glyph(ctx, "ó", "Bsml", W * Math.min(0.72 * scale, 0.95), y, st.headerColor);
+  }
+  return c;
+}
+
+// ── الخلفيات ─────────────────────────────────────────────────────────────────
+const PRESETS = ["ليل ونجوم", "غروب", "فجر", "زمردي", "أسود"];
+const chosenPresets = new Set(["ليل ونجوم"]);
+const uploads = []; // {name, kind, el}
+const presetImg = {};
+async function presetEl(i) {
+  if (!presetImg[i]) presetImg[i] = await createImageBitmap(await (await fetch(`assets/bg${i}.jpg`)).blob());
+  return presetImg[i];
+}
+async function bgList() {
+  const list = uploads.map((u) => u);
+  for (const name of PRESETS) if (chosenPresets.has(name)) list.push({ name, kind: "image", el: await presetEl(PRESETS.indexOf(name)) });
+  if (!list.length) list.push({ name: PRESETS[0], kind: "image", el: await presetEl(0) });
+  if ($("shuffle").checked) { let s = list.length * 7 + 3; for (let i = list.length - 1; i > 0; i--) { s = (s * 9301 + 49297) % 233280; const j = Math.floor(s / 233280 * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } }
+  return list;
+}
+
+function schedule(n, duration, segs) {
+  if (n < 2) return [0];
+  if (st.bgChange === "segment") {
+    const p = [0];
+    for (const g of segs.slice(1)) if (g.start - p.at(-1) >= st.bgMin && duration - g.start >= st.bgMin) p.push(g.start);
+    return p;
+  }
+  const every = Math.max(st.bgEvery, st.bgMin), out = [];
+  for (let i = 0; i * every <= duration - st.bgMin || i === 0; i++) out.push(i * every);
+  return out;
+}
+
+function seekVideo(v, t) {
+  return new Promise((res) => {
+    const target = v.duration ? t % v.duration : 0;
+    if (Math.abs(v.currentTime - target) < 0.001) return res();
+    const done = () => { v.removeEventListener("seeked", done); res(); };
+    v.addEventListener("seeked", done); v.currentTime = target;
+  });
+}
+
+async function drawSource(ctx, bg, localT, len, x = 0) {
+  const el = bg.el;
+  if (bg.kind === "video") await seekVideo(el, localT);
+  const sw = bg.kind === "video" ? el.videoWidth : el.width, sh = bg.kind === "video" ? el.videoHeight : el.height;
+  let s = Math.max(W / sw, H / sh);
+  if (bg.kind === "image" && st.zoom) s *= 1 + 0.08 * Math.min(localT / Math.max(len, 0.1), 1);
+  const dw = sw * s, dh = sh * s;
+  ctx.drawImage(el, x + (W - dw) / 2, (H - dh) / 2, dw, dh);
+}
+
+// يرسم إطار الخلفية في اللحظة t: الخلفية الحالية، وأثناء الانتقال يمزجها بالسابقة
+async function drawBackground(ctx, bgs, points, t, duration) {
+  const td = st.transition !== "none" && points.length > 1 ? Math.min(st.transDur, st.bgMin / 2) : 0;
+  let k = 0; for (let i = 0; i < points.length; i++) if (points[i] <= t) k = i;
+  const len = (i) => (i + 1 < points.length ? points[i + 1] + td : duration) - points[i];
+  ctx.save(); if (st.blur > 0) ctx.filter = `blur(${st.blur}px)`;
+  const cur = bgs[k % bgs.length], u = td ? (t - points[k]) / td : 1;
+  if (k > 0 && u < 1) {
+    const prev = bgs[(k - 1) % bgs.length], pT = t - points[k - 1];
+    if (st.transition === "fadeblack") {
+      if (u < 0.5) { await drawSource(ctx, prev, pT, len(k - 1)); ctx.fillStyle = `rgba(0,0,0,${u * 2})`; ctx.fillRect(0, 0, W, H); }
+      else { await drawSource(ctx, cur, t - points[k], len(k)); ctx.fillStyle = `rgba(0,0,0,${(1 - u) * 2})`; ctx.fillRect(0, 0, W, H); }
+    } else if (st.transition === "slideright") {
+      await drawSource(ctx, prev, pT, len(k - 1)); await drawSource(ctx, cur, t - points[k], len(k), (u - 1) * W);
+    } else if (st.transition === "circleopen") {
+      await drawSource(ctx, prev, pT, len(k - 1)); ctx.beginPath(); ctx.arc(W / 2, H / 2, u * Math.hypot(W, H) / 2, 0, 7); ctx.clip();
+      await drawSource(ctx, cur, t - points[k], len(k));
+    } else {
+      await drawSource(ctx, prev, pT, len(k - 1)); ctx.globalAlpha = u; await drawSource(ctx, cur, t - points[k], len(k));
+    }
+  } else await drawSource(ctx, cur, t - points[k], len(k));
+  ctx.restore();
+  if (st.dim > 0) { ctx.fillStyle = `rgba(0,0,0,${st.dim})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// ── الحالة والواجهة ──────────────────────────────────────────────────────────
+let segs = [];
+const surahSel = $("surah");
+QURAN.forEach(([name, ayat], i) => surahSel.add(new Option(`${i + 1}. ${name} (${ayat.length})`, i + 1)));
+surahSel.value = 70;
+function headerTexts() {
+  const s = +surahSel.value, name = `سُورَةُ ${QURAN[s - 1][0]}`, bas = s === 1 || s === 9 ? null : BASMALA;
+  $("showBasmala").disabled = !bas;
+  return [$("showName").checked ? name : null, $("showBasmala").checked ? bas : null];
+}
+function clampAyat() {
+  const n = QURAN[+surahSel.value - 1][1].length;
+  $("fromAyah").max = n; $("toAyah").max = n;
+  $("fromAyah").value = Math.min(Math.max(1, +$("fromAyah").value || 1), n);
+  $("toAyah").value = Math.min(Math.max(+$("fromAyah").value, +$("toAyah").value || 1), n);
+}
+function distribute(begin, end) {
+  clampAyat();
+  const s = +surahSel.value, a1 = +$("fromAyah").value, a2 = +$("toAyah").value;
+  const texts = QURAN[s - 1][1].slice(a1 - 1, a2).map((t, i) => `${t} ${arNum(a1 + i)}`);
+  const total = texts.reduce((x, t) => x + letters(t), 0); let t = begin;
+  segs = texts.map((text) => { const d = (end - begin) * letters(text) / total; const g = { text, start: +t.toFixed(2), end: +(t + d - 0.15).toFixed(2) }; t += d; return g; });
+  renderTable();
+}
+
+function renderTable() {
+  const body = $("segBody"); body.textContent = "";
+  segs.forEach((g, i) => {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td"); td.className = "txt";
+    const div = document.createElement("div"); div.contentEditable = "true"; div.dir = "rtl"; div.textContent = g.text;
+    div.addEventListener("input", () => { g.text = div.textContent.trim(); schedulePreview(); });
+    td.append(div); tr.append(td);
+    for (const key of ["start", "end"]) {
+      const c = document.createElement("td"), inp = document.createElement("input");
+      inp.type = "number"; inp.step = "0.1"; inp.min = "0"; inp.value = g[key]; inp.id = `seg-${key}-${i}`;
+      inp.addEventListener("change", () => { g[key] = +inp.value; schedulePreview(); });
+      c.append(inp); tr.append(c);
+    }
+    const c = document.createElement("td"), del = document.createElement("button");
+    del.textContent = "حذف"; del.addEventListener("click", () => { segs.splice(i, 1); renderTable(); });
+    c.append(del); tr.append(c); body.append(tr);
+  });
+  $("segPick").max = Math.max(segs.length - 1, 0);
+  if (+$("segPick").value > segs.length - 1) $("segPick").value = 0;
+  schedulePreview();
+}
+
+function validSegs() { return segs.filter((g) => g.text && g.end > g.start).sort((a, b) => a.start - b.start); }
+function fontTexts(list) { const s = +surahSel.value; return textsForFont(list.map((g) => g.text), nextWord(s, +$("toAyah").value)); }
+
+let pvTimer = null, pvBusy = false;
+function schedulePreview() { clearTimeout(pvTimer); pvTimer = setTimeout(drawPreview, 120); }
+async function drawPreview() {
+  if (pvBusy) { schedulePreview(); return; }
+  pvBusy = true;
+  try {
+    readStyle();
+    const list = validSegs(), ctx = $("pv").getContext("2d"), bgs = await bgList();
+    const idx = Math.min(+$("segPick").value, Math.max(list.length - 1, 0)); $("segV").textContent = idx + 1;
+    const duration = list.length ? list.at(-1).end + 0.8 : 10, points = schedule(bgs.length, duration, list);
+    const t = list.length ? (list[idx].start + list[idx].end) / 2 : 0;
+    ctx.clearRect(0, 0, W, H);
+    await drawBackground(ctx, bgs, points, t, duration);
+    ctx.drawImage(headerLayer(...headerTexts()), 0, 0);
+    if (list.length) ctx.drawImage(textLayer(fontTexts(list)[idx]), 0, 0);
+  } finally { pvBusy = false; }
+}
+
+function status(el, text, kind = "") { el.hidden = !text; el.textContent = text; el.className = "status " + kind; }
+
+$("audioFile").addEventListener("change", async () => {
+  const f = $("audioFile").files[0]; if (!f) return;
+  status($("syncStatus"), "قراءة الملف…");
+  try {
+    [audioBuffer, audio16] = await decodeAudio(f); audioName = f.name;
+    $("audioInfo").textContent = `${f.name} — ${Math.floor(audioBuffer.duration / 60)}:${String(Math.round(audioBuffer.duration % 60)).padStart(2, "0")}`;
+    $("syncBtn").disabled = false; status($("syncStatus"), "");
+    if (!segs.length) distribute(0, audioBuffer.duration);
+  } catch (e) { status($("syncStatus"), "تعذرت قراءة الملف الصوتي. جرّب ملف mp3 أو m4a.", "bad"); }
+});
+
+$("syncBtn").addEventListener("click", async () => {
+  $("syncBtn").disabled = true; const prog = $("syncProg"); prog.hidden = false;
+  try {
+    const r = await autoSync((msg, p) => { status($("syncStatus"), msg); prog.value = p; });
+    surahSel.value = r.surah; $("fromAyah").value = r.from; $("toAyah").value = r.to; clampAyat();
+    segs = r.segs; renderTable();
+    status($("syncStatus"), `سورة ${QURAN[r.surah - 1][0]}، الآيات ${r.from}–${r.to}، ${r.segs.length} مقطعاً. راجع الجدول وعدّل ما يلزم.`, "good");
+  } catch (e) {
+    console.error(e);
+    status($("syncStatus"), `${e.message || e}. اختر السورة والآيات يدوياً ثم «توزيع تقريبي».`, "bad");
+  } finally { $("syncBtn").disabled = false; prog.hidden = true; }
+});
+
+$("distBtn").addEventListener("click", () => distribute(0, audioBuffer ? audioBuffer.duration : 5 * (+$("toAyah").value - +$("fromAyah").value + 1)));
+$("addRow").addEventListener("click", () => { const last = segs.at(-1); segs.push({ text: last ? last.text : "", start: last ? last.end + 0.2 : 0, end: last ? last.end + 4 : 4 }); renderTable(); });
+surahSel.addEventListener("change", () => { $("fromAyah").value = 1; $("toAyah").value = Math.min(5, QURAN[+surahSel.value - 1][1].length); clampAyat(); schedulePreview(); });
+["fromAyah", "toAyah"].forEach((id) => $(id).addEventListener("change", clampAyat));
+document.querySelectorAll(".card input, .card select").forEach((el) => {
+  if (!["audioFile", "bgFiles", "surah", "fromAyah", "toAyah"].includes(el.id)) el.addEventListener("input", () => { readStyle(); updateBgUi(); schedulePreview(); });
+});
+$("segPick").addEventListener("input", schedulePreview);
+
+function updateBgUi() {
+  const n = uploads.length + chosenPresets.size;
+  $("bgMulti").hidden = n < 2;
+  $("everyBox").hidden = $("bgChange").value !== "time";
+}
+PRESETS.forEach((name, i) => {
+  const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.setAttribute("aria-pressed", chosenPresets.has(name));
+  const img = document.createElement("img"); img.src = `assets/bg${i}.jpg`; img.alt = "";
+  const lab = document.createElement("span"); lab.textContent = name; b.append(img, lab);
+  const sync = () => { const on = chosenPresets.has(name); b.setAttribute("aria-pressed", on); b.style.borderColor = on ? "var(--accent)" : ""; b.style.fontWeight = on ? "600" : ""; };
+  b.addEventListener("click", () => { chosenPresets.has(name) ? chosenPresets.delete(name) : chosenPresets.add(name); sync(); updateBgUi(); schedulePreview(); });
+  sync(); $("presetChips").append(b);
+});
+function renderBgChips() {
+  const box = $("bgChips"); box.textContent = "";
+  uploads.forEach((u, i) => {
+    const c = document.createElement("span"); c.className = "chip";
+    const lab = document.createElement("span"); lab.textContent = (u.kind === "video" ? "🎞️ " : "🖼️ ") + u.name;
+    const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "إزالة");
+    x.addEventListener("click", () => { uploads.splice(i, 1); renderBgChips(); updateBgUi(); schedulePreview(); });
+    c.append(lab, x); box.append(c);
+  });
+}
+$("bgFiles").addEventListener("change", async () => {
+  for (const f of $("bgFiles").files) {
+    const url = URL.createObjectURL(f);
+    if (f.type.startsWith("video")) {
+      const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = url;
+      await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = rej; }).catch(() => null);
+      if (v.videoWidth) uploads.push({ name: f.name, kind: "video", el: v });
+    } else {
+      try { uploads.push({ name: f.name, kind: "image", el: await createImageBitmap(f) }); } catch { /* ملف غير صالح */ }
+    }
+  }
+  $("bgFiles").value = ""; renderBgChips(); updateBgUi(); schedulePreview();
+});
+
+// ── الإنتاج: رسم الإطارات وترميزها إلى MP4 داخل المتصفح ─────────────────────
+let outBlob = null;
+async function pickVideoCodec() {
+  for (const codec of ["avc1.640028", "avc1.4d0028", "avc1.42002a"]) {
+    const cfg = { codec, width: W, height: H, bitrate: 8_000_000, framerate: FPS };
+    if ((await VideoEncoder.isConfigSupported(cfg)).supported) return { cfg, mux: "avc" };
+  }
+  const cfg = { codec: "vp09.00.40.08", width: W, height: H, bitrate: 8_000_000, framerate: FPS };
+  if ((await VideoEncoder.isConfigSupported(cfg)).supported) return { cfg, mux: "vp9" };
+  return null;
+}
+async function pickAudioCodec(rate, ch) {
+  for (const [codec, mux] of [["mp4a.40.2", "aac"], ["opus", "opus"]]) {
+    const cfg = { codec, sampleRate: rate, numberOfChannels: ch, bitrate: 160_000 };
+    try { if ((await AudioEncoder.isConfigSupported(cfg)).supported) return { cfg, mux }; } catch { /* غير مدعوم */ }
+  }
+  return null;
+}
+
+async function renderVideo(onProgress) {
+  if (!("VideoEncoder" in window)) throw new Error("متصفحك لا يدعم إنتاج الفيديو. استخدم Chrome أو Edge حديثاً");
+  readStyle();
+  const list = validSegs(); if (!list.length) throw new Error("لا توجد مقاطع صالحة في الجدول");
+  const texts = fontTexts(list), duration = list.at(-1).end + 0.8;
+  const v = await pickVideoCodec(); if (!v) throw new Error("متصفحك لا يدعم ترميز الفيديو");
+  const ch = Math.min(audioBuffer.numberOfChannels, 2), rate = audioBuffer.sampleRate;
+  const a = await pickAudioCodec(rate, ch);
+  const target = new Mp4Muxer.ArrayBufferTarget();
+  const muxer = new Mp4Muxer.Muxer({ target, fastStart: "in-memory",
+    video: { codec: v.mux, width: W, height: H, frameRate: FPS },
+    audio: a ? { codec: a.mux, numberOfChannels: ch, sampleRate: rate } : undefined });
+  let fail = null;
+  const venc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { fail = e; } });
+  venc.configure(v.cfg);
+  if (a) {
+    const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { fail = e; } });
+    aenc.configure(a.cfg);
+    const frames = Math.min(audioBuffer.length, Math.ceil(duration * rate)), block = 4096;
+    for (let s = 0; s < frames; s += block) {
+      const n = Math.min(block, frames - s), data = new Float32Array(n * ch);
+      for (let c = 0; c < ch; c++) data.set(audioBuffer.getChannelData(c).subarray(s, s + n), c * n);
+      const ad = new AudioData({ format: "f32-planar", sampleRate: rate, numberOfFrames: n, numberOfChannels: ch, timestamp: Math.round(s / rate * 1e6), data });
+      aenc.encode(ad); ad.close();
+    }
+    await aenc.flush(); aenc.close();
+  }
+  const bgs = await bgList(), points = schedule(bgs.length, duration, list);
+  const header = headerLayer(...headerTexts());
+  const layers = new Map(), canvas = new OffscreenCanvas(W, H), ctx = canvas.getContext("2d");
+  const total = Math.ceil(duration * FPS);
+  for (let i = 0; i < total; i++) {
+    if (fail) throw fail;
+    const t = i / FPS;
+    ctx.clearRect(0, 0, W, H);
+    await drawBackground(ctx, bgs, points, t, duration);
+    ctx.drawImage(header, 0, 0);
+    list.forEach((g, k) => {
+      if (t < g.start || t > g.end) return;
+      const d = g.end - g.start, f = Math.min(st.fade, d / 3);
+      const alpha = f > 0 ? Math.min(1, (t - g.start) / f, (g.end - t) / f) : 1;
+      if (!layers.has(k)) layers.set(k, textLayer(texts[k]));
+      ctx.globalAlpha = Math.max(0, alpha); ctx.drawImage(layers.get(k), 0, 0); ctx.globalAlpha = 1;
+    });
+    for (const k of layers.keys()) if (list[k].end < t) layers.delete(k);
+    const frame = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    venc.encode(frame, { keyFrame: i % (FPS * 2) === 0 }); frame.close();
+    while (venc.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 1));
+    if (i % 15 === 0) { onProgress(i / total); await new Promise((r) => setTimeout(r, 0)); }
+  }
+  await venc.flush(); venc.close();
+  if (fail) throw fail;
+  muxer.finalize();
+  return { blob: new Blob([target.buffer], { type: "video/mp4" }), noAudio: !a };
+}
+
+$("renderBtn").addEventListener("click", async () => {
+  if (!audioBuffer) { status($("renderStatus"), "ارفع ملف التلاوة أولاً.", "bad"); return; }
+  $("renderBtn").disabled = true; $("saveBtn").hidden = true; const prog = $("renderProg"); prog.hidden = false;
+  const t0 = performance.now();
+  try {
+    const { blob, noAudio } = await renderVideo((p) => {
+      prog.value = p; const el = (performance.now() - t0) / 1000, left = p > 0.02 ? el / p - el : 0;
+      status($("renderStatus"), `جارٍ الإنتاج… ${Math.round(p * 100)}%` + (left ? ` (باقٍ نحو ${Math.ceil(left / 60)} دقيقة)` : ""));
+    });
+    outBlob = blob;
+    const vid = $("outVideo"); vid.src = URL.createObjectURL(blob); vid.hidden = false;
+    status($("renderStatus"), `اكتمل الفيديو (${(blob.size / 1e6).toFixed(1)} ميجا).` + (noAudio ? " تنبيه: متصفحك لم يرمّز الصوت." : ""), noAudio ? "bad" : "good");
+    $("saveBtn").hidden = false;
+  } catch (e) { console.error(e); status($("renderStatus"), `تعذر الإنتاج: ${e.message || e}`, "bad"); }
+  finally { $("renderBtn").disabled = false; prog.hidden = true; }
+});
+
+$("saveBtn").addEventListener("click", async () => {
+  if (!outBlob) return;
+  const s = +surahSel.value, name = `تلاوة_${QURAN[s - 1][0]}_${$("fromAyah").value}-${$("toAyah").value}.mp4`;
+  const downloads = window.claude ? await window.claude.use("downloads") : null;
+  if (downloads) {
+    try { await downloads.save({ filename: name, data: outBlob }); status($("renderStatus"), "حُفظ الفيديو.", "good"); }
+    catch (e) { if (e.code !== "declined") status($("renderStatus"), "تعذر الحفظ من هذه الصفحة. اضغط مطولاً على الفيديو واختر الحفظ.", "bad"); }
+  } else {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(outBlob); a.download = name; a.click();
+  }
+});
+
+window.__tilawa = { autoSync, renderVideo, get segs() { return segs; }, set segs(v) { segs = v; renderTable(); } };
+readStyle(); updateBgUi(); distribute(0, 25);
+</script>
