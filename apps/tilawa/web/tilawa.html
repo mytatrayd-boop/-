@@ -16,6 +16,7 @@
 :root[data-theme="dark"] {
   --bg: #101614; --panel: #17201d; --ink: #e8ece6; --muted: #9aa69f; --line: #2a3632;
   --accent: #4fb08e; --accent-ink: #0b1210; --warn: #d9a25a; --bad: #e0776c; --good: #4fb08e; color-scheme: dark }
+[hidden] { display: none !important; }
 body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--ui); direction: rtl;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 20px 48px; }
@@ -107,11 +108,15 @@ details > summary { cursor: pointer; font-weight: 600; }
 
       <section class="card" aria-labelledby="h3">
         <h2 id="h3"><span class="n">٣</span> الخلفية</h2>
-        <label>خلفيات جاهزة</label>
+        <div class="row" role="radiogroup" aria-label="عدد الخلفيات">
+          <label class="inline"><input type="radio" name="bgMode" id="bgSingle" value="single" checked> خلفية واحدة ثابتة</label>
+          <label class="inline"><input type="radio" name="bgMode" id="bgMany" value="many"> عدة خلفيات تتبدّل</label>
+        </div>
+        <label id="presetLabel">اختر خلفية جاهزة</label>
         <div class="chips" id="presetChips"></div>
         <div class="drop">
           <input id="bgFiles" type="file" accept="image/*,video/*" multiple>
-          <p class="note">أو ارفع صوراً أو فيديوهات، واحدة أو أكثر. تُقص إلى 9:16، والفيديو القصير يتكرر.</p>
+          <p class="note" id="bgNote">أو ارفع صورة أو فيديو من جهازك. تُقص إلى 9:16، والفيديو القصير يتكرر.</p>
         </div>
         <div class="chips" id="bgChips"></div>
         <div class="grid2" id="bgMulti">
@@ -704,19 +709,36 @@ document.querySelectorAll(".card input, .card select").forEach((el) => {
   if (!["audioFile", "bgFiles", "surah", "fromAyah", "toAyah"].includes(el.id)) el.addEventListener("input", () => { readStyle(); updateBgUi(); schedulePreview(); });
 });
 $("segPick").addEventListener("input", schedulePreview);
+document.querySelectorAll('input[name="bgMode"]').forEach((r) => r.addEventListener("change", () => {
+  if (single()) {  // تبقى خلفية واحدة: آخر ما رُفع، أو أول خلفية جاهزة مختارة
+    if (uploads.length) { uploads.splice(0, uploads.length - 1); chosenPresets.clear(); }
+    else { const first = PRESETS.find((n) => chosenPresets.has(n)) || PRESETS[0]; chosenPresets.clear(); chosenPresets.add(first); }
+    renderBgChips(); syncChips();
+  }
+  updateBgUi(); schedulePreview();
+}));
 
+const single = () => $("bgSingle").checked;
 function updateBgUi() {
   const n = uploads.length + chosenPresets.size;
-  $("bgMulti").hidden = n < 2;
+  $("bgMulti").hidden = single() || n < 2;
+  $("presetLabel").textContent = single() ? "اختر خلفية جاهزة" : "اختر خلفيات جاهزة (واحدة أو أكثر)";
+  $("bgNote").textContent = single() ? "أو ارفع صورة أو فيديو من جهازك. تُقص إلى 9:16، والفيديو القصير يتكرر."
+    : "أو ارفع صوراً أو فيديوهات، واحدة أو أكثر. تُقص إلى 9:16، والفيديو القصير يتكرر.";
   $("everyBox").hidden = $("bgChange").value !== "time";
 }
+const chipSyncs = [], syncChips = () => chipSyncs.forEach((f) => f());
 PRESETS.forEach((name, i) => {
   const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.setAttribute("aria-pressed", chosenPresets.has(name));
   const img = document.createElement("img"); img.src = `assets/bg${i}.jpg`; img.alt = "";
   const lab = document.createElement("span"); lab.textContent = name; b.append(img, lab);
   const sync = () => { const on = chosenPresets.has(name); b.setAttribute("aria-pressed", on); b.style.borderColor = on ? "var(--accent)" : ""; b.style.fontWeight = on ? "600" : ""; };
-  b.addEventListener("click", () => { chosenPresets.has(name) ? chosenPresets.delete(name) : chosenPresets.add(name); sync(); updateBgUi(); schedulePreview(); });
-  sync(); $("presetChips").append(b);
+  b.addEventListener("click", () => {
+    if (single()) { chosenPresets.clear(); chosenPresets.add(name); uploads.length = 0; renderBgChips(); }
+    else chosenPresets.has(name) ? chosenPresets.delete(name) : chosenPresets.add(name);
+    syncChips(); updateBgUi(); schedulePreview();
+  });
+  chipSyncs.push(sync); sync(); $("presetChips").append(b);
 });
 function renderBgChips() {
   const box = $("bgChips"); box.textContent = "";
@@ -739,6 +761,7 @@ $("bgFiles").addEventListener("change", async () => {
       try { uploads.push({ name: f.name, kind: "image", el: await createImageBitmap(f) }); } catch { /* ملف غير صالح */ }
     }
   }
+  if (single() && uploads.length) { uploads.splice(0, uploads.length - 1); chosenPresets.clear(); syncChips(); }
   $("bgFiles").value = ""; renderBgChips(); updateBgUi(); schedulePreview();
 });
 

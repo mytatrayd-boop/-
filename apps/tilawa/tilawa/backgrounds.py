@@ -39,7 +39,6 @@ def _hills(d, layers, seed):
 def night():
     img, d = _gradient([(0, (6, 9, 22)), (0.6, (22, 26, 52)), (1, (10, 12, 26))])
     _stars(d, 220, 1, 0.75)
-    d.ellipse((800, 1380, 920, 1500), fill=(232, 226, 206))  # أسفل الشاشة بعيداً عن الترويسة والآيات
     return img.filter(ImageFilter.GaussianBlur(1))
 
 
@@ -74,7 +73,7 @@ PRESETS = {"ليل ونجوم": night, "غروب": sunset, "فجر": dawn, "زم
 
 def preset_path(name):
     CACHE.mkdir(parents=True, exist_ok=True)
-    p = CACHE / f"v2_{list(PRESETS).index(name)}.png"  # يتغير الإصدار عند تعديل الرسم
+    p = CACHE / f"v3_{list(PRESETS).index(name)}.png"  # يتغير الإصدار عند تعديل الرسم
     if not p.exists():
         PRESETS[name]().save(p)
     return str(p)
