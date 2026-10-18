@@ -138,10 +138,17 @@ class SettingsPage extends StatelessWidget {
               ),
           ]),
         ),
+        Card1(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('المصادر الرسمية', style: TextStyle(fontWeight: FontWeight.w700)),
+            for (final p in programs) SourceLink('${p.name}: ${p.source}', p.sourceUrl),
+            for (final (label, url) in holidaySources) SourceLink(label, url),
+          ]),
+        ),
         const Padding(
           padding: EdgeInsets.fromLTRB(8, 4, 8, 16),
           child: Text(
-              'تطبيق مستقل غير تابع لأي جهة حكومية. المواعيد محسوبة من قواعد الصرف المعلنة وقد تتغير؛ المرجع هو الجهة الرسمية.',
+              'تطبيق مستقل غير تابع لأي جهة حكومية. المواعيد محسوبة من قواعد الصرف المعلنة وقد تتغير؛ المرجع هو الجهة الرسمية في الروابط أعلاه.',
               style: TextStyle(color: muted, fontSize: 12)),
         ),
       ]);

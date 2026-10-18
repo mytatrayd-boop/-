@@ -111,6 +111,7 @@ class _MonthPageState extends State<MonthPage> {
         Padding(padding: EdgeInsets.fromLTRB(20, 6, 20, 8), child: Text('الإجازات', style: h2)),
         Card1(
           child: Column(children: [
+            for (final (label, url) in holidaySources) SourceLink(label, url),
             for (final h in monthHs)
               ListTile(
                 contentPadding: EdgeInsets.zero,

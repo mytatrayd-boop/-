@@ -1,17 +1,27 @@
 class Program {
   final String id, name;
   final int day;
-  const Program(this.id, this.name, this.day);
+
+  /// The official body that pays it, and its website (Google Play requires a
+  /// clear link to the government source of any government information).
+  final String source, sourceUrl;
+  const Program(this.id, this.name, this.day, this.source, this.sourceUrl);
 }
 
 const programs = <Program>[
-  Program('ss', 'الضمان الاجتماعي', 1),
-  Program('pension', 'الراتب التقاعدي', 1),
-  Program('hafiz', 'حافز', 5),
-  Program('citizen', 'حساب المواطن', 10),
-  Program('housing', 'الدعم السكني', 24),
-  Program('rehab', 'التأهيل الشامل', 26),
-  Program('gov', 'رواتب الموظفين الحكوميين', 27),
+  Program('ss', 'الضمان الاجتماعي', 1, 'وزارة الموارد البشرية والتنمية الاجتماعية', 'https://sbis.hrsd.gov.sa'),
+  Program('pension', 'الراتب التقاعدي', 1, 'المؤسسة العامة للتأمينات الاجتماعية', 'https://www.gosi.gov.sa'),
+  Program('hafiz', 'حافز', 5, 'صندوق تنمية الموارد البشرية (هدف)', 'https://www.hrdf.org.sa'),
+  Program('citizen', 'حساب المواطن', 10, 'برنامج حساب المواطن', 'https://www.ca.gov.sa'),
+  Program('housing', 'الدعم السكني', 24, 'وزارة البلديات والإسكان (سكني)', 'https://sakani.sa'),
+  Program('rehab', 'التأهيل الشامل', 26, 'وزارة الموارد البشرية والتنمية الاجتماعية', 'https://www.hrsd.gov.sa'),
+  Program('gov', 'رواتب الموظفين الحكوميين', 27, 'وزارة المالية', 'https://www.mof.gov.sa'),
+];
+
+/// Official sources for the holiday calendar.
+const holidaySources = <(String, String)>[
+  ('الإجازات الرسمية: وزارة الموارد البشرية والتنمية الاجتماعية', 'https://www.hrsd.gov.sa'),
+  ('التقويم الدراسي: وزارة التعليم', 'https://moe.gov.sa'),
 ];
 
 class Occasion {
