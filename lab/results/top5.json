@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T09:14:34.946Z",
+  "generatedAt": "2026-10-18T09:17:52.365Z",
   "method": "درجة 0..100 = Σ وزن×مكوّن (expectancy 0.4، winRate 0.25، posWeeks 0.15، stability 0.1، frequency 0.1). متوسط R ونسبة الربح والأسابيع الرابحة وσ منكمشة نحو متوسط الكون بالصيغة (n·x + k·μ)/(n + k) مع k=6، ومن متوسط R يُطرح 0.5×الخطأ المعياري. الحد الأدنى 4 صفقات. التعادل: متوسط R المنكمش ثم عدد الصفقات ثم الرمز. فحص خارج العينة: ترتيب على النصف الأقدم من الأسابيع (حد 2 صفقات) وقياس النصف الأحدث. تنبيه: المؤهَّل 1 فقط من 5.",
   "minTrades": 4,
   "prior": 6,
@@ -13,9 +13,9 @@
   "eligibleCount": 1,
   "universeStats": {
     "trades": 130,
-    "avgR": -0.1543,
+    "avgR": -0.1544,
     "winRate": 0.2923,
-    "sdR": 1.9458,
+    "sdR": 1.9459,
     "weeks": 15
   },
   "top": [
@@ -134,7 +134,7 @@
       "weeksTraded": 3,
       "posWeeks": 3,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": 0.5638,
+      "shrunkAvgR": 0.5637,
       "shrunkWinRate": 0.5282
     },
     {
@@ -150,7 +150,7 @@
       "weeksTraded": 2,
       "posWeeks": 2,
       "signalsPerWeek": 0.6667,
-      "shrunkAvgR": 0.3843,
+      "shrunkAvgR": 0.3842,
       "shrunkWinRate": 0.4692
     },
     {
@@ -182,7 +182,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.8,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -198,12 +198,12 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.7333,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
       "sym": "QCOM",
-      "score": 30.26,
+      "score": 30.25,
       "eligible": false,
       "trades": 3,
       "wins": 1,
@@ -230,7 +230,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.6667,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -246,7 +246,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.6667,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -310,7 +310,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.5333,
-      "shrunkAvgR": 0.1059,
+      "shrunkAvgR": 0.1058,
       "shrunkWinRate": 0.3442
     },
     {
@@ -326,7 +326,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -342,7 +342,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -358,7 +358,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": 0.3357,
+      "shrunkAvgR": 0.3356,
       "shrunkWinRate": 0.3442
     },
     {
@@ -390,7 +390,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.5333,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -406,7 +406,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.5333,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -454,7 +454,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -502,7 +502,7 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
@@ -550,23 +550,23 @@
       "weeksTraded": 2,
       "posWeeks": 1,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": 0.0093,
+      "shrunkAvgR": 0.0092,
       "shrunkWinRate": 0.3442
     },
     {
       "sym": "HD",
-      "score": 23.08,
+      "score": 23.05,
       "eligible": false,
       "trades": 2,
       "wins": 0,
       "winRate": 0,
-      "avgR": -1.0146,
-      "totalR": -2.0292,
-      "sdR": 0.0206,
+      "avgR": -1.018,
+      "totalR": -2.036,
+      "sdR": 0.0255,
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.8,
-      "shrunkAvgR": -0.3694,
+      "shrunkAvgR": -0.3703,
       "shrunkWinRate": 0.2192
     },
     {
@@ -598,7 +598,7 @@
       "weeksTraded": 3,
       "posWeeks": 0,
       "signalsPerWeek": 0.6667,
-      "shrunkAvgR": -0.4362,
+      "shrunkAvgR": -0.4363,
       "shrunkWinRate": 0.1949
     },
     {
@@ -614,7 +614,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.7333,
-      "shrunkAvgR": -0.3657,
+      "shrunkAvgR": -0.3658,
       "shrunkWinRate": 0.2192
     },
     {
@@ -646,7 +646,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": -0.3657,
+      "shrunkAvgR": -0.3658,
       "shrunkWinRate": 0.2192
     },
     {
@@ -662,7 +662,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -678,7 +678,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -710,7 +710,7 @@
       "weeksTraded": 3,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.4362,
+      "shrunkAvgR": -0.4363,
       "shrunkWinRate": 0.1949
     },
     {
@@ -726,7 +726,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.5333,
-      "shrunkAvgR": -0.3657,
+      "shrunkAvgR": -0.3658,
       "shrunkWinRate": 0.2192
     },
     {
@@ -742,7 +742,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.5333,
-      "shrunkAvgR": -0.3657,
+      "shrunkAvgR": -0.3658,
       "shrunkWinRate": 0.2192
     },
     {
@@ -758,7 +758,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.5333,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -774,7 +774,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.5333,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -790,7 +790,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.6667,
-      "shrunkAvgR": -0.397,
+      "shrunkAvgR": -0.3971,
       "shrunkWinRate": 0.2505
     },
     {
@@ -806,7 +806,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.3657,
+      "shrunkAvgR": -0.3658,
       "shrunkWinRate": 0.2192
     },
     {
@@ -822,7 +822,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -838,7 +838,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -854,7 +854,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -870,7 +870,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -886,7 +886,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.6,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -902,7 +902,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.3657,
+      "shrunkAvgR": -0.3658,
       "shrunkWinRate": 0.2192
     },
     {
@@ -918,7 +918,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -934,7 +934,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -982,7 +982,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.3657,
+      "shrunkAvgR": -0.3658,
       "shrunkWinRate": 0.2192
     },
     {
@@ -998,7 +998,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -1014,7 +1014,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -1030,7 +1030,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -1046,7 +1046,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1062,7 +1062,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1094,7 +1094,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.5383,
+      "shrunkAvgR": -0.5384,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1110,7 +1110,7 @@
       "weeksTraded": 0,
       "posWeeks": 0,
       "signalsPerWeek": 0.2667,
-      "shrunkAvgR": -0.1543,
+      "shrunkAvgR": -0.1544,
       "shrunkWinRate": 0.2923
     },
     {
@@ -1126,7 +1126,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1142,7 +1142,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1158,7 +1158,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1174,7 +1174,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1190,7 +1190,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1206,7 +1206,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.4667,
-      "shrunkAvgR": -0.4721,
+      "shrunkAvgR": -0.4722,
       "shrunkWinRate": 0.2192
     },
     {
@@ -1222,7 +1222,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1238,7 +1238,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1254,7 +1254,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1270,7 +1270,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.3333,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1302,7 +1302,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.4543,
+      "shrunkAvgR": -0.4544,
       "shrunkWinRate": 0.2192
     },
     {
@@ -1318,7 +1318,7 @@
       "weeksTraded": 2,
       "posWeeks": 0,
       "signalsPerWeek": 0.4,
-      "shrunkAvgR": -0.5972,
+      "shrunkAvgR": -0.5973,
       "shrunkWinRate": 0.2192
     },
     {
@@ -1350,7 +1350,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.2667,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     },
     {
@@ -1382,7 +1382,7 @@
       "weeksTraded": 1,
       "posWeeks": 0,
       "signalsPerWeek": 0.2,
-      "shrunkAvgR": -0.2751,
+      "shrunkAvgR": -0.2752,
       "shrunkWinRate": 0.2505
     }
   ]
