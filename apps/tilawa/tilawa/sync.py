@@ -12,8 +12,8 @@ import numpy as np
 from . import quran
 
 MODEL = "tarteel-ai/whisper-base-ar-quran"
-# رؤوس المحاذاة لـ whisper-base الأصلي (النموذج المدرّب مشتق منه ولا يحملها)
-ALIGNMENT_HEADS = [[3, 1], [4, 2], [4, 3], [4, 7], [5, 1], [5, 2], [5, 4], [5, 6], [5, 7]]
+# النموذج المدرّب مشتق من whisper-base ولا يحمل إعدادات التوقيت؛ نأخذها من الأصل
+BASE = "openai/whisper-base"
 SR = 16000
 
 _MARKS = re.compile("[ؐ-ًؚ-ٰٟۖ-ۭ࣓-ࣿـ]")
@@ -35,22 +35,62 @@ def load_audio(path):
 
 @lru_cache
 def _asr():
-    from transformers import pipeline
-    asr = pipeline("automatic-speech-recognition", model=MODEL, chunk_length_s=30, device="cpu")
-    if not getattr(asr.model.generation_config, "alignment_heads", None):
-        asr.model.generation_config.alignment_heads = ALIGNMENT_HEADS
+    from transformers import GenerationConfig, pipeline
+    asr = pipeline("automatic-speech-recognition", model=MODEL, device="cpu")
+    asr.model.generation_config = GenerationConfig.from_pretrained(BASE)
     return asr
 
 
+def silences(audio, frame=0.02, rel_db=-32, min_len=0.25):
+    """فترات الصمت [(بداية، نهاية)] بالطاقة: أهدأ من ذروة التلاوة بـ 32 ديسيبل لربع ثانية فأكثر."""
+    n = int(SR * frame)
+    frames = audio[:len(audio) // n * n].reshape(-1, n)
+    db = 10 * np.log10((frames ** 2).mean(axis=1) + 1e-10)
+    quiet = db < np.percentile(db, 95) + rel_db
+    out, start = [], None
+    for k, q in enumerate(np.append(quiet, False)):
+        if q and start is None:
+            start = k
+        elif not q and start is not None:
+            if (k - start) * frame >= min_len:
+                out.append((start * frame, k * frame))
+            start = None
+    return out
+
+
+def chunks(audio, quiet, max_len=25.0):
+    """تقطيع عند الوقفات إلى قطع لا تتجاوز 25 ث (حدّ Whisper 30 ث). القطع المستقلة تحفظ التكرار
+    الذي يحذفه دمج القطع المتداخلة."""
+    total = len(audio) / SR
+    cuts, begin = [0.0], 0.0
+    while total - begin > max_len:
+        mids = [(a + b) / 2 for a, b in quiet if begin + 3 < (a + b) / 2 <= begin + max_len]
+        begin = mids[-1] if mids else begin + max_len
+        cuts.append(begin)
+    return list(zip(cuts, cuts[1:] + [total]))
+
+
 def transcribe(path):
-    """[(كلمة، بداية، نهاية)] من Whisper."""
-    out = _asr()(load_audio(path), return_timestamps="word", generate_kwargs={"language": "ar", "task": "transcribe"})
+    """[(كلمة، بداية، نهاية)] من Whisper، وبداية كل كلمة بعد الصمت الذي يسبقها."""
+    audio = load_audio(path)
+    quiet = silences(audio)
     words = []
-    for ch in out["chunks"]:
-        b, e = ch["timestamp"]
-        for w in ch["text"].split():
-            words.append((w, float(b), float(e if e is not None else b + 0.4)))
-    return words
+    for b, e in chunks(audio, quiet):
+        out = _asr()(audio[int(b * SR):int(e * SR)], return_timestamps="word",
+                     generate_kwargs={"language": "ar", "task": "transcribe"})
+        for ch in out["chunks"]:
+            wb, we = ch["timestamp"]
+            we = we if we is not None else wb + 0.4
+            for w in ch["text"].split():
+                words.append((w, b + float(wb), b + float(we)))
+    # Whisper يضم الوقفة إلى الكلمة التالية؛ نزيحها إلى نهاية الصمت
+    fixed = []
+    for w, wb, we in words:
+        for a, z in quiet:
+            if wb < z < we:
+                wb = z
+        fixed.append((w, wb, we))
+    return fixed
 
 
 @lru_cache
