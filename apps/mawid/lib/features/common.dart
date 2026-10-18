@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../main.dart';
 import '../model/programs.dart';
 
@@ -43,3 +44,26 @@ class Card1 extends StatelessWidget {
 }
 
 TextStyle get h2 => TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ink);
+
+/// Opens an official source in the browser.
+Future<void> openSource(BuildContext context, String url) async {
+  final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication).catchError((_) => false);
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذّر فتح $url')));
+  }
+}
+
+/// "المصدر الرسمي: …" with a link, shown wherever a date is shown in detail.
+class SourceLink extends StatelessWidget {
+  final String label, url;
+  const SourceLink(this.label, this.url, {super.key});
+  @override
+  Widget build(BuildContext context) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        leading: const Icon(Icons.open_in_new, size: 20),
+        title: Text(label),
+        subtitle: Text(url.replaceFirst('https://', ''), textDirection: TextDirection.ltr, textAlign: TextAlign.right),
+        onTap: () => openSource(context, url),
+      );
+}

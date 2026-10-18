@@ -149,6 +149,7 @@ class _DetailPageState extends State<DetailPage> {
                       onPressed: () => _addToCalendar(p, d), child: const Text('إضافة إلى التقويم'))),
             ]),
           ),
+          Card1(child: SourceLink('المصدر الرسمي: ${p.source}', p.sourceUrl)),
         ]),
       ),
     );
