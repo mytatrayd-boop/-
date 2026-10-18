@@ -87,7 +87,7 @@ details > summary { cursor: pointer; font-weight: 600; }
         </div>
         <progress id="syncProg" value="0" max="1" hidden></progress>
         <div class="status" id="syncStatus" hidden></div>
-        <p class="note">أول مرة تنزّل الصفحة نموذج التعرف الصوتي (نحو 100 ميجا)، ثم يبقى في المتصفح.</p>
+        <p class="note">أول مرة تنزّل الصفحة نموذج التعرف الصوتي (نحو 60 ميجا)، ثم يُحفظ في المتصفح إن سمح بذلك.</p>
       </section>
 
       <section class="card" aria-labelledby="h2">
@@ -318,7 +318,11 @@ self.onmessage = async (e) => {
         return nativeFetch(input, init);
       };
       const T = await import(m.tjs + "transformers.min.js");
-      T.env.allowRemoteModels = false; T.env.allowLocalModels = true; T.env.useBrowserCache = false;
+      T.env.allowRemoteModels = false; T.env.allowLocalModels = true;
+      // يُحفظ النموذج في المتصفح بعد أول تنزيل إن سمح المتصفح بذلك
+      let cacheOk = false;
+      try { await caches.open("tilawa-probe"); await caches.delete("tilawa-probe"); cacheOk = true; } catch { /* غير متاح */ }
+      T.env.useBrowserCache = cacheOk;
       T.env.localModelPath = m.base;
       T.env.backends.onnx.wasm.wasmPaths = { mjs: m.tjs + "ort-wasm-simd-threaded.jsep.mjs", wasm: m.base + "assets/ort.wasm" };
       T.env.backends.onnx.wasm.numThreads = 1;
@@ -463,23 +467,68 @@ function buildSegments(units, unitWords, match, lo) {
   return segs;
 }
 
+// توزيع كلمات كل كتلة على وحدات النَّفَس فيها: القطع حيث يتناسب عدد الحروف مع مدة كل وحدة،
+// ويُفضَّل عند نهاية آية أو حيث يرجع القارئ ليعيد مقطعاً
+function splitBlocks(units, blocks, blockWords, match, lo) {
+  const out = []; let w0 = 0;
+  blocks.forEach(([u0, u1], k) => {
+    const words = blockWords[k], n = words.length, K = u1 - u0 + 1;
+    const ms = words.map((_, j) => (match[w0 + j] === null ? null : match[w0 + j] + lo));
+    w0 += n;
+    if (K === 1 || n === 0) { out.push(words); for (let i = 1; i < K; i++) out.push([]); return; }
+    const L = [0]; words.forEach((w) => L.push(L.at(-1) + norm(w).length + 1));
+    const dur = []; for (let u = u0; u <= u1; u++) dur.push(units[u][1] - units[u][0]);
+    const rate = L[n] / dur.reduce((a, b) => a + b, 0);
+    const bonus = (p) => {  // القطع قبل الكلمة p
+      let prev = null, next = null;
+      for (let j = p - 1; j >= 0 && prev === null; j--) prev = ms[j];
+      for (let j = p; j < n && next === null; j++) next = ms[j];
+      if (prev === null || next === null) return 0;
+      if (next <= prev) return 3;                       // رجوع للخلف = تكرار
+      return (prev + 1 >= QW.length || !sameAyah(prev, prev + 1)) ? 1.5 : 0; // نهاية آية
+    };
+    // best[i][p]: أقل كلفة لتوزيع أول p كلمة على أول i وحدة
+    const best = Array.from({ length: K + 1 }, () => new Float64Array(n + 1).fill(Infinity));
+    const from = Array.from({ length: K + 1 }, () => new Int32Array(n + 1));
+    best[0][0] = 0;
+    for (let i = 1; i <= K; i++) for (let p = i; p <= n - (K - i); p++) for (let a = i - 1; a < p; a++) {
+      if (best[i - 1][a] === Infinity) continue;
+      const diff = (L[p] - L[a]) / rate - dur[i - 1];
+      const c = best[i - 1][a] + diff * diff / Math.max(dur[i - 1], 1) - (i < K ? bonus(p) : 0);
+      if (c < best[i][p]) { best[i][p] = c; from[i][p] = a; }
+    }
+    const cuts = [n]; for (let i = K, p = n; i > 1; i--) { p = from[i][p]; cuts.unshift(p); }
+    let a = 0; for (const c of cuts) { out.push(words.slice(a, c)); a = c; }
+  });
+  return out;
+}
+
 async function autoSync(progress) {
   progress("تنزيل نموذج التعرف الصوتي…", 0);
   onLoadProgress = (p) => progress("تنزيل نموذج التعرف الصوتي…", p * 0.3);
-  await startWorker();
-  const units = breathUnits(audio16), unitWords = [];
+  const tl = performance.now(); await startWorker(); window.__loadMs = Math.round(performance.now() - tl);
+  // وحدات النَّفَس تُجمع في كتل حتى 28 ث: Whisper يعالج كل نداء كأنه 30 ث، فالكتلة أسرع بكثير من نداء لكل وحدة
+  const units = breathUnits(audio16), blocks = [];
   for (let u = 0; u < units.length; u++) {
-    progress(`التعرف على الصوت: ${u + 1} من ${units.length}`, 0.3 + 0.65 * u / units.length);
-    const [s, e] = units[u];
+    const b = blocks.at(-1);
+    if (b && units[u][1] - units[b[0]][0] <= 28) b[1] = u; else blocks.push([u, u]);
+  }
+  const blockWords = [];
+  for (let k = 0; k < blocks.length; k++) {
+    progress(`التعرف على الصوت: ${k + 1} من ${blocks.length}`, 0.3 + 0.65 * k / blocks.length);
+    const s = units[blocks[k][0]][0], e = units[blocks[k][1]][1], t0 = performance.now();
     const text = await transcribe(audio16.slice(Math.floor(s * 16000), Math.ceil(e * 16000)));
-    unitWords.push(text.trim().split(/\s+/).filter(Boolean));
+    (window.__times ||= []).push([+(e - s).toFixed(1), Math.round(performance.now() - t0)]);
+    blockWords.push(text.trim().split(/\s+/).filter(Boolean));
   }
   progress("المطابقة مع المصحف…", 0.96);
-  const an = unitWords.flat().map(norm);
+  const an = blockWords.flat().map(norm);
   const span = locate(an);
   if (!span) throw new Error("لم أتعرف على الآيات في هذا المقطع");
   const [lo, hi] = span;
-  const segs = buildSegments(units, unitWords, align(an, QN.slice(lo, hi + 1)), lo);
+  const match = align(an, QN.slice(lo, hi + 1));
+  const unitWords = splitBlocks(units, blocks, blockWords, match, lo);
+  const segs = buildSegments(units, unitWords, match, lo);
   if (!segs.length) throw new Error("لم أتعرف على الآيات في هذا المقطع");
   const count = {}; segs.forEach((g) => count[g.surah] = (count[g.surah] || 0) + 1);
   const surah = +Object.keys(count).sort((a, b) => count[b] - count[a])[0];

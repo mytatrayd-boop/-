@@ -5,15 +5,15 @@
 ينزّل نموذج التعرف الصوتي (نسخة ONNX مضغوطة) ومحرك تشغيله، ويقسم كل ملف أكبر من 14 ميجا إلى أجزاء
 (حدّ النشر للملف الواحد 15 ميجا)، والصفحة تعيد تجميعها. يحتاج أصول setup_assets.py (النص والخطوط).
 """
-import json, shutil, sqlite3, sys, urllib.request
+import json, os, shutil, sqlite3, sys, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from tilawa import backgrounds  # noqa: E402
 
-MODEL = "https://huggingface.co/aaqibhabib/whisper-base-ar-quran-onnx/resolve/main/"
-BASE_GEN = "https://huggingface.co/openai/whisper-base/resolve/main/generation_config.json"
+MODEL = "https://huggingface.co/aaqibhabib/whisper-{}-ar-quran-onnx/resolve/main/".format(os.environ.get("TILAWA_MODEL", "tiny"))
+BASE_GEN = "https://huggingface.co/openai/whisper-{}/resolve/main/generation_config.json".format(os.environ.get("TILAWA_MODEL", "tiny"))
 TJS = "https://registry.npmjs.org/@huggingface/transformers/-/transformers-3.7.5.tgz"
 PART = 14 * 1024 * 1024
 
