@@ -35,8 +35,10 @@ def load_audio(path):
 
 @lru_cache
 def _asr():
+    import torch
     from transformers import GenerationConfig, pipeline
-    asr = pipeline("automatic-speech-recognition", model=MODEL, device="cpu")
+    # كرت الشاشة إن وُجد (مثل Colab) أسرع بكثير
+    asr = pipeline("automatic-speech-recognition", model=MODEL, device=0 if torch.cuda.is_available() else "cpu")
     asr.model.generation_config = GenerationConfig.from_pretrained(BASE)
     return asr
 
