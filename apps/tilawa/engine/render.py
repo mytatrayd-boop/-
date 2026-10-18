@@ -49,16 +49,44 @@ def _tl(d, s, font):
     return d.textlength(s, font=font, direction="rtl", language="ar")
 
 
-def _wrap(d, text, font, max_w):
-    lines, cur = [], ""
+def _tokens(text):
+    """كلمات النص، ورقم الآية ملتصق بالكلمة قبله فلا ينزل وحده إلى سطر جديد."""
+    out = []
     for word in text.split():
-        trial = f"{cur} {word}".strip()
+        if out and word.isdigit():
+            out[-1] += f" {word}"
+        else:
+            out.append(word)
+    return out
+
+
+def _wrap(d, text, font, max_w):
+    """أقل عدد من الأسطر، موزّعة بأطوال متقاربة (لا يبقى سطر أخير بكلمة واحدة)."""
+    words = _tokens(text)
+    if not words:
+        return []
+    width = lambda i, j: _tl(d, " ".join(words[i:j]), font)
+    count, cur = 1, ""
+    for w in words:  # العدد الأدنى من الأسطر بالتعبئة المتتالية
+        trial = f"{cur} {w}".strip()
         if cur and _tl(d, trial, font) > max_w:
-            lines.append(cur)
-            cur = word
+            count, cur = count + 1, w
         else:
             cur = trial
-    return lines + [cur] if cur else lines
+    # تقسيم إلى count سطراً يجعل أطول سطر أقصر ما يمكن
+    n = len(words)
+    best = {(0, 0): (0.0, None)}
+    for k in range(1, count + 1):
+        for j in range(k, n + 1):
+            options = [(max(best[(k - 1, i)][0], width(i, j)), i) for i in range(k - 1, j) if (k - 1, i) in best]
+            if options:
+                best[(k, j)] = min(options)
+    lines, j = [], n
+    for k in range(count, 0, -1):
+        i = best[(k, j)][1]
+        lines.insert(0, " ".join(words[i:j]))
+        j = i
+    return lines
 
 
 def _x(d, line, font, align, max_w):

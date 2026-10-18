@@ -9,6 +9,11 @@ _DIGITS = "٠١٢٣٤٥٦٧٨٩"
 # Tanzil يرمز التنوين المتتابع بتنوين + ميم صغيرة؛ خط المجمع له رموز خاصة به
 _STAGGERED = {"ً": "ٗ", "ٌ": "ٞ", "ٍ": "ٖ"}
 _TANWEEN_MEEM = re.compile("([ًٌٍ])[ۭۢ]")
+# رموز يرمزها Tanzil بغير ما يرمزها خط المجمع (ترميز QPC)، وبدون تحويلها تظهر دائرة منقطة مكانها:
+# الصفر المستدير فوق الحرف الزائد (أُو۟لَـٰٓئِكَ) هو 0652 في الخط، والسكون بشكل رأس الخاء 06E1،
+# والإمالة نقطة تحت الحرف، والإشمام كالتسهيل، والسين الصغيرة تحت الحرف تُرسم فوقه (الخط لا يحملها تحت).
+_QPC = str.maketrans({"\u06df": "\u0652", "\u0652": "\u06e1", "\u06ea": "\u065c", "\u06eb": "\u06ec",
+                      "\u06e3": "\u06dc"})
 
 
 def _con():
@@ -39,7 +44,7 @@ def for_hafs_font(words):
     for i, w in enumerate(words):
         nxt = words[i + 1] if i + 1 < len(words) else ""
         iqlab = nxt.lstrip("ـ").startswith("ب")
-        out.append(_TANWEEN_MEEM.sub(lambda m: m.group(1) + "ۢ" if iqlab else _STAGGERED[m.group(1)], w))
+        out.append(_TANWEEN_MEEM.sub(lambda m: m.group(1) + "ۢ" if iqlab else _STAGGERED[m.group(1)], w).translate(_QPC))
     return out
 
 
