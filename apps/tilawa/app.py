@@ -42,24 +42,39 @@ c1, c2 = st.columns([1, 1])
 with c1:
     st.subheader("١) التلاوة")
     audio_file = st.file_uploader("ملف التلاوة (صوت أو فيديو)", type=["mp3", "m4a", "wav", "aac", "ogg", "mp4"])
+    audio_path = save_upload(audio_file, "audio") if audio_file else None
+    if audio_path and st.button("🔎 تعرّف على الآيات ووقّتها تلقائياً", type="primary"):
+        from tilawa import sync
+        try:
+            with st.status("المزامنة الآلية…", expanded=True) as box:
+                surah_id, a_from, a_to, auto = sync.auto_sync(audio_path, progress=st.write)
+                box.update(label="تمت المزامنة", state="complete", expanded=False)
+            st.session_state.update(surah=surah_id, start=a_from, end=a_to, segs=pd.DataFrame(auto),
+                                    seg_key=(surah_id, a_from, a_to, audio_file.name))
+            st.success(f"سورة {quran.surahs()[surah_id - 1][1]}، الآيات {a_from}–{a_to}، {len(auto)} مقطعاً. راجع الجدول وعدّل ما يلزم.")
+        except ValueError as err:
+            st.error(f"{err}. اختر السورة والآيات يدوياً.")
+    st.caption("أول تشغيل ينزّل نموذج التعرف الصوتي (~300 ميجا).")
 with c2:
     st.subheader("٢) الآيات")
     names = {i: f"{i}. {n}" for i, n, _ in quran.surahs()}
     counts = {i: c for i, _, c in quran.surahs()}
-    surah = st.selectbox("السورة", list(names), format_func=names.get, index=69)
+    st.session_state.setdefault("surah", 70)
+    surah = st.selectbox("السورة", list(names), format_func=names.get, key="surah")
+    st.session_state.start = min(st.session_state.get("start", 1), counts[surah])
+    st.session_state.end = min(max(st.session_state.get("end", 5), st.session_state.start), counts[surah])
     a1, a2 = st.columns(2)
-    start = a1.number_input("من آية", 1, counts[surah], 1)
-    end = a2.number_input("إلى آية", int(start), counts[surah], min(int(start) + 4, counts[surah]))
+    start = a1.number_input("من آية", 1, counts[surah], key="start")
+    end = a2.number_input("إلى آية", int(start), counts[surah], key="end")
 
-audio_path = save_upload(audio_file, "audio") if audio_file else None
 base = quran.segments_for(surah, int(start), int(end))
 
 # ── 3) التوقيت ──────────────────────────────────────────────────
 st.subheader("٣) التوقيت")
 st.caption("توزيع تقريبي حسب طول كل آية. عدّل البداية والنهاية، أو قسّم الآية لعدة مقاطع (احذف من النص وأضف صفاً)، "
-           "أو كرّر مقطعاً إذا أعاده القارئ. المزامنة الآلية بالتعرف الصوتي ستُضاف لاحقاً.")
+           "أو كرّر مقطعاً إذا أعاده القارئ. زر «تعرّف تلقائياً» يملأ الجدول من الصوت نفسه.")
 key = (surah, int(start), int(end), audio_file.name if audio_file else None)
-if st.session_state.get("seg_key") != key or st.button("↺ إعادة التوزيع التلقائي"):
+if "segs" not in st.session_state or st.session_state.get("seg_key") != key or st.button("↺ إعادة التوزيع التلقائي"):
     if audio_path:
         b, e = timing.speech_bounds(audio_path)
     else:
