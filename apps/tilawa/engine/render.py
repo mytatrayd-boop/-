@@ -35,6 +35,12 @@ class Style:
     # الخلفية
     dim: float = 0.25             # تعتيم الخلفية 0..0.8
     zoom: bool = True             # تقريب بطيء للصور
+    blur: float = 0.0             # تضبيب الخلفية 0..30 (يوضح النص فوق الصور المزدحمة)
+    bg_change: str = "time"       # عند تعدد الخلفيات: time كل bg_every ثانية / segment مع كل مقطع
+    bg_every: float = 8.0
+    bg_min: float = 3.0           # أقصر مدة لخلفية (في وضع المقاطع تُدمج المقاطع القصيرة)
+    transition: str = "fade"      # fade / fadeblack / slideright / circleopen / dissolve / none
+    transition_dur: float = 1.0
 
     @classmethod
     def from_dict(cls, d):
@@ -168,9 +174,14 @@ def header_layer(lines, font_path, st: Style):
     return _with_shadow(layer, st.shadow)
 
 
-def _bg_frame(bg, t=0.0):
-    """إطار من الخلفية مقصوص إلى 9:16 (للمعاينة)."""
-    if os.path.splitext(bg)[1].lower() in IMAGE_EXT:
+def _is_image(path):
+    return os.path.splitext(path)[1].lower() in IMAGE_EXT
+
+
+def _bg_frame(bg, t=0.0, blur=0.0):
+    """إطار من الخلفية مقصوص إلى 9:16 (للمعاينة). bg: مسار أو قائمة مسارات (يُعرض الأول)."""
+    bg = bg[0] if isinstance(bg, (list, tuple)) else bg
+    if _is_image(bg):
         im = Image.open(bg).convert("RGB")
     else:
         tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
@@ -179,12 +190,13 @@ def _bg_frame(bg, t=0.0):
     s = max(W / im.width, H / im.height)
     im = im.resize((round(im.width * s), round(im.height * s)))
     l, t_ = (im.width - W) // 2, (im.height - H) // 2
-    return im.crop((l, t_, l + W, t_ + H))
+    im = im.crop((l, t_, l + W, t_ + H))
+    return im.filter(ImageFilter.GaussianBlur(blur)) if blur > 0 else im
 
 
 def preview(bg, text, header_lines, font_path, st: Style):
     """صورة معاينة واحدة بنفس إعدادات الفيديو."""
-    im = _bg_frame(bg).convert("RGBA")
+    im = _bg_frame(bg, blur=st.blur).convert("RGBA")
     im.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(255 * st.dim))))
     im.alpha_composite(header_layer(header_lines, font_path, st))
     if text:
@@ -192,34 +204,78 @@ def preview(bg, text, header_lines, font_path, st: Style):
     return im.convert("RGB")
 
 
-def _bg_input(bg, duration, st: Style):
-    """مدخلات ffmpeg ومرشح الخلفية: قص إلى 9:16 + تعتيم + تقريب بطيء للصور + تكرار للفيديو."""
-    dim = f"drawbox=c=black@{st.dim:.2f}:t=fill" if st.dim > 0 else "null"
-    if os.path.splitext(bg)[1].lower() in IMAGE_EXT:
-        args = ["-loop", "1", "-framerate", str(FPS), "-t", f"{duration:.3f}", "-i", bg]
-        if st.zoom:
-            frames = int(duration * FPS) + 1
+def _clip(path, length, zoom):
+    """مدخلات ffmpeg ومرشح مقطع خلفية واحد بطول محدد: قص إلى 9:16، وتقريب بطيء للصور، وتكرار للفيديو."""
+    if _is_image(path):
+        args = ["-loop", "1", "-framerate", str(FPS), "-t", f"{length:.3f}", "-i", path]
+        if zoom:
+            frames = int(length * FPS) + 1
             flt = (f"scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
                    f"zoompan=z='1+0.08*on/{frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-                   f":d=1:s={W}x{H}:fps={FPS},{dim}")
+                   f":d=1:s={W}x{H}:fps={FPS}")
         else:
-            flt = f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},{dim}"
+            flt = f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS}"
     else:
-        args = ["-stream_loop", "-1", "-t", f"{duration:.3f}", "-i", bg]
-        flt = f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},{dim}"
-    return args, flt
+        args = ["-stream_loop", "-1", "-t", f"{length:.3f}", "-i", path]
+        flt = f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS}"
+    return args, f"{flt},setsar=1,format=yuv420p,trim=duration={length:.3f},setpts=PTS-STARTPTS"
+
+
+def bg_schedule(n_bgs, duration, segments, st: Style):
+    """أوقات تبدّل الخلفية [0، t1، t2، ...]. خلفية واحدة = بلا تبدّل."""
+    if n_bgs < 2:
+        return [0.0]
+    if st.bg_change == "segment":
+        points = [0.0]
+        for seg in segments[1:]:
+            if seg["start"] - points[-1] >= st.bg_min and duration - seg["start"] >= st.bg_min:
+                points.append(seg["start"])
+        return points
+    every = max(st.bg_every, st.bg_min)
+    return [i * every for i in range(int((duration - st.bg_min) // every) + 1)]
+
+
+def _bg_chain(bgs, duration, segments, st: Style, first_input=0):
+    """مدخلات ومرشحات الخلفية كاملة (تتابع الخلفيات بانتقالات) ← [bg]."""
+    points = bg_schedule(len(bgs), duration, segments, st)
+    td = st.transition_dur if st.transition != "none" and len(points) > 1 else 0.0
+    td = min(td, st.bg_min / 2)
+    args, chain = [], []
+    for k, start in enumerate(points):
+        end = points[k + 1] + td if k + 1 < len(points) else duration
+        a, flt = _clip(bgs[k % len(bgs)], end - start, st.zoom)
+        args += a
+        chain.append(f"[{first_input + k}:v]{flt}[c{k}]")
+    cur = "c0"
+    for k in range(1, len(points)):
+        nxt = f"x{k}"
+        if td > 0:
+            chain.append(f"[{cur}][c{k}]xfade=transition={st.transition}:duration={td:.3f}:offset={points[k]:.3f}[{nxt}]")
+        else:
+            chain.append(f"[{cur}][c{k}]concat=n=2:v=1:a=0[{nxt}]")
+        cur = nxt
+    post = []
+    if st.blur > 0:
+        post.append(f"gblur=sigma={st.blur:.1f}")
+    if st.dim > 0:
+        post.append(f"drawbox=c=black@{st.dim:.2f}:t=fill")
+    chain.append(f"[{cur}]{','.join(post) or 'null'},format=yuv420p[bg]")
+    return args, chain, len(points)
 
 
 def render(bg, audio, segments, font, out, st: Style = None, header_lines=(), audio_start=0.0, tail=0.8):
+    """bg: مسار خلفية أو قائمة مسارات تتبدّل حسب st.bg_change."""
     st = st or Style()
+    bgs = list(bg) if isinstance(bg, (list, tuple)) else [bg]
     duration = max(s["end"] for s in segments) + tail
     tmp = tempfile.mkdtemp(prefix="tilawa_")
-    bg_args, bg_flt = _bg_input(bg, duration, st)
+    bg_args, chain, n = _bg_chain(bgs, duration, segments, st)
     head_png = os.path.join(tmp, "header.png")
     header_layer(header_lines, font, st).save(head_png)
     cmd = ["ffmpeg", "-y", "-v", "error", *bg_args, "-ss", f"{audio_start:.3f}", "-i", audio,
            "-loop", "1", "-framerate", str(FPS), "-t", f"{duration:.3f}", "-i", head_png]
-    chain = [f"[0:v]{bg_flt},format=yuv420p[bg]", "[bg][2:v]overlay=0:0[v0]"]
+    audio_in, head_in = n, n + 1
+    chain.append(f"[bg][{head_in}:v]overlay=0:0[v0]")
     for i, seg in enumerate(segments):
         png = os.path.join(tmp, f"seg_{i:03d}.png")
         text_layer(seg["text"], font, st).save(png)
@@ -227,11 +283,11 @@ def render(bg, audio, segments, font, out, st: Style = None, header_lines=(), au
         fade = min(st.fade, dur / 3)
         cmd += ["-loop", "1", "-framerate", str(FPS), "-t", f"{dur:.3f}", "-i", png]
         chain.append(
-            f"[{i + 3}:v]format=rgba,fade=in:st=0:d={fade:.3f}:alpha=1,"
+            f"[{i + n + 2}:v]format=rgba,fade=in:st=0:d={fade:.3f}:alpha=1,"
             f"fade=out:st={max(dur - fade, 0):.3f}:d={fade:.3f}:alpha=1,"
             f"setpts=PTS+{seg['start']:.3f}/TB[t{i}]")
         chain.append(f"[v{i}][t{i}]overlay=0:0:eof_action=pass[v{i + 1}]")
-    cmd += ["-filter_complex", ";".join(chain), "-map", f"[v{len(segments)}]", "-map", "1:a",
+    cmd += ["-filter_complex", ";".join(chain), "-map", f"[v{len(segments)}]", "-map", f"{audio_in}:a",
             "-t", f"{duration:.3f}", "-c:v", "libx264", "-preset", "medium", "-crf", "20",
             "-pix_fmt", "yuv420p", "-r", str(FPS), "-c:a", "aac", "-b:a", "160k",
             "-movflags", "+faststart", out]
@@ -241,7 +297,7 @@ def render(bg, audio, segments, font, out, st: Style = None, header_lines=(), au
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--bg", required=True)
+    p.add_argument("--bg", required=True, nargs="+", help="خلفية أو أكثر (تتبدّل)")
     p.add_argument("--audio", required=True)
     p.add_argument("--segments", required=True)
     p.add_argument("--font", required=True)

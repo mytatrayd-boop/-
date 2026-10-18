@@ -11,7 +11,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "engine"))
-from render import Style, preview, render  # noqa: E402
+from render import Style, bg_schedule, preview, render  # noqa: E402
 from tilawa import backgrounds, quran, timing  # noqa: E402
 
 FONT = str(ROOT / "assets" / "hafs.otf")
@@ -97,15 +97,31 @@ st.subheader("٤) الخلفية والنص")
 left, right = st.columns([1.3, 1])
 with left:
     with st.expander("🖼️ الخلفية", expanded=True):
-        kind = st.radio("نوع الخلفية", ["جاهزة", "صورة أو فيديو من جهازي"], horizontal=True)
-        if kind == "جاهزة":
-            preset = st.radio("اختر", list(backgrounds.PRESETS), horizontal=True)
-            bg_path = backgrounds.preset_path(preset)
-        else:
-            up = st.file_uploader("ارفع صورة أو فيديو", type=["jpg", "jpeg", "png", "webp", "mp4", "mov", "m4v"])
-            bg_path = save_upload(up, "background") if up else backgrounds.preset_path("ليل ونجوم")
-            st.caption("يُقص تلقائياً إلى 9:16. الفيديو الأقصر من التلاوة يتكرر.")
+        presets = st.multiselect("خلفيات جاهزة", list(backgrounds.PRESETS), default=["ليل ونجوم"])
+        ups = st.file_uploader("أو ارفع صوراً أو فيديوهات (واحدة أو أكثر)", accept_multiple_files=True,
+                               type=["jpg", "jpeg", "png", "webp", "mp4", "mov", "m4v"])
+        st.caption("تُقص تلقائياً إلى 9:16. الفيديو الأقصر من مدته يتكرر.")
+        bg_paths = [save_upload(u, f"background_{i}") for i, u in enumerate(ups or [])]
+        bg_paths += [backgrounds.preset_path(n) for n in presets]
+        if not bg_paths:
+            bg_paths = [backgrounds.preset_path("ليل ونجوم")]
+        bg_change, bg_every, transition, transition_dur = "time", 8.0, "fade", 1.0
+        if len(bg_paths) > 1:
+            st.markdown(f"**تبدّل الخلفيات ({len(bg_paths)})**")
+            if st.checkbox("ترتيب عشوائي", False):
+                import random
+                random.Random(len(bg_paths)).shuffle(bg_paths)
+            changes = {"كل عدد من الثواني": "time", "مع كل مقطع من الآيات": "segment"}
+            bg_change = changes[st.radio("متى تتبدّل", list(changes), horizontal=True)]
+            if bg_change == "time":
+                bg_every = st.slider("كل (ثانية)", 3, 30, 8)
+            transitions = {"تلاشٍ": "fade", "تلاشٍ عبر الأسود": "fadeblack", "انزلاق": "slideright",
+                           "دائرة": "circleopen", "ذوبان": "dissolve", "بلا انتقال": "none"}
+            transition = transitions[st.radio("الانتقال", list(transitions), horizontal=True)]
+            if transition != "none":
+                transition_dur = st.slider("مدة الانتقال (ث)", 0.3, 2.0, 1.0, 0.1)
         dim = st.slider("تعتيم الخلفية", 0.0, 0.8, 0.25, 0.05)
+        blur = st.slider("تضبيب الخلفية", 0, 20, 0, help="يوضح النص فوق الصور المزدحمة")
         zoom = st.checkbox("تقريب بطيء (للصور)", True)
     with st.expander("🔤 نص الآيات (الحجم والموضع والمحاذاة)", expanded=True):
         font_size = st.slider("حجم الخط", 30, 120, 60)
@@ -130,7 +146,8 @@ with left:
 
 style = Style(font_size=font_size, text_y=text_y, align={"توسيط": "center", "يمين": "right", "يسار": "left"}[align],
               width=width, line_gap=line_gap, color=color, shadow=shadow, fade=fade, header_size=header_size,
-              header_y=header_y, header_color=header_color, header_mode=header_mode, dim=dim, zoom=zoom)
+              header_y=header_y, header_color=header_color, header_mode=header_mode, dim=dim, zoom=zoom,
+              blur=blur, bg_change=bg_change, bg_every=bg_every, transition=transition, transition_dur=transition_dur)
 header_lines = [surah_title if show_name else None, basmala if show_basmala else None]
 
 with right:
@@ -138,7 +155,11 @@ with right:
     if segments:
         idx = st.select_slider("المقطع المعروض", options=list(range(len(segments))), value=0,
                                format_func=lambda i: f"{i + 1}") if len(segments) > 1 else 0
-        st.image(preview(bg_path, render_segments[idx]["text"], header_lines, FONT, style), width=340)
+        # الخلفية الظاهرة فعلاً وقت هذا المقطع
+        points = bg_schedule(len(bg_paths), max(x["end"] for x in segments) + 0.8, segments, style)
+        active = max(k for k, t in enumerate(points) if t <= segments[idx]["start"])
+        st.image(preview(bg_paths[active % len(bg_paths)], render_segments[idx]["text"], header_lines, FONT, style),
+                 width=340)
 
 # ── 5) الإنتاج ──────────────────────────────────────────────────
 st.subheader("٥) الإنتاج")
@@ -149,7 +170,7 @@ elif not segments:
 elif st.button("🎬 أنتج الفيديو", type="primary"):
     out = str(WORK / f"tilawa_{surah}_{int(start)}-{int(end)}.mp4")
     with st.spinner("جارٍ إنتاج الفيديو…"):
-        render(bg_path, audio_path, render_segments, FONT, out, style, header_lines)
+        render(bg_paths, audio_path, render_segments, FONT, out, style, header_lines)
     st.columns([1, 2])[0].video(out)
     with open(out, "rb") as f:
         st.download_button("⬇️ تحميل الفيديو", f, file_name=Path(out).name, mime="video/mp4")
