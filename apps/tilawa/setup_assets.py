@@ -10,6 +10,7 @@ from pathlib import Path
 ASSETS = Path(__file__).parent / "assets"
 DB = ASSETS / "quran.db"
 FONT = ASSETS / "hafs.otf"
+BSML = ASSETS / "bsml.ttf"          # البسملة وإطار السورة بخط مجمع الملك فهد (QCF_BSML)
 TANZIL_IN_WHEEL = "quran_transcript/quran-script/quran-uthmani-without-pause-sajda-hizb-marks.xml"
 
 
@@ -22,6 +23,17 @@ def get_font():
     meta = json.loads(fetch("https://registry.npmjs.org/kfgqpc-uthmanic-script-hafs-regular/latest"))
     with tarfile.open(fileobj=io.BytesIO(fetch(meta["dist"]["tarball"]))) as t:
         FONT.write_bytes(t.extractfile("package/arabic.otf").read())
+
+
+def npm_file(package, path):
+    meta = json.loads(fetch(f"https://registry.npmjs.org/{package}/latest"))
+    with tarfile.open(fileobj=io.BytesIO(fetch(meta["dist"]["tarball"]))) as t:
+        return t.extractfile(path).read()
+
+
+def get_header_font():
+    if not BSML.exists():
+        BSML.write_bytes(npm_file("react-native-quran-hafs", "package/src/assets/fonts/QCF_BSML.ttf"))
 
 
 def get_tanzil_xml():
@@ -59,4 +71,6 @@ if __name__ == "__main__":
     if not FONT.exists():
         get_font()
     print("الخط:", FONT)
+    get_header_font()
+    print("خط الترويسة:", BSML)
     print("الآيات:", build_db(get_tanzil_xml()), "→", DB)

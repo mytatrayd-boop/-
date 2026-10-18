@@ -31,6 +31,7 @@ class Style:
     header_size: int = 46
     header_y: float = 0.09
     header_color: str = "#EBEBEB"
+    header_mode: str = "mushaf"   # plain نص عادي / mushaf إطار السورة + بسملة المصحف / basmala بسملة المصحف فقط
     # الخلفية
     dim: float = 0.25             # تعتيم الخلفية 0..0.8
     zoom: bool = True             # تقريب بطيء للصور
@@ -121,18 +122,49 @@ def text_layer(text, font_path, st: Style):
     return _with_shadow(layer, st.shadow)
 
 
+# خط الترويسة المزخرفة (في مجلد الخط نفسه): QCF_BSML من مجمع الملك فهد
+BSML_FRAME, BSML_BASMALA = "\u00f2", "\u00f3"   # إطار اسم السورة، والبسملة كما في مصحف المدينة
+
+
+def _glyph(d, ch, font_file, width, y, color):
+    """يرسم رمزاً واحداً في المنتصف بعرض محدد. يرجع ارتفاعه."""
+    probe = ImageFont.truetype(font_file, 100)
+    l, t, r, b = probe.getbbox(ch)
+    size = max(int(100 * width / max(r - l, 1)), 8)
+    f = ImageFont.truetype(font_file, size)
+    l, t, r, b = f.getbbox(ch)
+    d.text(((W - (r - l)) / 2 - l, y - t), ch, font=f, fill=color)
+    return b - t
+
+
 def header_layer(lines, font_path, st: Style):
-    """طبقة الترويسة الثابتة (اسم السورة، البسملة). lines: قائمة أسطر، الفارغ يُتجاهل."""
+    """طبقة الترويسة الثابتة. lines: [اسم السورة، البسملة]، والفارغ يُتجاهل."""
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    lines = [l for l in lines if l]
-    if not lines:
+    name, basmala = (list(lines) + [None, None])[:2]
+    if not (name or basmala):
         return layer
     font = _font(font_path, st.header_size)
     d = ImageDraw.Draw(layer)
     y = int(H * st.header_y)
-    for ln in lines:
-        d.text(((W - _tl(d, ln, font)) / 2, y), ln, font=font, fill=st.header_color, direction="rtl", language="ar")
-        y += int(st.header_size * 1.8)
+    assets = os.path.dirname(font_path)
+    bsml = os.path.join(assets, "bsml.ttf")
+    mode = st.header_mode if os.path.exists(bsml) else "plain"
+    scale = st.header_size / 46  # حجم الترويسة يكبّر الزخرفة أيضاً
+    if name:
+        if mode == "mushaf":
+            h = _glyph(d, BSML_FRAME, bsml, W * min(0.86 * scale, 0.98), y, st.header_color)
+            ty = y + h / 2 - st.header_size * 0.75
+            d.text(((W - _tl(d, name, font)) / 2, ty), name, font=font, fill=st.header_color, direction="rtl", language="ar")
+            y += h + int(st.header_size * 0.6)
+        else:
+            d.text(((W - _tl(d, name, font)) / 2, y), name, font=font, fill=st.header_color, direction="rtl", language="ar")
+            y += int(st.header_size * 1.8)
+    if basmala:
+        if mode in ("mushaf", "basmala"):
+            _glyph(d, BSML_BASMALA, bsml, W * min(0.72 * scale, 0.95), y, st.header_color)
+        else:
+            d.text(((W - _tl(d, basmala, font)) / 2, y), basmala, font=font, fill=st.header_color, direction="rtl",
+                   language="ar")
     return _with_shadow(layer, st.shadow)
 
 

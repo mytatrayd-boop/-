@@ -118,6 +118,8 @@ with left:
         fade = st.slider("مدة الظهور والاختفاء (ث)", 0.0, 1.0, 0.35, 0.05)
     with st.expander("🕌 الترويسة (اسم السورة والبسملة)", expanded=True):
         st.caption("الترويسة ثابتة طوال المقطع ولا تختفي مع الآيات.")
+        header_modes = {"إطار المصحف وبسملة مزخرفة": "mushaf", "بسملة مزخرفة": "basmala", "نص عادي": "plain"}
+        header_mode = header_modes[st.radio("شكل الترويسة", list(header_modes), horizontal=True)]
         surah_title, basmala = quran.header_for(surah)
         show_name = st.checkbox("اسم السورة", True)
         show_basmala = st.checkbox("البسملة", basmala is not None, disabled=basmala is None,
@@ -128,7 +130,7 @@ with left:
 
 style = Style(font_size=font_size, text_y=text_y, align={"توسيط": "center", "يمين": "right", "يسار": "left"}[align],
               width=width, line_gap=line_gap, color=color, shadow=shadow, fade=fade, header_size=header_size,
-              header_y=header_y, header_color=header_color, dim=dim, zoom=zoom)
+              header_y=header_y, header_color=header_color, header_mode=header_mode, dim=dim, zoom=zoom)
 header_lines = [surah_title if show_name else None, basmala if show_basmala else None]
 
 with right:
