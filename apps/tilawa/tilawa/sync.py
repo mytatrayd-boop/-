@@ -41,12 +41,14 @@ def _asr():
     return asr
 
 
-def silences(audio, frame=0.02, rel_db=-32, min_len=0.25):
-    """فترات الصمت [(بداية، نهاية)] بالطاقة: أهدأ من ذروة التلاوة بـ 32 ديسيبل لربع ثانية فأكثر."""
+def silences(audio, frame=0.02, rel_db=-32, floor_share=0.3, min_len=0.25):
+    """فترات الصمت [(بداية، نهاية)] بالطاقة لربع ثانية فأكثر. الحد: أهدأ من ذروة التلاوة بـ 32 ديسيبل،
+    أو قريب من أرضية الضجيج إذا كان في التسجيل صوت خلفية (الوقفة فيه لا تهبط كثيراً)."""
     n = int(SR * frame)
     frames = audio[:len(audio) // n * n].reshape(-1, n)
     db = 10 * np.log10((frames ** 2).mean(axis=1) + 1e-10)
-    quiet = db < np.percentile(db, 95) + rel_db
+    low, high = np.percentile(db, [5, 95])
+    quiet = db < max(high + rel_db, low + floor_share * (high - low))
     out, start = [], None
     for k, q in enumerate(np.append(quiet, False)):
         if q and start is None:
