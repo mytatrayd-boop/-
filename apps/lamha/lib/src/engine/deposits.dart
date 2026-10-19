@@ -22,6 +22,7 @@ class DepositRule {
     required this.day,
     required this.weekendShift,
     this.monthLabel,
+    this.defaultEnabled = true,
   });
 
   factory DepositRule.fromJson(Map<String, dynamic> j) {
@@ -44,6 +45,7 @@ class DepositRule {
       day: day,
       weekendShift: shift,
       monthLabel: j['monthLabel'] as String?,
+      defaultEnabled: (j['defaultEnabled'] as bool?) ?? true,
     );
   }
 
@@ -60,6 +62,9 @@ class DepositRule {
 
   /// إن وُجد يُعرض مع اسم الشهر («راتب أكتوبر»)، وإلا يُعرض [name] وحده.
   final String? monthLabel;
+
+  /// مفعّل في الإعدادات الافتراضية (الحقل `defaultEnabled`، الافتراضي true).
+  final bool defaultEnabled;
 }
 
 class DepositException {
@@ -149,6 +154,12 @@ class DepositsConfig {
   final List<DepositException> exceptions;
 
   Set<String> get ids => {for (final r in rules) r.id};
+
+  /// الإيداعات المفعّلة افتراضياً لمستخدم جديد.
+  Set<String> get defaultIds => {
+        for (final r in rules)
+          if (r.defaultEnabled) r.id,
+      };
 
   DepositRule rule(String id) => rules.firstWhere((r) => r.id == id,
       orElse: () => throw ArgumentError.value(id, 'id', 'إيداع غير معروف'));

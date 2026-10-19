@@ -67,6 +67,7 @@ Map<String, Object?> buildSchedule(
     longitude: s.longitude,
     timeZoneName: s.timeZone,
     method: s.prayerMethod,
+    isRamadan: (d) => data.hijri.tryConvert(d)?.month == 9,
   );
   final start = tz.TZDateTime.from(from, prayers.location);
   final qibla = qiblaDegrees(s.latitude, s.longitude);

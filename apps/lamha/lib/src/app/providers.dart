@@ -62,8 +62,14 @@ class SettingsController extends AsyncNotifier<AppState> {
     _prefs = await ref.watch(preferencesProvider.future);
     final saved = _prefs.getString(LamhaSettings.prefsKey);
     var settings = saved == null
-        ? LamhaSettings.defaults(cities.first, data.deposits.ids)
+        ? LamhaSettings.defaults(cities.first, data.deposits.defaultIds)
         : LamhaSettings.fromJson(jsonDecode(saved) as Map<String, dynamic>);
+    // إيداع محفوظ لم يعد في deposits.json لا يُكسر الجدول.
+    final known = settings.deposits.intersection(data.deposits.ids);
+    if (known.length != settings.deposits.length) {
+      settings = settings.copyWith(
+          deposits: known.isEmpty ? data.deposits.defaultIds : known);
+    }
     final s = _state(settings, cities, data);
     // يُبنى الجدول ويُحفظ عند فتح التطبيق (ARCHITECTURE: متى يُحسب الجدول).
     await _publish(s);

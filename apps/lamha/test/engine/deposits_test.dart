@@ -44,9 +44,18 @@ const expected = {
 void main() {
   final config = loadDeposits();
 
-  test('الملف فيه الإيداعات الأربعة بأسمائها وأيامها', () {
-    expect(config.ids,
+  test('الملف فيه الإيداعات الخمسة بأسمائها وأيامها', () {
+    expect(config.ids, {
+      'salary', 'citizen_account', 'social_security', 'housing_support',
+      'retirement',
+    });
+    expect(config.defaultIds,
         {'salary', 'citizen_account', 'social_security', 'housing_support'});
+    expect(config.rule('retirement').name, 'معاشات المتقاعدين');
+    expect(config.rule('retirement').day, 1);
+    expect(config.rule('retirement').defaultEnabled, isFalse);
+    expect(config.rule('retirement').weekendShift,
+        config.rule('social_security').weekendShift);
     expect(config.rule('salary').name, 'الرواتب');
     expect(config.rule('salary').day, 27);
     expect(config.rule('citizen_account').name, 'حساب المواطن');
@@ -126,7 +135,7 @@ void main() {
     });
 
     test('أكثر من إيداع: الأقرب فالأقرب، بحد اثنين', () {
-      final all = config.ids;
+      final all = config.defaultIds;
       final r = config.nextDeposits(DateTime(2026, 10, 19), all);
       expect(r.map((o) => o.id), ['housing_support', 'salary']);
       expect(r.map((o) => o.daysRemaining), [6, 8]);
@@ -182,5 +191,17 @@ void main() {
         ];
       expect(() => DepositsConfig.fromJson(bad), throwsFormatException);
     });
+  });
+
+  test('معاشات المتقاعدين: يوم ١ بقاعدة الضمان نفسها', () {
+    String iso2(DateTime d) => d.toIso8601String().substring(0, 10);
+    for (final (y, m) in [(2026, 2), (2026, 8), (2026, 11), (2027, 5)]) {
+      expect(iso2(config.dateFor('retirement', y, m)),
+          iso2(config.dateFor('social_security', y, m)));
+    }
+    // ١ أغسطس ٢٠٢٦ سبت ← الأحد ٢.
+    expect(config.dateFor('retirement', 2026, 8), DateTime(2026, 8, 2));
+    final r = config.nextDeposits(DateTime(2026, 10, 19), {'retirement'});
+    expect(r.single.date, DateTime(2026, 11, 1));
   });
 }

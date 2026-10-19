@@ -77,6 +77,13 @@ void main() {
 
   testWidgets('لا يمكن إلغاء آخر إيداع', (tester) async {
     final bridge = await pumpApp(tester);
+    // الخامس (المعاشات) ظاهر وغير مفعّل افتراضياً.
+    expect(
+        tester
+            .widget<SwitchListTile>(find.byKey(const Key('deposit-retirement')))
+            .value,
+        isFalse);
+    expect(find.text('معاشات المتقاعدين'), findsOneWidget);
     for (final id in ['salary', 'citizen_account', 'social_security']) {
       await tester.tap(find.byKey(Key('deposit-$id')));
       await tester.pumpAndSettle();

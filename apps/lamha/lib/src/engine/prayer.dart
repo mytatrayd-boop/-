@@ -88,6 +88,7 @@ class PrayerCalculator {
     required this.longitude,
     String timeZoneName = defaultTimeZone,
     this.method = defaultPrayerMethod,
+    this.isRamadan,
   }) : location = timeZone(timeZoneName) {
     if (!prayerMethods.containsKey(method)) {
       throw ArgumentError.value(method, 'method', 'طريقة حساب غير معروفة');
@@ -99,12 +100,23 @@ class PrayerCalculator {
   final tz.Location location;
   final String method;
 
+  /// هل التاريخ المحلي في رمضان (من جدول أم القرى). بدونها لا زيادة رمضان.
+  final bool Function(DateTime date)? isRamadan;
+
+  /// أم القرى (SOURCES.md، منهجية مواقيتي): الفجر ١٨٫٥°، والعشاء بعد المغرب
+  /// بـ٩٠ دقيقة، و١٢٠ دقيقة في رمضان.
+  static const ummAlQuraRamadanIshaMinutes = 120;
+
   /// أوقات التاريخ المحلي [date] (يؤخذ التاريخ فقط).
   DayPrayers forDate(DateTime date) {
+    final params = prayerMethods[method]!();
+    if (method == 'ummAlQura' && (isRamadan?.call(date) ?? false)) {
+      params.ishaInterval = ummAlQuraRamadanIshaMinutes;
+    }
     final pt = adhan.PrayerTimes(
       date: DateTime.utc(date.year, date.month, date.day),
       coordinates: adhan.Coordinates(latitude, longitude),
-      calculationParameters: prayerMethods[method]!(),
+      calculationParameters: params,
     );
     tz.TZDateTime local(DateTime utc) => tz.TZDateTime.from(utc, location);
     return DayPrayers(DateTime(date.year, date.month, date.day), [

@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lamha/src/engine/prayer.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../helpers.dart';
+
 // لم يتوفر مصدر موثوق قابل للاقتباس لأوقات أم القرى (الشبكة محجوبة في بيئة
 // البناء)، فالاختبارات هنا للخصائص: الترتيب، والمنطقة الزمنية، وقاعدة
 // العشاء = المغرب + ٩٠ دقيقة، والصلاة القادمة بعد العشاء = فجر الغد،
@@ -78,5 +80,47 @@ void main() {
         isNot(riyadh.forDate(day)[PrayerName.fajr]));
     expect(() => PrayerCalculator(latitude: 0, longitude: 0, method: 'x'),
         throwsArgumentError);
+  });
+
+  group('أم القرى ورمضان (SOURCES.md: منهجية مواقيتي)', () {
+    final hijri = loadEngineDataFromFiles().hijri;
+    final calc = PrayerCalculator(
+      latitude: 24.7136,
+      longitude: 46.6753,
+      isRamadan: (d) => hijri.convert(d).month == 9,
+    );
+    Duration ishaGap(DateTime d) {
+      final p = calc.forDate(d);
+      return p[PrayerName.isha].difference(p[PrayerName.maghrib]);
+    }
+
+    test('يوم عادي: العشاء بعد المغرب بـ٩٠ دقيقة', () {
+      expect(hijri.convert(day).month, isNot(9));
+      expect(ishaGap(day), const Duration(minutes: 90));
+    });
+
+    test('رمضان ١٤٤٨: العشاء بعد المغرب بـ١٢٠ دقيقة', () {
+      // أول يوم من رمضان ١٤٤٨ في جدول أم القرى، ثم يوم في منتصفه.
+      var d = DateTime(2027, 1, 1);
+      while (!(hijri.convert(d).year == 1448 && hijri.convert(d).month == 9)) {
+        d = DateTime(d.year, d.month, d.day + 1);
+      }
+      final mid = DateTime(d.year, d.month, d.day + 14);
+      expect(hijri.convert(mid).month, 9);
+      expect(ishaGap(d), const Duration(minutes: 120));
+      expect(ishaGap(mid), const Duration(minutes: 120));
+      // اليوم السابق لرمضان: ٩٠.
+      expect(ishaGap(DateTime(d.year, d.month, d.day - 1)),
+          const Duration(minutes: 90));
+      // طريقة أخرى غير أم القرى لا تتأثر.
+      final mwl = PrayerCalculator(
+          latitude: 24.7136,
+          longitude: 46.6753,
+          method: 'muslimWorldLeague',
+          isRamadan: (_) => true);
+      final p = mwl.forDate(mid);
+      expect(p[PrayerName.isha].difference(p[PrayerName.maghrib]),
+          isNot(const Duration(minutes: 120)));
+    });
   });
 }

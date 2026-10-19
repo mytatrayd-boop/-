@@ -38,3 +38,18 @@
 - **القبلة:** معادلة الدائرة العظمى في الكود (الكعبة 21.4225، 39.8262)، وتُقارن في الاختبارات بـ `adhan_dart`.
 - **الإيداعات:** قاعدة العطلة لكل إيداع في `assets/deposits.json` (`weekendRule`: إزاحة بالأيام لكل يوم أسبوع)، والاستثناءات بـ {id، شهر الاستحقاق، التاريخ}. الاسم مع الشهر (مثل «راتب أكتوبر») للراتب فقط عبر الحقل `monthLabel`.
 - **المواسم التراثية:** `assets/seasons.json` مسودة من hijri-calendars.com حتى يُعتمد جدول دليل المواسم.
+
+## ٨. مكتبات وبيانات الميزة ٢ (شاشة الإعدادات)
+- **`flutter_riverpod`** للحالة (ARCHITECTURE)، و**`shared_preferences`** للإعدادات (نص JSON بمفتاح `settings`).
+- **`home_widget`**: الجدول نصاً JSON بمفتاح `schedule`، وApp Group آيفون `group.sa.lamha.shared` (`ios/Runner/Runner.entitlements`)، وتحديث الودجت باسم `LamhaWidget` (أندرويد: `sa.lamha.lamha.LamhaWidget`). الطبقة خلف واجهة `WidgetBridge` لتُستبدل في الاختبارات.
+- **`geolocator`**: قراءة واحدة بدقة منخفضة (`ACCESS_COARSE_LOCATION`، و`NSLocationWhenInUseUsageDescription` بالعربية). الاسم من أقرب مدينة في القائمة، والإحداثيات من الموقع الفعلي.
+- **`image_picker`**: لاختيار لقطة الخلفية في آيفون (لا بديل في Flutter نفسه للوصول لمعرض الصور)، و**`path_provider`** لحفظ نسخة دائمة منها في مجلد التطبيق، لأن ملف image_picker مؤقت. القص في ميزة لاحقة.
+- **`intl`** وملفات ARB (`lib/l10n/app_ar.arb` و`app_en.arb`) لنصوص الواجهة.
+- **الخط Tajawal** (SIL OFL 1.1، `assets/fonts/OFL-Tajawal.txt`) منسوخ من `asraty/app/assets/fonts`.
+- **المدن:** `assets/cities.json` = المدن السعودية (٣٤) من `apps/durur/assets/tables/cities.json`، والإحداثيات من GeoNames (CC BY 4.0)، مع إشارة الرخصة في أسفل شاشة الإعدادات.
+- **الشفافية:** ألفا الخلفية = قيمة الشريط ÷ ١٠٠ (ARCHITECTURE)، فـ١٠٠ معتمة و٠ شفافة كلياً. والظل عند «شفافية أكثر من ٦٠٪» = قيمة أقل من ٤٠. (تعارض في التسمية، انظر STATUS.)
+
+## ٩. مراجع المالك (SOURCES.md) في الميزة ٢
+- **المواسم:** `assets/seasons.json` من «دليل الطوالع والنجوم» (أ.د عبدالله المسند، almisnid.com)، ١٢ موسماً، `approval: owner_provided`. الأوصاف القصيرة مسودة (`descriptionApproval: draft`)، ومنها أوصاف جديدة محايدة للحميمين والتويبع والمرزم والكليبين.
+- **العشاء في رمضان (أم القرى):** ١٢٠ دقيقة بعد المغرب بدل ٩٠، ورمضان من جدول أم القرى (الشهر ٩).
+- **معاشات المتقاعدين (`retirement`):** يوم ١ بقاعدة الضمان، غير مفعّل افتراضياً (`defaultEnabled: false`)، والمرجع النهائي إعلان التأمينات الاجتماعية.

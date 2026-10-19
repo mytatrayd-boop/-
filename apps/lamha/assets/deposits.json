@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "الأيام ميلادية. weekendRule: كم يوماً يُزاح الموعد إذا وافق اليوم المذكور (سالب = قبله). exceptions تتجاوز الحساب لشهر الاستحقاق.",
+  "note": "الأيام ميلادية. weekendRule: كم يوماً يُزاح الموعد إذا وافق اليوم المذكور (سالب = قبله). الأولوية للجدول الرسمي لكل جهة: الاستثناءات في exceptions (أي تقديم أو تأخير رسمي) مقدَّمة على الحساب لشهر الاستحقاق. defaultEnabled=false: غير مفعّل افتراضياً. المراجع في SOURCES.md.",
   "deposits": [
     {
       "id": "salary",
@@ -26,6 +26,14 @@
       "name": "الدعم السكني",
       "day": 24,
       "weekendRule": {"friday": -1, "saturday": 1}
+    },
+    {
+      "id": "retirement",
+      "name": "معاشات المتقاعدين",
+      "day": 1,
+      "weekendRule": {"friday": -1, "saturday": 1},
+      "defaultEnabled": false,
+      "source": "التأمينات الاجتماعية: الصرف في بداية الشهر الميلادي، وإعلانها هو المرجع النهائي (SOURCES.md)"
     }
   ],
   "exceptions": []
