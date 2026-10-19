@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -81,6 +83,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// ألفا مربع الصلاة بلون التمييز (٠٫١٨ في _Tile).
         private const val HIGHLIGHT_ALPHA = 46
 
+        /// حجم سطر الإيداع الثاني (depositSecondSize في widget_preview.dart).
+        private const val DEPOSIT_SECOND_SP = 11f
+
         private val seasonEmoji = mapOf(
             "spring" to "🌸", "summer" to "☀️", "autumn" to "🍂", "winter" to "❄️",
         )
@@ -152,13 +157,25 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             rv.removeAllViews(R.id.row1)
             rv.removeAllViews(R.id.row2)
             rows.forEachIndexed { r, row ->
-                for (cell in row) rv.addView(if (r == 0) R.id.row1 else R.id.row2, tile(context, ctx, day, cell, accent, now))
+                for (cell in row) {
+                    val titleWidth = LamhaLogic.tileTitleWidthDp(minWidth, cell.flex, row.sumOf { it.flex })
+                    rv.addView(if (r == 0) R.id.row1 else R.id.row2, tile(context, ctx, day, cell, accent, now, titleWidth))
+                }
             }
             rv.setViewVisibility(R.id.row2, if (rows.size > 1) View.VISIBLE else View.GONE)
             val grid = if (rows.isEmpty()) View.GONE else View.VISIBLE
             rv.setViewVisibility(R.id.grid, grid)
             rv.setViewVisibility(R.id.divider, grid)
             return rv
+        }
+
+        /// عرض [text] بالـ dp بخط عريض بحجم [sp] (لاختيار عنوان يتسع، كـ TextPainter في المعاينة).
+        private fun textWidthDp(context: Context, text: String, sp: Float): Float {
+            val metrics = context.resources.displayMetrics
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+            paint.typeface = Typeface.DEFAULT_BOLD
+            paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, metrics)
+            return paint.measureText(text) / metrics.density
         }
 
         private fun line(rv: RemoteViews, id: Int, shown: Boolean, text: String) {
@@ -178,6 +195,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// مربع واحد. الثانويات: sub1 سطر، ثم العدّاد، ثم sub2 سطر، ثم sub3 سطران (widget_tile_content.xml).
         private fun tile(
             context: Context, ctx: Context, day: LamhaDay, cell: LamhaLogic.Cell, accent: Int, now: Long,
+            titleWidthDp: Float,
         ): RemoteViews {
             val rv = RemoteViews(context.packageName, if (cell.flex == 2) R.layout.widget_tile_wide else R.layout.widget_tile)
             val (title, emoji) = when (cell.element) {
@@ -220,10 +238,18 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 "deposit" -> {
                     val first = day.deposits.firstOrNull()
                     val second = day.deposits.getOrNull(1)
+                    // «الإيداع القادم» إن اتسع سطراً واحداً، وإلا «الإيداع» (كـ _depositTile).
+                    val full = ctx.getString(R.string.tile_deposit)
+                    rv.setTextViewText(R.id.tile_title, LamhaLogic.fittingTitle(
+                        full, ctx.getString(R.string.tile_deposit_short), textWidthDp(ctx, full, 12f), titleWidthDp,
+                    ))
                     rv.setTextViewText(R.id.tile_value, first?.label ?: "--")
                     if (second != null) {
+                        // مع إيداعين: الاسم سطر واحد بـ«…»، ثم الباقي سطر، ثم الثاني سطر صغير (١١).
+                        rv.setInt(R.id.tile_value, "setMaxLines", 1)
                         sub1 = first?.remaining
                         sub2 = ctx.getString(R.string.value_with_suffix, second.label, second.remaining)
+                        rv.setTextViewTextSize(R.id.tile_sub2, TypedValue.COMPLEX_UNIT_SP, DEPOSIT_SECOND_SP)
                     } else {
                         sub3 = first?.remaining
                     }

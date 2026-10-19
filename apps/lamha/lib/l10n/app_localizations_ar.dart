@@ -104,6 +104,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tileDeposit => 'الإيداع القادم';
 
   @override
+  String get tileDepositShort => 'الإيداع';
+
+  @override
   String get tileSeason => 'الفصل';
 
   @override

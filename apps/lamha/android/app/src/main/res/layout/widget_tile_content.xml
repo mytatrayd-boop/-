@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- محتوى المربع (_Tile في widget_preview.dart): العنوان ١٢ عريض والرمز، ثم القيمة ١٧ عريض،
-     ثم الثانوي ١٢. العنوان والقيمة بلا قص، والثانوي وحده بحد أسطر و«…». -->
+     ثم الثانوي ١٢. العنوان والقيمة بلا قص، والثانوي وحده بحد أسطر و«…». استثناء مربع الإيداع مع
+     إيداعين: القيمة سطر واحد بـ«…» (setMaxLines من Kotlin)، والإيداع الثاني (sub2) بحجم ١١. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
     android:layout_width="match_parent"
@@ -59,6 +60,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
+            android:ellipsize="end"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFF4EFE6"

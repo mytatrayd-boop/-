@@ -324,8 +324,8 @@ class WidgetPreview extends StatelessWidget {
       highlight: accent,
       value: (next?['name'] as String?) ?? '',
       subs: [
-        if (next != null) (text: next['text'] as String, lines: 1),
-        (text: remainingMinutesText(minutes), lines: 1),
+        if (next != null) (text: next['text'] as String, lines: 1, size: tileSubSize),
+        (text: remainingMinutesText(minutes), lines: 1, size: tileSubSize),
       ],
     );
   }
@@ -338,21 +338,34 @@ class WidgetPreview extends StatelessWidget {
       title: l.tileQibla,
       value: l.degrees(arabicDigits(deg.round())),
       emoji: '🧭',
-      subs: [(text: q['direction'] as String, lines: 1)],
+      subs: [(text: q['direction'] as String, lines: 1, size: tileSubSize)],
     );
   }
 
   Widget _depositTile(AppLocalizations l, Map day) {
     final deps = (day['deposits'] as List).cast<Map>();
     final first = deps.first;
+    final two = deps.length > 1;
+    // مع إيداعين: الاسم سطر واحد بـ«…»، ثم الباقي سطر، ثم الثاني سطر صغير (١١) بـ«…».
+    // «الإيداع القادم» إن اتسع سطراً واحداً، وإلا «الإيداع» (كما في LamhaWidgetReceiver.kt).
     return _Tile(
       title: l.tileDeposit,
+      shortTitle: l.tileDepositShort,
       emoji: '💰',
       value: first['label'] as String,
+      valueLines: two ? 1 : null,
       subs: [
-        (text: first['remainingText'] as String, lines: deps.length > 1 ? 1 : 2),
-        if (deps.length > 1)
-          (text: '${deps[1]['label']} · ${deps[1]['remainingText']}', lines: 1),
+        (
+          text: first['remainingText'] as String,
+          lines: two ? 1 : 2,
+          size: tileSubSize
+        ),
+        if (two)
+          (
+            text: '${deps[1]['label']} · ${deps[1]['remainingText']}',
+            lines: 1,
+            size: depositSecondSize
+          ),
       ],
     );
   }
@@ -373,7 +386,8 @@ class WidgetPreview extends StatelessWidget {
         (
           text: l.remainingToNext(s['remainingText'] as String,
               withLam((s['next'] as Map)['name'] as String)),
-          lines: 2
+          lines: 2,
+          size: tileSubSize
         ),
       ],
     );
@@ -390,9 +404,10 @@ class WidgetPreview extends StatelessWidget {
         (
           text: l.remainingToNext(s['remainingText'] as String,
               withLam((s['next'] as Map)['name'] as String)),
-          lines: 1
+          lines: 1,
+          size: tileSubSize
         ),
-        if (description.isNotEmpty) (text: description, lines: 2),
+        if (description.isNotEmpty) (text: description, lines: 2, size: tileSubSize),
       ],
     );
   }
@@ -406,20 +421,46 @@ const tileValueSize = 17.0;
 const tileSubSize = 12.0;
 const tileGap = 3.0;
 
+/// سطر الإيداع الثاني في مربع الإيداع (DEPOSIT_SECOND_SP في LamhaWidgetReceiver.kt).
+const depositSecondSize = 11.0;
+
 class _Tile extends StatelessWidget {
   const _Tile({
     required this.title,
     required this.emoji,
     required this.value,
+    this.shortTitle,
+    this.valueLines,
     this.subs = const [],
     this.highlight,
   });
 
   final String title;
+
+  /// يحل محل [title] إذا لم يتسع سطراً واحداً.
+  final String? shortTitle;
   final String emoji;
   final String value;
-  final List<({String text, int lines})> subs;
+
+  /// حد أسطر القيمة مع «…»؛ null بلا حد.
+  final int? valueLines;
+  final List<({String text, int lines, double size})> subs;
   final Color? highlight;
+
+  /// [title] إن اتسع سطراً واحداً في [width]، وإلا [shortTitle].
+  String _fittingTitle(BuildContext context, TextStyle style, double width) {
+    final short = shortTitle;
+    if (short == null) return title;
+    final painter = TextPainter(
+      text: TextSpan(text: title, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout(maxWidth: width);
+    final fits = !painter.didExceedMaxLines;
+    painter.dispose();
+    return fits ? title : short;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -445,13 +486,16 @@ class _Tile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(title,
-                        key: const Key('tile-title'),
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                            fontSize: tileTitleSize,
-                            fontWeight: FontWeight.w700,
-                            color: _dim)),
+                    child: LayoutBuilder(builder: (context, c) {
+                      const style = TextStyle(
+                          fontSize: tileTitleSize,
+                          fontWeight: FontWeight.w700,
+                          color: _dim);
+                      return Text(_fittingTitle(context, style, c.maxWidth),
+                          key: const Key('tile-title'),
+                          textAlign: TextAlign.right,
+                          style: style);
+                    }),
                   ),
                   Text(emoji, textAlign: TextAlign.right, style: const TextStyle(fontSize: 16, height: 1)),
                 ],
@@ -460,6 +504,8 @@ class _Tile extends StatelessWidget {
               Text(value,
                   key: const Key('tile-value'),
                   textAlign: TextAlign.right,
+                  maxLines: valueLines,
+                  overflow: valueLines == null ? null : TextOverflow.ellipsis,
                   style: const TextStyle(
                       fontSize: tileValueSize,
                       fontWeight: FontWeight.w700,
@@ -472,8 +518,8 @@ class _Tile extends StatelessWidget {
                     textAlign: TextAlign.right,
                     maxLines: s.lines,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: tileSubSize, color: _dim, height: 1.25)),
+                    style: TextStyle(
+                        fontSize: s.size, color: _dim, height: 1.25)),
               ],
             ],
           ),

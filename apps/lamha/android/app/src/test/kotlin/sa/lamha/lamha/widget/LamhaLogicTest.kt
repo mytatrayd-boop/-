@@ -185,4 +185,25 @@ class LamhaLogicTest {
     fun arabicDigits() {
         assertEquals("٢٠٢٦-١٠", LamhaLogic.arabicDigits("2026-10"))
     }
+
+    @Test
+    fun shouldFetchWeatherOnlyWhenShownSomewhere() {
+        assertTrue(LamhaLogic.shouldFetchWeather(true, 1, false))
+        assertTrue(LamhaLogic.shouldFetchWeather(true, 0, true))
+        assertTrue(LamhaLogic.shouldFetchWeather(true, 2, true))
+        // الطقس مخفي: لا جلب حتى مع ودجت وإشعار.
+        assertEquals(false, LamhaLogic.shouldFetchWeather(false, 1, true))
+        // لا ودجت ولا إشعار.
+        assertEquals(false, LamhaLogic.shouldFetchWeather(true, 0, false))
+    }
+
+    @Test
+    fun fittingTitleFallsBackToShort() {
+        assertEquals("الإيداع القادم", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 70f, 80f))
+        assertEquals("الإيداع", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 90f, 80f))
+        assertEquals("الإيداع", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 10f, 0f))
+        // ٣٢٠dp بثلاثة مربعات: (٣٠٠ ÷ ٣) - ٤٦ = ٥٤.
+        assertEquals(54f, LamhaLogic.tileTitleWidthDp(320, 1, 3), 0.01f)
+        assertEquals(0f, LamhaLogic.tileTitleWidthDp(0, 1, 3), 0.01f)
+    }
 }

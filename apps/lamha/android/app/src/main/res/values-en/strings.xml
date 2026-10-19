@@ -6,6 +6,7 @@
     <string name="tile_prayer">Next prayer</string>
     <string name="tile_qibla">Qibla</string>
     <string name="tile_deposit">Next deposit</string>
+    <string name="tile_deposit_short">Deposit</string>
     <string name="tile_season">Season</string>
     <string name="tile_trad_season">Traditional season</string>
     <string name="hijri_date">%1$s AH</string>

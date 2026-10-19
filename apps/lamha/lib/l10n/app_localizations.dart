@@ -218,6 +218,12 @@ abstract class AppLocalizations {
   /// **'الإيداع القادم'**
   String get tileDeposit;
 
+  /// عنوان مربع الإيداع المختصر إذا لم يتسع العنوان الكامل سطراً واحداً
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيداع'**
+  String get tileDepositShort;
+
   /// عنوان مربع الفصل الفلكي
   ///
   /// In ar, this message translates to:

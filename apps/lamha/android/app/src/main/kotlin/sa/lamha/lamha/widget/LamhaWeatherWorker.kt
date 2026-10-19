@@ -1,5 +1,7 @@
 package sa.lamha.lamha.widget
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -20,14 +22,21 @@ import org.json.JSONObject
 
 /// جلب الطقس كل ساعة تقريباً بلا فتح التطبيق (الميزة ٣ج، DECISIONS ١٣): Open-Meteo بلا مفتاح،
 /// بإحداثيات المدينة من الجدول. القراءة تُحفظ بمفتاح weatherNative بصيغة weather.dart، ثم تُرسم
-/// الودجت من جديد. بلا إنترنت تبقى آخر قراءة، وبعد ٣ ساعات تُعرض «--°».
+/// الودجت من جديد. لا يجلب إذا كان الطقس مخفياً أو لا ودجت ولا إشعار (shouldFetchWeather). بلا إنترنت تبقى آخر قراءة، وبعد ٣ ساعات تُعرض «--°».
 class LamhaWeatherWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
 
     override fun doWork(): Result {
         val ctx = applicationContext
         val prefs = HomeWidgetPlugin.getData(ctx)
-        val (lat, lon) = LamhaSchedule.coordinates(prefs.getString(LamhaWidgetReceiver.SCHEDULE_KEY, null))
-            ?: return Result.success()
+        val json = prefs.getString(LamhaWidgetReceiver.SCHEDULE_KEY, null)
+        // الطقس مخفي، أو لا ودجت على الشاشة ولا إشعار: لا طلب شبكة.
+        val day = LamhaSchedule.read(json, System.currentTimeMillis()) ?: return Result.success()
+        val widgets = AppWidgetManager.getInstance(ctx)
+            .getAppWidgetIds(ComponentName(ctx, LamhaWidgetReceiver::class.java)).size
+        if (!LamhaLogic.shouldFetchWeather("weather" in day.visible, widgets, day.lockNotification)) {
+            return Result.success()
+        }
+        val (lat, lon) = LamhaSchedule.coordinates(json) ?: return Result.success()
         try {
             val current = JSONObject(get(url(lat, lon))).getJSONObject("current")
             val reading = JSONObject()

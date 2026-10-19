@@ -328,7 +328,10 @@ void main() {
       expect(value.style!.fontSize, 17);
       expect(value.style!.fontWeight, FontWeight.w700);
       for (final sub in tester.widgetList<Text>(inTile(e, 'tile-sub'))) {
-        expect(sub.style!.fontSize, 12);
+        // سطر الإيداع الثاني وحده ١١.
+        final second =
+            e == WidgetElement.deposit && sub.key == const Key('tile-sub-1');
+        expect(sub.style!.fontSize, second ? 11 : 12);
       }
       // تتابع من الأعلى: لا فراغ كبير بين العنوان والقيمة.
       final gap = tester.getRect(inTile(e, 'tile-value')).top -
@@ -357,6 +360,23 @@ void main() {
         .toList();
     expect(subs.first, asr['text']);
     expect(subs.last, startsWith('باقي'));
+
+    // الإيداع مع إيداعين: الاسم سطر بـ«…»، والباقي سطر، والثاني سطر ١١ بـ«…»، والعنوان المختصر إذا لم يتسع.
+    final deps = (day['deposits'] as List).cast<Map>();
+    expect(deps.length, greaterThan(1));
+    final dValue = tester.widget<Text>(inTile(WidgetElement.deposit, 'tile-value'));
+    expect(dValue.data, deps.first['label']);
+    expect(dValue.maxLines, 1);
+    expect(dValue.overflow, TextOverflow.ellipsis);
+    final dSubs =
+        tester.widgetList<Text>(inTile(WidgetElement.deposit, 'tile-sub')).toList();
+    expect(dSubs.map((t) => t.maxLines), [1, 1]);
+    expect(dSubs.first.data, deps.first['remainingText']);
+    expect(dSubs.last.data, startsWith('${deps[1]['label']} · '));
+    expect(dSubs.last.overflow, TextOverflow.ellipsis);
+    final dTitle = inTile(WidgetElement.deposit, 'tile-title');
+    // خط الاختبار عريض فلا يتسع «الإيداع القادم» سطراً واحداً، فيصير «الإيداع».
+    expect(tester.widget<Text>(dTitle).data, 'الإيداع');
   });
 
   test('لام الجر', () {

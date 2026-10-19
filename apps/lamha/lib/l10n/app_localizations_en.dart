@@ -104,6 +104,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tileDeposit => 'Next deposit';
 
   @override
+  String get tileDepositShort => 'Deposit';
+
+  @override
   String get tileSeason => 'Season';
 
   @override

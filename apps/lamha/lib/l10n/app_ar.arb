@@ -95,6 +95,10 @@
   "@tileDeposit": {
     "description": "عنوان مربع الإيداع"
   },
+  "tileDepositShort": "الإيداع",
+  "@tileDepositShort": {
+    "description": "عنوان مربع الإيداع المختصر إذا لم يتسع العنوان الكامل سطراً واحداً"
+  },
   "tileSeason": "الفصل",
   "@tileSeason": {
     "description": "عنوان مربع الفصل الفلكي"

@@ -20,6 +20,7 @@
   "tilePrayer": "Next prayer",
   "tileQibla": "Qibla",
   "tileDeposit": "Next deposit",
+  "tileDepositShort": "Deposit",
   "tileSeason": "Season",
   "tileTradSeason": "Traditional season",
   "hijriDateText": "{date} AH",

@@ -121,6 +121,24 @@ object LamhaLogic {
     /// أضيق من ٢٥٠dp. [minWidthDp] = 0 إذا لم يبلّغه المشغّل.
     fun clockSizeSp(minWidthDp: Int): Float = if (minWidthDp in 1 until 250) 34f else 42f
 
+    /// عرض المتاح لعنوان مربع (dp) داخل ودجت بعرض [minWidthDp]: حشوة الودجت ١٠+١٠ (widget_lamha.xml)،
+    /// ثم نصيب المربع [flex] من [rowFlex]، ناقصاً حشوة widget_tile ٤+٤ والمحتوى ٩+٩ والرمز (~٢٠).
+    /// 0 أو أقل إذا لم يبلّغ المشغّل العرض.
+    fun tileTitleWidthDp(minWidthDp: Int, flex: Int, rowFlex: Int): Float {
+        if (minWidthDp <= 0 || rowFlex <= 0) return 0f
+        return (minWidthDp - 20f) * flex / rowFlex - 8f - 18f - 20f
+    }
+
+    /// العنوان الكامل إن اتسع سطراً واحداً ([fullWidthDp] ≤ [availableDp])، وإلا القصير
+    /// («الإيداع القادم» ← «الإيداع»). بلا عرض معروف: القصير، كي لا يُقص.
+    fun fittingTitle(full: String, short: String, fullWidthDp: Float, availableDp: Float): String =
+        if (availableDp > 0f && fullWidthDp <= availableDp) full else short
+
+    /// هل يجلب LamhaWeatherWorker الطقس؟ فقط إذا كان عنصر الطقس ظاهراً، وعلى الشاشة ودجت
+    /// أو الإشعار مفعّل. وإلا لا طلب شبكة.
+    fun shouldFetchWeather(weatherVisible: Boolean, widgetCount: Int, notificationEnabled: Boolean): Boolean =
+        weatherVisible && (widgetCount > 0 || notificationEnabled)
+
     /// ألفا خلفية الودجت ٠–٢٥٥ من قيمة الشريط (ألفا = opacity ÷ ١٠٠، DECISIONS ٨).
     fun backgroundAlpha255(opacity: Int): Int = (opacity.coerceIn(0, 100) * 255 + 50) / 100
 
