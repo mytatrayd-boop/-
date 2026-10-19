@@ -275,7 +275,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               Text(status, style: const TextStyle(fontSize: 13)),
             ]),
           ),
-        Directionality(textDirection: TextDirection.ltr, child: Timeline(m)),
+        Directionality(textDirection: TextDirection.ltr, child: Timeline(m, thumb: thumbAt)),
         _toolbar(),
         TabBar(controller: tabs, tabs: const [Tab(text: 'المقطع'), Tab(text: 'قص الصوت'), Tab(text: 'الآيات'), Tab(text: 'الخلفية'), Tab(text: 'النص')]),
         SizedBox(
@@ -306,13 +306,71 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         look.showName ? name : null, look.showBasmala ? bas : null);
   }
 
+  // ── صور الخط الزمني المصغّرة من الفيديو النهائي (كل نصف ثانية) ──
+  final thumbs = <int, ui.Image>{};
+  final _thumbQueue = <int>{};
+  String _thumbSig = '';
+  Composer? _comp;
+  bool _thumbBusy = false;
+
+  /// توقيع كل ما يغيّر شكل الإطار: إن تغيّر تُعاد الصور.
+  String _signature() => [
+        for (final g in m.valid) '${g.text}${g.start}${g.end}',
+        m.trimStart, m.trimEnd, m.cuts, surah, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow,
+        look.align, look.headerMode, look.showName, look.showBasmala, look.headerSize, look.headerY, look.headerColor,
+        look.dim, look.blur, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) b.path], images.length,
+      ].join('|');
+
+  ui.Image? thumbAt(double t) {
+    final key = (t * 2).round();
+    final img = thumbs[key];
+    if (img == null && _comp != null) {
+      _thumbQueue.add(key);
+      _drainThumbs();
+    }
+    return img;
+  }
+
+  Future<void> _drainThumbs() async {
+    if (_thumbBusy) return;
+    _thumbBusy = true;
+    while (_thumbQueue.isNotEmpty && mounted) {
+      final key = _thumbQueue.first;
+      _thumbQueue.remove(key);
+      final comp = _comp, sig = _thumbSig;
+      if (comp == null || thumbs.containsKey(key)) continue;
+      final rec = ui.PictureRecorder();
+      final c = Canvas(rec)..scale(72 / vw);
+      comp.paint(c, key / 2);
+      final img = await rec.endRecording().toImage(72, 128);
+      if (sig != _thumbSig) {
+        img.dispose();
+        continue;
+      }
+      thumbs[key] = img;
+      if (_thumbQueue.isEmpty || thumbs.length % 6 == 0) m.changed();
+      await Future<void>.delayed(Duration.zero);
+    }
+    _thumbBusy = false;
+  }
+
   Widget _preview() => ListenableBuilder(
         listenable: m,
         builder: (context, _) {
           if (quran == null) return const SizedBox();
           if (activeBgs.any((b) => !images.containsKey(b.preview))) _loadImages();
+          final comp = composer(), sig = _signature();
+          _comp = comp;
+          if (sig != _thumbSig) {
+            _thumbSig = sig;
+            for (final i in thumbs.values) {
+              i.dispose();
+            }
+            thumbs.clear();
+            _thumbQueue.clear();
+          }
           return Stack(alignment: Alignment.bottomLeft, children: [
-            FrameView(composer(), m.playhead),
+            FrameView(comp, m.playhead),
             IconButton(
               tooltip: 'ملء الشاشة',
               icon: const Icon(Icons.fullscreen, color: Colors.white),

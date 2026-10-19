@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -267,11 +268,14 @@ class EditorModel extends ChangeNotifier {
 }
 
 // ── الخط الزمني ──
-const _rulerH = 18.0, _waveTop = 22.0, _waveH = 64.0, _segTop = 96.0, _segH = 58.0, tlHeight = 160.0;
+// الصفوف كما في CapCut: المسطرة، ثم شريط صور الفيديو، ثم المقاطع، ثم موجة الصوت
+const _rulerH = 18.0, _filmTop = 20.0, _filmH = 72.0, _segTop = 96.0, _segH = 44.0, _waveTop = 144.0, _waveH = 34.0;
+const tlHeight = 180.0;
 
 class Timeline extends StatefulWidget {
   final EditorModel m;
-  const Timeline(this.m, {super.key});
+  final ui.Image? Function(double t)? thumb; // صورة مصغّرة من الفيديو النهائي عند t
+  const Timeline(this.m, {super.key, this.thumb});
   @override
   State<Timeline> createState() => _TimelineState();
 }
@@ -305,7 +309,7 @@ class _TimelineState extends State<Timeline> {
       return GestureDetector(
         onTapUp: (d) {
           final p = d.localPosition;
-          if (p.dy >= _segTop) {
+          if (p.dy >= _segTop && p.dy < _segTop + _segH) {
             final i = _segAt(p.dx);
             m.select(i);
             if (i != null) m.seek(max(m.segs[i].start, x2t(p.dx)));
@@ -321,7 +325,7 @@ class _TimelineState extends State<Timeline> {
           _moved = false;
           _mode = 'pan';
           final g = m.sel;
-          if (d.pointerCount == 1 && g != null && p.dy >= _segTop) {
+          if (d.pointerCount == 1 && g != null && p.dy >= _segTop && p.dy < _segTop + _segH) {
             final xs = t2x(g.start), xe = t2x(g.end);
             if ((p.dx - xs).abs() < 18) {
               _mode = 'start';
@@ -369,7 +373,7 @@ class _TimelineState extends State<Timeline> {
           }
           m.changed();
         },
-        child: CustomPaint(size: Size(width, tlHeight), painter: _TimelinePainter(m, Theme.of(context).colorScheme)),
+        child: CustomPaint(size: Size(width, tlHeight), painter: _TimelinePainter(m, Theme.of(context).colorScheme, widget.thumb)),
       );
     });
   }
@@ -378,7 +382,8 @@ class _TimelineState extends State<Timeline> {
 class _TimelinePainter extends CustomPainter {
   final EditorModel m;
   final ColorScheme cs;
-  _TimelinePainter(this.m, this.cs) : super(repaint: m);
+  final ui.Image? Function(double t)? thumb;
+  _TimelinePainter(this.m, this.cs, this.thumb) : super(repaint: m);
 
   @override
   void paint(Canvas c, Size size) {
@@ -396,6 +401,19 @@ class _TimelinePainter extends CustomPainter {
           textDirection: TextDirection.ltr)
         ..layout();
       tp.paint(c, Offset(px + 2, 2));
+    }
+    // شريط صور الفيديو: صورة لكل خانة من الفيديو النهائي في وقتها
+    const tileW = _filmH * 9 / 16;
+    final first = (m.view * m.pps / tileW).floor();
+    for (var k = first; k * tileW / m.pps <= m.view + w / m.pps; k++) {
+      final t0 = k * tileW / m.pps, px = x(t0);
+      final dst = Rect.fromLTWH(px, _filmTop, tileW + 0.5, _filmH);
+      final img = t0 < m.duration ? thumb?.call(t0 + tileW / m.pps / 2) : null;
+      if (img != null) {
+        c.drawImageRect(img, Offset.zero & Size(img.width.toDouble(), img.height.toDouble()), dst, Paint()..filterQuality = FilterQuality.low);
+      } else if (t0 < m.duration) {
+        c.drawRect(dst.deflate(0.5), Paint()..color = cs.surfaceContainerLow);
+      }
     }
     // الموجة
     final wave = Paint()..color = cs.primary.withValues(alpha: 0.55);
