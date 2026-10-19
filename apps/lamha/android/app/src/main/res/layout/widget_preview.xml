@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="@string/widget_name"
-        android:textColor="#FF78BE96"
+        android:textColor="#FFD6AA5C"
         android:textSize="28sp"
         android:textStyle="bold" />
 </FrameLayout>

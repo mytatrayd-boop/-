@@ -6,6 +6,8 @@ import 'prayer.dart';
 import 'qibla.dart';
 import 'settings.dart';
 import 'traditional_seasons.dart';
+import 'weather.dart';
+import 'widget_theme.dart';
 
 import 'package:timezone/timezone.dart' as tz;
 
@@ -58,6 +60,7 @@ Map<String, Object?> buildSchedule(
   EngineData data, {
   int days = 30,
   DateTime? generatedAt,
+  WeatherReading? weather,
 }) {
   if (days < 1) throw RangeError.value(days, 'days');
   for (final id in s.deposits) {
@@ -117,6 +120,11 @@ Map<String, Object?> buildSchedule(
     'opacity': s.opacity,
     // اسم ملف اللقطة نسبياً داخل حاوية group.sa.lamha.shared؛ null بلا صورة أو في أندرويد.
     'background': s.background,
+    'theme': themeScheduleJson(s.theme),
+    'lockNotification': s.lockNotification,
+    // آخر قراءة للمدينة نفسها فقط؛ عمرها يُفحص عند العرض (weatherMaxAge).
+    'weather': weatherScheduleJson(
+        weather != null && weather.isFor(s.latitude, s.longitude) ? weather : null),
     'days': dayList,
   };
 }

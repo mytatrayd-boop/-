@@ -68,6 +68,15 @@ String remainingDaysText(int days) {
   return 'باقي ${arabicDigits(days)} يوماً';
 }
 
+/// «اليوم» أو «بعد يوم» أو «بعد يومين» أو «بعد ٨ أيام» أو «بعد ١١ يوماً» (لسطر الإشعار).
+String afterDaysText(int days) {
+  if (days <= 0) return todayText;
+  if (days == 1) return 'بعد يوم';
+  if (days == 2) return 'بعد يومين';
+  if (days <= 10) return 'بعد ${arabicDigits(days)} أيام';
+  return 'بعد ${arabicDigits(days)} يوماً';
+}
+
 /// «باقي دقيقة» أو «باقي دقيقتان» أو «باقي ٣ دقائق» أو «باقي ٣٤ دقيقة».
 String remainingMinutesText(int minutes) {
   if (minutes <= 0) return 'الآن';

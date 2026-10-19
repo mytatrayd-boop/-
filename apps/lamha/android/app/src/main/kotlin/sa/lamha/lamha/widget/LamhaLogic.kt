@@ -117,11 +117,69 @@ object LamhaLogic {
         return text.substring(0, i + 1).trim() to text.substring(i + 1).trim()
     }
 
-    /// حجم خط يجعل نصاً عرضه [widthAtPreferred] بالحجم [preferredSp] يتسع في [maxWidth]،
-    /// دون أن ينزل عن [minSp]. العرض يتناسب طردياً مع الحجم.
-    fun fitTextSize(preferredSp: Float, widthAtPreferred: Float, maxWidth: Float, minSp: Float): Float {
-        if (widthAtPreferred <= 0f || widthAtPreferred <= maxWidth) return preferredSp
-        return maxOf(minSp, preferredSp * maxWidth / widthAtPreferred)
+    /// حجم الساعة: ٤٢ (clockSize في widget_preview.dart)، و٣٤ إذا كان أقل عرض للودجت
+    /// أضيق من ٢٥٠dp. [minWidthDp] = 0 إذا لم يبلّغه المشغّل.
+    fun clockSizeSp(minWidthDp: Int): Float = if (minWidthDp in 1 until 250) 34f else 42f
+
+    /// ألفا خلفية الودجت ٠–٢٥٥ من قيمة الشريط (ألفا = opacity ÷ ١٠٠، DECISIONS ٨).
+    fun backgroundAlpha255(opacity: Int): Int = (opacity.coerceIn(0, 100) * 255 + 50) / 100
+
+    /// لونا الودجت (التمييز، الخلفية): للسمة "system" ألوان النظام إن توفرت (أندرويد ١٢+، [sdkInt] ≥ 31)،
+    /// وإلا لونا الجدول (وهما للسمة system ألوان الذهبي الاحتياطية من Dart).
+    fun themeColors(
+        themeId: String, accent: Int, background: Int, sdkInt: Int,
+        systemAccent: Int?, systemBackground: Int?,
+    ): Pair<Int, Int> =
+        if (themeId == "system" && sdkInt >= 31 && systemAccent != null && systemBackground != null) {
+            systemAccent to systemBackground
+        } else {
+            accent to background
+        }
+
+    /// قراءة طقس: من Dart في الجدول، أو من LamhaWeatherWorker.
+    data class Weather(
+        val temp: Double, val code: Int, val fetchedAtMillis: Long,
+        val latitude: Double, val longitude: Double,
+    ) {
+        /// للمكان نفسه؟ (فرق أقل من ٠٫٠٥°، كـ isFor في weather.dart)
+        fun isFor(lat: Double, lon: Double) =
+            Math.abs(latitude - lat) < 0.05 && Math.abs(longitude - lon) < 0.05
+    }
+
+    /// الأحدث من القراءتين للمكان ([lat]، [lon]) فقط.
+    fun newestWeather(a: Weather?, b: Weather?, lat: Double, lon: Double): Weather? =
+        listOfNotNull(a, b).filter { it.isFor(lat, lon) }.maxByOrNull { it.fetchedAtMillis }
+
+    /// «☀️ ٣١°» إذا كان عمر القراءة ≤ [maxAgeMinutes]، وإلا null (تُعرض «--°»).
+    /// الرمز من جدول [icons] الذي يكتبه Dart (weatherScheduleJson).
+    fun weatherText(w: Weather?, nowMillis: Long, maxAgeMinutes: Int, icons: Map<Int, String>): String? {
+        if (w == null || nowMillis - w.fetchedAtMillis > maxAgeMinutes * 60_000L) return null
+        return "${icons[w.code] ?: "🌡️"} ${temperatureText(w.temp)}"
+    }
+
+    /// «٣١°» أو «-٣°»، بتقريب النصف بعيداً عن الصفر كـ round() في Dart.
+    fun temperatureText(temp: Double): String {
+        val t = Math.floor(Math.abs(temp) + 0.5).toLong()
+        val sign = if (temp < 0 && t > 0) "-" else ""
+        return sign + arabicDigits(t.toString()) + "°"
+    }
+
+    /// الأرقام 0-9 إلى العربية الشرقية (arabicDigits في Dart).
+    fun arabicDigits(s: String): String =
+        buildString { for (ch in s) append(if (ch in '0'..'9') '٠' + (ch - '0') else ch) }
+
+    /// سطرا إشعار شاشة القفل: «الفجر · ٤:٣٥ ص» و«القبلة ٣٢٤° · راتب أكتوبر بعد ٨ أيام».
+    /// الصيغ من strings.xml: [titleFormat] (الاسم، الوقت)، [qiblaFormat] (الزاوية)،
+    /// [depositFormat] (الإيداع، بعد كم)، [joinFormat] (الجزءان).
+    fun notificationLines(
+        prayer: Prayer, qiblaDegrees: String, depositLabel: String?, depositAfter: String?,
+        titleFormat: String, qiblaFormat: String, depositFormat: String, joinFormat: String,
+    ): Pair<String, String> {
+        val title = if (prayer.text.isEmpty()) prayer.name else String.format(titleFormat, prayer.name, prayer.text)
+        val qibla = String.format(qiblaFormat, qiblaDegrees)
+        val text = if (depositLabel.isNullOrEmpty()) qibla
+        else String.format(joinFormat, qibla, String.format(depositFormat, depositLabel, depositAfter ?: "").trim())
+        return title to text
     }
 
     /// لحظات تحديث الودجت: كل صلاة، وكل منتصف ليل وظهر (لتغيّر «ص/م») في منطقة المدينة، بعد [nowMillis].

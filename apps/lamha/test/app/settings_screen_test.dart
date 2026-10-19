@@ -21,8 +21,7 @@ Finder tile(WidgetElement e) => find.byKey(Key('tile-${e.name}'));
 
 double bgAlpha(WidgetTester tester) {
   final box = tester.widget<DecoratedBox>(find.byKey(const Key('preview-background')));
-  final g = (box.decoration as BoxDecoration).gradient! as LinearGradient;
-  return g.colors.first.a;
+  return (box.decoration as BoxDecoration).color!.a;
 }
 
 void main() {
@@ -115,7 +114,7 @@ void main() {
 
   testWidgets('الشريط يغيّر شفافية خلفية المعاينة', (tester) async {
     final bridge = await pumpApp(tester);
-    expect(bgAlpha(tester), closeTo(0.92, 0.01));
+    expect(bgAlpha(tester), closeTo(1, 0.01));
     final slider = find.byKey(const Key('opacity-slider'));
     // الشريط يعرض الشفافية، ومن اليمين لليسار القيمة الكبرى (شفافية ١٠٠٪) في الطرف الأيسر.
     final r = tester.getRect(slider);
@@ -125,11 +124,11 @@ void main() {
     expect(bridge.last['opacity'], lessThan(5));
     await tester.tapAt(Offset(r.right - 2, r.center.dy));
     await tester.pumpAndSettle();
-    expect(bgAlpha(tester), closeTo(0.92, 0.02));
+    expect(bgAlpha(tester), closeTo(1, 0.02));
     expect(bridge.last['opacity'], greaterThan(95));
     await tester.tapAt(r.center);
     await tester.pumpAndSettle();
-    expect(bgAlpha(tester), closeTo(0.46, 0.03));
+    expect(bgAlpha(tester), closeTo(0.5, 0.03));
     expect(find.text('٥٠٪'), findsOneWidget);
   });
 

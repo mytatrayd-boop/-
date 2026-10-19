@@ -1,4 +1,5 @@
 import 'prayer.dart';
+import 'widget_theme.dart';
 
 /// عناصر الودجت التي يمكن إخفاؤها (SPEC §4ب). الساعة واليوم ثابتة.
 enum WidgetElement {
@@ -24,6 +25,8 @@ class Settings {
     Set<WidgetElement>? visible,
     this.opacity = 100,
     this.background,
+    this.theme = WidgetTheme.fallback,
+    this.lockNotification = false,
   })  : deposits = Set.unmodifiable(deposits),
         visible = Set.unmodifiable(visible ?? WidgetElement.values.toSet()) {
     if (deposits.isEmpty) {
@@ -61,4 +64,10 @@ class Settings {
 
   /// اسم ملف لقطة الخلفية داخل حاوية App Group (آيفون)، أو null.
   final String? background;
+
+  /// سمة لون الودجت والمعاينة.
+  final WidgetTheme theme;
+
+  /// إشعار ثابت في شاشة القفل (أندرويد)، مطفأ افتراضياً.
+  final bool lockNotification;
 }

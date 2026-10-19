@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
+import '../engine/widget_theme.dart';
 import 'places.dart';
 import 'providers.dart';
 import 'qibla_screen.dart';
@@ -78,6 +79,7 @@ class _Body extends ConsumerWidget {
               schedule: state.schedule,
               now: ref.read(clockProvider)(),
               backgroundPath: state.backgroundPath,
+              systemColors: state.systemColors,
             ),
           ),
         ),
@@ -98,6 +100,14 @@ class _Body extends ConsumerWidget {
           onChanged: (v) => c.setOpacity(100 - v.round(), commit: false),
           onChangeEnd: (v) => c.setOpacity(100 - v.round()),
         ),
+        Text(l.themeLabel, style: textTheme.titleMedium),
+        const SizedBox(height: 8),
+        _ThemePicker(
+          selected: s.theme,
+          system: state.systemColors,
+          onPick: c.setTheme,
+        ),
+        const SizedBox(height: 12),
         if (defaultTargetPlatform == TargetPlatform.iOS)
           OutlinedButton.icon(
             key: const Key('background-button'),
@@ -202,9 +212,110 @@ class _Body extends ConsumerWidget {
                 },
               ),
         ],
+        // شاشة القفل في أندرويد: إشعار ثابت اختياري (آيفون في ميزة لاحقة).
+        if (defaultTargetPlatform == TargetPlatform.android) ...[
+          const SizedBox(height: 8),
+          SwitchListTile(
+            key: const Key('lock-notification'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(l.lockNotificationLabel),
+            subtitle: Text(l.lockNotificationHint),
+            value: s.lockNotification,
+            onChanged: (v) async {
+              if (v && !await _explainPermission(context, l)) return;
+              if (!await c.setLockNotification(v)) toast(l.notificationDenied);
+            },
+          ),
+        ],
         const SizedBox(height: 16),
         Text(l.dataLicense, style: textTheme.bodySmall),
       ],
+    );
+  }
+}
+
+/// رسالة تشرح سبب إذن الإشعارات قبل طلبه؛ تعيد true عند «متابعة».
+Future<bool> _explainPermission(BuildContext context, AppLocalizations l) async =>
+    await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(l.notificationPermissionTitle),
+        content: Text(l.notificationPermissionBody),
+        actions: [
+          TextButton(
+            key: const Key('permission-cancel'),
+            onPressed: () => Navigator.of(c).pop(false),
+            child: Text(l.cancelAction),
+          ),
+          FilledButton(
+            key: const Key('permission-continue'),
+            onPressed: () => Navigator.of(c).pop(true),
+            child: Text(l.continueAction),
+          ),
+        ],
+      ),
+    ) ??
+    false;
+
+/// أزرار دائرية ملونة لسمات الودجت.
+class _ThemePicker extends StatelessWidget {
+  const _ThemePicker(
+      {required this.selected, required this.system, required this.onPick});
+
+  final WidgetTheme selected;
+  final SystemColors? system;
+  final ValueChanged<WidgetTheme> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      children: [
+        for (final t in WidgetTheme.values)
+          Tooltip(
+            message: l.themeName(t.name),
+            child: Semantics(
+              button: true,
+              selected: t == selected,
+              label: l.themeName(t.name),
+              child: InkResponse(
+                key: Key('theme-${t.name}'),
+                onTap: () => onPick(t),
+                radius: 22,
+                child: _swatch(t),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _swatch(WidgetTheme t) {
+    final c = themeColors(t, system);
+    final on = t == selected;
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // ألوان النظام: نصفان (التمييز والخلفية) ليظهر أنها من الجهاز.
+        gradient: t == WidgetTheme.system
+            ? SweepGradient(colors: [
+                Color(c.accent),
+                Color(c.accent),
+                Color(c.background),
+                Color(c.background),
+              ], stops: const [0, 0.5, 0.5, 1])
+            : null,
+        color: t == WidgetTheme.system ? null : Color(c.accent),
+        border: Border.all(
+            color: on ? Colors.white : Colors.white24, width: on ? 3 : 1),
+      ),
+      child: on
+          ? const Icon(Icons.check, size: 18, color: Colors.black87)
+          : null,
     );
   }
 }

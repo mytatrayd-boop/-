@@ -24,7 +24,7 @@
   "tileTradSeason": "Traditional season",
   "hijriDateText": "{date} AH",
   "gregorianDateText": "{date}",
-  "cityWeather": "📍 {city} · ⛅ --°",
+  "cityWeather": "📍 {city} · {weather}",
   "remainingToNext": "{remaining} {next}",
   "degrees": "{value}°",
   "dataLicense": "City coordinates from GeoNames (geonames.org), CC BY 4.0. Tajawal font, SIL OFL 1.1.",
@@ -39,5 +39,15 @@
   "compassHint": "Hold the phone flat, then turn until the arrow points up.",
   "compassWaiting": "Reading the compass…",
   "compassCalibrate": "Compass accuracy is low. Move the phone in a figure-8 to calibrate it, away from metal and magnets.",
-  "compassUnavailable": "This device has no compass sensor, so the arrow can't be shown. Use the angle above with another compass."
+  "compassUnavailable": "This device has no compass sensor, so the arrow can't be shown. Use the angle above with another compass.",
+  "weatherUnknown": "--°",
+  "themeLabel": "Widget color",
+  "themeName": "{theme, select, gold{Gold} green{Green} blue{Blue} purple{Purple} pink{Pink} gray{Gray} system{System colors} other{{theme}}}",
+  "lockNotificationLabel": "Show on lock screen (notification)",
+  "lockNotificationHint": "Most Android phones don't allow lock screen widgets, so a quiet notification shows the next prayer and qibla.",
+  "notificationPermissionTitle": "Notification permission",
+  "notificationPermissionBody": "To show the next prayer, countdown and qibla on the lock screen, Lamha needs notification permission. The notification is silent and can be turned off here at any time.",
+  "continueAction": "Continue",
+  "cancelAction": "Cancel",
+  "notificationDenied": "Notifications were not allowed, so nothing will show on the lock screen. You can allow them in phone settings."
 }

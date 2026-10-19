@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../engine/asset_loader.dart';
 import '../engine/schedule.dart';
 import '../engine/settings.dart';
+import '../engine/weather.dart';
+import '../engine/widget_theme.dart';
 import 'app_settings.dart';
 import 'cities.dart';
 import 'places.dart';
@@ -37,6 +40,18 @@ final compassSourceProvider =
 
 final widgetLaunchProvider = Provider<WidgetLaunch>((ref) => HomeWidgetLaunch());
 
+final weatherServiceProvider =
+    Provider<WeatherService>((ref) => OpenMeteoWeatherService());
+
+final systemColorsProvider =
+    Provider<SystemColorsSource>((ref) => AndroidSystemColorsSource());
+
+final notificationPermissionProvider =
+    Provider<NotificationPermission>((ref) => AndroidNotificationPermission());
+
+/// مفتاح آخر قراءة طقس في shared_preferences.
+const weatherPrefsKey = 'weather';
+
 /// الساعة (تُثبَّت في الاختبارات).
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 
@@ -50,6 +65,7 @@ class AppState {
     required this.cities,
     required this.data,
     this.backgroundPath,
+    this.systemColors,
   });
 
   final LamhaSettings settings;
@@ -61,6 +77,9 @@ class AppState {
 
   /// المسار الكامل للقطة الخلفية للمعاينة فقط (لا يُحفظ).
   final String? backgroundPath;
+
+  /// ألوان النظام (أندرويد ١٢+) لسمة «ألوان النظام» في المعاينة.
+  final SystemColors? systemColors;
 }
 
 /// نتيجة «موقعي»: [named] باسم من geocoding، و[nearest] باسم أقرب مدينة («قرب ...»).
@@ -73,6 +92,8 @@ const searchPlaceId = 'search';
 class SettingsController extends AsyncNotifier<AppState> {
   late SharedPreferences _prefs;
   String? _backgroundPath;
+  WeatherReading? _weather;
+  SystemColors? _systemColors;
 
   /// اللقطة لآيفون فقط؛ في أندرويد `background` في الجدول null.
   bool get _ios => defaultTargetPlatform == TargetPlatform.iOS;
@@ -100,9 +121,20 @@ class SettingsController extends AsyncNotifier<AppState> {
         debugPrint('background: $e');
       }
     }
+    final w = _prefs.getString(weatherPrefsKey);
+    if (w != null) {
+      try {
+        _weather = WeatherReading.fromJson(jsonDecode(w) as Map<String, dynamic>);
+      } on Object catch (e) {
+        debugPrint('weather prefs: $e');
+      }
+    }
+    _systemColors = await ref.read(systemColorsProvider).read();
     final s = _state(settings, cities, data);
     // يُبنى الجدول ويُحفظ عند فتح التطبيق (ARCHITECTURE: متى يُحسب الجدول).
     await _publish(s);
+    // الطقس عند فتح التطبيق، دون انتظار.
+    unawaited(Future(refreshWeather));
     return s;
   }
 
@@ -116,10 +148,12 @@ class SettingsController extends AsyncNotifier<AppState> {
         data,
         days: scheduleDays,
         generatedAt: now,
+        weather: _weather,
       ),
       cities: cities,
       data: data,
       backgroundPath: _ios ? _backgroundPath : null,
+      systemColors: _systemColors,
     );
   }
 
@@ -149,23 +183,66 @@ class SettingsController extends AsyncNotifier<AppState> {
   Future<void> setOpacity(int value, {bool commit = true}) =>
       _update(_s.copyWith(opacity: value.clamp(0, 100)), commit: commit);
 
-  Future<void> setCity(City c) => _update(_s.copyWith(
-        cityId: c.id,
-        cityName: c.name,
-        latitude: c.latitude,
-        longitude: c.longitude,
-        timeZone: c.timeZone,
-      ));
+  Future<void> setCity(City c) async {
+    await _update(_s.copyWith(
+      cityId: c.id,
+      cityName: c.name,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      timeZone: c.timeZone,
+    ));
+    await refreshWeather();
+  }
+
+  /// يجلب الطقس للمدينة الحالية ويحفظه في الإعدادات والجدول. بلا إنترنت تبقى آخر قراءة.
+  /// يعيد true عند النجاح.
+  Future<bool> refreshWeather() async {
+    if (!state.hasValue) return false;
+    final s = _s;
+    final WeatherReading r;
+    try {
+      r = await ref.read(weatherServiceProvider).current(s.latitude, s.longitude);
+    } catch (e) {
+      debugPrint('weather: $e');
+      return false;
+    }
+    if (!ref.mounted || !state.hasValue) return false;
+    _weather = r;
+    await _prefs.setString(weatherPrefsKey, jsonEncode(r.toJson()));
+    // المدينة تغيّرت أثناء الجلب: القراءة لا تُعرض لها (isFor في الجدول).
+    await _update(_s);
+    return true;
+  }
+
+  Future<void> setTheme(WidgetTheme t) => _update(_s.copyWith(theme: t));
+
+  /// عند التشغيل يُطلب إذن الإشعارات (أندرويد ١٣+)؛ يعيد false إذا رُفض.
+  Future<bool> setLockNotification(bool on) async {
+    if (on) {
+      bool granted;
+      try {
+        granted = await ref.read(notificationPermissionProvider).request();
+      } catch (e) {
+        debugPrint('notification permission: $e');
+        granted = false;
+      }
+      if (!granted) return false;
+    }
+    await _update(_s.copyWith(lockNotification: on));
+    return true;
+  }
 
   /// مكان من البحث أو من الموقع: إحداثياته الفعلية، وتوقيت الرياض (المدن سعودية).
-  Future<void> setPlace(Place p, {String id = searchPlaceId}) =>
-      _update(_s.copyWith(
-        cityId: id,
-        cityName: p.name,
-        latitude: p.latitude,
-        longitude: p.longitude,
-        timeZone: state.requireValue.cities.first.timeZone,
-      ));
+  Future<void> setPlace(Place p, {String id = searchPlaceId}) async {
+    await _update(_s.copyWith(
+      cityId: id,
+      cityName: p.name,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      timeZone: state.requireValue.cities.first.timeZone,
+    ));
+    await refreshWeather();
+  }
 
   /// قراءة واحدة للموقع، والحساب بإحداثياته الفعلية. الاسم من geocoding بالعربية،
   /// وإن تعذّر فـ[nearLabel] لأقرب مدينة في القائمة (مثل «قرب أبها»).

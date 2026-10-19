@@ -117,6 +117,7 @@ class DepositOccurrence {
         'date': isoDate(date),
         'daysRemaining': daysRemaining,
         'remainingText': remainingText,
+        'afterText': afterDaysText(daysRemaining),
       };
 }
 

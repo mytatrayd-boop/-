@@ -242,11 +242,11 @@ abstract class AppLocalizations {
   /// **'{date} م'**
   String gregorianDateText(String date);
 
-  /// سطر المدينة والطقس في المعاينة؛ الطقس الفعلي تجلبه الودجت الأصلية
+  /// سطر المدينة والطقس في المعاينة؛ weather مثل «☀️ ٣١°» أو weatherUnknown
   ///
   /// In ar, this message translates to:
-  /// **'📍 {city} · ⛅ ‎--°'**
-  String cityWeather(String city);
+  /// **'📍 {city} · {weather}'**
+  String cityWeather(String city, String weather);
 
   /// مثل: باقي ٣٤ يوماً للشتاء؛ next مسبوق باللام
   ///
@@ -337,6 +337,66 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا يتوفر حساس بوصلة في هذا الجهاز، فلا يمكن عرض السهم. استعن بالزاوية أعلاه وبوصلة أخرى.'**
   String get compassUnavailable;
+
+  /// لا قراءة طقس أحدث من ٣ ساعات
+  ///
+  /// In ar, this message translates to:
+  /// **'‎--°'**
+  String get weatherUnknown;
+
+  /// عنوان أزرار سمة اللون
+  ///
+  /// In ar, this message translates to:
+  /// **'لون الودجت'**
+  String get themeLabel;
+
+  /// اسم سمة اللون بمعرّفها
+  ///
+  /// In ar, this message translates to:
+  /// **'{theme, select, gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}'**
+  String themeName(String theme);
+
+  /// مفتاح الإشعار الثابت (أندرويد)
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار في شاشة القفل (إشعار)'**
+  String get lockNotificationLabel;
+
+  /// شرح تحت المفتاح
+  ///
+  /// In ar, this message translates to:
+  /// **'أغلب جوالات أندرويد لا تسمح بودجت على شاشة القفل، فيظهر إشعار هادئ بالصلاة القادمة والقبلة.'**
+  String get lockNotificationHint;
+
+  /// عنوان رسالة شرح الإذن
+  ///
+  /// In ar, this message translates to:
+  /// **'إذن الإشعارات'**
+  String get notificationPermissionTitle;
+
+  /// سبب طلب POST_NOTIFICATIONS
+  ///
+  /// In ar, this message translates to:
+  /// **'لعرض الصلاة القادمة والعد التنازلي والقبلة في شاشة القفل، تحتاج لمحة إذن الإشعارات. الإشعار ثابت وهادئ: بلا صوت ولا اهتزاز، ويمكنك إطفاؤه من هنا في أي وقت.'**
+  String get notificationPermissionBody;
+
+  /// زر متابعة
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get continueAction;
+
+  /// زر إلغاء
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cancelAction;
+
+  /// رفض إذن الإشعارات
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُسمح بالإشعارات، فلن يظهر شيء في شاشة القفل. يمكنك السماح بها من إعدادات الجوال.'**
+  String get notificationDenied;
 }
 
 class _AppLocalizationsDelegate

@@ -9,6 +9,8 @@ import 'package:lamha/src/app/cities.dart';
 import 'package:lamha/src/app/places.dart';
 import 'package:lamha/src/app/providers.dart';
 import 'package:lamha/src/app/services.dart';
+import 'package:lamha/src/engine/weather.dart';
+import 'package:lamha/src/engine/widget_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers.dart';
@@ -103,6 +105,48 @@ class FakeLaunch implements WidgetLaunch {
   Stream<Uri?> get clicks => controller.stream;
 }
 
+/// طقس وهمي: قراءة ثابتة لأي مكان، أو خطأ (لا إنترنت).
+class FakeWeather implements WeatherService {
+  FakeWeather({this.temp = 31, this.code = 0, this.error, DateTime? at})
+      : at = at ?? testNow;
+
+  final double temp;
+  final int code;
+  final Object? error;
+  final DateTime at;
+  final calls = <({double latitude, double longitude})>[];
+
+  @override
+  Future<WeatherReading> current(double latitude, double longitude) async {
+    calls.add((latitude: latitude, longitude: longitude));
+    if (error != null) throw error!;
+    return WeatherReading(
+        temp: temp, code: code, fetchedAt: at, latitude: latitude, longitude: longitude);
+  }
+}
+
+class FakeSystemColors implements SystemColorsSource {
+  FakeSystemColors([this.colors]);
+
+  final SystemColors? colors;
+
+  @override
+  Future<SystemColors?> read() async => colors;
+}
+
+class FakePermission implements NotificationPermission {
+  FakePermission([this.granted = true]);
+
+  final bool granted;
+  var requests = 0;
+
+  @override
+  Future<bool> request() async {
+    requests++;
+    return granted;
+  }
+}
+
 final testNow = DateTime.utc(2026, 10, 19, 9);
 final _data = loadEngineDataFromFiles();
 final _cities = parseCities(readAsset('assets/cities.json'));
@@ -116,6 +160,9 @@ Future<FakeBridge> pumpApp(
   PlaceGeocoder? geocoder,
   CompassSource? compass,
   WidgetLaunch? launch,
+  WeatherService? weather,
+  SystemColorsSource? systemColors,
+  NotificationPermission? permission,
   Map<String, Object> prefs = const {},
 }) async {
   tester.view.physicalSize = const Size(1000, 3200);
@@ -135,6 +182,11 @@ Future<FakeBridge> pumpApp(
       placeGeocoderProvider.overrideWithValue(geocoder ?? FakeGeocoder()),
       compassSourceProvider.overrideWithValue(compass ?? FakeCompass()),
       widgetLaunchProvider.overrideWithValue(launch ?? FakeLaunch()),
+      weatherServiceProvider
+          .overrideWithValue(weather ?? FakeWeather(error: 'offline')),
+      systemColorsProvider.overrideWithValue(systemColors ?? FakeSystemColors()),
+      notificationPermissionProvider
+          .overrideWithValue(permission ?? FakePermission()),
     ],
     child: const LamhaApp(),
   ));

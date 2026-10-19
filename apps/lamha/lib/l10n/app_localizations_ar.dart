@@ -120,8 +120,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String cityWeather(String city) {
-    return '📍 $city · ⛅ ‎--°';
+  String cityWeather(String city, String weather) {
+    return '📍 $city · $weather';
   }
 
   @override
@@ -182,4 +182,49 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get compassUnavailable =>
       'لا يتوفر حساس بوصلة في هذا الجهاز، فلا يمكن عرض السهم. استعن بالزاوية أعلاه وبوصلة أخرى.';
+
+  @override
+  String get weatherUnknown => '‎--°';
+
+  @override
+  String get themeLabel => 'لون الودجت';
+
+  @override
+  String themeName(String theme) {
+    String _temp0 = intl.Intl.selectLogic(theme, {
+      'gold': 'ذهبي',
+      'green': 'أخضر',
+      'blue': 'أزرق',
+      'purple': 'بنفسجي',
+      'pink': 'وردي',
+      'gray': 'رمادي',
+      'system': 'ألوان النظام',
+      'other': '$theme',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lockNotificationLabel => 'إظهار في شاشة القفل (إشعار)';
+
+  @override
+  String get lockNotificationHint =>
+      'أغلب جوالات أندرويد لا تسمح بودجت على شاشة القفل، فيظهر إشعار هادئ بالصلاة القادمة والقبلة.';
+
+  @override
+  String get notificationPermissionTitle => 'إذن الإشعارات';
+
+  @override
+  String get notificationPermissionBody =>
+      'لعرض الصلاة القادمة والعد التنازلي والقبلة في شاشة القفل، تحتاج لمحة إذن الإشعارات. الإشعار ثابت وهادئ: بلا صوت ولا اهتزاز، ويمكنك إطفاؤه من هنا في أي وقت.';
+
+  @override
+  String get continueAction => 'متابعة';
+
+  @override
+  String get cancelAction => 'إلغاء';
+
+  @override
+  String get notificationDenied =>
+      'لم يُسمح بالإشعارات، فلن يظهر شيء في شاشة القفل. يمكنك السماح بها من إعدادات الجوال.';
 }

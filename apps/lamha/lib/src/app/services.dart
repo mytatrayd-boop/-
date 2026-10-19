@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,9 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../engine/weather.dart';
+import '../engine/widget_theme.dart';
 
 /// واجهات المنصة خلف أنواع قابلة للاستبدال في الاختبارات.
 
@@ -156,4 +160,64 @@ class FlutterCompassSource implements CompassSource {
   @override
   Stream<CompassReading>? readings() => FlutterCompass.events
       ?.map((e) => (heading: e.heading, accuracy: e.accuracy));
+}
+
+/// الطقس الحالي من Open-Meteo (بلا مفتاح).
+abstract class WeatherService {
+  /// يرمي عند فشل الاتصال أو رد غير صالح.
+  Future<WeatherReading> current(double latitude, double longitude);
+}
+
+class OpenMeteoWeatherService implements WeatherService {
+  @override
+  Future<WeatherReading> current(double latitude, double longitude) async {
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+    try {
+      final req = await client.getUrl(openMeteoUri(latitude, longitude));
+      final res = await req.close().timeout(const Duration(seconds: 15));
+      if (res.statusCode != 200) {
+        throw HttpException('Open-Meteo ${res.statusCode}');
+      }
+      final body = await res.transform(utf8.decoder).join();
+      return parseOpenMeteo(jsonDecode(body) as Map<String, dynamic>,
+          DateTime.now().toUtc(), latitude, longitude);
+    } finally {
+      client.close();
+    }
+  }
+}
+
+/// قناة MainActivity.kt في أندرويد: ألوان النظام وإذن الإشعارات.
+const androidChannel = MethodChannel('sa.lamha/android');
+
+/// ألوان Material You (أندرويد ١٢+)؛ null في غيره.
+abstract class SystemColorsSource {
+  Future<SystemColors?> read();
+}
+
+class AndroidSystemColorsSource implements SystemColorsSource {
+  @override
+  Future<SystemColors?> read() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      final m = await androidChannel.invokeMapMethod<String, int>('systemColors');
+      if (m == null || m['accent'] == null || m['background'] == null) return null;
+      return (accent: m['accent']!, background: m['background']!);
+    } catch (e) {
+      debugPrint('systemColors: $e');
+      return null;
+    }
+  }
+}
+
+/// إذن POST_NOTIFICATIONS لإشعار شاشة القفل (أندرويد ١٣+؛ الأقدم مسموح دائماً).
+abstract class NotificationPermission {
+  Future<bool> request();
+}
+
+class AndroidNotificationPermission implements NotificationPermission {
+  @override
+  Future<bool> request() async =>
+      await androidChannel.invokeMethod<bool>('requestNotificationPermission') ??
+      false;
 }

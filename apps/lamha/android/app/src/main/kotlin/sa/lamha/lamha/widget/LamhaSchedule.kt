@@ -16,8 +16,8 @@ data class LamhaDay(
     /// الزاوية («٣٢٤°») والاتجاه («شمال غرب») سطران في المربع.
     val qiblaDegrees: String,
     val qiblaDirection: String,
-    /// (الاسم، الباقي) بالترتيب: الأقرب ثم الذي بعده.
-    val deposits: List<Pair<String, String>>,
+    /// بالترتيب: الأقرب ثم الذي بعده.
+    val deposits: List<Deposit>,
     val seasonId: String,
     val seasonName: String,
     val seasonRemaining: String,
@@ -26,9 +26,26 @@ data class LamhaDay(
     val tradRemaining: String,
     val tradNext: String,
     val tradDescription: String,
+    val latitude: Double,
+    val longitude: Double,
+    val themeId: String,
+    val accent: Int,
+    val background: Int,
+    val lockNotification: Boolean,
+    /// آخر قراءة طقس كتبها Dart في الجدول، وجدول رموزها، وأقصى عمر لها.
+    val weather: LamhaLogic.Weather?,
+    val weatherIcons: Map<Int, String>,
+    val weatherMaxAgeMinutes: Int,
 )
 
+/// [remaining] «باقي ٨ أيام» للمربع، و[after] «بعد ٨ أيام» للإشعار.
+data class Deposit(val label: String, val remaining: String, val after: String)
+
 object LamhaSchedule {
+
+    /// الذهبي (WidgetTheme.gold في Dart) لجدول بلا سمة.
+    private const val GOLD_ACCENT = 0xFFD6AA5CL
+    private const val GOLD_BACKGROUND = 0xFF2A241DL
 
     /// يعيد null إذا لم يُحفظ جدول أو تعذّر قراءته.
     fun read(json: String?, nowMillis: Long): LamhaDay? {
@@ -58,6 +75,37 @@ object LamhaSchedule {
             emptyList()
         }
     }
+
+    /// إحداثيات المدينة من الجدول (للطقس)، أو null.
+    fun coordinates(json: String?): Pair<Double, Double>? {
+        if (json.isNullOrEmpty()) return null
+        return try {
+            val c = JSONObject(json).getJSONObject("city")
+            c.getDouble("latitude") to c.getDouble("longitude")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /// قراءة طقس بصيغة weather.dart (temp، code، fetchedAt بصيغة ISO، latitude، longitude)، أو null.
+    fun weatherOf(o: JSONObject?): LamhaLogic.Weather? {
+        if (o == null || !o.has("temp") || !o.has("code") || !o.has("fetchedAt")) return null
+        return try {
+            LamhaLogic.Weather(
+                o.getDouble("temp"), o.getInt("code"), LamhaLogic.parseIsoMillis(o.getString("fetchedAt")),
+                o.getDouble("latitude"), o.getDouble("longitude"),
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun weatherOf(json: String?): LamhaLogic.Weather? =
+        if (json.isNullOrEmpty()) null else try {
+            weatherOf(JSONObject(json))
+        } catch (e: Exception) {
+            null
+        }
 
     private fun timeZoneOf(root: JSONObject): String =
         root.getJSONObject("city").optString("timeZone", "Asia/Riyadh")
@@ -99,11 +147,22 @@ object LamhaSchedule {
         val deps = day.optJSONArray("deposits") ?: JSONArray()
         val deposits = (0 until deps.length()).map {
             val d = deps.getJSONObject(it)
-            d.getString("label") to d.getString("remainingText")
+            Deposit(d.getString("label"), d.getString("remainingText"), d.optString("afterText", ""))
         }
         val (qiblaDegrees, qiblaDirection) = LamhaLogic.splitQibla(root.getJSONObject("qibla").getString("text"))
         val season = day.getJSONObject("season")
         val trad = day.getJSONObject("tradSeason")
+        // سمة وطقس (الميزة ٣ج)؛ جدول أقدم بلاهما يأخذ الذهبي وبلا طقس.
+        val theme = root.optJSONObject("theme")
+        val weather = root.optJSONObject("weather")
+        val icons = HashMap<Int, String>()
+        weather?.optJSONObject("icons")?.let { o ->
+            val keys = o.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                k.toIntOrNull()?.let { code -> icons[code] = o.getString(k) }
+            }
+        }
 
         return LamhaDay(
             timeZone = tz,
@@ -125,6 +184,15 @@ object LamhaSchedule {
             tradRemaining = trad.getString("remainingText"),
             tradNext = trad.getJSONObject("next").getString("name"),
             tradDescription = trad.optString("description", ""),
+            latitude = city.optDouble("latitude", 0.0),
+            longitude = city.optDouble("longitude", 0.0),
+            themeId = theme?.optString("id", "gold") ?: "gold",
+            accent = theme?.optLong("accent", GOLD_ACCENT)?.toInt() ?: GOLD_ACCENT.toInt(),
+            background = theme?.optLong("background", GOLD_BACKGROUND)?.toInt() ?: GOLD_BACKGROUND.toInt(),
+            lockNotification = root.optBoolean("lockNotification", false),
+            weather = weatherOf(weather),
+            weatherIcons = icons,
+            weatherMaxAgeMinutes = weather?.optInt("maxAgeMinutes", 180) ?: 180,
         )
     }
 }

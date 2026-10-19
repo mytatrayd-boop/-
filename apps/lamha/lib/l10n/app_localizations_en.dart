@@ -120,8 +120,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String cityWeather(String city) {
-    return '📍 $city · ⛅ --°';
+  String cityWeather(String city, String weather) {
+    return '📍 $city · $weather';
   }
 
   @override
@@ -182,4 +182,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get compassUnavailable =>
       'This device has no compass sensor, so the arrow can\'t be shown. Use the angle above with another compass.';
+
+  @override
+  String get weatherUnknown => '--°';
+
+  @override
+  String get themeLabel => 'Widget color';
+
+  @override
+  String themeName(String theme) {
+    String _temp0 = intl.Intl.selectLogic(theme, {
+      'gold': 'Gold',
+      'green': 'Green',
+      'blue': 'Blue',
+      'purple': 'Purple',
+      'pink': 'Pink',
+      'gray': 'Gray',
+      'system': 'System colors',
+      'other': '$theme',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lockNotificationLabel => 'Show on lock screen (notification)';
+
+  @override
+  String get lockNotificationHint =>
+      'Most Android phones don\'t allow lock screen widgets, so a quiet notification shows the next prayer and qibla.';
+
+  @override
+  String get notificationPermissionTitle => 'Notification permission';
+
+  @override
+  String get notificationPermissionBody =>
+      'To show the next prayer, countdown and qibla on the lock screen, Lamha needs notification permission. The notification is silent and can be turned off here at any time.';
+
+  @override
+  String get continueAction => 'Continue';
+
+  @override
+  String get cancelAction => 'Cancel';
+
+  @override
+  String get notificationDenied =>
+      'Notifications were not allowed, so nothing will show on the lock screen. You can allow them in phone settings.';
 }

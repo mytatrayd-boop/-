@@ -7,6 +7,7 @@ import 'package:lamha/l10n/app_localizations.dart';
 import 'package:lamha/src/app/widget_preview.dart';
 import 'package:lamha/src/engine/schedule.dart';
 import 'package:lamha/src/engine/settings.dart';
+import 'package:lamha/src/engine/weather.dart';
 
 import '../helpers.dart';
 
@@ -22,7 +23,7 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 void main() {
-  testWidgets('لقطة المعاينة (آيفون، شفافية ٨٠)', (tester) async {
+  testWidgets('لقطة المعاينة (أندرويد، ذهبي، شفافية ٨٠، طقس)', (tester) async {
     await _loadFont('Tajawal', [
       'assets/fonts/Tajawal-Regular.ttf',
       'assets/fonts/Tajawal-Medium.ttf',
@@ -46,6 +47,12 @@ void main() {
       loadEngineDataFromFiles(),
       days: 2,
       generatedAt: now,
+      weather: WeatherReading(
+          temp: 31.4,
+          code: 0,
+          fetchedAt: now.subtract(const Duration(minutes: 20)),
+          latitude: 24.6877,
+          longitude: 46.7219),
     );
 
     const size = Size(370, 386);
@@ -58,7 +65,7 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: ThemeData(
-        platform: TargetPlatform.iOS,
+        platform: TargetPlatform.android,
         fontFamily: 'Tajawal',
         fontFamilyFallback: hasEmoji ? const ['NotoColorEmoji'] : null,
       ),

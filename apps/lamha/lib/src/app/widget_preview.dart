@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -8,6 +7,8 @@ import '../../l10n/app_localizations.dart';
 import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
+import '../engine/weather.dart';
+import '../engine/widget_theme.dart';
 
 /// مقاس الودجت الكبيرة في آيفون (DESIGN، mockups/widget-large-v2.png).
 const previewWidgetSize = Size(338, 354);
@@ -50,34 +51,50 @@ double backgroundAlpha(int opacity) => opacity.clamp(0, 100) / 100;
 String withLam(String name) =>
     name.startsWith('ال') ? 'لل${name.substring(2)}' : 'ل$name';
 
-class _Palette {
-  const _Palette(this.accent, this.bgTop, this.bgBottom, this.wallTop,
-      this.wallBottom, this.radius);
-
-  final Color accent;
-  final Color bgTop;
-  final Color bgBottom;
-  final Color wallTop;
-  final Color wallBottom;
-  final double radius;
-
-  static const ios = _Palette(Color(0xFFD6AA5C), Color(0xFF3A3228),
-      Color(0xFF181512), Color(0xFF3A3128), Color(0xFF0B0A09), 22);
-  static const android = _Palette(Color(0xFF78BE96), Color(0xFF2E3A32),
-      Color(0xFF141815), Color(0xFF2F3A33), Color(0xFF0A0B0A), 28);
-}
-
+/// ألوان النص الثابتة (DESIGN)؛ التمييز والخلفية من سمة الجدول.
 const _text = Color(0xFFF4EFE6);
 const _muted = Color(0xFFCFC6B8);
 const _dim = Color(0xFFB9B0A2);
 
+/// خلفية الشاشة خلف المعاينة.
+const _wallTop = Color(0xFF34302B);
+const _wallBottom = Color(0xFF0B0A09);
+
+/// أحجام الصف العلوي، مطابقة لـ widget_lamha.xml في أندرويد (الميزة ٣ج).
+const clockSize = 42.0;
+const amPmSize = 18.0;
+const weekdaySize = 15.0;
+
+/// لونا الودجت من الجدول: ألوان النظام لسمة «ألوان النظام» إن توفرت (أندرويد ١٢+)، وإلا ألوان السمة.
+({Color accent, Color background}) scheduleColors(
+    Map<String, Object?> schedule, SystemColors? system) {
+  final t = (schedule['theme'] as Map?)?.cast<String, Object?>();
+  final theme = WidgetTheme.byName(t?['id'] as String?);
+  final c = theme == WidgetTheme.system && system != null
+      ? system
+      : (
+          accent: (t?['accent'] as int?) ?? theme.accent,
+          background: (t?['background'] as int?) ?? theme.background,
+        );
+  return (accent: Color(c.accent), background: Color(c.background));
+}
+
+/// آخر قراءة طقس في الجدول، أو null.
+WeatherReading? scheduleWeather(Map<String, Object?> schedule) {
+  final w = (schedule['weather'] as Map?)?.cast<String, dynamic>();
+  if (w == null || w['temp'] == null) return null;
+  return WeatherReading.fromJson(w);
+}
+
 /// معاينة الودجت الكبيرة، تُبنى من الجدول نفسه الذي يُحفظ للودجت.
+/// هي المرجع لتخطيط ودجت أندرويد (android/app/src/main/res/layout/widget_lamha.xml).
 class WidgetPreview extends StatelessWidget {
   const WidgetPreview({
     super.key,
     required this.schedule,
     required this.now,
     this.backgroundPath,
+    this.systemColors,
   });
 
   final Map<String, Object?> schedule;
@@ -86,12 +103,16 @@ class WidgetPreview extends StatelessWidget {
   /// لقطة الخلفية (آيفون) لتظهر خلف المعاينة.
   final String? backgroundPath;
 
+  /// ألوان النظام (أندرويد ١٢+) لسمة «ألوان النظام».
+  final SystemColors? systemColors;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final p = Theme.of(context).platform == TargetPlatform.iOS
-        ? _Palette.ios
-        : _Palette.android;
+    final radius =
+        Theme.of(context).platform == TargetPlatform.iOS ? 22.0 : 28.0;
+    final colors = scheduleColors(schedule, systemColors);
+    final accent = colors.accent;
     final visibleMap = (schedule['visible']! as Map).cast<String, bool>();
     bool on(WidgetElement e) => visibleMap[e.name] ?? false;
     final opacity = schedule['opacity']! as int;
@@ -109,11 +130,9 @@ class WidgetPreview extends StatelessWidget {
     if (idx < 0) idx = 0;
     final day = days[idx];
     final nextDay = idx + 1 < days.length ? days[idx + 1] : null;
+    final weather = weatherText(scheduleWeather(schedule), now) ?? l.weatherUnknown;
 
-    final hideHeadInfo = !on(WidgetElement.hijri) &&
-        !on(WidgetElement.gregorian) &&
-        !on(WidgetElement.weather);
-
+    // من اليمين: الساعة و«ص/م» وتحتهما اليوم، ثم يساراً التاريخان والمدينة والطقس.
     final head = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -125,25 +144,27 @@ class WidgetPreview extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(arabicClock(local),
-                    style: TextStyle(
-                        fontSize: hideHeadInfo ? 60 : 44,
+                    key: const Key('preview-clock'),
+                    style: const TextStyle(
+                        fontSize: clockSize,
                         height: 1,
                         fontWeight: FontWeight.w700,
                         color: _text)),
-                const SizedBox(width: 3),
+                const SizedBox(width: 4),
                 Text(amPm(local),
-                    style: TextStyle(
-                        fontSize: hideHeadInfo ? 26 : 20,
+                    style: const TextStyle(
+                        fontSize: amPmSize,
                         fontWeight: FontWeight.w700,
                         color: _text)),
               ],
             ),
             const SizedBox(height: 4),
             Text(day['weekday'] as String,
+                key: const Key('preview-weekday'),
                 style: TextStyle(
-                    fontSize: hideHeadInfo ? 19 : 15,
+                    fontSize: weekdaySize,
                     fontWeight: FontWeight.w700,
-                    color: p.accent)),
+                    color: accent)),
           ],
         ),
         const SizedBox(width: 8),
@@ -151,24 +172,25 @@ class WidgetPreview extends StatelessWidget {
           child: Align(
             alignment: AlignmentDirectional.topEnd,
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (on(WidgetElement.hijri))
-                _line(l.hijriDateText((day['hijri'] as Map)['text'] as String),
-                    14, FontWeight.w700, _text),
-              if (on(WidgetElement.gregorian))
-                _line(
-                    l.gregorianDateText(
-                        (day['gregorian'] as Map)['text'] as String),
-                    13,
-                    FontWeight.w400,
-                    _muted),
-              if (on(WidgetElement.weather))
-                _line(l.cityWeather(city['name'] as String), 12.5,
-                    FontWeight.w400, _muted),
-            ],
-          ),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (on(WidgetElement.hijri))
+                  _line(l.hijriDateText((day['hijri'] as Map)['text'] as String),
+                      14, FontWeight.w700, _text),
+                if (on(WidgetElement.gregorian))
+                  _line(
+                      l.gregorianDateText(
+                          (day['gregorian'] as Map)['text'] as String),
+                      13,
+                      FontWeight.w400,
+                      _muted),
+                if (on(WidgetElement.weather))
+                  _line(l.cityWeather(city['name'] as String, weather), 12,
+                      FontWeight.w400, _muted,
+                      key: const Key('preview-weather')),
+              ],
+            ),
           ),
         ),
       ],
@@ -178,8 +200,8 @@ class WidgetPreview extends StatelessWidget {
     final rows = gridRows(shown);
 
     Widget tileFor(WidgetElement e) => switch (e) {
-          WidgetElement.prayer => _prayerTile(l, p, day, nextDay, local),
-          WidgetElement.qibla => _qiblaTile(l, p),
+          WidgetElement.prayer => _prayerTile(l, accent, day, nextDay, local),
+          WidgetElement.qibla => _qiblaTile(l),
           WidgetElement.deposit => _depositTile(l, day),
           WidgetElement.season => _seasonTile(l, day),
           _ => _tradSeasonTile(l, day),
@@ -188,16 +210,8 @@ class WidgetPreview extends StatelessWidget {
     final widgetBox = DecoratedBox(
       key: const Key('preview-background'),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(p.radius),
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topStart,
-          end: AlignmentDirectional.bottomEnd,
-          colors: [
-            p.bgTop.withValues(alpha: 0.92 * alpha),
-            p.bgBottom.withValues(alpha: 0.95 * alpha),
-          ],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        borderRadius: BorderRadius.circular(radius),
+        color: colors.background.withValues(alpha: alpha),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -254,10 +268,10 @@ class WidgetPreview extends StatelessWidget {
             ? DecorationImage(image: FileImage(File(bg)), fit: BoxFit.cover)
             : null,
         gradient: bg == null
-            ? RadialGradient(
-                center: const Alignment(0.4, -0.8),
+            ? const RadialGradient(
+                center: Alignment(0.4, -0.8),
                 radius: 1.2,
-                colors: [p.wallTop, p.wallBottom],
+                colors: [_wallTop, _wallBottom],
               )
             : null,
       ),
@@ -269,14 +283,17 @@ class WidgetPreview extends StatelessWidget {
     );
   }
 
-  static Widget _line(String s, double size, FontWeight w, Color c) => Text(
+  static Widget _line(String s, double size, FontWeight w, Color c,
+          {Key? key}) =>
+      Text(
         s,
+        key: key,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(fontSize: size, fontWeight: w, color: c, height: 1.4),
       );
 
-  Widget _prayerTile(AppLocalizations l, _Palette p, Map day, Map? nextDay,
+  Widget _prayerTile(AppLocalizations l, Color accent, Map day, Map? nextDay,
       tz.TZDateTime local) {
     Map? next;
     DateTime? at;
@@ -300,7 +317,7 @@ class WidgetPreview extends StatelessWidget {
     return _Tile(
       title: l.tilePrayer,
       emoji: '🕌',
-      highlight: p.accent,
+      highlight: accent,
       value: (next?['name'] as String?) ?? '',
       subs: [
         if (next != null) (text: next['text'] as String, lines: 1),
@@ -309,18 +326,15 @@ class WidgetPreview extends StatelessWidget {
     );
   }
 
-  Widget _qiblaTile(AppLocalizations l, _Palette p) {
+  Widget _qiblaTile(AppLocalizations l) {
     final q = schedule['qibla']! as Map;
     final deg = (q['degrees'] as num).toDouble();
     // الزاوية سطر، والاتجاه سطر أصغر تحته.
     return _Tile(
       title: l.tileQibla,
       value: l.degrees(arabicDigits(deg.round())),
+      emoji: '🧭',
       subs: [(text: q['direction'] as String, lines: 1)],
-      badge: SizedBox.square(
-        dimension: 18,
-        child: CustomPaint(painter: _CompassPainter(deg, p.accent)),
-      ),
     );
   }
 
@@ -380,8 +394,9 @@ class WidgetPreview extends StatelessWidget {
   }
 }
 
-/// أحجام المربعات الموحدة (الميزة ٣ب): العنوان ١٢، والقيمة ١٧ عريض، والثانوي ١٢،
-/// والمحتوى من الأعلى بتباعد ثابت [tileGap]. مطابقة لـ LamhaWidget.kt.
+/// أحجام المربعات الموحدة: العنوان ١٢، والقيمة ١٧ عريض، والثانوي ١٢، والمحتوى من الأعلى
+/// بتباعد ثابت [tileGap]. مطابقة لـ widget_tile_content.xml. العنوان والقيمة بلا قص
+/// (يلتفّان)، والثانوي وحده بحد أسطر وعلامة «…».
 const tileTitleSize = 12.0;
 const tileValueSize = 17.0;
 const tileSubSize = 12.0;
@@ -390,19 +405,16 @@ const tileGap = 3.0;
 class _Tile extends StatelessWidget {
   const _Tile({
     required this.title,
-    this.emoji,
+    required this.emoji,
     required this.value,
     this.subs = const [],
-    this.badge,
     this.highlight,
   });
 
   final String title;
-  final String? emoji;
+  final String emoji;
   final String value;
   final List<({String text, int lines})> subs;
-  /// بدل الرمز التعبيري بجانب العنوان (سهم القبلة).
-  final Widget? badge;
   final Color? highlight;
 
   @override
@@ -411,32 +423,37 @@ class _Tile extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: h == null ? Colors.white.withValues(alpha: 0.06) : null,
-        gradient: h == null
-            ? null
-            : LinearGradient(
-                begin: AlignmentDirectional.topStart,
-                end: AlignmentDirectional.bottomEnd,
-                colors: [
-                  h.withValues(alpha: 0.25),
-                  h.withValues(alpha: 0.07),
-                ],
-              ),
-        border: Border.all(
-            color: h?.withValues(alpha: 0.3) ??
-                Colors.white.withValues(alpha: 0.07)),
+        // مربع الصلاة: لون التمييز بألفا ثابتة (كـ setImageAlpha في أندرويد).
+        color: h?.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.06),
+        border: h == null
+            ? Border.all(color: Colors.white.withValues(alpha: 0.07))
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(9, 8, 9, 8),
-        child: LayoutBuilder(builder: (context, box) {
-          final content = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+        // ما لا يتسع يُقص من الأسفل كما في الودجت، بلا تصغير.
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(title,
+                        key: const Key('tile-title'),
+                        style: const TextStyle(
+                            fontSize: tileTitleSize,
+                            fontWeight: FontWeight.w700,
+                            color: _dim)),
+                  ),
+                  Text(emoji, style: const TextStyle(fontSize: 16, height: 1)),
+                ],
+              ),
+              const SizedBox(height: tileGap),
               Text(value,
                   key: const Key('tile-value'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       fontSize: tileValueSize,
                       fontWeight: FontWeight.w700,
@@ -452,94 +469,9 @@ class _Tile extends StatelessWidget {
                         fontSize: tileSubSize, color: _dim, height: 1.25)),
               ],
             ],
-          );
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(title,
-                        key: const Key('tile-title'),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: tileTitleSize,
-                            fontWeight: FontWeight.w700,
-                            color: _dim)),
-                  ),
-                  if (badge != null)
-                    badge!
-                  else if (emoji != null)
-                    Text(emoji!, style: const TextStyle(fontSize: 16, height: 1)),
-                ],
-              ),
-              const SizedBox(height: tileGap),
-              // المحتوى متتابع من الأعلى، ويصغر فقط إذا لم يتسع المربع.
-              Expanded(
-                child: Align(
-                  alignment: AlignmentDirectional.topStart,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: AlignmentDirectional.topStart,
-                    child: SizedBox(
-                      width: box.maxWidth,
-                      child: content,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
+          ),
+        ),
       ),
     );
   }
-}
-
-/// سهم القبلة: الزاوية من الشمال باتجاه عقارب الساعة.
-class _CompassPainter extends CustomPainter {
-  _CompassPainter(this.degrees, this.accent);
-
-  final double degrees;
-  final Color accent;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = size.center(Offset.zero);
-    final r = size.shortestSide / 2 - 2;
-    canvas.drawCircle(
-        c,
-        r,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = _text.withValues(alpha: 0.6));
-    canvas.save();
-    canvas.translate(c.dx, c.dy);
-    canvas.rotate(degrees * math.pi / 180);
-    final s = r / 17;
-    canvas.drawPath(
-        Path()
-          ..moveTo(0, -15 * s)
-          ..lineTo(4 * s, 0)
-          ..lineTo(0, -2 * s)
-          ..lineTo(-4 * s, 0)
-          ..close(),
-        Paint()..color = accent);
-    canvas.drawPath(
-        Path()
-          ..moveTo(0, 15 * s)
-          ..lineTo(4 * s, 0)
-          ..lineTo(0, 2 * s)
-          ..lineTo(-4 * s, 0)
-          ..close(),
-        Paint()..color = _text.withValues(alpha: 0.45));
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_CompassPainter old) =>
-      old.degrees != degrees || old.accent != accent;
 }

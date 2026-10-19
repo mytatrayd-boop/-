@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
+import '../engine/widget_theme.dart';
 import 'cities.dart';
 
 /// إعدادات التطبيق المحفوظة في shared_preferences (مفتاح [prefsKey]).
@@ -17,6 +18,8 @@ class LamhaSettings {
     required this.visible,
     this.opacity = 100,
     this.backgroundFile,
+    this.theme = WidgetTheme.fallback,
+    this.lockNotification = false,
   });
 
   factory LamhaSettings.defaults(City city, Set<String> depositIds) =>
@@ -44,6 +47,9 @@ class LamhaSettings {
         },
         opacity: j['opacity'] as int,
         backgroundFile: j['backgroundFile'] as String?,
+        // مفتاحان جديدان (الميزة ٣ج)؛ الإعدادات القديمة بلاهما.
+        theme: WidgetTheme.byName(j['theme'] as String?),
+        lockNotification: j['lockNotification'] as bool? ?? false,
       );
 
   static const prefsKey = 'settings';
@@ -61,6 +67,11 @@ class LamhaSettings {
   /// اسم ملف لقطة الخلفية داخل حاوية App Group (آيفون)، لا مسار كامل.
   final String? backgroundFile;
 
+  final WidgetTheme theme;
+
+  /// إشعار ثابت في شاشة القفل (أندرويد).
+  final bool lockNotification;
+
   /// [withBackground] = false في أندرويد، فيكون `background` في الجدول null.
   Settings toEngine({bool withBackground = true}) => Settings(
         latitude: latitude,
@@ -72,6 +83,8 @@ class LamhaSettings {
         visible: visible,
         opacity: opacity,
         background: withBackground ? backgroundFile : null,
+        theme: theme,
+        lockNotification: lockNotification,
       );
 
   LamhaSettings copyWith({
@@ -85,6 +98,8 @@ class LamhaSettings {
     Set<WidgetElement>? visible,
     int? opacity,
     String? backgroundFile,
+    WidgetTheme? theme,
+    bool? lockNotification,
   }) =>
       LamhaSettings(
         cityId: cityId ?? this.cityId,
@@ -97,6 +112,8 @@ class LamhaSettings {
         visible: visible ?? this.visible,
         opacity: opacity ?? this.opacity,
         backgroundFile: backgroundFile ?? this.backgroundFile,
+        theme: theme ?? this.theme,
+        lockNotification: lockNotification ?? this.lockNotification,
       );
 
   Map<String, Object?> toJson() => {
@@ -110,6 +127,8 @@ class LamhaSettings {
         'visible': [for (final e in visible) e.name],
         'opacity': opacity,
         'backgroundFile': backgroundFile,
+        'theme': theme.name,
+        'lockNotification': lockNotification,
       };
 
   String encode() => jsonEncode(toJson());
