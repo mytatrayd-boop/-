@@ -1,26 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'l10n/app_localizations.dart';
+import 'src/app/settings_screen.dart';
 
 void main() {
-  runApp(const LamhaApp());
+  runApp(const ProviderScope(child: LamhaApp()));
 }
 
-/// شاشة فارغة مؤقتاً (الميزة ١: المحرك فقط). العربية ومن اليمين لليسار.
+/// العربية فقط في النسخة الأولى (SPEC ٨)، ومن اليمين لليسار.
 class LamhaApp extends StatelessWidget {
   const LamhaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      locale: Locale('ar'),
-      supportedLocales: [Locale('ar')],
-      localizationsDelegates: [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      home: Scaffold(),
+      onGenerateTitle: (c) => AppLocalizations.of(c).appTitle,
+      locale: const Locale('ar'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        fontFamily: 'Tajawal',
+        colorSchemeSeed: const Color(0xFFD6AA5C),
+      ),
+      home: const SettingsScreen(),
     );
   }
 }

@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- الموقع التقريبي لمرة واحدة لتحديد المدينة (SPEC ٥). -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="lamha"
         android:name="${applicationName}"
