@@ -314,9 +314,15 @@ class WidgetPreview extends StatelessWidget {
       body: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(l.degrees(arabicDigits(deg.round())),
-              style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w700, color: _text)),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(l.degrees(arabicDigits(deg.round())),
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w700, color: _text)),
+            ),
+          ),
+          const SizedBox(width: 4),
           SizedBox.square(
             dimension: 38,
             child: CustomPaint(painter: _CompassPainter(deg, p.accent)),
