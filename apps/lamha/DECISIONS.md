@@ -43,7 +43,7 @@
 - **`flutter_riverpod`** للحالة (ARCHITECTURE)، و**`shared_preferences`** للإعدادات (نص JSON بمفتاح `settings`).
 - **`home_widget`**: الجدول نصاً JSON بمفتاح `schedule`، وApp Group آيفون `group.sa.lamha.shared` (`ios/Runner/Runner.entitlements`)، وتحديث الودجت باسم `LamhaWidget` (أندرويد: `sa.lamha.lamha.LamhaWidget`). الطبقة خلف واجهة `WidgetBridge` لتُستبدل في الاختبارات.
 - **`geolocator`**: قراءة واحدة بدقة منخفضة (`ACCESS_COARSE_LOCATION`، و`NSLocationWhenInUseUsageDescription` بالعربية). الاسم من أقرب مدينة في القائمة، والإحداثيات من الموقع الفعلي.
-- **`image_picker`**: لاختيار لقطة الخلفية في آيفون (لا بديل في Flutter نفسه للوصول لمعرض الصور)، و**`path_provider`** لحفظ نسخة دائمة منها في مجلد التطبيق، لأن ملف image_picker مؤقت. القص في ميزة لاحقة.
+- **`image_picker`**: لاختيار لقطة الخلفية في آيفون (لا بديل في Flutter نفسه للوصول لمعرض الصور). تُحفظ نسخة منها في حاوية App Group (`group.sa.lamha.shared`) عبر قناة `sa.lamha/app_group` في AppDelegate تعيد مسار containerURL، والجدول يحمل اسم الملف فقط (`background`) لتقرأه الودجت من حاويتها. القص في ميزة لاحقة.
 - **`intl`** وملفات ARB (`lib/l10n/app_ar.arb` و`app_en.arb`) لنصوص الواجهة.
 - **الخط Tajawal** (SIL OFL 1.1، `assets/fonts/OFL-Tajawal.txt`) منسوخ من `asraty/app/assets/fonts`.
 - **المدن:** `assets/cities.json` = المدن السعودية (٣٤) من `apps/durur/assets/tables/cities.json`، والإحداثيات من GeoNames (CC BY 4.0)، مع إشارة الرخصة في أسفل شاشة الإعدادات.

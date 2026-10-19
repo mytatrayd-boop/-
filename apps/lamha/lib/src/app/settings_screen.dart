@@ -54,7 +54,7 @@ class _Body extends ConsumerWidget {
             child: WidgetPreview(
               schedule: state.schedule,
               now: ref.read(clockProvider)(),
-              backgroundPath: s.backgroundPath,
+              backgroundPath: state.backgroundPath,
             ),
           ),
         ),

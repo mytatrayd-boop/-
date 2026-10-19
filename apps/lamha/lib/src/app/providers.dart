@@ -25,8 +25,8 @@ final widgetBridgeProvider = Provider<WidgetBridge>((ref) => HomeWidgetBridge())
 final locationServiceProvider =
     Provider<LocationService>((ref) => GeolocatorLocationService());
 
-final backgroundPickerProvider =
-    Provider<BackgroundPicker>((ref) => ImagePickerBackgroundPicker());
+final backgroundStoreProvider =
+    Provider<BackgroundStore>((ref) => AppGroupBackgroundStore());
 
 /// الساعة (تُثبَّت في الاختبارات).
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
@@ -40,6 +40,7 @@ class AppState {
     required this.schedule,
     required this.cities,
     required this.data,
+    this.backgroundPath,
   });
 
   final LamhaSettings settings;
@@ -48,12 +49,19 @@ class AppState {
   final Map<String, Object?> schedule;
   final List<City> cities;
   final EngineData data;
+
+  /// المسار الكامل للقطة الخلفية للمعاينة فقط (لا يُحفظ).
+  final String? backgroundPath;
 }
 
 enum LocationResult { ok, unavailable }
 
 class SettingsController extends AsyncNotifier<AppState> {
   late SharedPreferences _prefs;
+  String? _backgroundPath;
+
+  /// اللقطة لآيفون فقط؛ في أندرويد `background` في الجدول null.
+  bool get _ios => defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   Future<AppState> build() async {
@@ -70,24 +78,36 @@ class SettingsController extends AsyncNotifier<AppState> {
       settings = settings.copyWith(
           deposits: known.isEmpty ? data.deposits.defaultIds : known);
     }
+    final bg = settings.backgroundFile;
+    if (_ios && bg != null) {
+      try {
+        _backgroundPath = await ref.read(backgroundStoreProvider).resolve(bg);
+      } on Exception catch (e) {
+        debugPrint('background: $e');
+      }
+    }
     final s = _state(settings, cities, data);
     // يُبنى الجدول ويُحفظ عند فتح التطبيق (ARCHITECTURE: متى يُحسب الجدول).
     await _publish(s);
     return s;
   }
 
-  AppState _state(LamhaSettings s, List<City> cities, EngineData data) =>
-      AppState(
-        settings: s,
-        schedule: buildSchedule(
-          ref.read(clockProvider)(),
-          s.toEngine(),
-          data,
-          days: scheduleDays,
-        ),
-        cities: cities,
-        data: data,
-      );
+  AppState _state(LamhaSettings s, List<City> cities, EngineData data) {
+    final now = ref.read(clockProvider)();
+    return AppState(
+      settings: s,
+      schedule: buildSchedule(
+        now,
+        s.toEngine(withBackground: _ios),
+        data,
+        days: scheduleDays,
+        generatedAt: now,
+      ),
+      cities: cities,
+      data: data,
+      backgroundPath: _ios ? _backgroundPath : null,
+    );
+  }
 
   /// يحفظ الإعدادات، ثم الجدول للودجت، ثم يطلب تحديثها.
   Future<void> _publish(AppState s) async {
@@ -164,9 +184,11 @@ class SettingsController extends AsyncNotifier<AppState> {
 
   /// يعيد true إذا اختيرت صورة وحُفظت.
   Future<bool> pickBackground() async {
-    final path = await ref.read(backgroundPickerProvider).pickAndSave();
-    if (path == null) return false;
-    await _update(_s.copyWith(backgroundPath: path));
+    final store = ref.read(backgroundStoreProvider);
+    final name = await store.pickAndSave();
+    if (name == null) return false;
+    _backgroundPath = await store.resolve(name);
+    await _update(_s.copyWith(backgroundFile: name));
     return true;
   }
 }

@@ -16,7 +16,7 @@ class LamhaSettings {
     required this.deposits,
     required this.visible,
     this.opacity = 100,
-    this.backgroundPath,
+    this.backgroundFile,
   });
 
   factory LamhaSettings.defaults(City city, Set<String> depositIds) =>
@@ -43,7 +43,7 @@ class LamhaSettings {
             ...WidgetElement.values.where((e) => e.name == n),
         },
         opacity: j['opacity'] as int,
-        backgroundPath: j['backgroundPath'] as String?,
+        backgroundFile: j['backgroundFile'] as String?,
       );
 
   static const prefsKey = 'settings';
@@ -58,10 +58,11 @@ class LamhaSettings {
   final Set<WidgetElement> visible;
   final int opacity;
 
-  /// مسار لقطة الخلفية المحفوظة (آيفون).
-  final String? backgroundPath;
+  /// اسم ملف لقطة الخلفية داخل حاوية App Group (آيفون)، لا مسار كامل.
+  final String? backgroundFile;
 
-  Settings toEngine() => Settings(
+  /// [withBackground] = false في أندرويد، فيكون `background` في الجدول null.
+  Settings toEngine({bool withBackground = true}) => Settings(
         latitude: latitude,
         longitude: longitude,
         cityName: cityName,
@@ -70,6 +71,7 @@ class LamhaSettings {
         deposits: deposits,
         visible: visible,
         opacity: opacity,
+        background: withBackground ? backgroundFile : null,
       );
 
   LamhaSettings copyWith({
@@ -82,7 +84,7 @@ class LamhaSettings {
     Set<String>? deposits,
     Set<WidgetElement>? visible,
     int? opacity,
-    String? backgroundPath,
+    String? backgroundFile,
   }) =>
       LamhaSettings(
         cityId: cityId ?? this.cityId,
@@ -94,7 +96,7 @@ class LamhaSettings {
         deposits: deposits ?? this.deposits,
         visible: visible ?? this.visible,
         opacity: opacity ?? this.opacity,
-        backgroundPath: backgroundPath ?? this.backgroundPath,
+        backgroundFile: backgroundFile ?? this.backgroundFile,
       );
 
   Map<String, Object?> toJson() => {
@@ -107,7 +109,7 @@ class LamhaSettings {
         'deposits': deposits.toList(),
         'visible': [for (final e in visible) e.name],
         'opacity': opacity,
-        'backgroundPath': backgroundPath,
+        'backgroundFile': backgroundFile,
       };
 
   String encode() => jsonEncode(toJson());

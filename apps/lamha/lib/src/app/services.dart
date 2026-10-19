@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 
 /// واجهات المنصة خلف أنواع قابلة للاستبدال في الاختبارات.
 
@@ -71,23 +71,41 @@ class GeolocatorLocationService implements LocationService {
   }
 }
 
-/// اختيار لقطة الخلفية (آيفون) وحفظ نسخة منها في مجلد التطبيق.
-/// القص على مقاس الودجت في ميزة لاحقة.
-abstract class BackgroundPicker {
-  /// مسار الصورة المحفوظة، أو null إذا ألغى المستخدم.
+/// اختيار لقطة الخلفية (آيفون) وحفظها في حاوية App Group [appGroupId]
+/// لتقرأها الودجت من حاويتها. القص على مقاس الودجت في ميزة لاحقة.
+abstract class BackgroundStore {
+  /// اسم الملف المحفوظ داخل الحاوية (نسبي)، أو null إذا ألغى المستخدم.
   Future<String?> pickAndSave();
+
+  /// المسار الكامل للملف [fileName] لعرضه في المعاينة، أو null.
+  Future<String?> resolve(String fileName);
 }
 
-class ImagePickerBackgroundPicker implements BackgroundPicker {
+/// قناة صغيرة في AppDelegate تعيد مسار containerURL للـApp Group.
+const appGroupChannel = MethodChannel('sa.lamha/app_group');
+
+class AppGroupBackgroundStore implements BackgroundStore {
+  Future<String?> _container() =>
+      appGroupChannel.invokeMethod<String>('containerPath', appGroupId);
+
   @override
   Future<String?> pickAndSave() async {
     final file = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (file == null) return null;
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await _container();
+    if (dir == null) throw StateError('App Group غير متاح: $appGroupId');
     final dot = file.name.lastIndexOf('.');
     final ext = dot >= 0 ? file.name.substring(dot) : '.png';
-    final path = '${dir.path}${Platform.pathSeparator}wallpaper$ext';
-    await file.saveTo(path);
-    return path;
+    final name = 'wallpaper$ext';
+    await file.saveTo('$dir${Platform.pathSeparator}$name');
+    return name;
+  }
+
+  @override
+  Future<String?> resolve(String fileName) async {
+    final dir = await _container();
+    if (dir == null) return null;
+    final path = '$dir${Platform.pathSeparator}$fileName';
+    return File(path).existsSync() ? path : null;
   }
 }

@@ -128,4 +128,24 @@ void main() {
         DateTime.utc(2026, 10, 19, 20, 59), settings(), data, days: 1);
     expect(((before['days']! as List).first as Map)['date'], '2026-10-19');
   });
+
+  test('background: null افتراضياً، واسم الملف إن وُجد', () {
+    expect(schedule.containsKey('background'), isTrue);
+    expect(schedule['background'], isNull);
+    final withBg = buildSchedule(
+      DateTime.utc(2026, 10, 19, 9),
+      Settings(
+        latitude: 24.7136,
+        longitude: 46.6753,
+        cityName: 'الرياض',
+        deposits: {'salary'},
+        background: 'wallpaper.png',
+      ),
+      data,
+      days: 1,
+    );
+    expect(withBg['background'], 'wallpaper.png');
+    // generatedAt افتراضياً = لحظة البناء الممررة، لا ساعة الجهاز.
+    expect(withBg['generatedAt'], '2026-10-19T09:00:00.000Z');
+  });
 }

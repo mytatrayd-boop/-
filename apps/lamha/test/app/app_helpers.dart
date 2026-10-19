@@ -34,6 +34,23 @@ class FakeLocation implements LocationService {
       result;
 }
 
+/// حاوية App Group وهمية: تحفظ اسم الملف ولا تلمس القرص.
+class FakeBackgroundStore implements BackgroundStore {
+  FakeBackgroundStore([this.picked = 'wallpaper.jpg']);
+
+  final String? picked;
+  var picks = 0;
+
+  @override
+  Future<String?> pickAndSave() async {
+    picks++;
+    return picked;
+  }
+
+  @override
+  Future<String?> resolve(String fileName) async => null;
+}
+
 final testNow = DateTime.utc(2026, 10, 19, 9);
 final _data = loadEngineDataFromFiles();
 final _cities = parseCities(readAsset('assets/cities.json'));
@@ -43,11 +60,13 @@ Future<FakeBridge> pumpApp(
   WidgetTester tester, {
   FakeBridge? bridge,
   LocationService? location,
+  BackgroundStore? background,
+  Map<String, Object> prefs = const {},
 }) async {
   tester.view.physicalSize = const Size(1000, 3200);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  SharedPreferences.setMockInitialValues({});
+  SharedPreferences.setMockInitialValues(prefs);
   final b = bridge ?? FakeBridge();
   await tester.pumpWidget(ProviderScope(
     overrides: [
@@ -56,6 +75,8 @@ Future<FakeBridge> pumpApp(
       clockProvider.overrideWithValue(() => testNow),
       widgetBridgeProvider.overrideWithValue(b),
       locationServiceProvider.overrideWithValue(location ?? FakeLocation(null)),
+      backgroundStoreProvider
+          .overrideWithValue(background ?? FakeBackgroundStore()),
     ],
     child: const LamhaApp(),
   ));

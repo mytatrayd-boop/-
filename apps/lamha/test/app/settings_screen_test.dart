@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lamha/src/app/app_settings.dart';
+import 'package:lamha/src/app/cities.dart';
 import 'package:lamha/src/engine/settings.dart';
 import 'package:lamha/src/app/widget_preview.dart';
 
+import '../helpers.dart';
 import 'app_helpers.dart';
 
 Finder tile(WidgetElement e) => find.byKey(Key('tile-${e.name}'));
@@ -170,6 +173,31 @@ void main() {
     await pumpApp(tester);
     expect(find.byKey(const Key('background-button')), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('آيفون: اسم ملف اللقطة في الجدول المحفوظ (نسبي داخل الحاوية)',
+      (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final store = FakeBackgroundStore();
+    final bridge = await pumpApp(tester, background: store);
+    expect(bridge.last['background'], isNull);
+    await tester.tap(find.byKey(const Key('background-button')));
+    await tester.pumpAndSettle();
+    expect(store.picks, 1);
+    expect(bridge.last['background'], 'wallpaper.jpg');
+    expect(find.text('حُفظت لقطة الخلفية'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('أندرويد: background في الجدول null حتى لو حُفظ ملف', (tester) async {
+    final saved = LamhaSettings.defaults(
+      parseCities(readAsset('assets/cities.json')).first,
+      {'salary'},
+    ).copyWith(backgroundFile: 'wallpaper.jpg');
+    final bridge = await pumpApp(tester,
+        prefs: {LamhaSettings.prefsKey: saved.encode()});
+    expect(bridge.last.containsKey('background'), isTrue);
+    expect(bridge.last['background'], isNull);
   });
 
   test('لام الجر', () {

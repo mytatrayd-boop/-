@@ -23,6 +23,7 @@ class Settings {
     required Set<String> deposits,
     Set<WidgetElement>? visible,
     this.opacity = 100,
+    this.background,
   })  : deposits = Set.unmodifiable(deposits),
         visible = Set.unmodifiable(visible ?? WidgetElement.values.toSet()) {
     if (deposits.isEmpty) {
@@ -57,4 +58,7 @@ class Settings {
 
   /// شفافية خلفية الودجت 0–100.
   final int opacity;
+
+  /// اسم ملف لقطة الخلفية داخل حاوية App Group (آيفون)، أو null.
+  final String? background;
 }

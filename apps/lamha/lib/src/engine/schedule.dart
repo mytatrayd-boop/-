@@ -51,6 +51,7 @@ Map<String, Object> hijriJson(UmmAlQuraCalendar calendar, DateTime day) {
 }
 
 /// يبني جدول [days] يوماً بدءاً من اليوم المحلي (في منطقة [s]) للحظة [from].
+/// [generatedAt] افتراضياً = [from]، فلا يعتمد المحرك على ساعة الجهاز.
 Map<String, Object?> buildSchedule(
   DateTime from,
   Settings s,
@@ -99,7 +100,7 @@ Map<String, Object?> buildSchedule(
 
   return {
     'schemaVersion': scheduleSchemaVersion,
-    'generatedAt': (generatedAt ?? DateTime.now()).toUtc().toIso8601String(),
+    'generatedAt': (generatedAt ?? from).toUtc().toIso8601String(),
     'city': {
       'name': s.cityName,
       'latitude': s.latitude,
@@ -114,6 +115,8 @@ Map<String, Object?> buildSchedule(
     },
     'visible': {for (final e in WidgetElement.values) e.name: s.visible.contains(e)},
     'opacity': s.opacity,
+    // اسم ملف اللقطة نسبياً داخل حاوية group.sa.lamha.shared؛ null بلا صورة أو في أندرويد.
+    'background': s.background,
     'days': dayList,
   };
 }
