@@ -312,7 +312,7 @@ void main() {
     expect(bridge.last['background'], isNull);
   });
 
-  testWidgets('المعاينة: القيمة تحت العنوان مباشرة، والأحجام ١٢/١٧/١٢', (tester) async {
+  testWidgets('المعاينة: القيمة تحت العنوان مباشرة، والأحجام ١٣/٢٠/١٤ بلا رموز', (tester) async {
     final bridge = await pumpApp(tester);
     Finder inTile(WidgetElement e, String key) => find.descendant(
         of: tile(e),
@@ -324,14 +324,24 @@ void main() {
     for (final e in gridElements) {
       final title = tester.widget<Text>(inTile(e, 'tile-title'));
       final value = tester.widget<Text>(inTile(e, 'tile-value'));
-      expect(title.style!.fontSize, 12);
-      expect(value.style!.fontSize, 17);
+      // العنوان والقيمة سطر واحد بلا كسر، يصغر خطهما (حتى ٧٠٪) إن لم يتسعا.
+      expect(title.style!.fontSize, inInclusiveRange(13 * 0.7, 13));
+      expect(title.maxLines, 1);
+      expect(title.softWrap, isFalse);
+      expect(value.style!.fontSize, inInclusiveRange(20 * 0.7, 20));
       expect(value.style!.fontWeight, FontWeight.w700);
       for (final sub in tester.widgetList<Text>(inTile(e, 'tile-sub'))) {
-        // سطر الإيداع الثاني وحده ١١.
-        final second =
-            e == WidgetElement.deposit && sub.key == const Key('tile-sub-1');
-        expect(sub.style!.fontSize, second ? 11 : 12);
+        expect(sub.style!.fontSize, 14);
+      }
+      // لا رموز تعبيرية في المربعات.
+      final texts = tester
+          .widgetList<Text>(
+              find.descendant(of: tile(e), matching: find.byType(Text)))
+          .map((t) => t.data!);
+      final emoji =
+          RegExp(r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]', unicode: true);
+      for (final t in texts) {
+        expect(emoji.hasMatch(t), isFalse, reason: '${e.name}: $t');
       }
       // تتابع من الأعلى: لا فراغ كبير بين العنوان والقيمة.
       final gap = tester.getRect(inTile(e, 'tile-value')).top -
@@ -359,9 +369,10 @@ void main() {
         .map((t) => t.data)
         .toList();
     expect(subs.first, asr['text']);
-    expect(subs.last, startsWith('باقي'));
+    // العدّاد بصيغة Chronometer: ١٢:٠٠ ← العصر.
+    expect(subs.last, matches(RegExp(r'^باقي [٠-٩]+:[٠-٩]{2}:[٠-٩]{2}$')));
 
-    // الإيداع مع إيداعين: الاسم سطر بـ«…»، والباقي سطر، والثاني سطر ١١ بـ«…»، والعنوان المختصر إذا لم يتسع.
+    // الإيداع مع إيداعين: الاسم سطر بـ«…»، والباقي سطر، والثاني سطر بـ«…»، والعنوان المختصر إذا لم يتسع.
     final deps = (day['deposits'] as List).cast<Map>();
     expect(deps.length, greaterThan(1));
     final dValue = tester.widget<Text>(inTile(WidgetElement.deposit, 'tile-value'));

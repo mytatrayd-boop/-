@@ -230,4 +230,24 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get notificationDenied =>
       'لم يُسمح بالإشعارات، فلن يظهر شيء في شاشة القفل. يمكنك السماح بها من إعدادات الجوال.';
+
+  @override
+  String get fontScaleLabel => 'حجم الخط';
+
+  @override
+  String fontScaleName(String scale) {
+    String _temp0 = intl.Intl.selectLogic(scale, {
+      'small': 'صغير',
+      'medium': 'متوسط',
+      'large': 'كبير',
+      'xlarge': 'كبير جداً',
+      'other': '$scale',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String countdownText(String time) {
+    return 'باقي $time';
+  }
 }

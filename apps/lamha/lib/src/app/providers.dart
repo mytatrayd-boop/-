@@ -216,6 +216,8 @@ class SettingsController extends AsyncNotifier<AppState> {
 
   Future<void> setTheme(WidgetTheme t) => _update(_s.copyWith(theme: t));
 
+  Future<void> setFontScale(FontScale f) => _update(_s.copyWith(fontScale: f));
+
   /// عند التشغيل يُطلب إذن الإشعارات (أندرويد ١٣+)؛ يعيد false إذا رُفض.
   Future<bool> setLockNotification(bool on) async {
     if (on) {

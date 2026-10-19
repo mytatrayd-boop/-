@@ -36,6 +36,8 @@ data class LamhaDay(
     val weather: LamhaLogic.Weather?,
     val weatherIcons: Map<Int, String>,
     val weatherMaxAgeMinutes: Int,
+    /// معامل حجم الخط (الميزة ٣د)؛ ١ لجدول أقدم بلاه.
+    val fontScale: Float = 1f,
 )
 
 /// [remaining] «باقي ٨ أيام» للمربع، و[after] «بعد ٨ أيام» للإشعار.
@@ -193,6 +195,7 @@ object LamhaSchedule {
             weather = weatherOf(weather),
             weatherIcons = icons,
             weatherMaxAgeMinutes = weather?.optInt("maxAgeMinutes", 180) ?: 180,
+            fontScale = root.optDouble("fontScale", 1.0).toFloat(),
         )
     }
 }

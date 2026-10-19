@@ -86,6 +86,16 @@ String remainingMinutesText(int minutes) {
   return 'باقي ${arabicDigits(minutes)} دقيقة';
 }
 
+/// العدّاد كما يعرضه Chronometer في أندرويد: «٦:٠٤:١٩» بساعات، و«٠٤:١٩» دونها.
+String countdownClock(Duration d) {
+  final s = d.isNegative ? 0 : d.inSeconds;
+  String two(int n) => arabicDigits(n.toString().padLeft(2, '0'));
+  final h = s ~/ 3600, m = s % 3600 ~/ 60, sec = s % 60;
+  return h > 0
+      ? '${arabicDigits(h)}:${two(m)}:${two(sec)}'
+      : '${two(m)}:${two(sec)}';
+}
+
 /// «ص» قبل الظهر و«م» بعده.
 const amText = 'ص';
 const pmText = 'م';

@@ -230,4 +230,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notificationDenied =>
       'Notifications were not allowed, so nothing will show on the lock screen. You can allow them in phone settings.';
+
+  @override
+  String get fontScaleLabel => 'Text size';
+
+  @override
+  String fontScaleName(String scale) {
+    String _temp0 = intl.Intl.selectLogic(scale, {
+      'small': 'Small',
+      'medium': 'Medium',
+      'large': 'Large',
+      'xlarge': 'Extra large',
+      'other': '$scale',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String countdownText(String time) {
+    return '$time left';
+  }
 }

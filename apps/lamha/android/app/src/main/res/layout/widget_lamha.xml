@@ -25,10 +25,13 @@
         android:paddingTop="14dp"
         android:paddingBottom="14dp">
 
-        <!-- الصف العلوي: يميناً الساعة و«ص/م» وتحتهما اليوم، ويساراً الهجري والميلادي والمدينة والطقس. -->
+        <!-- الصف العلوي (الميزة ٣د): يميناً الساعة ٥٢ و«ص/م» وتحتهما اليوم مباشرة، ويساراً الهجري
+             والميلادي والمدينة والطقس. العمودان متوسطان رأسياً. الأحجام هنا لمعامل ١، وتضربها
+             LamhaWidgetReceiver في معامل حجم الخط. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="4dp"
             android:paddingEnd="4dp">
@@ -36,6 +39,7 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -55,11 +59,12 @@
                         android:format12Hour="h:mm"
                         android:format24Hour="h:mm"
                         android:includeFontPadding="false"
+                        android:fallbackLineSpacing="false"
                         android:maxLines="1"
                         android:shadowColor="#66000000"
                         android:shadowRadius="3"
                         android:textColor="#FFF4EFE6"
-                        android:textSize="42sp"
+                        android:textSize="52sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -84,24 +89,26 @@
                     android:layout_gravity="right"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="-4dp"
+                    android:includeFontPadding="false"
                     android:maxLines="1"
                     android:shadowColor="#66000000"
                     android:shadowRadius="3"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
             <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="left|top"
+                    android:layout_gravity="left|center_vertical"
                     android:orientation="vertical">
                     <!-- عمود أيسر، ونصوصه محاذاة يمين داخله (عرض match_parent = أعرض سطر). -->
 
@@ -116,7 +123,7 @@
                         android:shadowColor="#66000000"
                         android:shadowRadius="3"
                         android:textColor="#FFF4EFE6"
-                        android:textSize="14sp"
+                        android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -131,7 +138,7 @@
                         android:shadowColor="#66000000"
                         android:shadowRadius="3"
                         android:textColor="#FFCFC6B8"
-                        android:textSize="13sp" />
+                        android:textSize="16sp" />
 
                     <TextView
                         android:gravity="right|center_vertical"
@@ -145,7 +152,7 @@
                         android:shadowColor="#66000000"
                         android:shadowRadius="3"
                         android:textColor="#FFCFC6B8"
-                        android:textSize="12sp" />
+                        android:textSize="16sp" />
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>

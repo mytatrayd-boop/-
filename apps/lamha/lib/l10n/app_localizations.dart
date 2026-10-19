@@ -403,6 +403,24 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لم يُسمح بالإشعارات، فلن يظهر شيء في شاشة القفل. يمكنك السماح بها من إعدادات الجوال.'**
   String get notificationDenied;
+
+  /// عنوان اختيار حجم خط الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط'**
+  String get fontScaleLabel;
+
+  /// أسماء أحجام الخط
+  ///
+  /// In ar, this message translates to:
+  /// **'{scale, select, small{صغير} medium{متوسط} large{كبير} xlarge{كبير جداً} other{{scale}}}'**
+  String fontScaleName(String scale);
+
+  /// العد التنازلي للصلاة في المعاينة (كـ countdown_format في أندرويد)
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {time}'**
+  String countdownText(String time);
 }
 
 class _AppLocalizationsDelegate

@@ -111,6 +111,22 @@ class _Body extends ConsumerWidget {
           onPick: c.setTheme,
         ),
         const SizedBox(height: 12),
+        Text(l.fontScaleLabel, style: textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final f in FontScale.values)
+              ChoiceChip(
+                key: Key('font-${f.name}'),
+                label: Text(l.fontScaleName(f.name)),
+                selected: s.fontScale == f,
+                onSelected: (_) => c.setFontScale(f),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
         if (defaultTargetPlatform == TargetPlatform.iOS)
           OutlinedButton.icon(
             key: const Key('background-button'),

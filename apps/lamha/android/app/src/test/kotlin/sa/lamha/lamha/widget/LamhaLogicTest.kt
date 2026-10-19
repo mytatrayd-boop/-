@@ -123,9 +123,9 @@ class LamhaLogicTest {
 
     @Test
     fun clockShrinksOnlyOnNarrowWidgets() {
-        assertEquals(42f, LamhaLogic.clockSizeSp(0), 0.001f)
-        assertEquals(42f, LamhaLogic.clockSizeSp(250), 0.001f)
-        assertEquals(34f, LamhaLogic.clockSizeSp(180), 0.001f)
+        assertEquals(52f, LamhaLogic.clockSizeSp(0), 0.001f)
+        assertEquals(52f, LamhaLogic.clockSizeSp(250), 0.001f)
+        assertEquals(42f, LamhaLogic.clockSizeSp(180), 0.001f)
     }
 
     @Test
@@ -202,8 +202,46 @@ class LamhaLogicTest {
         assertEquals("الإيداع القادم", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 70f, 80f))
         assertEquals("الإيداع", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 90f, 80f))
         assertEquals("الإيداع", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 10f, 0f))
-        // ٣٢٠dp بثلاثة مربعات: (٣٠٠ ÷ ٣) - ٤٦ = ٥٤.
-        assertEquals(54f, LamhaLogic.tileTitleWidthDp(320, 1, 3), 0.01f)
-        assertEquals(0f, LamhaLogic.tileTitleWidthDp(0, 1, 3), 0.01f)
+        // ٣٢٠dp بثلاثة مربعات بلا رموز: (٣٠٠ ÷ ٣) - ٢٦ = ٧٤.
+        assertEquals(74f, LamhaLogic.tileTextWidthDp(320, 1, 3), 0.01f)
+        assertEquals(0f, LamhaLogic.tileTextWidthDp(0, 1, 3), 0.01f)
+    }
+
+    // الميزة ٣د: الأرقام نفسها في test/app/feature_3d_test.dart (دوال Dart المطابقة).
+    @Test
+    fun fitTextSizeShrinksOnlyWhenTooWide() {
+        assertEquals(44f, LamhaLogic.fitTextSize(44f, 120f, 150f, 28f), 0.001f)
+        assertEquals(33f, LamhaLogic.fitTextSize(44f, 200f, 150f, 28f), 0.001f)
+        assertEquals(28f, LamhaLogic.fitTextSize(44f, 400f, 150f, 28f), 0.001f)
+        assertEquals(44f, LamhaLogic.fitTextSize(44f, 0f, 150f, 28f), 0.001f)
+    }
+
+    @Test
+    fun headWidths() {
+        assertEquals(310f, LamhaLogic.headContentDp(338), 0.001f)
+        assertEquals(310f - 8f - 150f - 20f - 4f, LamhaLogic.clockAvailableDp(310f, 150f, 20f), 0.001f)
+        assertEquals(310f * 0.4f - 20f - 4f, LamhaLogic.clockAvailableDp(310f, 280f, 20f), 0.001f)
+        assertEquals(310f - 8f - 120f, LamhaLogic.leftColumnDp(310f, 120f, 80f), 0.001f)
+        assertEquals(310f - 8f - 80f, LamhaLogic.leftColumnDp(310f, 60f, 80f), 0.001f)
+    }
+
+    @Test
+    fun tileFitScaleShrinksTallestTileToFit() {
+        val lines = listOf(13f, 20f, 14f, 14f)
+        assertEquals(1.0f, LamhaLogic.tileFitScale(1.0f, 97.5f, lines, 1.25f, 3f), 0.0001f)
+        assertEquals((90.5f - 9f) / 76.25f, LamhaLogic.tileFitScale(1.3f, 90.5f, lines, 1.25f, 3f), 0.0001f)
+        assertEquals(0.6f, LamhaLogic.tileFitScale(1.3f, 10f, lines, 1.25f, 3f), 0.0001f)
+        assertEquals(1.3f, LamhaLogic.tileFitScale(1.3f, 0f, lines, 1.25f, 3f), 0.0001f)
+    }
+
+    @Test
+    fun tileInnerHeightAndFittingLines() {
+        // ٤٠٠dp، صف علوي ٨٠، صفان: (٤٠٠ - ٢٨ - ٨٠ - ١٧ - ٨) ÷ ٢ - ١٦ = ١١٧٫٥.
+        assertEquals(117.5f, LamhaLogic.tileInnerHeightDp(400, 80f, 2), 0.001f)
+        assertEquals(0f, LamhaLogic.tileInnerHeightDp(0, 80f, 2), 0.001f)
+        assertEquals(1, LamhaLogic.fittingLines(0f, 17.5f, 2))
+        assertEquals(2, LamhaLogic.fittingLines(17.5f, 17.5f, 2))
+        assertEquals(2, LamhaLogic.fittingLines(100f, 17.5f, 2))
+        assertEquals(1, LamhaLogic.fittingLines(-5f, 17.5f, 2))
     }
 }

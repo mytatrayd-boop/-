@@ -117,16 +117,61 @@ object LamhaLogic {
         return text.substring(0, i + 1).trim() to text.substring(i + 1).trim()
     }
 
-    /// حجم الساعة: ٤٢ (clockSize في widget_preview.dart)، و٣٤ إذا كان أقل عرض للودجت
-    /// أضيق من ٢٥٠dp. [minWidthDp] = 0 إذا لم يبلّغه المشغّل.
-    fun clockSizeSp(minWidthDp: Int): Float = if (minWidthDp in 1 until 250) 34f else 42f
+    /// حجم الساعة قبل معامل الخط: ٥٢ (clockSize في widget_preview.dart)، و٤٢ إذا كان أقل عرض
+    /// للودجت أضيق من ٢٥٠dp. [minWidthDp] = 0 إذا لم يبلّغه المشغّل.
+    fun clockSizeSp(minWidthDp: Int): Float = if (minWidthDp in 1 until 250) 42f else 52f
 
-    /// عرض المتاح لعنوان مربع (dp) داخل ودجت بعرض [minWidthDp]: حشوة الودجت ١٠+١٠ (widget_lamha.xml)،
-    /// ثم نصيب المربع [flex] من [rowFlex]، ناقصاً حشوة widget_tile ٤+٤ والمحتوى ٩+٩ والرمز (~٢٠).
+    /// أدنى حجم للساعة عند تصغيرها (clockMinSize).
+    const val CLOCK_MIN_SP = 28f
+
+    /// حجم خط يجعل نصاً عرضه [widthAtPreferred] بالحجم [preferredSp] يتسع في [maxWidth]،
+    /// دون أن ينزل عن [minSp]. العرض يتناسب طردياً مع الحجم (fitTextSize في Dart).
+    fun fitTextSize(preferredSp: Float, widthAtPreferred: Float, maxWidth: Float, minSp: Float): Float {
+        if (widthAtPreferred <= 0f || widthAtPreferred <= maxWidth) return preferredSp
+        return maxOf(minSp, preferredSp * maxWidth / widthAtPreferred)
+    }
+
+    /// عرض محتوى الصف العلوي (dp): حشوة الودجت ١٠+١٠ وحشوة الصف ٤+٤ (widget_lamha.xml).
+    fun headContentDp(minWidthDp: Int): Float = minWidthDp - 28f
+
+    /// العرض المتاح لأرقام الساعة: ما يبقى بعد العمود الأيسر [leftDp] وفاصل ٨، ولا يقل عن ٤٠٪
+    /// من [contentDp]، ناقصاً «ص/م» [amPmDp] وفاصلها ٤ (clockAvailableWidth في Dart).
+    fun clockAvailableDp(contentDp: Float, leftDp: Float, amPmDp: Float): Float =
+        maxOf(contentDp - 8f - leftDp, contentDp * 0.4f) - amPmDp - 4f
+
+    /// عرض العمود الأيسر: ما يبقى بعد عمود الساعة (الأعرض من سطر الساعة واليوم) وفاصل ٨.
+    fun leftColumnDp(contentDp: Float, clockRowDp: Float, weekdayDp: Float): Float =
+        contentDp - 8f - maxOf(clockRowDp, weekdayDp)
+
+    /// عرض نصوص مربع (dp) داخل ودجت بعرض [minWidthDp]: حشوة الودجت ١٠+١٠ (widget_lamha.xml)،
+    /// ثم نصيب المربع [flex] من [rowFlex]، ناقصاً حشوة widget_tile ٤+٤ والمحتوى ٩+٩.
     /// 0 أو أقل إذا لم يبلّغ المشغّل العرض.
-    fun tileTitleWidthDp(minWidthDp: Int, flex: Int, rowFlex: Int): Float {
+    fun tileTextWidthDp(minWidthDp: Int, flex: Int, rowFlex: Int): Float {
         if (minWidthDp <= 0 || rowFlex <= 0) return 0f
-        return (minWidthDp - 20f) * flex / rowFlex - 8f - 18f - 20f
+        return (minWidthDp - 20f) * flex / rowFlex - 8f - 18f
+    }
+
+    /// ارتفاع محتوى المربع (dp) في ودجت بارتفاع [heightDp]: حشوة ١٤+١٤، والصف العلوي [headDp]،
+    /// والفاصل ١+٨+٨، و٨ بين الصفوف، وحشوة المربع ٨+٨. 0 إذا لم يُعرف الارتفاع.
+    fun tileInnerHeightDp(heightDp: Int, headDp: Float, rows: Int): Float {
+        if (heightDp <= 0 || rows <= 0) return 0f
+        return (heightDp - 28f - headDp - 17f - 8f * (rows - 1)) / rows - 16f
+    }
+
+    /// معامل خط المربعات: [fontScale]، أو أصغر منه إن لم تتسع أسطر المربع الأطول [lineSizes]
+    /// (كل سطر [lineHeight] × حجمه، وبينها [gap]) في [innerHeight]. لا ينزل عن ٠٫٦.
+    /// بلا ارتفاع معروف: [fontScale] (tileFitScale في Dart).
+    fun tileFitScale(fontScale: Float, innerHeight: Float, lineSizes: List<Float>, lineHeight: Float, gap: Float): Float {
+        if (innerHeight <= 0f || lineSizes.isEmpty()) return fontScale
+        val gaps = gap * (lineSizes.size - 1)
+        val base = lineSizes.sum() * lineHeight
+        return minOf(fontScale, maxOf(0.6f, (innerHeight - gaps) / base))
+    }
+
+    /// أسطر الثانوي الأخير بحد [maxLines]: ما يتسع في [remaining] بعد بقية المحتوى، ولا يقل عن ١.
+    fun fittingLines(remaining: Float, lineHeight: Float, maxLines: Int): Int {
+        if (lineHeight <= 0f) return maxLines
+        return (1 + Math.floor((remaining / lineHeight).toDouble()).toInt()).coerceIn(1, maxLines)
     }
 
     /// العنوان الكامل إن اتسع سطراً واحداً ([fullWidthDp] ≤ [availableDp])، وإلا القصير

@@ -122,6 +122,8 @@ Map<String, Object?> buildSchedule(
     'background': s.background,
     'theme': themeScheduleJson(s.theme),
     'lockNotification': s.lockNotification,
+    // معامل حجم الخط تضرب به المعاينة والودجت كل حجم نص.
+    'fontScale': s.fontScale.factor,
     // آخر قراءة للمدينة نفسها فقط؛ عمرها يُفحص عند العرض (weatherMaxAge).
     'weather': weatherScheduleJson(
         weather != null && weather.isFor(s.latitude, s.longitude) ? weather : null),

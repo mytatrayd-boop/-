@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- محتوى المربع (_Tile في widget_preview.dart): العنوان ١٢ عريض والرمز، ثم القيمة ١٧ عريض،
-     ثم الثانوي ١٢. العنوان والقيمة بلا قص، والثانوي وحده بحد أسطر و«…». استثناء مربع الإيداع مع
-     إيداعين: القيمة سطر واحد بـ«…» (setMaxLines من Kotlin)، والإيداع الثاني (sub2) بحجم ١١. -->
+<!-- محتوى المربع (_Tile في widget_preview.dart، الميزة ٣د، بلا رموز): العنوان ١٣ عريض، ثم القيمة
+     ٢٠ عريض، ثم الثانوي ١٤، كلها × معامل الخط من LamhaWidgetReceiver. العنوان والقيمة سطر واحد
+     يصغر خطه ليتسع (fitTextSize) ثم «…»، والثانوي بحد أسطر و«…» (الأخير يأخذ ما يتسع). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
     android:layout_width="match_parent"
@@ -24,34 +24,19 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
-        <LinearLayout
+        <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:id="@+id/tile_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:baselineAligned="false"
-            android:orientation="horizontal">
-
-            <TextView
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:id="@+id/tile_title"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:shadowColor="#66000000"
-                android:shadowRadius="3"
-                android:textColor="#FFB9B0A2"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:id="@+id/tile_emoji"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:textSize="16sp" />
-        </LinearLayout>
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFB9B0A2"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <TextView
             android:gravity="right|center_vertical"
@@ -61,10 +46,11 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
             android:ellipsize="end"
+            android:singleLine="true"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFF4EFE6"
-            android:textSize="17sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <TextView
@@ -79,7 +65,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFB9B0A2"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:visibility="gone" />
 
         <!-- عدّاد النظام التنازلي للصلاة القادمة. -->
@@ -94,7 +80,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFB9B0A2"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:visibility="gone" />
 
         <TextView
@@ -109,7 +95,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFB9B0A2"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:visibility="gone" />
 
         <TextView
@@ -124,7 +110,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFB9B0A2"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

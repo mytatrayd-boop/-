@@ -264,5 +264,23 @@
   "notificationDenied": "لم يُسمح بالإشعارات، فلن يظهر شيء في شاشة القفل. يمكنك السماح بها من إعدادات الجوال.",
   "@notificationDenied": {
     "description": "رفض إذن الإشعارات"
+  },
+  "fontScaleLabel": "حجم الخط",
+  "@fontScaleLabel": {
+    "description": "عنوان اختيار حجم خط الودجت"
+  },
+  "fontScaleName": "{scale, select, small{صغير} medium{متوسط} large{كبير} xlarge{كبير جداً} other{{scale}}}",
+  "@fontScaleName": {
+    "description": "أسماء أحجام الخط",
+    "placeholders": {
+      "scale": {"type": "String"}
+    }
+  },
+  "countdownText": "باقي {time}",
+  "@countdownText": {
+    "description": "العد التنازلي للصلاة في المعاينة (كـ countdown_format في أندرويد)",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
   }
 }

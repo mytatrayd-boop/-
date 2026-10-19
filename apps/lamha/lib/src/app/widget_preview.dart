@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -25,7 +26,8 @@ const gridElements = [
 /// توزيع المربعات الظاهرة على صفوف (DESIGN: إعادة الترتيب عند الإخفاء).
 /// كل مربع يأخذ مرونة ١، إلا الموسم في صف الخمسة فيأخذ عمودين.
 List<List<({WidgetElement element, int flex})>> gridRows(
-    List<WidgetElement> shown) {
+  List<WidgetElement> shown,
+) {
   ({WidgetElement element, int flex}) one(WidgetElement e) =>
       (element: e, flex: 1);
   final n = shown.length;
@@ -60,14 +62,79 @@ const _dim = Color(0xFFB9B0A2);
 const _wallTop = Color(0xFF34302B);
 const _wallBottom = Color(0xFF0B0A09);
 
-/// أحجام الصف العلوي، مطابقة لـ widget_lamha.xml في أندرويد (الميزة ٣ج).
-const clockSize = 42.0;
+/// أحجام الصف العلوي (الميزة ٣د)، مطابقة لـ widget_lamha.xml في أندرويد، وتُضرب في معامل
+/// حجم الخط. الساعة ٥٢ (و٤٢ في الودجت الضيقة بأندرويد)، وتصغر إن لم تتسع (fitTextSize).
+const clockSize = 52.0;
+const clockMinSize = 28.0;
 const amPmSize = 18.0;
-const weekdaySize = 15.0;
+const weekdaySize = 18.0;
+const hijriSize = 18.0;
+const gregorianSize = 16.0;
+const cityWeatherSize = 16.0;
+
+/// أعرض نص ممكن للساعة، لتثبيت حجمها طوال اليوم.
+const widestClockText = '١٢:٥٨';
+
+/// ارتفاع أسطر العمود الأيسر.
+const headLineHeight = 1.3;
+
+/// معامل حجم الخط من الجدول (١ لجدول أقدم بلاه).
+double scheduleFontScale(Map<String, Object?> schedule) =>
+    (schedule['fontScale'] as num?)?.toDouble() ?? 1.0;
+
+/// حجم خط يجعل نصاً عرضه [widthAtPreferred] بالحجم [preferred] يتسع في [maxWidth]، دون أن ينزل
+/// عن [min]. العرض يتناسب طردياً مع الحجم (fitTextSize في LamhaLogic.kt).
+double fitTextSize(
+  double preferred,
+  double widthAtPreferred,
+  double maxWidth,
+  double min,
+) {
+  if (widthAtPreferred <= 0 || widthAtPreferred <= maxWidth) return preferred;
+  return math.max(min, preferred * maxWidth / widthAtPreferred);
+}
+
+/// العرض المتاح لأرقام الساعة: ما يبقى بعد العمود الأيسر [leftWidth] (وفاصل ٨)، ولا يقل عن ٤٠٪
+/// من [contentWidth] (وما لا يتسع بعدها من العمود الأيسر يصغر خطه)، ناقصاً «ص/م» [amPmWidth] وفاصلها ٤ (clockAvailableDp في LamhaLogic.kt).
+double clockAvailableWidth(
+  double contentWidth,
+  double leftWidth,
+  double amPmWidth,
+) => math.max(contentWidth - 8 - leftWidth, contentWidth * 0.4) - amPmWidth - 4;
+
+/// عرض العمود الأيسر في الصف العلوي: ما يبقى بعد عمود الساعة (الأعرض من سطر الساعة [clockRowWidth]
+/// واليوم [weekdayWidth]) وفاصل ٨ (leftColumnDp في LamhaLogic.kt).
+double leftColumnWidth(
+  double contentWidth,
+  double clockRowWidth,
+  double weekdayWidth,
+) => contentWidth - 8 - math.max(clockRowWidth, weekdayWidth);
+
+/// معامل خط المربعات: معامل المستخدم [fontScale]، أو أصغر منه إن لم تتسع أسطر المربع الأطول
+/// [lineSizes] (كل سطر بارتفاع [tileLineHeight] × حجمه، وبينها [tileGap]) في [innerHeight].
+/// لا ينزل عن ٠٫٦. بلا ارتفاع معروف: [fontScale] (tileFitScale في LamhaLogic.kt).
+double tileFitScale(
+  double fontScale,
+  double innerHeight,
+  List<double> lineSizes,
+) {
+  if (innerHeight <= 0 || lineSizes.isEmpty) return fontScale;
+  final gaps = tileGap * (lineSizes.length - 1);
+  final base = lineSizes.fold<double>(0, (a, b) => a + b) * tileLineHeight;
+  return math.min(fontScale, math.max(0.6, (innerHeight - gaps) / base));
+}
+
+/// أسطر سطر ثانوي أخير بحد [maxLines]: ما يتسع في [remaining] بعد بقية المحتوى، ولا يقل عن ١.
+int fittingLines(double remaining, double lineHeight, int maxLines) {
+  if (lineHeight <= 0) return maxLines;
+  return (1 + (remaining / lineHeight).floor()).clamp(1, maxLines);
+}
 
 /// لونا الودجت من الجدول: ألوان النظام لسمة «ألوان النظام» إن توفرت (أندرويد ١٢+)، وإلا ألوان السمة.
 ({Color accent, Color background}) scheduleColors(
-    Map<String, Object?> schedule, SystemColors? system) {
+  Map<String, Object?> schedule,
+  SystemColors? system,
+) {
   final t = (schedule['theme'] as Map?)?.cast<String, Object?>();
   final theme = WidgetTheme.byName(t?['id'] as String?);
   final c = theme == WidgetTheme.system && system != null
@@ -109,8 +176,9 @@ class WidgetPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final radius =
-        Theme.of(context).platform == TargetPlatform.iOS ? 22.0 : 28.0;
+    final radius = Theme.of(context).platform == TargetPlatform.iOS
+        ? 22.0
+        : 28.0;
     final colors = scheduleColors(schedule, systemColors);
     final accent = colors.accent;
     final visibleMap = (schedule['visible']! as Map).cast<String, bool>();
@@ -130,68 +198,163 @@ class WidgetPreview extends StatelessWidget {
     if (idx < 0) idx = 0;
     final day = days[idx];
     final nextDay = idx + 1 < days.length ? days[idx + 1] : null;
-    final weather = weatherText(scheduleWeather(schedule), now) ?? l.weatherUnknown;
+    final weather =
+        weatherText(scheduleWeather(schedule), now) ?? l.weatherUnknown;
 
-    // من اليمين: الساعة و«ص/م» وتحتهما اليوم، ثم يساراً التاريخان والمدينة والطقس.
+    final scale = scheduleFontScale(schedule);
+    final base = DefaultTextStyle.of(context).style;
+    final scaler = MediaQuery.textScalerOf(context);
+    double width(String text, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: base.merge(style)),
+        textDirection: TextDirection.rtl,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      final w = painter.width;
+      painter.dispose();
+      return w;
+    }
+
+    // العمود الأيسر: الهجري ١٨ عريض، ثم الميلادي ١٦، ثم المدينة والطقس ١٦.
+    final leftLines = <({String text, TextStyle style, Key? key})>[
+      if (on(WidgetElement.hijri))
+        (
+          text: l.hijriDateText((day['hijri'] as Map)['text'] as String),
+          style: TextStyle(
+            fontSize: hijriSize * scale,
+            fontWeight: FontWeight.w700,
+            color: _text,
+            height: headLineHeight,
+          ),
+          key: null,
+        ),
+      if (on(WidgetElement.gregorian))
+        (
+          text: l.gregorianDateText(
+            (day['gregorian'] as Map)['text'] as String,
+          ),
+          style: TextStyle(
+            fontSize: gregorianSize * scale,
+            color: _muted,
+            height: headLineHeight,
+          ),
+          key: null,
+        ),
+      if (on(WidgetElement.weather))
+        (
+          text: l.cityWeather(city['name'] as String, weather),
+          style: TextStyle(
+            fontSize: cityWeatherSize * scale,
+            color: _muted,
+            height: headLineHeight,
+          ),
+          key: const Key('preview-weather'),
+        ),
+    ];
+    final leftWidth = leftLines.fold<double>(
+      0,
+      (m, e) => math.max(m, width(e.text, e.style)),
+    );
+    final amPmStyle = TextStyle(
+      fontSize: amPmSize * scale,
+      fontWeight: FontWeight.w700,
+      color: _text,
+    );
+    final amPmText = amPm(local);
+    // الساعة ٥٢ × المعامل، وتصغر إن لم يتسع أعرض نص لها بجانب العمود الأيسر.
+    final contentWidth = previewWidgetSize.width - 28;
+    final clockPreferred = clockSize * scale;
+    final clockFont = fitTextSize(
+      clockPreferred,
+      width(
+        widestClockText,
+        TextStyle(fontSize: clockPreferred, fontWeight: FontWeight.w700),
+      ),
+      clockAvailableWidth(contentWidth, leftWidth, width(amPmText, amPmStyle)),
+      clockMinSize,
+    );
+    // ما يبقى للعمود الأيسر بعد عمود الساعة؛ السطر الذي لا يتسع يصغر خطه (حتى ٧٥٪) قبل «…».
+    final weekdayStyle = TextStyle(
+      fontSize: weekdaySize * scale,
+      fontWeight: FontWeight.w700,
+      height: 1.2,
+      color: accent,
+    );
+    final leftAvailable = leftColumnWidth(
+      contentWidth,
+      width(
+            widestClockText,
+            TextStyle(fontSize: clockFont, fontWeight: FontWeight.w700),
+          ) +
+          4 +
+          width(amPmText, amPmStyle),
+      width(day['weekday'] as String, weekdayStyle),
+    );
+    TextStyle fitted(TextStyle st, String text) => st.copyWith(
+      fontSize: fitTextSize(
+        st.fontSize!,
+        width(text, st),
+        leftAvailable - fitMargin,
+        st.fontSize! * 0.75,
+      ),
+    );
+
+    // من اليمين: الساعة و«ص/م» وتحتهما اليوم مباشرة، ثم يساراً التاريخان والمدينة والطقس.
+    // العمودان يتوسطان رأسياً معاً.
     final head = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Column(
+          key: const Key('preview-clock-column'),
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(arabicClock(local),
-                    key: const Key('preview-clock'),
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                        fontSize: clockSize,
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        color: _text)),
+                Text(
+                  arabicClock(local),
+                  key: const Key('preview-clock'),
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: clockFont,
+                    height: 1,
+                    fontWeight: FontWeight.w700,
+                    color: _text,
+                  ),
+                ),
                 const SizedBox(width: 4),
-                Text(amPm(local),
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                        fontSize: amPmSize,
-                        fontWeight: FontWeight.w700,
-                        color: _text)),
+                Text(amPmText, textAlign: TextAlign.right, style: amPmStyle),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(day['weekday'] as String,
-                key: const Key('preview-weekday'),
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                    fontSize: weekdaySize,
-                    fontWeight: FontWeight.w700,
-                    color: accent)),
+            Text(
+              day['weekday'] as String,
+              key: const Key('preview-weekday'),
+              textAlign: TextAlign.right,
+              style: weekdayStyle,
+            ),
           ],
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Align(
-            alignment: AlignmentDirectional.topEnd,
+            alignment: AlignmentDirectional.centerEnd,
             child: Column(
+              key: const Key('preview-date-column'),
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (on(WidgetElement.hijri))
-                  _line(l.hijriDateText((day['hijri'] as Map)['text'] as String),
-                      14, FontWeight.w700, _text),
-                if (on(WidgetElement.gregorian))
-                  _line(
-                      l.gregorianDateText(
-                          (day['gregorian'] as Map)['text'] as String),
-                      13,
-                      FontWeight.w400,
-                      _muted),
-                if (on(WidgetElement.weather))
-                  _line(l.cityWeather(city['name'] as String, weather), 12,
-                      FontWeight.w400, _muted,
-                      key: const Key('preview-weather')),
+                for (final e in leftLines)
+                  Text(
+                    e.text,
+                    key: e.key,
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: fitted(e.style, e.text),
+                  ),
               ],
             ),
           ),
@@ -199,16 +362,60 @@ class WidgetPreview extends StatelessWidget {
       ],
     );
 
-    final shown = [for (final e in gridElements) if (on(e)) e];
+    final shown = [
+      for (final e in gridElements)
+        if (on(e)) e,
+    ];
     final rows = gridRows(shown);
 
-    Widget tileFor(WidgetElement e) => switch (e) {
-          WidgetElement.prayer => _prayerTile(l, accent, day, nextDay, local),
-          WidgetElement.qibla => _qiblaTile(l),
-          WidgetElement.deposit => _depositTile(l, day),
-          WidgetElement.season => _seasonTile(l, day),
-          _ => _tradSeasonTile(l, day),
-        };
+    _Tile tileFor(WidgetElement e) => switch (e) {
+      WidgetElement.prayer => _prayerTile(l, accent, day, nextDay),
+      WidgetElement.qibla => _qiblaTile(l),
+      WidgetElement.deposit => _depositTile(l, day),
+      WidgetElement.season => _seasonTile(l, day),
+      _ => _tradSeasonTile(l, day),
+    };
+
+    // الصفوف متساوية الارتفاع؛ معامل المربعات واحد للشبكة كلها من المربع الأطول.
+    Widget grid(BuildContext context, BoxConstraints c) {
+      final tiles = [
+        for (final row in rows) [for (final cell in row) tileFor(cell.element)],
+      ];
+      final inner = (c.maxHeight - 8 * (rows.length - 1)) / rows.length - 16;
+      var tallest = const <double>[];
+      for (final t in tiles.expand((r) => r)) {
+        final sizes = t.coreSizes;
+        if (sizes.fold<double>(0, (a, b) => a + b) >
+            tallest.fold<double>(0, (a, b) => a + b)) {
+          tallest = sizes;
+        }
+      }
+      final tileScale = tileFitScale(scale, inner, tallest);
+      return Column(
+        children: [
+          for (var r = 0; r < rows.length; r++) ...[
+            if (r > 0) const SizedBox(height: 8),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < rows[r].length; i++) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    Expanded(
+                      flex: rows[r][i].flex,
+                      child: KeyedSubtree(
+                        key: Key('tile-${rows[r][i].element.name}'),
+                        child: tiles[r][i].withScale(tileScale),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      );
+    }
 
     final widgetBox = DecoratedBox(
       key: const Key('preview-background'),
@@ -227,34 +434,11 @@ class WidgetPreview extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Divider(
-                      height: 1, color: Colors.white.withValues(alpha: 0.08)),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      for (var r = 0; r < rows.length; r++) ...[
-                        if (r > 0) const SizedBox(height: 8),
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var i = 0; i < rows[r].length; i++) ...[
-                                if (i > 0) const SizedBox(width: 8),
-                                Expanded(
-                                  flex: rows[r][i].flex,
-                                  child: KeyedSubtree(
-                                    key: Key('tile-${rows[r][i].element.name}'),
-                                    child: tileFor(rows[r][i].element),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
+                Expanded(child: LayoutBuilder(builder: grid)),
               ],
             ],
           ),
@@ -286,19 +470,7 @@ class WidgetPreview extends StatelessWidget {
     );
   }
 
-  static Widget _line(String s, double size, FontWeight w, Color c,
-          {Key? key}) =>
-      Text(
-        s,
-        key: key,
-        textAlign: TextAlign.right,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: size, fontWeight: w, color: c, height: 1.4),
-      );
-
-  Widget _prayerTile(AppLocalizations l, Color accent, Map day, Map? nextDay,
-      tz.TZDateTime local) {
+  _Tile _prayerTile(AppLocalizations l, Color accent, Map day, Map? nextDay) {
     Map? next;
     DateTime? at;
     final today = (day['prayers'] as Map).cast<String, Map>();
@@ -315,214 +487,257 @@ class WidgetPreview extends StatelessWidget {
       next = (nextDay['prayers'] as Map)['fajr'] as Map;
       at = DateTime.parse(next['time'] as String);
     }
-    final minutes =
-        at == null ? 0 : (at.difference(now).inSeconds / 60).ceil();
-    // الاسم، ثم وقت الصلاة، ثم الباقي (كما في LamhaWidget.kt).
+    // الاسم، ثم وقت الصلاة، ثم العدّاد بصيغة Chronometer (كما في LamhaWidgetReceiver.kt).
     return _Tile(
       title: l.tilePrayer,
-      emoji: '🕌',
       highlight: accent,
       value: (next?['name'] as String?) ?? '',
       subs: [
-        if (next != null) (text: next['text'] as String, lines: 1, size: tileSubSize),
-        (text: remainingMinutesText(minutes), lines: 1, size: tileSubSize),
+        if (next != null) (text: next['text'] as String, lines: 1),
+        if (at != null)
+          (text: l.countdownText(countdownClock(at.difference(now))), lines: 1),
       ],
     );
   }
 
-  Widget _qiblaTile(AppLocalizations l) {
+  _Tile _qiblaTile(AppLocalizations l) {
     final q = schedule['qibla']! as Map;
     final deg = (q['degrees'] as num).toDouble();
-    // الزاوية سطر، والاتجاه سطر أصغر تحته.
+    // الزاوية، ثم الاتجاه.
     return _Tile(
       title: l.tileQibla,
       value: l.degrees(arabicDigits(deg.round())),
-      emoji: '🧭',
-      subs: [(text: q['direction'] as String, lines: 1, size: tileSubSize)],
+      subs: [(text: q['direction'] as String, lines: 1)],
     );
   }
 
-  Widget _depositTile(AppLocalizations l, Map day) {
+  _Tile _depositTile(AppLocalizations l, Map day) {
     final deps = (day['deposits'] as List).cast<Map>();
     final first = deps.first;
     final two = deps.length > 1;
-    // مع إيداعين: الاسم سطر واحد بـ«…»، ثم الباقي سطر، ثم الثاني سطر صغير (١١) بـ«…».
+    // مع إيداعين: الاسم، ثم الباقي، ثم الثاني «راتب أكتوبر · باقي ٨ أيام» كاملاً إن اتسع وإلا بـ«…».
     // «الإيداع القادم» إن اتسع سطراً واحداً، وإلا «الإيداع» (كما في LamhaWidgetReceiver.kt).
     return _Tile(
       title: l.tileDeposit,
       shortTitle: l.tileDepositShort,
-      emoji: '💰',
       value: first['label'] as String,
-      valueLines: two ? 1 : null,
       subs: [
-        (
-          text: first['remainingText'] as String,
-          lines: two ? 1 : 2,
-          size: tileSubSize
-        ),
+        (text: first['remainingText'] as String, lines: two ? 1 : 2),
         if (two)
-          (
-            text: '${deps[1]['label']} · ${deps[1]['remainingText']}',
-            lines: 1,
-            size: depositSecondSize
-          ),
+          (text: '${deps[1]['label']} · ${deps[1]['remainingText']}', lines: 1),
       ],
     );
   }
 
-  Widget _seasonTile(AppLocalizations l, Map day) {
+  _Tile _seasonTile(AppLocalizations l, Map day) {
     final s = day['season'] as Map;
-    const emoji = {
-      'spring': '🌸',
-      'summer': '☀️',
-      'autumn': '🍂',
-      'winter': '❄️',
-    };
     return _Tile(
       title: l.tileSeason,
-      emoji: emoji[s['id']] ?? '🍂',
       value: s['name'] as String,
       subs: [
         (
-          text: l.remainingToNext(s['remainingText'] as String,
-              withLam((s['next'] as Map)['name'] as String)),
+          text: l.remainingToNext(
+            s['remainingText'] as String,
+            withLam((s['next'] as Map)['name'] as String),
+          ),
           lines: 2,
-          size: tileSubSize
         ),
       ],
     );
   }
 
-  Widget _tradSeasonTile(AppLocalizations l, Map day) {
+  _Tile _tradSeasonTile(AppLocalizations l, Map day) {
     final s = day['tradSeason'] as Map;
     final description = s['description'] as String;
     return _Tile(
       title: l.tileTradSeason,
-      emoji: '🌾',
       value: s['name'] as String,
       subs: [
         (
-          text: l.remainingToNext(s['remainingText'] as String,
-              withLam((s['next'] as Map)['name'] as String)),
+          text: l.remainingToNext(
+            s['remainingText'] as String,
+            withLam((s['next'] as Map)['name'] as String),
+          ),
           lines: 1,
-          size: tileSubSize
         ),
-        if (description.isNotEmpty) (text: description, lines: 2, size: tileSubSize),
+        if (description.isNotEmpty) (text: description, lines: 2),
       ],
     );
   }
 }
 
-/// أحجام المربعات الموحدة: العنوان ١٢، والقيمة ١٧ عريض، والثانوي ١٢، والمحتوى من الأعلى
-/// بتباعد ثابت [tileGap]. مطابقة لـ widget_tile_content.xml. العنوان والقيمة بلا قص
-/// (يلتفّان)، والثانوي وحده بحد أسطر وعلامة «…».
-const tileTitleSize = 12.0;
-const tileValueSize = 17.0;
-const tileSubSize = 12.0;
+/// أحجام المربعات (الميزة ٣د، بلا رموز): العنوان ١٣ عريض، والقيمة ٢٠ عريض، والثانوي ١٤، كلها
+/// × معامل الخط، من الأعلى بتباعد ثابت [tileGap]. مطابقة لـ widget_tile_content.xml.
+/// العنوان والقيمة سطر واحد يصغر خطه ليتسع (ثم «…»)، والثانوي بحد أسطر و«…».
+const tileTitleSize = 13.0;
+const tileValueSize = 20.0;
+const tileSubSize = 14.0;
 const tileGap = 3.0;
+const tileLineHeight = 1.25;
 
-/// سطر الإيداع الثاني في مربع الإيداع (DEPOSIT_SECOND_SP في LamhaWidgetReceiver.kt).
-const depositSecondSize = 11.0;
+/// هامش أمان (بكسل) عند قياس ما يتسع سطراً واحداً، كي لا يُقص بفرق التقريب.
+const fitMargin = 2.0;
+
+/// أدنى حجم للعنوان والقيمة عند تصغيرهما ليتسعا (نسبة من حجمهما).
+const tileMinFit = 0.7;
 
 class _Tile extends StatelessWidget {
   const _Tile({
     required this.title,
-    required this.emoji,
     required this.value,
     this.shortTitle,
-    this.valueLines,
     this.subs = const [],
     this.highlight,
+    this.scale = 1,
   });
 
   final String title;
 
   /// يحل محل [title] إذا لم يتسع سطراً واحداً.
   final String? shortTitle;
-  final String emoji;
   final String value;
 
-  /// حد أسطر القيمة مع «…»؛ null بلا حد.
-  final int? valueLines;
-  final List<({String text, int lines, double size})> subs;
+  /// الثانويات: [lines] حدها الأقصى. الأخير ذو الأسطر المتعددة يأخذ ما يتسع منها.
+  final List<({String text, int lines})> subs;
   final Color? highlight;
 
-  /// [title] إن اتسع سطراً واحداً في [width]، وإلا [shortTitle].
-  String _fittingTitle(BuildContext context, TextStyle style, double width) {
-    final short = shortTitle;
-    if (short == null) return title;
-    final painter = TextPainter(
-      text: TextSpan(text: title, style: style),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout(maxWidth: width);
-    final fits = !painter.didExceedMaxLines;
-    painter.dispose();
-    return fits ? title : short;
-  }
+  /// معامل الخط الفعلي (tileFitScale).
+  final double scale;
+
+  _Tile withScale(double s) => _Tile(
+    title: title,
+    shortTitle: shortTitle,
+    value: value,
+    subs: subs,
+    highlight: highlight,
+    scale: s,
+  );
+
+  /// أحجام الأسطر الأساسية (كل ثانوي سطر واحد) لحساب معامل الشبكة.
+  List<double> get coreSizes => [
+    tileTitleSize,
+    tileValueSize,
+    for (final _ in subs) tileSubSize,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final h = highlight;
+    final base = DefaultTextStyle.of(context).style;
+    final scaler = MediaQuery.textScalerOf(context);
+    double width(String text, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: base.merge(style)),
+        textDirection: TextDirection.rtl,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      final w = painter.width;
+      painter.dispose();
+      return w;
+    }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         // مربع الصلاة: لون التمييز بألفا ثابتة (كـ setImageAlpha في أندرويد).
-        color: h?.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.06),
+        color:
+            h?.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.06),
         border: h == null
             ? Border.all(color: Colors.white.withValues(alpha: 0.07))
             : null,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(9, 8, 9, 8),
-        // ما لا يتسع يُقص من الأسفل كما في الودجت، بلا تصغير.
-        child: SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: LayoutBuilder(builder: (context, c) {
-                      const style = TextStyle(
-                          fontSize: tileTitleSize,
-                          fontWeight: FontWeight.w700,
-                          color: _dim);
-                      return Text(_fittingTitle(context, style, c.maxWidth),
-                          key: const Key('tile-title'),
-                          textAlign: TextAlign.right,
-                          style: style);
-                    }),
-                  ),
-                  Text(emoji, textAlign: TextAlign.right, style: const TextStyle(fontSize: 16, height: 1)),
-                ],
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final titleStyle = TextStyle(
+              fontSize: tileTitleSize * scale,
+              fontWeight: FontWeight.w700,
+              color: _dim,
+              height: tileLineHeight,
+            );
+            // «الإيداع القادم» ← «الإيداع» إن لم يتسع، ثم تصغير الخط حتى يتسع سطراً واحداً.
+            final short = shortTitle;
+            final t =
+                short != null &&
+                    width(title, titleStyle) > c.maxWidth - fitMargin
+                ? short
+                : title;
+            final titleSize = fitTextSize(
+              tileTitleSize * scale,
+              width(t, titleStyle),
+              c.maxWidth - fitMargin,
+              tileTitleSize * scale * tileMinFit,
+            );
+            final valueStyle = TextStyle(
+              fontSize: tileValueSize * scale,
+              fontWeight: FontWeight.w700,
+              color: _text,
+              height: tileLineHeight,
+            );
+            final valueSize = fitTextSize(
+              tileValueSize * scale,
+              width(value, valueStyle),
+              c.maxWidth - fitMargin,
+              tileValueSize * scale * tileMinFit,
+            );
+            final subLine = tileSubSize * scale * tileLineHeight;
+            final used =
+                (titleSize + valueSize) * tileLineHeight +
+                subs.length * subLine +
+                tileGap * (subs.length + 1);
+            final extra = fittingLines(c.maxHeight - used, subLine, 99);
+            return ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.topCenter,
+                maxHeight: double.infinity,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t,
+                      key: const Key('tile-title'),
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle.copyWith(fontSize: titleSize),
+                    ),
+                    const SizedBox(height: tileGap),
+                    Text(
+                      value,
+                      key: const Key('tile-value'),
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: valueStyle.copyWith(fontSize: valueSize),
+                    ),
+                    for (final (i, s) in subs.indexed) ...[
+                      const SizedBox(height: tileGap),
+                      Text(
+                        s.text,
+                        key: Key('tile-sub-$i'),
+                        textAlign: TextAlign.right,
+                        // الأخير وحده يأخذ أسطراً إضافية إن اتسعت.
+                        maxLines: i == subs.length - 1
+                            ? math.min(s.lines, extra)
+                            : 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: tileSubSize * scale,
+                          color: _dim,
+                          height: tileLineHeight,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: tileGap),
-              Text(value,
-                  key: const Key('tile-value'),
-                  textAlign: TextAlign.right,
-                  maxLines: valueLines,
-                  overflow: valueLines == null ? null : TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: tileValueSize,
-                      fontWeight: FontWeight.w700,
-                      color: _text,
-                      height: 1.2)),
-              for (final (i, s) in subs.indexed) ...[
-                const SizedBox(height: tileGap),
-                Text(s.text,
-                    key: Key('tile-sub-$i'),
-                    textAlign: TextAlign.right,
-                    maxLines: s.lines,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: s.size, color: _dim, height: 1.25)),
-              ],
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

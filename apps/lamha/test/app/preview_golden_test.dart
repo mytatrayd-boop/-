@@ -23,7 +23,12 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 void main() {
-  testWidgets('لقطة المعاينة (أندرويد، ذهبي، شفافية ٨٠، طقس)', (tester) async {
+  // الحجم المتوسط (mockups/settings_preview.png)، و«كبير جداً» للتأكد من أن لا قص ولا تداخل.
+  for (final (scale, file) in [
+    (FontScale.medium, 'settings_preview.png'),
+    (FontScale.xlarge, 'settings_preview_xlarge.png'),
+  ]) {
+  testWidgets('لقطة المعاينة (أندرويد، ذهبي، شفافية ٨٠، طقس، خط ${scale.name})', (tester) async {
     await _loadFont('Tajawal', [
       'assets/fonts/Tajawal-Regular.ttf',
       'assets/fonts/Tajawal-Medium.ttf',
@@ -43,6 +48,7 @@ void main() {
         deposits: {'salary', 'citizen_account'},
         visible: WidgetElement.values.toSet(),
         opacity: 80,
+        fontScale: scale,
       ),
       loadEngineDataFromFiles(),
       days: 2,
@@ -79,6 +85,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
     await expectLater(find.byKey(const Key('golden')),
-        matchesGoldenFile('goldens/settings_preview.png'));
+        matchesGoldenFile('goldens/$file'));
   }, tags: ['golden']);
+  }
 }

@@ -13,6 +13,23 @@ enum WidgetElement {
   tradSeason,
 }
 
+/// حجم خط الودجت والمعاينة (الميزة ٣د): معامل يُضرب به كل حجم نص.
+enum FontScale {
+  small(0.9),
+  medium(1.0),
+  large(1.15),
+  xlarge(1.3);
+
+  const FontScale(this.factor);
+
+  final double factor;
+
+  static const fallback = FontScale.medium;
+
+  static FontScale byName(String? name) =>
+      FontScale.values.firstWhere((f) => f.name == name, orElse: () => fallback);
+}
+
 /// إعدادات المستخدم التي يُبنى منها الجدول.
 class Settings {
   Settings({
@@ -27,6 +44,7 @@ class Settings {
     this.background,
     this.theme = WidgetTheme.fallback,
     this.lockNotification = false,
+    this.fontScale = FontScale.fallback,
   })  : deposits = Set.unmodifiable(deposits),
         visible = Set.unmodifiable(visible ?? WidgetElement.values.toSet()) {
     if (deposits.isEmpty) {
@@ -70,4 +88,7 @@ class Settings {
 
   /// إشعار ثابت في شاشة القفل (أندرويد)، مطفأ افتراضياً.
   final bool lockNotification;
+
+  /// حجم الخط (متوسط افتراضياً).
+  final FontScale fontScale;
 }

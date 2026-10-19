@@ -20,6 +20,7 @@ class LamhaSettings {
     this.backgroundFile,
     this.theme = WidgetTheme.fallback,
     this.lockNotification = false,
+    this.fontScale = FontScale.fallback,
   });
 
   factory LamhaSettings.defaults(City city, Set<String> depositIds) =>
@@ -50,6 +51,8 @@ class LamhaSettings {
         // مفتاحان جديدان (الميزة ٣ج)؛ الإعدادات القديمة بلاهما.
         theme: WidgetTheme.byName(j['theme'] as String?),
         lockNotification: j['lockNotification'] as bool? ?? false,
+        // الميزة ٣د؛ الإعدادات القديمة بلاه = متوسط.
+        fontScale: FontScale.byName(j['fontScale'] as String?),
       );
 
   static const prefsKey = 'settings';
@@ -72,6 +75,9 @@ class LamhaSettings {
   /// إشعار ثابت في شاشة القفل (أندرويد).
   final bool lockNotification;
 
+  /// حجم خط الودجت.
+  final FontScale fontScale;
+
   /// [withBackground] = false في أندرويد، فيكون `background` في الجدول null.
   Settings toEngine({bool withBackground = true}) => Settings(
         latitude: latitude,
@@ -85,6 +91,7 @@ class LamhaSettings {
         background: withBackground ? backgroundFile : null,
         theme: theme,
         lockNotification: lockNotification,
+        fontScale: fontScale,
       );
 
   LamhaSettings copyWith({
@@ -100,6 +107,7 @@ class LamhaSettings {
     String? backgroundFile,
     WidgetTheme? theme,
     bool? lockNotification,
+    FontScale? fontScale,
   }) =>
       LamhaSettings(
         cityId: cityId ?? this.cityId,
@@ -114,6 +122,7 @@ class LamhaSettings {
         backgroundFile: backgroundFile ?? this.backgroundFile,
         theme: theme ?? this.theme,
         lockNotification: lockNotification ?? this.lockNotification,
+        fontScale: fontScale ?? this.fontScale,
       );
 
   Map<String, Object?> toJson() => {
@@ -129,6 +138,7 @@ class LamhaSettings {
         'backgroundFile': backgroundFile,
         'theme': theme.name,
         'lockNotification': lockNotification,
+        'fontScale': fontScale.name,
       };
 
   String encode() => jsonEncode(toJson());
