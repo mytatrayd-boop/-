@@ -77,6 +77,22 @@ String remainingMinutesText(int minutes) {
   return 'باقي ${arabicDigits(minutes)} دقيقة';
 }
 
+/// «ص» قبل الظهر و«م» بعده.
+const amText = 'ص';
+const pmText = 'م';
+
+/// الساعة بنظام ١٢ ساعة بالأرقام العربية الشرقية بلا لاحقة، مثل «٤:٣٥».
+String arabicClock(DateTime t) {
+  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  return '${arabicDigits(h)}:${arabicDigits(t.minute.toString().padLeft(2, '0'))}';
+}
+
+/// «ص» أو «م» للحظة [t].
+String amPm(DateTime t) => t.hour < 12 ? amText : pmText;
+
+/// الوقت جاهزاً للعرض، مثل «٤:٣٥ ص».
+String arabicTimeText(DateTime t) => '${arabicClock(t)} ${amPm(t)}';
+
 /// عدد الأيام التقويمية من [from] إلى [to] (التاريخ فقط، بلا أثر للتوقيت الصيفي).
 int daysBetween(DateTime from, DateTime to) =>
     DateTime.utc(to.year, to.month, to.day)

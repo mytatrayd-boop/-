@@ -38,6 +38,13 @@ dependencies:
   timezone: ^0.11.2
   flutter_localizations:
     sdk: flutter
+  flutter_riverpod: ^3.4.3
+  shared_preferences: ^2.5.6
+  home_widget: ^0.10.0
+  geolocator: ^14.1.1
+  image_picker: ^1.2.4
+  path_provider: ^2.1.6
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +62,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -65,6 +73,19 @@ flutter:
     - assets/deposits.json
     - assets/seasons.json
     - assets/tables/hijri_umm_al_qura.json
+    - assets/cities.json
+    - assets/fonts/OFL-Tajawal.txt
+
+  # Tajawal برخصة SIL OFL 1.1 (assets/fonts/OFL-Tajawal.txt).
+  fonts:
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Tajawal-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lamha/src/engine/arabic.dart';
 import 'package:lamha/src/engine/schedule.dart';
 import 'package:lamha/src/engine/settings.dart';
 
@@ -95,5 +96,36 @@ void main() {
         throwsRangeError);
     expect(() => buildSchedule(DateTime(2026), settings(deposits: {'x'}), data),
         throwsArgumentError);
+  });
+
+  test('نص الوقت جاهز بالأرقام العربية الشرقية بجانب ISO', () {
+    final first = days.first as Map;
+    final prayers = first['prayers'] as Map;
+    final fajr = prayers['fajr'] as Map;
+    final t = DateTime.parse(fajr['time'] as String).add(const Duration(hours: 3));
+    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    expect(fajr['text'], arabicTimeText(DateTime(2026, 1, 1, t.hour, t.minute)));
+    expect(fajr['text'], matches(RegExp(r'^[٠-٩]{1,2}:[٠-٩]{2} ص$')));
+    expect(fajr['text'], startsWith(arabicDigits(h)));
+    expect((prayers['maghrib'] as Map)['text'], endsWith(' م'));
+    expect(arabicTimeText(DateTime(2026, 1, 1, 0, 5)), '١٢:٠٥ ص');
+    expect(arabicTimeText(DateTime(2026, 1, 1, 12, 0)), '١٢:٠٠ م');
+    expect(arabicTimeText(DateTime(2026, 1, 1, 16, 35)), '٤:٣٥ م');
+  });
+
+  test('بعد منتصف الليل بتوقيت الرياض وقبله في UTC: يبدأ الجدول باليوم التالي', () {
+    // 22:30 UTC يوم ١٩ = 01:30 بتوقيت الرياض يوم ٢٠.
+    final s = buildSchedule(DateTime.utc(2026, 10, 19, 22, 30), settings(), data,
+        days: 2);
+    final d = (s['days']! as List).cast<Map>();
+    expect(d.first['date'], '2026-10-20');
+    expect(d.first['weekday'], 'الثلاثاء');
+    expect(d.last['date'], '2026-10-21');
+    final fajr = (d.first['prayers'] as Map)['fajr'] as Map;
+    expect(fajr['time'] as String, startsWith('2026-10-20T04:'));
+    // وقبل منتصف الليل بدقيقة بتوقيت الرياض: اليوم نفسه.
+    final before = buildSchedule(
+        DateTime.utc(2026, 10, 19, 20, 59), settings(), data, days: 1);
+    expect(((before['days']! as List).first as Map)['date'], '2026-10-19');
   });
 }

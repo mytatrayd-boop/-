@@ -74,7 +74,11 @@ class DayPrayers {
 
   Map<String, Object> toJson() => {
         for (final p in times)
-          p.name.name: {'name': p.name.arabic, 'time': p.time.toIso8601String()},
+          p.name.name: {
+            'name': p.name.arabic,
+            'time': p.time.toIso8601String(),
+            'text': arabicTimeText(p.time),
+          },
       };
 }
 
