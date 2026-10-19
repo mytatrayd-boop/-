@@ -60,6 +60,12 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+# shared_preferences_android 2.5.0 (JNI) يفشل في نسخة release على الجهاز:
+# NoSuchMethodError في SharedPreferencesApiRegistrar.getAll (R8 يحذف دالة تُستدعى عبر JNI).
+# نثبّت 2.4.28 (قنوات Pigeon، وهي ما يعمل في durur) حتى يُصلَح. DECISIONS ١١.
+dependency_overrides:
+  shared_preferences_android: 2.4.28
+
 flutter:
   generate: true
 
