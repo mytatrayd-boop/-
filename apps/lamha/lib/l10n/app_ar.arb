@@ -12,6 +12,8 @@
   "@backgroundButton": {"description": "زر اختيار لقطة خلفية الشاشة (آيفون فقط)"},
   "backgroundSaved": "حُفظت لقطة الخلفية",
   "@backgroundSaved": {"description": "تأكيد حفظ اللقطة"},
+  "backgroundError": "تعذّر حفظ لقطة الخلفية. تأكد من إذن الصور وحاول مرة أخرى.",
+  "@backgroundError": {"description": "فشل اختيار اللقطة أو حفظها"},
   "cityLabel": "المدينة",
   "@cityLabel": {"description": "عنوان اختيار المدينة"},
   "myLocation": "موقعي",

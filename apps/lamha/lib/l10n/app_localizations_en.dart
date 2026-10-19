@@ -30,6 +30,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backgroundSaved => 'Wallpaper screenshot saved';
 
   @override
+  String get backgroundError =>
+      'Could not save the wallpaper screenshot. Check photo access and try again.';
+
+  @override
   String get cityLabel => 'City';
 
   @override

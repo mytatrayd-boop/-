@@ -6,6 +6,7 @@
   "percent": "{value}%",
   "backgroundButton": "Wallpaper screenshot",
   "backgroundSaved": "Wallpaper screenshot saved",
+  "backgroundError": "Could not save the wallpaper screenshot. Check photo access and try again.",
   "cityLabel": "City",
   "myLocation": "My location",
   "locationDenied": "Location access was not allowed. Pick a city from the list.",

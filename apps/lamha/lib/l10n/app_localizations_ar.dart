@@ -30,6 +30,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get backgroundSaved => 'حُفظت لقطة الخلفية';
 
   @override
+  String get backgroundError =>
+      'تعذّر حفظ لقطة الخلفية. تأكد من إذن الصور وحاول مرة أخرى.';
+
+  @override
   String get cityLabel => 'المدينة';
 
   @override

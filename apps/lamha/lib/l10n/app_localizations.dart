@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'حُفظت لقطة الخلفية'**
   String get backgroundSaved;
 
+  /// فشل اختيار اللقطة أو حفظها
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ لقطة الخلفية. تأكد من إذن الصور وحاول مرة أخرى.'**
+  String get backgroundError;
+
   /// عنوان اختيار المدينة
   ///
   /// In ar, this message translates to:

@@ -36,14 +36,16 @@ class FakeLocation implements LocationService {
 
 /// حاوية App Group وهمية: تحفظ اسم الملف ولا تلمس القرص.
 class FakeBackgroundStore implements BackgroundStore {
-  FakeBackgroundStore([this.picked = 'wallpaper.jpg']);
+  FakeBackgroundStore([this.picked = 'wallpaper.jpg', this.error]);
 
   final String? picked;
+  final Object? error;
   var picks = 0;
 
   @override
   Future<String?> pickAndSave() async {
     picks++;
+    if (error != null) throw error!;
     return picked;
   }
 

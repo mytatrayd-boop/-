@@ -81,7 +81,12 @@ class _Body extends ConsumerWidget {
             icon: const Icon(Icons.wallpaper),
             label: Text(l.backgroundButton),
             onPressed: () async {
-              if (await c.pickBackground()) toast(l.backgroundSaved);
+              try {
+                if (await c.pickBackground()) toast(l.backgroundSaved);
+              } catch (_) {
+                // حاوية App Group غير متاحة، أو القناة غير مسجلة، أو رُفض إذن الصور.
+                toast(l.backgroundError);
+              }
             },
           ),
         const SizedBox(height: 16),

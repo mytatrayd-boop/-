@@ -189,6 +189,18 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('آيفون: فشل حفظ اللقطة يعرض رسالة ولا يغيّر الجدول', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final store = FakeBackgroundStore(null, StateError('no container'));
+    final bridge = await pumpApp(tester, background: store);
+    await tester.tap(find.byKey(const Key('background-button')));
+    await tester.pumpAndSettle();
+    expect(store.picks, 1);
+    expect(bridge.last['background'], isNull);
+    expect(find.textContaining('تعذّر حفظ لقطة الخلفية'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('أندرويد: background في الجدول null حتى لو حُفظ ملف', (tester) async {
     final saved = LamhaSettings.defaults(
       parseCities(readAsset('assets/cities.json')).first,
