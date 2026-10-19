@@ -1,4 +1,4 @@
-// تلاوة: ارفع تلاوة ← تعرّف تلقائي على الآيات وتوقيتها ← تحرير بالخط الزمني ← فيديو 1080×1920.
+// تلاوة: ارفع تلاوة ← تعرّف تلقائي على الآيات وتوقيتها ← تحرير على طريقة CapCut ← فيديو 1080×1920.
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -28,13 +28,19 @@ class TilawaApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         locale: const Locale('ar'),
         builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
-        theme: ThemeData(colorSchemeSeed: const Color(0xFF1F6B55), brightness: Brightness.dark, useMaterial3: true),
+        theme: ThemeData(
+          colorSchemeSeed: const Color(0xFF4FC3DC),
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF101010),
+          useMaterial3: true,
+        ),
         home: const Home(),
       );
 }
 
 const presets = ['ليل ونجوم', 'غروب', 'فجر', 'زمردي', 'أسود'];
 const swatches = [Colors.white, Color(0xFFF3E3B5), Color(0xFFE8C66A), Color(0xFFBFE3FF), Color(0xFFD7F5E6)];
+const accent = Color(0xFF55C7DE);
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -46,7 +52,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   final m = EditorModel();
   final look = Look();
   final player = AudioPlayer();
-  late final TabController tabs = TabController(length: 5, vsync: this);
+  final ui0 = ValueNotifier(0); // يعيد بناء اللوحات السفلية عند التغيير
   Quran? quran;
   Asr? asr;
   String? audioPath;
@@ -55,41 +61,34 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   final bgs = <Bg>[];
   String status = '';
   double? progress;
-  bool busy = false, splitting = false;
-  final textCtl = TextEditingController();
-  final addAyahCtl = TextEditingController(text: '1');
+  bool busy = false;
+
+  void refresh([VoidCallback? fn]) {
+    setState(fn ?? () {});
+    ui0.value++;
+  }
 
   @override
   void initState() {
     super.initState();
-    rootBundle.loadString('assets/quran.json').then((s) => setState(() => quran = Quran.fromJson(s)));
-    _presetBg(0).then((b) => setState(() => bgs.add(b)));
-    // كل إطار أثناء التشغيل (أنعم من positionStream الذي يأتي كل 200 ملي ثانية)
+    rootBundle.loadString('assets/quran.json').then((s) => refresh(() => quran = Quran.fromJson(s)));
+    _presetBg(0).then((b) => refresh(() => bgs.add(b)));
+    // كل إطار أثناء التشغيل: المؤشر يتبع الصوت، ويقفز فوق الأجزاء المحذوفة
     createTicker((_) {
       if (!player.playing) return;
       final t = player.position.inMilliseconds / 1000;
-      if (t >= m.trimEnd) {
+      final skip = m.skipCut(t);
+      if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
+      if (t >= m.duration - 0.05) {
         player.pause();
         if (m.tapIndex != null) m.tapStop(t);
       }
-      final skip = m.skipCut(t);
-      if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
       m.playhead = t;
-      if (!mounted) return;
-      final w = MediaQuery.of(context).size.width;
-      if (t > m.view + w / m.pps * 0.85 || t < m.view) m.view = (t - w / m.pps * 0.15).clamp(0, m.duration);
       m.changed();
     }).start();
-    player.playingStream.listen((_) => setState(() {}));
-    m.addListener(_syncText);
+    player.playingStream.listen((_) => refresh());
+    m.addListener(() => ui0.value++);
   }
-
-  void _syncText() {
-    final g = m.sel;
-    if (g != null && textCtl.text != g.text && !textCtlFocused) textCtl.text = g.text;
-  }
-
-  bool get textCtlFocused => FocusManager.instance.primaryFocus?.context?.widget is EditableText;
 
   Future<Bg> _presetBg(int i) async {
     final f = File('${(await workDir()).path}/bg$i.jpg');
@@ -104,7 +103,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   Future<void> pickAudio() async {
     final path = (await FilePicker.pickFile(type: FileType.any))?.path;
     if (path == null) return;
-    setState(() {
+    refresh(() {
       busy = true;
       status = 'قراءة الملف…';
     });
@@ -115,19 +114,19 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       audio16 = a;
       m.setAudio(a);
       _distribute();
-      setState(() => status = '');
+      refresh(() => status = '');
       await autoSync();
     } catch (e) {
-      setState(() => status = 'تعذرت قراءة الملف الصوتي.');
+      refresh(() => status = 'تعذرت قراءة الملف الصوتي.');
     } finally {
-      setState(() => busy = false);
+      refresh(() => busy = false);
     }
   }
 
   Future<void> autoSync() async {
     final a = audio16, q = quran;
     if (a == null || q == null) return;
-    setState(() {
+    refresh(() {
       busy = true;
       progress = 0;
       status = 'تجهيز نموذج التعرف…';
@@ -136,8 +135,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       asr ??= await Asr.start();
       final units = breathUnits(a), blocks = packBlocks(units), texts = <String>[];
       for (var k = 0; k < blocks.length; k++) {
-        setState(() {
-          status = 'التعرف على الصوت: ${k + 1} من ${blocks.length}';
+        refresh(() {
+          status = 'التعرف على الآيات ${((k / blocks.length) * 100).round()}٪';
           progress = k / blocks.length;
         });
         final s = (units[blocks[k].$1][0] * sr).floor(), e = (units[blocks[k].$2][1] * sr).ceil();
@@ -145,18 +144,19 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       }
       final r = finishSync(q, units, blocks, texts);
       if (r == null) {
-        setState(() => status = 'لم أتعرف على الآيات. اختر السورة والآيات من تبويب «الآيات».');
+        refresh(() => status = 'لم أتعرف على الآيات. اختر السورة والآيات من «الآيات».');
         return;
       }
       surah = r.surah;
       from = r.from;
       to = r.to;
       m.setSegments(r.segs);
-      setState(() => status = 'سورة ${q.names[r.surah - 1]}، الآيات $from–$to، ${r.segs.length} مقطعاً.');
+      refresh(() => status = 'سورة ${q.names[r.surah - 1]}، الآيات $from–$to');
+      Future.delayed(const Duration(seconds: 4), () => refresh(() => status = ''));
     } catch (e) {
-      setState(() => status = 'تعذر التعرف: $e');
+      refresh(() => status = 'تعذر التعرف: $e');
     } finally {
-      setState(() {
+      refresh(() {
         busy = false;
         progress = null;
       });
@@ -184,6 +184,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     if (player.playing) {
       await player.pause();
     } else {
+      if (m.playhead >= m.duration - 0.1) m.seek(0);
       await player.seek(Duration(milliseconds: (m.playhead * 1000).round()));
       player.play();
     }
@@ -199,91 +200,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       await player.seek(Duration(milliseconds: (m.playhead * 1000).round()));
       player.play();
     }
-    setState(() {});
+    refresh();
   }
 
-  // ── الإنتاج ──
-  Future<void> export() async {
-    final q = quran, a = audioPath;
-    if (q == null || a == null) return;
-    final list = m.valid;
-    if (list.isEmpty) return;
-    final (name, bas) = q.header(surah);
-    setState(() {
-      busy = true;
-      progress = 0;
-      status = 'جارٍ إنتاج الفيديو…';
-    });
-    try {
-      final end = m.trimEnd < m.duration ? m.trimEnd : (list.last.end + 0.8).clamp(0.0, m.duration);
-      final out = await renderVideo(
-        audio: a,
-        segs: list,
-        texts: textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
-        bgs: activeBgs,
-        look: look,
-        headerName: look.showName ? name : null,
-        headerBasmala: look.showBasmala ? bas : null,
-        kept: keptRanges(m.trimStart, end, m.cuts),
-        onProgress: (p) => setState(() => progress = p),
-      );
-      await Gal.putVideo(out, album: 'تلاوة');
-      setState(() => status = 'حُفظ الفيديو في معرض الصور (ألبوم «تلاوة»).');
-    } catch (e) {
-      setState(() => status = 'تعذر الإنتاج: $e');
-    } finally {
-      setState(() {
-        busy = false;
-        progress = null;
-      });
-    }
-  }
-
-  // ── الواجهة ──
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('تلاوة'), actions: [
-        IconButton(onPressed: busy ? null : pickAudio, icon: const Icon(Icons.audio_file), tooltip: 'اختر تلاوة'),
-        if (audioPath != null)
-          FilledButton.icon(onPressed: busy ? null : export, icon: const Icon(Icons.movie), label: const Text('أنتج')),
-        const SizedBox(width: 8),
-      ]),
-      body: audioPath == null ? _welcome() : _editor(),
-    );
-  }
-
-  Widget _welcome() => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('ارفع تلاوة، فيتعرف التطبيق على الآيات ويوقّتها، ثم تعدّل بالخط الزمني وتنتج الفيديو.', textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            FilledButton.icon(onPressed: busy || quran == null ? null : pickAudio, icon: const Icon(Icons.audio_file), label: const Text('اختر ملف التلاوة')),
-            if (status.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 16), child: Text(status)),
-          ]),
-        ),
-      );
-
-  Widget _editor() => Column(children: [
-        Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Center(child: _preview()))),
-        if (status.isNotEmpty || progress != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Column(children: [
-              if (progress != null) LinearProgressIndicator(value: progress),
-              Text(status, style: const TextStyle(fontSize: 13)),
-            ]),
-          ),
-        Directionality(textDirection: TextDirection.ltr, child: Timeline(m, thumb: thumbAt)),
-        _toolbar(),
-        TabBar(controller: tabs, tabs: const [Tab(text: 'المقطع'), Tab(text: 'قص الصوت'), Tab(text: 'الآيات'), Tab(text: 'الخلفية'), Tab(text: 'النص')]),
-        SizedBox(
-          height: 230,
-          child: TabBarView(controller: tabs, children: [_segTab(), _cutTab(), _ayatTab(), _bgTab(), _textTab()]),
-        ),
-      ]);
-
+  // ── المعاينة والصور المصغّرة ──
   final images = <String, ui.Image>{};
   bool _loadingImages = false;
   Future<void> _loadImages() async {
@@ -293,7 +213,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       if (!images.containsKey(b.preview)) images[b.preview] = await decodeImageFromList(await File(b.preview).readAsBytes());
     }
     _loadingImages = false;
-    if (mounted) setState(() {});
+    if (mounted) refresh();
   }
 
   List<Bg> get activeBgs => look.manyBgs ? bgs : bgs.take(1).toList();
@@ -306,19 +226,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         look.showName ? name : null, look.showBasmala ? bas : null);
   }
 
-  // ── صور الخط الزمني المصغّرة من الفيديو النهائي (كل نصف ثانية) ──
   final thumbs = <int, ui.Image>{};
   final _thumbQueue = <int>{};
   String _thumbSig = '';
   Composer? _comp;
   bool _thumbBusy = false;
 
-  /// توقيع كل ما يغيّر شكل الإطار: إن تغيّر تُعاد الصور.
   String _signature() => [
         for (final g in m.valid) '${g.text}${g.start}${g.end}',
-        m.trimStart, m.trimEnd, m.cuts, surah, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow,
-        look.align, look.headerMode, look.showName, look.showBasmala, look.headerSize, look.headerY, look.headerColor,
-        look.dim, look.blur, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) b.path], images.length,
+        m.cuts, surah, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow, look.align,
+        look.headerMode, look.showName, look.showBasmala, look.headerSize, look.headerY, look.headerColor, look.dim,
+        look.blur, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) b.path], images.length,
       ].join('|');
 
   ui.Image? thumbAt(double t) {
@@ -354,7 +272,138 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     _thumbBusy = false;
   }
 
-  Widget _preview() => ListenableBuilder(
+  void _openFullscreen() {
+    if (m.valid.isEmpty || audioPath == null) return;
+    player.pause();
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => PreviewPage(audio: audioPath!, composer: composer())));
+  }
+
+  // ── التصدير ──
+  Future<void> export() async {
+    final q = quran, a = audioPath;
+    if (q == null || a == null || busy) return;
+    final list = m.valid;
+    if (list.isEmpty) return;
+    player.pause();
+    final (name, bas) = q.header(surah);
+    final prog = ValueNotifier(0.0);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text('جارٍ التصدير'),
+          content: ValueListenableBuilder(
+            valueListenable: prog,
+            builder: (_, p, _) => Column(mainAxisSize: MainAxisSize.min, children: [
+              LinearProgressIndicator(value: p),
+              const SizedBox(height: 12),
+              Text('${(p * 100).round()}٪'),
+            ]),
+          ),
+        ),
+      ),
+    );
+    busy = true;
+    try {
+      final end = (list.last.end + 0.8).clamp(0.0, m.duration);
+      final out = await renderVideo(
+        audio: a,
+        segs: list,
+        texts: textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
+        bgs: activeBgs,
+        look: look,
+        headerName: look.showName ? name : null,
+        headerBasmala: look.showBasmala ? bas : null,
+        kept: keptRanges(0, end, m.cuts),
+        onProgress: (p) => prog.value = p,
+      );
+      await Gal.putVideo(out, album: 'تلاوة');
+      if (mounted) Navigator.of(context).pop();
+      _toast('حُفظ الفيديو في معرض الصور (ألبوم «تلاوة»)');
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      _toast('تعذر التصدير: $e');
+    } finally {
+      busy = false;
+    }
+  }
+
+  void _toast(String s) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
+  }
+
+  // ── الواجهة ──
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(child: audioPath == null ? _welcome() : _editor()),
+    );
+  }
+
+  Widget _welcome() => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('تلاوة', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            const Text('ارفع تلاوة، فيتعرف التطبيق على الآيات ويوقّتها، ثم تحرّر وتصدّر الفيديو.', textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.black),
+              onPressed: busy || quran == null ? null : pickAudio,
+              icon: const Icon(Icons.add),
+              label: const Text('مشروع جديد: اختر التلاوة'),
+            ),
+            if (status.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 16), child: Text(status)),
+          ]),
+        ),
+      );
+
+  Widget _editor() => Column(children: [
+        _topBar(),
+        Expanded(child: _previewArea()),
+        _controls(),
+        Directionality(textDirection: TextDirection.ltr, child: Timeline(m, thumb: thumbAt, onScrub: player.pause)),
+        if (m.tapIndex != null)
+          Padding(
+            padding: const EdgeInsets.all(6),
+            child: Row(children: [
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.black, minimumSize: const Size.fromHeight(48)),
+                  onPressed: () => m.tap(m.playhead),
+                  child: const Text('المقطع التالي يبدأ الآن ⏭', style: TextStyle(fontSize: 16)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(onPressed: toggleTap, child: const Text('إنهاء')),
+            ]),
+          ),
+        _bottomBar(),
+      ]);
+
+  Widget _topBar() => Padding(
+        padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
+        child: Row(children: [
+          IconButton(icon: const Icon(Icons.close), tooltip: 'مشروع جديد', onPressed: busy ? null : pickAudio),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(color: const Color(0xFF242424), borderRadius: BorderRadius.circular(10)),
+            child: Text(quran == null ? 'تلاوة' : 'سورة ${quran!.names[surah - 1]} · 1080p', style: const TextStyle(fontSize: 14)),
+          ),
+          const Spacer(),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 22)),
+            onPressed: busy ? null : export,
+            child: const Text('تصدير', style: TextStyle(fontSize: 16)),
+          ),
+        ]),
+      );
+
+  Widget _previewArea() => ListenableBuilder(
         listenable: m,
         builder: (context, _) {
           if (quran == null) return const SizedBox();
@@ -369,137 +418,200 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             thumbs.clear();
             _thumbQueue.clear();
           }
-          return Stack(alignment: Alignment.bottomLeft, children: [
-            FrameView(comp, m.playhead),
-            IconButton(
-              tooltip: 'ملء الشاشة',
-              icon: const Icon(Icons.fullscreen, color: Colors.white),
-              onPressed: m.valid.isEmpty
-                  ? null
-                  : () {
-                      player.pause();
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => PreviewPage(audio: audioPath!, composer: composer())));
-                    },
-            ),
-          ]);
+          return Container(
+            color: const Color(0xFF0B0B0B),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Stack(alignment: Alignment.center, children: [
+              GestureDetector(onTap: togglePlay, child: FrameView(comp, m.playhead)),
+              if (status.isNotEmpty || progress != null)
+                Positioned(
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text(status, style: const TextStyle(fontSize: 13)),
+                      if (progress != null) SizedBox(width: 160, child: LinearProgressIndicator(value: progress)),
+                    ]),
+                  ),
+                ),
+            ]),
+          );
         },
       );
 
-  Widget _toolbar() => ListenableBuilder(
+  Widget _controls() => ListenableBuilder(
         listenable: m,
-        builder: (context, _) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(children: [
-            IconButton.filled(onPressed: togglePlay, icon: Icon(player.playing ? Icons.pause : Icons.play_arrow)),
-            Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text(fmtTime(m.playhead), textDirection: TextDirection.ltr)),
-            IconButton(onPressed: () => setState(() => m.pps = (m.pps / 1.5).clamp(8, 400)), icon: const Icon(Icons.zoom_out)),
-            IconButton(onPressed: () => setState(() => m.pps = (m.pps * 1.5).clamp(8, 400)), icon: const Icon(Icons.zoom_in)),
-            IconButton(onPressed: m.canUndo ? m.undo : null, icon: const Icon(Icons.undo), tooltip: 'تراجع'),
-            const Spacer(),
-            if (m.tapIndex != null)
-              FilledButton(onPressed: () => m.tap(m.playhead), child: const Text('التالي ⏭')),
-            TextButton(onPressed: toggleTap, child: Text(m.tapIndex != null ? 'إنهاء' : '🎯 بالنقر')),
-          ]),
+        builder: (context, _) => Directionality(
+          textDirection: TextDirection.ltr,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Row(children: [
+              IconButton(onPressed: m.canUndo ? m.undo : null, icon: const Icon(Icons.undo), tooltip: 'تراجع'),
+              IconButton(onPressed: m.canRedo ? m.redo : null, icon: const Icon(Icons.redo), tooltip: 'إعادة'),
+              Text('${fmtTime(m.toDisp(m.playhead))} / ${fmtTime(m.dispDuration)}', style: const TextStyle(fontSize: 13)),
+              const Spacer(),
+              IconButton(iconSize: 34, onPressed: togglePlay, icon: Icon(player.playing ? Icons.pause : Icons.play_arrow)),
+              const Spacer(),
+              IconButton(onPressed: _openFullscreen, icon: const Icon(Icons.fullscreen), tooltip: 'ملء الشاشة'),
+            ]),
+          ),
         ),
       );
 
-  Widget _pad(List<Widget> c) => ListView(padding: const EdgeInsets.all(12), children: c);
-  Widget _wrap(List<Widget> c) => Wrap(spacing: 8, runSpacing: 8, children: c);
+  // ── شريط الأدوات السفلي المنزلق: يتغير حسب المحدد (مقطع نص، قطعة صوت، أو لا شيء) ──
+  Widget _tool(IconData icon, String label, VoidCallback? on) => InkWell(
+        onTap: on,
+        borderRadius: BorderRadius.circular(8),
+        child: Opacity(
+          opacity: on == null ? 0.4 : 1,
+          child: SizedBox(
+            width: 76,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 26),
+              const SizedBox(height: 4),
+              Text(label, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 12, height: 1.2)),
+            ]),
+          ),
+        ),
+      );
 
-  Widget _segTab() => ListenableBuilder(
+  Widget _bottomBar() => ListenableBuilder(
         listenable: m,
         builder: (context, _) {
-          final g = m.sel;
-          if (g == null) return const Center(child: Text('اضغط مقطعاً في الخط الزمني لتحريره.'));
-          return _pad([
-            Text('${fmtTime(g.start)} ← ${fmtTime(g.end)}', textDirection: TextDirection.ltr),
-            TextField(
-              controller: textCtl,
-              maxLines: 2,
-              style: const TextStyle(fontSize: 18),
-              onTap: m.checkpoint,
-              onChanged: (v) {
-                g.text = v.trim();
-                m.changed();
-              },
-            ),
-            const SizedBox(height: 8),
-            _wrap([
-              OutlinedButton(onPressed: m.setStartHere, child: const Text('البداية هنا')),
-              OutlinedButton(onPressed: m.setEndHere, child: const Text('النهاية هنا')),
-              OutlinedButton(onPressed: () => setState(() => splitting = !splitting), child: const Text('✂️ قسّم')),
-              OutlinedButton(onPressed: m.mergeNext, child: const Text('ادمج مع التالي')),
-              OutlinedButton(onPressed: m.duplicate, child: const Text('🔁 كرّر')),
-              OutlinedButton(onPressed: m.delete, child: const Text('🗑 احذف')),
+          final List<Widget> items;
+          Widget? back;
+          if (m.sel != null) {
+            back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
+            items = [
+              _tool(Icons.edit_note, 'تحرير النص', _editTextSheet),
+              _tool(Icons.content_cut, 'تقسيم', _splitSheet),
+              _tool(Icons.start, 'البداية هنا', m.setStartHere),
+              _tool(Icons.keyboard_tab, 'النهاية هنا', m.setEndHere),
+              _tool(Icons.copy, 'تكرار', m.duplicate),
+              _tool(Icons.call_merge, 'دمج مع التالي', m.mergeNext),
+              _tool(Icons.delete_outline, 'حذف', m.deleteSeg),
+            ];
+          } else if (m.audioSel != null) {
+            back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
+            items = [
+              _tool(Icons.content_cut, 'تقسيم', m.splitAudio),
+              _tool(Icons.delete_outline, 'حذف', m.deleteAudio),
+              _tool(Icons.restore, 'استرجاع المحذوف', m.cuts.isEmpty ? null : m.restoreAudio),
+            ];
+          } else {
+            items = [
+              _tool(Icons.auto_fix_high, 'تعرّف تلقائي', busy ? null : autoSync),
+              _tool(Icons.menu_book, 'الآيات', _ayatSheet),
+              _tool(Icons.graphic_eq, 'الصوت', () => m.selectAudioAt(m.playhead)),
+              _tool(Icons.wallpaper, 'الخلفية', () => _sheet(_bgPanel)),
+              _tool(Icons.text_fields, 'النص', () => _sheet(_textPanel)),
+              _tool(Icons.title, 'الترويسة', () => _sheet(_headerPanel)),
+              _tool(Icons.touch_app, 'مزامنة بالنقر', toggleTap),
+            ];
+          }
+          return Container(
+            height: 78,
+            color: const Color(0xFF181818),
+            child: Row(children: [
+              ?back,
+              Expanded(child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 6), children: items)),
             ]),
-            if (splitting) ...[
-              const SizedBox(height: 8),
-              const Text('اختر الكلمة التي يبدأ بها الجزء الثاني:'),
-              _wrap([
-                for (final (i, w) in splitWords(g.text).indexed)
-                  if (i > 0) ActionChip(label: Text(w.replaceAll(marks, '')), onPressed: () { m.splitAt(i); setState(() => splitting = false); }),
-              ]),
-            ],
-          ]);
+          );
         },
       );
 
-  Widget _ayatTab() {
-    final q = quran;
-    if (q == null) return const SizedBox();
-    final n = q.ayat[surah - 1].length;
-    return StatefulBuilder(builder: (context, set) => _pad([
-          FilledButton.icon(onPressed: busy ? null : autoSync, icon: const Icon(Icons.auto_fix_high), label: const Text('تعرّف تلقائياً من جديد')),
-          const SizedBox(height: 8),
-          DropdownButton<int>(
-            isExpanded: true,
-            value: surah,
-            items: [for (var i = 1; i <= 114; i++) DropdownMenuItem(value: i, child: Text('$i. ${q.names[i - 1]}'))],
-            onChanged: (v) => setState(() { surah = v!; from = 1; to = q.ayat[v - 1].length.clamp(1, 5); }),
-          ),
-          Row(children: [
-            Expanded(child: _numField('من آية', from, 1, n, (v) => setState(() => from = v))),
-            const SizedBox(width: 8),
-            Expanded(child: _numField('إلى آية', to, from, n, (v) => setState(() => to = v))),
-            const SizedBox(width: 8),
-            OutlinedButton(onPressed: _distribute, child: const Text('توزيع تقريبي')),
-          ]),
-          const Divider(),
-          Row(children: [
-            Expanded(child: TextField(controller: addAyahCtl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'رقم آية لإضافتها عند المؤشر'))),
-            const SizedBox(width: 8),
-            OutlinedButton(onPressed: () {
-              final a = int.tryParse(addAyahCtl.text);
-              if (a != null && a >= 1 && a <= n) m.addAt(q.ayahText(surah, a));
-            }, child: const Text('+ أضف')),
+  // ── اللوحات السفلية (المعاينة ظاهرة فوقها) ──
+  void _sheet(Widget Function() panel) => showModalBottomSheet(
+        context: context,
+        barrierColor: Colors.black26,
+        backgroundColor: const Color(0xFF1C1C1C),
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.42),
+        builder: (_) => ValueListenableBuilder(valueListenable: ui0, builder: (_, _, _) => panel()),
+      );
+
+  Widget _pad(List<Widget> c) => ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 16), children: c);
+  Widget _wrap(List<Widget> c) => Wrap(spacing: 8, runSpacing: 8, children: c);
+
+  Widget _slider(String label, double v, double lo, double hi, void Function(double) on, {int div = 20}) => Row(children: [
+        SizedBox(width: 104, child: Text(label, style: const TextStyle(fontSize: 13))),
+        Expanded(child: Slider(value: v.clamp(lo, hi), min: lo, max: hi, divisions: div, onChanged: (x) => refresh(() => on(x)))),
+      ]);
+
+  void _editTextSheet() {
+    final g = m.sel;
+    if (g == null) return;
+    final ctl = TextEditingController(text: g.text);
+    m.checkpoint();
+    _sheet(() => _pad([
+          const Text('نص المقطع'),
+          TextField(controller: ctl, maxLines: 3, autofocus: true, style: const TextStyle(fontSize: 18), onChanged: (v) {
+            g.text = v.trim();
+            m.changed();
+          }),
+        ]));
+  }
+
+  void _splitSheet() {
+    final g = m.sel;
+    if (g == null) return;
+    _sheet(() => _pad([
+          const Text('اختر الكلمة التي يبدأ بها الجزء الثاني (يبدأ من موضع المؤشر):'),
+          const SizedBox(height: 10),
+          _wrap([
+            for (final (i, w) in splitWords(g.text).indexed)
+              if (i > 0)
+                ActionChip(
+                  label: Text(w.replaceAll(marks, ''), style: const TextStyle(fontSize: 16)),
+                  onPressed: () {
+                    m.splitAt(i);
+                    Navigator.of(context).pop();
+                  },
+                ),
           ]),
         ]));
   }
 
-  Widget _cutTab() => ListenableBuilder(
-        listenable: m,
-        builder: (context, _) => _pad([
-          const Text('ظلّل جزءاً من الصوت: ضع المؤشر عند بدايته واضغط «بداية التظليل»، ثم عند نهايته واضغط «نهاية التظليل».',
-              style: TextStyle(fontSize: 13)),
-          const SizedBox(height: 8),
-          _wrap([
-            OutlinedButton(onPressed: m.markA, child: const Text('⟦ بداية التظليل')),
-            OutlinedButton(onPressed: m.markB, child: const Text('نهاية التظليل ⟧')),
-            FilledButton(
-              onPressed: m.selA != null && m.selB != null ? m.deleteSel : null,
-              child: Text(m.selA != null && m.selB != null ? '🗑 احذف المظلل (${(m.selB! - m.selA!).toStringAsFixed(1)} ث)' : '🗑 احذف المظلل'),
-            ),
-            if (m.selA != null || m.selB != null) TextButton(onPressed: m.clearSel, child: const Text('إلغاء التظليل')),
-          ]),
-          const Text('يُحذف الصوت المظلل ونصه، ويقفز التشغيل فوقه، ويُختصر الفيديو بقدره.', style: TextStyle(fontSize: 12)),
-          const Divider(),
-          _wrap([
-            OutlinedButton(onPressed: m.trimBefore, child: const Text('✂️ احذف ما قبل المؤشر')),
-            OutlinedButton(onPressed: m.trimAfter, child: const Text('احذف ما بعد المؤشر ✂️')),
-            if (m.hasEdits) TextButton(onPressed: m.resetTrim, child: const Text('استرجاع كل المحذوف')),
-          ]),
+  void _ayatSheet() {
+    final q = quran;
+    if (q == null) return;
+    final addCtl = TextEditingController(text: '1');
+    _sheet(() {
+      final n = q.ayat[surah - 1].length;
+      return _pad([
+        DropdownButton<int>(
+          isExpanded: true,
+          value: surah,
+          items: [for (var i = 1; i <= 114; i++) DropdownMenuItem(value: i, child: Text('$i. ${q.names[i - 1]}'))],
+          onChanged: (v) => refresh(() {
+            surah = v!;
+            from = 1;
+            to = q.ayat[v - 1].length.clamp(1, 5);
+          }),
+        ),
+        Row(children: [
+          Expanded(child: _numField('من آية', from, 1, n, (v) => refresh(() => from = v))),
+          const SizedBox(width: 8),
+          Expanded(child: _numField('إلى آية', to, from, n, (v) => refresh(() => to = v))),
+          const SizedBox(width: 8),
+          OutlinedButton(onPressed: _distribute, child: const Text('توزيع تقريبي')),
         ]),
-      );
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: TextField(controller: addCtl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'إضافة آية عند المؤشر (رقمها)'))),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: () {
+              final a = int.tryParse(addCtl.text);
+              if (a != null && a >= 1 && a <= n) m.addAt(q.ayahText(surah, a));
+            },
+            child: const Text('+ أضف'),
+          ),
+        ]),
+      ]);
+    });
+  }
 
   Widget _numField(String label, int v, int lo, int hi, void Function(int) on) => TextFormField(
         key: ValueKey('$label$v$surah'),
@@ -512,21 +624,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         },
       );
 
-  Widget _slider(String label, double v, double lo, double hi, void Function(double) on, {int div = 20}) => Row(children: [
-        SizedBox(width: 110, child: Text(label, style: const TextStyle(fontSize: 13))),
-        Expanded(child: Slider(value: v.clamp(lo, hi), min: lo, max: hi, divisions: div, label: v.toStringAsFixed(2), onChanged: (x) => setState(() => on(x)))),
-      ]);
-
-  Widget _bgTab() => _pad([
+  Widget _bgPanel() => _pad([
         SegmentedButton<bool>(
           segments: const [ButtonSegment(value: false, label: Text('خلفية واحدة')), ButtonSegment(value: true, label: Text('عدة خلفيات تتبدّل'))],
           selected: {look.manyBgs},
-          onSelectionChanged: (s) => setState(() {
+          onSelectionChanged: (s) => refresh(() {
             look.manyBgs = s.first;
             if (!look.manyBgs && bgs.length > 1) bgs.removeRange(1, bgs.length);
           }),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         _wrap([
           for (var i = 0; i < presets.length; i++)
             FilterChip(
@@ -534,30 +641,44 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               selected: bgs.any((b) => b.name == presets[i]),
               onSelected: (_) async {
                 final b = await _presetBg(i);
-                setState(() {
+                refresh(() {
                   final at = bgs.indexWhere((x) => x.name == b.name);
-                  if (!look.manyBgs) { bgs..clear()..add(b); } else if (at >= 0) { if (bgs.length > 1) bgs.removeAt(at); } else { bgs.add(b); }
+                  if (!look.manyBgs) {
+                    bgs
+                      ..clear()
+                      ..add(b);
+                  } else if (at >= 0) {
+                    if (bgs.length > 1) bgs.removeAt(at);
+                  } else {
+                    bgs.add(b);
+                  }
                 });
               },
             ),
-          ActionChip(avatar: const Icon(Icons.add_photo_alternate, size: 18), label: const Text('من المعرض'), onPressed: () async {
-            final files = look.manyBgs
-                ? await FilePicker.pickFiles(type: FileType.media)
-                : [?(await FilePicker.pickFile(type: FileType.media))];
-            final added = <Bg>[];
-            for (final f in files.where((f) => f.path != null)) {
-              final v = isVideo(f.path!);
-              added.add(Bg(f.path!, f.name, video: v, thumb: v ? await videoThumb(f.path!) : null));
-            }
-            setState(() { if (!look.manyBgs) bgs.clear(); bgs.addAll(look.manyBgs ? added : added.take(1)); });
-          }),
+          ActionChip(
+            avatar: const Icon(Icons.add_photo_alternate, size: 18),
+            label: const Text('من المعرض'),
+            onPressed: () async {
+              final files = look.manyBgs ? await FilePicker.pickFiles(type: FileType.media) : [?(await FilePicker.pickFile(type: FileType.media))];
+              final added = <Bg>[];
+              for (final f in files.where((f) => f.path != null)) {
+                final v = isVideo(f.path!);
+                added.add(Bg(f.path!, f.name, video: v, thumb: v ? await videoThumb(f.path!) : null));
+              }
+              refresh(() {
+                if (!look.manyBgs) bgs.clear();
+                bgs.addAll(look.manyBgs ? added : added.take(1));
+              });
+            },
+          ),
         ]),
         if (look.manyBgs && bgs.length > 1) ...[
+          const SizedBox(height: 6),
           Text('المختارة: ${bgs.map((b) => b.name).join('، ')}', style: const TextStyle(fontSize: 12)),
           DropdownButton<String>(value: look.bgChange, items: const [
             DropdownMenuItem(value: 'time', child: Text('تتبدّل كل عدد من الثواني')),
             DropdownMenuItem(value: 'segment', child: Text('تتبدّل مع كل مقطع')),
-          ], onChanged: (v) => setState(() => look.bgChange = v!)),
+          ], onChanged: (v) => refresh(() => look.bgChange = v!)),
           if (look.bgChange == 'time') _slider('كل ${look.bgEvery.round()} ث', look.bgEvery, 3, 30, (x) => look.bgEvery = x, div: 27),
           DropdownButton<String>(value: look.transition, items: const [
             DropdownMenuItem(value: 'fade', child: Text('انتقال: تلاشٍ')),
@@ -565,14 +686,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             DropdownMenuItem(value: 'slideright', child: Text('انتقال: انزلاق')),
             DropdownMenuItem(value: 'circleopen', child: Text('انتقال: دائرة')),
             DropdownMenuItem(value: 'none', child: Text('بلا انتقال')),
-          ], onChanged: (v) => setState(() => look.transition = v!)),
+          ], onChanged: (v) => refresh(() => look.transition = v!)),
         ],
         _slider('تعتيم', look.dim, 0, 0.8, (x) => look.dim = x, div: 16),
         _slider('تضبيب', look.blur, 0, 20, (x) => look.blur = x),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('تقريب بطيء للصور'), value: look.zoom, onChanged: (v) => setState(() => look.zoom = v)),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('تقريب بطيء للصور (يبطئ التصدير)'), value: look.zoom,
+            onChanged: (v) => refresh(() => look.zoom = v)),
       ]);
 
-  Widget _textTab() => _pad([
+  Widget _textPanel() => _pad([
         _slider('حجم الخط', look.fontSize, 30, 120, (x) => look.fontSize = x, div: 90),
         _slider('الموضع', look.textY, 0.15, 0.9, (x) => look.textY = x, div: 75),
         _slider('عرض السطر', look.width, 0.5, 0.95, (x) => look.width = x, div: 45),
@@ -582,30 +704,32 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         SegmentedButton<String>(
           segments: const [ButtonSegment(value: 'right', label: Text('يمين')), ButtonSegment(value: 'center', label: Text('توسيط')), ButtonSegment(value: 'left', label: Text('يسار'))],
           selected: {look.align},
-          onSelectionChanged: (s) => setState(() => look.align = s.first),
+          onSelectionChanged: (s) => refresh(() => look.align = s.first),
         ),
         const SizedBox(height: 8),
-        Row(children: [const Text('لون النص  '), for (final c in swatches) _swatch(c, look.color, (x) => look.color = x)]),
-        const Divider(),
-        DropdownButton<String>(value: look.headerMode, items: const [
-          DropdownMenuItem(value: 'mushaf', child: Text('الترويسة: إطار المصحف وبسملة مزخرفة')),
-          DropdownMenuItem(value: 'basmala', child: Text('الترويسة: بسملة مزخرفة')),
-          DropdownMenuItem(value: 'plain', child: Text('الترويسة: نص عادي')),
-        ], onChanged: (v) => setState(() => look.headerMode = v!)),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('اسم السورة'), value: look.showName, onChanged: (v) => setState(() => look.showName = v)),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('البسملة'), value: look.showBasmala, onChanged: (v) => setState(() => look.showBasmala = v)),
-        _slider('حجم الترويسة', look.headerSize, 24, 90, (x) => look.headerSize = x, div: 66),
-        _slider('موضع الترويسة', look.headerY, 0.03, 0.4, (x) => look.headerY = x, div: 37),
-        Row(children: [const Text('لون الترويسة  '), for (final c in swatches) _swatch(c, look.headerColor, (x) => look.headerColor = x)]),
+        Row(children: [const Text('اللون  '), for (final c in swatches) _swatch(c, look.color, (x) => look.color = x)]),
+      ]);
+
+  Widget _headerPanel() => _pad([
+        DropdownButton<String>(isExpanded: true, value: look.headerMode, items: const [
+          DropdownMenuItem(value: 'mushaf', child: Text('إطار المصحف وبسملة مزخرفة')),
+          DropdownMenuItem(value: 'basmala', child: Text('بسملة مزخرفة')),
+          DropdownMenuItem(value: 'plain', child: Text('نص عادي')),
+        ], onChanged: (v) => refresh(() => look.headerMode = v!)),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('اسم السورة'), value: look.showName, onChanged: (v) => refresh(() => look.showName = v)),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('البسملة'), value: look.showBasmala, onChanged: (v) => refresh(() => look.showBasmala = v)),
+        _slider('الحجم', look.headerSize, 24, 90, (x) => look.headerSize = x, div: 66),
+        _slider('الموضع', look.headerY, 0.03, 0.4, (x) => look.headerY = x, div: 37),
+        Row(children: [const Text('اللون  '), for (final c in swatches) _swatch(c, look.headerColor, (x) => look.headerColor = x)]),
       ]);
 
   Widget _swatch(Color c, Color current, void Function(Color) on) => GestureDetector(
-        onTap: () => setState(() => on(c)),
+        onTap: () => refresh(() => on(c)),
         child: Container(
           margin: const EdgeInsets.all(4),
           width: 30,
           height: 30,
-          decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: current == c ? Colors.tealAccent : Colors.grey, width: current == c ? 3 : 1)),
+          decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: current == c ? accent : Colors.grey, width: current == c ? 3 : 1)),
         ),
       );
 }
