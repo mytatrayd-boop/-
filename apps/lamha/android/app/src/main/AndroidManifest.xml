@@ -8,7 +8,7 @@
     <!-- إشعار شاشة القفل الاختياري، أندرويد ١٣+ (DECISIONS ١٣). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="lamha"
+        android:label="@string/widget_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:supportsRtl="true">
