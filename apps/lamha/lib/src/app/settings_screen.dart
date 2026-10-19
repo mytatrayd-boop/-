@@ -63,16 +63,17 @@ class _Body extends ConsumerWidget {
           children: [
             Text(l.opacityLabel, style: textTheme.titleMedium),
             const Spacer(),
-            Text(l.percent(arabicDigits(s.opacity))),
+            // الشريط يعرض الشفافية: ١٠٠٪ = خلفية شفافة تماماً (opacity = 0).
+            Text(l.percent(arabicDigits(100 - s.opacity))),
           ],
         ),
         Slider(
           key: const Key('opacity-slider'),
-          value: s.opacity.toDouble(),
+          value: (100 - s.opacity).toDouble(),
           max: 100,
           divisions: 100,
-          onChanged: (v) => c.setOpacity(v.round(), commit: false),
-          onChangeEnd: (v) => c.setOpacity(v.round()),
+          onChanged: (v) => c.setOpacity(100 - v.round(), commit: false),
+          onChangeEnd: (v) => c.setOpacity(100 - v.round()),
         ),
         if (defaultTargetPlatform == TargetPlatform.iOS)
           OutlinedButton.icon(

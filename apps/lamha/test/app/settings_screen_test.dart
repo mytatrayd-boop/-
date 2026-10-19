@@ -106,12 +106,16 @@ void main() {
     final bridge = await pumpApp(tester);
     expect(bgAlpha(tester), closeTo(0.92, 0.01));
     final slider = find.byKey(const Key('opacity-slider'));
-    // من اليمين لليسار: القيمة الصغرى في الطرف الأيمن.
+    // الشريط يعرض الشفافية، ومن اليمين لليسار القيمة الكبرى (شفافية ١٠٠٪) في الطرف الأيسر.
     final r = tester.getRect(slider);
-    await tester.tapAt(Offset(r.right - 2, r.center.dy));
+    await tester.tapAt(Offset(r.left + 2, r.center.dy));
     await tester.pumpAndSettle();
     expect(bgAlpha(tester), closeTo(0, 0.02));
     expect(bridge.last['opacity'], lessThan(5));
+    await tester.tapAt(Offset(r.right - 2, r.center.dy));
+    await tester.pumpAndSettle();
+    expect(bgAlpha(tester), closeTo(0.92, 0.02));
+    expect(bridge.last['opacity'], greaterThan(95));
     await tester.tapAt(r.center);
     await tester.pumpAndSettle();
     expect(bgAlpha(tester), closeTo(0.46, 0.03));
