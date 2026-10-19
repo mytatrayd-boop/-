@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">Lamha</string>
+    <string name="widget_description">Clock, next prayer, qibla, deposit and season at a glance</string>
+    <string name="widget_setup">Open Lamha to set up the widget</string>
+    <string name="tile_prayer">Next prayer</string>
+    <string name="tile_qibla">Qibla</string>
+    <string name="tile_deposit">Next deposit</string>
+    <string name="tile_season">Season</string>
+    <string name="tile_trad_season">Traditional season</string>
+    <string name="hijri_date">%1$s AH</string>
+    <string name="gregorian_date">%1$s</string>
+    <string name="city_weather">📍 %1$s · ⛅ --°</string>
+    <string name="remaining_to_next">%1$s %2$s</string>
+    <string name="value_with_suffix">%1$s · %2$s</string>
+    <string name="countdown_format">%s left</string>
+    <string name="am">AM</string>
+    <string name="pm">PM</string>
+</resources>

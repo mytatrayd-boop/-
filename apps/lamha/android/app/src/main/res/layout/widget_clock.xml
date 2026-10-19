@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ساعة النظام: تتحدث كل دقيقة بلا تحديث للودجت. ١٢ ساعة دائماً كما في المعاينة. -->
+<TextClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:format12Hour="h:mm"
+    android:format24Hour="h:mm"
+    android:includeFontPadding="false"
+    android:maxLines="1"
+    android:textColor="#FFF4EFE6"
+    android:textSize="44sp"
+    android:textStyle="bold" />

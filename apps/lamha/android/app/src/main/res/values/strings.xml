@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نصوص ودجت أندرويد. العربية هي الافتراضية (التطبيق عربي فقط)، والإنجليزية في values-en. -->
+<resources>
+    <string name="widget_name">لمحة</string>
+    <string name="widget_description">الساعة والصلاة القادمة والقبلة والإيداع والموسم في لمحة</string>
+    <string name="widget_setup">افتح لمحة لإعداد الودجت</string>
+    <string name="tile_prayer">الصلاة القادمة</string>
+    <string name="tile_qibla">القبلة</string>
+    <string name="tile_deposit">الإيداع القادم</string>
+    <string name="tile_season">الفصل</string>
+    <string name="tile_trad_season">الموسم</string>
+    <string name="hijri_date">%1$s هـ</string>
+    <string name="gregorian_date">%1$s م</string>
+    <string name="city_weather">📍 %1$s · ⛅ ‎--°</string>
+    <string name="remaining_to_next">%1$s %2$s</string>
+    <string name="value_with_suffix">%1$s · %2$s</string>
+    <!-- صيغة Chronometer للعد التنازلي؛ %s هو الوقت الباقي. -->
+    <string name="countdown_format">باقي %s</string>
+    <string name="am">ص</string>
+    <string name="pm">م</string>
+</resources>

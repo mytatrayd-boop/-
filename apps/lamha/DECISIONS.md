@@ -41,7 +41,7 @@
 
 ## ٨. مكتبات وبيانات الميزة ٢ (شاشة الإعدادات)
 - **`flutter_riverpod`** للحالة (ARCHITECTURE)، و**`shared_preferences`** للإعدادات (نص JSON بمفتاح `settings`).
-- **`home_widget`**: الجدول نصاً JSON بمفتاح `schedule`، وApp Group آيفون `group.sa.lamha.shared` (`ios/Runner/Runner.entitlements`)، وتحديث الودجت باسم `LamhaWidget` (أندرويد: `sa.lamha.lamha.LamhaWidget`). الطبقة خلف واجهة `WidgetBridge` لتُستبدل في الاختبارات.
+- **`home_widget`**: الجدول نصاً JSON بمفتاح `schedule`، وApp Group آيفون `group.sa.lamha.shared` (`ios/Runner/Runner.entitlements`)، وتحديث الودجت باسم `LamhaWidget` (أندرويد: المستقبل `sa.lamha.lamha.widget.LamhaWidgetReceiver` عبر `qualifiedAndroidName`، الميزة ٣). الطبقة خلف واجهة `WidgetBridge` لتُستبدل في الاختبارات.
 - **`geolocator`**: قراءة واحدة بدقة منخفضة (`ACCESS_COARSE_LOCATION`، و`NSLocationWhenInUseUsageDescription` بالعربية). الاسم من أقرب مدينة في القائمة، والإحداثيات من الموقع الفعلي.
 - **`image_picker`**: لاختيار لقطة الخلفية في آيفون (لا بديل في Flutter نفسه للوصول لمعرض الصور). تُحفظ نسخة منها في حاوية App Group (`group.sa.lamha.shared`) عبر قناة `sa.lamha/app_group` في AppDelegate تعيد مسار containerURL، والجدول يحمل اسم الملف فقط (`background`) لتقرأه الودجت من حاويتها. القص في ميزة لاحقة.
 - **`intl`** وملفات ARB (`lib/l10n/app_ar.arb` و`app_en.arb`) لنصوص الواجهة.
@@ -53,3 +53,12 @@
 - **المواسم:** `assets/seasons.json` من «دليل الطوالع والنجوم» (أ.د عبدالله المسند، almisnid.com)، ١٢ موسماً، `approval: owner_provided`. الأوصاف القصيرة مسودة (`descriptionApproval: draft`)، ومنها أوصاف جديدة محايدة للحميمين والتويبع والمرزم والكليبين.
 - **العشاء في رمضان (أم القرى):** ١٢٠ دقيقة بعد المغرب بدل ٩٠، ورمضان من جدول أم القرى (الشهر ٩).
 - **معاشات المتقاعدين (`retirement`):** يوم ١ بقاعدة الضمان، غير مفعّل افتراضياً (`defaultEnabled: false`)، والمرجع النهائي إعلان التأمينات الاجتماعية.
+
+## ١٠. ودجت أندرويد الكبيرة (الميزة ٣)
+- **Glance 1.2.0** (نفس ما تعتمده `home_widget` 0.10.0)، مع `HomeWidgetGlanceWidgetReceiver` و`HomeWidgetGlanceStateDefinition` من الحزمة نفسها، فلا قراءة مباشرة لملف SharedPreferences. أُضيف Compose compiler (`org.jetbrains.kotlin.plugin.compose` 2.4.0، بنسخة Kotlin) وطُبّق Kotlin صراحة في `app/build.gradle.kts` ليأتي قبله؛ Flutter يطبع تحذيراً عن ذلك فقط.
+- **الساعة:** `TextClock` عبر `AndroidRemoteViews` (بصيغة `h:mm` دائماً)، و«ص/م» نص من الودجت يتجدد بتحديث الظهر ومنتصف الليل. **العد التنازلي:** `Chronometer` تنازلي حتى وقت الصلاة. السبب: كلاهما يتحدث من النظام بلا أي تحديث للودجت، وهو الأبسط الصحيح (ARCHITECTURE). أرقامهما تتبع لغة الجهاز، فقد تظهر لاتينية على جهاز بالإنجليزية.
+- **التحديث:** `HomeWidgetScheduler` من home_widget بعد كل تحديث: عند كل صلاة ومنتصف الليل والظهر بتوقيت المدينة، من الجدول. `updatePeriodMillis = 0`.
+- **أذونات جديدة:** `RECEIVE_BOOT_COMPLETED` فقط، لإعادة المنبهات بعد إعادة التشغيل (`HomeWidgetScheduledUpdateReceiver`). لا `SCHEDULE_EXACT_ALARM`: المنبهات غير دقيقة، وتأخير دقائق مقبول لأن العدّاد نفسه من النظام.
+- **الاتجاه:** التطبيق بلا `supportsRtl`، فالتخطيط يُبنى بالترتيب المرئي (أول مربع أقصى اليمين) ليبقى من اليمين لليسار أياً كانت لغة الجهاز. النصوص من `values/strings.xml` (عربي) و`values-en`، والودجت تستخدم العربية دائماً مثل التطبيق.
+- **الشفافية:** ألفا الخلفية = opacity ÷ ١٠٠؛ وتحت ٤٠ تباين أعلى (نص أبيض ومربعات داكنة) لأن Glance لا يدعم ظل النص.
+- **الخط:** خط النظام؛ Glance لا يحمّل Tajawal من الأصول.

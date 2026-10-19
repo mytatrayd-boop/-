@@ -1,5 +1,8 @@
 plugins {
     id("com.android.application")
+    // Kotlin صريحاً ليُطبَّق Compose compiler (لـ Glance) بعده بترتيب ثابت.
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -29,10 +32,15 @@ android {
         versionName = flutter.versionName
     }
 
+    buildFeatures {
+        compose = true
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
+            // للاختبار فقط: APK الـ CI موقّع بمفتاح debug، وليس للمتجر.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -46,4 +54,10 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // نفس نسخة Glance التي تعتمدها home_widget 0.10.0 (api في android/build.gradle للحزمة).
+    implementation("androidx.glance:glance-appwidget:1.2.0")
+    testImplementation("junit:junit:4.13.2")
 }

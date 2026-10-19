@@ -13,6 +13,9 @@ const appGroupId = 'group.sa.lamha.shared';
 /// اسم الودجت الأصلية في أندرويد وآيفون.
 const widgetName = 'LamhaWidget';
 
+/// مستقبل الودجت في أندرويد بالاسم الكامل (android/.../widget/LamhaWidgetReceiver.kt).
+const androidWidgetReceiver = 'sa.lamha.lamha.widget.LamhaWidgetReceiver';
+
 /// مفتاح الجدول (نص JSON) في التخزين المشترك.
 const scheduleKey = 'schedule';
 
@@ -37,7 +40,7 @@ class HomeWidgetBridge implements WidgetBridge {
   @override
   Future<void> requestUpdate() async {
     await HomeWidget.updateWidget(
-      androidName: widgetName,
+      qualifiedAndroidName: androidWidgetReceiver,
       iOSName: widgetName,
     );
   }
