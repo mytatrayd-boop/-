@@ -8,6 +8,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:gravity="right|center_vertical"
+        android:textDirection="rtl"
         android:text="@string/widget_name"
         android:textColor="#FFD6AA5C"
         android:textSize="28sp"
