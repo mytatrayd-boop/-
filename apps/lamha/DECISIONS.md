@@ -89,7 +89,6 @@
 - **شاشة القفل في أندرويد = إشعار ثابت اختياري** (`LamhaNotification`): مطفأ افتراضياً (`lockNotification`). قناة IMPORTANCE_LOW بلا صوت ولا اهتزاز، ongoing، VISIBILITY_PUBLIC، عدّاد تنازلي `setUsesChronometer` + `setChronometerCountDown` + `setWhen`. يُحدَّث مع تحديثات الودجت ويُلغى عند الإطفاء. **إذن POST_NOTIFICATIONS** (أندرويد ١٣+) يُطلب بعد رسالة عربية تشرح السبب، عبر قناة `sa.lamha/android` في MainActivity (بلا حزمة جديدة). آيفون: لا شيء هنا.
 
 ## ١٤. الشعار والأيقونة (قرار المالك)
-اعتمد المالك الشعار في `assets/branding/logo.png`. الأيقونة هي الرمز المربع من الشعار بلا كلمة «لمحة» (`assets/branding/icon_1024.png`).
-- أندرويد: أيقونة عادية، وأيقونة متكيفة (adaptive) خلفيتها ‎#0F1217.
-- آيفون: كل مقاسات AppIcon.
-عند تغيير الشعار يُعاد توليد المقاسات من `icon_1024.png`.
+- الشعار الكامل `assets/branding/logo.png` يبقى للهوية (المتجر والعرض).
+- الأيقونة: اختار المالك الاقتراح «ج» من `mockups/app_icon_options.png` (هلال وساعة بالذهبي ‎#D6AA5C على ‎#12161D)، لأن رمز الشعار مزدحم بحجم الأيقونة الصغير. المصدر `assets/branding/icon_1024.png`.
+- أندرويد: أيقونة عادية ومتكيفة (adaptive) بخلفية ‎#12161D. وآيفون: كل مقاسات AppIcon.
