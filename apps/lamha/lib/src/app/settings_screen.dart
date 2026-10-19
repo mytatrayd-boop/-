@@ -29,12 +29,15 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(l.loadError, style: Theme.of(context).textTheme.titleMedium),
+                Text(l.loadError,
+                    textAlign: TextAlign.right, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
                 // تفاصيل الخطأ ليرسلها المالك عند التجربة.
                 SelectableText('$e',
                     textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.right,
                     style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: 16),
                 FilledButton(

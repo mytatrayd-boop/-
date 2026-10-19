@@ -122,10 +122,67 @@ class LamhaLogicTest {
     }
 
     @Test
-    fun fitTextSizeShrinksOnlyWhenTooWide() {
-        assertEquals(44f, LamhaLogic.fitTextSize(44f, 120f, 150f, 28f), 0.001f)
-        assertEquals(33f, LamhaLogic.fitTextSize(44f, 200f, 150f, 28f), 0.001f)
-        assertEquals(28f, LamhaLogic.fitTextSize(44f, 400f, 150f, 28f), 0.001f)
-        assertEquals(44f, LamhaLogic.fitTextSize(44f, 0f, 150f, 28f), 0.001f)
+    fun clockShrinksOnlyOnNarrowWidgets() {
+        assertEquals(42f, LamhaLogic.clockSizeSp(0), 0.001f)
+        assertEquals(42f, LamhaLogic.clockSizeSp(250), 0.001f)
+        assertEquals(34f, LamhaLogic.clockSizeSp(180), 0.001f)
+    }
+
+    @Test
+    fun themeUsesSystemColorsOnlyOnAndroid12WithColors() {
+        val gold = 0xFFD6AA5C.toInt() to 0xFF2A241D.toInt()
+        val sys = 0xFF112233.toInt() to 0xFF000011.toInt()
+        assertEquals(sys, LamhaLogic.themeColors("system", gold.first, gold.second, 31, sys.first, sys.second))
+        // أقدم من ١٢، أو بلا ألوان: الذهبي من الجدول.
+        assertEquals(gold, LamhaLogic.themeColors("system", gold.first, gold.second, 30, sys.first, sys.second))
+        assertEquals(gold, LamhaLogic.themeColors("system", gold.first, gold.second, 33, null, null))
+        // سمة عادية: ألوان الجدول ولو توفرت ألوان النظام.
+        val blue = 0xFF7FB2E5.toInt() to 0xFF1C2430.toInt()
+        assertEquals(blue, LamhaLogic.themeColors("blue", blue.first, blue.second, 34, sys.first, sys.second))
+        assertEquals(0, LamhaLogic.backgroundAlpha255(0))
+        assertEquals(204, LamhaLogic.backgroundAlpha255(80))
+        assertEquals(255, LamhaLogic.backgroundAlpha255(140))
+    }
+
+    @Test
+    fun weatherAgeAndNewestForSamePlace() {
+        val now = t("2026-10-19T12:00:00.000Z")
+        val icons = mapOf(0 to "☀️", 3 to "☁️")
+        val fresh = LamhaLogic.Weather(31.4, 0, now - 20 * 60_000L, 24.69, 46.72)
+        assertEquals("☀️ ٣١°", LamhaLogic.weatherText(fresh, now, 180, icons))
+        // ٣ ساعات بالضبط مقبولة، وبعدها «--°».
+        assertEquals("☀️ ٣١°", LamhaLogic.weatherText(fresh.copy(fetchedAtMillis = now - 180 * 60_000L), now, 180, icons))
+        assertNull(LamhaLogic.weatherText(fresh.copy(fetchedAtMillis = now - 181 * 60_000L), now, 180, icons))
+        assertNull(LamhaLogic.weatherText(null, now, 180, icons))
+        assertEquals("🌡️ -٣°", LamhaLogic.weatherText(fresh.copy(temp = -2.5, code = 99), now, 180, icons))
+        assertEquals("٠°", LamhaLogic.temperatureText(-0.4))
+
+        val older = fresh.copy(temp = 20.0, fetchedAtMillis = now - 60 * 60_000L)
+        val otherCity = fresh.copy(temp = 10.0, fetchedAtMillis = now, latitude = 18.2)
+        assertEquals(fresh, LamhaLogic.newestWeather(older, fresh, 24.69, 46.72))
+        assertEquals(fresh, LamhaLogic.newestWeather(fresh, otherCity, 24.69, 46.72))
+        assertNull(LamhaLogic.newestWeather(otherCity, null, 24.69, 46.72))
+    }
+
+    @Test
+    fun notificationLines() {
+        val fajr = LamhaLogic.Prayer("fajr", "الفجر", 0L, "٤:٣٥ ص")
+        val (title, text) = LamhaLogic.notificationLines(
+            fajr, "٣٢٤°", "راتب أكتوبر", "بعد ٨ أيام",
+            "%1\$s · %2\$s", "القبلة %1\$s", "%1\$s %2\$s", "%1\$s · %2\$s",
+        )
+        assertEquals("الفجر · ٤:٣٥ ص", title)
+        assertEquals("القبلة ٣٢٤° · راتب أكتوبر بعد ٨ أيام", text)
+        val (t2, x2) = LamhaLogic.notificationLines(
+            LamhaLogic.Prayer("fajr", "الفجر", 0L), "٣٢٤°", null, null,
+            "%1\$s · %2\$s", "القبلة %1\$s", "%1\$s %2\$s", "%1\$s · %2\$s",
+        )
+        assertEquals("الفجر", t2)
+        assertEquals("القبلة ٣٢٤°", x2)
+    }
+
+    @Test
+    fun arabicDigits() {
+        assertEquals("٢٠٢٦-١٠", LamhaLogic.arabicDigits("2026-10"))
     }
 }

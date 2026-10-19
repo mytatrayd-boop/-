@@ -145,6 +145,7 @@ class WidgetPreview extends StatelessWidget {
               children: [
                 Text(arabicClock(local),
                     key: const Key('preview-clock'),
+                    textAlign: TextAlign.right,
                     style: const TextStyle(
                         fontSize: clockSize,
                         height: 1,
@@ -152,6 +153,7 @@ class WidgetPreview extends StatelessWidget {
                         color: _text)),
                 const SizedBox(width: 4),
                 Text(amPm(local),
+                    textAlign: TextAlign.right,
                     style: const TextStyle(
                         fontSize: amPmSize,
                         fontWeight: FontWeight.w700,
@@ -161,6 +163,7 @@ class WidgetPreview extends StatelessWidget {
             const SizedBox(height: 4),
             Text(day['weekday'] as String,
                 key: const Key('preview-weekday'),
+                textAlign: TextAlign.right,
                 style: TextStyle(
                     fontSize: weekdaySize,
                     fontWeight: FontWeight.w700,
@@ -288,6 +291,7 @@ class WidgetPreview extends StatelessWidget {
       Text(
         s,
         key: key,
+        textAlign: TextAlign.right,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(fontSize: size, fontWeight: w, color: c, height: 1.4),
@@ -443,17 +447,19 @@ class _Tile extends StatelessWidget {
                   Expanded(
                     child: Text(title,
                         key: const Key('tile-title'),
+                        textAlign: TextAlign.right,
                         style: const TextStyle(
                             fontSize: tileTitleSize,
                             fontWeight: FontWeight.w700,
                             color: _dim)),
                   ),
-                  Text(emoji, style: const TextStyle(fontSize: 16, height: 1)),
+                  Text(emoji, textAlign: TextAlign.right, style: const TextStyle(fontSize: 16, height: 1)),
                 ],
               ),
               const SizedBox(height: tileGap),
               Text(value,
                   key: const Key('tile-value'),
+                  textAlign: TextAlign.right,
                   style: const TextStyle(
                       fontSize: tileValueSize,
                       fontWeight: FontWeight.w700,
@@ -463,6 +469,7 @@ class _Tile extends StatelessWidget {
                 const SizedBox(height: tileGap),
                 Text(s.text,
                     key: Key('tile-sub-$i'),
+                    textAlign: TextAlign.right,
                     maxLines: s.lines,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

@@ -82,13 +82,13 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                 Text(
                   l.qiblaFromNorth(l.degrees(arabicDigits(qibla.round()))),
                   key: const Key('qibla-angle'),
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.right,
                   style: textTheme.headlineSmall
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(
                   '${q!['direction']} · ${app!.settings.cityName}',
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.right,
                   style: textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 24),
@@ -107,7 +107,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(l.compassHint,
-                      textAlign: TextAlign.center, style: textTheme.bodyMedium),
+                      textAlign: TextAlign.right, style: textTheme.bodyMedium),
                   if (needsCalibration(_last?.accuracy)) ...[
                     const SizedBox(height: 12),
                     _Notice(key: const Key('compass-calibrate'), text: l.compassCalibrate),
@@ -116,6 +116,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                   _Notice(key: const Key('compass-unavailable'), text: l.compassUnavailable)
                 else
                   Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const CircularProgressIndicator(),
                       const SizedBox(height: 12),
@@ -141,7 +142,7 @@ class _Notice extends StatelessWidget {
             children: [
               const Icon(Icons.info_outline),
               const SizedBox(width: 12),
-              Expanded(child: Text(text)),
+              Expanded(child: Text(text, textAlign: TextAlign.right)),
             ],
           ),
         ),
