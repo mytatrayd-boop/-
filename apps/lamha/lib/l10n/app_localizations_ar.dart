@@ -16,6 +16,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loadError => 'تعذّر تحميل الإعدادات';
 
   @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
   String get opacityLabel => 'الشفافية';
 
   @override

@@ -116,8 +116,8 @@ class SettingsController extends AsyncNotifier<AppState> {
     try {
       await bridge.saveSchedule(jsonEncode(s.schedule));
       await bridge.requestUpdate();
-    } on Exception catch (e) {
-      // الودجت الأصلية لم تُكتب بعد؛ لا يوقف ذلك التطبيق.
+    } catch (e) {
+      // فشل الحفظ للودجت لا يوقف التطبيق.
       debugPrint('home_widget: $e');
     }
   }

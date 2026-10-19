@@ -21,7 +21,28 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(l.appTitle)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(l.loadError)),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(l.loadError, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                // تفاصيل الخطأ ليرسلها المالك عند التجربة.
+                SelectableText('$e',
+                    textDirection: TextDirection.ltr,
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 16),
+                FilledButton(
+                  key: const Key('retry-button'),
+                  onPressed: () => ref.invalidate(settingsControllerProvider),
+                  child: Text(l.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (s) => _Body(state: s),
       ),
     );

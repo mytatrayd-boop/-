@@ -5,7 +5,8 @@ import 'l10n/app_localizations.dart';
 import 'src/app/settings_screen.dart';
 
 void main() {
-  runApp(const ProviderScope(child: LamhaApp()));
+  // بلا إعادة محاولة تلقائية: الخطأ يظهر للمستخدم بدل دوّامة تحميل لا تنتهي.
+  runApp(ProviderScope(retry: (_, _) => null, child: const LamhaApp()));
 }
 
 /// العربية فقط في النسخة الأولى (SPEC ٨)، ومن اليمين لليسار.

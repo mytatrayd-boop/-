@@ -16,6 +16,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadError => 'Could not load settings';
 
   @override
+  String get retry => 'Retry';
+
+  @override
   String get opacityLabel => 'Transparency';
 
   @override

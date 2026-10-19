@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'تعذّر تحميل الإعدادات'**
   String get loadError;
 
+  /// زر إعادة التحميل بعد الخطأ
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get retry;
+
   /// عنوان شريط الشفافية (SPEC ٢)
   ///
   /// In ar, this message translates to:

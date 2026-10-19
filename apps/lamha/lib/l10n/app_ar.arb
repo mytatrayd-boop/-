@@ -3,6 +3,8 @@
   "appTitle": "لمحة",
   "@appTitle": {"description": "اسم التطبيق"},
   "loadError": "تعذّر تحميل الإعدادات",
+  "retry": "إعادة المحاولة",
+  "@retry": {"description": "زر إعادة التحميل بعد الخطأ"},
   "@loadError": {"description": "خطأ عند فشل تحميل البيانات"},
   "opacityLabel": "الشفافية",
   "@opacityLabel": {"description": "عنوان شريط الشفافية (SPEC ٢)"},

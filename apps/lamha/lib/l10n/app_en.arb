@@ -1,6 +1,7 @@
 {
   "@@locale": "en",
   "appTitle": "Lamha",
+  "retry": "Retry",
   "loadError": "Could not load settings",
   "opacityLabel": "Transparency",
   "percent": "{value}%",
