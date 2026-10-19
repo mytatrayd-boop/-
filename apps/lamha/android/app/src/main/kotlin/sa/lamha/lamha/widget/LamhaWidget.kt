@@ -190,7 +190,7 @@ class LamhaWidget : GlanceAppWidget() {
                         ),
                     )
                     Spacer(GlanceModifier.width(3.dp))
-                    AndroidRemoteViews(clockViews(ctx, big, p.text))
+                    AndroidRemoteViews(clockViews(ctx, big, p.text, day.timeZone))
                 }
                 Spacer(GlanceModifier.height(4.dp))
                 Text(
@@ -205,8 +205,10 @@ class LamhaWidget : GlanceAppWidget() {
         }
     }
 
-    private fun clockViews(ctx: Context, big: Boolean, color: Color): RemoteViews =
+    /// الساعة بتوقيت المدينة (DECISIONS ٨) لتطابق «ص/م» واليوم، ولو اختلف توقيت الجهاز.
+    private fun clockViews(ctx: Context, big: Boolean, color: Color, timeZone: String): RemoteViews =
         RemoteViews(ctx.packageName, R.layout.widget_clock).apply {
+            setString(R.id.clock, "setTimeZone", timeZone)
             setTextViewTextSize(R.id.clock, TypedValue.COMPLEX_UNIT_SP, if (big) 60f else 44f)
             setTextColor(R.id.clock, color.toArgbInt())
         }
