@@ -14,6 +14,7 @@ import 'asr.dart';
 import 'editor.dart';
 import 'look.dart';
 import 'media.dart';
+import 'preview.dart';
 import 'quran.dart';
 import 'sync.dart';
 
@@ -41,11 +42,11 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
+class _HomeState extends State<Home> with TickerProviderStateMixin {
   final m = EditorModel();
   final look = Look();
   final player = AudioPlayer();
-  late final TabController tabs = TabController(length: 4, vsync: this);
+  late final TabController tabs = TabController(length: 5, vsync: this);
   Quran? quran;
   Asr? asr;
   String? audioPath;
@@ -63,19 +64,22 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     super.initState();
     rootBundle.loadString('assets/quran.json').then((s) => setState(() => quran = Quran.fromJson(s)));
     _presetBg(0).then((b) => setState(() => bgs.add(b)));
-    player.positionStream.listen((p) {
+    // كل إطار أثناء التشغيل (أنعم من positionStream الذي يأتي كل 200 ملي ثانية)
+    createTicker((_) {
       if (!player.playing) return;
-      final t = p.inMilliseconds / 1000;
+      final t = player.position.inMilliseconds / 1000;
       if (t >= m.trimEnd) {
         player.pause();
         if (m.tapIndex != null) m.tapStop(t);
       }
+      final skip = m.skipCut(t);
+      if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
       m.playhead = t;
       if (!mounted) return;
       final w = MediaQuery.of(context).size.width;
       if (t > m.view + w / m.pps * 0.85 || t < m.view) m.view = (t - w / m.pps * 0.15).clamp(0, m.duration);
       m.changed();
-    });
+    }).start();
     player.playingStream.listen((_) => setState(() {}));
     m.addListener(_syncText);
   }
@@ -216,12 +220,11 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         audio: a,
         segs: list,
         texts: textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
-        bgs: look.manyBgs ? bgs : [bgs.first],
+        bgs: activeBgs,
         look: look,
         headerName: look.showName ? name : null,
         headerBasmala: look.showBasmala ? bas : null,
-        trimStart: m.trimStart,
-        trimEnd: end,
+        kept: keptRanges(m.trimStart, end, m.cuts),
         onProgress: (p) => setState(() => progress = p),
       );
       await Gal.putVideo(out, album: 'تلاوة');
@@ -274,59 +277,55 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           ),
         Directionality(textDirection: TextDirection.ltr, child: Timeline(m)),
         _toolbar(),
-        TabBar(controller: tabs, tabs: const [Tab(text: 'المقطع'), Tab(text: 'الآيات'), Tab(text: 'الخلفية'), Tab(text: 'النص')]),
+        TabBar(controller: tabs, tabs: const [Tab(text: 'المقطع'), Tab(text: 'قص الصوت'), Tab(text: 'الآيات'), Tab(text: 'الخلفية'), Tab(text: 'النص')]),
         SizedBox(
           height: 230,
-          child: TabBarView(controller: tabs, children: [_segTab(), _ayatTab(), _bgTab(), _textTab()]),
+          child: TabBarView(controller: tabs, children: [_segTab(), _cutTab(), _ayatTab(), _bgTab(), _textTab()]),
         ),
       ]);
 
-  Widget _preview() => AspectRatio(
-        aspectRatio: 9 / 16,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: ListenableBuilder(
-            listenable: m,
-            builder: (context, _) {
-              final q = quran;
-              final t = m.playhead;
-              final cur = m.valid.where((g) => t >= g.start && t <= g.end).toList();
-              final bg = bgs.isEmpty ? null : bgs[_bgIndexAt(t)];
-              String? text;
-              if (q != null && cur.isNotEmpty) text = textsForFont([cur.first.text], q.nextWord(surah, to)).first;
-              final (name, bas) = q?.header(surah) ?? ('', null);
-              return Stack(fit: StackFit.expand, children: [
-                if (bg != null)
-                  ImageFiltered(
-                    imageFilter: ui.ImageFilter.blur(sigmaX: look.blur / 4, sigmaY: look.blur / 4),
-                    child: Image.file(File(bg.preview), fit: BoxFit.cover),
-                  ),
-                Container(color: Colors.black.withValues(alpha: look.dim)),
-                FittedBox(
-                  child: SizedBox(
-                    width: vw,
-                    height: vh,
-                    child: CustomPaint(painter: _LayerPainter((c) {
-                      paintHeader(c, look.showName ? name : null, look.showBasmala ? bas : null, look);
-                      if (text != null) paintText(c, text, look);
-                    })),
-                  ),
-                ),
-              ]);
-            },
-          ),
-        ),
-      );
-
-  int _bgIndexAt(double t) {
-    if (!look.manyBgs || bgs.length < 2) return 0;
-    final pts = bgSchedule(bgs.length, m.trimEnd - m.trimStart, m.valid, look);
-    var k = 0;
-    for (var i = 0; i < pts.length; i++) {
-      if (pts[i] <= t - m.trimStart) k = i;
+  final images = <String, ui.Image>{};
+  bool _loadingImages = false;
+  Future<void> _loadImages() async {
+    if (_loadingImages) return;
+    _loadingImages = true;
+    for (final b in [...bgs]) {
+      if (!images.containsKey(b.preview)) images[b.preview] = await decodeImageFromList(await File(b.preview).readAsBytes());
     }
-    return k % bgs.length;
+    _loadingImages = false;
+    if (mounted) setState(() {});
   }
+
+  List<Bg> get activeBgs => look.manyBgs ? bgs : bgs.take(1).toList();
+
+  Composer composer() {
+    final q = quran!;
+    final (name, bas) = q.header(surah);
+    final list = m.valid;
+    return Composer(m, look, activeBgs, images, textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
+        look.showName ? name : null, look.showBasmala ? bas : null);
+  }
+
+  Widget _preview() => ListenableBuilder(
+        listenable: m,
+        builder: (context, _) {
+          if (quran == null) return const SizedBox();
+          if (activeBgs.any((b) => !images.containsKey(b.preview))) _loadImages();
+          return Stack(alignment: Alignment.bottomLeft, children: [
+            FrameView(composer(), m.playhead),
+            IconButton(
+              tooltip: 'ملء الشاشة',
+              icon: const Icon(Icons.fullscreen, color: Colors.white),
+              onPressed: m.valid.isEmpty
+                  ? null
+                  : () {
+                      player.pause();
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => PreviewPage(audio: audioPath!, composer: composer())));
+                    },
+            ),
+          ]);
+        },
+      );
 
   Widget _toolbar() => ListenableBuilder(
         listenable: m,
@@ -416,14 +415,33 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               if (a != null && a >= 1 && a <= n) m.addAt(q.ayahText(surah, a));
             }, child: const Text('+ أضف')),
           ]),
+        ]));
+  }
+
+  Widget _cutTab() => ListenableBuilder(
+        listenable: m,
+        builder: (context, _) => _pad([
+          const Text('ظلّل جزءاً من الصوت: ضع المؤشر عند بدايته واضغط «بداية التظليل»، ثم عند نهايته واضغط «نهاية التظليل».',
+              style: TextStyle(fontSize: 13)),
+          const SizedBox(height: 8),
+          _wrap([
+            OutlinedButton(onPressed: m.markA, child: const Text('⟦ بداية التظليل')),
+            OutlinedButton(onPressed: m.markB, child: const Text('نهاية التظليل ⟧')),
+            FilledButton(
+              onPressed: m.selA != null && m.selB != null ? m.deleteSel : null,
+              child: Text(m.selA != null && m.selB != null ? '🗑 احذف المظلل (${(m.selB! - m.selA!).toStringAsFixed(1)} ث)' : '🗑 احذف المظلل'),
+            ),
+            if (m.selA != null || m.selB != null) TextButton(onPressed: m.clearSel, child: const Text('إلغاء التظليل')),
+          ]),
+          const Text('يُحذف الصوت المظلل ونصه، ويقفز التشغيل فوقه، ويُختصر الفيديو بقدره.', style: TextStyle(fontSize: 12)),
           const Divider(),
           _wrap([
             OutlinedButton(onPressed: m.trimBefore, child: const Text('✂️ احذف ما قبل المؤشر')),
             OutlinedButton(onPressed: m.trimAfter, child: const Text('احذف ما بعد المؤشر ✂️')),
-            TextButton(onPressed: m.resetTrim, child: const Text('إلغاء القص')),
+            if (m.hasEdits) TextButton(onPressed: m.resetTrim, child: const Text('استرجاع كل المحذوف')),
           ]),
-        ]));
-  }
+        ]),
+      );
 
   Widget _numField(String label, int v, int lo, int hi, void Function(int) on) => TextFormField(
         key: ValueKey('$label$v$surah'),
@@ -532,13 +550,4 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: current == c ? Colors.tealAccent : Colors.grey, width: current == c ? 3 : 1)),
         ),
       );
-}
-
-class _LayerPainter extends CustomPainter {
-  final void Function(Canvas) draw;
-  _LayerPainter(this.draw);
-  @override
-  void paint(Canvas canvas, Size size) => draw(canvas);
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => true;
 }

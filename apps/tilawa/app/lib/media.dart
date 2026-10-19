@@ -63,12 +63,36 @@ List<double> bgSchedule(int n, double duration, List<Segment> segs, Look l) {
   return [for (var i = 0; i == 0 || i * every <= duration - minLen; i++) i * every];
 }
 
+/// الأجزاء الباقية من الصوت بعد القص من الطرفين وحذف المناطق المظللة.
+List<(double, double)> keptRanges(double start, double end, List<(double, double)> cuts) {
+  final out = <(double, double)>[];
+  var t = start;
+  for (final (a, b) in [...cuts]..sort((x, y) => x.$1.compareTo(y.$1))) {
+    if (b <= t || a >= end) continue;
+    if (a > t) out.add((t, a));
+    t = max(t, b);
+  }
+  if (end > t) out.add((t, end));
+  return out;
+}
+
+/// وقت الصوت ← وقت الفيديو (null إن كان داخل جزء محذوف).
+double? outTime(double t, List<(double, double)> kept) {
+  var acc = 0.0;
+  for (final (a, b) in kept) {
+    if (t < a) return null;
+    if (t <= b) return acc + t - a;
+    acc += b - a;
+  }
+  return null;
+}
+
 (List<String>, String) _clip(Bg bg, double len, bool zoom) {
   if (!bg.video) {
     final args = ['-loop', '1', '-framerate', '$fps', '-t', len.toStringAsFixed(3), '-i', bg.path];
     final frames = (len * fps).ceil() + 1;
     final f = zoom
-        ? 'scale=1350:2400:force_original_aspect_ratio=increase,crop=1350:2400,'
+        ? 'scale=1188:2112:force_original_aspect_ratio=increase,crop=1188:2112,'
             "zoompan=z='1+0.08*on/$frames':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=$fps"
         : 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=$fps';
     return (args, f);
@@ -79,7 +103,7 @@ List<double> bgSchedule(int n, double duration, List<Segment> segs, Look l) {
   );
 }
 
-/// ينتج الفيديو: segs بأوقات مطلقة في الصوت، ويؤخذ من الصوت [trimStart, trimEnd].
+/// ينتج الفيديو: segs بأوقات مطلقة في الصوت، ويؤخذ من الصوت الأجزاء kept فقط متصلة.
 Future<String> renderVideo({
   required String audio,
   required List<Segment> segs,
@@ -88,15 +112,26 @@ Future<String> renderVideo({
   required Look look,
   required String? headerName,
   required String? headerBasmala,
-  required double trimStart,
-  required double trimEnd,
+  required List<(double, double)> kept,
   required void Function(double) onProgress,
 }) async {
   final dir = await workDir();
-  final duration = trimEnd - trimStart;
+  final duration = kept.fold(0.0, (s, k) => s + k.$2 - k.$1);
+  // كل مقطع يُنقل إلى وقت الفيديو؛ ما وقع في جزء محذوف يُقص على حدوده
+  double clampOut(double t, bool isStart) {
+    final o = outTime(t, kept);
+    if (o != null) return o;
+    var acc = 0.0;
+    for (final (a, b) in kept) {
+      if (t < a) return acc;
+      acc += b - a;
+    }
+    return isStart ? duration : acc;
+  }
+
   final shifted = <(Segment, String)>[];
   for (var i = 0; i < segs.length; i++) {
-    final s = max(segs[i].start, trimStart) - trimStart, e = min(segs[i].end, trimEnd) - trimStart;
+    final s = clampOut(segs[i].start, true), e = clampOut(segs[i].end, false);
     if (e - s > 0.2) shifted.add((Segment(segs[i].text, s, e), texts[i]));
   }
   final points = bgSchedule(bgs.length, duration, [for (final x in shifted) x.$1], look);
@@ -120,28 +155,47 @@ Future<String> renderVideo({
   chain.add('[$cur]${post.isEmpty ? 'null' : post.join(',')},format=yuv420p[bg]');
 
   final n = points.length;
-  args.addAll(['-ss', trimStart.toStringAsFixed(3), '-t', duration.toStringAsFixed(3), '-i', audio]);
+  // الصوت: الأجزاء الباقية متصلة
+  args.addAll(['-i', audio]);
+  final parts = [
+    for (var k = 0; k < kept.length; k++)
+      '[$n:a]atrim=start=${kept[k].$1.toStringAsFixed(3)}:end=${kept[k].$2.toStringAsFixed(3)},asetpts=PTS-STARTPTS[a$k]'
+  ];
+  chain.addAll(parts);
+  chain.add('${[for (var k = 0; k < kept.length; k++) '[a$k]'].join()}concat=n=${kept.length}:v=0:a=1[aout]');
+  // طبقات صغيرة مقصوصة، تُقرأ صورها مرة في الثانية وتُكرر إطاراتها (أسرع بكثير)
   final head = '${dir.path}/header.png';
-  await File(head).writeAsBytes(await layerPng((c) => paintHeader(c, headerName, headerBasmala, look)));
-  args.addAll(['-loop', '1', '-framerate', '$fps', '-t', duration.toStringAsFixed(3), '-i', head]);
-  chain.add('[bg][${n + 1}:v]overlay=0:0[v0]');
+  final (hb, hx, hy) = await layerPng((c) => paintHeader(c, headerName, headerBasmala, look));
+  await File(head).writeAsBytes(hb);
+  args.addAll(['-loop', '1', '-framerate', '1', '-t', duration.toStringAsFixed(3), '-i', head]);
+  chain.add('[${n + 1}:v]fps=$fps,format=rgba[hd]');
+  chain.add('[bg][hd]overlay=$hx:$hy:eof_action=repeat[v0]');
   for (var i = 0; i < shifted.length; i++) {
     final (g, text) = shifted[i];
     final png = '${dir.path}/seg_$i.png';
-    await File(png).writeAsBytes(await layerPng((c) => paintText(c, text, look)));
+    final (tb, tx, ty) = await layerPng((c) => paintText(c, text, look));
+    await File(png).writeAsBytes(tb);
     final d = g.end - g.start, f = min(look.fade, d / 3);
-    args.addAll(['-loop', '1', '-framerate', '$fps', '-t', d.toStringAsFixed(3), '-i', png]);
-    chain.add('[${i + n + 2}:v]format=rgba,fade=in:st=0:d=${f.toStringAsFixed(3)}:alpha=1,'
+    args.addAll(['-loop', '1', '-framerate', '1', '-t', (d + 1).toStringAsFixed(3), '-i', png]);
+    chain.add('[${i + n + 2}:v]fps=$fps,trim=duration=${d.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${f.toStringAsFixed(3)}:alpha=1,'
         'fade=out:st=${max(d - f, 0).toStringAsFixed(3)}:d=${f.toStringAsFixed(3)}:alpha=1,'
         'setpts=PTS+${g.start.toStringAsFixed(3)}/TB[t$i]');
-    chain.add('[v$i][t$i]overlay=0:0:eof_action=pass[v${i + 1}]');
+    chain.add('[v$i][t$i]overlay=$tx:$ty:eof_action=pass[v${i + 1}]');
   }
   final out = '${dir.path}/tilawa_${DateTime.now().millisecondsSinceEpoch}.mp4';
-  args.addAll([
-    '-filter_complex', chain.join(';'), '-map', '[v${shifted.length}]', '-map', '$n:a',
-    '-t', duration.toStringAsFixed(3), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21',
-    '-pix_fmt', 'yuv420p', '-r', '$fps', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out,
-  ]);
+  final common = ['-filter_complex', chain.join(';'), '-map', '[v${shifted.length}]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
+  final tail = ['-r', '$fps', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out];
+  // ترميز العتاد (MediaCodec) أسرع بكثير؛ إن لم يدعمه الجوال نرجع إلى x264 السريع
+  try {
+    await _runAsync([...args, ...common, '-c:v', 'h264_mediacodec', '-b:v', '8M', '-pix_fmt', 'nv12', ...tail], duration, onProgress);
+  } catch (_) {
+    await _runAsync([...args, ...common, '-c:v', 'libx264', '-preset', 'superfast', '-crf', '22', '-pix_fmt', 'yuv420p', ...tail],
+        duration, onProgress);
+  }
+  return out;
+}
+
+Future<void> _runAsync(List<String> args, double duration, void Function(double) onProgress) async {
   final done = Completer<void>();
   await FFmpegKit.executeWithArgumentsAsync(['-y', '-v', 'error', ...args], (session) async {
     if (ReturnCode.isSuccess(await session.getReturnCode())) {
@@ -151,5 +205,4 @@ Future<String> renderVideo({
     }
   }, null, (stats) => onProgress((stats.getTime() / 1000 / duration).clamp(0, 1)));
   await done.future;
-  return out;
 }

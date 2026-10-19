@@ -11,6 +11,8 @@ import 'sync.dart';
 class EditorModel extends ChangeNotifier {
   List<Segment> segs = [];
   double duration = 0, trimStart = 0, trimEnd = 0, playhead = 0;
+  List<(double, double)> cuts = []; // أجزاء محذوفة من وسط الصوت
+  double? selA, selB; // التظليل
   int? selected;
   Float32List peaks = Float32List(0); // أعلى قيمة لكل 10 ملي ثانية
   double pps = 60, view = 0; // بكسل لكل ثانية، وبداية النافذة بالثواني
@@ -22,6 +24,8 @@ class EditorModel extends ChangeNotifier {
     trimEnd = duration;
     playhead = 0;
     view = 0;
+    cuts = [];
+    selA = selB = null;
     final n = a16.length ~/ 160;
     peaks = Float32List(n);
     for (var i = 0; i < n; i++) {
@@ -39,7 +43,12 @@ class EditorModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  String _snap() => jsonEncode({'s': segs.map((g) => g.toJson()).toList(), 'a': trimStart, 'b': trimEnd});
+  String _snap() => jsonEncode({
+        's': segs.map((g) => g.toJson()).toList(),
+        'a': trimStart,
+        'b': trimEnd,
+        'c': [for (final (x, y) in cuts) [x, y]],
+      });
   void checkpoint() {
     _undo.add(_snap());
     if (_undo.length > 60) _undo.removeAt(0);
@@ -52,6 +61,7 @@ class EditorModel extends ChangeNotifier {
     segs = [for (final g in j['s'] as List) Segment.fromJson(g as Map<String, dynamic>)];
     trimStart = (j['a'] as num).toDouble();
     trimEnd = (j['b'] as num).toDouble();
+    cuts = [for (final c in j['c'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())];
     if (selected != null && selected! >= segs.length) selected = null;
     notifyListeners();
   }
@@ -174,7 +184,50 @@ class EditorModel extends ChangeNotifier {
     checkpoint();
     trimStart = 0;
     trimEnd = duration;
+    cuts = [];
     notifyListeners();
+  }
+
+  // ── التظليل وحذف المظلل ──
+  void markA() {
+    selA = playhead;
+    if (selB != null && selB! <= selA!) selB = null;
+    notifyListeners();
+  }
+
+  void markB() {
+    selB = playhead;
+    if (selA != null && selA! >= selB!) selA = null;
+    notifyListeners();
+  }
+
+  void clearSel() {
+    selA = selB = null;
+    notifyListeners();
+  }
+
+  /// يحذف الجزء المظلل من الصوت، والمقاطع التي داخله كلها، ويقص المقاطع التي تتقاطع معه.
+  void deleteSel() {
+    final a = selA, b = selB;
+    if (a == null || b == null || b - a < 0.1) return;
+    checkpoint();
+    cuts = [...cuts, (a, b)];
+    segs = [
+      for (final g in segs)
+        if (!(g.start >= a && g.end <= b))
+          g.end > a && g.end <= b ? (g..end = a) : g.start >= a && g.start < b ? (g..start = b) : g
+    ];
+    selected = null;
+    selA = selB = null;
+    notifyListeners();
+  }
+
+  /// إن وقع t داخل جزء محذوف يرجع نهايته (للتشغيل الذي يقفز فوقه).
+  double? skipCut(double t) {
+    for (final (a, b) in cuts) {
+      if (t >= a && t < b) return b;
+    }
+    return null;
   }
 
   // ── المزامنة بالنقر: كل نقرة تنهي المقطع الحالي وتبدأ التالي ──
@@ -209,6 +262,8 @@ class EditorModel extends ChangeNotifier {
   List<Segment> get valid =>
       segs.where((g) => g.text.trim().isNotEmpty && g.end > g.start && g.end > trimStart && g.start < trimEnd).toList()
         ..sort((a, b) => a.start.compareTo(b.start));
+
+  bool get hasEdits => trimStart > 0 || trimEnd < duration || cuts.isNotEmpty;
 }
 
 // ── الخط الزمني ──
@@ -357,6 +412,19 @@ class _TimelinePainter extends CustomPainter {
     final shade = Paint()..color = Colors.black.withValues(alpha: 0.45);
     if (m.trimStart > 0) c.drawRect(Rect.fromLTRB(0, 0, x(m.trimStart).clamp(0, w), size.height), shade);
     if (m.trimEnd < m.duration) c.drawRect(Rect.fromLTRB(x(m.trimEnd).clamp(0, w), 0, w, size.height), shade);
+    final cut = Paint()..color = Colors.red.withValues(alpha: 0.35);
+    for (final (a, b) in m.cuts) {
+      c.drawRect(Rect.fromLTRB(x(a).clamp(0, w), 0, x(b).clamp(0, w), size.height), cut);
+    }
+    // التظليل
+    final sel = Paint()..color = Colors.amber.withValues(alpha: 0.35);
+    final mark = Paint()
+      ..color = Colors.amber
+      ..strokeWidth = 2;
+    if (m.selA != null && m.selB != null) c.drawRect(Rect.fromLTRB(x(m.selA!), 0, x(m.selB!), size.height), sel);
+    for (final t in [m.selA, m.selB]) {
+      if (t != null) c.drawLine(Offset(x(t), 0), Offset(x(t), size.height), mark);
+    }
     // المقاطع
     for (var i = 0; i < m.segs.length; i++) {
       final g = m.segs[i];
