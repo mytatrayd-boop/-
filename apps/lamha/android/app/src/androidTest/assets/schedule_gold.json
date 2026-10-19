@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-19T00:00:00.000Z",
+  "city": {
+    "name": "أبها",
+    "latitude": 18.2,
+    "longitude": 42.33,
+    "timeZone": "Asia/Riyadh"
+  },
+  "prayerMethod": "ummAlQura",
+  "qibla": {
+    "degrees": 324.3,
+    "direction": "شمال غرب",
+    "text": "٣٢٤° شمال غرب"
+  },
+  "visible": {
+    "hijri": true,
+    "gregorian": true,
+    "weather": true,
+    "prayer": true,
+    "qibla": true,
+    "deposit": true,
+    "season": true,
+    "tradSeason": true
+  },
+  "opacity": 80,
+  "background": null,
+  "theme": {
+    "id": "gold",
+    "accent": 4292258396,
+    "background": 4280951837
+  },
+  "lockNotification": false,
+  "fontScale": 1.0,
+  "weather": {
+    "temp": 26.2,
+    "code": 0,
+    "fetchedAt": "2026-10-18T23:40:00.000Z",
+    "latitude": 18.2,
+    "longitude": 42.33,
+    "emoji": "☀️",
+    "text": "صحو",
+    "tempText": "٢٦°",
+    "maxAgeMinutes": 180,
+    "icons": {
+      "0": "☀️",
+      "1": "🌤️",
+      "2": "⛅",
+      "3": "☁️",
+      "45": "🌫️",
+      "48": "🌫️",
+      "51": "🌦️",
+      "53": "🌦️",
+      "55": "🌦️",
+      "56": "🌧️",
+      "57": "🌧️",
+      "61": "🌧️",
+      "63": "🌧️",
+      "65": "🌧️",
+      "66": "🌧️",
+      "67": "🌧️",
+      "71": "🌨️",
+      "73": "🌨️",
+      "75": "🌨️",
+      "77": "🌨️",
+      "80": "🌦️",
+      "81": "🌧️",
+      "82": "⛈️",
+      "85": "🌨️",
+      "86": "🌨️",
+      "95": "⛈️",
+      "96": "⛈️",
+      "99": "⛈️"
+    }
+  },
+  "days": [
+    {
+      "date": "2026-10-19",
+      "weekday": "الإثنين",
+      "gregorian": {
+        "day": 19,
+        "month": 10,
+        "monthName": "أكتوبر",
+        "year": 2026,
+        "text": "١٩ أكتوبر ٢٠٢٦"
+      },
+      "hijri": {
+        "day": 8,
+        "month": 5,
+        "monthName": "جمادى الأولى",
+        "year": 1448,
+        "text": "٨ جمادى الأولى ١٤٤٨"
+      },
+      "prayers": {
+        "fajr": {
+          "name": "الفجر",
+          "time": "2026-10-19T04:50:00.000+0300",
+          "text": "٤:٥٠ ص"
+        },
+        "sunrise": {
+          "name": "الشروق",
+          "time": "2026-10-19T06:05:00.000+0300",
+          "text": "٦:٠٥ ص"
+        },
+        "dhuhr": {
+          "name": "الظهر",
+          "time": "2026-10-19T11:56:00.000+0300",
+          "text": "١١:٥٦ ص"
+        },
+        "asr": {
+          "name": "العصر",
+          "time": "2026-10-19T15:16:00.000+0300",
+          "text": "٣:١٦ م"
+        },
+        "maghrib": {
+          "name": "المغرب",
+          "time": "2026-10-19T17:46:00.000+0300",
+          "text": "٥:٤٦ م"
+        },
+        "isha": {
+          "name": "العشاء",
+          "time": "2026-10-19T19:16:00.000+0300",
+          "text": "٧:١٦ م"
+        }
+      },
+      "season": {
+        "id": "autumn",
+        "name": "الخريف",
+        "next": {
+          "id": "winter",
+          "name": "الشتاء"
+        },
+        "nextStart": "2026-12-21",
+        "daysRemaining": 63,
+        "remainingText": "باقي ٦٣ يوماً"
+      },
+      "tradSeason": {
+        "id": "wasm",
+        "name": "الوسم",
+        "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "start": "2026-10-16",
+        "end": "2026-12-06",
+        "next": {
+          "id": "murabbaniya",
+          "name": "المربعانية"
+        },
+        "daysRemaining": 49,
+        "remainingText": "باقي ٤٩ يوماً",
+        "approval": "owner_provided"
+      },
+      "deposits": [
+        {
+          "id": "housing_support",
+          "name": "الدعم السكني",
+          "label": "الدعم السكني",
+          "date": "2026-10-25",
+          "daysRemaining": 6,
+          "remainingText": "باقي ٦ أيام",
+          "afterText": "بعد ٦ أيام"
+        },
+        {
+          "id": "salary",
+          "name": "الرواتب",
+          "label": "راتب أكتوبر",
+          "date": "2026-10-27",
+          "daysRemaining": 8,
+          "remainingText": "باقي ٨ أيام",
+          "afterText": "بعد ٨ أيام"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "weekday": "الثلاثاء",
+      "gregorian": {
+        "day": 20,
+        "month": 10,
+        "monthName": "أكتوبر",
+        "year": 2026,
+        "text": "٢٠ أكتوبر ٢٠٢٦"
+      },
+      "hijri": {
+        "day": 9,
+        "month": 5,
+        "monthName": "جمادى الأولى",
+        "year": 1448,
+        "text": "٩ جمادى الأولى ١٤٤٨"
+      },
+      "prayers": {
+        "fajr": {
+          "name": "الفجر",
+          "time": "2026-10-20T04:51:00.000+0300",
+          "text": "٤:٥١ ص"
+        },
+        "sunrise": {
+          "name": "الشروق",
+          "time": "2026-10-20T06:06:00.000+0300",
+          "text": "٦:٠٦ ص"
+        },
+        "dhuhr": {
+          "name": "الظهر",
+          "time": "2026-10-20T11:55:00.000+0300",
+          "text": "١١:٥٥ ص"
+        },
+        "asr": {
+          "name": "العصر",
+          "time": "2026-10-20T15:15:00.000+0300",
+          "text": "٣:١٥ م"
+        },
+        "maghrib": {
+          "name": "المغرب",
+          "time": "2026-10-20T17:45:00.000+0300",
+          "text": "٥:٤٥ م"
+        },
+        "isha": {
+          "name": "العشاء",
+          "time": "2026-10-20T19:15:00.000+0300",
+          "text": "٧:١٥ م"
+        }
+      },
+      "season": {
+        "id": "autumn",
+        "name": "الخريف",
+        "next": {
+          "id": "winter",
+          "name": "الشتاء"
+        },
+        "nextStart": "2026-12-21",
+        "daysRemaining": 62,
+        "remainingText": "باقي ٦٢ يوماً"
+      },
+      "tradSeason": {
+        "id": "wasm",
+        "name": "الوسم",
+        "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "start": "2026-10-16",
+        "end": "2026-12-06",
+        "next": {
+          "id": "murabbaniya",
+          "name": "المربعانية"
+        },
+        "daysRemaining": 48,
+        "remainingText": "باقي ٤٨ يوماً",
+        "approval": "owner_provided"
+      },
+      "deposits": [
+        {
+          "id": "housing_support",
+          "name": "الدعم السكني",
+          "label": "الدعم السكني",
+          "date": "2026-10-25",
+          "daysRemaining": 5,
+          "remainingText": "باقي ٥ أيام",
+          "afterText": "بعد ٥ أيام"
+        },
+        {
+          "id": "salary",
+          "name": "الرواتب",
+          "label": "راتب أكتوبر",
+          "date": "2026-10-27",
+          "daysRemaining": 7,
+          "remainingText": "باقي ٧ أيام",
+          "afterText": "بعد ٧ أيام"
+        }
+      ]
+    }
+  ]
+}

@@ -137,15 +137,43 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         fun openAppIntent(context: Context) =
             HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
 
-        private fun views(context: Context, prefs: SharedPreferences, options: Bundle?): RemoteViews {
-            val now = System.currentTimeMillis()
-            val ctx = arabic(context)
-            val day = LamhaSchedule.read(prefs.getString(SCHEDULE_KEY, null), now)
-            if (day == null) {
-                return RemoteViews(context.packageName, R.layout.widget_setup).apply {
+        private fun views(context: Context, prefs: SharedPreferences, options: Bundle?): RemoteViews =
+            buildViews(
+                context,
+                prefs.getString(SCHEDULE_KEY, null),
+                options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0,
+                options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) ?: 0,
+                System.currentTimeMillis(),
+                prefs.getString(NATIVE_WEATHER_KEY, null),
+            )
+
+        /// RemoteViews الودجت من [schedule] (JSON الجدول) بمقاس [widthDp]×[heightDp] (0 = غير معروف)
+        /// عند [nowMillis]. يستدعيها المستقبل واختبار اللقطات (androidTest/LamhaScreensTest) معاً.
+        ///
+        /// تُغلَّف في RemoteViews(أفقي، رأسي) بنسختين متطابقتين ليعيد المشغّل بناء الشجرة في كل
+        /// تحديث بدل إعادة تطبيق الأوامر على شجرة قديمة (canRecycleView يرفض التخطيطات المتعددة).
+        /// بعد تحديث التطبيق تتغير أرقام المعرّفات (R.id)، وإعادة التطبيق على شجرة الإصدار السابق
+        /// تضع النصوص في عناصر غير عناصرها (تراجع الإصدار ١٦: عناوين مختفية وقيم مكسّرة).
+        fun buildViews(
+            context: Context,
+            schedule: String?,
+            widthDp: Int,
+            heightDp: Int,
+            nowMillis: Long,
+            nativeWeather: String? = null,
+        ): RemoteViews {
+            val day = LamhaSchedule.read(schedule, nowMillis)
+                ?: return RemoteViews(context.packageName, R.layout.widget_setup).apply {
                     setOnClickPendingIntent(R.id.root, openAppIntent(context))
                 }
-            }
+            fun one() = singleViews(context, day, widthDp, heightDp, nowMillis, nativeWeather)
+            return RemoteViews(one(), one())
+        }
+
+        private fun singleViews(
+            context: Context, day: LamhaDay, minWidth: Int, maxHeight: Int, now: Long, nativeWeather: String?,
+        ): RemoteViews {
+            val ctx = arabic(context)
             val (accent, background) = colors(context, day)
             val rv = RemoteViews(context.packageName, R.layout.widget_lamha)
             rv.setOnClickPendingIntent(R.id.root, openAppIntent(context))
@@ -156,8 +184,6 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             // كل حجم × معامل الخط، والساعة تصغر إن لم تتسع بجانب العمود الأيسر، وسطور العمود الأيسر
             // تصغر قليلاً (حتى ٧٥٪) قبل «…» (كالمعاينة).
             val scale = day.fontScale
-            val minWidth = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
-            val maxHeight = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) ?: 0
             val sys = ctx.resources.configuration.fontScale
             val content = if (minWidth > 0) LamhaLogic.headContentDp(minWidth) else 0f
             fun w(text: String, sp: Float, bold: Boolean) = textWidthDp(ctx, text, sp, bold)
@@ -165,7 +191,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
             val amPm = ctx.getString(if (LamhaLogic.isAm(now, day.timeZone)) R.string.am else R.string.pm)
             val weather = LamhaLogic.newestWeather(
-                day.weather, LamhaSchedule.weatherOf(prefs.getString(NATIVE_WEATHER_KEY, null)),
+                day.weather, LamhaSchedule.weatherOf(nativeWeather),
                 day.latitude, day.longitude,
             )
             val weatherText = LamhaLogic.weatherText(weather, now, day.weatherMaxAgeMinutes, day.weatherIcons)
@@ -352,6 +378,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 if (availDp > 0f) LamhaLogic.fitTextSize(sp, textWidthDp(ctx, text, sp), availDp, sp * TILE_MIN_FIT) else sp
             val titleFit = fit(title, titleSp)
             val valueFit = fit(value, valueSp)
+            // العنوان والقيمة ظاهران دائماً (صراحةً، لا اعتماداً على حالة شجرة سابقة).
+            rv.setViewVisibility(R.id.tile_title, View.VISIBLE)
+            rv.setViewVisibility(R.id.tile_value, View.VISIBLE)
             rv.setTextViewText(R.id.tile_title, title)
             rv.setTextViewTextSize(R.id.tile_title, TypedValue.COMPLEX_UNIT_SP, titleFit)
             rv.setTextViewText(R.id.tile_value, value)
