@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "approval": {"status": "draft", "reviewer": null, "date": null},
+  "source": {
+    "title": "تقويم المواسم السعودية",
+    "url": "https://hijri-calendars.com/saudi-seasons-calendar.php"
+  },
+  "note": "مسودة يراجعها المالك. start = بداية الموسم (شهر-يوم ميلادي)، والنهاية اليوم السابق لبداية الموسم التالي. الأوصاف مسودة.",
+  "seasons": [
+    {"id": "suhail", "name": "سهيل", "start": "08-24", "description": "يبدأ فيه انكسار الحر ويلطف الليل تدريجياً"},
+    {"id": "wasm", "name": "الوسم", "start": "10-16", "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية"},
+    {"id": "murabbaniya", "name": "المربعانية", "start": "12-07", "description": "أبرد أيام السنة وأطول لياليها"},
+    {"id": "shabat", "name": "الشبط", "start": "01-16", "description": "يشتد فيه البرد مع تقلّب الأجواء"},
+    {"id": "aqarib", "name": "العقارب", "start": "02-10", "description": "يخف فيه البرد تدريجياً وتنشط الرياح"},
+    {"id": "dhiraan", "name": "الذراعان", "start": "03-21", "description": "تعتدل فيه الأجواء وتكثر أمطار الربيع"},
+    {"id": "thurayya", "name": "الثريا", "start": "05-02", "description": "ترتفع فيه الحرارة ويبدأ القيظ"},
+    {"id": "jawza", "name": "الجوزاء", "start": "06-14", "description": "من أشد أيام الحر وتهب فيه الرياح الحارة"}
+  ]
+}

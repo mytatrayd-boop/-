@@ -1,0 +1,89 @@
+/// نصوص العرض العربية التي يولّدها المحرك في الجدول (النسخة الأولى عربية فقط،
+/// SPEC §8). كلها هنا في مكان واحد ليسهل نقلها لملفات الترجمة لاحقاً.
+library;
+
+const gregorianMonthNames = [
+  'يناير',
+  'فبراير',
+  'مارس',
+  'أبريل',
+  'مايو',
+  'يونيو',
+  'يوليو',
+  'أغسطس',
+  'سبتمبر',
+  'أكتوبر',
+  'نوفمبر',
+  'ديسمبر',
+];
+
+const hijriMonthNames = [
+  'محرم',
+  'صفر',
+  'ربيع الأول',
+  'ربيع الآخر',
+  'جمادى الأولى',
+  'جمادى الآخرة',
+  'رجب',
+  'شعبان',
+  'رمضان',
+  'شوال',
+  'ذو القعدة',
+  'ذو الحجة',
+];
+
+/// بترتيب `DateTime.weekday` (1 = الإثنين ... 7 = الأحد).
+const weekdayNames = [
+  'الإثنين',
+  'الثلاثاء',
+  'الأربعاء',
+  'الخميس',
+  'الجمعة',
+  'السبت',
+  'الأحد',
+];
+
+const todayText = 'اليوم';
+
+const _western = '0123456789';
+const _eastern = '٠١٢٣٤٥٦٧٨٩';
+
+/// يحوّل الأرقام 0-9 في [input] إلى الأرقام العربية الشرقية.
+String arabicDigits(Object input) {
+  final s = input.toString();
+  final b = StringBuffer();
+  for (final ch in s.split('')) {
+    final i = _western.indexOf(ch);
+    b.write(i >= 0 ? _eastern[i] : ch);
+  }
+  return b.toString();
+}
+
+/// «اليوم» أو «باقي يوم» أو «باقي يومان» أو «باقي ٣ أيام» أو «باقي ١١ يوماً».
+String remainingDaysText(int days) {
+  if (days <= 0) return todayText;
+  if (days == 1) return 'باقي يوم';
+  if (days == 2) return 'باقي يومان';
+  if (days <= 10) return 'باقي ${arabicDigits(days)} أيام';
+  return 'باقي ${arabicDigits(days)} يوماً';
+}
+
+/// «باقي دقيقة» أو «باقي دقيقتان» أو «باقي ٣ دقائق» أو «باقي ٣٤ دقيقة».
+String remainingMinutesText(int minutes) {
+  if (minutes <= 0) return 'الآن';
+  if (minutes == 1) return 'باقي دقيقة';
+  if (minutes == 2) return 'باقي دقيقتان';
+  if (minutes <= 10) return 'باقي ${arabicDigits(minutes)} دقائق';
+  return 'باقي ${arabicDigits(minutes)} دقيقة';
+}
+
+/// عدد الأيام التقويمية من [from] إلى [to] (التاريخ فقط، بلا أثر للتوقيت الصيفي).
+int daysBetween(DateTime from, DateTime to) =>
+    DateTime.utc(to.year, to.month, to.day)
+        .difference(DateTime.utc(from.year, from.month, from.day))
+        .inDays;
+
+/// `YYYY-MM-DD`.
+String isoDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+    '${d.month.toString().padLeft(2, '0')}-'
+    '${d.day.toString().padLeft(2, '0')}';
