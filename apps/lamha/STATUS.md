@@ -16,10 +16,10 @@
   - المدينة من «موقعي» تأخذ توقيت الرياض دائماً (المدن سعودية فقط).
   - SPEC يذكر أربعة إيداعات وفي «لاحقاً» حساب التقاعد؛ أضيفت المعاشات بطلب المالك ويلزم تحديث SPEC.
   - جدول المواسم في lamha صار من مصدر المالك، وdurur لم يُعدَّل.
-- الميزة ٣ (ودجت أندرويد الكبيرة ٤×٤، Glance): **منفّذة، لم تُبنَ بعد.** لا Android SDK هنا، والبناء الأول على GitHub (`.github/workflows/lamha-android.yml`) هو الاختبار. لم تُشغَّل على جهاز أو محاكي.
+- الميزة ٣ (ودجت أندرويد الكبيرة ٤×٤، Glance): **مقبولة.** رُفضت مرة لعيب واحد (الساعة بتوقيت الجهاز لا المدينة) وأُصلح. البناء على GitHub نجح (run 2: analyze وflutter test وبناء APK و٩ اختبارات JUnit)، والملف lamha-test-apk-2. لم تُجرَّب على جهاز بعد.
   - `android/app/src/main/kotlin/sa/lamha/lamha/widget/`: `LamhaWidget` و`LamhaWidgetReceiver` و`LamhaSchedule` (قراءة JSON) و`LamhaLogic` (اختيار اليوم والصلاة القادمة وإعادة الترتيب).
   - اختبارات JUnit (٩) في `android/app/src/test/`: نجحت محلياً على JVM مع Kotlin 2.4.0 خارج مشروع أندرويد، وفي CI عبر `./gradlew :app:testDebugUnitTest`.
   - Dart: طلب التحديث صار بـ `qualifiedAndroidName` للمستقبل الجديد.
   - الطقس «--°»، والقبلة نص بلا سهم، ولا Material You بعد.
   - `flutter analyze`: No issues found. `flutter test`: ٩٩ اختباراً، كلها ناجحة.
-- التالي: مراجعة الميزة ٣ ونتيجة أول بناء على GitHub.
+- التالي: تجربة المالك للـ APK على جواله، ثم الميزة ٤ (ودجت آيفون وشاشة القفل) والطقس.
