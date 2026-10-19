@@ -32,4 +32,12 @@ void main() {
     expect(isQiblaLaunch(Uri.parse('lamha://settings')), isFalse);
     expect(isQiblaLaunch(null), isFalse);
   });
+
+  test('حدود السعودية: أبها وتبوك والدمام داخلها، والقاهرة وبغداد خارجها (الحدود تقريبية مستطيلة)', () {
+    expect(inSaudiBounds(18.2164, 42.5053), isTrue);
+    expect(inSaudiBounds(28.3835, 36.5662), isTrue);
+    expect(inSaudiBounds(26.4207, 50.0888), isTrue);
+    expect(inSaudiBounds(30.0444, 31.2357), isFalse);
+    expect(inSaudiBounds(33.3152, 44.3661), isFalse);
+  });
 }

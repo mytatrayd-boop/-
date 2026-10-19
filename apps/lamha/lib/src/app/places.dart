@@ -28,6 +28,10 @@ String? placemarkName(
 /// نص البحث كما يُرسل لـ geocoding، مقيداً بالسعودية.
 String searchAddress(String query) => '${query.trim()}، السعودية';
 
+/// حدود السعودية التقريبية: نتيجة بحث خارجها تُستبعد، لأن الحساب يفترض توقيت الرياض.
+bool inSaudiBounds(double latitude, double longitude) =>
+    latitude >= 16 && latitude <= 32.5 && longitude >= 34.4 && longitude <= 55.8;
+
 /// خدمة الأسماء والبحث (حزمة geocoding) خلف واجهة تُستبدل في الاختبارات.
 abstract class PlaceGeocoder {
   /// اسم المكان بالعربية، أو null إن لم يُعرف. يرمي عند فشل الاتصال.
@@ -67,7 +71,9 @@ class GeocodingPlaceGeocoder implements PlaceGeocoder {
         .locationFromAddress(searchAddress(query), locale: _ar)
         .timeout(_timeout);
     final out = <Place>[];
-    for (final l in locations.take(_maxResults)) {
+    for (final l in locations
+        .where((l) => inSaudiBounds(l.latitude, l.longitude))
+        .take(_maxResults)) {
       String? name;
       try {
         name = await placeName(l.latitude, l.longitude);
