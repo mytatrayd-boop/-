@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:image_picker/image_picker.dart';
@@ -48,7 +50,7 @@ class HomeWidgetBridge implements WidgetBridge {
 
 /// قراءة واحدة للموقع بدقة تقريبية.
 abstract class LocationService {
-  /// يعيد null إذا رُفض الإذن أو تعطلت خدمة الموقع.
+  /// يعيد null إذا رُفض الإذن أو تعطلت خدمة الموقع، ويرمي إذا تعذّرت القراءة.
   Future<({double latitude, double longitude})?> currentPosition();
 }
 
@@ -111,4 +113,47 @@ class AppGroupBackgroundStore implements BackgroundStore {
     final path = '$dir${Platform.pathSeparator}$fileName';
     return File(path).existsSync() ? path : null;
   }
+}
+
+/// رابط فتح شاشة القبلة من مربع القبلة في الودجت (LamhaWidget.kt: QIBLA_URI).
+final qiblaLaunchUri = Uri.parse('lamha://qibla');
+
+/// هل فُتح التطبيق من مربع القبلة؟
+bool isQiblaLaunch(Uri? uri) =>
+    uri != null && uri.scheme == qiblaLaunchUri.scheme && uri.host == qiblaLaunchUri.host;
+
+/// فتح التطبيق من الودجت (home_widget). الرابط null إذا لم يُفتح منها.
+abstract class WidgetLaunch {
+  Future<Uri?> initial();
+  Stream<Uri?> get clicks;
+}
+
+class HomeWidgetLaunch implements WidgetLaunch {
+  @override
+  Future<Uri?> initial() async {
+    try {
+      return await HomeWidget.initiallyLaunchedFromHomeWidget();
+    } catch (e) {
+      debugPrint('home_widget launch: $e');
+      return null;
+    }
+  }
+
+  @override
+  Stream<Uri?> get clicks => HomeWidget.widgetClicked.handleError(
+      (Object e) => debugPrint('home_widget clicks: $e'));
+}
+
+/// قراءة من حساس البوصلة: الاتجاه من الشمال، والخطأ المحتمل بالدرجات.
+typedef CompassReading = ({double? heading, double? accuracy});
+
+/// حساس البوصلة (flutter_compass). null إذا لم يتوفر في الجهاز.
+abstract class CompassSource {
+  Stream<CompassReading>? readings();
+}
+
+class FlutterCompassSource implements CompassSource {
+  @override
+  Stream<CompassReading>? readings() => FlutterCompass.events
+      ?.map((e) => (heading: e.heading, accuracy: e.accuracy));
 }

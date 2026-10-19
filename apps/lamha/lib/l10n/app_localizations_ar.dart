@@ -44,10 +44,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get locationDenied =>
-      'لم يُسمح بالوصول إلى الموقع. اختر المدينة من القائمة.';
+      'لم يُسمح بالوصول إلى الموقع، أو خدمة الموقع مغلقة. ابحث عن مدينتك أو اخترها من القائمة.';
 
   @override
-  String get locationFailed => 'تعذّر تحديد الموقع. اختر المدينة من القائمة.';
+  String get locationFailed =>
+      'تعذّر تحديد الموقع. ابحث عن مدينتك أو اخترها من القائمة.';
 
   @override
   String get prayerMethodLabel => 'طريقة حساب الصلاة';
@@ -136,4 +137,49 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dataLicense =>
       'إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0. الخط Tajawal برخصة SIL OFL 1.1.';
+
+  @override
+  String nearCity(String city) {
+    return 'قرب $city';
+  }
+
+  @override
+  String get locationNearest =>
+      'تعذّر جلب اسم المكان، فظهر اسم أقرب مدينة. الحساب بموقعك الفعلي.';
+
+  @override
+  String get searchHint => 'ابحث عن مدينة أو محافظة';
+
+  @override
+  String get searchNoResults => 'لا توجد نتائج. جرّب اسماً آخر.';
+
+  @override
+  String get searchFailed =>
+      'تعذّر البحث. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get quickPick => 'اختيار سريع';
+
+  @override
+  String get qiblaTitle => 'اتجاه القبلة';
+
+  @override
+  String qiblaFromNorth(String degrees) {
+    return '$degrees من الشمال';
+  }
+
+  @override
+  String get compassHint =>
+      'ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.';
+
+  @override
+  String get compassWaiting => 'جارٍ قراءة البوصلة…';
+
+  @override
+  String get compassCalibrate =>
+      'دقة البوصلة منخفضة. حرّك الجوال في الهواء على شكل الرقم ٨ لمعايرتها، وابتعد عن المعادن والمغناطيس.';
+
+  @override
+  String get compassUnavailable =>
+      'لا يتوفر حساس بوصلة في هذا الجهاز، فلا يمكن عرض السهم. استعن بالزاوية أعلاه وبوصلة أخرى.';
 }

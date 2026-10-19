@@ -161,13 +161,13 @@ abstract class AppLocalizations {
   /// رفض إذن الموقع
   ///
   /// In ar, this message translates to:
-  /// **'لم يُسمح بالوصول إلى الموقع. اختر المدينة من القائمة.'**
+  /// **'لم يُسمح بالوصول إلى الموقع، أو خدمة الموقع مغلقة. ابحث عن مدينتك أو اخترها من القائمة.'**
   String get locationDenied;
 
   /// فشل قراءة الموقع
   ///
   /// In ar, this message translates to:
-  /// **'تعذّر تحديد الموقع. اختر المدينة من القائمة.'**
+  /// **'تعذّر تحديد الموقع. ابحث عن مدينتك أو اخترها من القائمة.'**
   String get locationFailed;
 
   /// عنوان قائمة طرق الحساب
@@ -265,6 +265,78 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0. الخط Tajawal برخصة SIL OFL 1.1.'**
   String get dataLicense;
+
+  /// اسم المكان من «موقعي» إذا تعذّر geocoding
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب {city}'**
+  String nearCity(String city);
+
+  /// «موقعي» بلا إنترنت
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر جلب اسم المكان، فظهر اسم أقرب مدينة. الحساب بموقعك الفعلي.'**
+  String get locationNearest;
+
+  /// حقل البحث عن المكان
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن مدينة أو محافظة'**
+  String get searchHint;
+
+  /// البحث بلا نتائج
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج. جرّب اسماً آخر.'**
+  String get searchNoResults;
+
+  /// فشل البحث (لا إنترنت)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر البحث. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.'**
+  String get searchFailed;
+
+  /// تلميح قائمة المدن الجاهزة
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار سريع'**
+  String get quickPick;
+
+  /// عنوان شاشة البوصلة وزرها في الإعدادات
+  ///
+  /// In ar, this message translates to:
+  /// **'اتجاه القبلة'**
+  String get qiblaTitle;
+
+  /// زاوية القبلة من الشمال
+  ///
+  /// In ar, this message translates to:
+  /// **'{degrees} من الشمال'**
+  String qiblaFromNorth(String degrees);
+
+  /// إرشاد استخدام البوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.'**
+  String get compassHint;
+
+  /// قبل أول قراءة من الحساس
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ قراءة البوصلة…'**
+  String get compassWaiting;
+
+  /// دقة الحساس منخفضة
+  ///
+  /// In ar, this message translates to:
+  /// **'دقة البوصلة منخفضة. حرّك الجوال في الهواء على شكل الرقم ٨ لمعايرتها، وابتعد عن المعادن والمغناطيس.'**
+  String get compassCalibrate;
+
+  /// الجهاز بلا حساس بوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يتوفر حساس بوصلة في هذا الجهاز، فلا يمكن عرض السهم. استعن بالزاوية أعلاه وبوصلة أخرى.'**
+  String get compassUnavailable;
 }
 
 class _AppLocalizationsDelegate

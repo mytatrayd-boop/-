@@ -278,56 +278,48 @@ class WidgetPreview extends StatelessWidget {
 
   Widget _prayerTile(AppLocalizations l, _Palette p, Map day, Map? nextDay,
       tz.TZDateTime local) {
-    String? name;
+    Map? next;
     DateTime? at;
     final today = (day['prayers'] as Map).cast<String, Map>();
     for (final e in today.entries) {
       if (e.key == PrayerName.sunrise.name) continue;
       final t = DateTime.parse(e.value['time'] as String);
       if (t.isAfter(now)) {
-        name = e.value['name'] as String;
+        next = e.value;
         at = t;
         break;
       }
     }
-    if (name == null && nextDay != null) {
-      final fajr = (nextDay['prayers'] as Map)['fajr'] as Map;
-      name = fajr['name'] as String;
-      at = DateTime.parse(fajr['time'] as String);
+    if (next == null && nextDay != null) {
+      next = (nextDay['prayers'] as Map)['fajr'] as Map;
+      at = DateTime.parse(next['time'] as String);
     }
     final minutes =
         at == null ? 0 : (at.difference(now).inSeconds / 60).ceil();
+    // الاسم، ثم وقت الصلاة، ثم الباقي (كما في LamhaWidget.kt).
     return _Tile(
       title: l.tilePrayer,
       emoji: '🕌',
       highlight: p.accent,
-      value: name ?? '',
-      sub: remainingMinutesText(minutes),
+      value: (next?['name'] as String?) ?? '',
+      subs: [
+        if (next != null) (text: next['text'] as String, lines: 1),
+        (text: remainingMinutesText(minutes), lines: 1),
+      ],
     );
   }
 
   Widget _qiblaTile(AppLocalizations l, _Palette p) {
     final q = schedule['qibla']! as Map;
     final deg = (q['degrees'] as num).toDouble();
+    // الزاوية سطر، والاتجاه سطر أصغر تحته.
     return _Tile(
       title: l.tileQibla,
-      body: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(l.degrees(arabicDigits(deg.round())),
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700, color: _text)),
-            ),
-          ),
-          const SizedBox(width: 4),
-          SizedBox.square(
-            dimension: 38,
-            child: CustomPaint(painter: _CompassPainter(deg, p.accent)),
-          ),
-        ],
+      value: l.degrees(arabicDigits(deg.round())),
+      subs: [(text: q['direction'] as String, lines: 1)],
+      badge: SizedBox.square(
+        dimension: 18,
+        child: CustomPaint(painter: _CompassPainter(deg, p.accent)),
       ),
     );
   }
@@ -339,10 +331,11 @@ class WidgetPreview extends StatelessWidget {
       title: l.tileDeposit,
       emoji: '💰',
       value: first['label'] as String,
-      sub: first['remainingText'] as String,
-      extra: deps.length > 1
-          ? '${deps[1]['label']} · ${deps[1]['remainingText']}'
-          : null,
+      subs: [
+        (text: first['remainingText'] as String, lines: deps.length > 1 ? 1 : 2),
+        if (deps.length > 1)
+          (text: '${deps[1]['label']} · ${deps[1]['remainingText']}', lines: 1),
+      ],
     );
   }
 
@@ -358,45 +351,58 @@ class WidgetPreview extends StatelessWidget {
       title: l.tileSeason,
       emoji: emoji[s['id']] ?? '🍂',
       value: s['name'] as String,
-      sub: l.remainingToNext(s['remainingText'] as String,
-          withLam((s['next'] as Map)['name'] as String)),
+      subs: [
+        (
+          text: l.remainingToNext(s['remainingText'] as String,
+              withLam((s['next'] as Map)['name'] as String)),
+          lines: 2
+        ),
+      ],
     );
   }
 
   Widget _tradSeasonTile(AppLocalizations l, Map day) {
     final s = day['tradSeason'] as Map;
+    final description = s['description'] as String;
     return _Tile(
       title: l.tileTradSeason,
       emoji: '🌾',
       value: s['name'] as String,
-      valueSuffix: ' · ${l.remainingToNext(s['remainingText'] as String, withLam((s['next'] as Map)['name'] as String))}',
-      sub: s['description'] as String,
-      subLines: 3,
+      subs: [
+        (
+          text: l.remainingToNext(s['remainingText'] as String,
+              withLam((s['next'] as Map)['name'] as String)),
+          lines: 1
+        ),
+        if (description.isNotEmpty) (text: description, lines: 2),
+      ],
     );
   }
 }
+
+/// أحجام المربعات الموحدة (الميزة ٣ب): العنوان ١٢، والقيمة ١٧ عريض، والثانوي ١٢،
+/// والمحتوى من الأعلى بتباعد ثابت [tileGap]. مطابقة لـ LamhaWidget.kt.
+const tileTitleSize = 12.0;
+const tileValueSize = 17.0;
+const tileSubSize = 12.0;
+const tileGap = 3.0;
 
 class _Tile extends StatelessWidget {
   const _Tile({
     required this.title,
     this.emoji,
-    this.value,
-    this.valueSuffix,
-    this.sub,
-    this.subLines = 2,
-    this.extra,
-    this.body,
+    required this.value,
+    this.subs = const [],
+    this.badge,
     this.highlight,
   });
 
   final String title;
   final String? emoji;
-  final String? value;
-  final String? valueSuffix;
-  final String? sub;
-  final int subLines;
-  final String? extra;
-  final Widget? body;
+  final String value;
+  final List<({String text, int lines})> subs;
+  /// بدل الرمز التعبيري بجانب العنوان (سهم القبلة).
+  final Widget? badge;
   final Color? highlight;
 
   @override
@@ -423,43 +429,30 @@ class _Tile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(9, 8, 9, 8),
         child: LayoutBuilder(builder: (context, box) {
-          final bottom = body ??
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text.rich(
-                    TextSpan(text: value ?? '', children: [
-                      if (valueSuffix != null)
-                        TextSpan(
-                            text: valueSuffix,
-                            style: const TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                                color: _dim)),
-                    ]),
-                    maxLines: 2,
+          final content = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(value,
+                  key: const Key('tile-value'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: tileValueSize,
+                      fontWeight: FontWeight.w700,
+                      color: _text,
+                      height: 1.2)),
+              for (final (i, s) in subs.indexed) ...[
+                const SizedBox(height: tileGap),
+                Text(s.text,
+                    key: Key('tile-sub-$i'),
+                    maxLines: s.lines,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: _text,
-                        height: 1.25),
-                  ),
-                  if (sub != null)
-                    Text(sub!,
-                        maxLines: subLines,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 11, color: _dim, height: 1.35)),
-                  if (extra != null)
-                    Text(extra!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 9.5, color: _dim, height: 1.35)),
-                ],
-              );
+                        fontSize: tileSubSize, color: _dim, height: 1.25)),
+              ],
+            ],
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -468,24 +461,32 @@ class _Tile extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(title,
+                        key: const Key('tile-title'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: tileTitleSize,
                             fontWeight: FontWeight.w700,
                             color: _dim)),
                   ),
-                  if (emoji != null)
-                    Text(emoji!, style: const TextStyle(fontSize: 18, height: 1)),
+                  if (badge != null)
+                    badge!
+                  else if (emoji != null)
+                    Text(emoji!, style: const TextStyle(fontSize: 16, height: 1)),
                 ],
               ),
+              const SizedBox(height: tileGap),
+              // المحتوى متتابع من الأعلى، ويصغر فقط إذا لم يتسع المربع.
               Expanded(
                 child: Align(
-                  alignment: AlignmentDirectional.bottomStart,
+                  alignment: AlignmentDirectional.topStart,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    alignment: AlignmentDirectional.bottomStart,
-                    child: SizedBox(width: box.maxWidth, child: bottom),
+                    alignment: AlignmentDirectional.topStart,
+                    child: SizedBox(
+                      width: box.maxWidth,
+                      child: content,
+                    ),
                   ),
                 ),
               ),

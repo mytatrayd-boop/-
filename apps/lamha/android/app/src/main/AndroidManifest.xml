@@ -24,6 +24,11 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- رابط مربع القبلة (lamha://qibla) تعالجه home_widget في Dart، فلا يدفعه Flutter
+                 مساراً للـ Navigator (DECISIONS ١٢). -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

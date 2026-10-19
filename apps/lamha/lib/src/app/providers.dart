@@ -10,6 +10,7 @@ import '../engine/schedule.dart';
 import '../engine/settings.dart';
 import 'app_settings.dart';
 import 'cities.dart';
+import 'places.dart';
 import 'services.dart';
 
 final engineDataProvider = FutureProvider<EngineData>((ref) => loadEngineData());
@@ -27,6 +28,14 @@ final locationServiceProvider =
 
 final backgroundStoreProvider =
     Provider<BackgroundStore>((ref) => AppGroupBackgroundStore());
+
+final placeGeocoderProvider =
+    Provider<PlaceGeocoder>((ref) => GeocodingPlaceGeocoder());
+
+final compassSourceProvider =
+    Provider<CompassSource>((ref) => FlutterCompassSource());
+
+final widgetLaunchProvider = Provider<WidgetLaunch>((ref) => HomeWidgetLaunch());
 
 /// الساعة (تُثبَّت في الاختبارات).
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
@@ -54,7 +63,12 @@ class AppState {
   final String? backgroundPath;
 }
 
-enum LocationResult { ok, unavailable }
+/// نتيجة «موقعي»: [named] باسم من geocoding، و[nearest] باسم أقرب مدينة («قرب ...»).
+enum LocationResult { named, nearest, denied, failed }
+
+/// معرّفا المكان غير الموجود في قائمة المدن.
+const gpsPlaceId = 'gps';
+const searchPlaceId = 'search';
 
 class SettingsController extends AsyncNotifier<AppState> {
   late SharedPreferences _prefs;
@@ -143,26 +157,46 @@ class SettingsController extends AsyncNotifier<AppState> {
         timeZone: c.timeZone,
       ));
 
-  /// قراءة واحدة للموقع؛ الاسم من أقرب مدينة في القائمة.
-  Future<LocationResult> useMyLocation() async {
+  /// مكان من البحث أو من الموقع: إحداثياته الفعلية، وتوقيت الرياض (المدن سعودية).
+  Future<void> setPlace(Place p, {String id = searchPlaceId}) =>
+      _update(_s.copyWith(
+        cityId: id,
+        cityName: p.name,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        timeZone: state.requireValue.cities.first.timeZone,
+      ));
+
+  /// قراءة واحدة للموقع، والحساب بإحداثياته الفعلية. الاسم من geocoding بالعربية،
+  /// وإن تعذّر فـ[nearLabel] لأقرب مدينة في القائمة (مثل «قرب أبها»).
+  Future<LocationResult> useMyLocation(
+      {required String Function(String city) nearLabel}) async {
     final ({double latitude, double longitude})? p;
     try {
       p = await ref.read(locationServiceProvider).currentPosition();
-    } on Exception catch (e) {
+    } catch (e) {
       debugPrint('location: $e');
-      return LocationResult.unavailable;
+      return LocationResult.failed;
     }
-    if (p == null) return LocationResult.unavailable;
-    final c = nearestCity(state.requireValue.cities, p.latitude, p.longitude);
-    await _update(_s.copyWith(
-      cityId: c.id,
-      cityName: c.name,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      timeZone: c.timeZone,
-    ));
-    return LocationResult.ok;
+    if (p == null) return LocationResult.denied;
+    String? name;
+    try {
+      name = await ref.read(placeGeocoderProvider).placeName(p.latitude, p.longitude);
+    } catch (e) {
+      // بلا إنترنت أو بلا خدمة geocoding: اسم أقرب مدينة.
+      debugPrint('geocoding: $e');
+    }
+    final near = nearestCity(state.requireValue.cities, p.latitude, p.longitude);
+    await setPlace(
+      Place(name: name ?? nearLabel(near.name), latitude: p.latitude, longitude: p.longitude),
+      id: gpsPlaceId,
+    );
+    return name == null ? LocationResult.nearest : LocationResult.named;
   }
+
+  /// البحث عن مدينة أو محافظة؛ يرمي عند فشل الاتصال.
+  Future<List<Place>> searchPlaces(String query) =>
+      ref.read(placeGeocoderProvider).search(query);
 
   Future<void> setPrayerMethod(String id) =>
       _update(_s.copyWith(prayerMethod: id));

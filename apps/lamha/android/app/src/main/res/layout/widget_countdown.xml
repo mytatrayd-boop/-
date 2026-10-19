@@ -7,4 +7,4 @@
     android:gravity="right"
     android:maxLines="1"
     android:textColor="#FFB9B0A2"
-    android:textSize="11sp" />
+    android:textSize="12sp" />

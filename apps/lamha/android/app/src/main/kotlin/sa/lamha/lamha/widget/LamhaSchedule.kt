@@ -13,7 +13,9 @@ data class LamhaDay(
     val hijriText: String,
     val gregorianText: String,
     val nextPrayer: LamhaLogic.Prayer?,
-    val qiblaText: String,
+    /// الزاوية («٣٢٤°») والاتجاه («شمال غرب») سطران في المربع.
+    val qiblaDegrees: String,
+    val qiblaDirection: String,
     /// (الاسم، الباقي) بالترتيب: الأقرب ثم الذي بعده.
     val deposits: List<Pair<String, String>>,
     val seasonId: String,
@@ -67,7 +69,12 @@ object LamhaSchedule {
         while (keys.hasNext()) {
             val key = keys.next()
             val e = p.getJSONObject(key)
-            out.add(LamhaLogic.Prayer(key, e.getString("name"), LamhaLogic.parseIsoMillis(e.getString("time"))))
+            out.add(
+                LamhaLogic.Prayer(
+                    key, e.getString("name"), LamhaLogic.parseIsoMillis(e.getString("time")),
+                    e.optString("text", ""),
+                ),
+            )
         }
         return out
     }
@@ -94,6 +101,7 @@ object LamhaSchedule {
             val d = deps.getJSONObject(it)
             d.getString("label") to d.getString("remainingText")
         }
+        val (qiblaDegrees, qiblaDirection) = LamhaLogic.splitQibla(root.getJSONObject("qibla").getString("text"))
         val season = day.getJSONObject("season")
         val trad = day.getJSONObject("tradSeason")
 
@@ -106,7 +114,8 @@ object LamhaSchedule {
             hijriText = day.getJSONObject("hijri").getString("text"),
             gregorianText = day.getJSONObject("gregorian").getString("text"),
             nextPrayer = LamhaLogic.nextPrayer(prayersOf(day), tomorrow, nowMillis),
-            qiblaText = root.getJSONObject("qibla").getString("text"),
+            qiblaDegrees = qiblaDegrees,
+            qiblaDirection = qiblaDirection,
             deposits = deposits,
             seasonId = season.getString("id"),
             seasonName = season.getString("name"),

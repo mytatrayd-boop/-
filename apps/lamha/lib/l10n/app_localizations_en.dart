@@ -44,11 +44,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationDenied =>
-      'Location access was not allowed. Pick a city from the list.';
+      'Location access was not allowed or location is off. Search for your city or pick it from the list.';
 
   @override
   String get locationFailed =>
-      'Could not get your location. Pick a city from the list.';
+      'Could not get your location. Search for your city or pick it from the list.';
 
   @override
   String get prayerMethodLabel => 'Prayer calculation method';
@@ -137,4 +137,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dataLicense =>
       'City coordinates from GeoNames (geonames.org), CC BY 4.0. Tajawal font, SIL OFL 1.1.';
+
+  @override
+  String nearCity(String city) {
+    return 'Near $city';
+  }
+
+  @override
+  String get locationNearest =>
+      'Could not get the place name, so the nearest city is shown. Times use your actual location.';
+
+  @override
+  String get searchHint => 'Search for a city or governorate';
+
+  @override
+  String get searchNoResults => 'No results. Try another name.';
+
+  @override
+  String get searchFailed =>
+      'Search failed. Check your internet connection and try again.';
+
+  @override
+  String get quickPick => 'Quick pick';
+
+  @override
+  String get qiblaTitle => 'Qibla direction';
+
+  @override
+  String qiblaFromNorth(String degrees) {
+    return '$degrees from north';
+  }
+
+  @override
+  String get compassHint =>
+      'Hold the phone flat, then turn until the arrow points up.';
+
+  @override
+  String get compassWaiting => 'Reading the compass…';
+
+  @override
+  String get compassCalibrate =>
+      'Compass accuracy is low. Move the phone in a figure-8 to calibrate it, away from metal and magnets.';
+
+  @override
+  String get compassUnavailable =>
+      'This device has no compass sensor, so the arrow can\'t be shown. Use the angle above with another compass.';
 }

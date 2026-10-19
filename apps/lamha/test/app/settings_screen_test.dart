@@ -1,10 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lamha/src/app/app_settings.dart';
 import 'package:lamha/src/app/cities.dart';
-import 'package:lamha/src/engine/settings.dart';
+import 'package:lamha/src/app/places.dart';
+import 'package:lamha/src/app/providers.dart';
+import 'package:lamha/src/app/services.dart';
 import 'package:lamha/src/app/widget_preview.dart';
+import 'package:lamha/src/engine/arabic.dart';
+import 'package:lamha/src/engine/qibla.dart';
+import 'package:lamha/src/engine/settings.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers.dart';
 import 'app_helpers.dart';
@@ -145,14 +153,48 @@ void main() {
     expect(bridge.updates, 3);
   });
 
-  testWidgets('«موقعي» يختار أقرب مدينة ويحفظ الإحداثيات', (tester) async {
+  testWidgets('«موقعي» يحسب بالإحداثيات الفعلية والاسم من geocoding', (tester) async {
     final bridge = await pumpApp(tester,
-        location: FakeLocation((latitude: 21.5, longitude: 39.2)));
+        location: FakeLocation((latitude: 18.3, longitude: 42.6)),
+        geocoder: FakeGeocoder(name: 'خميس مشيط'));
     await tester.tap(find.byKey(const Key('my-location')));
     await tester.pumpAndSettle();
     final city = bridge.last['city'] as Map;
-    expect(city['name'], 'جدة');
+    expect(city['name'], 'خميس مشيط');
+    expect(city['latitude'], 18.3);
+    expect(city['longitude'], 42.6);
+    expect(city['timeZone'], 'Asia/Riyadh');
+    // القبلة من الإحداثيات نفسها لا من أقرب مدينة.
+    expect((bridge.last['qibla'] as Map)['degrees'],
+        double.parse(qiblaDegrees(18.3, 42.6).toStringAsFixed(1)));
+    // الاسم يظهر في القائمة تلميحاً لأنه ليس من المدن الجاهزة.
+    expect(find.text('خميس مشيط'), findsWidgets);
+  });
+
+  testWidgets('«موقعي» بلا إنترنت: اسم أقرب مدينة مع «قرب»', (tester) async {
+    final bridge = await pumpApp(tester,
+        location: FakeLocation((latitude: 21.5, longitude: 39.2)),
+        geocoder: FakeGeocoder(error: Exception('offline')));
+    await tester.tap(find.byKey(const Key('my-location')));
+    await tester.pumpAndSettle();
+    final city = bridge.last['city'] as Map;
+    expect(city['name'], 'قرب جدة');
     expect(city['latitude'], 21.5);
+    expect(find.textContaining('أقرب مدينة'), findsOneWidget);
+  });
+
+  testWidgets('الإعدادات تحفظ المكان المختار وتعيده عند الفتح', (tester) async {
+    final bridge = await pumpApp(tester,
+        location: FakeLocation((latitude: 18.3, longitude: 42.6)),
+        geocoder: FakeGeocoder(name: 'خميس مشيط'));
+    await tester.tap(find.byKey(const Key('my-location')));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    final saved = jsonDecode(prefs.getString(LamhaSettings.prefsKey)!) as Map;
+    expect(saved['cityName'], 'خميس مشيط');
+    expect(saved['latitude'], 18.3);
+    expect(saved['cityId'], gpsPlaceId);
+    expect(bridge.saved, hasLength(2));
   });
 
   testWidgets('«موقعي» بلا إذن: رسالة ولا تغيير', (tester) async {
@@ -161,6 +203,65 @@ void main() {
     await tester.pump();
     expect(find.textContaining('لم يُسمح'), findsOneWidget);
     expect(bridge.saved, hasLength(1));
+  });
+
+  testWidgets('«موقعي» عند فشل القراءة: رسالة «تعذّر»', (tester) async {
+    await pumpApp(tester, location: _ThrowingLocation());
+    await tester.tap(find.byKey(const Key('my-location')));
+    await tester.pump();
+    expect(find.textContaining('تعذّر تحديد الموقع'), findsOneWidget);
+  });
+
+  testWidgets('البحث يعرض النتائج والاختيار يحفظ الإحداثيات', (tester) async {
+    final geo = FakeGeocoder(results: const [
+      Place(name: 'النماص', latitude: 19.12, longitude: 42.13),
+      Place(name: 'تنومة', latitude: 18.93, longitude: 42.18),
+    ]);
+    final bridge = await pumpApp(tester, geocoder: geo);
+    await tester.enterText(find.byKey(const Key('city-search')), 'النماص');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(geo.queries, ['النماص']);
+    expect(find.text('تنومة'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('place-0')));
+    await tester.pumpAndSettle();
+    final city = bridge.last['city'] as Map;
+    expect(city['name'], 'النماص');
+    expect(city['latitude'], 19.12);
+    expect(find.byKey(const Key('place-0')), findsNothing);
+  });
+
+  testWidgets('البحث بلا إنترنت أو بلا نتائج: رسالة عربية', (tester) async {
+    await pumpApp(tester, geocoder: FakeGeocoder(error: Exception('offline')));
+    await tester.enterText(find.byKey(const Key('city-search')), 'أبها');
+    await tester.tap(find.byKey(const Key('city-search-button')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('تحقق من الاتصال بالإنترنت'), findsOneWidget);
+  });
+
+  testWidgets('البحث بلا نتائج', (tester) async {
+    await pumpApp(tester, geocoder: FakeGeocoder());
+    await tester.enterText(find.byKey(const Key('city-search')), 'كذا');
+    await tester.tap(find.byKey(const Key('city-search-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('لا توجد نتائج. جرّب اسماً آخر.'), findsOneWidget);
+  });
+
+  testWidgets('القائمة الجاهزة تبقى اختياراً سريعاً بعد مكان من البحث', (tester) async {
+    final bridge = await pumpApp(tester,
+        geocoder: FakeGeocoder(results: const [
+          Place(name: 'النماص', latitude: 19.12, longitude: 42.13),
+        ]));
+    await tester.enterText(find.byKey(const Key('city-search')), 'النماص');
+    await tester.tap(find.byKey(const Key('city-search-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('place-0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('city-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('أبها').last);
+    await tester.pumpAndSettle();
+    expect((bridge.last['city'] as Map)['name'], 'أبها');
   });
 
   testWidgets('زر لقطة الخلفية لا يظهر في أندرويد', (tester) async {
@@ -212,8 +313,61 @@ void main() {
     expect(bridge.last['background'], isNull);
   });
 
+  testWidgets('المعاينة: القيمة تحت العنوان مباشرة، والأحجام ١٢/١٧/١٢', (tester) async {
+    final bridge = await pumpApp(tester);
+    Finder inTile(WidgetElement e, String key) => find.descendant(
+        of: tile(e),
+        matching: key == 'tile-sub'
+            ? find.byWidgetPredicate((w) =>
+                w.key is ValueKey<String> &&
+                (w.key! as ValueKey<String>).value.startsWith('tile-sub-'))
+            : find.byKey(Key(key)));
+    for (final e in gridElements) {
+      final title = tester.widget<Text>(inTile(e, 'tile-title'));
+      final value = tester.widget<Text>(inTile(e, 'tile-value'));
+      expect(title.style!.fontSize, 12);
+      expect(value.style!.fontSize, 17);
+      expect(value.style!.fontWeight, FontWeight.w700);
+      for (final sub in tester.widgetList<Text>(inTile(e, 'tile-sub'))) {
+        expect(sub.style!.fontSize, 12);
+      }
+      // تتابع من الأعلى: لا فراغ كبير بين العنوان والقيمة.
+      final gap = tester.getRect(inTile(e, 'tile-value')).top -
+          tester.getRect(inTile(e, 'tile-title')).bottom;
+      expect(gap, inInclusiveRange(0, 8), reason: e.name);
+    }
+
+    // القبلة: الزاوية سطر والاتجاه سطر تحته.
+    final q = bridge.last['qibla'] as Map;
+    final qValue = tester.widget<Text>(inTile(WidgetElement.qibla, 'tile-value'));
+    expect(qValue.data, '${arabicDigits((q['degrees'] as num).round())}°');
+    final qSub = inTile(WidgetElement.qibla, 'tile-sub');
+    expect(tester.widget<Text>(qSub).data, q['direction']);
+    expect(tester.getRect(qSub).top,
+        greaterThan(tester.getRect(inTile(WidgetElement.qibla, 'tile-value')).bottom - 0.5));
+
+    // الصلاة: الاسم، ثم وقتها من الجدول (text)، ثم الباقي.
+    // ٩:٠٠Z = ١٢:٠٠ بالرياض، فالقادمة العصر.
+    final day = (bridge.last['days'] as List).first as Map;
+    final asr = (day['prayers'] as Map)['asr'] as Map;
+    expect(tester.widget<Text>(inTile(WidgetElement.prayer, 'tile-value')).data,
+        asr['name']);
+    final subs = tester
+        .widgetList<Text>(inTile(WidgetElement.prayer, 'tile-sub'))
+        .map((t) => t.data)
+        .toList();
+    expect(subs.first, asr['text']);
+    expect(subs.last, startsWith('باقي'));
+  });
+
   test('لام الجر', () {
     expect(withLam('الشتاء'), 'للشتاء');
     expect(withLam('سهيل'), 'لسهيل');
   });
+}
+
+class _ThrowingLocation implements LocationService {
+  @override
+  Future<({double latitude, double longitude})?> currentPosition() async =>
+      throw Exception('timeout');
 }

@@ -13,7 +13,8 @@ object LamhaLogic {
     /// مربعات الشبكة بترتيبها من اليمين (DESIGN: الشبكة ٣×٢)، بأسماء مفاتيح visible في الجدول.
     val gridElements = listOf("prayer", "qibla", "deposit", "season", "tradSeason")
 
-    data class Prayer(val key: String, val name: String, val atMillis: Long)
+    /// [text] وقت الصلاة جاهزاً للعرض من الجدول (مثل «٤:٣٥ ص»).
+    data class Prayer(val key: String, val name: String, val atMillis: Long, val text: String = "")
 
     data class Cell(val element: String, val flex: Int)
 
@@ -108,6 +109,20 @@ object LamhaLogic {
     /// اسم مسبوق بلام الجر: «الشتاء» ← «للشتاء»، «سهيل» ← «لسهيل» (كـ withLam في Dart).
     fun withLam(name: String): String =
         if (name.startsWith("ال")) "لل" + name.substring(2) else "ل$name"
+
+    /// يقسم نص القبلة من الجدول («٣٢٤° شمال غرب») إلى الزاوية («٣٢٤°») والاتجاه («شمال غرب»).
+    fun splitQibla(text: String): Pair<String, String> {
+        val i = text.indexOf('°')
+        if (i < 0) return text.trim() to ""
+        return text.substring(0, i + 1).trim() to text.substring(i + 1).trim()
+    }
+
+    /// حجم خط يجعل نصاً عرضه [widthAtPreferred] بالحجم [preferredSp] يتسع في [maxWidth]،
+    /// دون أن ينزل عن [minSp]. العرض يتناسب طردياً مع الحجم.
+    fun fitTextSize(preferredSp: Float, widthAtPreferred: Float, maxWidth: Float, minSp: Float): Float {
+        if (widthAtPreferred <= 0f || widthAtPreferred <= maxWidth) return preferredSp
+        return maxOf(minSp, preferredSp * maxWidth / widthAtPreferred)
+    }
 
     /// لحظات تحديث الودجت: كل صلاة، وكل منتصف ليل وظهر (لتغيّر «ص/م») في منطقة المدينة، بعد [nowMillis].
     fun updateTimes(

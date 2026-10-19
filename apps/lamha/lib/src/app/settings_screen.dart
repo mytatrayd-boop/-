@@ -6,7 +6,9 @@ import '../../l10n/app_localizations.dart';
 import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
+import 'places.dart';
 import 'providers.dart';
+import 'qibla_screen.dart';
 import 'widget_preview.dart';
 
 /// شاشة الإعدادات الوحيدة (SPEC ٧، DESIGN «تطبيق الإعدادات»).
@@ -118,7 +120,11 @@ class _Body extends ConsumerWidget {
               child: DropdownButton<String>(
                 key: const Key('city-dropdown'),
                 isExpanded: true,
-                value: s.cityId,
+                // مكان من البحث أو الموقع ليس في القائمة: يظهر اسمه تلميحاً.
+                value: state.cities.any((city) => city.id == s.cityId)
+                    ? s.cityId
+                    : null,
+                hint: Text(s.cityName),
                 items: [
                   for (final city in state.cities)
                     DropdownMenuItem(value: city.id, child: Text(city.name)),
@@ -133,11 +139,31 @@ class _Body extends ConsumerWidget {
               icon: const Icon(Icons.my_location),
               label: Text(l.myLocation),
               onPressed: () async {
-                final r = await c.useMyLocation();
-                if (r == LocationResult.unavailable) toast(l.locationDenied);
+                final r = await c.useMyLocation(nearLabel: l.nearCity);
+                switch (r) {
+                  case LocationResult.named:
+                    break;
+                  case LocationResult.nearest:
+                    toast(l.locationNearest);
+                  case LocationResult.denied:
+                    toast(l.locationDenied);
+                  case LocationResult.failed:
+                    toast(l.locationFailed);
+                }
               },
             ),
           ],
+        ),
+        const _PlaceSearch(),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const Key('qibla-button'),
+          icon: const Icon(Icons.explore),
+          label: Text(l.qiblaTitle),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            settings: const RouteSettings(name: QiblaScreen.routeName),
+            builder: (_) => const QiblaScreen(),
+          )),
         ),
         const SizedBox(height: 16),
         Text(l.prayerMethodLabel, style: textTheme.titleMedium),
@@ -178,6 +204,100 @@ class _Body extends ConsumerWidget {
         ],
         const SizedBox(height: 16),
         Text(l.dataLicense, style: textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+/// البحث عن مدينة أو محافظة (geocoding)، والنتائج للاختيار.
+class _PlaceSearch extends ConsumerStatefulWidget {
+  const _PlaceSearch();
+
+  @override
+  ConsumerState<_PlaceSearch> createState() => _PlaceSearchState();
+}
+
+class _PlaceSearchState extends ConsumerState<_PlaceSearch> {
+  final _text = TextEditingController();
+  var _busy = false;
+  String? _message;
+  var _results = const <Place>[];
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(AppLocalizations l) async {
+    final q = _text.text.trim();
+    if (q.isEmpty) return;
+    setState(() {
+      _busy = true;
+      _message = null;
+      _results = const [];
+    });
+    try {
+      final r =
+          await ref.read(settingsControllerProvider.notifier).searchPlaces(q);
+      if (!mounted) return;
+      setState(() {
+        _results = r;
+        _message = r.isEmpty ? l.searchNoResults : null;
+      });
+    } catch (e) {
+      debugPrint('search: $e');
+      if (mounted) setState(() => _message = l.searchFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          key: const Key('city-search'),
+          controller: _text,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _search(l),
+          decoration: InputDecoration(
+            hintText: l.searchHint,
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _busy
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                : IconButton(
+                    key: const Key('city-search-button'),
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: () => _search(l),
+                  ),
+          ),
+        ),
+        if (_message != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(_message!, key: const Key('city-search-message')),
+          ),
+        for (final (i, p) in _results.indexed)
+          ListTile(
+            key: Key('place-$i'),
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.place_outlined),
+            title: Text(p.name),
+            onTap: () async {
+              setState(() => _results = const []);
+              _text.clear();
+              await ref.read(settingsControllerProvider.notifier).setPlace(p);
+            },
+          ),
       ],
     );
   }

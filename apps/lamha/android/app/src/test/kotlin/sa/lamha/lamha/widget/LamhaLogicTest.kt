@@ -107,4 +107,25 @@ class LamhaLogicTest {
         assertTrue(LamhaLogic.isAm(t("2026-10-19T11:59:00.000+0300"), riyadh))
         assertTrue(!LamhaLogic.isAm(t("2026-10-19T12:00:00.000+0300"), riyadh))
     }
+
+    @Test
+    fun splitQiblaIntoAngleAndDirection() {
+        assertEquals("٣٢٤°" to "شمال غرب", LamhaLogic.splitQibla("٣٢٤° شمال غرب"))
+        assertEquals("٩٠°" to "شرق", LamhaLogic.splitQibla("٩٠° شرق"))
+        assertEquals("٢٤٣" to "", LamhaLogic.splitQibla("٢٤٣"))
+    }
+
+    @Test
+    fun prayerTextDefaultsToEmpty() {
+        assertEquals("", LamhaLogic.Prayer("fajr", "الفجر", 0L).text)
+        assertEquals("٤:٣٥ ص", LamhaLogic.Prayer("fajr", "الفجر", 0L, "٤:٣٥ ص").text)
+    }
+
+    @Test
+    fun fitTextSizeShrinksOnlyWhenTooWide() {
+        assertEquals(44f, LamhaLogic.fitTextSize(44f, 120f, 150f, 28f), 0.001f)
+        assertEquals(33f, LamhaLogic.fitTextSize(44f, 200f, 150f, 28f), 0.001f)
+        assertEquals(28f, LamhaLogic.fitTextSize(44f, 400f, 150f, 28f), 0.001f)
+        assertEquals(44f, LamhaLogic.fitTextSize(44f, 0f, 150f, 28f), 0.001f)
+    }
 }
