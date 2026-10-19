@@ -10,10 +10,17 @@
     <string name="tile_trad_season">Traditional season</string>
     <string name="hijri_date">%1$s AH</string>
     <string name="gregorian_date">%1$s</string>
-    <string name="city_weather">📍 %1$s · ⛅ --°</string>
+    <string name="city_weather">📍 %1$s · %2$s</string>
     <string name="remaining_to_next">%1$s %2$s</string>
     <string name="value_with_suffix">%1$s · %2$s</string>
     <string name="countdown_format">%s left</string>
     <string name="am">AM</string>
     <string name="pm">PM</string>
+    <string name="weather_unknown">--°</string>
+    <string name="notification_channel">Lock screen</string>
+    <string name="notification_channel_description">Next prayer and qibla on the lock screen, silent</string>
+    <string name="notification_title">%1$s · %2$s</string>
+    <string name="notification_qibla">Qibla %1$s</string>
+    <string name="notification_deposit">%1$s %2$s</string>
+    <string name="notification_join">%1$s · %2$s</string>
 </resources>

@@ -1,8 +1,6 @@
 plugins {
     id("com.android.application")
-    // Kotlin صريحاً ليُطبَّق Compose compiler (لـ Glance) بعده بترتيب ثابت.
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -32,10 +30,6 @@ android {
         versionName = flutter.versionName
     }
 
-    buildFeatures {
-        compose = true
-    }
-
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -57,7 +51,7 @@ flutter {
 }
 
 dependencies {
-    // نفس نسخة Glance التي تعتمدها home_widget 0.10.0 (api في android/build.gradle للحزمة).
-    implementation("androidx.glance:glance-appwidget:1.2.0")
+    // جلب الطقس الدوري (LamhaWeatherWorker): نفس نسخة WorkManager في home_widget 0.10.0.
+    implementation("androidx.work:work-runtime:2.11.2")
     testImplementation("junit:junit:4.13.2")
 }

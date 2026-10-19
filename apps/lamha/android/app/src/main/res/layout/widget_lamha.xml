@@ -41,11 +41,14 @@
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="right"
                     android:baselineAligned="true"
                     android:orientation="horizontal">
 
                     <!-- ساعة النظام بلا «ص/م»: تتحدث كل دقيقة دون تحديث الودجت. -->
                     <TextClock
+                        android:gravity="right|center_vertical"
+                        android:textDirection="rtl"
                         android:id="@+id/clock"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -60,6 +63,8 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:gravity="right|center_vertical"
+                        android:textDirection="rtl"
                         android:id="@+id/am_pm"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -73,7 +78,10 @@
                 </LinearLayout>
 
                 <TextView
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
                     android:id="@+id/weekday"
+                    android:layout_gravity="right"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
@@ -93,45 +101,49 @@
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end|top"
+                    android:layout_gravity="left|top"
                     android:orientation="vertical">
+                    <!-- عمود أيسر، ونصوصه محاذاة يمين داخله (عرض match_parent = أعرض سطر). -->
 
                     <TextView
+                        android:gravity="right|center_vertical"
+                        android:textDirection="rtl"
                         android:id="@+id/hijri"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:singleLine="true"
                         android:shadowColor="#66000000"
                         android:shadowRadius="3"
-                        android:textAlignment="viewStart"
                         android:textColor="#FFF4EFE6"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
                     <TextView
+                        android:gravity="right|center_vertical"
+                        android:textDirection="rtl"
                         android:id="@+id/gregorian"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:ellipsize="end"
                         android:singleLine="true"
                         android:shadowColor="#66000000"
                         android:shadowRadius="3"
-                        android:textAlignment="viewStart"
                         android:textColor="#FFCFC6B8"
                         android:textSize="13sp" />
 
                     <TextView
+                        android:gravity="right|center_vertical"
+                        android:textDirection="rtl"
                         android:id="@+id/weather"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:ellipsize="end"
                         android:singleLine="true"
                         android:shadowColor="#66000000"
                         android:shadowRadius="3"
-                        android:textAlignment="viewStart"
                         android:textColor="#FFCFC6B8"
                         android:textSize="12sp" />
                 </LinearLayout>

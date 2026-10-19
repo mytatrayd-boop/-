@@ -30,18 +30,21 @@
             android:orientation="horizontal">
 
             <TextView
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
                 android:id="@+id/tile_title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:shadowColor="#66000000"
                 android:shadowRadius="3"
-                android:textAlignment="viewStart"
                 android:textColor="#FFB9B0A2"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
                 android:id="@+id/tile_emoji"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -50,18 +53,21 @@
         </LinearLayout>
 
         <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
             android:id="@+id/tile_value"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
-            android:textAlignment="viewStart"
             android:textColor="#FFF4EFE6"
             android:textSize="17sp"
             android:textStyle="bold" />
 
         <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
             android:id="@+id/tile_sub1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -70,13 +76,14 @@
             android:maxLines="1"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
-            android:textAlignment="viewStart"
             android:textColor="#FFB9B0A2"
             android:textSize="12sp"
             android:visibility="gone" />
 
         <!-- عدّاد النظام التنازلي للصلاة القادمة. -->
         <Chronometer
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
             android:id="@+id/tile_countdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -84,12 +91,13 @@
             android:maxLines="1"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
-            android:textAlignment="viewStart"
             android:textColor="#FFB9B0A2"
             android:textSize="12sp"
             android:visibility="gone" />
 
         <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
             android:id="@+id/tile_sub2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -98,12 +106,13 @@
             android:maxLines="1"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
-            android:textAlignment="viewStart"
             android:textColor="#FFB9B0A2"
             android:textSize="12sp"
             android:visibility="gone" />
 
         <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
             android:id="@+id/tile_sub3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -112,7 +121,6 @@
             android:maxLines="2"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
-            android:textAlignment="viewStart"
             android:textColor="#FFB9B0A2"
             android:textSize="12sp"
             android:visibility="gone" />

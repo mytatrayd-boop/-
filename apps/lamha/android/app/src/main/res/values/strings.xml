@@ -11,11 +11,19 @@
     <string name="tile_trad_season">الموسم</string>
     <string name="hijri_date">%1$s هـ</string>
     <string name="gregorian_date">%1$s م</string>
-    <string name="city_weather">📍 %1$s · ⛅ ‎--°</string>
+    <string name="city_weather">📍 %1$s · %2$s</string>
     <string name="remaining_to_next">%1$s %2$s</string>
     <string name="value_with_suffix">%1$s · %2$s</string>
     <!-- صيغة Chronometer للعد التنازلي؛ %s هو الوقت الباقي. -->
     <string name="countdown_format">باقي %s</string>
     <string name="am">ص</string>
     <string name="pm">م</string>
+    <string name="weather_unknown">‎--°</string>
+    <!-- إشعار شاشة القفل (الميزة ٣ج). -->
+    <string name="notification_channel">شاشة القفل</string>
+    <string name="notification_channel_description">الصلاة القادمة والقبلة في شاشة القفل، بلا صوت</string>
+    <string name="notification_title">%1$s · %2$s</string>
+    <string name="notification_qibla">القبلة %1$s</string>
+    <string name="notification_deposit">%1$s %2$s</string>
+    <string name="notification_join">%1$s · %2$s</string>
 </resources>
