@@ -42,4 +42,13 @@
   - اللقطات: `mockups/settings_preview.png` و`test/app/goldens/settings_preview_xlarge.png` (كبير جداً): لا قص ولا تداخل؛ «…» فقط في سطر الإيداع الثاني ووصف الموسم كما في DESIGN.
   - `flutter analyze`: No issues found. `flutter test`: ١٥٤ اختباراً، كلها ناجحة. JUnit: ٢٢ اختباراً لـ LamhaLogic ناجحة محلياً على JVM. `LamhaWidgetReceiver.kt` والتخطيطات لم تُترجم هنا (لا Android SDK).
   - ملاحظات للمراجع: (١) بأحجام المالك لا تتسع أربعة أسطر في المربع مع «كبير جداً» داخل ٤×٤ (٣٣٨×٣٥٤)، فخط المربعات يصغر تلقائياً (في المعاينة ١٫٠٧ بدل ١٫٣)، والصف العلوي يكبر كاملاً. (٢) في أندرويد ارتفاع الأسطر تقدير (١٫٤٥ × الحجم) من ارتفاع الودجت الذي يبلغه المشغّل، فقد يختلف قليلاً عن الجهاز. (٣) «fitTextSize الموجود» لم يكن موجوداً (حُذف في ٣ج)، فأُعيد بالصيغة نفسها.
+- إصلاح تراجع الإصدار ١٦ ولقطات الودجت الحقيقية: **منفذ، بانتظار المراجعة والبناء على GitHub.** لم يُجرَّب على جهاز.
+  - السبب: التخطيطات كانت سليمة (المربع عمود رأسي، والقيمة singleLine). حذف `tile_emoji` في ٣د غيّر أرقام المعرّفات (R.id)، والمشغّل بعد تحديث التطبيق أعاد تطبيق الأوامر على شجرة الإصدار ١٥ (canRecycleView)، فذهبت القيمة إلى عنوان قديم بوزن، والوقت إلى مكان الرمز، واليوم إلى سطر الطقس. الإصلاح: `buildViews` تعيد RemoteViews(أفقي، رأسي) فيُبنى التخطيط من جديد في كل تحديث، والعنوان والقيمة ظاهران صراحةً. على جوال المالك الحالي: إزالة الودجت وإضافتها (أو إعادة التشغيل) تكفي.
+  - `LamhaWidgetReceiver.buildViews(context, schedule, widthDp, heightDp, nowMillis)` يستدعيها المستقبل والاختباران.
+  - طريقة رؤية اللقطات (أبها، الفجر، إيداعان، القبلة ٣٢٤ شمال غرب، الوسم، الخريف، ٢٦°؛ ٣٣٨×٣٥٤ و٢٩٠×٣٢٠؛ خط ٠٫٩/١/١٫٣؛ ذهبي وأزرق):
+    - محلياً بلا محاكي (Robolectric): `cd android && ./gradlew :app:testDebugUnitTest` يكتب `mockups/widget_screens/*.png`.
+    - على GitHub (محاكي API 34، job `screens` بعد apk): artifact `lamha-screens-<رقم التشغيل>`، وفرع `lamha-screens` (مجلد screens فقط): `git fetch origin lamha-screens && git checkout FETCH_HEAD -- screens`.
+  - الجدول التجريبي `android/app/src/androidTest/assets/schedule_{gold,blue}.json` مولّد من المحرك ويتحقق منه `test/app/android_fixture_test.dart` (إعادة التوليد: `LAMHA_UPDATE_FIXTURES=1 flutter test test/app/android_fixture_test.dart`). الإحداثيات قرب أبها (١٨٫٢٠، ٤٢٫٣٣) لتكون القبلة ٣٢٤°؛ مركز أبها ٣٢٢°.
+  - التحقق الآلي في `src/sharedTest/.../LamhaScreens.kt`: كل نص ظاهر عرضه > ٠ وأسطره ≤ حده ونصه داخل حدوده، والعناوين الخمسة ظاهرة، والمربع عمود رأسي محاذى يميناً، واليوم تحت الساعة، والتواريخ والمدينة يسارها.
+  - `flutter analyze`: No issues found. `flutter test`: ١٥٦ ناجحة. `flutter build apk --debug` نجح محلياً. JUnit: ٢٢ + اختبار Robolectric ناجحة. اختبار المحاكي مترجم ولم يُشغَّل هنا (لا KVM).
 - التالي: البناء على GitHub وتجربة المالك، ثم الميزة ٤ (ودجت آيفون وشاشة القفل).

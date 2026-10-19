@@ -32,6 +32,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // لقطات الودجت: منطق مشترك بين اختبار المحاكي (androidTest) واختبار Robolectric (test).
+    sourceSets {
+        getByName("test").java.srcDir("src/sharedTest/kotlin")
+        getByName("androidTest").java.srcDir("src/sharedTest/kotlin")
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -56,7 +66,17 @@ dependencies {
     // جلب الطقس الدوري (LamhaWeatherWorker): نفس نسخة WorkManager في home_widget 0.10.0.
     implementation("androidx.work:work-runtime:2.11.2")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16")
+    testImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:core:1.6.1")
+}
+
+// Robolectric (isIncludeAndroidResources) يحزم أصول الإصدار، ومنها أصول Flutter: ترتيب صريح يرضي
+// تحقق Gradle دون أن يفرض بناء Flutter مع اختبارات JUnit.
+tasks.configureEach {
+    for (variant in listOf("Debug", "Profile", "Release")) {
+        if (name == "package${variant}UnitTestForUnitTest") mustRunAfter("copyFlutterAssets$variant")
+    }
 }
