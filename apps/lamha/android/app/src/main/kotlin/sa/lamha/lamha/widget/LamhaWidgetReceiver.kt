@@ -416,9 +416,20 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     if (next != null) {
                         // عدّاد النظام التنازلي حتى الصلاة («باقي ٦:٠٤:١٩»)، فلا يحتاج تحديثاً كل ثانية.
                         val base = SystemClock.elapsedRealtime() + (next.atMillis - env.now)
-                        rv.setChronometer(R.id.tile_countdown, base, ctx.getString(R.string.countdown_format), true)
+                        // في المربع الضيق: بلا «باقي» ثم بخط أصغر، ليبقى العدّاد سطراً واحداً.
+                        var format = ctx.getString(R.string.countdown_format)
+                        var countSp = subSp
+                        if (availDp > 0f) {
+                            val sample = String.format(format, "00:00:00")
+                            if (textWidthDp(ctx, sample, countSp, false) > availDp) format = "%s"
+                            countSp = LamhaLogic.fitTextSize(
+                                countSp, textWidthDp(ctx, String.format(format, "00:00:00"), countSp, false),
+                                availDp, countSp * TILE_MIN_FIT,
+                            )
+                        }
+                        rv.setChronometer(R.id.tile_countdown, base, format, true)
                         rv.setChronometerCountDown(R.id.tile_countdown, true)
-                        rv.setTextViewTextSize(R.id.tile_countdown, TypedValue.COMPLEX_UNIT_SP, subSp)
+                        rv.setTextViewTextSize(R.id.tile_countdown, TypedValue.COMPLEX_UNIT_SP, countSp)
                         rv.setViewVisibility(R.id.tile_countdown, View.VISIBLE)
                     }
                 }
