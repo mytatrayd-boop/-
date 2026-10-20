@@ -1,4 +1,4 @@
-# منصة نواتج التعلم — عقل المشروع
+# مهارات القراءة لاختبارات نافس — عقل المشروع
 
 - موقع ويب ثابت (ليس Flutter) على Firebase: Hosting + Auth + Firestore. انظر ARCHITECTURE.md وDECISIONS.md.
 - الواجهة عربية RTL، والتصميم يطابق `design/original.html`.
