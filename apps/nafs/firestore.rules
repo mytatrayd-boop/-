@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// المعلم: حساب بريد وكلمة مرور. الطالب: دخول مجهول (anonymous) ثم قراءة سجله برقم السجل المدني فقط.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function provider() { return request.auth.token.firebase.sign_in_provider; }
+    function isTeacher() { return signedIn() && provider() == 'password'; }
+    function isStudentSession() { return signedIn() && provider() == 'anonymous'; }
+    function isOwner(uid) { return isTeacher() && request.auth.uid == uid; }
+    function text(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
+    function civilId(v) { return v is string && v.matches('^[0-9]{10}$'); }
+
+    match /teachers/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'civilId', 'school', 'className', 'email', 'createdAt'])
+        && text(request.resource.data.name, 100)
+        && civilId(request.resource.data.civilId)
+        && text(request.resource.data.school, 120)
+        && text(request.resource.data.className, 60);
+
+      // الملفات المرفوعة (أكسل) محفوظة كنص base64 داخل المستند (الحد ~700KB للملف).
+      match /uploads/{fileId} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['name', 'size', 'type', 'data', 'className', 'added', 'createdAt'])
+          && text(request.resource.data.name, 200)
+          && request.resource.data.data is string
+          && request.resource.data.data.size() <= 950000
+          && request.resource.data.size is int
+          && request.resource.data.added is int;
+      }
+    }
+
+    // مستند لكل طالب، معرّفه رقم السجل المدني. الطالب مسجل عند معلم واحد فقط.
+    match /students/{sid} {
+      allow get: if signedIn();
+      allow list: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+
+      allow create: if isTeacher() && civilId(sid)
+        && request.resource.data.keys().hasOnly(['name', 'teacherUid', 'className', 'school', 'status', 'createdAt'])
+        && request.resource.data.teacherUid == request.auth.uid
+        && text(request.resource.data.name, 100)
+        && text(request.resource.data.className, 60);
+
+      allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+
+      allow update: if
+        (isTeacher()
+          && resource.data.teacherUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'className', 'status', 'score', 'completedAt'])
+          && text(request.resource.data.name, 100))
+        ||
+        (isStudentSession()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'status', 'completedAt'])
+          && request.resource.data.score is int
+          && request.resource.data.score >= 0 && request.resource.data.score <= 100
+          && request.resource.data.status == 'منجز'
+          && request.resource.data.completedAt == request.time);
+    }
+  }
+}
