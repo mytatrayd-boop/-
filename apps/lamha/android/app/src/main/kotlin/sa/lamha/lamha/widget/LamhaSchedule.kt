@@ -141,6 +141,8 @@ object LamhaSchedule {
                 visible = t.optBoolean("visible", true),
                 span = t.optInt("span", 1).coerceIn(1, LamhaLogic.GRID_COLUMNS),
                 fontScale = t.optDouble("fontScale", 1.0).toFloat(),
+                showTitle = t.optBoolean("showTitle", true),
+                showSub = t.optBoolean("showSub", true),
                 primaryColor = if (t.isNull("primaryColor")) null else t.getLong("primaryColor").toInt(),
                 secondaryColor = if (t.isNull("secondaryColor")) null else t.getLong("secondaryColor").toInt(),
             )

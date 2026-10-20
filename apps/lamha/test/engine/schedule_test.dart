@@ -58,6 +58,7 @@ void main() {
     expect(layout.map((t) => t['id']), [for (final e in WidgetElement.values) e.name]);
     expect(layout[1], {
       'id': 'dates', 'visible': true, 'span': 2, 'fontScale': 1.0,
+      'showTitle': true, 'showSub': true,
       'primaryColor': null, 'secondaryColor': null,
     });
   });

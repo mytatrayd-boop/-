@@ -20,6 +20,8 @@ object LamhaLogic {
         val visible: Boolean = true,
         val span: Int = 1,
         val fontScale: Float = 1f,
+        val showTitle: Boolean = true,
+        val showSub: Boolean = true,
         val primaryColor: Int? = null,
         val secondaryColor: Int? = null,
     )
@@ -116,6 +118,84 @@ object LamhaLogic {
             return s to h
         }
         return s to natural.map { it * space / sum }
+    }
+
+    /// سطر ثانوي (SubLine في Dart): ارتفاعه بالحجم المطلوب، وحده، وعرضه إن كان لا يُختصر (0 = يُختصر).
+    data class SubLine(val height: Float, val maxLines: Int = 1, val fitWidth: Float = 0f)
+
+    /// نتيجة fitTile: العنوان ظاهر؟ ومعامل القيمة (≤ ١) وأسطرها، والثانويات الظاهرة ومعاملاتها، وأسطر آخرها.
+    data class TileFit(
+        val title: Boolean, val valueScale: Float, val valueLines: Int,
+        val subs: List<Int>, val subScales: List<Float>, val lastSubLines: Int,
+    )
+
+    /// أسطر نص كلماته بعرض [words] (ومسافته [space]) في [width]، بالتفاف عند المسافات فقط (wrapLines في Dart).
+    fun wrapLines(words: List<Float>, space: Float, width: Float): Int {
+        if (words.isEmpty()) return 1
+        var lines = 1
+        var line = words[0]
+        for (w in words.drop(1)) {
+            if (line + space + w <= width) {
+                line += space + w
+            } else {
+                lines++
+                line = w
+            }
+        }
+        return lines
+    }
+
+    /// ملاءمة مربع (الميزة ٥ب، fitTile في Dart): الحجم المطلوب يُحترم ومقاس المربع ثابت. القيمة تلتفّ
+    /// عند المسافات ولا تصغر عرضياً إلا إذا لم تتسع أعرض كلمة؛ وإن ضاق الارتفاع تُخفى الثانويات
+    /// بأولويتها ثم العنوان، وآخراً تصغر القيمة بأدنى تصغير لتظهر كاملة. بلا مقاس (0): كما هي.
+    fun fitTile(
+        height: Float, width: Float, titleHeight: Float, valueLineHeight: Float,
+        valueWords: List<Float>, valueSpace: Float = 0f, subs: List<SubLine> = emptyList(),
+        hideFromStart: Boolean = false, gap: Float = 0f, minSubFit: Float = 0.7f,
+    ): TileFit {
+        var k = 1f
+        val widest = valueWords.maxOrNull() ?: 0f
+        if (width > 0f && widest > width) k = width / widest
+        var lines = if (width > 0f) wrapLines(valueWords.map { it * k }, valueSpace * k, width) else 1
+        val scales = LinkedHashMap<Int, Float>()
+        for (i in subs.indices) {
+            val f = subs[i].fitWidth
+            val s = if (width > 0f && f > width) width / f else 1f
+            if (s >= minSubFit) scales[i] = s
+        }
+        val kept = scales.keys.toMutableList()
+        var title = titleHeight > 0f
+        fun used(): Float {
+            val items = (if (title) 1 else 0) + 1 + kept.size
+            return (if (title) titleHeight else 0f) + lines * valueLineHeight * k +
+                kept.sumOf { (subs[it].height * scales[it]!!).toDouble() }.toFloat() + gap * (items - 1)
+        }
+        var lastLines = if (kept.isEmpty()) 1 else subs[kept.last()].maxLines
+        if (height > 0f) {
+            while (used() > height && kept.isNotEmpty()) {
+                if (hideFromStart) kept.removeAt(0) else kept.removeAt(kept.size - 1)
+            }
+            if (used() > height && title) title = false
+            if (used() > height && valueLineHeight > 0f) {
+                // القيمة كاملة بأدنى تصغير: أكبر معامل تتسع به أسطرها (بعد الالتفاف) في الارتفاع.
+                fun linesAt(f: Float) = if (width > 0f) wrapLines(valueWords, valueSpace, width / f) else 1
+                var lo = 0f
+                var hi = k
+                repeat(40) {
+                    val mid = (lo + hi) / 2
+                    if (linesAt(mid) * valueLineHeight * mid <= height) lo = mid else hi = mid
+                }
+                k = lo
+                lines = linesAt(k)
+            }
+            if (kept.isNotEmpty()) {
+                val last = subs[kept.last()]
+                val line = last.height * scales[kept.last()]!!
+                lastLines = if (line <= 0f) last.maxLines
+                else (1 + Math.floor(((height - used()) / line + 1e-6f).toDouble()).toInt()).coerceIn(1, last.maxLines)
+            }
+        }
+        return TileFit(title, k, lines, kept.toList(), kept.map { scales[it]!! }, lastLines)
     }
 
     /// خانة التاريخين وتحتهما المدينة والطقس (datesWeatherCell في Dart).
@@ -229,9 +309,6 @@ object LamhaLogic {
     /// حجم الساعة قبل معامل الخط: ٥٢ (clockSize في widget_preview.dart)، و٤٢ إذا كان أقل عرض
     /// للودجت أضيق من ٢٥٠dp. [minWidthDp] = 0 إذا لم يبلّغه المشغّل.
     fun clockSizeSp(minWidthDp: Int): Float = if (minWidthDp in 1 until 250) 42f else 52f
-
-    /// أدنى حجم للساعة عند تصغيرها (clockMinSize).
-    const val CLOCK_MIN_SP = 28f
 
     /// حجم خط يجعل نصاً عرضه [widthAtPreferred] بالحجم [preferredSp] يتسع في [maxWidth]،
     /// دون أن ينزل عن [minSp]. العرض يتناسب طردياً مع الحجم (fitTextSize في Dart).

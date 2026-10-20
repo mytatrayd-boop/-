@@ -255,7 +255,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customizeTitle => 'تخصيص الودجت';
 
   @override
-  String get resetLayout => 'استعادة الترتيب الافتراضي';
+  String get resetLayout => 'استعادة الافتراضي';
 
   @override
   String get tileVisible => 'إظهار';
@@ -276,11 +276,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tileOverflow => 'لا يتسع في الودجت (أكثر من ٥ صفوف)';
 
   @override
-  String get dragHandle => 'اسحب لإعادة الترتيب';
+  String get dragHandle => 'اضغط مطولاً واسحب لإعادة الترتيب';
 
   @override
   String get tileHint =>
-      'اضغط على مربع في المعاينة لتعديله، واسحب البطاقات لإعادة ترتيبها.';
+      'اضغط على مربع في المعاينة أو في الشريط لتعديله، واضغط مطولاً على عنصر في الشريط واسحبه لإعادة الترتيب.';
 
   @override
   String tileSpanName(String span) {
@@ -308,4 +308,10 @@ class AppLocalizationsAr extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get tileShowTitle => 'إظهار العنوان';
+
+  @override
+  String get tileShowSub => 'إظهار السطر الفرعي';
 }

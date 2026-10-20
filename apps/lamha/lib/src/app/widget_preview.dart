@@ -31,9 +31,8 @@ const _wallTop = Color(0xFF34302B);
 const _wallBottom = Color(0xFF0B0A09);
 
 /// أحجام مربعات الساعة والتاريخين والمدينة (الميزة ٣د)، مطابقة لتخطيطاتها في أندرويد، وتُضرب في
-/// معامل الخط. الساعة ٥٢ (و٤٢ في الودجت الضيقة بأندرويد)، وتصغر لتتسع في مربعها (fitTextSize).
+/// معامل الخط. الساعة ٥٢ (و٤٢ في الودجت الضيقة بأندرويد)، وتصغر بقدر عرض مربعها فقط (fitTile).
 const clockSize = 52.0;
-const clockMinSize = 28.0;
 const amPmSize = 18.0;
 const weekdaySize = 18.0;
 const hijriSize = 18.0;
@@ -65,6 +64,8 @@ typedef ScheduleTile = ({
   bool visible,
   int span,
   double fontScale,
+  bool showTitle,
+  bool showSub,
   int? primary,
   int? secondary,
 });
@@ -82,6 +83,8 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
             visible: t['visible'] as bool? ?? true,
             span: ((t['span'] as num?)?.toInt() ?? 1).clamp(1, gridColumns),
             fontScale: (t['fontScale'] as num?)?.toDouble() ?? 1.0,
+            showTitle: t['showTitle'] as bool? ?? true,
+            showSub: t['showSub'] as bool? ?? true,
             primary: t['primaryColor'] as int?,
             secondary: t['secondaryColor'] as int?,
           ),
@@ -98,7 +101,9 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
         id: t.id,
         visible: t.visible,
         span: t.span,
-        fontScale: t.fontScale.factor,
+        fontScale: t.fontScale,
+        showTitle: true,
+        showSub: true,
         primary: null,
         secondary: null,
       ),
@@ -274,6 +279,8 @@ class WidgetPreview extends StatelessWidget {
       };
       return tile.styled(
         scale: global * t.fontScale,
+        showTitle: t.showTitle,
+        showSub: t.showSub,
         primary: t.primary == null ? null : Color(t.primary!),
         secondary: t.secondary == null ? null : Color(t.secondary!),
       );
@@ -300,16 +307,27 @@ class WidgetPreview extends StatelessWidget {
         for (var r = 0; r < rows.length; r++)
           [
             for (var i = 0; i < rows[r].length; i++)
-              [for (final t in tiles[r][i]) t.heights(context, widthOf(r, i))],
+              [
+                for (final t in tiles[r][i])
+                  t.base.heights(context, widthOf(r, i)),
+              ],
           ],
       ];
       double sumOf(List<({double text, double pad})> h, bool text) =>
           h.fold<double>(0, (a, x) => a + (text ? x.text : x.pad));
-      // ارتفاع كل صف بوزن أطول خانة فيه، ومعامل واحد يصغر به النص كله إن لم يتسع. صفوف
-      // المربعات تقتسم الباقي، وصفوف الساعة والتاريخين والمدينة بقدر محتواها.
+      // مقاس المربعات بالحجم الأساسي (١) لا بحجم الخط المختار، فلا يتغير بتغيّره (الميزة ٥ب): كل
+      // صف بوزن أطول خانة فيه، وصفوف المربعات تقتسم الباقي، وصفوف الساعة والتاريخين والمدينة بقدر
+      // محتواها. ثم يلائم كل مربع نصه بحجمه المطلوب داخل مقاسه (fitTile).
+      // كل صف بأطول خانة فيه (نصها وحشوتها معاً).
+      final tallest = [
+        for (final r in sizes)
+          r
+              .map((h) => (text: sumOf(h, true), pad: sumOf(h, false)))
+              .reduce((a, b) => a.text + a.pad >= b.text + b.pad ? a : b),
+      ];
       final fit = rowHeights(
-        [for (final r in sizes) r.map((h) => sumOf(h, true)).reduce(math.max)],
-        [for (final r in sizes) r.map((h) => sumOf(h, false)).reduce(math.max)],
+        [for (final t in tallest) t.text],
+        [for (final t in tallest) t.pad],
         c.maxHeight,
         tileSpacing,
         flexible: [
@@ -321,7 +339,7 @@ class WidgetPreview extends StatelessWidget {
         if (ids.length == 1) {
           return _tap(
             WidgetElement.values.byName(ids.first),
-            tiles[r][i].first.fitted(fit.scale),
+            tiles[r][i].first,
           );
         }
         return Column(
@@ -332,7 +350,7 @@ class WidgetPreview extends StatelessWidget {
                 height: sizes[r][i][k].text * fit.scale + sizes[r][i][k].pad,
                 child: _tap(
                   WidgetElement.values.byName(ids[k]),
-                  tiles[r][i][k].fitted(fit.scale),
+                  tiles[r][i][k],
                 ),
               ),
           ],
@@ -444,9 +462,15 @@ class WidgetPreview extends StatelessWidget {
       hideFirstSub: true,
       value: (next?['name'] as String?) ?? '',
       subs: [
-        if (next != null) (text: next['text'] as String, lines: 1),
+        if (next != null)
+          (text: next['text'] as String, lines: 1, compact: null),
+        // العدّاد لا يُختصر: بلا «باقي» إن لم يتسع، ثم يصغر قليلاً، وإلا يُخفى.
         if (at != null)
-          (text: l.countdownText(countdownClock(at.difference(now))), lines: 1),
+          (
+            text: l.countdownText(countdownClock(at.difference(now))),
+            lines: 1,
+            compact: countdownClock(at.difference(now)),
+          ),
       ],
     );
   }
@@ -459,7 +483,7 @@ class WidgetPreview extends StatelessWidget {
       kind: WidgetElement.qibla,
       title: l.tileQibla,
       value: l.degrees(arabicDigits(deg.round())),
-      subs: [(text: q['direction'] as String, lines: 1)],
+      subs: [(text: q['direction'] as String, lines: 1, compact: null)],
     );
   }
 
@@ -475,9 +499,17 @@ class WidgetPreview extends StatelessWidget {
       shortTitle: l.tileDepositShort,
       value: first['label'] as String,
       subs: [
-        (text: first['remainingText'] as String, lines: two ? 1 : 2),
+        (
+          text: first['remainingText'] as String,
+          lines: two ? 1 : 2,
+          compact: null,
+        ),
         if (two)
-          (text: '${deps[1]['label']} · ${deps[1]['remainingText']}', lines: 1),
+          (
+            text: '${deps[1]['label']} · ${deps[1]['remainingText']}',
+            lines: 1,
+            compact: null,
+          ),
       ],
     );
   }
@@ -495,6 +527,7 @@ class WidgetPreview extends StatelessWidget {
             withLam((s['next'] as Map)['name'] as String),
           ),
           lines: 2,
+          compact: null,
         ),
       ],
     );
@@ -514,8 +547,10 @@ class WidgetPreview extends StatelessWidget {
             withLam((s['next'] as Map)['name'] as String),
           ),
           lines: 1,
+          compact: null,
         ),
-        if (description.isNotEmpty) (text: description, lines: 2),
+        if (description.isNotEmpty)
+          (text: description, lines: 2, compact: null),
       ],
     );
   }
@@ -545,8 +580,28 @@ const headMinFit = 0.75;
 
 typedef _Line = ({String text, double size, bool bold, Key? key});
 
+/// سطر ثانوي: [lines] حده الأقصى، و[compact] صيغته المختصرة إن كان لا يُختصر بـ«…» (العدّاد).
+typedef _Sub = ({String text, int lines, String? compact});
+
+/// عرض كلمات [text] (للالتفاف عند المسافات فقط) وعرض المسافة بينها، بالحجم [style].
+({List<double> words, double space}) _words(
+  BuildContext context,
+  String text,
+  TextStyle style,
+) {
+  final parts = text.split(' ').where((w) => w.isNotEmpty).toList();
+  final words = [for (final w in parts) _measure(context, w, style)];
+  final sum = words.fold<double>(0, (a, b) => a + b);
+  final space = parts.length > 1
+      ? math.max(0.0, (_measure(context, parts.join(' '), style) - sum)) /
+            (parts.length - 1)
+      : 0.0;
+  return (words: words, space: space);
+}
+
 /// مربع واحد: مربعات المعلومات الخمسة (عنوان وقيمة وثانويات في صندوق)، أو الساعة واليوم، أو
 /// أسطر بلا صندوق (التاريخان، المدينة والطقس) كما كان الصف العلوي.
+/// الحجم المطلوب يُحترم داخل مقاس المربع (fitTile، الميزة ٥ب): تُخفى الأسطر الأقل أولية قبل أي تصغير.
 class _Tile extends StatelessWidget {
   const _Tile({
     required this.kind,
@@ -561,6 +616,8 @@ class _Tile extends StatelessWidget {
        amPmText = null,
        accent = null,
        scale = 1,
+       showTitle = true,
+       showSub = true,
        primary = null,
        secondary = null;
 
@@ -579,6 +636,8 @@ class _Tile extends StatelessWidget {
        highlight = null,
        hideFirstSub = false,
        scale = 1,
+       showTitle = true,
+       showSub = true,
        primary = null,
        secondary = null;
 
@@ -593,12 +652,16 @@ class _Tile extends StatelessWidget {
       amPmText = null,
       accent = null,
       scale = 1,
+      showTitle = true,
+      showSub = true,
       primary = null,
       secondary = null;
 
   _Tile._copy(
     _Tile t, {
     required this.scale,
+    required this.showTitle,
+    required this.showSub,
     required this.primary,
     required this.secondary,
   }) : kind = t.kind,
@@ -622,8 +685,8 @@ class _Tile extends StatelessWidget {
   /// قيمة المربع، أو اليوم في مربع الساعة.
   final String value;
 
-  /// الثانويات: [lines] حدها الأقصى. الأخير ذو الأسطر المتعددة يأخذ ما يتسع منها.
-  final List<({String text, int lines})> subs;
+  /// الثانويات بترتيب عرضها. الأخير ذو الأسطر المتعددة يأخذ ما يتسع منها.
+  final List<_Sub> subs;
   final Color? highlight;
 
   /// أولوية الإخفاء عند ضيق الارتفاع: الثانويات تُخفى من الآخر، ومع [hideFirstSub] (الصلاة) يُخفى
@@ -638,28 +701,47 @@ class _Tile extends StatelessWidget {
   final String? amPmText;
   final Color? accent;
 
-  /// معامل الخط الفعلي (العام × المربع × ما يلزم ليتسع).
+  /// معامل الخط المطلوب (العام × المربع).
   final double scale;
+
+  /// مفتاحا «إظهار العنوان» و«إظهار السطر الفرعي».
+  final bool showTitle;
+  final bool showSub;
 
   /// لونا الخط؛ null = تلقائي.
   final Color? primary;
   final Color? secondary;
 
-  _Tile styled({required double scale, Color? primary, Color? secondary}) =>
-      _Tile._copy(this, scale: scale, primary: primary, secondary: secondary);
-
-  _Tile fitted(double fit) => _Tile._copy(
+  _Tile styled({
+    required double scale,
+    required bool showTitle,
+    required bool showSub,
+    Color? primary,
+    Color? secondary,
+  }) => _Tile._copy(
     this,
-    scale: scale * fit,
+    scale: scale,
+    showTitle: showTitle,
+    showSub: showSub,
     primary: primary,
     secondary: secondary,
   );
 
-  /// ارتفاع المربع في عرض [width]: [text] نصه بالحجم المطلوب (يصغر مع معامل الملاءمة)، و[pad] ما لا
-  /// يصغر (الحشوات، والساعة إن صغّرها العرض فلا تصغر أكثر).
+  /// المربع بالحجم الأساسي وكل أسطره، لحساب مقاس الشبكة (لا يتغير بحجم الخط ولا بالمفتاحين).
+  _Tile get base => _Tile._copy(
+    this,
+    scale: 1,
+    showTitle: true,
+    showSub: true,
+    primary: primary,
+    secondary: secondary,
+  );
+
+  /// ارتفاع المربع في عرض [width]: [text] نصه، و[pad] ما لا يتغير (الحشوات، والساعة إن صغّرها
+  /// العرض).
   ({double text, double pad}) heights(BuildContext context, double width) {
     if (time != null) {
-      final font = _clockFont(context, width);
+      final font = clockSize * scale * _clockFit(context, width);
       final weekday = weekdaySize * weekdayLineHeight * scale;
       return font < clockSize * scale
           ? (text: weekday, pad: font)
@@ -683,19 +765,23 @@ class _Tile extends StatelessWidget {
     );
   }
 
-  /// حجم الساعة: ٥٢ × المعامل، ويصغر (حتى ٢٨) ليتسع أعرض نص لها مع «ص/م» في [width].
-  double _clockFont(BuildContext context, double width) {
-    final preferred = clockSize * scale;
-    return fitTextSize(
-      preferred,
-      _measure(
-        context,
-        widestClockText,
-        TextStyle(fontSize: preferred, fontWeight: FontWeight.w700),
-      ),
-      width - 4 - _measure(context, amPmText!, _amPmStyle) - fitMargin,
-      clockMinSize,
-    );
+  TextStyle get _clockStyle => TextStyle(
+    fontSize: clockSize * scale,
+    height: 1,
+    fontWeight: FontWeight.w700,
+    color: _primary,
+  );
+
+  /// عرض الساعة (أعرض نص لها) و«ص/م» بجانبها، بالحجم المطلوب.
+  double _clockWidth(BuildContext context) =>
+      _measure(context, widestClockText, _clockStyle) +
+      4 +
+      _measure(context, amPmText!, _amPmStyle);
+
+  /// معامل الساعة ليتسع عرضها في [width] (كلمة واحدة: أدنى تصغير).
+  double _clockFit(BuildContext context, double width) {
+    final w = _clockWidth(context);
+    return w > width - fitMargin ? (width - fitMargin) / w : 1.0;
   }
 
   TextStyle get _amPmStyle => TextStyle(
@@ -724,15 +810,29 @@ class _Tile extends StatelessWidget {
 
   Widget _clock(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
-      final amPmStyle = _amPmStyle;
-      // أعرض نص للساعة مع «ص/م» يتسع في المربع، وإلا يصغر (حتى ٢٨).
-      final clockFont = _clockFont(context, c.maxWidth);
       final weekdayStyle = TextStyle(
         fontSize: weekdaySize * scale,
         fontWeight: FontWeight.w700,
         height: weekdayLineHeight,
         color: _secondary,
       );
+      // الساعة كلمة واحدة: تصغر فقط إن لم يتسع عرضها. اليوم يُخفى قبل أن تصغر لضيق الارتفاع.
+      final fit = fitTile(
+        height: c.maxHeight,
+        width: c.maxWidth - fitMargin,
+        valueLineHeight: clockSize * scale,
+        valueWords: [_clockWidth(context)],
+        subs: [
+          if (showSub)
+            (
+              height: weekdaySize * scale * weekdayLineHeight,
+              maxLines: 1,
+              fitWidth: _measure(context, value, weekdayStyle),
+            ),
+        ],
+        minSubFit: headMinFit,
+      );
+      final k = fit.valueScale;
       return ClipRect(
         child: OverflowBox(
           alignment: AlignmentDirectional.centerStart,
@@ -743,7 +843,7 @@ class _Tile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // أمان: إن لم يتسع حتى بأدنى حجم (خط عريض جداً) يصغر كله ولا يُقص.
+              // أمان: إن لم يتسع (فرق قياس) يصغر كله ولا يُقص.
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: AlignmentDirectional.centerStart,
@@ -756,37 +856,32 @@ class _Tile extends StatelessWidget {
                       time!,
                       key: const Key('preview-clock'),
                       textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: clockFont,
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        color: _primary,
+                      style: _clockStyle.copyWith(
+                        fontSize: clockSize * scale * k,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       amPmText!,
                       textAlign: TextAlign.right,
-                      style: amPmStyle,
+                      style: _amPmStyle.copyWith(
+                        fontSize: amPmSize * scale * k,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Text(
-                value,
-                key: const Key('preview-weekday'),
-                textAlign: TextAlign.right,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: weekdayStyle.copyWith(
-                  fontSize: fitTextSize(
-                    weekdayStyle.fontSize!,
-                    _measure(context, value, weekdayStyle),
-                    c.maxWidth - fitMargin,
-                    weekdayStyle.fontSize! * headMinFit,
+              if (fit.subs.isNotEmpty)
+                Text(
+                  value,
+                  key: const Key('preview-weekday'),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: weekdayStyle.copyWith(
+                    fontSize: weekdaySize * scale * fit.subScales.first,
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -794,54 +889,58 @@ class _Tile extends StatelessWidget {
     },
   );
 
-  /// التاريخان أو المدينة والطقس: أسطر محاذاة يمين، كل سطر يصغر (حتى ٧٥٪) ثم «…».
+  /// التاريخان أو المدينة والطقس: الأول قيمة تلتفّ عند المسافات، والميلادي يُخفى إن لم يتسع.
   Widget _lines(BuildContext context) => LayoutBuilder(
-    builder: (context, c) => ClipRect(
-      child: OverflowBox(
-        alignment: AlignmentDirectional.centerStart,
-        minHeight: 0,
-        maxHeight: double.infinity,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final (i, line) in lines.indexed)
-              // ما بعد الأول يُخفى إن لم يتسع، فلا يُقص.
-              if (i == 0 ||
-                  lines.take(i + 1).fold<double>(0, (a, l) => a + l.size) *
-                          headLineHeight *
-                          scale <=
-                      c.maxHeight + 0.5)
-                Builder(
-                  builder: (context) {
-                    final style = TextStyle(
-                      fontSize: line.size * scale,
-                      fontWeight: line.bold ? FontWeight.w700 : FontWeight.w400,
-                      color: i == 0 ? _primary : _secondary,
-                      height: headLineHeight,
-                    );
-                    return Text(
-                      line.text,
-                      key: line.key,
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                      style: style.copyWith(
-                        fontSize: fitTextSize(
-                          style.fontSize!,
-                          _measure(context, line.text, style),
-                          c.maxWidth - fitMargin,
-                          style.fontSize! * headMinFit,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-          ],
+    builder: (context, c) {
+      TextStyle styleOf(int i) => TextStyle(
+        fontSize: lines[i].size * scale,
+        fontWeight: lines[i].bold ? FontWeight.w700 : FontWeight.w400,
+        color: i == 0 ? _primary : _secondary,
+        height: headLineHeight,
+      );
+      final first = _words(context, lines.first.text, styleOf(0));
+      final fit = fitTile(
+        height: c.maxHeight,
+        width: c.maxWidth - fitMargin,
+        valueLineHeight: lines.first.size * scale * headLineHeight,
+        valueWords: first.words,
+        valueSpace: first.space,
+        subs: [
+          if (showSub)
+            for (var i = 1; i < lines.length; i++)
+              (
+                height: lines[i].size * scale * headLineHeight,
+                maxLines: 1,
+                fitWidth: _measure(context, lines[i].text, styleOf(i)),
+              ),
+        ],
+        minSubFit: headMinFit,
+      );
+      Text line(int i, double factor, int maxLines) => Text(
+        lines[i].text,
+        key: lines[i].key,
+        textAlign: TextAlign.right,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: styleOf(i).copyWith(fontSize: lines[i].size * scale * factor),
+      );
+      return ClipRect(
+        child: OverflowBox(
+          alignment: AlignmentDirectional.centerStart,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              line(0, fit.valueScale, fit.valueLines),
+              for (final (j, i) in fit.subs.indexed)
+                line(i + 1, fit.subScales[j], 1),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 
   Widget _box(BuildContext context) {
@@ -865,6 +964,7 @@ class _Tile extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, c) {
+            final width = c.maxWidth - fitMargin;
             final titleStyle = TextStyle(
               fontSize: tileTitleSize * scale,
               fontWeight: FontWeight.w700,
@@ -874,15 +974,13 @@ class _Tile extends StatelessWidget {
             // «الإيداع القادم» ← «الإيداع» إن لم يتسع، ثم تصغير الخط حتى يتسع سطراً واحداً.
             final short = shortTitle;
             final t =
-                short != null &&
-                    _measure(context, title!, titleStyle) >
-                        c.maxWidth - fitMargin
+                short != null && _measure(context, title!, titleStyle) > width
                 ? short
                 : title!;
             final titleSize = fitTextSize(
               tileTitleSize * scale,
               _measure(context, t, titleStyle),
-              c.maxWidth - fitMargin,
+              width,
               tileTitleSize * scale * tileMinFit,
             );
             final valueStyle = TextStyle(
@@ -891,25 +989,50 @@ class _Tile extends StatelessWidget {
               color: _primary,
               height: tileLineHeight,
             );
-            final valueSize = fitTextSize(
-              tileValueSize * scale,
-              _measure(context, value, valueStyle),
-              c.maxWidth - fitMargin,
-              tileValueSize * scale * tileMinFit,
+            final subStyle = TextStyle(
+              fontSize: tileSubSize * scale,
+              color: _secondary,
+              height: tileLineHeight,
             );
-            final subLine = tileSubSize * scale * tileLineHeight;
-            // الثانويات بالترتيب ما اتسع منها، وما بعده يُخفى فلا يُقص سطر في منتصفه.
-            var used = (titleSize + valueSize) * tileLineHeight + tileGap;
-            var shown = 0;
-            while (shown < subs.length &&
-                used + tileGap + subLine <= c.maxHeight + 0.5) {
-              used += tileGap + subLine;
-              shown++;
-            }
-            final visibleSubs = hideFirstSub
-                ? subs.sublist(subs.length - shown)
-                : subs.sublist(0, shown);
-            final extra = fittingLines(c.maxHeight - used, subLine, 99);
+            // العدّاد بلا «باقي» إن لم يتسع.
+            final texts = [
+              for (final s in subs)
+                s.compact != null && _measure(context, s.text, subStyle) > width
+                    ? s.compact!
+                    : s.text,
+            ];
+            final words = _words(context, value, valueStyle);
+            final fit = fitTile(
+              height: c.maxHeight,
+              width: width,
+              // العنوان الذي لا يتسع حتى بأدنى حجم يُخفى (لا «…»).
+              titleHeight:
+                  showTitle &&
+                      _measure(
+                            context,
+                            t,
+                            titleStyle.copyWith(fontSize: titleSize),
+                          ) <=
+                          width + 0.5
+                  ? titleSize * tileLineHeight
+                  : 0,
+              valueLineHeight: tileValueSize * scale * tileLineHeight,
+              valueWords: words.words,
+              valueSpace: words.space,
+              subs: [
+                if (showSub)
+                  for (final (i, s) in subs.indexed)
+                    (
+                      height: tileSubSize * scale * tileLineHeight,
+                      maxLines: s.lines,
+                      fitWidth: s.compact != null
+                          ? _measure(context, texts[i], subStyle)
+                          : 0,
+                    ),
+              ],
+              hideFromStart: hideFirstSub,
+              gap: tileGap,
+            );
             return ClipRect(
               child: OverflowBox(
                 alignment: Alignment.topCenter,
@@ -918,40 +1041,41 @@ class _Tile extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      t,
-                      key: const Key('tile-title'),
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                      style: titleStyle.copyWith(fontSize: titleSize),
-                    ),
-                    const SizedBox(height: tileGap),
+                    if (fit.title) ...[
+                      Text(
+                        t,
+                        key: const Key('tile-title'),
+                        textAlign: TextAlign.right,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: titleStyle.copyWith(fontSize: titleSize),
+                      ),
+                      const SizedBox(height: tileGap),
+                    ],
                     Text(
                       value,
                       key: const Key('tile-value'),
                       textAlign: TextAlign.right,
-                      maxLines: 1,
-                      softWrap: false,
+                      maxLines: fit.valueLines,
                       overflow: TextOverflow.ellipsis,
-                      style: valueStyle.copyWith(fontSize: valueSize),
+                      style: valueStyle.copyWith(
+                        fontSize: tileValueSize * scale * fit.valueScale,
+                      ),
                     ),
-                    for (final (i, s) in visibleSubs.indexed) ...[
+                    for (final (j, i) in fit.subs.indexed) ...[
                       const SizedBox(height: tileGap),
                       Text(
-                        s.text,
-                        key: Key('tile-sub-$i'),
+                        texts[i],
+                        key: Key('tile-sub-$j'),
                         textAlign: TextAlign.right,
                         // الأخير وحده يأخذ أسطراً إضافية إن اتسعت.
-                        maxLines: i == visibleSubs.length - 1
-                            ? math.min(s.lines, extra)
+                        maxLines: j == fit.subs.length - 1
+                            ? fit.lastSubLines
                             : 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: tileSubSize * scale,
-                          color: _secondary,
-                          height: tileLineHeight,
+                        style: subStyle.copyWith(
+                          fontSize: tileSubSize * scale * fit.subScales[j],
                         ),
                       ),
                     ],

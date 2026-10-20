@@ -431,7 +431,7 @@ abstract class AppLocalizations {
   /// زر إعادة التخطيط الافتراضي
   ///
   /// In ar, this message translates to:
-  /// **'استعادة الترتيب الافتراضي'**
+  /// **'استعادة الافتراضي'**
   String get resetLayout;
 
   /// مفتاح إظهار المربع
@@ -473,13 +473,13 @@ abstract class AppLocalizations {
   /// تلميح مقبض السحب
   ///
   /// In ar, this message translates to:
-  /// **'اسحب لإعادة الترتيب'**
+  /// **'اضغط مطولاً واسحب لإعادة الترتيب'**
   String get dragHandle;
 
   /// إرشاد أعلى القائمة
   ///
   /// In ar, this message translates to:
-  /// **'اضغط على مربع في المعاينة لتعديله، واسحب البطاقات لإعادة ترتيبها.'**
+  /// **'اضغط على مربع في المعاينة أو في الشريط لتعديله، واضغط مطولاً على عنصر في الشريط واسحبه لإعادة الترتيب.'**
   String get tileHint;
 
   /// عرض المربع ١/٢/٣
@@ -493,6 +493,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{color, select, auto{تلقائي} white{أبيض} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}'**
   String tileColorName(String color);
+
+  /// مفتاح عنوان المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار العنوان'**
+  String get tileShowTitle;
+
+  /// مفتاح الأسطر الثانوية
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار السطر الفرعي'**
+  String get tileShowSub;
 }
 
 class _AppLocalizationsDelegate

@@ -55,15 +55,17 @@
   "countdownText": "{time} left",
   "depositsSection": "Shown deposits",
   "customizeTitle": "Customize widget",
-  "resetLayout": "Restore default layout",
+  "resetLayout": "Restore defaults",
   "tileVisible": "Show",
   "tileSpanLabel": "Width",
   "tileFontLabel": "Text size",
   "primaryColorLabel": "Main text color",
   "secondaryColorLabel": "Secondary text color",
   "tileOverflow": "Does not fit on the widget (more than 5 rows)",
-  "dragHandle": "Drag to reorder",
-  "tileHint": "Tap a tile in the preview to edit it, and drag the cards to reorder them.",
+  "dragHandle": "Long-press and drag to reorder",
+  "tileHint": "Tap a tile in the preview or the strip to edit it. Long-press an item in the strip and drag it to reorder.",
   "tileSpanName": "{span, select, small{Small} medium{Medium} wide{Wide} other{{span}}}",
-  "tileColorName": "{color, select, auto{Automatic} white{White} gold{Gold} green{Green} blue{Blue} purple{Purple} pink{Pink} lightGray{Light gray} other{{color}}}"
+  "tileColorName": "{color, select, auto{Automatic} white{White} gold{Gold} green{Green} blue{Blue} purple{Purple} pink{Pink} lightGray{Light gray} other{{color}}}",
+  "tileShowTitle": "Show title",
+  "tileShowSub": "Show secondary line"
 }

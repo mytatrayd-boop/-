@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- محتوى مربعات المعلومات الخمسة (_Tile في widget_preview.dart، الميزة ٣د، بلا رموز): العنوان ١٣ عريض، ثم القيمة
-     ٢٠ عريض، ثم الثانوي ١٤، كلها × معامل الخط من LamhaWidgetReceiver. العنوان والقيمة سطر واحد
-     يصغر خطه ليتسع (fitTextSize) ثم «…»، والثانوي بحد أسطر و«…» (الأخير يأخذ ما يتسع). -->
+     ٢٠ عريض، ثم الثانوي ١٤، كلها × معامل الخط من LamhaWidgetReceiver. العنوان سطر واحد يصغر ليتسع ثم «…»، والقيمة
+     تلتفّ عند المسافات بحد أسطر من fitTile (الميزة ٥ب)، والثانوي بحد أسطر و«…». -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
     android:layout_width="match_parent"
@@ -46,7 +46,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
             android:ellipsize="end"
-            android:singleLine="true"
+            android:maxLines="1"
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFF4EFE6"

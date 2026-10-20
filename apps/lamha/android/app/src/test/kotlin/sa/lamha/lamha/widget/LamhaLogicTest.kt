@@ -316,4 +316,54 @@ class LamhaLogicTest {
         assertEquals(2, LamhaLogic.fittingLines(100f, 17.5f, 2))
         assertEquals(1, LamhaLogic.fittingLines(-5f, 17.5f, 2))
     }
+
+    // الميزة ٥ب: الحالات نفسها في widget_layout_test.dart.
+    @Test
+    fun wrapLinesAtSpacesOnly() {
+        assertEquals(1, LamhaLogic.wrapLines(listOf(30f, 20f), 5f, 80f))
+        assertEquals(2, LamhaLogic.wrapLines(listOf(30f, 20f), 5f, 54f))
+        assertEquals(2, LamhaLogic.wrapLines(listOf(10f, 10f, 10f), 0f, 20f))
+        assertEquals(1, LamhaLogic.wrapLines(emptyList(), 0f, 10f))
+    }
+
+    private val twoSubs = listOf(LamhaLogic.SubLine(17.5f, 1), LamhaLogic.SubLine(17.5f, 2))
+
+    private fun fit(height: Float, width: Float, fromStart: Boolean = false, subs: List<LamhaLogic.SubLine> = twoSubs) =
+        LamhaLogic.fitTile(height, width, 16f, 25f, listOf(30f, 20f), 5f, subs, fromStart, 3f)
+
+    @Test
+    fun fitTileCases() {
+        val a = fit(100f, 80f)
+        assertEquals(LamhaLogic.TileFit(true, 1f, 1, listOf(0, 1), listOf(1f, 1f), 1), a)
+        assertEquals(2, fit(120f, 80f).lastSubLines)
+        val u = fit(0f, 0f)
+        assertEquals(listOf(0, 1), u.subs)
+        assertEquals(2, u.lastSubLines)
+        // ضيق الارتفاع: الثانويات بأولويتها، ثم العنوان، ثم أدنى تصغير للقيمة.
+        assertEquals(emptyList<Int>(), fit(60f, 80f).subs)
+        assertTrue(fit(60f, 80f).title)
+        assertEquals(listOf(1), fit(70f, 80f, fromStart = true).subs)
+        val c = fit(30f, 80f)
+        assertEquals(false, c.title)
+        assertEquals(emptyList<Int>(), c.subs)
+        assertEquals(1f, c.valueScale, 1e-6f)
+        val d = fit(100f, 40f)
+        assertEquals(2, d.valueLines)
+        assertEquals(listOf(0), d.subs)
+        assertTrue(d.title)
+        assertEquals(false, fit(60f, 40f).title)
+        assertEquals(2, fit(60f, 40f).valueLines)
+        assertEquals(2, fit(40f, 40f).valueLines)
+        assertEquals(0.8f, fit(40f, 40f).valueScale, 1e-5f)
+        assertEquals(0.8f, LamhaLogic.fitTile(20f, 80f, 0f, 25f, listOf(30f)).valueScale, 1e-6f)
+        // القيمة تصغر عرضياً فقط إن لم تتسع أعرض كلمة، وبأدنى تصغير.
+        val e = fit(200f, 24f)
+        assertEquals(0.8f, e.valueScale, 1e-6f)
+        assertEquals(2, e.valueLines)
+        assertEquals(1f, fit(200f, 30f).valueScale, 1e-6f)
+        // سطر لا يُختصر (العدّاد): يصغر حتى ٧٠٪ وإلا يُخفى.
+        val g = fit(200f, 80f, subs = listOf(LamhaLogic.SubLine(17.5f, 1, 100f), LamhaLogic.SubLine(17.5f, 1, 200f)))
+        assertEquals(listOf(0), g.subs)
+        assertEquals(0.8f, g.subScales.single(), 1e-6f)
+    }
 }

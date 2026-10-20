@@ -255,7 +255,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customizeTitle => 'Customize widget';
 
   @override
-  String get resetLayout => 'Restore default layout';
+  String get resetLayout => 'Restore defaults';
 
   @override
   String get tileVisible => 'Show';
@@ -276,11 +276,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tileOverflow => 'Does not fit on the widget (more than 5 rows)';
 
   @override
-  String get dragHandle => 'Drag to reorder';
+  String get dragHandle => 'Long-press and drag to reorder';
 
   @override
   String get tileHint =>
-      'Tap a tile in the preview to edit it, and drag the cards to reorder them.';
+      'Tap a tile in the preview or the strip to edit it. Long-press an item in the strip and drag it to reorder.';
 
   @override
   String tileSpanName(String span) {
@@ -308,4 +308,10 @@ class AppLocalizationsEn extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get tileShowTitle => 'Show title';
+
+  @override
+  String get tileShowSub => 'Show secondary line';
 }

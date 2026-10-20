@@ -2,20 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../engine/arabic.dart';
 import '../engine/widget_layout.dart';
 import 'providers.dart';
 import 'widget_preview.dart';
 
-/// شاشة «تخصيص الودجت» (الميزة ٥): معاينة حية بالحجم الحقيقي، وتحتها بطاقات المربعات قابلة
-/// للسحب لإعادة الترتيب، ولكل مربع: الإظهار والعرض وحجم الخط واللونان. الضغط على مربع في
-/// المعاينة يفتح إعداداته.
-class CustomizeScreen extends ConsumerWidget {
+/// شاشة «تخصيص الودجت» (الميزة ٥ب): من الأعلى المعاينة (حتى ٤٥٪ من الارتفاع)، ثم إعدادات المربع
+/// المختار، ثم شريط عرضي بعناصر الودجت بترتيبها: الضغط يختار، والضغط المطوّل ثم السحب يعيد الترتيب.
+class CustomizeScreen extends ConsumerStatefulWidget {
   const CustomizeScreen({super.key});
 
   static const routeName = '/customize';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CustomizeScreen> createState() => _CustomizeScreenState();
+}
+
+class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
+  /// المربع المختار؛ null = أول عنصر في الترتيب.
+  WidgetElement? _selected;
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final state = ref.watch(settingsControllerProvider).value;
     final c = ref.read(settingsControllerProvider.notifier);
@@ -33,37 +41,36 @@ class CustomizeScreen extends ConsumerWidget {
       ),
       body: state == null
           ? const Center(child: CircularProgressIndicator())
-          : _Body(state: state),
+          : _body(context, state),
     );
   }
-}
 
-class _Body extends ConsumerWidget {
-  const _Body({required this.state});
-
-  final AppState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget _body(BuildContext context, AppState state) {
     final l = AppLocalizations.of(context);
     final c = ref.read(settingsControllerProvider.notifier);
     final layout = state.settings.layout;
+    final selected = _selected ?? layout.first.id;
+    final tile = layout.firstWhere((t) => t.id == selected);
     final placed = placedElements([
       for (final t in layout)
         if (t.visible) (id: t.id.name, span: t.span),
     ]);
+    void select(WidgetElement e) => setState(() => _selected = e);
+    // المعاينة ٣٣٨×٣٥٤ وحولها خلفية ١٦، وتصغر لتأخذ ٤٥٪ من ارتفاع الشاشة حداً أقصى.
+    final previewSize = previewWidgetSize + const Offset(32, 32);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-          child: SizedBox(
-            height: previewWidgetSize.height + 32,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+            ),
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: SizedBox(
-                // بالحجم الحقيقي (٣٣٨×٣٥٤ وحولها خلفية ١٦)، ويصغر فقط إن ضاقت الشاشة.
-                width: previewWidgetSize.width + 32,
-                height: previewWidgetSize.height + 32,
+              child: SizedBox.fromSize(
+                size: previewSize,
                 child: RepaintBoundary(
                   key: const Key('customize-preview'),
                   child: WidgetPreview(
@@ -71,7 +78,8 @@ class _Body extends ConsumerWidget {
                     now: ref.read(clockProvider)(),
                     backgroundPath: state.backgroundPath,
                     systemColors: state.systemColors,
-                    onTileTap: (e) => _openSheet(context, e),
+                    onTileTap: select,
+                    selected: selected,
                   ),
                 ),
               ),
@@ -79,7 +87,7 @@ class _Body extends ConsumerWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
           child: Text(
             l.tileHint,
             textAlign: TextAlign.right,
@@ -87,47 +95,49 @@ class _Body extends ConsumerWidget {
           ),
         ),
         Expanded(
+          child: SingleChildScrollView(
+            key: const Key('tile-panel'),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _Header(tile: tile),
+                if (tile.visible && !placed.contains(tile.id.name))
+                  Text(
+                    l.tileOverflow,
+                    key: Key('overflow-${tile.id.name}'),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                TileSettings(tile: tile),
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 1),
+        SizedBox(
+          height: 64,
           child: ReorderableListView.builder(
             key: const Key('tile-list'),
+            scrollDirection: Axis.horizontal,
             buildDefaultDragHandles: false,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             itemCount: layout.length,
             onReorderItem: c.moveTile,
             itemBuilder: (context, i) {
               final t = layout[i];
-              return Card(
-                key: ValueKey('card-${t.id.name}'),
+              return ReorderableDelayedDragStartListener(
+                key: ValueKey('chip-${t.id.name}'),
+                index: i,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _Header(
-                        tile: t,
-                        prefix: '',
-                        handle: ReorderableDragStartListener(
-                          key: Key('drag-${t.id.name}'),
-                          index: i,
-                          child: Tooltip(
-                            message: l.dragHandle,
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(Icons.drag_handle),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (t.visible && !placed.contains(t.id.name))
-                        Text(
-                          l.tileOverflow,
-                          key: Key('overflow-${t.id.name}'),
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      TileSettings(tile: t, prefix: ''),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _Chip(
+                    tile: t,
+                    selected: t.id == selected,
+                    overflow: t.visible && !placed.contains(t.id.name),
+                    onTap: () => select(t.id),
                   ),
                 ),
               );
@@ -137,30 +147,75 @@ class _Body extends ConsumerWidget {
       ],
     );
   }
+}
 
-  /// إعدادات مربع من المعاينة، تتحدث مع كل تغيير.
-  void _openSheet(BuildContext context, WidgetElement id) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => Consumer(
-        builder: (context, ref, _) {
-          final s = ref.watch(settingsControllerProvider).value;
-          if (s == null) return const SizedBox.shrink();
-          final t = s.settings.layout.firstWhere((t) => t.id == id);
-          return SingleChildScrollView(
-            key: const Key('tile-sheet'),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _Header(tile: t, prefix: 'sheet-'),
-                TileSettings(tile: t, prefix: 'sheet-'),
-              ],
+/// رقاقة عنصر في الشريط: المختار بلون التمييز، والمخفي باهت، وما لا يتسع عليه علامة.
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.tile,
+    required this.selected,
+    required this.overflow,
+    required this.onTap,
+  });
+
+  final TileLayout tile;
+  final bool selected;
+  final bool overflow;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final fg = selected ? scheme.onPrimary : scheme.onSurface;
+    // بلا Tooltip: الضغط المطوّل للسحب.
+    return Semantics(
+      hint: l.dragHandle,
+      child: Opacity(
+        opacity: tile.visible ? 1 : 0.45,
+        child: Material(
+          color: selected ? scheme.primary : scheme.surfaceContainerHighest,
+          shape: StadiumBorder(
+            side: BorderSide(
+              color: selected ? scheme.primary : scheme.outlineVariant,
             ),
-          );
-        },
+          ),
+          child: InkWell(
+            key: Key('chip-tap-${tile.id.name}'),
+            customBorder: const StadiumBorder(),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (overflow) ...[
+                    Icon(
+                      Icons.error_outline,
+                      key: Key('chip-overflow-${tile.id.name}'),
+                      size: 18,
+                      color: selected ? fg : scheme.error,
+                      semanticLabel: l.tileOverflow,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  if (!tile.visible) ...[
+                    Icon(Icons.visibility_off, size: 16, color: fg),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    l.elementName(tile.id.name),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: fg,
+                      fontWeight: selected ? FontWeight.w700 : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -168,28 +223,26 @@ class _Body extends ConsumerWidget {
 
 /// اسم المربع ومفتاح إظهاره.
 class _Header extends ConsumerWidget {
-  const _Header({required this.tile, required this.prefix, this.handle});
+  const _Header({required this.tile});
 
   final TileLayout tile;
-  final String prefix;
-  final Widget? handle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     return Row(
       children: [
-        ?handle,
         Expanded(
           child: Text(
             l.elementName(tile.id.name),
+            key: const Key('panel-name'),
             textAlign: TextAlign.right,
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
         Text(l.tileVisible),
         Switch(
-          key: Key('${prefix}visible-${tile.id.name}'),
+          key: Key('visible-${tile.id.name}'),
           value: tile.visible,
           onChanged: (v) => ref
               .read(settingsControllerProvider.notifier)
@@ -200,16 +253,25 @@ class _Header extends ConsumerWidget {
   }
 }
 
-/// العرض وحجم الخط واللونان لمربع واحد (في البطاقة وفي نافذة المعاينة).
+/// العرض وحجم الخط ومفتاحا العنوان والسطر الفرعي واللونان لمربع واحد.
 class TileSettings extends ConsumerWidget {
-  const TileSettings({super.key, required this.tile, required this.prefix});
+  const TileSettings({super.key, required this.tile});
 
   final TileLayout tile;
 
-  /// بادئة المفاتيح ('' للبطاقة، 'sheet-' للنافذة).
-  final String prefix;
-
   static const spanNames = {1: 'small', 2: 'medium', 3: 'wide'};
+
+  /// مربعات لها عنوان (مربعات المعلومات)، ولها سطر فرعي (وكذلك اليوم تحت الساعة والميلادي).
+  static bool hasTitle(WidgetElement e) => !const {
+    WidgetElement.clock,
+    WidgetElement.dates,
+    WidgetElement.weather,
+  }.contains(e);
+
+  static bool hasSub(WidgetElement e) => e != WidgetElement.weather;
+
+  /// «١.٥» بالأرقام العربية (خط Tajawal بلا الفاصلة العشرية العربية ٫).
+  static String scaleText(double v) => arabicDigits(v.toStringAsFixed(1));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -221,12 +283,19 @@ class TileSettings extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: Text(s, textAlign: TextAlign.right, style: label),
     );
+    Widget toggle(String key, String text, bool value, ValueChanged<bool> on) =>
+        Row(
+          children: [
+            Expanded(child: Text(text, textAlign: TextAlign.right)),
+            Switch(key: Key(key), value: value, onChanged: on),
+          ],
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         title(l.tileSpanLabel),
         SegmentedButton<int>(
-          key: Key('${prefix}span-${id.name}'),
+          key: Key('span-${id.name}'),
           showSelectedIcon: false,
           segments: [
             for (final e in spanNames.entries)
@@ -234,7 +303,7 @@ class TileSettings extends ConsumerWidget {
                 value: e.key,
                 label: Text(
                   l.tileSpanName(e.value),
-                  key: Key('${prefix}span-${id.name}-${e.key}'),
+                  key: Key('span-${id.name}-${e.key}'),
                 ),
               ),
           ],
@@ -242,31 +311,59 @@ class TileSettings extends ConsumerWidget {
           onSelectionChanged: (v) =>
               c.updateTile(id, (t) => t.copyWith(span: v.first)),
         ),
-        title(l.tileFontLabel),
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            for (final f in FontScale.values)
-              ChoiceChip(
-                key: Key('${prefix}tilefont-${id.name}-${f.name}'),
-                label: Text(l.fontScaleName(f.name)),
-                selected: tile.fontScale == f,
-                onSelected: (_) =>
-                    c.updateTile(id, (t) => t.copyWith(fontScale: f)),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l.tileFontLabel,
+                  textAlign: TextAlign.right,
+                  style: label,
+                ),
               ),
-          ],
+              Text(
+                scaleText(tile.fontScale),
+                key: Key('tilefont-value-${id.name}'),
+                textAlign: TextAlign.right,
+                style: label,
+              ),
+            ],
+          ),
         ),
+        Slider(
+          key: Key('tilefont-${id.name}'),
+          min: tileFontMin,
+          max: tileFontMax,
+          divisions: ((tileFontMax - tileFontMin) / tileFontStep).round(),
+          value: tile.fontScale,
+          label: scaleText(tile.fontScale),
+          onChanged: (v) => c.updateTile(id, (t) => t.copyWith(fontScale: v)),
+        ),
+        if (hasTitle(id))
+          toggle(
+            'showtitle-${id.name}',
+            l.tileShowTitle,
+            tile.showTitle,
+            (v) => c.updateTile(id, (t) => t.copyWith(showTitle: v)),
+          ),
+        if (hasSub(id))
+          toggle(
+            'showsub-${id.name}',
+            l.tileShowSub,
+            tile.showSub,
+            (v) => c.updateTile(id, (t) => t.copyWith(showSub: v)),
+          ),
         title(l.primaryColorLabel),
         _ColorRow(
-          keyPrefix: '${prefix}primary-${id.name}',
+          keyPrefix: 'primary-${id.name}',
           selected: tile.primaryColor,
           onPick: (color) =>
               c.updateTile(id, (t) => t.copyWith(primaryColor: () => color)),
         ),
         title(l.secondaryColorLabel),
         _ColorRow(
-          keyPrefix: '${prefix}secondary-${id.name}',
+          keyPrefix: 'secondary-${id.name}',
           selected: tile.secondaryColor,
           onPick: (color) =>
               c.updateTile(id, (t) => t.copyWith(secondaryColor: () => color)),

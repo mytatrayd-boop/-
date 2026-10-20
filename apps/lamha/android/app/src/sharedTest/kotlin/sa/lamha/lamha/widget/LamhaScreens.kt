@@ -20,7 +20,8 @@ import sa.lamha.lamha.R
 /// واختبار Robolectric المحلي (test/LamhaScreensRobolectricTest). يبني RemoteViews بالدالة نفسها
 /// التي يستخدمها المستقبل (LamhaWidgetReceiver.buildViews)، ويطبقها داخل FrameLayout بمقاس الودجت
 /// بالعربية ومن اليمين لليسار، ويرسمها PNG، ثم يتحقق: لا سطر فوق حده، ولا نص بعرض صفر ولا مقصوص
-/// خارج خانته، وكل عنوان مربع في التخطيط ظاهر، والمربع عمود رأسي محاذى يميناً، واليوم تحت الساعة،
+/// خارج خانته ولا كلمة مكسورة بين سطرين، وكل مربع في التخطيط قيمته ظاهرة وحجمها ≥ ٩٠٪ من المطلوب إن
+/// اتسعت أعرض كلمة فيها (الميزة ٥ب)، والمربع عمود رأسي محاذى يميناً، واليوم تحت الساعة،
 /// والتاريخان والمدينة ظاهرة إن كانت في التخطيط ومخفية إن لم تكن.
 object LamhaScreens {
     /// ٣:٠٠ ص بتوقيت أبها في ١٩ أكتوبر ٢٠٢٦، قبل الفجر (fixtureNow في test/app/android_fixture_test.dart).
@@ -84,7 +85,16 @@ object LamhaScreens {
         "tilexl" to { l ->
             JSONArray(l.objects().map { if (it.getString("id") == "deposit") it.put("fontScale", 1.3) else it })
         },
+        // الميزة ٥ب: حجم مربع واحد يُحترم داخل مقاسه (الصلاة في صف من ٣، والموسم، والساعة).
+        "prayer20" to { l -> scaled(l, "prayer", 2.0) },
+        "trad18" to { l -> scaled(l, "tradSeason", 1.8) },
+        "clock15" to { l -> scaled(l, "clock", 1.5) },
+        // الساعة بعرض ١ محدودة بعرضها، فبعرض ٢ يظهر أثر الحجم.
+        "clock15span2" to { l -> JSONArray(scaled(l, "clock", 1.5).objects().map { if (it.getString("id") == "clock") it.put("span", 2) else it }) },
     )
+
+    private fun scaled(l: JSONArray, id: String, font: Double) =
+        JSONArray(l.objects().map { if (it.getString("id") == id) it.put("fontScale", font) else it })
 
     fun arabicRtl(context: Context): Context {
         val config = Configuration(context.resources.configuration)
@@ -123,7 +133,35 @@ object LamhaScreens {
         val placed = LamhaLogic.packRows(
             LamhaLogic.stackCells(layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) }),
         ).flatten().flatMap { LamhaLogic.cellElements(it.id) }.toSet()
-        return check(ctx, parent, placed)
+        return check(ctx, parent, placed) + valueSizes(ctx, parent, JSONObject(schedule), layout)
+    }
+
+    /// حجم القيمة الفعلي ≥ ٩٠٪ من المطلوب (العام × المربع × ٢٠) إذا اتسعت أعرض كلمة فيها بالحجم
+    /// المطلوب في عرض عنصرها (الميزة ٥ب). القيمة تُعرف من نصها في الجدول.
+    private fun valueSizes(ctx: Context, root: ViewGroup, schedule: JSONObject, layout: List<LamhaLogic.Tile>): List<String> {
+        val out = ArrayList<String>()
+        val day = LamhaSchedule.read(schedule.toString(), NOW_MILLIS) ?: return out
+        val ids = mapOf(
+            day.nextPrayer?.name to "prayer", day.qiblaDegrees to "qibla", day.deposits.firstOrNull()?.label to "deposit",
+            day.seasonName to "season", day.tradName to "tradSeason",
+        )
+        val metrics = ctx.resources.displayMetrics
+        val texts = ArrayList<TextView>()
+        collect(root, texts)
+        for (v in texts.filter { it.id == R.id.tile_value && shown(it, root) }) {
+            val id = ids[v.text.toString()] ?: continue
+            val tile = layout.firstOrNull { it.id == id } ?: continue
+            val requested = android.util.TypedValue.applyDimension(
+                android.util.TypedValue.COMPLEX_UNIT_SP, 20f * day.fontScale * tile.fontScale, metrics,
+            )
+            val paint = android.graphics.Paint(v.paint).apply { textSize = requested }
+            val widest = v.text.split(' ').maxOf { paint.measureText(it) }
+            val inner = v.width - v.totalPaddingLeft - v.totalPaddingRight - 2f * metrics.density
+            if (widest <= inner && v.textSize < requested * 0.9f) {
+                out += "$id: حجم القيمة ${v.textSize} أقل من ٩٠٪ من ${requested}"
+            }
+        }
+        return out
     }
 
     private fun check(ctx: Context, root: ViewGroup, placed: Set<String>): List<String> {
@@ -168,6 +206,16 @@ object LamhaScreens {
             }
             val max = t.maxLines
             if (max > 0 && t.lineCount > max) out += "$label: ${t.lineCount} أسطر والحد $max"
+            // لا كسر حروف: كل سطر ملتفّ ينتهي عند مسافة.
+            if (layout != null) {
+                val s = t.text
+                for (i in 0 until minOf(t.lineCount, if (max > 0) max else t.lineCount) - 1) {
+                    val end = layout.getLineEnd(i)
+                    if (end in 1 until s.length && !s[end - 1].isWhitespace() && !s[end].isWhitespace()) {
+                        out += "$label: كلمة مكسورة بين السطرين ${i + 1} و${i + 2}"
+                    }
+                }
+            }
         }
 
         // عناوين مربعات المعلومات الظاهرة في التخطيط، وكل مربع عمود رأسي: العنوان ثم القيمة (سطر
@@ -179,18 +227,20 @@ object LamhaScreens {
             Triple("season", ctx.getString(R.string.tile_season), null),
             Triple("tradSeason", ctx.getString(R.string.tile_trad_season), null),
         ).filter { it.first in placed }
+        // كل مربع ظاهر له قيمة، والعنوان قد يُخفى لضيق المربع (الميزة ٥ب) لكن لا يظهر غير المتوقع.
         val titles = texts.filter { it.id == R.id.tile_title && shown(it, root) && it.text.isNotEmpty() }
+        val values = texts.filter { it.id == R.id.tile_value && shown(it, root) }
         val titleTexts = titles.map { it.text.toString() }
-        if (titles.size != expected.size) out += "${titles.size} عناوين والمتوقع ${expected.size}"
-        for ((_, full, short) in expected) {
-            if (full !in titleTexts && (short == null || short !in titleTexts)) out += "عنوان «$full» غير ظاهر"
+        if (values.size != expected.size) out += "${values.size} قيم والمتوقع ${expected.size}"
+        for (t in titleTexts) {
+            if (expected.none { it.second == t || it.third == t }) out += "عنوان «$t» غير متوقع"
         }
-        for (title in titles) {
-            val box = title.parent as ViewGroup
+        for (value in values) {
+            val box = value.parent as ViewGroup
+            val title = value
             val column = (0 until box.childCount).map { box.getChildAt(it) }
                 .filter { it.visibility == View.VISIBLE }
-            val value = box.findViewById<TextView>(R.id.tile_value)
-            if (value.lineCount != 1) out += "قيمة «${value.text}» في ${value.lineCount} أسطر"
+
             for (i in 1 until column.size) {
                 val a = rect(column[i - 1], root)
                 val b = rect(column[i], root)
@@ -202,15 +252,18 @@ object LamhaScreens {
         // الساعة: اليوم تحتها في عمودها. التاريخان والمدينة والطقس ظاهرة إن كانت في التخطيط.
         val clockView = root.findViewById<View>(R.id.clock)
         if (("clock" in placed) != (clockView != null)) out += "الساعة: في التخطيط ${"clock" in placed}"
-        if (clockView != null) {
+        val weekday = root.findViewById<TextView>(R.id.weekday)
+        // اليوم قد يُخفى لضيق المربع (الميزة ٥ب)، فيُفحص موضعه إن ظهر.
+        if (clockView != null && weekday != null && shown(weekday, root)) {
             val clock = rect(clockView, root)
-            val day = rect(root.findViewById<TextView>(R.id.weekday), root)
+            val day = rect(weekday, root)
             if (day.top < clock.top + clock.height() / 2) out += "اليوم ليس تحت الساعة"
             if (day.right < clock.left || day.left > clock.right) out += "اليوم ليس في عمود الساعة"
         }
+        // الميلادي سطر فرعي قد يُخفى لضيق المربع (الميزة ٥ب)، والهجري والمدينة ظاهران دائماً.
         for ((id, view) in listOf("dates" to R.id.hijri, "dates" to R.id.gregorian, "weather" to R.id.weather)) {
             val v = root.findViewById<TextView>(view)
-            if (id in placed && (v == null || !shown(v, root))) out += "$id غير ظاهر"
+            if (id in placed && (v == null || (!shown(v, root) && view != R.id.gregorian))) out += "$id غير ظاهر"
             if (id !in placed && v != null) out += "$id ظاهر وهو مخفي"
         }
         root.findViewById<TextView>(R.id.weather)?.let {

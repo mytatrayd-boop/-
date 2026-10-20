@@ -291,16 +291,21 @@ void main() {
                 (w.key! as ValueKey<String>).value.startsWith('tile-sub-'))
             : find.byKey(Key(key)));
     for (final e in infoTiles) {
-      final title = tester.widget<Text>(inTile(e, 'tile-title'));
       final value = tester.widget<Text>(inTile(e, 'tile-value'));
-      // العنوان والقيمة سطر واحد بلا كسر، يصغر خطهما (حتى ٧٠٪) إن لم يتسعا.
-      expect(title.style!.fontSize, inInclusiveRange(13 * 0.7, 13));
-      expect(title.maxLines, 1);
-      expect(title.softWrap, isFalse);
-      expect(value.style!.fontSize, inInclusiveRange(20 * 0.7, 20));
+      // العنوان سطر واحد بلا كسر، يصغر (حتى ٧٠٪) ليتسع وإلا يُخفى (الميزة ٥ب). القيمة ٢٠ تلتفّ عند
+      // المسافات، ولا تصغر إلا إن لم تتسع كلمة (خط الاختبار عريض).
+      final hasTitle = inTile(e, 'tile-title').evaluate().isNotEmpty;
+      if (hasTitle) {
+        final title = tester.widget<Text>(inTile(e, 'tile-title'));
+        expect(title.style!.fontSize, inInclusiveRange(13 * 0.7, 13));
+        expect(title.maxLines, 1);
+        expect(title.softWrap, isFalse);
+      }
+      expect(value.style!.fontSize, lessThanOrEqualTo(20));
       expect(value.style!.fontWeight, FontWeight.w700);
       for (final sub in tester.widgetList<Text>(inTile(e, 'tile-sub'))) {
-        expect(sub.style!.fontSize, 14);
+        // العدّاد وحده يصغر (حتى ٧٠٪) ليتسع بلا «…».
+        expect(sub.style!.fontSize, inInclusiveRange(14 * 0.7, 14));
       }
       // لا رموز تعبيرية في المربعات.
       final texts = tester
@@ -313,9 +318,11 @@ void main() {
         expect(emoji.hasMatch(t), isFalse, reason: '${e.name}: $t');
       }
       // تتابع من الأعلى: لا فراغ كبير بين العنوان والقيمة.
-      final gap = tester.getRect(inTile(e, 'tile-value')).top -
-          tester.getRect(inTile(e, 'tile-title')).bottom;
-      expect(gap, inInclusiveRange(0, 8), reason: e.name);
+      if (hasTitle) {
+        final gap = tester.getRect(inTile(e, 'tile-value')).top -
+            tester.getRect(inTile(e, 'tile-title')).bottom;
+        expect(gap, inInclusiveRange(0, 8), reason: e.name);
+      }
     }
 
     // القبلة: الزاوية سطر والاتجاه سطر تحته.
@@ -338,25 +345,33 @@ void main() {
         .map((t) => t.data)
         .toList();
     expect(subs.first, asr['text']);
-    // العدّاد بصيغة Chronometer: ١٢:٠٠ ← العصر.
-    expect(subs.last, matches(RegExp(r'^باقي [٠-٩]+:[٠-٩]{2}:[٠-٩]{2}$')));
+    // العدّاد بصيغة Chronometer: ١٢:٠٠ ← العصر، وبلا «باقي» إن لم يتسع.
+    expect(subs.last, matches(RegExp(r'^(باقي )?[٠-٩]+:[٠-٩]{2}:[٠-٩]{2}$')));
 
-    // الإيداع مع إيداعين: الاسم سطر بـ«…»، والباقي سطر، والثاني سطر بـ«…»، والعنوان المختصر إذا لم يتسع.
+    // الإيداع مع إيداعين: الاسم يلتفّ عند المسافات (الميزة ٥ب)، ثم الباقي، ثم الثاني سطر بـ«…»؛
+    // وإن ضاق المربع يُخفى الثاني قبل الباقي. والعنوان المختصر إذا لم يتسع.
     final deps = (day['deposits'] as List).cast<Map>();
     expect(deps.length, greaterThan(1));
     final dValue = tester.widget<Text>(inTile(WidgetElement.deposit, 'tile-value'));
     expect(dValue.data, deps.first['label']);
-    expect(dValue.maxLines, 1);
-    expect(dValue.overflow, TextOverflow.ellipsis);
+    expect(dValue.maxLines, greaterThanOrEqualTo(1));
+    expect(dValue.softWrap, isNot(isFalse));
     final dSubs =
         tester.widgetList<Text>(inTile(WidgetElement.deposit, 'tile-sub')).toList();
-    expect(dSubs.map((t) => t.maxLines), [1, 1]);
-    expect(dSubs.first.data, deps.first['remainingText']);
-    expect(dSubs.last.data, startsWith('${deps[1]['label']} · '));
-    expect(dSubs.last.overflow, TextOverflow.ellipsis);
+    final expected = [
+      deps.first['remainingText'],
+      '${deps[1]['label']} · ${deps[1]['remainingText']}',
+    ];
+    expect(dSubs.map((t) => t.data), expected.take(dSubs.length));
+    for (final t in dSubs) {
+      expect(t.maxLines, 1);
+      expect(t.overflow, TextOverflow.ellipsis);
+    }
     final dTitle = inTile(WidgetElement.deposit, 'tile-title');
-    // خط الاختبار عريض فلا يتسع «الإيداع القادم» سطراً واحداً، فيصير «الإيداع».
-    expect(tester.widget<Text>(dTitle).data, 'الإيداع');
+    // خط الاختبار عريض فلا يتسع «الإيداع القادم» سطراً واحداً، فيصير «الإيداع» (أو يُخفى).
+    if (dTitle.evaluate().isNotEmpty) {
+      expect(tester.widget<Text>(dTitle).data, 'الإيداع');
+    }
   });
 
   test('لام الجر', () {

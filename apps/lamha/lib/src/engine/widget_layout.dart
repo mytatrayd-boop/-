@@ -16,7 +16,7 @@ enum WidgetElement {
   tradSeason,
 }
 
-/// حجم الخط (العام ولكل مربع): معامل يُضرب به كل حجم نص.
+/// حجم الخط العام (شاشة الإعدادات): معامل يُضرب به كل حجم نص.
 enum FontScale {
   small(0.9),
   medium(1.0),
@@ -56,13 +56,32 @@ enum TileColor {
 const gridColumns = 3;
 const maxGridRows = 5;
 
+/// حجم خط المربع (الميزة ٥ب): شريط من [tileFontMin] إلى [tileFontMax] بخطوة [tileFontStep]،
+/// يُضرب في حجم الخط العام.
+const tileFontMin = 0.8;
+const tileFontMax = 2.0;
+const tileFontStep = 0.1;
+
+/// معامل خط مربع ضمن المدى وعلى خطوة ٠٫١. القيمة المحفوظة قبل ٥ب اسم (FontScale)، فتُحوَّل لمعاملها.
+double tileFontScale(Object? raw) {
+  final v = raw is num
+      ? raw.toDouble()
+      : raw is String
+      ? FontScale.byName(raw).factor
+      : 1.0;
+  return ((v.clamp(tileFontMin, tileFontMax) * 10 + 1e-9).round() / 10)
+      .toDouble();
+}
+
 /// إعدادات مربع واحد.
 class TileLayout {
   const TileLayout(
     this.id, {
     this.visible = true,
     this.span = 1,
-    this.fontScale = FontScale.medium,
+    this.fontScale = 1.0,
+    this.showTitle = true,
+    this.showSub = true,
     this.primaryColor,
     this.secondaryColor,
   });
@@ -71,7 +90,9 @@ class TileLayout {
     WidgetElement.values.byName(j['id'] as String),
     visible: j['visible'] as bool? ?? true,
     span: ((j['span'] as num?)?.toInt() ?? 1).clamp(1, gridColumns),
-    fontScale: FontScale.byName(j['fontScale'] as String?),
+    fontScale: tileFontScale(j['fontScale']),
+    showTitle: j['showTitle'] as bool? ?? true,
+    showSub: j['showSub'] as bool? ?? true,
     primaryColor: TileColor.byName(j['primaryColor'] as String?),
     secondaryColor: TileColor.byName(j['secondaryColor'] as String?),
   );
@@ -82,8 +103,12 @@ class TileLayout {
   /// العرض بالوحدات: ١ صغير، ٢ متوسط، ٣ عريض.
   final int span;
 
-  /// يُضرب في حجم الخط العام.
-  final FontScale fontScale;
+  /// معامل خط المربع (٠٫٨–٢٫٠)، يُضرب في حجم الخط العام.
+  final double fontScale;
+
+  /// إظهار العنوان (مربعات المعلومات)، والسطر الفرعي (الثانويات، واليوم تحت الساعة، والميلادي).
+  final bool showTitle;
+  final bool showSub;
 
   /// لون الخط الرئيسي (القيمة) والفرعي (العنوان والثانويات)؛ null = تلقائي.
   final TileColor? primaryColor;
@@ -92,36 +117,44 @@ class TileLayout {
   TileLayout copyWith({
     bool? visible,
     int? span,
-    FontScale? fontScale,
+    double? fontScale,
+    bool? showTitle,
+    bool? showSub,
     TileColor? Function()? primaryColor,
     TileColor? Function()? secondaryColor,
   }) => TileLayout(
     id,
     visible: visible ?? this.visible,
     span: span ?? this.span,
-    fontScale: fontScale ?? this.fontScale,
+    fontScale: fontScale != null ? tileFontScale(fontScale) : this.fontScale,
+    showTitle: showTitle ?? this.showTitle,
+    showSub: showSub ?? this.showSub,
     primaryColor: primaryColor != null ? primaryColor() : this.primaryColor,
     secondaryColor: secondaryColor != null
         ? secondaryColor()
         : this.secondaryColor,
   );
 
-  /// للإعدادات المحفوظة (أسماء).
+  /// للإعدادات المحفوظة (اللونان بالأسماء).
   Map<String, Object?> toJson() => {
     'id': id.name,
     'visible': visible,
     'span': span,
-    'fontScale': fontScale.name,
+    'fontScale': fontScale,
+    'showTitle': showTitle,
+    'showSub': showSub,
     'primaryColor': primaryColor?.name,
     'secondaryColor': secondaryColor?.name,
   };
 
-  /// للجدول (قيم جاهزة): المعامل رقماً واللون ARGB أو null.
+  /// للجدول (قيم جاهزة): اللون ARGB أو null.
   Map<String, Object?> toScheduleJson() => {
     'id': id.name,
     'visible': visible,
     'span': span,
-    'fontScale': fontScale.factor,
+    'fontScale': fontScale,
+    'showTitle': showTitle,
+    'showSub': showSub,
     'primaryColor': primaryColor?.argb,
     'secondaryColor': secondaryColor?.argb,
   };
@@ -133,12 +166,22 @@ class TileLayout {
       other.visible == visible &&
       other.span == span &&
       other.fontScale == fontScale &&
+      other.showTitle == showTitle &&
+      other.showSub == showSub &&
       other.primaryColor == primaryColor &&
       other.secondaryColor == secondaryColor;
 
   @override
-  int get hashCode =>
-      Object.hash(id, visible, span, fontScale, primaryColor, secondaryColor);
+  int get hashCode => Object.hash(
+    id,
+    visible,
+    span,
+    fontScale,
+    showTitle,
+    showSub,
+    primaryColor,
+    secondaryColor,
+  );
 }
 
 /// الترتيب الافتراضي = الشكل السابق: الساعة واليوم يميناً، ويسارها التاريخان وتحتهما المدينة
@@ -271,7 +314,10 @@ List<List<GridCell>> packRows(
       }
     } else {
       // حصص متساوية، والصف الذي يحتاج أكثر من حصته يأخذ حاجته ويقتسم الباقون ما بقي.
-      var open = [for (var i = 0; i < n; i++) if (flex[i]) i];
+      var open = [
+        for (var i = 0; i < n; i++)
+          if (flex[i]) i,
+      ];
       var left = rest;
       while (open.isNotEmpty) {
         final share = left / open.length;
@@ -321,6 +367,119 @@ List<String> cellElements(String cellId) => cellId.split('+');
 
 /// العناصر التي تظهر فعلاً في الودجت: التكديس ثم التوزيع كما ترسمها الودجت والمعاينة.
 Set<String> placedElements(List<GridCell> shown) => {
-      for (final r in packRows(stackCells(shown)))
-        for (final cell in r) ...cellElements(cell.id),
-    };
+  for (final r in packRows(stackCells(shown)))
+    for (final cell in r) ...cellElements(cell.id),
+};
+
+/// سطر ثانوي في مربع: [height] ارتفاع سطره بالحجم المطلوب، و[maxLines] حده، و[fitWidth] عرضه إن
+/// كان لا يُختصر بـ«…» (العدّاد واليوم)، فيصغر حتى [fitTile.minSubFit] وإلا يُخفى؛ 0 = يُختصر.
+typedef SubLine = ({double height, int maxLines, double fitWidth});
+
+/// ما يظهر في مربع وبأي حجم (fitTile).
+typedef TileFit = ({
+  bool title,
+  double valueScale,
+  int valueLines,
+  List<int> subs,
+  List<double> subScales,
+  int lastSubLines,
+});
+
+/// أسطر نص كلماته بعرض [words] (ومسافته [space]) في عرض [width]، بالتفاف عند المسافات فقط.
+int wrapLines(List<double> words, double space, double width) {
+  if (words.isEmpty) return 1;
+  var lines = 1;
+  var line = words.first;
+  for (final w in words.skip(1)) {
+    if (line + space + w <= width) {
+      line += space + w;
+    } else {
+      lines++;
+      line = w;
+    }
+  }
+  return lines;
+}
+
+/// ملاءمة مربع (الميزة ٥ب): حجم الخط المطلوب يُحترم، ومقاس المربع ([height]×[width]) ثابت.
+/// [titleHeight] سطر العنوان (0 = بلا عنوان)، و[valueLineHeight] سطر القيمة، و[valueWords] عرض
+/// كلماتها، و[subs] الثانويات بترتيب عرضها، و[gap] بين الأسطر؛ كلها بالحجم المطلوب.
+/// - القيمة تلتفّ عند المسافات، ولا تصغر عرضياً إلا إذا لم تتسع أعرض كلمة فيها، وبأدنى تصغير.
+/// - ثانوي له [SubLine.fitWidth] أعرض من المربع يصغر حتى [minSubFit] وإلا يُخفى.
+/// - إن لم يتسع الارتفاع: تُخفى الثانويات بأولويتها (من الآخر، أو من الأول مع [hideFromStart]:
+///   الصلاة)، ثم العنوان، وآخراً تصغر القيمة بأدنى تصغير لتظهر كاملة (لا «…» في القيمة).
+/// - الثانوي الأخير يأخذ أسطراً إضافية (حتى حده) إن بقي مكان.
+/// بلا مقاس معروف (0): الكل بالحجم المطلوب. مطابقة لـ fitTile في LamhaLogic.kt.
+TileFit fitTile({
+  required double height,
+  required double width,
+  double titleHeight = 0,
+  required double valueLineHeight,
+  required List<double> valueWords,
+  double valueSpace = 0,
+  List<SubLine> subs = const [],
+  bool hideFromStart = false,
+  double gap = 0,
+  double minSubFit = 0.7,
+}) {
+  var k = 1.0;
+  final widest = valueWords.fold<double>(0, math.max);
+  if (width > 0 && widest > width) k = width / widest;
+  var lines = width > 0
+      ? wrapLines([for (final w in valueWords) w * k], valueSpace * k, width)
+      : 1;
+  final scales = <int, double>{};
+  for (var i = 0; i < subs.length; i++) {
+    final f = subs[i].fitWidth;
+    final s = width > 0 && f > width ? width / f : 1.0;
+    if (s >= minSubFit) scales[i] = s;
+  }
+  final kept = scales.keys.toList();
+  var title = titleHeight > 0;
+  double used() {
+    final items = (title ? 1 : 0) + 1 + kept.length;
+    return (title ? titleHeight : 0) +
+        lines * valueLineHeight * k +
+        kept.fold<double>(0, (a, i) => a + subs[i].height * scales[i]!) +
+        gap * (items - 1);
+  }
+
+  var lastLines = kept.isEmpty ? 1 : subs[kept.last].maxLines;
+  if (height > 0) {
+    while (used() > height && kept.isNotEmpty) {
+      hideFromStart ? kept.removeAt(0) : kept.removeLast();
+    }
+    if (used() > height && title) title = false;
+    if (used() > height && valueLineHeight > 0) {
+      // القيمة كاملة بأدنى تصغير: أكبر معامل تتسع به أسطرها (بعد الالتفاف) في الارتفاع.
+      int linesAt(double f) =>
+          width > 0 ? wrapLines(valueWords, valueSpace, width / f) : 1;
+      var lo = 0.0;
+      var hi = k;
+      for (var i = 0; i < 40; i++) {
+        final mid = (lo + hi) / 2;
+        linesAt(mid) * valueLineHeight * mid <= height ? lo = mid : hi = mid;
+      }
+      k = lo;
+      lines = linesAt(k);
+    }
+    if (kept.isNotEmpty) {
+      final last = subs[kept.last];
+      final line = last.height * scales[kept.last]!;
+      lastLines = line <= 0
+          ? last.maxLines
+          : (1 + ((height - used()) / line + 1e-6).floor()).clamp(
+              1,
+              last.maxLines,
+            );
+    }
+  }
+  return (
+    title: title,
+    valueScale: k,
+    valueLines: lines,
+    subs: List.unmodifiable(kept),
+    subScales: List.unmodifiable([for (final i in kept) scales[i]!]),
+    lastSubLines: lastLines,
+  );
+}

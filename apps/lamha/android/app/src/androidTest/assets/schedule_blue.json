@@ -29,6 +29,8 @@
       "visible": true,
       "span": 1,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     },
@@ -37,6 +39,8 @@
       "visible": true,
       "span": 2,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     },
@@ -45,6 +49,8 @@
       "visible": true,
       "span": 2,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     },
@@ -53,6 +59,8 @@
       "visible": true,
       "span": 1,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     },
@@ -61,6 +69,8 @@
       "visible": true,
       "span": 1,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     },
@@ -69,6 +79,8 @@
       "visible": true,
       "span": 1,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     },
@@ -77,6 +89,8 @@
       "visible": true,
       "span": 1,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     },
@@ -85,6 +99,8 @@
       "visible": true,
       "span": 2,
       "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
     }

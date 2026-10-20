@@ -189,7 +189,8 @@ void main() {
         WidgetElement.qibla,
         visible: false,
         span: 2,
-        fontScale: FontScale.xlarge,
+        fontScale: 1.3,
+        showSub: false,
         primaryColor: TileColor.pink,
       );
       final back = TileLayout.fromJson(
@@ -201,6 +202,8 @@ void main() {
         'visible': false,
         'span': 2,
         'fontScale': 1.3,
+        'showTitle': true,
+        'showSub': false,
         'primaryColor': 0xFFEE9AB8,
         'secondaryColor': null,
       });
@@ -219,5 +222,90 @@ void main() {
     final placed = placedElements(shown);
     expect(placed, containsAll(['clock', 'dates', 'weather', 'prayer', 'qibla', 'deposit']));
     expect(placed.contains('season'), isFalse);
+  });
+
+  group('الميزة ٥ب: حجم خط المربع والملاءمة (fitTileCases في LamhaLogicTest.kt)', () {
+    test('tileFontScale: المدى ٠٫٨–٢٫٠ بخطوة ٠٫١، والأسماء القديمة', () {
+      expect(tileFontScale(1.55), 1.6);
+      expect(tileFontScale(3), 2.0);
+      expect(tileFontScale(0.1), 0.8);
+      expect(tileFontScale('xlarge'), 1.3);
+      expect(tileFontScale('large'), 1.2);
+      expect(tileFontScale(null), 1.0);
+      final old = TileLayout.fromJson({'id': 'qibla', 'fontScale': 'small'});
+      expect(old.fontScale, 0.9);
+      expect(old.showTitle && old.showSub, isTrue);
+      expect(const TileLayout(WidgetElement.qibla).copyWith(fontScale: 1.94).fontScale, 1.9);
+    });
+
+    test('wrapLines: التفاف عند المسافات فقط', () {
+      expect(wrapLines([30, 20], 5, 80), 1);
+      expect(wrapLines([30, 20], 5, 54), 2);
+      expect(wrapLines([10, 10, 10], 0, 20), 2);
+      expect(wrapLines([], 0, 10), 1);
+    });
+
+    TileFit fit(double height, double width, {bool fromStart = false, List<SubLine>? subs}) =>
+        fitTile(
+          height: height,
+          width: width,
+          titleHeight: 16,
+          valueLineHeight: 25,
+          valueWords: [30, 20],
+          valueSpace: 5,
+          subs: subs ??
+              const [
+                (height: 17.5, maxLines: 1, fitWidth: 0),
+                (height: 17.5, maxLines: 2, fitWidth: 0),
+              ],
+          hideFromStart: fromStart,
+          gap: 3,
+        );
+
+    test('يتسع كله بالحجم المطلوب، والأخير يأخذ سطره الثاني إن بقي مكان', () {
+      final a = fit(100, 80);
+      expect((a.title, a.valueScale, a.valueLines, a.lastSubLines), (true, 1.0, 1, 1));
+      expect(a.subs, [0, 1]);
+      expect(fit(120, 80).lastSubLines, 2);
+      // بلا مقاس معروف: الكل.
+      final u = fit(0, 0);
+      expect((u.title, u.valueLines, u.lastSubLines), (true, 1, 2));
+      expect(u.subs, [0, 1]);
+    });
+
+    test('ضيق الارتفاع: الثانويات بأولويتها، ثم العنوان، ثم أدنى تصغير للقيمة', () {
+      expect(fit(60, 80).subs, isEmpty);
+      expect(fit(60, 80).title, isTrue);
+      expect(fit(70, 80, fromStart: true).subs, [1]);
+      final c = fit(30, 80);
+      expect((c.title, c.valueScale), (false, 1.0));
+      expect(c.subs, isEmpty);
+      // القيمة في سطرين (عرض ٤٠).
+      final d = fit(100, 40);
+      expect((d.valueLines, d.title), (2, true));
+      expect(d.subs, [0]);
+      expect((fit(60, 40).title, fit(60, 40).valueLines), (false, 2));
+      // لا مكان لسطريها: تصغر بأدنى تصغير لتظهر كاملة (سطران بمعامل ٠٫٨).
+      expect(fit(40, 40).valueLines, 2);
+      expect(fit(40, 40).valueScale, closeTo(0.8, 1e-6));
+      final f = fitTile(height: 20, width: 80, valueLineHeight: 25, valueWords: [30]);
+      expect(f.valueScale, closeTo(0.8, 1e-9));
+    });
+
+    test('القيمة تصغر عرضياً فقط إن لم تتسع أعرض كلمة، وبأدنى تصغير', () {
+      final e = fit(200, 24);
+      expect(e.valueScale, closeTo(0.8, 1e-9));
+      expect(e.valueLines, 2);
+      expect(fit(200, 30).valueScale, 1.0);
+    });
+
+    test('سطر لا يُختصر (العدّاد): يصغر حتى ٧٠٪ وإلا يُخفى', () {
+      final g = fit(200, 80, subs: const [
+        (height: 17.5, maxLines: 1, fitWidth: 100),
+        (height: 17.5, maxLines: 1, fitWidth: 200),
+      ]);
+      expect(g.subs, [0]);
+      expect(g.subScales.single, closeTo(0.8, 1e-9));
+    });
   });
 }
