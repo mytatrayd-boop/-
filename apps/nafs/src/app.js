@@ -7,7 +7,11 @@ import {
     getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc, deleteDoc,
     collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, orderBy,
 } from 'firebase/firestore';
-import { CLASSES, MAX_UPLOAD_BYTES, isCivilId, parseStudentRows, scoreQuiz, summarize, reportCsv } from './logic.js';
+import {
+    CLASSES, MAX_UPLOAD_BYTES, isCivilId, parseStudentRows, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError,
+} from './logic.js';
+import { GRADES, LEVELS, DOMAINS, gradeOfClass, skillById, levelName } from './skills.js';
+import { TEMPLATES } from './templates.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,6 +22,12 @@ let uploads = [];
 let activeStudent = null;  // {id, name, ...}
 let teacherTab = 'students';
 let authMode = 'login';
+let tests = [];            // اختبارات المعلم (كل الفصول)
+let keys = {};             // testId → الإجابات الصحيحة
+let attempts = [];         // محاولات طلاب المعلم
+let draft = null;          // الاختبار قيد البناء
+let studentTests = [];     // اختبارات فصل الطالب المنشورة
+let openTest = null;
 
 // ---------- الإعداد ----------
 
@@ -155,7 +165,7 @@ async function openTeacherDashboard() {
     $('dashWelcome').textContent = `مرحباً بك أستاذ/ة: ${teacher.name}`;
     $('dashClass').value = teacher.className;
     renderMeta();
-    await Promise.all([loadStudents(), loadUploads()]);
+    await Promise.all([loadStudents(), loadUploads(), loadTeacherTests()]);
 }
 
 function renderMeta() {
@@ -172,14 +182,15 @@ async function changeClass() {
     } catch (err) { reportError(err); $('dashClass').value = teacher.className; }
 }
 
+const TAB_ON = 'pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition whitespace-nowrap';
+const TAB_OFF = 'pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap';
+
 function switchTeacherTab(tab) {
     teacherTab = tab;
-    const on = 'pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition';
-    const off = 'pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition';
-    $('teacherTabStudents').classList.toggle('hidden', tab !== 'students');
-    $('teacherTabReports').classList.toggle('hidden', tab !== 'reports');
-    $('tabBtnStudents').className = tab === 'students' ? on : off;
-    $('tabBtnReports').className = tab === 'reports' ? on : off;
+    for (const [name, panel, btn] of [['students', 'teacherTabStudents', 'tabBtnStudents'], ['tests', 'teacherTabTests', 'tabBtnTests'], ['reports', 'teacherTabReports', 'tabBtnReports']]) {
+        $(panel).classList.toggle('hidden', tab !== name);
+        $(btn).className = tab === name ? TAB_ON : TAB_OFF;
+    }
     renderTeacher();
 }
 
@@ -192,65 +203,387 @@ async function loadStudents() {
     renderTeacher();
 }
 
-function cell(text, cls = 'p-3') {
-    const td = document.createElement('td');
-    td.className = cls;
-    td.textContent = text;
-    return td;
+function el(tag, cls = '', text = '') {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== '') e.textContent = text;
+    return e;
 }
 
-function emptyRow(text) {
-    const tr = document.createElement('tr');
-    tr.append(cell(text, 'p-6 text-center text-slate-400'));
-    tr.firstChild.colSpan = 5;
+function cell(text, cls = 'p-3') {
+    return el('td', cls, text);
+}
+
+function emptyRow(text, cols = 5) {
+    const tr = el('tr');
+    const td = cell(text, 'p-6 text-center text-slate-400');
+    td.colSpan = cols;
+    tr.append(td);
     return tr;
 }
 
+function actionButton(text, action, id, cls) {
+    const b = el('button', cls, text);
+    b.dataset.action = action;
+    if (id) b.dataset.id = id;
+    return b;
+}
+
+const TONE_BADGE = { good: 'bg-emerald-100 text-emerald-800', mid: 'bg-amber-100 text-amber-800', low: 'bg-red-100 text-red-700', none: 'bg-slate-100 text-slate-500' };
+const TONE_BAR = { good: 'bg-emerald-500', mid: 'bg-amber-400', low: 'bg-red-400', none: 'bg-slate-200' };
+
+function badge(pct) {
+    const m = masteryLevel(pct);
+    return el('span', `inline-block px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${TONE_BADGE[m.tone]}`, m.label);
+}
+
+function statRow(name, stat, hint = '') {
+    const pct = stat ? stat.pct : null;
+    const row = el('div', 'space-y-1');
+    const top = el('div', 'flex justify-between items-center gap-3 text-xs');
+    const label = el('span', 'font-semibold text-slate-700', name);
+    if (hint) label.title = hint;
+    const right = el('span', 'flex items-center gap-2 shrink-0');
+    right.append(el('span', 'font-black text-slate-800', pct === null ? '—' : pct + '%'), badge(pct));
+    top.append(label, right);
+    const track = el('div', 'h-2 bg-slate-100 rounded-full overflow-hidden');
+    const fill = el('div', `h-full rounded-full ${TONE_BAR[masteryLevel(pct).tone]}`);
+    fill.style.width = (pct ?? 0) + '%';
+    track.append(fill);
+    row.append(top, track);
+    if (stat?.t) row.append(el('p', 'text-[11px] text-slate-400', `${stat.c} صحيحة من ${stat.t}`));
+    return row;
+}
+
+const ms = (ts) => ts?.toMillis?.() ?? 0;
+const classTests = () => tests.filter((t) => t.className === teacher.className);
+const currentGrade = () => gradeOfClass(teacher.className);
+
+function classReport() {
+    const ct = Object.fromEntries(classTests().map((t) => [t.id, t]));
+    return buildReport(classStudents(), attempts.filter((a) => ct[a.testId]), ct, keys);
+}
+
+async function loadTeacherTests() {
+    const mine = (name) => getDocs(query(collection(db, name), where('teacherUid', '==', teacher.uid)));
+    const [t, k, a] = await Promise.all([mine('tests'), mine('testKeys'), mine('attempts')]);
+    tests = t.docs.map((d) => ({ id: d.id, ...d.data() })).sort((x, y) => ms(y.createdAt) - ms(x.createdAt));
+    keys = Object.fromEntries(k.docs.map((d) => [d.id, d.data().answers]));
+    attempts = a.docs.map((d) => ({ id: d.id, ...d.data(), submittedAt: ms(d.data().submittedAt) }));
+    renderTeacher();
+}
+
 function renderTeacher() {
+    if (!teacher) return;
+    const report = classReport();
+    if (teacherTab === 'students') renderStudentsTab(report);
+    else if (teacherTab === 'tests') renderTestsTab();
+    else renderReports(report);
+}
+
+function renderStudentsTab(report) {
     const list = classStudents();
-    if (teacherTab === 'students') {
-        $('studentCount').textContent = list.length;
-        const tbody = $('studentsTableBody');
-        tbody.replaceChildren();
-        if (!list.length) tbody.append(emptyRow('لا يوجد طلاب مسجلين بعد. قم بإضافة طلاب أو ارفع ملف أكسل.'));
-        list.forEach((s, i) => {
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-slate-50/80 transition';
-            const level = cell('');
-            const badge = document.createElement('span');
-            badge.className = 'px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg font-bold';
-            badge.textContent = typeof s.score === 'number' ? s.score + '%' : 'لم يقس بعد';
-            level.append(badge);
-            const actions = cell('', 'p-3 text-center');
-            const del = document.createElement('button');
-            del.className = 'text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded';
-            del.textContent = 'حذف';
-            del.dataset.action = 'delete-student';
-            del.dataset.id = s.id;
-            actions.append(del);
-            tr.append(cell(i + 1, 'p-3 font-bold'), cell(s.name, 'p-3 font-semibold text-slate-800'), cell(s.id, 'p-3 font-mono text-slate-600'), level, actions);
-            tbody.append(tr);
-        });
-    } else {
-        const sum = summarize(list);
-        $('repTotalStudents').textContent = sum.total;
-        $('repCompletedCount').textContent = sum.completed;
-        $('repAvgMastery').textContent = sum.avg + '%';
-        const tbody = $('reportsTableBody');
-        tbody.replaceChildren();
-        if (!list.length) tbody.append(emptyRow('لا توجد بيانات تقارير متاحة حالياً.'));
-        for (const s of list) {
-            const done = typeof s.score === 'number';
-            const tr = document.createElement('tr');
-            const status = cell('');
-            const pill = document.createElement('span');
-            pill.className = 'px-2.5 py-1 rounded-full text-[11px] ' + (done ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600');
-            pill.textContent = done ? 'منجز' : 'بانتظار الاختبار';
-            status.append(pill);
-            tr.append(cell(s.name, 'p-3 font-bold text-slate-800'), cell(s.id, 'p-3 font-mono'), cell('طلاقة وقراءة استيعابية'),
-                cell(done ? s.score + '%' : 'غير مختبر', 'p-3 font-bold text-emerald-600'), status);
-            tbody.append(tr);
+    const byId = Object.fromEntries(report.students.map((s) => [s.id, s]));
+    $('studentCount').textContent = list.length;
+    const tbody = $('studentsTableBody');
+    tbody.replaceChildren();
+    if (!list.length) tbody.append(emptyRow('لا يوجد طلاب مسجلين بعد. قم بإضافة طلاب أو ارفع ملف أكسل.'));
+    list.forEach((s, i) => {
+        const tr = el('tr', 'hover:bg-slate-50/80 transition');
+        const r = byId[s.id];
+        const level = cell('');
+        level.append(el('span', 'font-black text-slate-800 ml-2', r?.pct === null || !r ? '' : r.pct + '%'), badge(r?.pct ?? null));
+        const actions = cell('', 'p-3 text-center');
+        actions.append(actionButton('حذف', 'delete-student', s.id, 'text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded'));
+        tr.append(cell(i + 1, 'p-3 font-bold'), cell(s.name, 'p-3 font-semibold text-slate-800'), cell(s.id, 'p-3 font-mono text-slate-600'), level, actions);
+        tbody.append(tr);
+    });
+}
+
+// ---------- التقارير ----------
+
+function renderReports(report) {
+    const grade = currentGrade();
+    $('repTotalStudents').textContent = report.students.length;
+    $('repTests').textContent = classTests().filter((t) => t.status === 'published').length;
+    $('repCompletedCount').textContent = report.tested;
+    $('repAvgMastery').textContent = report.avg === null ? '—' : report.avg + '%';
+
+    const skillsBox = $('repSkills');
+    skillsBox.replaceChildren();
+    for (const o of GRADES[grade].outcomes) {
+        const group = el('div', 'space-y-3');
+        group.append(el('p', 'text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2', `${DOMAINS[o.domain]} — ${o.text}`));
+        for (const ind of o.indicators) group.append(statRow(ind.name, report.skills[ind.id], ind.desc));
+        skillsBox.append(group);
+    }
+
+    const levelsBox = $('repLevels');
+    levelsBox.replaceChildren(...LEVELS.map((l) => statRow(l.name, report.levels[l.id])));
+
+    const tbody = $('reportsTableBody');
+    tbody.replaceChildren();
+    if (!report.students.length) tbody.append(emptyRow('لا يوجد طلاب في هذا الفصل.', 7));
+    const sorted = [...report.students].sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
+    for (const s of sorted) {
+        const tr = el('tr', 'hover:bg-slate-50/80');
+        const lvl = cell('');
+        lvl.append(badge(s.pct));
+        const prog = s.progress === null ? cell('—', 'p-3 text-slate-400')
+            : cell((s.progress > 0 ? '▲ +' : s.progress < 0 ? '▼ ' : '') + s.progress + '%', 'p-3 font-bold ' + (s.progress > 0 ? 'text-emerald-600' : s.progress < 0 ? 'text-red-600' : 'text-slate-500'));
+        const weak = s.weakest && s.skills[s.weakest].pct < 80 ? skillById(s.weakest).name : '—';
+        const act = cell('', 'p-3 text-left');
+        if (s.history.length) act.append(actionButton('التفاصيل', 'student-detail', s.id, 'text-teal-700 hover:text-teal-900 font-bold'));
+        tr.append(cell(s.name, 'p-3 font-bold text-slate-800'), cell(s.history.length), cell(s.pct === null ? '—' : s.pct + '%', 'p-3 font-black'), lvl, prog, cell(weak, 'p-3 text-slate-600'), act);
+        tbody.append(tr);
+    }
+}
+
+function showStudentDetail(id) {
+    const s = classReport().students.find((x) => x.id === id);
+    if (!s) return;
+    $('smName').textContent = s.name;
+    $('smMeta').textContent = `السجل المدني: ${s.id} · النسبة العامة: ${s.pct ?? '—'}% · ${masteryLevel(s.pct).label}`
+        + (s.progress === null ? '' : ` · التقدّم من أول اختبار: ${s.progress > 0 ? '+' : ''}${s.progress}%`);
+    $('smHistory').replaceChildren(...s.history.map((h) => statRow(`${h.title} — ${new Date(h.at).toLocaleDateString('ar-SA')}`, { pct: h.pct })));
+    const box = $('smSkills');
+    box.replaceChildren();
+    for (const o of GRADES[currentGrade()].outcomes) {
+        for (const ind of o.indicators) if (s.skills[ind.id]) box.append(statRow(ind.name, s.skills[ind.id], ind.desc));
+    }
+    $('studentModal').classList.remove('hidden');
+}
+
+function exportReport() {
+    const report = classReport();
+    if (!report.students.length) return showAlert('لا توجد بيانات طلاب لتصديرها.', 'تنبيه');
+    const ids = GRADES[currentGrade()].outcomes.flatMap((o) => o.indicators.map((i) => i.id));
+    downloadBlob(new Blob([reportCsv(report, ids, (id) => skillById(id).name)], { type: 'text/csv;charset=utf-8;' }), `تقرير_مهارات_القراءة_${teacher.className}.csv`);
+    showAlert('تم تصدير تقرير المهارات بنجاح!', 'نجاح التصدير');
+}
+
+// ---------- بناء الاختبارات ----------
+
+function renderTestsTab() {
+    const grade = currentGrade();
+    $('testsClassName').textContent = teacher.className;
+    $('testsGradeName').textContent = GRADES[grade].name;
+    if (draft) return renderBuilder();
+    $('testsListView').classList.remove('hidden');
+    $('testBuilder').classList.add('hidden');
+    const box = $('testsList');
+    box.replaceChildren();
+    const list = classTests();
+    const total = classStudents().length;
+    if (!list.length) box.append(el('p', 'text-sm text-slate-400 bg-white rounded-3xl border border-slate-100 p-8 text-center md:col-span-2', 'لا توجد اختبارات لهذا الفصل بعد. اضغط «بناء اختبار جديد».'));
+    for (const t of list) {
+        const done = attempts.filter((a) => a.testId === t.id).length;
+        const card = el('div', 'bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3');
+        const head = el('div', 'flex justify-between items-start gap-3');
+        head.append(el('h4', 'font-bold text-slate-800', t.title),
+            el('span', 'text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ' + (t.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'), t.status === 'published' ? 'منشور' : 'مسودة'));
+        const meta = el('p', 'text-xs text-slate-500', `${t.questions.length} سؤالاً · ${t.skills.length} مهارات · أجاب ${done} من ${total} طالباً`);
+        const chips = el('div', 'flex flex-wrap gap-1.5');
+        for (const id of t.skills) chips.append(el('span', 'text-[11px] bg-teal-50 text-teal-800 border border-teal-100 rounded-lg px-2 py-0.5', skillById(id)?.name ?? id));
+        const btns = el('div', 'flex flex-wrap gap-3 pt-1 text-xs font-bold');
+        btns.append(actionButton(t.status === 'published' ? 'إيقاف النشر' : 'نشر للطلاب', 'toggle-publish', t.id, 'text-emerald-700 hover:text-emerald-900'));
+        btns.append(actionButton(done ? 'نسخ كاختبار جديد' : 'تعديل', 'edit-test', t.id, 'text-slate-700 hover:text-slate-900'));
+        btns.append(actionButton('حذف', 'delete-test', t.id, 'text-red-500 hover:text-red-700'));
+        card.append(head, meta, chips, btns);
+        box.append(card);
+    }
+}
+
+function openBuilder(test) {
+    const copy = test && attempts.some((a) => a.testId === test.id); // اختبار له إجابات يُنسخ ولا يُعدّل
+    draft = test ? {
+        id: copy ? null : test.id,
+        createdAt: copy ? null : test.createdAt,
+        status: copy ? 'draft' : test.status,
+        title: copy ? `${test.title} (نسخة)` : test.title,
+        passage: test.passage,
+        className: teacher.className,
+        grade: test.grade,
+        skills: [...test.skills],
+        questions: test.questions.map((q, i) => ({ ...q, options: [...q.options, '', '', ''].slice(0, Math.max(4, q.options.length)), answer: keys[test.id]?.[i] ?? 0 })),
+    } : { id: null, title: '', passage: '', className: teacher.className, grade: currentGrade(), skills: [], questions: [] };
+    renderTestsTab();
+}
+
+function closeBuilder() {
+    draft = null;
+    renderTestsTab();
+}
+
+function renderBuilder() {
+    $('testsListView').classList.add('hidden');
+    $('testBuilder').classList.remove('hidden');
+    $('tbError').classList.add('hidden');
+    $('tbHeading').textContent = draft.id ? 'تعديل اختبار' : 'اختبار جديد';
+    $('tbTitle').value = draft.title;
+    $('tbPassage').value = draft.passage;
+    $('tbClass').textContent = draft.className;
+    $('tbGrade').textContent = GRADES[draft.grade].name;
+    const box = $('tbSkills');
+    box.replaceChildren();
+    for (const o of GRADES[draft.grade].outcomes) {
+        const group = el('fieldset', 'border border-slate-200 rounded-2xl p-4 space-y-2');
+        group.append(el('legend', 'px-2 text-xs font-bold text-emerald-700', DOMAINS[o.domain]));
+        group.append(el('p', 'text-[11px] text-slate-500 mb-2', o.text));
+        for (const ind of o.indicators) {
+            const label = el('label', 'flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer');
+            const cb = el('input', 'mt-1 accent-emerald-600 w-4 h-4 shrink-0');
+            cb.type = 'checkbox';
+            cb.dataset.skill = ind.id;
+            cb.checked = draft.skills.includes(ind.id);
+            const txt = el('span');
+            txt.append(el('span', 'block text-sm font-bold text-slate-800', ind.name), el('span', 'block text-[11px] text-slate-500 leading-relaxed', ind.desc));
+            label.append(cb, txt);
+            group.append(label);
         }
+        box.append(group);
+    }
+    renderQuestions();
+}
+
+const SKILL_ORDER = (grade) => GRADES[grade].outcomes.flatMap((o) => o.indicators.map((i) => i.id));
+
+function renderQuestions() {
+    $('tbCount').textContent = draft.questions.length;
+    const box = $('tbQuestions');
+    box.replaceChildren();
+    if (!draft.questions.length) box.append(el('p', 'text-sm text-slate-400 text-center py-6', draft.skills.length ? 'أضف سؤالاً لكل مهارة اخترتها.' : 'اختر المهارات أولاً، ثم أضف الأسئلة.'));
+    const chosen = SKILL_ORDER(draft.grade).filter((id) => draft.skills.includes(id));
+    draft.questions.forEach((q, i) => {
+        const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3 bg-slate-50/50');
+        const head = el('div', 'flex justify-between items-center');
+        head.append(el('span', 'text-xs font-black text-slate-700', `سؤال ${i + 1}`), actionButton('حذف السؤال', 'remove-question', String(i), 'text-xs text-red-500 font-bold'));
+        const selects = el('div', 'grid grid-cols-1 sm:grid-cols-3 gap-2');
+        const skill = el('select', 'sm:col-span-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs');
+        skill.dataset.q = i; skill.dataset.f = 'skill';
+        skill.add(new Option('— اختر مهارة السؤال —', ''));
+        for (const id of chosen) skill.add(new Option(skillById(id).name, id));
+        skill.value = chosen.includes(q.skill) ? q.skill : '';
+        const level = el('select', 'px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs');
+        level.dataset.q = i; level.dataset.f = 'level';
+        for (const l of LEVELS) level.add(new Option(l.name, l.id));
+        level.value = q.level;
+        selects.append(skill, level);
+        const text = el('textarea', 'w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm');
+        text.rows = 2; text.placeholder = 'نص السؤال'; text.value = q.text; text.maxLength = 500;
+        text.dataset.q = i; text.dataset.f = 'text';
+        const opts = el('div', 'grid grid-cols-1 sm:grid-cols-2 gap-2');
+        q.options.forEach((o, j) => {
+            const row = el('label', 'flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2');
+            const radio = el('input', 'accent-emerald-600');
+            radio.type = 'radio'; radio.name = `tb-ans-${i}`; radio.checked = q.answer === j; radio.title = 'الإجابة الصحيحة';
+            radio.dataset.q = i; radio.dataset.f = 'answer'; radio.dataset.o = j;
+            const inp = el('input', 'flex-1 min-w-0 text-sm bg-transparent focus:outline-none');
+            inp.value = o; inp.placeholder = `الخيار ${j + 1}`; inp.maxLength = 300;
+            inp.dataset.q = i; inp.dataset.f = 'opt'; inp.dataset.o = j;
+            row.append(radio, inp);
+            opts.append(row);
+        });
+        card.append(head, selects, text, opts, el('p', 'text-[11px] text-slate-400', 'اختر الدائرة بجانب الإجابة الصحيحة.'));
+        box.append(card);
+    });
+}
+
+function builderInput(e) {
+    const t = e.target;
+    if (t.id === 'tbTitle') draft.title = t.value;
+    else if (t.id === 'tbPassage') draft.passage = t.value;
+    else if (t.dataset.skill) {
+        draft.skills = t.checked ? [...draft.skills, t.dataset.skill] : draft.skills.filter((id) => id !== t.dataset.skill);
+        renderQuestions();
+    } else if (t.dataset.q !== undefined) {
+        const q = draft.questions[Number(t.dataset.q)];
+        if (t.dataset.f === 'opt') q.options[Number(t.dataset.o)] = t.value;
+        else if (t.dataset.f === 'answer') q.answer = Number(t.dataset.o);
+        else q[t.dataset.f] = t.value;
+    }
+}
+
+function addQuestion() {
+    if (!draft.skills.length) return builderError('اختر مهارة واحدة على الأقل قبل إضافة الأسئلة.');
+    const chosen = SKILL_ORDER(draft.grade).filter((id) => draft.skills.includes(id));
+    // المهارة الافتراضية: أول مهارة مختارة ليس لها سؤال بعد
+    const skill = chosen.find((id) => !draft.questions.some((q) => q.skill === id)) ?? chosen[0];
+    draft.questions.push({ skill, level: 'know', text: '', options: ['', '', '', ''], answer: 0 });
+    $('tbError').classList.add('hidden');
+    renderQuestions();
+    $('tbQuestions').lastChild.querySelector('textarea').focus();
+}
+
+async function loadTemplate() {
+    const t = TEMPLATES[draft.grade];
+    if ((draft.passage.trim() || draft.questions.length) && !(await confirmDialog('سيُستبدل النص والأسئلة الحالية بالنموذج الجاهز. متابعة؟', 'نعم، استبدل'))) return;
+    draft.title = draft.title.trim() || t.title;
+    draft.passage = t.passage;
+    draft.questions = t.questions.map((q) => shuffleOptions(q));
+    draft.skills = [...new Set(t.questions.map((q) => q.skill))];
+    renderBuilder();
+}
+
+function builderError(msg) {
+    $('tbError').textContent = msg;
+    $('tbError').classList.remove('hidden');
+    $('tbError').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function saveTest(button, publish) {
+    if (!draft.title.trim()) return builderError('اكتب عنوان الاختبار.');
+    if (!draft.passage.trim()) return builderError('اكتب نص القراءة.');
+    if (!draft.questions.length) return builderError('أضف سؤالاً واحداً على الأقل.');
+    for (const [i, q] of draft.questions.entries()) {
+        const err = questionError(q, draft.skills);
+        if (err) return builderError(`سؤال ${i + 1}: ${err}`);
+    }
+    // حذف الخيارات الفارغة مع تعديل رقم الإجابة الصحيحة
+    const clean = draft.questions.map((q) => {
+        const kept = q.options.map((o, j) => [o.trim(), j]).filter(([o]) => o);
+        return { skill: q.skill, level: q.level, text: q.text.trim(), options: kept.map(([o]) => o), answer: kept.findIndex(([, j]) => j === q.answer) };
+    });
+    const skills = SKILL_ORDER(draft.grade).filter((id) => clean.some((q) => q.skill === id));
+    await busy(button, async () => {
+        const ref = draft.id ? doc(db, 'tests', draft.id) : doc(collection(db, 'tests'));
+        const batch = writeBatch(db);
+        batch.set(ref, {
+            teacherUid: teacher.uid, title: draft.title.trim(), className: draft.className, grade: draft.grade,
+            passage: draft.passage.trim(), questions: clean.map(({ answer, ...q }) => q), skills,
+            status: publish ? 'published' : 'draft', createdAt: draft.createdAt ?? serverTimestamp(), updatedAt: serverTimestamp(),
+        });
+        batch.set(doc(db, 'testKeys', ref.id), { teacherUid: teacher.uid, answers: clean.map((q) => q.answer) });
+        await batch.commit();
+        draft = null;
+        await loadTeacherTests();
+        showAlert(publish ? 'تم حفظ الاختبار ونشره. يظهر الآن لطلاب الفصل عند دخولهم.' : 'تم حفظ الاختبار كمسودة.', 'تم الحفظ');
+    });
+}
+
+async function togglePublish(id) {
+    const t = tests.find((x) => x.id === id);
+    try {
+        await updateDoc(doc(db, 'tests', id), { status: t.status === 'published' ? 'draft' : 'published', updatedAt: serverTimestamp() });
+        await loadTeacherTests();
+    } catch (err) { reportError(err); }
+}
+
+async function deleteTest(id) {
+    const t = tests.find((x) => x.id === id);
+    const n = attempts.filter((a) => a.testId === id).length;
+    if (!t || !(await confirmDialog(`حذف اختبار «${t.title}»${n ? ` وإجابات ${n} طالباً عليه` : ''} نهائياً؟`))) return;
+    try {
+        await deleteInBatches([doc(db, 'tests', id), doc(db, 'testKeys', id), ...attempts.filter((a) => a.testId === id).map((a) => doc(db, 'attempts', a.id))]);
+        await loadTeacherTests();
+    } catch (err) { reportError(err); }
+}
+
+async function deleteInBatches(refs) {
+    for (let i = 0; i < refs.length; i += 400) {
+        const batch = writeBatch(db);
+        refs.slice(i, i + 400).forEach((r) => batch.delete(r));
+        await batch.commit();
     }
 }
 
@@ -285,10 +618,10 @@ async function addStudent(e) {
 
 async function deleteStudent(id) {
     const s = students.find((x) => x.id === id);
-    if (!s || !(await confirmDialog(`حذف الطالب «${s.name}» ونتيجته نهائياً؟`))) return;
+    if (!s || !(await confirmDialog(`حذف الطالب «${s.name}» ونتائجه نهائياً؟`))) return;
     try {
-        await deleteDoc(doc(db, 'students', id));
-        await loadStudents();
+        await deleteInBatches([doc(db, 'students', id), ...attempts.filter((a) => a.studentId === id).map((a) => doc(db, 'attempts', a.id))]);
+        await Promise.all([loadStudents(), loadTeacherTests()]);
     } catch (err) { reportError(err); }
 }
 
@@ -297,12 +630,9 @@ async function clearAllStudents() {
     if (!list.length) return;
     if (!(await confirmDialog(`حذف جميع طلاب فصل «${teacher.className}» (${list.length}) ونتائجهم نهائياً؟`))) return;
     try {
-        for (let i = 0; i < list.length; i += 400) {
-            const batch = writeBatch(db);
-            list.slice(i, i + 400).forEach((s) => batch.delete(doc(db, 'students', s.id)));
-            await batch.commit();
-        }
-        await loadStudents();
+        const ids = new Set(list.map((s) => s.id));
+        await deleteInBatches([...list.map((s) => doc(db, 'students', s.id)), ...attempts.filter((a) => ids.has(a.studentId)).map((a) => doc(db, 'attempts', a.id))]);
+        await Promise.all([loadStudents(), loadTeacherTests()]);
         showAlert('تم حذف جميع الطلاب بنجاح.', 'إشعار');
     } catch (err) { reportError(err); }
 }
@@ -433,13 +763,6 @@ async function deleteUpload(id) {
     } catch (err) { reportError(err); }
 }
 
-function exportReport() {
-    const list = classStudents();
-    if (!list.length) return showAlert('لا توجد بيانات طلاب لتصديرها.', 'تنبيه');
-    downloadBlob(new Blob([reportCsv(list)], { type: 'text/csv;charset=utf-8;' }), `تقرير_نواتج_التعلم_${teacher.className}.csv`);
-    showAlert('تم تصدير التقرير الدوري بنجاح!', 'نجاح التصدير');
-}
-
 // ---------- الطالب ----------
 
 async function studentLogin(e) {
@@ -456,29 +779,95 @@ async function studentLogin(e) {
         }
         activeStudent = { id, ...snap.data() };
         $('sIdInput').value = '';
-        document.querySelectorAll('#quizContainer input[type=radio]').forEach((r) => { r.checked = false; });
-        $('quizContainer').classList.add('hidden');
         showScreen('studentDashboardScreen');
         $('studentFullNameDisplay').textContent = `أهلاً بك، ${activeStudent.name}`;
         $('studentClassDisplay').textContent = `رقم السجل المدني: ${id} | ${activeStudent.className}`;
+        await loadStudentTests();
+    });
+}
+
+async function loadStudentTests() {
+    const snap = await getDocs(query(collection(db, 'tests'),
+        where('teacherUid', '==', activeStudent.teacherUid), where('className', '==', activeStudent.className), where('status', '==', 'published')));
+    studentTests = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((x, y) => ms(y.createdAt) - ms(x.createdAt));
+    const done = await Promise.all(studentTests.map((t) => getDoc(doc(db, 'attempts', `${t.id}_${activeStudent.id}`)).then((x) => x.exists())));
+    studentTests.forEach((t, i) => { t.done = done[i]; });
+    renderStudentTests();
+}
+
+function renderStudentTests() {
+    openTest = null;
+    $('studentTestsView').classList.remove('hidden');
+    $('studentTestView').classList.add('hidden');
+    const box = $('studentTestsList');
+    box.replaceChildren();
+    if (!studentTests.length) box.append(el('p', 'text-sm text-slate-400 text-center py-8', 'لا توجد اختبارات منشورة لفصلك حالياً.'));
+    for (const t of studentTests) {
+        const row = el('div', 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border ' + (t.done ? 'border-slate-200 bg-slate-50' : 'border-teal-200 bg-teal-50/40'));
+        const info = el('div');
+        info.append(el('p', 'font-bold text-slate-800', t.title), el('p', 'text-xs text-slate-500 mt-1', `${t.questions.length} سؤالاً`));
+        row.append(info, t.done ? el('span', 'text-xs font-bold text-emerald-700', '✓ تم الإرسال')
+            : actionButton('ابدأ الاختبار ➔', 'open-test', t.id, 'bg-teal-600 hover:bg-teal-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs'));
+        box.append(row);
+    }
+}
+
+function openStudentTest(id) {
+    openTest = studentTests.find((t) => t.id === id);
+    if (!openTest || openTest.done) return;
+    $('studentTestsView').classList.add('hidden');
+    $('studentTestView').classList.remove('hidden');
+    $('stTitle').textContent = openTest.title;
+    $('stPassage').textContent = openTest.passage;
+    const box = $('stQuestions');
+    box.replaceChildren();
+    openTest.questions.forEach((q, i) => {
+        const card = el('div', 'p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3');
+        card.append(el('p', 'text-sm font-bold text-slate-800', `${i + 1}. ${q.text}`));
+        const opts = el('div', 'grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm');
+        q.options.forEach((o, j) => {
+            const label = el('label', 'p-3 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500');
+            const r = el('input', 'accent-teal-600');
+            r.type = 'radio'; r.name = `sq-${i}`; r.value = j;
+            label.append(r, document.createTextNode(o));
+            opts.append(label);
+        });
+        card.append(opts);
+        box.append(card);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function submitTest(e) {
+    const answers = openTest.questions.map((_, i) => {
+        const r = document.querySelector(`input[name="sq-${i}"]:checked`);
+        return r ? Number(r.value) : null;
+    });
+    const missing = answers.indexOf(null);
+    if (missing !== -1) return showAlert(`أجب عن السؤال ${missing + 1} قبل الإرسال.`, 'تنبيه');
+    if (!(await confirmDialog('إرسال إجاباتك؟ لا يمكن تعديلها بعد الإرسال.', 'نعم، أرسل'))) return;
+    await busy(e.target, async () => {
+        try {
+            await setDoc(doc(db, 'attempts', `${openTest.id}_${activeStudent.id}`), {
+                testId: openTest.id, studentId: activeStudent.id, teacherUid: activeStudent.teacherUid,
+                className: activeStudent.className, answers, submittedAt: serverTimestamp(),
+            });
+        } catch (err) {
+            if (err?.code === 'permission-denied') return showAlert('سبق أن أرسلت هذا الاختبار، أو أوقف المعلم نشره.', 'تنبيه');
+            throw err;
+        }
+        openTest.done = true;
+        renderStudentTests();
+        showAlert('أحسنت! تم إرسال إجاباتك، وسيطّلع معلمك على نتيجتك ومستواك في كل مهارة.', 'تم الإرسال');
     });
 }
 
 async function studentLogout(message = 'تم تسجيل خروج الطالب.', title = 'إشعار') {
     activeStudent = null;
+    studentTests = [];
     if (auth.currentUser?.isAnonymous) await signOut(auth);
     showScreen(teacher ? 'teacherDashboardScreen' : 'roleSelectionScreen');
     showAlert(message, title);
-}
-
-async function submitQuiz(e) {
-    const answers = ['q1', 'q2'].map((q) => document.querySelector(`input[name="${q}"]:checked`)?.value);
-    if (answers.includes(undefined)) return showAlert('الرجاء الإجابة عن جميع الأسئلة قبل الإرسال.', 'تنبيه');
-    const score = scoreQuiz(answers);
-    await busy(e.target, async () => {
-        await updateDoc(doc(db, 'students', activeStudent.id), { score, status: 'منجز', completedAt: serverTimestamp() });
-        await studentLogout(`ممتاز! لقد أكملت التدريب بنجاح. نتيجتك هي: ${score}%`, 'نتيجة الاختبار');
-    });
 }
 
 // ---------- رسائل ----------
@@ -494,10 +883,10 @@ function showAlert(message, title = 'تنبيه') {
     $('customModal').classList.remove('hidden');
 }
 
-function confirmDialog(message) {
+function confirmDialog(message, okLabel = 'نعم، احذف') {
     showAlert(message, 'تأكيد');
     $('modalCancel').classList.remove('hidden');
-    $('modalOk').textContent = 'نعم، احذف';
+    $('modalOk').textContent = okLabel;
     return new Promise((resolve) => { modalResolve = resolve; });
 }
 
@@ -540,11 +929,13 @@ function bindEvents() {
     $('dashClass').addEventListener('change', changeClass);
     $('modalOk').addEventListener('click', () => closeModal(true));
     $('modalCancel').addEventListener('click', () => closeModal(false));
+    $('testBuilder').addEventListener('input', builderInput);
+    $('testBuilder').addEventListener('change', builderInput);
 
     document.addEventListener('click', (e) => {
         const el = e.target.closest('[data-action]');
         if (!el) return;
-        const { action, id, tab } = el.dataset;
+        const { action, id, tab, publish } = el.dataset;
         switch (action) {
             case 'show-teacher-login': showScreen('teacherLoginScreen'); setAuthMode('login'); break;
             case 'show-student-login': showScreen('studentLoginScreen'); break;
@@ -558,8 +949,20 @@ function bindEvents() {
             case 'delete-student': deleteStudent(id); break;
             case 'download-upload': downloadUpload(id); break;
             case 'delete-upload': deleteUpload(id); break;
-            case 'start-quiz': $('quizContainer').classList.remove('hidden'); break;
-            case 'submit-quiz': submitQuiz(e); break;
+            case 'new-test': openBuilder(null); break;
+            case 'edit-test': openBuilder(tests.find((t) => t.id === id)); break;
+            case 'cancel-test': closeBuilder(); break;
+            case 'load-template': loadTemplate(); break;
+            case 'add-question': addQuestion(); break;
+            case 'remove-question': draft.questions.splice(Number(id), 1); renderQuestions(); break;
+            case 'save-test': saveTest(el, publish === '1'); break;
+            case 'toggle-publish': togglePublish(id); break;
+            case 'delete-test': deleteTest(id); break;
+            case 'student-detail': showStudentDetail(id); break;
+            case 'close-student': $('studentModal').classList.add('hidden'); break;
+            case 'open-test': openStudentTest(id); break;
+            case 'back-to-tests': renderStudentTests(); break;
+            case 'submit-test': submitTest(e); break;
             case 'student-logout': studentLogout(); break;
         }
     });
