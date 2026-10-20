@@ -109,7 +109,7 @@ if (problems.length) {
 } else {
     try {
         await smokeTest(url);
-        console.log('✓ Live test: teacher signup, add student, student quiz, score saved (test data removed)');
+        console.log('✓ Live test: teacher signup, add student, build + publish test, student submits (test data removed)');
         console.log(`\n✓ الموقع جاهز: ${url}`);
     } catch (err) {
         console.log(`✗ Live test failed: ${err.message}`);

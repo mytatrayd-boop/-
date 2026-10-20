@@ -57,7 +57,7 @@
                 <button data-action="show-teacher-login" class="group p-8 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition flex flex-col items-center">
                     <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition">👨‍🏫</div>
                     <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة المعلم</h3>
-                    <p class="text-xs text-slate-500 text-center">تسجيل، إدارة الطلاب، التقارير ورفع ملفات الأكسل</p>
+                    <p class="text-xs text-slate-500 text-center">إدارة الطلاب، بناء الاختبارات حسب المهارات، والتقارير</p>
                 </button>
                 <button data-action="show-student-login" class="group p-8 rounded-2xl border-2 border-teal-100 hover:border-teal-500 bg-teal-50/50 hover:bg-teal-50 transition flex flex-col items-center">
                     <div class="w-16 h-16 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-teal-600/30 group-hover:scale-110 transition">🎓</div>
@@ -137,9 +137,10 @@
                 </div>
             </div>
 
-            <div class="flex border-b border-slate-200 gap-6">
-                <button data-action="teacher-tab" data-tab="students" id="tabBtnStudents" class="pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition">إدارة الطلاب واستيراد الأكسل</button>
-                <button data-action="teacher-tab" data-tab="reports" id="tabBtnReports" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition">متابعة المستويات والتقارير</button>
+            <div class="flex border-b border-slate-200 gap-6 overflow-x-auto">
+                <button data-action="teacher-tab" data-tab="students" id="tabBtnStudents" class="pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition whitespace-nowrap">إدارة الطلاب واستيراد الأكسل</button>
+                <button data-action="teacher-tab" data-tab="tests" id="tabBtnTests" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">بناء الاختبارات</button>
+                <button data-action="teacher-tab" data-tab="reports" id="tabBtnReports" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">متابعة المستويات والتقارير</button>
             </div>
 
             <div id="teacherTabStudents" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -197,37 +198,132 @@
                 </div>
             </div>
 
+            <!-- بناء الاختبارات -->
+            <div id="teacherTabTests" class="hidden space-y-6">
+                <div id="testsListView" class="space-y-4">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">اختبارات فصل <span id="testsClassName"></span></h3>
+                            <p class="text-xs text-slate-500 mt-1">ابنِ اختباراً من المهارات التي تختارها حسب وثيقة نواتج التعلم (<span id="testsGradeName"></span>).</p>
+                        </div>
+                        <button data-action="new-test" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">➕ بناء اختبار جديد</button>
+                    </div>
+                    <div id="testsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <div id="testBuilder" class="hidden space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
+                            <h3 id="tbHeading" class="font-bold text-slate-800">اختبار جديد</h3>
+                            <button data-action="load-template" class="bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-4 py-2 rounded-xl text-xs border border-teal-200">📋 ابدأ من نموذج جاهز</button>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1" for="tbTitle">عنوان الاختبار</label>
+                            <input type="text" id="tbTitle" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مثال: اختبار الفهم القرائي ١">
+                        </div>
+                        <p class="text-xs text-slate-500">الفصل: <b id="tbClass"></b> — المهارات من <b id="tbGrade"></b></p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-1 text-sm">١. اختر المهارات التي تريد قياسها</h3>
+                        <p class="text-xs text-slate-500 mb-4">من وثيقة نواتج التعلم للاختبارات الوطنية 2026. كل سؤال يرتبط بمهارة واحدة منها.</p>
+                        <div id="tbSkills" class="space-y-4"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-3 text-sm">٢. نص القراءة</h3>
+                        <textarea id="tbPassage" rows="8" maxlength="20000" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-loose" placeholder="الصق أو اكتب النص الذي سيقرؤه الطالب قبل الأسئلة"></textarea>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 text-sm">٣. الأسئلة (<span id="tbCount">0</span>)</h3>
+                            <button data-action="add-question" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ سؤال</button>
+                        </div>
+                        <div id="tbQuestions" class="space-y-4"></div>
+                    </div>
+
+                    <p id="tbError" class="hidden text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl p-3"></p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button data-action="save-test" data-publish="1" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-600/20">حفظ ونشر للطلاب</button>
+                        <button data-action="save-test" data-publish="0" class="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3.5 rounded-xl text-sm border border-slate-200">حفظ كمسودة</button>
+                        <button data-action="cancel-test" class="sm:w-32 text-slate-500 hover:text-slate-800 font-bold py-3.5 text-sm">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- التقارير -->
             <div id="teacherTabReports" class="hidden space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
-                        <h4 class="text-xs text-slate-500 font-bold mb-1">إجمالي عدد الطلاب</h4>
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">طلاب الفصل</h4>
                         <p id="repTotalStudents" class="text-3xl font-black text-slate-800">0</p>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
-                        <h4 class="text-xs text-slate-500 font-bold mb-1">متوسط إتقان المهارات</h4>
-                        <p id="repAvgMastery" class="text-3xl font-black text-emerald-600">0%</p>
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">الاختبارات المنشورة</h4>
+                        <p id="repTests" class="text-3xl font-black text-slate-800">0</p>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
-                        <h4 class="text-xs text-slate-500 font-bold mb-1">الطلاب المنجزون للاختبارات</h4>
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">طلاب اختُبروا</h4>
                         <p id="repCompletedCount" class="text-3xl font-black text-teal-600">0</p>
                     </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">متوسط الإتقان</h4>
+                        <p id="repAvgMastery" class="text-3xl font-black text-emerald-600">—</p>
+                    </div>
                 </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-1 text-sm">إتقان الفصل لكل مهارة</h3>
+                        <p class="text-xs text-slate-500 mb-4">نسبة الإجابات الصحيحة لكل مهارة في كل الاختبارات. متقن ≥ 80% · قريب من الإتقان 50–79% · يحتاج دعمًا &lt; 50%</p>
+                        <div id="repSkills" class="space-y-5"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-4 text-sm">حسب المستويات الإدراكية</h3>
+                        <div id="repLevels" class="space-y-4"></div>
+                    </div>
+                </div>
+
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold text-slate-800 mb-4 text-sm">تقرير قياس نواتج التعلم التفصيلي للطلاب</h3>
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm">مستوى الطلاب وتقدّمهم</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-right text-xs">
-                            <thead class="bg-slate-50 text-slate-500 uppercase">
+                            <thead class="bg-slate-50 text-slate-500">
                                 <tr>
                                     <th class="p-3 rounded-r-xl">اسم الطالب</th>
-                                    <th class="p-3">السجل المدني</th>
-                                    <th class="p-3">المهارة القرائية</th>
-                                    <th class="p-3">نسبة الإتقان</th>
-                                    <th class="p-3 rounded-l-xl">الحالة</th>
+                                    <th class="p-3">الاختبارات</th>
+                                    <th class="p-3">النسبة العامة</th>
+                                    <th class="p-3">المستوى</th>
+                                    <th class="p-3">التقدّم</th>
+                                    <th class="p-3">يحتاج دعمًا في</th>
+                                    <th class="p-3 rounded-l-xl"></th>
                                 </tr>
                             </thead>
                             <tbody id="reportsTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- تفاصيل طالب -->
+        <div id="studentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-start justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 my-8 space-y-5">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <h3 id="smName" class="text-xl font-black text-slate-800"></h3>
+                        <p id="smMeta" class="text-xs text-slate-500 mt-1"></p>
+                    </div>
+                    <button data-action="close-student" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">تقدّمه عبر الاختبارات</h4>
+                    <div id="smHistory" class="space-y-2"></div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">إتقانه لكل مهارة</h4>
+                    <div id="smSkills" class="space-y-3"></div>
                 </div>
             </div>
         </div>
@@ -257,39 +353,20 @@
                 <button data-action="student-logout" class="bg-white/10 hover:bg-white/20 text-white text-xs px-4 py-2 rounded-xl border border-white/20 transition">خروج</button>
             </div>
 
-            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-                <div class="flex justify-between items-center border-b pb-4">
-                    <h3 class="font-bold text-slate-800 text-base">📖 نشاط القياس القرائي والطلاقة</h3>
-                    <span class="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold">مستوى الصف المستهدف</span>
-                </div>
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 leading-loose text-lg text-slate-700 text-justify">
-                    "في الصباح الباكر، ذهب أحمد مع أسرته إلى الحديقة العامة. شاهد أحمد الأزهار الملونة تتفتح وسط المسطحات الخضراء الجميلة. قرأ أحمد لافتة إرشادية تحث على الحفاظ على نظافة المكان، فاستنتج أهمية الوعي البيئي والتعاون في خدمة المجتمع."
-                </div>
-                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center bg-teal-50/50 p-4 rounded-2xl border border-teal-100">
-                    <div class="text-xs text-teal-900 font-semibold">⏱️ قم بقراءة النص بصوت واضح، ثم أجب عن أسئلة قياس نواتج التعلم أدناه.</div>
-                    <button data-action="start-quiz" class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition shadow-md">ابدأ اختبار الفهم القرائي ➔</button>
-                </div>
+            <div id="studentTestsView" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base mb-4">📖 اختبارات القراءة</h3>
+                <div id="studentTestsList" class="space-y-3"></div>
+            </div>
 
-                <div id="quizContainer" class="hidden space-y-6 pt-4 border-t">
-                    <h4 class="font-bold text-slate-800 text-sm">أجب عن الأسئلة التالية لقياس الفهم والاستيعاب:</h4>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                            <p class="text-xs font-bold text-slate-800">1. إلى أين ذهب أحمد مع أسرته في الصباح الباكر؟</p>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500"><input type="radio" name="q1" value="wrong"> المدرسة</label>
-                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500"><input type="radio" name="q1" value="correct"> الحديقة العامة</label>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                            <p class="text-xs font-bold text-slate-800">2. ماذا قرأ أحمد على اللافتة الإرشادية؟</p>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500"><input type="radio" name="q2" value="correct"> الحفاظ على نظافة المكان</label>
-                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500"><input type="radio" name="q2" value="wrong"> قوانين المرور</label>
-                            </div>
-                        </div>
-                    </div>
-                    <button data-action="submit-quiz" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">إرسال الإجابات وحفظ النتيجة</button>
+            <div id="studentTestView" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4 gap-4">
+                    <h3 id="stTitle" class="font-bold text-slate-800 text-base"></h3>
+                    <button data-action="back-to-tests" class="text-xs text-slate-500 hover:text-slate-800 font-bold">← الاختبارات</button>
                 </div>
+                <div id="stPassage" class="bg-slate-50 p-6 rounded-2xl border border-slate-200 leading-loose text-lg text-slate-700 text-justify whitespace-pre-line"></div>
+                <div class="text-xs text-teal-900 font-semibold bg-teal-50/50 p-4 rounded-2xl border border-teal-100">⏱️ اقرأ النص جيداً، ثم أجب عن الأسئلة. يمكنك الإرسال مرة واحدة فقط.</div>
+                <div id="stQuestions" class="space-y-4"></div>
+                <button data-action="submit-test" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">إرسال الإجابات</button>
             </div>
         </div>
     </main>

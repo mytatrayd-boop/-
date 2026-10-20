@@ -47,18 +47,61 @@ service cloud.firestore {
 
       allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
 
-      allow update: if
-        (isTeacher()
-          && resource.data.teacherUid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'className', 'status', 'score', 'completedAt'])
-          && text(request.resource.data.name, 100))
-        ||
-        (isStudentSession()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'status', 'completedAt'])
-          && request.resource.data.score is int
-          && request.resource.data.score >= 0 && request.resource.data.score <= 100
-          && request.resource.data.status == 'منجز'
-          && request.resource.data.completedAt == request.time);
+      // الدرجات تُحسب من محاولات الاختبارات، فلا يكتب الطالب في سجله.
+      allow update: if isTeacher()
+        && resource.data.teacherUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'className', 'status', 'score', 'completedAt'])
+        && text(request.resource.data.name, 100);
+    }
+
+    function testDoc(id) { return get(/databases/$(database)/documents/tests/$(id)).data; }
+    function studentDoc(id) { return get(/databases/$(database)/documents/students/$(id)).data; }
+
+    // اختبار يبنيه المعلم: نص + أسئلة مربوطة بالمهارات، بدون الإجابات الصحيحة.
+    match /tests/{testId} {
+      allow read: if (isTeacher() && resource.data.teacherUid == request.auth.uid)
+        || (signedIn() && resource.data.status == 'published');
+      allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow create, update: if isTeacher()
+        && request.resource.data.teacherUid == request.auth.uid
+        && (resource == null || resource.data.teacherUid == request.auth.uid)
+        && request.resource.data.keys().hasOnly(['teacherUid', 'title', 'className', 'grade', 'passage', 'questions', 'skills', 'status', 'createdAt', 'updatedAt'])
+        && text(request.resource.data.title, 120)
+        && text(request.resource.data.className, 60)
+        && request.resource.data.grade in [3, 6, 9]
+        && request.resource.data.passage is string && request.resource.data.passage.size() <= 20000
+        && request.resource.data.questions is list
+        && request.resource.data.questions.size() > 0 && request.resource.data.questions.size() <= 60
+        && request.resource.data.skills is list
+        && request.resource.data.status in ['draft', 'published'];
+    }
+
+    // الإجابات الصحيحة — للمعلم فقط.
+    match /testKeys/{testId} {
+      allow read, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow create, update: if isTeacher()
+        && request.resource.data.teacherUid == request.auth.uid
+        && (resource == null || resource.data.teacherUid == request.auth.uid)
+        && request.resource.data.keys().hasOnly(['teacherUid', 'answers'])
+        && request.resource.data.answers is list;
+    }
+
+    // محاولة طالب: معرّفها testId_studentId، تُكتب مرة واحدة، ويصححها المعلم بمفتاح الإجابات.
+    match /attempts/{attemptId} {
+      allow get: if signedIn() && (isStudentSession() || resource.data.teacherUid == request.auth.uid);
+      allow list, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow create: if isStudentSession()
+        && request.resource.data.keys().hasOnly(['testId', 'studentId', 'teacherUid', 'className', 'answers', 'submittedAt'])
+        && attemptId == request.resource.data.testId + '_' + request.resource.data.studentId
+        && civilId(request.resource.data.studentId)
+        && request.resource.data.submittedAt == request.time
+        && request.resource.data.answers is list
+        && testDoc(request.resource.data.testId).status == 'published'
+        && testDoc(request.resource.data.testId).teacherUid == request.resource.data.teacherUid
+        && testDoc(request.resource.data.testId).className == request.resource.data.className
+        && request.resource.data.answers.size() == testDoc(request.resource.data.testId).questions.size()
+        && studentDoc(request.resource.data.studentId).teacherUid == request.resource.data.teacherUid
+        && studentDoc(request.resource.data.studentId).className == request.resource.data.className;
     }
   }
 }
