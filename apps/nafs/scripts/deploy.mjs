@@ -8,6 +8,7 @@ import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getSecurityRules } from 'firebase-admin/security-rules';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { smokeTest } from './smoke.mjs';
 
 const root = new URL('..', import.meta.url).pathname;
 const credential = applicationDefault();
@@ -95,7 +96,7 @@ if (apiKey) {
 }
 
 try {
-    await getFirestore().doc('teachers/__deploy_check__').get();
+    await getFirestore().doc('teachers/deploy-check').get();
     console.log('✓ Firestore database exists');
 } catch (err) {
     problems.push(`قاعدة البيانات Firestore غير منشأة: Firestore Database ← Create database (وضع Production). (${err.message.slice(0, 120)})`);
@@ -106,5 +107,12 @@ if (problems.length) {
     problems.forEach((p, i) => console.log(`${i + 1}. ${p}`));
     process.exitCode = 1;
 } else {
-    console.log(`\n✓ الموقع جاهز: ${url}`);
+    try {
+        await smokeTest(url);
+        console.log('✓ Live test: teacher signup, add student, student quiz, score saved (test data removed)');
+        console.log(`\n✓ الموقع جاهز: ${url}`);
+    } catch (err) {
+        console.log(`✗ Live test failed: ${err.message}`);
+        process.exitCode = 1;
+    }
 }
