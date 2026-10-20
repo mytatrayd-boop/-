@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مهارات القراءة لاختبارات نافس</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+    <script type="module" src="app.js"></script>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <header class="bg-gradient-to-r from-emerald-700 to-teal-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wide">مهارات القراءة لاختبارات نافس</h1>
+                    <p class="text-xs text-emerald-200">القياس والتحليل والتدريب المستمر</p>
+                </div>
+            </div>
+            <div id="userInfoHeader" class="hidden flex items-center gap-4 bg-emerald-900/40 px-4 py-2 rounded-xl border border-emerald-600/30">
+                <span id="headerTeacherName" class="text-sm font-semibold"></span>
+                <button data-action="logout" class="text-xs bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">خروج</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <!-- رسالة تنبيه / تأكيد -->
+        <div id="customModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center border border-slate-100">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-600 text-2xl font-bold">✓</div>
+                <h3 id="modalTitle" class="text-xl font-bold text-slate-800 mb-2">تنبيه</h3>
+                <p id="modalMessage" class="text-slate-600 mb-6 leading-relaxed"></p>
+                <div class="flex gap-3">
+                    <button id="modalOk" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/20">حسناً</button>
+                    <button id="modalCancel" class="hidden flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- جاري التحميل -->
+        <div id="loadingScreen" class="screen text-center my-24 text-slate-500 font-semibold">جاري التحميل…</div>
+
+        <!-- اختيار البوابة -->
+        <div id="roleSelectionScreen" class="screen hidden max-w-2xl mx-auto my-12 bg-white rounded-3xl shadow-xl border border-slate-100 p-8 text-center">
+            <h2 class="text-3xl font-black text-slate-800 mb-4">أهلاً بك في مهارات القراءة لاختبارات نافس</h2>
+            <p class="text-slate-500 mb-8">اختر صفحتك للبدء في العملية التعليمية وتتبع مستويات الطلاب</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button data-action="show-teacher-login" class="group p-8 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition flex flex-col items-center">
+                    <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition">👨‍🏫</div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة المعلم</h3>
+                    <p class="text-xs text-slate-500 text-center">إدارة الطلاب، بناء الاختبارات حسب المهارات، والتقارير</p>
+                </button>
+                <button data-action="show-student-login" class="group p-8 rounded-2xl border-2 border-teal-100 hover:border-teal-500 bg-teal-50/50 hover:bg-teal-50 transition flex flex-col items-center">
+                    <div class="w-16 h-16 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-teal-600/30 group-hover:scale-110 transition">🎓</div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة الطالب</h3>
+                    <p class="text-xs text-slate-500 text-center">الدخول برقم السجل المدني للتدريب والاختبار</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- دخول / تسجيل المعلم -->
+        <div id="teacherLoginScreen" class="screen hidden max-w-md mx-auto my-8 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <button data-action="back" class="text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+
+            <div class="flex bg-slate-100 rounded-xl p-1 mb-6 text-sm font-bold">
+                <button data-action="auth-tab" data-tab="login" id="authTabLogin" class="flex-1 py-2 rounded-lg bg-white shadow text-emerald-700">تسجيل الدخول</button>
+                <button data-action="auth-tab" data-tab="signup" id="authTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">حساب جديد</button>
+            </div>
+
+            <form id="teacherLoginForm" class="space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">دخول المعلم</h2>
+                <p class="text-xs text-slate-500">بياناتك وطلابك محفوظة على الخادم، وتجدها من أي جهاز.</p>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="loginEmail">البريد الإلكتروني</label>
+                    <input type="email" id="loginEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-right">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="loginPassword">كلمة المرور</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">الدخول للوحة التحكم</button>
+                <button type="button" data-action="reset-password" class="w-full text-xs text-slate-500 hover:text-emerald-700 font-semibold">نسيت كلمة المرور؟</button>
+            </form>
+
+            <form id="teacherSignupForm" class="hidden space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">حساب معلم جديد</h2>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tName">اسم المعلم الثلاثي</label>
+                    <input type="text" id="tName" required maxlength="100" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="مثال: أحمد محمد القحطاني">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tId">السجل المدني للمعلم</label>
+                    <input type="text" id="tId" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="10 أرقام">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tSchool">المدرسة</label>
+                    <input type="text" id="tSchool" required maxlength="120" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="اسم المدرسة">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tClass">الصف والفصل</label>
+                    <select id="tClass" required class="class-select w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                        <option value="">اختر الصف والفصل</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupEmail">البريد الإلكتروني</label>
+                    <input type="email" id="signupEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-right">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupPassword">كلمة المرور (6 أحرف على الأقل)</label>
+                    <input type="password" id="signupPassword" required minlength="6" autocomplete="new-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">إنشاء الحساب والدخول</button>
+            </form>
+        </div>
+
+        <!-- لوحة المعلم -->
+        <div id="teacherDashboardScreen" class="screen hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">لوحة المعلم المعتمدة</span>
+                    <h2 id="dashWelcome" class="text-xl font-bold text-slate-800 mt-2"></h2>
+                    <p id="dashMeta" class="text-xs text-slate-500 mt-0.5"></p>
+                </div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <select id="dashClass" class="class-select px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+                    <button data-action="export" class="bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-4 py-2.5 rounded-xl text-xs transition border border-teal-200 flex items-center gap-2">📊 تصدير تقرير الأداء</button>
+                </div>
+            </div>
+
+            <div class="flex border-b border-slate-200 gap-6 overflow-x-auto">
+                <button data-action="teacher-tab" data-tab="students" id="tabBtnStudents" class="pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition whitespace-nowrap">إدارة الطلاب واستيراد الأكسل</button>
+                <button data-action="teacher-tab" data-tab="tests" id="tabBtnTests" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">بناء الاختبارات</button>
+                <button data-action="teacher-tab" data-tab="reports" id="tabBtnReports" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">متابعة المستويات والتقارير</button>
+            </div>
+
+            <div id="teacherTabStudents" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-4 text-sm">➕ إضافة طالب جديد فردياً</h3>
+                        <form id="addStudentForm" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1" for="newStudentName">اسم الطالب ثلاثي</label>
+                                <input type="text" id="newStudentName" required maxlength="100" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم الطالب الكامل">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1" for="newStudentId">رقم السجل المدني للطالب</label>
+                                <input type="text" id="newStudentId" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="10 أرقام">
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs transition">حفظ الطالب</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-2 text-sm">📁 استيراد الطلاب من ملف Excel</h3>
+                        <p class="text-xs text-slate-500 mb-4">يجب أن يحتوي الملف على عمودين: (اسم الطالب) و (رقم السجل المدني). يُحفظ الملف نفسه أيضاً في حسابك.</p>
+                        <label class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50 transition">
+                            <span class="text-2xl mb-2">📄</span>
+                            <span class="text-xs font-bold text-slate-700">اضغط لرفع ملف أكسل (XLSX / XLS)</span>
+                            <input type="file" id="excelFile" accept=".xlsx,.xls" class="hidden">
+                        </label>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-4 text-sm">🗂️ الملفات المرفوعة (<span id="uploadCount">0</span>)</h3>
+                        <ul id="uploadsList" class="space-y-2 text-xs"></ul>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 text-sm">قائمة طلاب الصف المسجلين (<span id="studentCount">0</span>)</h3>
+                        <button data-action="clear-all" class="text-xs text-red-500 hover:text-red-700 font-semibold">حذف الكل</button>
+                    </div>
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-50 text-slate-500 uppercase">
+                                <tr>
+                                    <th class="p-3 rounded-r-xl">م</th>
+                                    <th class="p-3">اسم الطالب الكامل</th>
+                                    <th class="p-3">رقم السجل المدني</th>
+                                    <th class="p-3">مستوى القراءة</th>
+                                    <th class="p-3 rounded-l-xl text-center">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بناء الاختبارات -->
+            <div id="teacherTabTests" class="hidden space-y-6">
+                <div id="testsListView" class="space-y-4">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">اختبارات فصل <span id="testsClassName"></span></h3>
+                            <p class="text-xs text-slate-500 mt-1">ابنِ اختباراً من المهارات التي تختارها حسب وثيقة نواتج التعلم (<span id="testsGradeName"></span>).</p>
+                        </div>
+                        <button data-action="new-test" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">➕ بناء اختبار جديد</button>
+                    </div>
+                    <div id="testsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <div id="testBuilder" class="hidden space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
+                            <h3 id="tbHeading" class="font-bold text-slate-800">اختبار جديد</h3>
+                            <button data-action="load-template" class="bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-4 py-2 rounded-xl text-xs border border-teal-200">📋 ابدأ من نموذج جاهز</button>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1" for="tbTitle">عنوان الاختبار</label>
+                            <input type="text" id="tbTitle" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مثال: اختبار الفهم القرائي ١">
+                        </div>
+                        <p class="text-xs text-slate-500">الفصل: <b id="tbClass"></b> — المهارات من <b id="tbGrade"></b></p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-1 text-sm">١. اختر المهارات التي تريد قياسها</h3>
+                        <p class="text-xs text-slate-500 mb-4">من وثيقة نواتج التعلم للاختبارات الوطنية 2026. كل سؤال يرتبط بمهارة واحدة منها.</p>
+                        <div id="tbSkills" class="space-y-4"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-3 text-sm">٢. نص القراءة</h3>
+                        <textarea id="tbPassage" rows="8" maxlength="20000" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-loose" placeholder="الصق أو اكتب النص الذي سيقرؤه الطالب قبل الأسئلة"></textarea>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 text-sm">٣. الأسئلة (<span id="tbCount">0</span>)</h3>
+                            <button data-action="add-question" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ سؤال</button>
+                        </div>
+                        <div id="tbQuestions" class="space-y-4"></div>
+                    </div>
+
+                    <p id="tbError" class="hidden text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl p-3"></p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button data-action="save-test" data-publish="1" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-lg shadow-emerald-600/20">حفظ ونشر للطلاب</button>
+                        <button data-action="save-test" data-publish="0" class="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3.5 rounded-xl text-sm border border-slate-200">حفظ كمسودة</button>
+                        <button data-action="cancel-test" class="sm:w-32 text-slate-500 hover:text-slate-800 font-bold py-3.5 text-sm">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- التقارير -->
+            <div id="teacherTabReports" class="hidden space-y-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">طلاب الفصل</h4>
+                        <p id="repTotalStudents" class="text-3xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">الاختبارات المنشورة</h4>
+                        <p id="repTests" class="text-3xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">طلاب اختُبروا</h4>
+                        <p id="repCompletedCount" class="text-3xl font-black text-teal-600">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">متوسط الإتقان</h4>
+                        <p id="repAvgMastery" class="text-3xl font-black text-emerald-600">—</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-1 text-sm">إتقان الفصل لكل مهارة</h3>
+                        <p class="text-xs text-slate-500 mb-4">نسبة الإجابات الصحيحة لكل مهارة في كل الاختبارات. متقن ≥ 80% · قريب من الإتقان 50–79% · يحتاج دعمًا &lt; 50%</p>
+                        <div id="repSkills" class="space-y-5"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-4 text-sm">حسب المستويات الإدراكية</h3>
+                        <div id="repLevels" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm">مستوى الطلاب وتقدّمهم</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-50 text-slate-500">
+                                <tr>
+                                    <th class="p-3 rounded-r-xl">اسم الطالب</th>
+                                    <th class="p-3">الاختبارات</th>
+                                    <th class="p-3">النسبة العامة</th>
+                                    <th class="p-3">المستوى</th>
+                                    <th class="p-3">التقدّم</th>
+                                    <th class="p-3">يحتاج دعمًا في</th>
+                                    <th class="p-3 rounded-l-xl"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- تفاصيل طالب -->
+        <div id="studentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-start justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 my-8 space-y-5">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <h3 id="smName" class="text-xl font-black text-slate-800"></h3>
+                        <p id="smMeta" class="text-xs text-slate-500 mt-1"></p>
+                    </div>
+                    <button data-action="close-student" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">تقدّمه عبر الاختبارات</h4>
+                    <div id="smHistory" class="space-y-2"></div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">إتقانه لكل مهارة</h4>
+                    <div id="smSkills" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- دخول الطالب -->
+        <div id="studentLoginScreen" class="screen hidden max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <button data-action="back" class="text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">دخول الطالب</h2>
+            <p class="text-xs text-slate-500 mb-6">أدخل رقم السجل المدني الخاص بك للوصول للتدريبات</p>
+            <form id="studentLoginForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="sIdInput">رقم السجل المدني للطالب</label>
+                    <input type="text" id="sIdInput" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="أدخل 10 أرقام لسجلك المدني">
+                </div>
+                <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-teal-600/20">دخول المنصة</button>
+            </form>
+        </div>
+
+        <!-- صفحة الطالب -->
+        <div id="studentDashboardScreen" class="screen hidden space-y-6 max-w-4xl mx-auto">
+            <div class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs bg-white/20 px-3 py-1 rounded-full font-bold">بوابة الطالب الذكية</span>
+                    <h2 id="studentFullNameDisplay" class="text-2xl font-black mt-2"></h2>
+                    <p id="studentClassDisplay" class="text-xs text-teal-100 mt-1"></p>
+                </div>
+                <button data-action="student-logout" class="bg-white/10 hover:bg-white/20 text-white text-xs px-4 py-2 rounded-xl border border-white/20 transition">خروج</button>
+            </div>
+
+            <div id="studentTestsView" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base mb-4">📖 اختبارات القراءة</h3>
+                <div id="studentTestsList" class="space-y-3"></div>
+            </div>
+
+            <div id="studentTestView" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4 gap-4">
+                    <h3 id="stTitle" class="font-bold text-slate-800 text-base"></h3>
+                    <button data-action="back-to-tests" class="text-xs text-slate-500 hover:text-slate-800 font-bold">← الاختبارات</button>
+                </div>
+                <div id="stPassage" class="bg-slate-50 p-6 rounded-2xl border border-slate-200 leading-loose text-lg text-slate-700 text-justify whitespace-pre-line"></div>
+                <div class="text-xs text-teal-900 font-semibold bg-teal-50/50 p-4 rounded-2xl border border-teal-100">⏱️ اقرأ النص جيداً، ثم أجب عن الأسئلة. يمكنك الإرسال مرة واحدة فقط.</div>
+                <div id="stQuestions" class="space-y-4"></div>
+                <button data-action="submit-test" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">إرسال الإجابات</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-300 py-6 mt-12 border-t border-slate-800 text-center text-sm">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center gap-2">
+            <p class="font-bold tracking-wide">مشرف دعم التميز المدرسي</p>
+            <p class="font-semibold">جابر عبدالله ال الغبشه</p>
+            <p class="text-slate-400">قطاع تعليم محايل عسير</p>
+        </div>
+    </footer>
+</body>
+</html>
