@@ -459,12 +459,15 @@ class DemoBackend extends Backend {
   }
 
   @override
-  Future<void> sendReport() async {
+  Future<void> sendReport({Span span = Span.daily}) async {
     _need(Perm.report);
     final s = current.data!;
-    final r = s.ranking(Period.daily);
+    final r = s.rankingFor(span);
+    final title = const {
+      Span.daily: 'ترتيب إنجاز اليوم', Span.weekly: 'ترتيب إنجاز الأسبوع', Span.monthly: 'ترتيب إنجاز الشهر', Span.yearly: 'ترتيب إنجاز السنة',
+    }[span]!;
     final lines = [for (var i = 0; i < r.length; i++) '${medal(i)} ${r[i].person.name}: ${r[i].points} نقطة (${r[i].count} إنجاز)'];
-    _note('all', '🏆 ترتيب إنجاز اليوم', 'ترتيب إنجاز اليوم\n\n${lines.join('\n')}\n\nمجموع الأسرة: ${s.familyEarned(Period.daily)} نقطة');
+    _note('all', '🏆 $title', '$title\n\n${lines.join('\n')}\n\nمجموع الأسرة: ${s.familyEarnedFor(span)} نقطة');
     _publish();
   }
 

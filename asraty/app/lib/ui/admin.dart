@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/logic.dart';
 import '../core/models.dart';
+import '../l10n/app_localizations.dart';
 import 'common.dart';
 import 'competitions.dart';
 import 'honor.dart';
@@ -41,7 +42,6 @@ class AdminHome extends ConsumerWidget {
       _Tile('addAdmin', '🛡️', t.tileAddAdmin, owner),
       _Tile('addMember', '➕', t.tileAddMember, can(me, Perm.addMembers)),
       _Tile('reports', '📊', t.tileReports, can(me, Perm.viewReports) || can(me, Perm.report)),
-      _Tile('sendReport', '📣', t.tileSendReport, can(me, Perm.report)),
       _Tile('honor', '🏆', t.tileHonor, true),
       _Tile('tasks', '📝', t.tileTasks, true),
       _Tile('alerts', '🔔', t.tileAlerts, owner),
@@ -130,7 +130,6 @@ class AdminPage extends ConsumerWidget {
       'addAdmin' => AddAdminPage(c),
       'addMember' => AddMemberPage(c),
       'reports' => ReportsPage(c),
-      'sendReport' => SendReportPage(c),
       'tasks' => TasksPage(c),
       'alerts' => AlertsPage(c),
       'comps' => CompsPage(c),
@@ -423,20 +422,25 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
 
 // ------------------------------------------------------------------ reports
 
-class ReportsPage extends StatefulWidget {
+/// Achievement report for today, this week, this month or this year, with a
+/// button that sends it to the family as an alert (report permission).
+class ReportsPage extends ConsumerStatefulWidget {
   const ReportsPage(this.c, {super.key});
   final Ctx c;
   @override
-  State<ReportsPage> createState() => _ReportsPageState();
+  ConsumerState<ReportsPage> createState() => _ReportsPageState();
 }
 
-class _ReportsPageState extends State<ReportsPage> {
-  var _p = Period.daily;
+class _ReportsPageState extends ConsumerState<ReportsPage> {
+  var _s = Span.daily;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t, d = widget.c.data;
-    final r = d.ranking(_p), fam = d.familyEarned(_p), ft = tierOf(d.tiers, fam, _p, Scope.family);
+    // Reward levels exist for days and weeks only.
+    final p = switch (_s) { Span.daily => Period.daily, Span.weekly => Period.weekly, _ => null };
+    final r = d.rankingFor(_s), fam = d.familyEarnedFor(_s);
+    final ft = p == null ? null : tierOf(d.tiers, fam, p, Scope.family);
     Widget stat(int n, String l) => Expanded(
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -449,7 +453,11 @@ class _ReportsPageState extends State<ReportsPage> {
         );
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.tileReports),
-      SegTabs<Period>(tabs: [(Period.daily, t.today, 0), (Period.weekly, t.thisWeek, 0)], value: _p, onChanged: (v) => setState(() => _p = v)),
+      SegTabs<Span>(
+        tabs: [(Span.daily, t.today, 0), (Span.weekly, t.thisWeek, 0), (Span.monthly, t.thisMonth, 0), (Span.yearly, t.thisYear, 0)],
+        value: _s,
+        onChanged: (v) => setState(() => _s = v),
+      ),
       Row(children: [stat(fam, t.familyTotal), const SizedBox(width: 8), stat(r.fold(0, (a, x) => a + x.count), t.achievements)]),
       if (ft != null)
         TierBox(
@@ -461,7 +469,7 @@ class _ReportsPageState extends State<ReportsPage> {
       if (r.isEmpty) EmptyState('📊', t.reportsEmpty),
       for (var i = 0; i < r.length; i++)
         Builder(builder: (context) {
-          final x = r[i], tier = tierOf(d.tiers, x.points, _p, Scope.each, personId: x.person.id);
+          final x = r[i], tier = p == null ? null : tierOf(d.tiers, x.points, p, Scope.each, personId: x.person.id);
           return RowCard(children: [
             MedalText(medal(i)),
             AvatarView(x.person.avatar),
@@ -469,40 +477,38 @@ class _ReportsPageState extends State<ReportsPage> {
             Pts('${x.points}'),
           ]);
         }),
+      if (can(widget.c.me, Perm.report)) ...[
+        const SizedBox(height: 12),
+        Muted(t.sendReportSub),
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: context.pal.bg, borderRadius: BorderRadius.circular(14)),
+          child: Text(reportText(context, d, DateTime.now(), _s)),
+        ),
+        Btn(t.sendToAll,
+            expand: true,
+            onPressed: d.members.isEmpty ? null : () => run(context, () => ref.read(backendProvider).sendReport(span: _s), ok: t.reportSent)),
+      ],
     ]);
   }
 }
 
-String reportText(BuildContext context, FamilySnapshot d, DateTime now) {
+String reportTitle(L10n t, Span s) => switch (s) {
+      Span.daily => t.reportTitleDaily,
+      Span.weekly => t.reportTitleWeekly,
+      Span.monthly => t.reportTitleMonthly,
+      Span.yearly => t.reportTitleYearly,
+    };
+
+String reportText(BuildContext context, FamilySnapshot d, DateTime now, [Span s = Span.daily]) {
   final t = context.t;
-  final r = d.ranking(Period.daily);
+  final r = d.rankingFor(s);
   if (r.isEmpty) return t.reportNoMembers;
   final date = MaterialLocalizations.of(context).formatFullDate(now);
-  return '${t.reportTitleLine(date)}\n\n'
+  return '${reportTitle(t, s)} — $date\n\n'
       '${[for (var i = 0; i < r.length; i++) t.reportLine(medal(i), r[i].person.name, '${r[i].points}', '${r[i].count}')].join('\n')}'
-      '\n\n${t.reportTotal('${d.familyEarned(Period.daily)}')}';
-}
-
-class SendReportPage extends ConsumerWidget {
-  const SendReportPage(this.c, {super.key});
-  final Ctx c;
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      H2(t.tileSendReport),
-      Muted(t.sendReportSub),
-      Container(
-        margin: const EdgeInsets.symmetric(vertical: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: context.pal.bg, borderRadius: BorderRadius.circular(14)),
-        child: Text(reportText(context, c.data, DateTime.now())),
-      ),
-      Btn(t.sendToAll,
-          expand: true,
-          onPressed: c.data.members.isEmpty ? null : () => run(context, () => ref.read(backendProvider).sendReport(), ok: t.reportSent)),
-    ]);
-  }
+      '\n\n${t.reportTotal('${d.familyEarnedFor(s)}')}';
 }
 
 // ------------------------------------------------------------------ tasks
@@ -564,7 +570,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
     final members = d.members;
     final memberItems = [for (final m in members) (m.id, m.name)];
     if (_who != 'all' && !members.any((m) => m.id == _who)) _who = 'all';
-    final repItems = [(Period.daily, t.dailyF), (Period.weekly, t.weeklyF)];
+    final repItems = [(Period.daily, t.dailyF), (Period.weekly, t.weeklyF), (Period.once, t.onceF)];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.tileTasks),
       Muted(edit ? t.tasksEditSub : t.tasksViewOnly),
@@ -623,7 +629,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
                         ? StateTag(t.waiting, Tone.wait)
                         : StateTag(t.doneCheck, Tone.ok);
                 return RowCard(children: [
-                  Expanded(child: TitleSub(x.title, t.taskMeta(x.repeat == Period.daily ? t.dailyF : t.weeklyF, '${x.points}'))),
+                  Expanded(child: TitleSub(x.title, t.taskMeta(switch (x.repeat) { Period.daily => t.dailyF, Period.weekly => t.weeklyF, Period.once => t.onceF }, '${x.points}'))),
                   st,
                   if (edit)
                     Row(mainAxisSize: MainAxisSize.min, children: [
@@ -822,13 +828,13 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
     final owners = <String?>[null, for (final m in d.members) m.id];
     final groups = [
       for (final who in owners)
-        for (final p in Period.values)
+        for (final p in rewardPeriods)
           for (final s in Scope.values)
             if (d.tiers.any((x) => x.period == p && x.scope == s && x.personId == who))
               (p, s, who, d.tiers.where((x) => x.period == p && x.scope == s && x.personId == who).toList()..sort((a, b) => b.threshold.compareTo(a.threshold))),
     ];
     final due = <({String who, Tier tier, String whoKey, String pk})>[];
-    for (final p in Period.values) {
+    for (final p in rewardPeriods) {
       for (final m in d.members) {
         final tier = tierOf(d.tiers, d.earned(m.id, p), p, Scope.each, personId: m.id);
         if (tier != null) due.add((who: m.name, tier: tier, whoKey: m.id, pk: periodKey(p, now)));

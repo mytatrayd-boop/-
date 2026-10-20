@@ -143,7 +143,7 @@ class FirebaseBackend extends Backend {
         return TaskItem(id: d.id, title: x['title'] ?? '', personId: x['personId'] ?? '', points: _int(x['points']), repeat: periodFrom(x['repeat']));
       }).toList();
     });
-    on(f.collection('completions').where('periodKey', whereIn: [_dayKey, wk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+    on(f.collection('completions').where('periodKey', whereIn: [_dayKey, wk, 'once']).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _completions = q.docs.map((d) {
         final x = d.data();
         return Completion(
@@ -385,7 +385,7 @@ class FirebaseBackend extends Backend {
   Future<void> deleteGoal(String goalId) => _op('deleteGoal', {'goalId': goalId});
 
   @override
-  Future<void> sendReport() => _op('sendReport');
+  Future<void> sendReport({Span span = Span.daily}) => _op('sendReport', {'period': span.name});
 
   @override
   Future<void> markRead() => _op('markRead');

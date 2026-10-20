@@ -92,7 +92,7 @@ abstract class Backend {
   /// [minutes] > 0 makes a timed alert that ends after that many minutes.
   Future<void> sendAlert(String to, String body, {int minutes = 0});
   Future<void> deleteAlert(String noticeId);
-  Future<void> sendReport();
+  Future<void> sendReport({Span span = Span.daily});
   Future<void> markRead();
 
   // ---- honor board goals

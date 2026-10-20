@@ -1,0 +1,28 @@
+name: Asraty — push check (read-only)
+
+# Diagnoses why a parent gets no notifications: lists, per family, each
+# person's role, permissions and registered devices, and asks FCM about each
+# parent's device in a dry run. Sends nothing to anyone and changes no data.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: asraty/functions } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: asraty/functions/package-lock.json }
+      - run: npm ci
+      - name: Service account
+        env: { SA: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" }
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - run: node scripts/push-check.mjs
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"

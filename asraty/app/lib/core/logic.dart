@@ -26,7 +26,8 @@ String monthKey(DateTime t) => 'm${dayKey(t).substring(0, 7)}';
 String yearKey(DateTime t) => 'y${dayKey(t).substring(0, 4)}';
 String honorKey(Honor h, DateTime t) => h == Honor.monthly ? monthKey(t) : yearKey(t);
 
-String periodKey(Period p, DateTime t) => p == Period.daily ? dayKey(t) : weekKey(t);
+/// A one-time task's single period is "once": done once, it stays done.
+String periodKey(Period p, DateTime t) => switch (p) { Period.daily => dayKey(t), Period.weekly => weekKey(t), Period.once => 'once' };
 
 bool can(Person? p, Perm perm) {
   if (p == null) return false;
@@ -73,6 +74,21 @@ extension SnapshotLogic on FamilySnapshot {
   int earned(String personId, Period p) => (p == Period.daily ? daily : weekly)[personId]?.points ?? 0;
   int earnedCount(String personId, Period p) => (p == Period.daily ? daily : weekly)[personId]?.count ?? 0;
   int familyEarned(Period p) => members.fold(0, (a, m) => a + earned(m.id, p));
+
+  Map<String, PeriodSum> sumsFor(Span s) => switch (s) {
+        Span.daily => daily,
+        Span.weekly => weekly,
+        Span.monthly => monthly,
+        Span.yearly => yearly,
+      };
+
+  /// Report ranking for any period, most points first.
+  List<RankRow> rankingFor(Span s) {
+    final m = sumsFor(s);
+    return members.map((x) => RankRow(x, m[x.id]?.points ?? 0, m[x.id]?.count ?? 0)).toList()..sort((a, b) => b.points.compareTo(a.points));
+  }
+
+  int familyEarnedFor(Span s) => sumsFor(s).entries.where((e) => members.any((m) => m.id == e.key)).fold(0, (a, e) => a + e.value.points);
 
   /// Honor board ranking for this month or year.
   List<RankRow> honorRanking(Honor h) {

@@ -89,4 +89,22 @@ void main() {
     expect(find.text('رسالة خاصة للأم'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
   });
+
+  testWidgets('reports for day, week, month and year, each sendable to the family', (tester) async {
+    final c = await openAs(tester, 'abu@demo.sa', Role.admin);
+    final b = c.read(backendProvider) as DemoBackend;
+    await tester.tap(find.text('تقارير الإنجاز'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('→'), findsNothing);
+    expect(find.text('‹ رجوع'), findsWidgets, reason: 'back button beside sign-out');
+    await tester.tap(find.text('هذه السنة'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.textContaining('ترتيب إنجاز السنة'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('إرسال لكل الأعضاء'), 200);
+    await tester.tap(find.text('إرسال لكل الأعضاء'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(b.current.data!.notices.first.title, '🏆 ترتيب إنجاز السنة');
+    await tester.pump(const Duration(seconds: 4));
+  });
 }

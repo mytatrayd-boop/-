@@ -165,6 +165,11 @@ class _Header extends ConsumerWidget {
                     ),
                   ),
                 ),
+                // Back, beside sign-out, on every inner page.
+                if (GoRouter.of(context).canPop()) ...[
+                  hb(t.back, t.back, () => GoRouter.of(context).pop()),
+                  const SizedBox(width: 6),
+                ],
                 // Sign-out in plain sight next to the signed-in name (testers could not find it in the settings).
                 hb('🚪 ${t.signOut}', t.signOut, () async {
                   final router = GoRouter.of(context);

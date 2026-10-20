@@ -3,6 +3,8 @@
 // design/prototype.html (pk/dk/wk, tierOf, ranking, reportText, compDone).
 
 export type Period = "daily" | "weekly";
+/** How a task repeats: every day, every week, or once only. */
+export type TaskRepeat = Period | "once";
 export type Scope = "each" | "family";
 export type Role = "owner" | "admin" | "member";
 
@@ -45,7 +47,9 @@ export function yearKey(ms: number): string {
   return "y" + dayKey(ms).slice(0, 4);
 }
 
-export function periodKey(period: Period, ms: number): string {
+export function periodKey(period: TaskRepeat, ms: number): string {
+  // A one-time task has a single period: done once, it stays done.
+  if (period === "once") return "once";
   return period === "daily" ? dayKey(ms) : weekKey(ms);
 }
 
@@ -105,13 +109,28 @@ export function arabicDate(ms: number): string {
   return `${AR_WEEKDAYS[d.getUTCDay()]}، ${d.getUTCDate()} ${AR_MONTHS[d.getUTCMonth()]}`;
 }
 
-/** Daily ranking report text (same format as the app preview). */
-export function reportText(rows: RankRow[], ms: number): string {
+export type ReportPeriod = "daily" | "weekly" | "monthly" | "yearly";
+
+/** Title of a ranking report for its period. */
+export const REPORT_TITLE: Record<ReportPeriod, string> = {
+  daily: "ترتيب إنجاز اليوم",
+  weekly: "ترتيب إنجاز الأسبوع",
+  monthly: "ترتيب إنجاز الشهر",
+  yearly: "ترتيب إنجاز السنة",
+};
+
+/** Summary key a report period reads (the same keys addPoints writes). */
+export function reportKey(period: ReportPeriod, ms: number): string {
+  return { daily: dayKey, weekly: weekKey, monthly: monthKey, yearly: yearKey }[period](ms);
+}
+
+/** Ranking report text (same format as the app preview). */
+export function reportText(rows: RankRow[], ms: number, period: ReportPeriod = "daily"): string {
   if (!rows.length) return "لا يوجد أعضاء بعد.";
   const sorted = [...rows].sort((a, b) => b.points - a.points);
   const total = sorted.reduce((a, r) => a + r.points, 0);
   return (
-    `ترتيب إنجاز اليوم — ${arabicDate(ms)}\n\n` +
+    `${REPORT_TITLE[period]} — ${arabicDate(ms)}\n\n` +
     sorted.map((r, i) => `${medal(i)} ${r.name}: ${r.points} نقطة (${r.count} إنجاز)`).join("\n") +
     `\n\nمجموع الأسرة: ${total} نقطة`
   );

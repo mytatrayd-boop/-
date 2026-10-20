@@ -969,6 +969,30 @@ abstract class L10n {
   /// **'إرسال لكل الأعضاء'**
   String get sendToAll;
 
+  /// No description provided for @reportTitleDaily.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز اليوم'**
+  String get reportTitleDaily;
+
+  /// No description provided for @reportTitleWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز الأسبوع'**
+  String get reportTitleWeekly;
+
+  /// No description provided for @reportTitleMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز الشهر'**
+  String get reportTitleMonthly;
+
+  /// No description provided for @reportTitleYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز السنة'**
+  String get reportTitleYearly;
+
   /// No description provided for @reportSent.
   ///
   /// In ar, this message translates to:
@@ -1040,6 +1064,12 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'أسبوعية'**
   String get weeklyF;
+
+  /// No description provided for @onceF.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة واحدة'**
+  String get onceF;
 
   /// No description provided for @points.
   ///

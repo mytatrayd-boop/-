@@ -130,4 +130,25 @@ void main() {
     expect(d.notices.where((n) => n.to == lama.id), isEmpty);
     expect(d.tiers.where((t) => t.personId == lama.id), isEmpty);
   });
+
+  test('one-time tasks, for one member or everyone, stay done once approved', () async {
+    var now = clock;
+    final b = DemoBackend(clock: () => now);
+    final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
+    await b.addTask(title: 'تنظيف السيارة', personId: 'all', points: 20, repeat: Period.once);
+    final mine = b.current.data!.tasks.where((t) => t.title == 'تنظيف السيارة').toList();
+    expect(mine.length, b.current.data!.members.length, reason: 'one copy per member');
+    final task = mine.firstWhere((t) => t.personId == aseel.id);
+
+    await login(b, 'aseel@demo.sa', Role.member);
+    await b.completeTask(task.id);
+    await login(b, 'abu@demo.sa', Role.admin);
+    final c = b.current.data!.completions.firstWhere((c) => c.taskId == task.id);
+    expect(c.periodKey, 'once');
+    await b.decideCompletion(c.id, true);
+
+    now = now.add(const Duration(days: 9)); // a later day and week
+    await login(b, 'aseel@demo.sa', Role.member);
+    await expectLater(b.completeTask(task.id), throwsA(isA<AppError>().having((e) => e.code, 'code', 'already-done')));
+  });
 }

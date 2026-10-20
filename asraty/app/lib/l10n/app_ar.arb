@@ -259,6 +259,10 @@
   },
   "sendReportSub": "يصل هذا التقرير كتنبيه لكل أعضاء الأسرة.",
   "sendToAll": "إرسال لكل الأعضاء",
+  "reportTitleDaily": "ترتيب إنجاز اليوم",
+  "reportTitleWeekly": "ترتيب إنجاز الأسبوع",
+  "reportTitleMonthly": "ترتيب إنجاز الشهر",
+  "reportTitleYearly": "ترتيب إنجاز السنة",
   "reportSent": "أُرسل التقرير لكل الأعضاء",
   "reportTitleLine": "ترتيب إنجاز اليوم — {date}",
   "@reportTitleLine": {
@@ -301,6 +305,7 @@
   "allMembers": "كل الأعضاء",
   "dailyF": "يومية",
   "weeklyF": "أسبوعية",
+  "onceF": "مرة واحدة",
   "points": "النقاط",
   "addTask": "إضافة المهمة",
   "noTasks": "لا توجد مهام.",
