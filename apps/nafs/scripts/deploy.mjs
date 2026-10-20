@@ -30,8 +30,14 @@ async function api(method, url, body, headers = {}) {
 }
 
 // 1) قواعد Firestore
-const rules = await getSecurityRules().releaseFirestoreRulesetFromSource(readFileSync(root + 'firestore.rules', 'utf8'));
-console.log(`✓ Firestore rules: ${rules.name}`);
+// لا نتوقف عند الفشل: نكمل الخطوات ونجمع كل الناقص في قائمة واحدة.
+try {
+    const rules = await getSecurityRules().releaseFirestoreRulesetFromSource(readFileSync(root + 'firestore.rules', 'utf8'));
+    console.log(`✓ Firestore rules: ${rules.name}`);
+} catch (err) {
+    console.log(`✗ Firestore rules: ${err.message.slice(0, 200)}`);
+    problems.push('تعذر نشر قواعد الحماية: تأكد أن قاعدة Firestore منشأة (Firestore Database ← Create database)، وأن المفتاح من Service accounts ← Firebase Admin SDK. لن يقرأ الموقع أو يكتب البيانات قبل نشرها.');
+}
 
 // 2) Hosting
 const HOSTING = 'https://firebasehosting.googleapis.com/v1beta1';
