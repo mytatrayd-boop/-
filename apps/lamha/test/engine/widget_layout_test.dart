@@ -15,18 +15,33 @@ List<GridCell> cells(String spec) => [
 
 void main() {
   group('packRows', () {
-    test('الترتيب الافتراضي = الشكل السابق', () {
+    test('الترتيب الافتراضي = الشكل السابق (المدينة تحت التاريخين)', () {
       expect(
-        shape([
+        shape(stackCells([
           for (final t in defaultLayout) (id: t.id.name, span: t.span),
-        ]),
+        ])),
         [
-          ['clock1', 'dates2'],
-          ['weather3'],
+          ['clock1', 'dates+weather2'],
           ['prayer1', 'qibla1', 'deposit1'],
           ['season1', 'tradSeason2'],
         ],
       );
+      expect(cellElements('dates+weather'), ['dates', 'weather']);
+    });
+
+    test('stackCells: الطقس بعد التاريخين مباشرة وبعرضهما فقط', () {
+      expect(shape(stackCells(cells('dates2 weather1 qibla1'))), [
+        ['dates2', 'weather1'],
+        ['qibla3'],
+      ]);
+      expect(shape(stackCells(cells('weather2 dates2'))), [
+        ['weather3'],
+        ['dates3'],
+      ]);
+      expect(shape(stackCells(cells('dates3 weather3 prayer1'))), [
+        ['dates+weather3'],
+        ['prayer3'],
+      ]);
     });
 
     test('آخر مربع في الصف الناقص يتمدد', () {
@@ -108,13 +123,21 @@ void main() {
       expect(rowHeights(const [], const [], 300, 8).heights, isEmpty);
     });
 
-    test('لا يتسع بأدنى معامل: النقص من الصفوف التي تتحمله وحدها', () {
-      final r = rowHeights([80, 20, 100], [0, 0, 20], 120, 0,
-          squeezable: [true, false, true]);
-      expect(r.scale, 0.6);
-      expect(r.heights[0], closeTo(40.5, 1e-9));
-      expect(r.heights[1], closeTo(12, 1e-9));
-      expect(r.heights[2], closeTo(67.5, 1e-9));
+    test('صفوف السطور بقدر محتواها، وصفوف المربعات تقتسم الباقي بالتساوي', () {
+      final a = rowHeights([80, 20, 100], [0, 0, 20], 300, 0,
+          flexible: [false, false, true]);
+      expect(a.scale, 1);
+      expect(a.heights, [80, 20, 200]);
+      final b = rowHeights([50, 60, 70], [0, 20, 20], 300, 0,
+          flexible: [false, true, true]);
+      expect(b.heights, [50, 125, 125]);
+      // لا يتسع بأدنى معامل: النقص من صفوف المربعات بنسبتها.
+      final c = rowHeights([80, 20, 100], [0, 0, 20], 120, 0,
+          flexible: [false, false, true]);
+      expect(c.scale, 0.6);
+      expect(c.heights[0], closeTo(48, 1e-9));
+      expect(c.heights[1], closeTo(12, 1e-9));
+      expect(c.heights[2], closeTo(60, 1e-9));
     });
 
     test('صفوف متساوية (أندرويد أقدم من ١٢): المعامل من أضيقها', () {

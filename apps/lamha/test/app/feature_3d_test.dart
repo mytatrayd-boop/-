@@ -87,7 +87,10 @@ void main() {
       final gregorian = tester.getRect(
         find.byKey(const Key('preview-gregorian')),
       );
-      expect(right.center.dy, closeTo((hijri.top + gregorian.bottom) / 2, 0.5));
+      // والعمود الأيسر: التاريخان وتحتهما المدينة والطقس.
+      final weather = tester.getRect(find.byKey(const Key('preview-weather')));
+      expect(weather.top, greaterThanOrEqualTo(gregorian.bottom - 0.5));
+      expect(right.center.dy, closeTo((hijri.top + weather.bottom) / 2, 2.5));
       expect(right.left, greaterThan(hijri.right));
       // اليوم تحت الساعة مباشرة.
       final gap =

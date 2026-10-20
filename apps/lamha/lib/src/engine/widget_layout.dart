@@ -141,12 +141,12 @@ class TileLayout {
       Object.hash(id, visible, span, fontScale, primaryColor, secondaryColor);
 }
 
-/// الترتيب الافتراضي = الشكل السابق: الساعة واليوم يميناً والتاريخان يسارها، ثم المدينة والطقس،
-/// ثم الصلاة والقبلة والإيداع، ثم الفصل والموسم (بعرض وحدتين).
+/// الترتيب الافتراضي = الشكل السابق: الساعة واليوم يميناً، ويسارها التاريخان وتحتهما المدينة
+/// والطقس (بعرضهما فيُكدَّسان، [stackCells])، ثم الصلاة والقبلة والإيداع، ثم الفصل والموسم.
 const defaultLayout = <TileLayout>[
   TileLayout(WidgetElement.clock),
   TileLayout(WidgetElement.dates, span: 2),
-  TileLayout(WidgetElement.weather, span: 3),
+  TileLayout(WidgetElement.weather, span: 2),
   TileLayout(WidgetElement.prayer),
   TileLayout(WidgetElement.qibla),
   TileLayout(WidgetElement.deposit),
@@ -214,9 +214,10 @@ List<List<GridCell>> packRows(
 
 /// ارتفاعات الصفوف بوزن المحتوى: [text] ارتفاع نص أطول مربع في كل صف بحجمه المطلوب، و[pads]
 /// ما لا يصغر منه (حشوات)، و[gap] بين الصفوف. يصغر النص كله بمعامل واحد (حتى [minScale]) إن لم
-/// يتسع في [available]، وما يبقى من الارتفاع يُوزَّع بنسبة كل صف. مع [equal] الصفوف متساوية
-/// والمعامل من أضيقها (أندرويد أقدم من ١٢). بلا ارتفاع معروف: المعامل ١ والارتفاعات الطبيعية.
-/// [squeezable]: الصفوف التي تتحمل نقصاً (مربعات تُخفي ثانوياتها)؛ null = كلها.
+/// يتسع في [available]. الصفوف غير [flexible] (الساعة والتاريخان والمدينة) بارتفاعها الطبيعي،
+/// وصفوف المربعات تقتسم الباقي بالتساوي (ومن يحتاج أكثر يأخذ حاجته؛ وإن نقص: بنسبتها).
+/// بلا صف مرن (أو بلا [flexible]): الكل بنسبته. مع [equal] الصفوف متساوية والمعامل من أضيقها
+/// (أندرويد أقدم من ١٢). بلا ارتفاع معروف: المعامل ١ والارتفاعات الطبيعية.
 ({double scale, List<double> heights}) rowHeights(
   List<double> text,
   List<double> pads,
@@ -224,7 +225,7 @@ List<List<GridCell>> packRows(
   double gap, {
   bool equal = false,
   double minScale = 0.6,
-  List<bool>? squeezable,
+  List<bool>? flexible,
 }) {
   final n = text.length;
   if (n == 0) return (scale: 1.0, heights: const []);
@@ -253,24 +254,67 @@ List<List<GridCell>> packRows(
       : ((space - sumPads) / sumText).clamp(minScale, 1.0).toDouble();
   final natural = [for (var i = 0; i < n; i++) text[i] * s + pads[i]];
   final sum = natural.fold<double>(0, (a, b) => a + b);
-  // لا يتسع حتى بأدنى معامل: النقص من الصفوف التي تُخفي أسطرها ([squeezable]) وحدها إن أمكن،
-  // فيبقى صف السطر الواحد كاملاً.
-  final canSqueeze = [
-    for (var i = 0; i < n; i++) squeezable == null || squeezable[i],
-  ];
-  final soft = [
-    for (var i = 0; i < n; i++)
-      if (canSqueeze[i]) natural[i],
-  ].fold<double>(0, (a, b) => a + b);
-  final deficit = sum - space;
-  if (deficit > 0 && soft > deficit) {
-    return (
-      scale: s,
-      heights: [
-        for (var i = 0; i < n; i++)
-          canSqueeze[i] ? natural[i] * (soft - deficit) / soft : natural[i],
-      ],
-    );
+  final flex = [for (var i = 0; i < n; i++) flexible != null && flexible[i]];
+  final count = flex.where((f) => f).length;
+  var fixed = 0.0;
+  var soft = 0.0;
+  for (var i = 0; i < n; i++) {
+    flex[i] ? soft += natural[i] : fixed += natural[i];
+  }
+  final rest = space - fixed;
+  if (count > 0 && rest > 0) {
+    final h = [...natural];
+    if (soft > rest) {
+      // نقص: صفوف المربعات بنسبتها.
+      for (var i = 0; i < n; i++) {
+        if (flex[i]) h[i] = natural[i] * rest / soft;
+      }
+    } else {
+      // حصص متساوية، والصف الذي يحتاج أكثر من حصته يأخذ حاجته ويقتسم الباقون ما بقي.
+      var open = [for (var i = 0; i < n; i++) if (flex[i]) i];
+      var left = rest;
+      while (open.isNotEmpty) {
+        final share = left / open.length;
+        final big = open.where((i) => natural[i] > share).toList();
+        if (big.isEmpty) {
+          for (final i in open) {
+            h[i] = share;
+          }
+          break;
+        }
+        for (final i in big) {
+          h[i] = natural[i];
+          left -= natural[i];
+        }
+        open = open.where((i) => !big.contains(i)).toList();
+      }
+    }
+    return (scale: s, heights: h);
   }
   return (scale: s, heights: [for (final h in natural) h * space / sum]);
 }
+
+/// معرّف خانة التاريخين وتحتهما المدينة والطقس (الشكل السابق).
+const datesWeatherCell = 'dates+weather';
+
+/// إذا جاء مربع المدينة والطقس بعد التاريخين مباشرة وبعرضهما، يُكدَّس تحتهما في خانة واحدة
+/// [datesWeatherCell] (كالعمود الأيسر السابق). قبل [packRows] (stackCells في LamhaLogic.kt).
+List<GridCell> stackCells(List<GridCell> shown) {
+  final out = <GridCell>[];
+  for (var i = 0; i < shown.length; i++) {
+    final c = shown[i];
+    if (c.id == WidgetElement.dates.name &&
+        i + 1 < shown.length &&
+        shown[i + 1].id == WidgetElement.weather.name &&
+        shown[i + 1].span == c.span) {
+      out.add((id: datesWeatherCell, span: c.span));
+      i++;
+    } else {
+      out.add(c);
+    }
+  }
+  return out;
+}
+
+/// معرّفات العناصر في خانة (اثنان للخانة المكدسة).
+List<String> cellElements(String cellId) => cellId.split('+');

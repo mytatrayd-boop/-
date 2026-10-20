@@ -43,7 +43,7 @@
     {
       "id": "weather",
       "visible": true,
-      "span": 3,
+      "span": 2,
       "fontScale": 1.0,
       "primaryColor": null,
       "secondaryColor": null

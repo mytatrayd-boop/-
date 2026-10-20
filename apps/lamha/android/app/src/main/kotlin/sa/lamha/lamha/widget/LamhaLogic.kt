@@ -26,7 +26,7 @@ object LamhaLogic {
 
     /// الترتيب الافتراضي (defaultLayout في Dart).
     private val DEFAULT_SPANS = listOf(
-        "clock" to 1, "dates" to 2, "weather" to 3, "prayer" to 1,
+        "clock" to 1, "dates" to 2, "weather" to 2, "prayer" to 1,
         "qibla" to 1, "deposit" to 1, "season" to 1, "tradSeason" to 2,
     )
 
@@ -66,12 +66,13 @@ object LamhaLogic {
     }
 
     /// ارتفاعات الصفوف بوزن المحتوى (rowHeights في Dart): [text] نص أطول مربع في كل صف، و[pads]
-    /// ما لا يصغر، و[gap] بين الصفوف. معامل واحد للنص (حتى [minScale]) إن لم يتسع في [available]،
-    /// والباقي بنسبة كل صف. [equal]: صفوف متساوية والمعامل من أضيقها. بلا ارتفاع: الطبيعي.
-    /// [squeezable]: الصفوف التي تتحمل نقصاً إن لم يتسع حتى بأدنى معامل (مربعات تُخفي ثانوياتها)؛ null = كلها.
+    /// ما لا يصغر، و[gap] بين الصفوف. معامل واحد للنص (حتى [minScale]) إن لم يتسع في [available].
+    /// الصفوف غير [flexible] بارتفاعها الطبيعي، وصفوف المربعات تقتسم الباقي بالتساوي (ومن يحتاج أكثر
+    /// يأخذ حاجته؛ وإن نقص: بنسبتها). بلا صف مرن: الكل بنسبته. [equal]: صفوف متساوية والمعامل من
+    /// أضيقها. بلا ارتفاع: الطبيعي.
     fun rowHeights(
         text: List<Float>, pads: List<Float>, available: Float, gap: Float,
-        equal: Boolean = false, minScale: Float = 0.6f, squeezable: List<Boolean>? = null,
+        equal: Boolean = false, minScale: Float = 0.6f, flexible: List<Boolean>? = null,
     ): Pair<Float, List<Float>> {
         val n = text.size
         if (n == 0) return 1f to emptyList()
@@ -87,15 +88,58 @@ object LamhaLogic {
         val s = if (sumText <= 0f) 1f else ((space - pads.sum()) / sumText).coerceIn(minScale, 1f)
         val natural = List(n) { text[it] * s + pads[it] }
         val sum = natural.sum()
-        // لا يتسع حتى بأدنى معامل: النقص من صفوف [squeezable] وحدها إن أمكن.
-        val can = List(n) { squeezable == null || squeezable[it] }
-        val soft = (0 until n).filter { can[it] }.sumOf { natural[it].toDouble() }.toFloat()
-        val deficit = sum - space
-        if (deficit > 0f && soft > deficit) {
-            return s to List(n) { if (can[it]) natural[it] * (soft - deficit) / soft else natural[it] }
+        val flex = List(n) { flexible != null && flexible[it] }
+        val fixed = (0 until n).filter { !flex[it] }.sumOf { natural[it].toDouble() }.toFloat()
+        val soft = (0 until n).filter { flex[it] }.sumOf { natural[it].toDouble() }.toFloat()
+        val rest = space - fixed
+        if (flex.any { it } && rest > 0f) {
+            val h = natural.toMutableList()
+            if (soft > rest) {
+                for (i in 0 until n) if (flex[i]) h[i] = natural[i] * rest / soft
+            } else {
+                var open = (0 until n).filter { flex[it] }
+                var left = rest
+                while (open.isNotEmpty()) {
+                    val share = left / open.size
+                    val big = open.filter { natural[it] > share }
+                    if (big.isEmpty()) {
+                        for (i in open) h[i] = share
+                        break
+                    }
+                    for (i in big) {
+                        h[i] = natural[i]
+                        left -= natural[i]
+                    }
+                    open = open.filter { it !in big }
+                }
+            }
+            return s to h
         }
         return s to natural.map { it * space / sum }
     }
+
+    /// خانة التاريخين وتحتهما المدينة والطقس (datesWeatherCell في Dart).
+    const val DATES_WEATHER = "dates+weather"
+
+    /// المدينة والطقس بعد التاريخين مباشرة وبعرضهما يُكدَّسان في خانة واحدة (stackCells في Dart).
+    fun stackCells(shown: List<Cell>): List<Cell> {
+        val out = ArrayList<Cell>()
+        var i = 0
+        while (i < shown.size) {
+            val c = shown[i]
+            if (c.id == "dates" && i + 1 < shown.size && shown[i + 1].id == "weather" && shown[i + 1].span == c.span) {
+                out += Cell(DATES_WEATHER, c.span)
+                i += 2
+            } else {
+                out += c
+                i++
+            }
+        }
+        return out
+    }
+
+    /// معرّفات العناصر في خانة.
+    fun cellElements(cellId: String): List<String> = cellId.split("+")
 
     /// [text] وقت الصلاة جاهزاً للعرض من الجدول (مثل «٤:٣٥ ص»).
     data class Prayer(val key: String, val name: String, val atMillis: Long, val text: String = "")

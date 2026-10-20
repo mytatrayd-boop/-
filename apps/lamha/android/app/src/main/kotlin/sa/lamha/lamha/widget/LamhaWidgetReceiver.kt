@@ -184,7 +184,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             // أطول مربع فيه (rowHeights)، ومعامل واحد يصغر به النص كله إن لم يتسع (تقديراً).
             val sys = ctx.resources.configuration.fontScale
             val byId = day.layout.associateBy { it.id }
-            val rows = LamhaLogic.packRows(day.layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) })
+            val rows = LamhaLogic.packRows(
+                LamhaLogic.stackCells(day.layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) }),
+            )
             val weather = LamhaLogic.newestWeather(
                 day.weather, LamhaSchedule.weatherOf(nativeWeather),
                 day.latitude, day.longitude,
@@ -193,14 +195,22 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 ?: ctx.getString(R.string.weather_unknown)
             val env = Env(context, ctx, day, accent, now, minWidth, sys, weatherText)
             fun scaleOf(id: String) = day.fontScale * (byId[id]?.fontScale ?: 1f)
-            val sizes = rows.map { r -> r.map { heightsDp(env, it, scaleOf(it.id)) } }
+            // الخانة المكدسة (التاريخان وتحتهما المدينة): مجموع ارتفاعيهما، وحشوة الخانة مرة.
+            val sizes = rows.map { r ->
+                r.map { cell ->
+                    val parts = LamhaLogic.cellElements(cell.id).map { heightsDp(env, LamhaLogic.Cell(it, cell.span), scaleOf(it)) }
+                    parts.sumOf { it.first.toDouble() }.toFloat() to
+                        (parts.sumOf { it.second.toDouble() }.toFloat() - 8f * (parts.size - 1))
+                }
+            }
             val text = sizes.map { r -> r.maxOf { it.first } }
             val pads = sizes.map { r -> r.maxOf { it.second } }
             // أندرويد ١٢+ يضبط ارتفاع الصف (setViewLayoutHeight)، والأقدم صفوف متساوية.
             val exact = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && maxHeight > 0
             val (fit, heights) = LamhaLogic.rowHeights(
                 text, pads, if (maxHeight > 0) maxHeight - 20f else 0f, 0f, equal = !exact,
-                squeezable = rows.map { r -> r.none { it.id in FIXED_TILES } },
+                // صفوف المربعات تقتسم الباقي، وصفوف الساعة والتاريخين والمدينة بقدر محتواها.
+                flexible = rows.map { r -> r.any { it.id !in LINE_TILES } },
             )
             rv.removeAllViews(R.id.grid)
             rows.forEachIndexed { r, row ->
@@ -217,9 +227,20 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                             else -> R.layout.widget_tile_full
                         },
                     )
-                    val spec = byId[cell.id] ?: LamhaLogic.Tile(cell.id)
                     val inner = if (maxHeight > 0) heights[r] - 8f else 0f
-                    slot.addView(R.id.slot, tile(env, spec, cell.span, scaleOf(cell.id) * fit, inner))
+                    val ids = LamhaLogic.cellElements(cell.id)
+                    if (ids.size == 1) {
+                        val spec = byId[cell.id] ?: LamhaLogic.Tile(cell.id)
+                        slot.addView(R.id.slot, tile(env, spec, cell.span, scaleOf(cell.id) * fit, inner))
+                    } else {
+                        // عمود: التاريخان ثم المدينة والطقس تحتهما، متوسطان رأسياً.
+                        val stack = RemoteViews(context.packageName, R.layout.widget_tile_stack)
+                        for (id in ids) {
+                            val spec = byId[id] ?: LamhaLogic.Tile(id)
+                            stack.addView(R.id.stack, tile(env, spec, cell.span, scaleOf(id) * fit, 0f))
+                        }
+                        slot.addView(R.id.slot, stack)
+                    }
                     rowViews.addView(R.id.row, slot)
                 }
                 rv.addView(R.id.grid, rowViews)
@@ -227,8 +248,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             return rv
         }
 
-        /// مربعات لا تُخفي أسطرها إن ضاق صفها (rowHeights: squeezable).
-        private val FIXED_TILES = setOf("clock", "weather")
+        /// خانات بلا صندوق: صفوفها بقدر محتواها (rowHeights: flexible، _lineTiles في المعاينة).
+        private val LINE_TILES = setOf("clock", "dates", "weather", LamhaLogic.DATES_WEATHER)
 
         /// ما يحتاجه كل مربع: السياقان (الأصلي وبالعربية)، واليوم، والتمييز، والعرض، وخط النظام.
         private class Env(
@@ -451,19 +472,28 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             for (id in intArrayOf(R.id.tile_sub1, R.id.tile_sub2, R.id.tile_sub3)) {
                 rv.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, subSp)
             }
-            // الثانويات بالترتيب ما اتسع منها (تقديراً)، وما بعده يُخفى فلا يُقص سطر في منتصفه.
+            // الثانويات ما اتسع منها (تقديراً) بأولوية الإخفاء، فلا يُقص سطر في منتصفه. العنوان والقيمة
+            // ثابتان. الإخفاء من الآخر (الإيداع: الثاني قبل «باقي»؛ الموسم: الوصف قبل «باقي»)، إلا
+            // الصلاة: الوقت أولاً، والعدّاد آخراً.
+            val countdown = if (element == "prayer" && day.nextPrayer != null) "countdown" else null
+            val lines = listOf(R.id.tile_sub1 to sub1, R.id.tile_countdown to countdown, R.id.tile_sub2 to sub2, R.id.tile_sub3 to sub3)
+                .filter { !it.second.isNullOrEmpty() }
             val subLine = subSp * sys * LINE_HEIGHT
             var used = (titleFit + valueFit) * sys * LINE_HEIGHT + TILE_GAP_DP
-            var room = true
-            fun fits(): Boolean {
-                room = room && (innerHeightDp <= 0f || used + TILE_GAP_DP + subLine <= innerHeightDp)
-                if (room) used += TILE_GAP_DP + subLine
-                return room
+            var fitting = lines.size
+            if (innerHeightDp > 0f) {
+                fitting = 0
+                while (fitting < lines.size && used + TILE_GAP_DP + subLine <= innerHeightDp) {
+                    used += TILE_GAP_DP + subLine
+                    fitting++
+                }
             }
-            sub(rv, R.id.tile_sub1, sub1.takeIf { !it.isNullOrEmpty() && fits() })
-            if (element == "prayer" && day.nextPrayer != null && !fits()) rv.setViewVisibility(R.id.tile_countdown, View.GONE)
-            sub(rv, R.id.tile_sub2, sub2.takeIf { !it.isNullOrEmpty() && fits() })
-            sub(rv, R.id.tile_sub3, sub3.takeIf { !it.isNullOrEmpty() && fits() })
+            val kept = (if (element == "prayer") lines.takeLast(fitting) else lines.take(fitting)).map { it.first }.toSet()
+            sub(rv, R.id.tile_sub1, sub1.takeIf { R.id.tile_sub1 in kept })
+            if (countdown != null && R.id.tile_countdown !in kept) rv.setViewVisibility(R.id.tile_countdown, View.GONE)
+            sub(rv, R.id.tile_sub2, sub2.takeIf { R.id.tile_sub2 in kept })
+            sub(rv, R.id.tile_sub3, sub3.takeIf { R.id.tile_sub3 in kept })
+            val room = R.id.tile_sub3 in kept
             if (!sub3.isNullOrEmpty() && room && innerHeightDp > 0f) {
                 // sub3 يأخذ سطراً ثانياً إن اتسع بعد بقية المحتوى (fittingLines كالمعاينة).
                 rv.setInt(R.id.tile_sub3, "setMaxLines", LamhaLogic.fittingLines(innerHeightDp - used, subLine, 2))

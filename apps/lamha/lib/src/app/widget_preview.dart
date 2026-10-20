@@ -47,8 +47,9 @@ const widestClockText = '١٢:٥٨';
 const headLineHeight = 1.3;
 const weekdayLineHeight = 1.2;
 
-/// مربعات لا تُخفي أسطرها إن ضاق صفها (FIXED_TILES في LamhaWidgetReceiver.kt).
-const _fixedTiles = {'clock', 'weather'};
+/// خانات بلا صندوق: صفوفها بقدر محتواها، وصفوف المربعات تقتسم الباقي (LINE_TILES في
+/// LamhaWidgetReceiver.kt).
+const _lineTiles = {'clock', 'dates', 'weather', datesWeatherCell};
 
 /// حشوة الودجت، والتباعد بين المربعات والصفوف.
 const widgetPadding = 14.0;
@@ -219,10 +220,12 @@ class WidgetPreview extends StatelessWidget {
 
     final layout = scheduleLayout(schedule);
     final byId = {for (final t in layout) t.id: t};
-    final rows = packRows([
-      for (final t in layout)
-        if (t.visible) (id: t.id.name, span: t.span),
-    ]);
+    final rows = packRows(
+      stackCells([
+        for (final t in layout)
+          if (t.visible) (id: t.id.name, span: t.span),
+      ]),
+    );
 
     _Tile tileFor(WidgetElement e) {
       final t = byId[e]!;
@@ -277,38 +280,65 @@ class WidgetPreview extends StatelessWidget {
     }
 
     Widget grid(BuildContext context, BoxConstraints c) {
+      // كل خانة مربع واحد، أو التاريخان وتحتهما المدينة والطقس (stackCells).
       final tiles = [
         for (final row in rows)
           [
             for (final cell in row)
-              tileFor(WidgetElement.values.byName(cell.id)),
+              [
+                for (final id in cellElements(cell.id))
+                  tileFor(WidgetElement.values.byName(id)),
+              ],
           ],
       ];
-      // ارتفاع كل صف بوزن أطول مربع فيه، ومعامل واحد يصغر به النص كله إن لم يتسع.
       // ارتفاعا كل مربع بعرضه: عرض [span] في صف من [k] مربعات (كتوزيع Expanded).
+      double widthOf(int r, int i) =>
+          (c.maxWidth - tileSpacing * (rows[r].length - 1)) *
+          rows[r][i].span /
+          gridColumns;
       final sizes = [
         for (var r = 0; r < rows.length; r++)
           [
             for (var i = 0; i < rows[r].length; i++)
-              tiles[r][i].heights(
-                context,
-                (c.maxWidth - tileSpacing * (rows[r].length - 1)) *
-                    rows[r][i].span /
-                    gridColumns,
-              ),
+              [for (final t in tiles[r][i]) t.heights(context, widthOf(r, i))],
           ],
       ];
+      double sumOf(List<({double text, double pad})> h, bool text) =>
+          h.fold<double>(0, (a, x) => a + (text ? x.text : x.pad));
+      // ارتفاع كل صف بوزن أطول خانة فيه، ومعامل واحد يصغر به النص كله إن لم يتسع. صفوف
+      // المربعات تقتسم الباقي، وصفوف الساعة والتاريخين والمدينة بقدر محتواها.
       final fit = rowHeights(
-        [for (final r in sizes) r.map((h) => h.text).reduce(math.max)],
-        [for (final r in sizes) r.map((h) => h.pad).reduce(math.max)],
+        [for (final r in sizes) r.map((h) => sumOf(h, true)).reduce(math.max)],
+        [for (final r in sizes) r.map((h) => sumOf(h, false)).reduce(math.max)],
         c.maxHeight,
         tileSpacing,
-        // الساعة والمدينة لا تُخفيان أسطرهما، فصفاهما لا يتحملان نقصاً.
-        squeezable: [
-          for (final r in rows)
-            r.every((cell) => !_fixedTiles.contains(cell.id)),
+        flexible: [
+          for (final r in rows) r.any((cell) => !_lineTiles.contains(cell.id)),
         ],
       );
+      Widget cellWidget(int r, int i) {
+        final ids = cellElements(rows[r][i].id);
+        if (ids.length == 1) {
+          return _tap(
+            WidgetElement.values.byName(ids.first),
+            tiles[r][i].first.fitted(fit.scale),
+          );
+        }
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var k = 0; k < ids.length; k++)
+              SizedBox(
+                height: sizes[r][i][k].text * fit.scale + sizes[r][i][k].pad,
+                child: _tap(
+                  WidgetElement.values.byName(ids[k]),
+                  tiles[r][i][k].fitted(fit.scale),
+                ),
+              ),
+          ],
+        );
+      }
+
       return Column(
         children: [
           for (var r = 0; r < rows.length; r++) ...[
@@ -320,13 +350,7 @@ class WidgetPreview extends StatelessWidget {
                 children: [
                   for (var i = 0; i < rows[r].length; i++) ...[
                     if (i > 0) const SizedBox(width: tileSpacing),
-                    Expanded(
-                      flex: rows[r][i].span,
-                      child: _tap(
-                        WidgetElement.values.byName(rows[r][i].id),
-                        tiles[r][i].fitted(fit.scale),
-                      ),
-                    ),
+                    Expanded(flex: rows[r][i].span, child: cellWidget(r, i)),
                   ],
                 ],
               ),
@@ -417,6 +441,7 @@ class WidgetPreview extends StatelessWidget {
       kind: WidgetElement.prayer,
       title: l.tilePrayer,
       highlight: accent,
+      hideFirstSub: true,
       value: (next?['name'] as String?) ?? '',
       subs: [
         if (next != null) (text: next['text'] as String, lines: 1),
@@ -530,6 +555,7 @@ class _Tile extends StatelessWidget {
     this.shortTitle,
     this.subs = const [],
     this.highlight,
+    this.hideFirstSub = false,
   }) : lines = const [],
        time = null,
        amPmText = null,
@@ -551,6 +577,7 @@ class _Tile extends StatelessWidget {
        subs = const [],
        lines = const [],
        highlight = null,
+       hideFirstSub = false,
        scale = 1,
        primary = null,
        secondary = null;
@@ -561,6 +588,7 @@ class _Tile extends StatelessWidget {
       value = '',
       subs = const [],
       highlight = null,
+      hideFirstSub = false,
       time = null,
       amPmText = null,
       accent = null,
@@ -579,6 +607,7 @@ class _Tile extends StatelessWidget {
        value = t.value,
        subs = t.subs,
        highlight = t.highlight,
+       hideFirstSub = t.hideFirstSub,
        lines = t.lines,
        time = t.time,
        amPmText = t.amPmText,
@@ -596,6 +625,10 @@ class _Tile extends StatelessWidget {
   /// الثانويات: [lines] حدها الأقصى. الأخير ذو الأسطر المتعددة يأخذ ما يتسع منها.
   final List<({String text, int lines})> subs;
   final Color? highlight;
+
+  /// أولوية الإخفاء عند ضيق الارتفاع: الثانويات تُخفى من الآخر، ومع [hideFirstSub] (الصلاة) يُخفى
+  /// أولها (الوقت) قبل آخرها (العدّاد)، فلا يُخفى العدّاد أبداً قبل غيره.
+  final bool hideFirstSub;
 
   /// أسطر مربع بلا صندوق: الأول بالخط الرئيسي والبقية بالفرعي.
   final List<_Line> lines;
@@ -873,7 +906,9 @@ class _Tile extends StatelessWidget {
               used += tileGap + subLine;
               shown++;
             }
-            final visibleSubs = subs.sublist(0, shown);
+            final visibleSubs = hideFirstSub
+                ? subs.sublist(subs.length - shown)
+                : subs.sublist(0, shown);
             final extra = fittingLines(c.maxHeight - used, subLine, 99);
             return ClipRect(
               child: OverflowBox(

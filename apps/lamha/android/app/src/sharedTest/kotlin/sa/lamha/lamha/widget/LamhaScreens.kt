@@ -120,8 +120,9 @@ object LamhaScreens {
         parent.draw(canvas)
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         val layout = LamhaSchedule.layoutOf(JSONObject(schedule)) ?: emptyList()
-        val placed = LamhaLogic.packRows(layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) })
-            .flatten().map { it.id }.toSet()
+        val placed = LamhaLogic.packRows(
+            LamhaLogic.stackCells(layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) }),
+        ).flatten().flatMap { LamhaLogic.cellElements(it.id) }.toSet()
         return check(ctx, parent, placed)
     }
 

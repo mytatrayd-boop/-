@@ -53,16 +53,21 @@ void main() {
       expect(find.byKey(ValueKey('card-${e.name}')), findsOneWidget);
       expect(tile(e.name), findsOneWidget);
     }
-    // الترتيب الافتراضي: الساعة يمين التاريخين، ثم المدينة والطقس بعرض الصف، ثم الخمسة.
+    // الترتيب الافتراضي كالشكل السابق: الساعة يميناً، ويسارها التاريخان وتحتهما المدينة والطقس
+    // في الصف نفسه، ثم الخمسة.
     final clock = tester.getRect(tile('clock'));
     final dates = tester.getRect(tile('dates'));
     final weather = tester.getRect(tile('weather'));
     final prayer = tester.getRect(tile('prayer'));
     expect(clock.left, greaterThan(dates.right));
-    expect(clock.top, dates.top);
-    expect(weather.top, greaterThan(clock.bottom));
-    expect(weather.width, closeTo(338 - 28, 0.5));
-    expect(prayer.top, greaterThan(weather.bottom));
+    expect(weather.top, greaterThanOrEqualTo(dates.bottom - 0.5));
+    expect(weather.right, closeTo(dates.right, 0.5));
+    expect(weather.bottom, lessThanOrEqualTo(clock.bottom + 0.5));
+    expect(prayer.top, greaterThan(clock.bottom));
+    // الصلاة تعرض العدّاد.
+    expect(
+        find.descendant(of: tile('prayer'), matching: find.textContaining('باقي')),
+        findsOneWidget);
   });
 
   testWidgets('الإظهار يحفظ في الجدول، والمربعات الباقية تملأ الصف', (tester) async {
@@ -100,6 +105,7 @@ void main() {
     expect(tileOf(bridge, 'deposit')['fontScale'], 1.3);
     expect(valueSize('deposit'), greaterThan(small));
 
+    await tapKey(tester, 'span-qibla-1');
     await tapKey(tester, 'primary-qibla-pink');
     await tapKey(tester, 'secondary-qibla-blue');
     expect(tileOf(bridge, 'qibla')['primaryColor'], TileColor.pink.argb);

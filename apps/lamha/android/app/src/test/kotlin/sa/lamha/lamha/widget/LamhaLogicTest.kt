@@ -75,11 +75,19 @@ class LamhaLogicTest {
         assertTrue(all.all { it.visible })
         assertEquals(
             listOf(
-                listOf("clock1", "dates2"), listOf("weather3"),
+                listOf("clock1", "dates+weather2"),
                 listOf("prayer1", "qibla1", "deposit1"), listOf("season1", "tradSeason2"),
             ),
-            shape(all.map { LamhaLogic.Cell(it.id, it.span) }),
+            shape(LamhaLogic.stackCells(all.map { LamhaLogic.Cell(it.id, it.span) })),
         )
+        assertEquals(listOf("dates", "weather"), LamhaLogic.cellElements("dates+weather"))
+    }
+
+    @Test
+    fun stackCellsOnlyWeatherRightAfterDatesWithSameSpan() {
+        assertEquals(listOf(listOf("dates2", "weather1"), listOf("qibla3")), shape(LamhaLogic.stackCells(cells("dates2 weather1 qibla1"))))
+        assertEquals(listOf(listOf("weather3"), listOf("dates3")), shape(LamhaLogic.stackCells(cells("weather2 dates2"))))
+        assertEquals(listOf(listOf("dates+weather3"), listOf("prayer3")), shape(LamhaLogic.stackCells(cells("dates3 weather3 prayer1"))))
     }
 
     @Test
@@ -125,14 +133,19 @@ class LamhaLogicTest {
         assertEquals(listOf(84f, 24f), h3)
         assertEquals(emptyList<Float>(), LamhaLogic.rowHeights(emptyList(), emptyList(), 300f, 8f).second)
 
-        // لا يتسع بأدنى معامل: النقص من صفوف squeezable وحدها.
+        // صفوف السطور بقدر محتواها، وصفوف المربعات تقتسم الباقي بالتساوي، وإن نقص فبنسبتها.
+        val fa = LamhaLogic.rowHeights(listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 300f, 0f, flexible = listOf(false, false, true))
+        assertEquals(1f, fa.first, 1e-5f)
+        assertEquals(listOf(80f, 20f, 200f), fa.second)
+        val fb = LamhaLogic.rowHeights(listOf(50f, 60f, 70f), listOf(0f, 20f, 20f), 300f, 0f, flexible = listOf(false, true, true))
+        assertEquals(listOf(50f, 125f, 125f), fb.second)
         val (s5, h5) = LamhaLogic.rowHeights(
-            listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 120f, 0f, squeezable = listOf(true, false, true),
+            listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 120f, 0f, flexible = listOf(false, false, true),
         )
         assertEquals(0.6f, s5, 1e-5f)
-        assertEquals(40.5f, h5[0], 1e-3f)
+        assertEquals(48f, h5[0], 1e-3f)
         assertEquals(12f, h5[1], 1e-3f)
-        assertEquals(67.5f, h5[2], 1e-3f)
+        assertEquals(60f, h5[2], 1e-3f)
 
         val (s4, h4) = LamhaLogic.rowHeights(listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 300f, 0f, equal = true)
         assertEquals(listOf(100f, 100f, 100f), h4)
@@ -149,7 +162,7 @@ class LamhaLogicTest {
             ),
             l.associate { it.id to it.visible },
         )
-        assertEquals(listOf(1, 2, 3, 1, 1, 1, 1, 2), l.map { it.span })
+        assertEquals(listOf(1, 2, 2, 1, 1, 1, 1, 2), l.map { it.span })
         assertEquals(listOf("clock"), LamhaLogic.defaultLayout(emptySet()).filter { it.visible }.map { it.id })
     }
 
