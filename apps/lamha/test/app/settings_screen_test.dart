@@ -8,7 +8,7 @@ import 'package:lamha/src/app/cities.dart';
 import 'package:lamha/src/app/places.dart';
 import 'package:lamha/src/app/providers.dart';
 import 'package:lamha/src/app/services.dart';
-import 'package:lamha/src/app/widget_preview.dart';
+import 'package:lamha/src/app/widget_preview.dart' show withLam;
 import 'package:lamha/src/engine/arabic.dart';
 import 'package:lamha/src/engine/qibla.dart';
 import 'package:lamha/src/engine/settings.dart';
@@ -18,6 +18,15 @@ import '../helpers.dart';
 import 'app_helpers.dart';
 
 Finder tile(WidgetElement e) => find.byKey(Key('tile-${e.name}'));
+
+/// مربعات المعلومات الخمسة بترتيبها الافتراضي.
+const infoTiles = [
+  WidgetElement.prayer,
+  WidgetElement.qibla,
+  WidgetElement.deposit,
+  WidgetElement.season,
+  WidgetElement.tradSeason,
+];
 
 double bgAlpha(WidgetTester tester) {
   final box = tester.widget<DecoratedBox>(find.byKey(const Key('preview-background')));
@@ -29,7 +38,7 @@ void main() {
     await pumpApp(tester);
     final dir = Directionality.of(tester.element(find.byType(Scaffold)));
     expect(dir, TextDirection.rtl);
-    for (final e in gridElements) {
+    for (final e in infoTiles) {
       expect(tile(e), findsOneWidget);
     }
     // الصف الأول من اليمين: الصلاة ثم القبلة ثم الإيداع.
@@ -42,47 +51,6 @@ void main() {
     final trad = tester.getRect(tile(WidgetElement.tradSeason));
     expect(trad.width / qibla.width, inInclusiveRange(2.0, 2.15));
     expect(trad.top, greaterThan(prayer.bottom));
-  });
-
-  testWidgets('المعاينة تعيد الترتيب عند الإخفاء', (tester) async {
-    await pumpApp(tester);
-    final prayerRect = tester.getRect(tile(WidgetElement.prayer));
-    await tester.tap(find.byKey(const Key('switch-prayer')));
-    await tester.pumpAndSettle();
-    expect(tile(WidgetElement.prayer), findsNothing);
-    // أربعة مربعات: ٢×٢، والقبلة تأخذ مكان الصلاة من اليمين.
-    final q = tester.getRect(tile(WidgetElement.qibla));
-    final d = tester.getRect(tile(WidgetElement.deposit));
-    final s = tester.getRect(tile(WidgetElement.season));
-    final t = tester.getRect(tile(WidgetElement.tradSeason));
-    expect(q.right, closeTo(prayerRect.right, 0.5));
-    expect(q.top, closeTo(prayerRect.top, 0.5));
-    expect(d.top, q.top);
-    expect(q.width, closeTo(d.width, 0.5));
-    expect(s.width, closeTo(t.width, 0.5));
-    expect(s.top, greaterThan(q.bottom));
-    expect(q.width, greaterThan(prayerRect.width));
-
-    // مربع واحد يأخذ الشبكة كلها.
-    for (final e in ['qibla', 'deposit', 'season']) {
-      await tester.tap(find.byKey(Key('switch-$e')));
-      await tester.pumpAndSettle();
-    }
-    final only = tester.getRect(tile(WidgetElement.tradSeason));
-    expect(only.width, greaterThan(q.width * 2));
-  });
-
-  test('توزيع الصفوف حسب عدد المربعات', () {
-    List<List<int>> shape(int n) => [
-          for (final r in gridRows(gridElements.sublist(0, n)))
-            [for (final c in r) c.flex]
-        ];
-    expect(shape(0), isEmpty);
-    expect(shape(1), [[1]]);
-    expect(shape(2), [[1, 1]]);
-    expect(shape(3), [[1, 1], [1]]);
-    expect(shape(4), [[1, 1], [1, 1]]);
-    expect(shape(5), [[1, 1, 1], [1, 2]]);
   });
 
   testWidgets('لا يمكن إلغاء آخر إيداع', (tester) async {
@@ -101,7 +69,7 @@ void main() {
     final saves = bridge.saved.length;
     await tester.tap(find.byKey(const Key('deposit-housing_support')));
     await tester.pump();
-    expect(find.text('يلزم إيداع واحد على الأقل. لإخفاء المربع أطفئ «الإيداع».'),
+    expect(find.text('يلزم إيداع واحد على الأقل. لإخفاء المربع استخدم «تخصيص الودجت».'),
         findsOneWidget);
     final sw = tester.widget<SwitchListTile>(
         find.byKey(const Key('deposit-housing_support')));
@@ -138,11 +106,12 @@ void main() {
     expect(bridge.saved, hasLength(1));
     expect(bridge.updates, 1);
     expect(bridge.last['days'], hasLength(30));
-    await tester.tap(find.byKey(const Key('switch-weather')));
+    final retirement = find.byKey(const Key('deposit-retirement'));
+    await tester.ensureVisible(retirement);
+    await tester.tap(retirement);
     await tester.pumpAndSettle();
     expect(bridge.saved, hasLength(2));
     expect(bridge.updates, 2);
-    expect((bridge.last['visible'] as Map)['weather'], isFalse);
 
     await tester.tap(find.byKey(const Key('method-dropdown')));
     await tester.pumpAndSettle();
@@ -321,7 +290,7 @@ void main() {
                 w.key is ValueKey<String> &&
                 (w.key! as ValueKey<String>).value.startsWith('tile-sub-'))
             : find.byKey(Key(key)));
-    for (final e in gridElements) {
+    for (final e in infoTiles) {
       final title = tester.widget<Text>(inTile(e, 'tile-title'));
       final value = tester.widget<Text>(inTile(e, 'tile-value'));
       // العنوان والقيمة سطر واحد بلا كسر، يصغر خطهما (حتى ٧٠٪) إن لم يتسعا.

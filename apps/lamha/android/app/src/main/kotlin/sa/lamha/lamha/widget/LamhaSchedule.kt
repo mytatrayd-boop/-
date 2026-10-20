@@ -38,6 +38,8 @@ data class LamhaDay(
     val weatherMaxAgeMinutes: Int,
     /// معامل حجم الخط (الميزة ٣د)؛ ١ لجدول أقدم بلاه.
     val fontScale: Float = 1f,
+    /// تخطيط المربعات بترتيبه (الميزة ٥)؛ جدول أقدم بلاه: الافتراضي من visible.
+    val layout: List<LamhaLogic.Tile> = LamhaLogic.defaultLayout(visible),
 )
 
 /// [remaining] «باقي ٨ أيام» للمربع، و[after] «بعد ٨ أيام» للإشعار.
@@ -129,6 +131,22 @@ object LamhaSchedule {
         return out
     }
 
+    /// `layout` من الجدول (TileLayout.toScheduleJson في Dart)، أو null لجدول أقدم.
+    fun layoutOf(root: JSONObject): List<LamhaLogic.Tile>? {
+        val a = root.optJSONArray("layout") ?: return null
+        return (0 until a.length()).map {
+            val t = a.getJSONObject(it)
+            LamhaLogic.Tile(
+                id = t.getString("id"),
+                visible = t.optBoolean("visible", true),
+                span = t.optInt("span", 1).coerceIn(1, LamhaLogic.GRID_COLUMNS),
+                fontScale = t.optDouble("fontScale", 1.0).toFloat(),
+                primaryColor = if (t.isNull("primaryColor")) null else t.getLong("primaryColor").toInt(),
+                secondaryColor = if (t.isNull("secondaryColor")) null else t.getLong("secondaryColor").toInt(),
+            )
+        }
+    }
+
     private fun parse(root: JSONObject, nowMillis: Long): LamhaDay {
         val city = root.getJSONObject("city")
         val tz = timeZoneOf(root)
@@ -196,6 +214,7 @@ object LamhaSchedule {
             weatherIcons = icons,
             weatherMaxAgeMinutes = weather?.optInt("maxAgeMinutes", 180) ?: 180,
             fontScale = root.optDouble("fontScale", 1.0).toFloat(),
+            layout = layoutOf(root) ?: LamhaLogic.defaultLayout(visible),
         )
     }
 }

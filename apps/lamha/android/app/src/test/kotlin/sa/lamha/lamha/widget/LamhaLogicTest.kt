@@ -61,21 +61,104 @@ class LamhaLogicTest {
         assertNull(LamhaLogic.nextPrayer(day("2026-10-19"), null, t("2026-10-19T21:00:00.000+0300")))
     }
 
+    // الميزة ٥: الحالات نفسها في test/engine/widget_layout_test.dart.
+    private fun cells(spec: String) = spec.split(" ").map {
+        LamhaLogic.Cell(it.dropLast(1), it.takeLast(1).toInt())
+    }
+
+    private fun shape(cells: List<LamhaLogic.Cell>) =
+        LamhaLogic.packRows(cells).map { r -> r.map { "${it.id}${it.span}" } }
+
     @Test
-    fun gridRowsMatchesPreview() {
-        val all = LamhaLogic.gridElements
-        fun shape(n: Int) = LamhaLogic.gridRows(all.take(n)).map { r -> r.map { it.flex } }
-        assertEquals(emptyList<List<Int>>(), shape(0))
-        assertEquals(listOf(listOf(1)), shape(1))
-        assertEquals(listOf(listOf(1, 1)), shape(2))
-        assertEquals(listOf(listOf(1, 1), listOf(1)), shape(3))
-        assertEquals(listOf(listOf(1, 1), listOf(1, 1)), shape(4))
-        assertEquals(listOf(listOf(1, 1, 1), listOf(1, 2)), shape(5))
-        // الترتيب يُحفظ بعد الإخفاء: بلا قبلة.
-        val rows = LamhaLogic.gridRows(listOf("prayer", "deposit", "season"))
-        assertEquals(listOf("prayer", "deposit"), rows[0].map { it.element })
-        assertEquals(listOf("season"), rows[1].map { it.element })
-        assertEquals("tradSeason", LamhaLogic.gridRows(all)[1][1].element)
+    fun packRowsDefaultMatchesOldShape() {
+        val all = LamhaLogic.defaultLayout(setOf("dates", "weather", "prayer", "qibla", "deposit", "season", "tradSeason"))
+        assertTrue(all.all { it.visible })
+        assertEquals(
+            listOf(
+                listOf("clock1", "dates2"), listOf("weather3"),
+                listOf("prayer1", "qibla1", "deposit1"), listOf("season1", "tradSeason2"),
+            ),
+            shape(all.map { LamhaLogic.Cell(it.id, it.span) }),
+        )
+    }
+
+    @Test
+    fun packRowsStretchWrapAndLimit() {
+        assertEquals(listOf(listOf("a1", "b1", "c1"), listOf("d3")), shape(cells("a1 b1 c1 d1")))
+        assertEquals(listOf(listOf("a1", "b2")), shape(cells("a1 b1")))
+        assertEquals(listOf(listOf("a3"), listOf("b2", "c1")), shape(cells("a2 b2 c1")))
+        assertEquals(
+            listOf(listOf("a3"), listOf("b3"), listOf("c3"), listOf("d3"), listOf("e3")),
+            shape(cells("a3 b3 c3 d3 e3 f1")),
+        )
+        assertEquals(
+            listOf(listOf("a3"), listOf("b3"), listOf("c3"), listOf("d3"), listOf("e2", "f1")),
+            shape(cells("a3 b3 c3 d3 e2 f1 g1")),
+        )
+        assertEquals(emptyList<List<String>>(), shape(emptyList()))
+        assertEquals(listOf(listOf("a3")), shape(cells("a5")))
+        assertEquals(listOf(listOf("a1", "b2")), shape(cells("a0 b1")))
+        assertEquals(
+            listOf(listOf("prayer3"), listOf("clock1", "dates2"), listOf("weather1", "qibla1", "deposit1")),
+            shape(cells("prayer3 clock1 dates2 weather1 qibla1 deposit1")),
+        )
+    }
+
+    @Test
+    fun rowHeightsByContent() {
+        val (s1, h1) = LamhaLogic.rowHeights(listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 300f, 8f)
+        assertEquals(1f, s1, 1e-5f)
+        val k = 284f / 220f
+        assertEquals(80f * k, h1[0], 1e-3f)
+        assertEquals(20f * k, h1[1], 1e-3f)
+        assertEquals(120f * k, h1[2], 1e-3f)
+
+        val (s2, h2) = LamhaLogic.rowHeights(listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 200f, 8f)
+        assertEquals(0.82f, s2, 1e-5f)
+        assertEquals(65.6f, h2[0], 1e-3f)
+        assertEquals(102f, h2[2], 1e-3f)
+        assertEquals(184f, h2.sum(), 1e-3f)
+
+        assertEquals(0.6f, LamhaLogic.rowHeights(listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 50f, 8f).first, 1e-5f)
+        val (s3, h3) = LamhaLogic.rowHeights(listOf(80f, 20f), listOf(4f, 4f), 0f, 8f)
+        assertEquals(1f, s3, 1e-5f)
+        assertEquals(listOf(84f, 24f), h3)
+        assertEquals(emptyList<Float>(), LamhaLogic.rowHeights(emptyList(), emptyList(), 300f, 8f).second)
+
+        // لا يتسع بأدنى معامل: النقص من صفوف squeezable وحدها.
+        val (s5, h5) = LamhaLogic.rowHeights(
+            listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 120f, 0f, squeezable = listOf(true, false, true),
+        )
+        assertEquals(0.6f, s5, 1e-5f)
+        assertEquals(40.5f, h5[0], 1e-3f)
+        assertEquals(12f, h5[1], 1e-3f)
+        assertEquals(67.5f, h5[2], 1e-3f)
+
+        val (s4, h4) = LamhaLogic.rowHeights(listOf(80f, 20f, 100f), listOf(0f, 0f, 20f), 300f, 0f, equal = true)
+        assertEquals(listOf(100f, 100f, 100f), h4)
+        assertEquals(0.8f, s4, 1e-5f)
+    }
+
+    @Test
+    fun defaultLayoutFromOldVisible() {
+        val l = LamhaLogic.defaultLayout(setOf("gregorian", "prayer", "tradSeason"))
+        assertEquals(
+            mapOf(
+                "clock" to true, "dates" to true, "weather" to false, "prayer" to true,
+                "qibla" to false, "deposit" to false, "season" to false, "tradSeason" to true,
+            ),
+            l.associate { it.id to it.visible },
+        )
+        assertEquals(listOf(1, 2, 3, 1, 1, 1, 1, 2), l.map { it.span })
+        assertEquals(listOf("clock"), LamhaLogic.defaultLayout(emptySet()).filter { it.visible }.map { it.id })
+    }
+
+    @Test
+    fun slotInnerWidth() {
+        // ٣٣٨dp: (٣١٨ × ١ ÷ ٣) - ٨ = ٩٨، وبعرض ٣ = ٣١٠.
+        assertEquals(98f, LamhaLogic.slotInnerDp(338, 1), 0.01f)
+        assertEquals(310f, LamhaLogic.slotInnerDp(338, 3), 0.01f)
+        assertEquals(0f, LamhaLogic.slotInnerDp(0, 1), 0.01f)
     }
 
     @Test
@@ -202,9 +285,6 @@ class LamhaLogicTest {
         assertEquals("الإيداع القادم", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 70f, 80f))
         assertEquals("الإيداع", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 90f, 80f))
         assertEquals("الإيداع", LamhaLogic.fittingTitle("الإيداع القادم", "الإيداع", 10f, 0f))
-        // ٣٢٠dp بثلاثة مربعات بلا رموز: (٣٠٠ ÷ ٣) - ٢٦ = ٧٤.
-        assertEquals(74f, LamhaLogic.tileTextWidthDp(320, 1, 3), 0.01f)
-        assertEquals(0f, LamhaLogic.tileTextWidthDp(0, 1, 3), 0.01f)
     }
 
     // الميزة ٣د: الأرقام نفسها في test/app/feature_3d_test.dart (دوال Dart المطابقة).
@@ -217,28 +297,7 @@ class LamhaLogicTest {
     }
 
     @Test
-    fun headWidths() {
-        assertEquals(310f, LamhaLogic.headContentDp(338), 0.001f)
-        assertEquals(310f - 8f - 150f - 20f - 4f, LamhaLogic.clockAvailableDp(310f, 150f, 20f), 0.001f)
-        assertEquals(310f * 0.4f - 20f - 4f, LamhaLogic.clockAvailableDp(310f, 280f, 20f), 0.001f)
-        assertEquals(310f - 8f - 120f, LamhaLogic.leftColumnDp(310f, 120f, 80f), 0.001f)
-        assertEquals(310f - 8f - 80f, LamhaLogic.leftColumnDp(310f, 60f, 80f), 0.001f)
-    }
-
-    @Test
-    fun tileFitScaleShrinksTallestTileToFit() {
-        val lines = listOf(13f, 20f, 14f, 14f)
-        assertEquals(1.0f, LamhaLogic.tileFitScale(1.0f, 97.5f, lines, 1.25f, 3f), 0.0001f)
-        assertEquals((90.5f - 9f) / 76.25f, LamhaLogic.tileFitScale(1.3f, 90.5f, lines, 1.25f, 3f), 0.0001f)
-        assertEquals(0.6f, LamhaLogic.tileFitScale(1.3f, 10f, lines, 1.25f, 3f), 0.0001f)
-        assertEquals(1.3f, LamhaLogic.tileFitScale(1.3f, 0f, lines, 1.25f, 3f), 0.0001f)
-    }
-
-    @Test
-    fun tileInnerHeightAndFittingLines() {
-        // ٤٠٠dp، صف علوي ٨٠، صفان: (٤٠٠ - ٢٨ - ٨٠ - ١٧ - ٨) ÷ ٢ - ١٦ = ١١٧٫٥.
-        assertEquals(117.5f, LamhaLogic.tileInnerHeightDp(400, 80f, 2), 0.001f)
-        assertEquals(0f, LamhaLogic.tileInnerHeightDp(0, 80f, 2), 0.001f)
+    fun fittingLines() {
         assertEquals(1, LamhaLogic.fittingLines(0f, 17.5f, 2))
         assertEquals(2, LamhaLogic.fittingLines(17.5f, 17.5f, 2))
         assertEquals(2, LamhaLogic.fittingLines(100f, 17.5f, 2))

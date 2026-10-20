@@ -14,8 +14,8 @@
     "text": "٣٢٤° شمال غرب"
   },
   "visible": {
-    "hijri": true,
-    "gregorian": true,
+    "clock": true,
+    "dates": true,
     "weather": true,
     "prayer": true,
     "qibla": true,
@@ -23,6 +23,72 @@
     "season": true,
     "tradSeason": true
   },
+  "layout": [
+    {
+      "id": "clock",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "dates",
+      "visible": true,
+      "span": 2,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "weather",
+      "visible": true,
+      "span": 3,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "prayer",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "qibla",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "deposit",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "season",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "tradSeason",
+      "visible": true,
+      "span": 2,
+      "fontScale": 1.0,
+      "primaryColor": null,
+      "secondaryColor": null
+    }
+  ],
   "opacity": 80,
   "background": null,
   "theme": {

@@ -26,7 +26,6 @@ String fixture(WidgetTheme theme) {
       longitude: lon,
       cityName: 'أبها',
       deposits: {'salary', 'housing_support'},
-      visible: WidgetElement.values.toSet(),
       opacity: 80,
       theme: theme,
     ),

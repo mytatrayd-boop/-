@@ -7,6 +7,7 @@ import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
 import '../engine/widget_theme.dart';
+import 'customize_screen.dart';
 import 'places.dart';
 import 'providers.dart';
 import 'qibla_screen.dart';
@@ -127,6 +128,17 @@ class _Body extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 12),
+        // الميزة ٥: ترتيب المربعات وأحجامها وألوانها.
+        FilledButton.tonalIcon(
+          key: const Key('customize-button'),
+          icon: const Icon(Icons.dashboard_customize),
+          label: Text(l.customizeTitle),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            settings: const RouteSettings(name: CustomizeScreen.routeName),
+            builder: (_) => const CustomizeScreen(),
+          )),
+        ),
+        const SizedBox(height: 12),
         if (defaultTargetPlatform == TargetPlatform.iOS)
           OutlinedButton.icon(
             key: const Key('background-button'),
@@ -207,30 +219,20 @@ class _Body extends ConsumerWidget {
           onChanged: (id) => c.setPrayerMethod(id!),
         ),
         const SizedBox(height: 16),
-        Text(l.visibleSection, style: textTheme.titleMedium),
-        for (final e in WidgetElement.values) ...[
+        Text(l.depositsSection, style: textTheme.titleMedium),
+        for (final r in state.data.deposits.rules)
           SwitchListTile(
-            key: Key('switch-${e.name}'),
+            key: Key('deposit-${r.id}'),
             contentPadding: EdgeInsets.zero,
-            title: Text(l.elementName(e.name)),
-            value: s.visible.contains(e),
-            onChanged: (v) => c.setVisible(e, v),
+            dense: true,
+            title: Text(r.name),
+            value: s.deposits.contains(r.id),
+            onChanged: (v) async {
+              if (!await c.setDeposit(r.id, v)) {
+                toast(l.lastDepositMessage);
+              }
+            },
           ),
-          if (e == WidgetElement.deposit)
-            for (final r in state.data.deposits.rules)
-              SwitchListTile(
-                key: Key('deposit-${r.id}'),
-                contentPadding: const EdgeInsetsDirectional.only(start: 24),
-                dense: true,
-                title: Text(r.name),
-                value: s.deposits.contains(r.id),
-                onChanged: (v) async {
-                  if (!await c.setDeposit(r.id, v)) {
-                    toast(l.lastDepositMessage);
-                  }
-                },
-              ),
-        ],
         // شاشة القفل في أندرويد: إشعار ثابت اختياري (آيفون في ميزة لاحقة).
         if (defaultTargetPlatform == TargetPlatform.android) ...[
           const SizedBox(height: 8),

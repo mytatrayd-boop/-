@@ -280,11 +280,25 @@ class SettingsController extends AsyncNotifier<AppState> {
   Future<void> setPrayerMethod(String id) =>
       _update(_s.copyWith(prayerMethod: id));
 
-  Future<void> setVisible(WidgetElement e, bool on) {
-    final v = {..._s.visible};
-    on ? v.add(e) : v.remove(e);
-    return _update(_s.copyWith(visible: v));
+  /// تخطيط الودجت (الميزة ٥): إعدادات مربع واحد.
+  Future<void> updateTile(
+          WidgetElement id, TileLayout Function(TileLayout t) change) =>
+      _update(_s.copyWith(layout: [
+        for (final t in _s.layout) t.id == id ? change(t) : t,
+      ]));
+
+  Future<void> setVisible(WidgetElement e, bool on) =>
+      updateTile(e, (t) => t.copyWith(visible: on));
+
+  /// نقل مربع من [from] إلى [to] (موضعه بعد حذفه من [from]، كـ onReorderItem).
+  Future<void> moveTile(int from, int to) {
+    final l = [..._s.layout];
+    final t = l.removeAt(from);
+    l.insert(to.clamp(0, l.length), t);
+    return _update(_s.copyWith(layout: l));
   }
+
+  Future<void> resetLayout() => _update(_s.copyWith(layout: defaultLayout));
 
   /// يعيد false إذا كان هذا آخر إيداع مفعّل (لا يُلغى).
   Future<bool> setDeposit(String id, bool on) async {

@@ -46,7 +46,6 @@ void main() {
         longitude: 46.7219,
         cityName: 'الرياض',
         deposits: {'salary', 'citizen_account'},
-        visible: WidgetElement.values.toSet(),
         opacity: 80,
         fontScale: scale,
       ),

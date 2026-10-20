@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- محتوى المربع (_Tile في widget_preview.dart، الميزة ٣د، بلا رموز): العنوان ١٣ عريض، ثم القيمة
+<!-- محتوى مربعات المعلومات الخمسة (_Tile في widget_preview.dart، الميزة ٣د، بلا رموز): العنوان ١٣ عريض، ثم القيمة
      ٢٠ عريض، ثم الثانوي ١٤، كلها × معامل الخط من LamhaWidgetReceiver. العنوان والقيمة سطر واحد
      يصغر خطه ليتسع (fitTextSize) ثم «…»، والثانوي بحد أسطر و«…» (الأخير يأخذ ما يتسع). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"

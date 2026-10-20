@@ -7,16 +7,98 @@ import java.util.TimeZone
 
 /// منطق الودجت النقي (بلا Android) ليُختبر بـ JUnit.
 /// لا يحسب أوقاتاً ولا تواريخ: يختار اليوم والصلاة القادمة من الجدول الجاهز الذي يكتبه Dart
-/// (lib/src/engine/schedule.dart)، ويوزّع المربعات كما في gridRows (lib/src/app/widget_preview.dart).
+/// (lib/src/engine/schedule.dart)، ويوزّع المربعات كما في packRows وrowHeights (lib/src/engine/widget_layout.dart).
 object LamhaLogic {
 
-    /// مربعات الشبكة بترتيبها من اليمين (DESIGN: الشبكة ٣×٢)، بأسماء مفاتيح visible في الجدول.
-    val gridElements = listOf("prayer", "qibla", "deposit", "season", "tradSeason")
+    /// عرض الشبكة بالوحدات وأقصى عدد صفوف (الميزة ٥، gridColumns وmaxGridRows في Dart).
+    const val GRID_COLUMNS = 3
+    const val MAX_GRID_ROWS = 5
+
+    /// مربع من `layout` في الجدول: [fontScale] معامل المربع (× العام)، واللونان ARGB أو null (تلقائي).
+    data class Tile(
+        val id: String,
+        val visible: Boolean = true,
+        val span: Int = 1,
+        val fontScale: Float = 1f,
+        val primaryColor: Int? = null,
+        val secondaryColor: Int? = null,
+    )
+
+    /// الترتيب الافتراضي (defaultLayout في Dart).
+    private val DEFAULT_SPANS = listOf(
+        "clock" to 1, "dates" to 2, "weather" to 3, "prayer" to 1,
+        "qibla" to 1, "deposit" to 1, "season" to 1, "tradSeason" to 2,
+    )
+
+    /// تخطيط جدول أقدم بلا `layout`: الترتيب الافتراضي والإظهار من مفاتيح visible القديمة
+    /// (layoutFromVisible في Dart). الساعة ثابتة، والتاريخان إن ظهر أحدهما.
+    fun defaultLayout(visible: Set<String>): List<Tile> = DEFAULT_SPANS.map { (id, span) ->
+        val on = when (id) {
+            "clock" -> true
+            "dates" -> "dates" in visible || "hijri" in visible || "gregorian" in visible
+            else -> id in visible
+        }
+        Tile(id, on, span)
+    }
+
+    data class Cell(val id: String, val span: Int)
+
+    /// توزيع المربعات الظاهرة على صفوف بعرض [columns] (packRows في Dart): كل مربع في صف السابق
+    /// إن اتسع وإلا في صف جديد، وآخر مربع في كل صف ناقص يتمدد ليملأه. ما بعد [maxRows] لا يظهر.
+    fun packRows(shown: List<Cell>, columns: Int = GRID_COLUMNS, maxRows: Int = MAX_GRID_ROWS): List<List<Cell>> {
+        val rows = ArrayList<MutableList<Cell>>()
+        var used = columns
+        for (c in shown) {
+            val span = c.span.coerceIn(1, columns)
+            if (used + span > columns) {
+                if (rows.size == maxRows) break
+                rows.add(ArrayList())
+                used = 0
+            }
+            rows.last().add(Cell(c.id, span))
+            used += span
+        }
+        for (r in rows) {
+            val total = r.sumOf { it.span }
+            if (total < columns) r[r.size - 1] = r.last().copy(span = r.last().span + columns - total)
+        }
+        return rows
+    }
+
+    /// ارتفاعات الصفوف بوزن المحتوى (rowHeights في Dart): [text] نص أطول مربع في كل صف، و[pads]
+    /// ما لا يصغر، و[gap] بين الصفوف. معامل واحد للنص (حتى [minScale]) إن لم يتسع في [available]،
+    /// والباقي بنسبة كل صف. [equal]: صفوف متساوية والمعامل من أضيقها. بلا ارتفاع: الطبيعي.
+    /// [squeezable]: الصفوف التي تتحمل نقصاً إن لم يتسع حتى بأدنى معامل (مربعات تُخفي ثانوياتها)؛ null = كلها.
+    fun rowHeights(
+        text: List<Float>, pads: List<Float>, available: Float, gap: Float,
+        equal: Boolean = false, minScale: Float = 0.6f, squeezable: List<Boolean>? = null,
+    ): Pair<Float, List<Float>> {
+        val n = text.size
+        if (n == 0) return 1f to emptyList()
+        val space = available - gap * (n - 1)
+        if (available <= 0f) return 1f to List(n) { text[it] + pads[it] }
+        if (equal) {
+            val h = space / n
+            var s = 1f
+            for (i in 0 until n) if (text[i] > 0f) s = minOf(s, (h - pads[i]) / text[i])
+            return s.coerceIn(minScale, 1f) to List(n) { h }
+        }
+        val sumText = text.sum()
+        val s = if (sumText <= 0f) 1f else ((space - pads.sum()) / sumText).coerceIn(minScale, 1f)
+        val natural = List(n) { text[it] * s + pads[it] }
+        val sum = natural.sum()
+        // لا يتسع حتى بأدنى معامل: النقص من صفوف [squeezable] وحدها إن أمكن.
+        val can = List(n) { squeezable == null || squeezable[it] }
+        val soft = (0 until n).filter { can[it] }.sumOf { natural[it].toDouble() }.toFloat()
+        val deficit = sum - space
+        if (deficit > 0f && soft > deficit) {
+            return s to List(n) { if (can[it]) natural[it] * (soft - deficit) / soft else natural[it] }
+        }
+        return s to natural.map { it * space / sum }
+    }
 
     /// [text] وقت الصلاة جاهزاً للعرض من الجدول (مثل «٤:٣٥ ص»).
     data class Prayer(val key: String, val name: String, val atMillis: Long, val text: String = "")
-
-    data class Cell(val element: String, val flex: Int)
 
     /// يحوّل نص ISO من Dart (مثل 2026-10-19T04:35:00.000+0300 أو ...Z) إلى epoch millis.
     fun parseIsoMillis(s: String): Long {
@@ -89,23 +171,6 @@ object LamhaLogic {
         return next ?: tomorrow?.firstOrNull { it.key == "fajr" }
     }
 
-    /// توزيع المربعات الظاهرة على صفوف (DESIGN: إعادة الترتيب عند الإخفاء)، مطابق لـ gridRows في Dart.
-    fun gridRows(shown: List<String>): List<List<Cell>> {
-        val n = shown.size
-        if (n == 0) return emptyList()
-        if (n <= 2) return listOf(shown.map { Cell(it, 1) })
-        if (n == 5) {
-            return listOf(
-                shown.subList(0, 3).map { Cell(it, 1) },
-                listOf(Cell(shown[3], 1), Cell(shown[4], 2)),
-            )
-        }
-        return listOf(
-            shown.subList(0, 2).map { Cell(it, 1) },
-            shown.subList(2, n).map { Cell(it, 1) },
-        )
-    }
-
     /// اسم مسبوق بلام الجر: «الشتاء» ← «للشتاء»، «سهيل» ← «لسهيل» (كـ withLam في Dart).
     fun withLam(name: String): String =
         if (name.startsWith("ال")) "لل" + name.substring(2) else "ل$name"
@@ -131,41 +196,11 @@ object LamhaLogic {
         return maxOf(minSp, preferredSp * maxWidth / widthAtPreferred)
     }
 
-    /// عرض محتوى الصف العلوي (dp): حشوة الودجت ١٠+١٠ وحشوة الصف ٤+٤ (widget_lamha.xml).
-    fun headContentDp(minWidthDp: Int): Float = minWidthDp - 28f
-
-    /// العرض المتاح لأرقام الساعة: ما يبقى بعد العمود الأيسر [leftDp] وفاصل ٨، ولا يقل عن ٤٠٪
-    /// من [contentDp]، ناقصاً «ص/م» [amPmDp] وفاصلها ٤ (clockAvailableWidth في Dart).
-    fun clockAvailableDp(contentDp: Float, leftDp: Float, amPmDp: Float): Float =
-        maxOf(contentDp - 8f - leftDp, contentDp * 0.4f) - amPmDp - 4f
-
-    /// عرض العمود الأيسر: ما يبقى بعد عمود الساعة (الأعرض من سطر الساعة واليوم) وفاصل ٨.
-    fun leftColumnDp(contentDp: Float, clockRowDp: Float, weekdayDp: Float): Float =
-        contentDp - 8f - maxOf(clockRowDp, weekdayDp)
-
-    /// عرض نصوص مربع (dp) داخل ودجت بعرض [minWidthDp]: حشوة الودجت ١٠+١٠ (widget_lamha.xml)،
-    /// ثم نصيب المربع [flex] من [rowFlex]، ناقصاً حشوة widget_tile ٤+٤ والمحتوى ٩+٩.
-    /// 0 أو أقل إذا لم يبلّغ المشغّل العرض.
-    fun tileTextWidthDp(minWidthDp: Int, flex: Int, rowFlex: Int): Float {
-        if (minWidthDp <= 0 || rowFlex <= 0) return 0f
-        return (minWidthDp - 20f) * flex / rowFlex - 8f - 18f
-    }
-
-    /// ارتفاع محتوى المربع (dp) في ودجت بارتفاع [heightDp]: حشوة ١٤+١٤، والصف العلوي [headDp]،
-    /// والفاصل ١+٨+٨، و٨ بين الصفوف، وحشوة المربع ٨+٨. 0 إذا لم يُعرف الارتفاع.
-    fun tileInnerHeightDp(heightDp: Int, headDp: Float, rows: Int): Float {
-        if (heightDp <= 0 || rows <= 0) return 0f
-        return (heightDp - 28f - headDp - 17f - 8f * (rows - 1)) / rows - 16f
-    }
-
-    /// معامل خط المربعات: [fontScale]، أو أصغر منه إن لم تتسع أسطر المربع الأطول [lineSizes]
-    /// (كل سطر [lineHeight] × حجمه، وبينها [gap]) في [innerHeight]. لا ينزل عن ٠٫٦.
-    /// بلا ارتفاع معروف: [fontScale] (tileFitScale في Dart).
-    fun tileFitScale(fontScale: Float, innerHeight: Float, lineSizes: List<Float>, lineHeight: Float, gap: Float): Float {
-        if (innerHeight <= 0f || lineSizes.isEmpty()) return fontScale
-        val gaps = gap * (lineSizes.size - 1)
-        val base = lineSizes.sum() * lineHeight
-        return minOf(fontScale, maxOf(0.6f, (innerHeight - gaps) / base))
+    /// عرض داخل خانة مربع (dp) بعرض [span] في ودجت بعرض [widthDp]: حشوة الشبكة ١٠+١٠
+    /// (widget_lamha.xml)، ثم نصيب المربع من ٣، ناقصاً حشوة الخانة ٤+٤. 0 إذا لم يبلّغ المشغّل العرض.
+    fun slotInnerDp(widthDp: Int, span: Int): Float {
+        if (widthDp <= 0) return 0f
+        return (widthDp - 20f) * span / GRID_COLUMNS - 8f
     }
 
     /// أسطر الثانوي الأخير بحد [maxLines]: ما يتسع في [remaining] بعد بقية المحتوى، ولا يقل عن ١.

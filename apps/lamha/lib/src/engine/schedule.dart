@@ -116,7 +116,11 @@ Map<String, Object?> buildSchedule(
       'direction': directionName(qibla),
       'text': '${arabicDigits(qibla.round())}° ${directionName(qibla)}',
     },
-    'visible': {for (final e in WidgetElement.values) e.name: s.visible.contains(e)},
+    // ما يظهر (يقرؤه عامل الطقس في أندرويد)، ثم التخطيط بترتيبه (الميزة ٥).
+    'visible': {
+      for (final e in WidgetElement.values) e.name: s.visible.contains(e),
+    },
+    'layout': [for (final t in s.layout) t.toScheduleJson()],
     'opacity': s.opacity,
     // اسم ملف اللقطة نسبياً داخل حاوية group.sa.lamha.shared؛ null بلا صورة أو في أندرويد.
     'background': s.background,

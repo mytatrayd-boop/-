@@ -15,7 +15,7 @@ class LamhaSettings {
     required this.timeZone,
     this.prayerMethod = defaultPrayerMethod,
     required this.deposits,
-    required this.visible,
+    this.layout = defaultLayout,
     this.opacity = 100,
     this.backgroundFile,
     this.theme = WidgetTheme.fallback,
@@ -31,7 +31,6 @@ class LamhaSettings {
         longitude: city.longitude,
         timeZone: city.timeZone,
         deposits: depositIds,
-        visible: WidgetElement.values.toSet(),
       );
 
   factory LamhaSettings.fromJson(Map<String, dynamic> j) => LamhaSettings(
@@ -42,10 +41,15 @@ class LamhaSettings {
         timeZone: j['timeZone'] as String,
         prayerMethod: j['prayerMethod'] as String,
         deposits: (j['deposits'] as List).cast<String>().toSet(),
-        visible: {
-          for (final n in (j['visible'] as List).cast<String>())
-            ...WidgetElement.values.where((e) => e.name == n),
-        },
+        // الميزة ٥: التخطيط، وإعدادات أقدم بلاه تُرحَّل من مفاتيح visible.
+        layout: j['layout'] is List
+            ? normalizeLayout([
+                for (final t in (j['layout'] as List).cast<Map<String, dynamic>>())
+                  if (WidgetElement.values.any((e) => e.name == t['id']))
+                    TileLayout.fromJson(t),
+              ])
+            : layoutFromVisible(
+                (j['visible'] as List? ?? const []).cast<String>()),
         opacity: j['opacity'] as int,
         backgroundFile: j['backgroundFile'] as String?,
         // مفتاحان جديدان (الميزة ٣ج)؛ الإعدادات القديمة بلاهما.
@@ -64,7 +68,8 @@ class LamhaSettings {
   final String timeZone;
   final String prayerMethod;
   final Set<String> deposits;
-  final Set<WidgetElement> visible;
+  /// تخطيط الودجت (الميزة ٥).
+  final List<TileLayout> layout;
   final int opacity;
 
   /// اسم ملف لقطة الخلفية داخل حاوية App Group (آيفون)، لا مسار كامل.
@@ -86,7 +91,7 @@ class LamhaSettings {
         timeZone: timeZone,
         prayerMethod: prayerMethod,
         deposits: deposits,
-        visible: visible,
+        layout: layout,
         opacity: opacity,
         background: withBackground ? backgroundFile : null,
         theme: theme,
@@ -102,7 +107,7 @@ class LamhaSettings {
     String? timeZone,
     String? prayerMethod,
     Set<String>? deposits,
-    Set<WidgetElement>? visible,
+    List<TileLayout>? layout,
     int? opacity,
     String? backgroundFile,
     WidgetTheme? theme,
@@ -117,7 +122,7 @@ class LamhaSettings {
         timeZone: timeZone ?? this.timeZone,
         prayerMethod: prayerMethod ?? this.prayerMethod,
         deposits: deposits ?? this.deposits,
-        visible: visible ?? this.visible,
+        layout: layout ?? this.layout,
         opacity: opacity ?? this.opacity,
         backgroundFile: backgroundFile ?? this.backgroundFile,
         theme: theme ?? this.theme,
@@ -133,7 +138,7 @@ class LamhaSettings {
         'timeZone': timeZone,
         'prayerMethod': prayerMethod,
         'deposits': deposits.toList(),
-        'visible': [for (final e in visible) e.name],
+        'layout': [for (final t in layout) t.toJson()],
         'opacity': opacity,
         'backgroundFile': backgroundFile,
         'theme': theme.name,

@@ -72,14 +72,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get visibleSection => 'ما يظهر على الودجت';
-
-  @override
   String elementName(String element) {
     String _temp0 = intl.Intl.selectLogic(element, {
-      'hijri': 'التاريخ الهجري',
-      'gregorian': 'التاريخ الميلادي',
-      'weather': 'الطقس',
+      'clock': 'الساعة واليوم',
+      'dates': 'التاريخ الهجري والميلادي',
+      'weather': 'المدينة والطقس',
       'prayer': 'الصلاة',
       'qibla': 'القبلة',
       'deposit': 'الإيداع',
@@ -92,7 +89,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get lastDepositMessage =>
-      'يلزم إيداع واحد على الأقل. لإخفاء المربع أطفئ «الإيداع».';
+      'يلزم إيداع واحد على الأقل. لإخفاء المربع استخدم «تخصيص الودجت».';
 
   @override
   String get tilePrayer => 'الصلاة القادمة';
@@ -249,5 +246,66 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String countdownText(String time) {
     return 'باقي $time';
+  }
+
+  @override
+  String get depositsSection => 'الإيداعات الظاهرة';
+
+  @override
+  String get customizeTitle => 'تخصيص الودجت';
+
+  @override
+  String get resetLayout => 'استعادة الترتيب الافتراضي';
+
+  @override
+  String get tileVisible => 'إظهار';
+
+  @override
+  String get tileSpanLabel => 'العرض';
+
+  @override
+  String get tileFontLabel => 'حجم الخط';
+
+  @override
+  String get primaryColorLabel => 'لون الخط الرئيسي';
+
+  @override
+  String get secondaryColorLabel => 'لون الخط الفرعي';
+
+  @override
+  String get tileOverflow => 'لا يتسع في الودجت (أكثر من ٥ صفوف)';
+
+  @override
+  String get dragHandle => 'اسحب لإعادة الترتيب';
+
+  @override
+  String get tileHint =>
+      'اضغط على مربع في المعاينة لتعديله، واسحب البطاقات لإعادة ترتيبها.';
+
+  @override
+  String tileSpanName(String span) {
+    String _temp0 = intl.Intl.selectLogic(span, {
+      'small': 'صغير',
+      'medium': 'متوسط',
+      'wide': 'عريض',
+      'other': '$span',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tileColorName(String color) {
+    String _temp0 = intl.Intl.selectLogic(color, {
+      'auto': 'تلقائي',
+      'white': 'أبيض',
+      'gold': 'ذهبي',
+      'green': 'أخضر',
+      'blue': 'أزرق',
+      'purple': 'بنفسجي',
+      'pink': 'وردي',
+      'lightGray': 'رمادي فاتح',
+      'other': '$color',
+    });
+    return '$_temp0';
   }
 }

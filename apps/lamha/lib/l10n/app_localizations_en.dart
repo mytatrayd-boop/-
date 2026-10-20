@@ -72,14 +72,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get visibleSection => 'Shown on the widget';
-
-  @override
   String elementName(String element) {
     String _temp0 = intl.Intl.selectLogic(element, {
-      'hijri': 'Hijri date',
-      'gregorian': 'Gregorian date',
-      'weather': 'Weather',
+      'clock': 'Clock and day',
+      'dates': 'Hijri and Gregorian dates',
+      'weather': 'City and weather',
       'prayer': 'Prayer',
       'qibla': 'Qibla',
       'deposit': 'Deposit',
@@ -92,7 +89,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lastDepositMessage =>
-      'At least one deposit is required. To hide the tile, turn off \"Deposit\".';
+      'At least one deposit is required. To hide the tile, use \"Customize widget\".';
 
   @override
   String get tilePrayer => 'Next prayer';
@@ -249,5 +246,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String countdownText(String time) {
     return '$time left';
+  }
+
+  @override
+  String get depositsSection => 'Shown deposits';
+
+  @override
+  String get customizeTitle => 'Customize widget';
+
+  @override
+  String get resetLayout => 'Restore default layout';
+
+  @override
+  String get tileVisible => 'Show';
+
+  @override
+  String get tileSpanLabel => 'Width';
+
+  @override
+  String get tileFontLabel => 'Text size';
+
+  @override
+  String get primaryColorLabel => 'Main text color';
+
+  @override
+  String get secondaryColorLabel => 'Secondary text color';
+
+  @override
+  String get tileOverflow => 'Does not fit on the widget (more than 5 rows)';
+
+  @override
+  String get dragHandle => 'Drag to reorder';
+
+  @override
+  String get tileHint =>
+      'Tap a tile in the preview to edit it, and drag the cards to reorder them.';
+
+  @override
+  String tileSpanName(String span) {
+    String _temp0 = intl.Intl.selectLogic(span, {
+      'small': 'Small',
+      'medium': 'Medium',
+      'wide': 'Wide',
+      'other': '$span',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tileColorName(String color) {
+    String _temp0 = intl.Intl.selectLogic(color, {
+      'auto': 'Automatic',
+      'white': 'White',
+      'gold': 'Gold',
+      'green': 'Green',
+      'blue': 'Blue',
+      'purple': 'Purple',
+      'pink': 'Pink',
+      'lightGray': 'Light gray',
+      'other': '$color',
+    });
+    return '$_temp0';
   }
 }

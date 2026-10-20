@@ -1,34 +1,8 @@
 import 'prayer.dart';
+import 'widget_layout.dart';
 import 'widget_theme.dart';
 
-/// عناصر الودجت التي يمكن إخفاؤها (SPEC §4ب). الساعة واليوم ثابتة.
-enum WidgetElement {
-  hijri,
-  gregorian,
-  weather,
-  prayer,
-  qibla,
-  deposit,
-  season,
-  tradSeason,
-}
-
-/// حجم خط الودجت والمعاينة (الميزة ٣د): معامل يُضرب به كل حجم نص.
-enum FontScale {
-  small(0.9),
-  medium(1.0),
-  large(1.15),
-  xlarge(1.3);
-
-  const FontScale(this.factor);
-
-  final double factor;
-
-  static const fallback = FontScale.medium;
-
-  static FontScale byName(String? name) =>
-      FontScale.values.firstWhere((f) => f.name == name, orElse: () => fallback);
-}
+export 'widget_layout.dart';
 
 /// إعدادات المستخدم التي يُبنى منها الجدول.
 class Settings {
@@ -39,14 +13,14 @@ class Settings {
     this.timeZone = defaultTimeZone,
     this.prayerMethod = defaultPrayerMethod,
     required Set<String> deposits,
-    Set<WidgetElement>? visible,
+    List<TileLayout>? layout,
     this.opacity = 100,
     this.background,
     this.theme = WidgetTheme.fallback,
     this.lockNotification = false,
     this.fontScale = FontScale.fallback,
   })  : deposits = Set.unmodifiable(deposits),
-        visible = Set.unmodifiable(visible ?? WidgetElement.values.toSet()) {
+        layout = normalizeLayout(layout ?? defaultLayout) {
     if (deposits.isEmpty) {
       throw ArgumentError.value(
           deposits, 'deposits', 'لا يمكن إلغاء الإيداعات كلها');
@@ -75,7 +49,14 @@ class Settings {
   /// معرّفات الإيداعات المختارة (واحد على الأقل).
   final Set<String> deposits;
 
-  final Set<WidgetElement> visible;
+  /// تخطيط الودجت (الميزة ٥): كل العناصر بترتيبها وإعداداتها.
+  final List<TileLayout> layout;
+
+  /// العناصر الظاهرة.
+  Set<WidgetElement> get visible => {
+    for (final t in layout)
+      if (t.visible) t.id,
+  };
 
   /// شفافية خلفية الودجت 0–100.
   final int opacity;

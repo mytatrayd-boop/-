@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- مربع المدينة والطقس (الميزة ٥، بلا صندوق): «📍 أبها · ☀️ ٢٦°» ١٦، يصغر (حتى ٧٥٪) ثم «…». -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile_box"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:gravity="right|center_vertical"
+        android:textDirection="rtl"
+        android:id="@+id/weather"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:shadowColor="#66000000"
+        android:shadowRadius="3"
+        android:textColor="#FFCFC6B8"
+        android:textSize="16sp" />
+</FrameLayout>

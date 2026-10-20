@@ -182,22 +182,16 @@ abstract class AppLocalizations {
   /// **'{method, select, ummAlQura{أم القرى} muslimWorldLeague{رابطة العالم الإسلامي} egyptian{الهيئة المصرية العامة للمساحة} karachi{جامعة العلوم الإسلامية بكراتشي} dubai{دبي} kuwait{الكويت} qatar{قطر} gulfRegion{منطقة الخليج} northAmerica{أمريكا الشمالية} turkiye{تركيا} other{{method}}}'**
   String prayerMethodName(String method);
 
-  /// عنوان قسم المفاتيح (SPEC ٤ب)
-  ///
-  /// In ar, this message translates to:
-  /// **'ما يظهر على الودجت'**
-  String get visibleSection;
-
   /// اسم عنصر الودجت بمعرّفه
   ///
   /// In ar, this message translates to:
-  /// **'{element, select, hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} weather{الطقس} prayer{الصلاة} qibla{القبلة} deposit{الإيداع} season{الفصل} tradSeason{الموسم} other{{element}}}'**
+  /// **'{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة} qibla{القبلة} deposit{الإيداع} season{الفصل} tradSeason{الموسم} other{{element}}}'**
   String elementName(String element);
 
   /// عند محاولة إلغاء آخر إيداع
   ///
   /// In ar, this message translates to:
-  /// **'يلزم إيداع واحد على الأقل. لإخفاء المربع أطفئ «الإيداع».'**
+  /// **'يلزم إيداع واحد على الأقل. لإخفاء المربع استخدم «تخصيص الودجت».'**
   String get lastDepositMessage;
 
   /// عنوان مربع الصلاة
@@ -421,6 +415,84 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'باقي {time}'**
   String countdownText(String time);
+
+  /// عنوان مفاتيح الإيداعات في الإعدادات
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيداعات الظاهرة'**
+  String get depositsSection;
+
+  /// زر الإعدادات وعنوان شاشة التخصيص (الميزة ٥)
+  ///
+  /// In ar, this message translates to:
+  /// **'تخصيص الودجت'**
+  String get customizeTitle;
+
+  /// زر إعادة التخطيط الافتراضي
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة الترتيب الافتراضي'**
+  String get resetLayout;
+
+  /// مفتاح إظهار المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار'**
+  String get tileVisible;
+
+  /// عنوان اختيار عرض المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'العرض'**
+  String get tileSpanLabel;
+
+  /// عنوان حجم خط المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط'**
+  String get tileFontLabel;
+
+  /// لون القيمة
+  ///
+  /// In ar, this message translates to:
+  /// **'لون الخط الرئيسي'**
+  String get primaryColorLabel;
+
+  /// لون العنوان والثانويات
+  ///
+  /// In ar, this message translates to:
+  /// **'لون الخط الفرعي'**
+  String get secondaryColorLabel;
+
+  /// مربع ظاهر بعد الصف الخامس
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يتسع في الودجت (أكثر من ٥ صفوف)'**
+  String get tileOverflow;
+
+  /// تلميح مقبض السحب
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لإعادة الترتيب'**
+  String get dragHandle;
+
+  /// إرشاد أعلى القائمة
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط على مربع في المعاينة لتعديله، واسحب البطاقات لإعادة ترتيبها.'**
+  String get tileHint;
+
+  /// عرض المربع ١/٢/٣
+  ///
+  /// In ar, this message translates to:
+  /// **'{span, select, small{صغير} medium{متوسط} wide{عريض} other{{span}}}'**
+  String tileSpanName(String span);
+
+  /// ألوان الخط؛ auto حسب السمة
+  ///
+  /// In ar, this message translates to:
+  /// **'{color, select, auto{تلقائي} white{أبيض} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}'**
+  String tileColorName(String color);
 }
 
 class _AppLocalizationsDelegate

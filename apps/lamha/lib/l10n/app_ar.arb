@@ -66,11 +66,7 @@
       }
     }
   },
-  "visibleSection": "ما يظهر على الودجت",
-  "@visibleSection": {
-    "description": "عنوان قسم المفاتيح (SPEC ٤ب)"
-  },
-  "elementName": "{element, select, hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} weather{الطقس} prayer{الصلاة} qibla{القبلة} deposit{الإيداع} season{الفصل} tradSeason{الموسم} other{{element}}}",
+  "elementName": "{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة} qibla{القبلة} deposit{الإيداع} season{الفصل} tradSeason{الموسم} other{{element}}}",
   "@elementName": {
     "description": "اسم عنصر الودجت بمعرّفه",
     "placeholders": {
@@ -79,7 +75,7 @@
       }
     }
   },
-  "lastDepositMessage": "يلزم إيداع واحد على الأقل. لإخفاء المربع أطفئ «الإيداع».",
+  "lastDepositMessage": "يلزم إيداع واحد على الأقل. لإخفاء المربع استخدم «تخصيص الودجت».",
   "@lastDepositMessage": {
     "description": "عند محاولة إلغاء آخر إيداع"
   },
@@ -273,14 +269,80 @@
   "@fontScaleName": {
     "description": "أسماء أحجام الخط",
     "placeholders": {
-      "scale": {"type": "String"}
+      "scale": {
+        "type": "String"
+      }
     }
   },
   "countdownText": "باقي {time}",
   "@countdownText": {
     "description": "العد التنازلي للصلاة في المعاينة (كـ countdown_format في أندرويد)",
     "placeholders": {
-      "time": {"type": "String"}
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "depositsSection": "الإيداعات الظاهرة",
+  "@depositsSection": {
+    "description": "عنوان مفاتيح الإيداعات في الإعدادات"
+  },
+  "customizeTitle": "تخصيص الودجت",
+  "@customizeTitle": {
+    "description": "زر الإعدادات وعنوان شاشة التخصيص (الميزة ٥)"
+  },
+  "resetLayout": "استعادة الترتيب الافتراضي",
+  "@resetLayout": {
+    "description": "زر إعادة التخطيط الافتراضي"
+  },
+  "tileVisible": "إظهار",
+  "@tileVisible": {
+    "description": "مفتاح إظهار المربع"
+  },
+  "tileSpanLabel": "العرض",
+  "@tileSpanLabel": {
+    "description": "عنوان اختيار عرض المربع"
+  },
+  "tileFontLabel": "حجم الخط",
+  "@tileFontLabel": {
+    "description": "عنوان حجم خط المربع"
+  },
+  "primaryColorLabel": "لون الخط الرئيسي",
+  "@primaryColorLabel": {
+    "description": "لون القيمة"
+  },
+  "secondaryColorLabel": "لون الخط الفرعي",
+  "@secondaryColorLabel": {
+    "description": "لون العنوان والثانويات"
+  },
+  "tileOverflow": "لا يتسع في الودجت (أكثر من ٥ صفوف)",
+  "@tileOverflow": {
+    "description": "مربع ظاهر بعد الصف الخامس"
+  },
+  "dragHandle": "اسحب لإعادة الترتيب",
+  "@dragHandle": {
+    "description": "تلميح مقبض السحب"
+  },
+  "tileHint": "اضغط على مربع في المعاينة لتعديله، واسحب البطاقات لإعادة ترتيبها.",
+  "@tileHint": {
+    "description": "إرشاد أعلى القائمة"
+  },
+  "tileSpanName": "{span, select, small{صغير} medium{متوسط} wide{عريض} other{{span}}}",
+  "@tileSpanName": {
+    "description": "عرض المربع ١/٢/٣",
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
+  },
+  "tileColorName": "{color, select, auto{تلقائي} white{أبيض} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}",
+  "@tileColorName": {
+    "description": "ألوان الخط؛ auto حسب السمة",
+    "placeholders": {
+      "color": {
+        "type": "String"
+      }
     }
   }
 }

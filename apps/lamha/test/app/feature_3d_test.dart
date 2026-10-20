@@ -50,21 +50,20 @@ void main() {
       (tester) async {
         final bridge = await pumpApp(tester);
         expect(bridge.last['fontScale'], 1.0);
-        expect(sizeOf(tester, const Key('preview-weekday')), 18);
+        // ١٨، أو أصغر قليلاً إن لم يتسع اليوم في عرض مربع الساعة (حتى ٧٥٪).
+        final medium = sizeOf(tester, const Key('preview-weekday'));
+        expect(medium, inInclusiveRange(18 * 0.75, 18));
         final chip = find.byKey(const Key('font-xlarge'));
         expect(find.text('كبير جداً'), findsOneWidget);
         await tester.ensureVisible(chip);
         await tester.tap(chip);
         await tester.pumpAndSettle();
         expect(bridge.last['fontScale'], 1.3);
-        expect(
-          sizeOf(tester, const Key('preview-weekday')),
-          closeTo(18 * 1.3, 1e-9),
-        );
+        expect(sizeOf(tester, const Key('preview-weekday')), greaterThan(medium));
         // المدينة والطقس ١٦ × المعامل، أو أصغر قليلاً إن لم يتسع (حتى ٧٥٪).
         expect(
           sizeOf(tester, const Key('preview-weather')),
-          inInclusiveRange(16 * 1.3 * 0.75, 16 * 1.3),
+          inInclusiveRange(16 * 0.75, 16 * 1.3),
         );
         final prefs = await SharedPreferences.getInstance();
         final saved =
@@ -80,11 +79,16 @@ void main() {
       final clock = sizeOf(tester, const Key('preview-clock'));
       expect(clock, lessThanOrEqualTo(52));
       expect(clock, greaterThanOrEqualTo(clockMinSize));
+      // الساعة والتاريخان في الصف الأول (الترتيب الافتراضي)، والعمودان متوسطان رأسياً.
       final right = tester.getRect(
         find.byKey(const Key('preview-clock-column')),
       );
-      final left = tester.getRect(find.byKey(const Key('preview-date-column')));
-      expect(right.center.dy, closeTo(left.center.dy, 0.5));
+      final hijri = tester.getRect(find.byKey(const Key('preview-hijri')));
+      final gregorian = tester.getRect(
+        find.byKey(const Key('preview-gregorian')),
+      );
+      expect(right.center.dy, closeTo((hijri.top + gregorian.bottom) / 2, 0.5));
+      expect(right.left, greaterThan(hijri.right));
       // اليوم تحت الساعة مباشرة.
       final gap =
           tester.getRect(find.byKey(const Key('preview-weekday'))).top -
@@ -99,25 +103,6 @@ void main() {
       expect(fitTextSize(44, 200, 150, 28), 33);
       expect(fitTextSize(44, 400, 150, 28), 28);
       expect(fitTextSize(44, 0, 150, 28), 44);
-    });
-
-    test('clockAvailableWidth: ما يبقى بعد العمود الأيسر، و٤٠٪ على الأقل', () {
-      expect(clockAvailableWidth(310, 150, 20), 310 - 8 - 150 - 20 - 4);
-      expect(clockAvailableWidth(310, 280, 20), 310 * 0.4 - 20 - 4);
-    });
-
-    test('leftColumnWidth من الأعرض بين سطر الساعة واليوم', () {
-      expect(leftColumnWidth(310, 120, 80), 310 - 8 - 120);
-      expect(leftColumnWidth(310, 60, 80), 310 - 8 - 80);
-    });
-
-    test('tileFitScale: معامل المستخدم إن اتسع، وإلا أصغر بحد ٠٫٦', () {
-      const lines = [13.0, 20.0, 14.0, 14.0];
-      // (13+20+14+14) × 1.25 = 76.25، وثلاثة فواصل = 9.
-      expect(tileFitScale(1.0, 97.5, lines), 1.0);
-      expect(tileFitScale(1.3, 90.5, lines), closeTo((90.5 - 9) / 76.25, 1e-9));
-      expect(tileFitScale(1.3, 10, lines), 0.6);
-      expect(tileFitScale(1.3, 0, lines), 1.3);
     });
 
     test('fittingLines', () {

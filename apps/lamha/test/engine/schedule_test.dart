@@ -14,7 +14,12 @@ void main() {
         longitude: 46.6753,
         cityName: 'الرياض',
         deposits: deposits ?? {'salary', 'citizen_account'},
-        visible: {WidgetElement.hijri, WidgetElement.prayer},
+        layout: [
+          for (final t in defaultLayout)
+            t.copyWith(
+                visible: t.id == WidgetElement.dates ||
+                    t.id == WidgetElement.prayer),
+        ],
         opacity: 40,
       );
 
@@ -34,7 +39,7 @@ void main() {
 
   test('مفاتيح المستوى الأعلى', () {
     expect(schedule.keys, containsAll([
-      'schemaVersion', 'generatedAt', 'city', 'qibla', 'visible', 'opacity',
+      'schemaVersion', 'generatedAt', 'city', 'qibla', 'visible', 'layout', 'opacity',
       'prayerMethod', 'days',
     ]));
     expect(schedule['schemaVersion'], 1);
@@ -45,8 +50,15 @@ void main() {
     expect(qibla['degrees'] as double, closeTo(244, 1));
     expect(qibla['direction'], 'جنوب غرب');
     expect(schedule['visible'], {
-      'hijri': true, 'gregorian': false, 'weather': false, 'prayer': true,
+      'clock': false, 'dates': true, 'weather': false, 'prayer': true,
       'qibla': false, 'deposit': false, 'season': false, 'tradSeason': false,
+    });
+    // التخطيط بترتيبه وقيمه الجاهزة (الميزة ٥).
+    final layout = (schedule['layout']! as List).cast<Map>();
+    expect(layout.map((t) => t['id']), [for (final e in WidgetElement.values) e.name]);
+    expect(layout[1], {
+      'id': 'dates', 'visible': true, 'span': 2, 'fontScale': 1.0,
+      'primaryColor': null, 'secondaryColor': null,
     });
   });
 

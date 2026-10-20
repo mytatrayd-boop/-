@@ -168,9 +168,12 @@ void main() {
           (p.textAlign == TextAlign.start && p.textDirection == TextDirection.rtl);
       expect(right, isTrue, reason: p.text.toPlainText());
     }
-    // العمود الأيسر (التواريخ والطقس): أسطره متحاذية من اليمين.
-    final hijri = tester.getRect(find.textContaining('هـ').first);
+    // التاريخان والمدينة والطقس: أسطرها على يمين مربعاتها.
+    final hijri = tester.getRect(find.byKey(const Key('preview-hijri')));
     final weather = tester.getRect(find.byKey(const Key('preview-weather')));
-    expect(weather.right, closeTo(hijri.right, 0.5));
+    expect(hijri.right,
+        closeTo(tester.getRect(find.byKey(const Key('tile-dates'))).right, 0.5));
+    expect(weather.right,
+        closeTo(tester.getRect(find.byKey(const Key('tile-weather'))).right, 0.5));
   });
 }
