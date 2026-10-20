@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة نواتج التعلم للقراءة</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (xlsx) for reading Excel files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Google Font: Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-emerald-700 to-teal-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wide">منصة نواتج التعلم للقراءة</h1>
+                    <p class="text-xs text-emerald-200">القياس والتحليل والتدريب المستمر</p>
+                </div>
+            </div>
+            
+            <div id="userInfoHeader" class="hidden flex items-center gap-4 bg-emerald-900/40 px-4 py-2 rounded-xl border border-emerald-600/30">
+                <span id="headerTeacherName" class="text-sm font-semibold"></span>
+                <button onclick="logout()" class="text-xs bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">خروج</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+        
+        <!-- Custom Message Modal (Alert Alternative) -->
+        <div id="customModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center border border-slate-100">
+                <div id="modalIcon" class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-600 text-2xl font-bold">✓</div>
+                <h3 id="modalTitle" class="text-xl font-bold text-slate-800 mb-2">تنبيه</h3>
+                <p id="modalMessage" class="text-slate-600 mb-6 leading-relaxed"></p>
+                <button onclick="closeModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/20">حسناً</button>
+            </div>
+        </div>
+
+        <!-- Role Selection Screen (Initial if no login saved) -->
+        <div id="roleSelectionScreen" class="max-w-2xl mx-auto my-12 bg-white rounded-3xl shadow-xl border border-slate-100 p-8 text-center">
+            <h2 class="text-3xl font-black text-slate-800 mb-4">أهلاً بك في منصة نواتج التعلم</h2>
+            <p class="text-slate-500 mb-8">اختر صفحتك للبدء في العملية التعليمية وتتبع مستويات الطلاب</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button onclick="showTeacherLogin()" class="group p-8 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition flex flex-col items-center">
+                    <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition">👨‍🏫</div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة المعلم</h3>
+                    <p class="text-xs text-slate-500 text-center">تسجيل، إدارة الطلاب، التقارير ورفع ملفات الأكسل</p>
+                </button>
+
+                <button onclick="showStudentLogin()" class="group p-8 rounded-2xl border-2 border-teal-100 hover:border-teal-500 bg-teal-50/50 hover:bg-teal-50 transition flex flex-col items-center">
+                    <div class="w-16 h-16 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-teal-600/30 group-hover:scale-110 transition">🎓</div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة الطالب</h3>
+                    <p class="text-xs text-slate-500 text-center">الدخول برقم السجل المدني للتدريب والاختبار</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Teacher Login Screen -->
+        <div id="teacherLoginScreen" class="hidden max-w-md mx-auto my-8 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <button onclick="backToRoleSelection()" class="text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 text-sm font-semibold">
+                ← رجوع
+            </button>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">تسجيل دخول المعلم</h2>
+            <p class="text-xs text-slate-500 mb-6">سيتم حفظ بياناتك واسترجاعها تلقائياً عند زيارتك القادمة</p>
+            
+            <form id="teacherForm" onsubmit="handleTeacherLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المعلم الثلاثي</label>
+                    <input type="text" id="tName" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="مثال: أحمد محمد القحطاني">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">السجل المدني للمعلم</label>
+                    <input type="text" id="tId" required pattern="[0-9]{10}" maxlength="10" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="10 أرقام">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المدرسة</label>
+                    <input type="text" id="tSchool" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="اسم المدرسة">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الصف والفصل</label>
+                    <select id="tClass" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                        <option value="">اختر الصف والفصل</option>
+                        <option value="الثالث الابتدائي - أ">الثالث الابتدائي (أ)</option>
+                        <option value="الثالث الابتدائي - ب">الثالث الابتدائي (ب)</option>
+                        <option value="الثالث الابتدائي - ج">الثالث الابتدائي (ج)</option>
+                        <option value="السادس الابتدائي - أ">السادس الابتدائي (أ)</option>
+                        <option value="السادس الابتدائي - ب">السادس الابتدائي (ب)</option>
+                        <option value="السادس الابتدائي - ج">السادس الابتدائي (ج)</option>
+                        <option value="الثالث المتوسط - أ">الثالث المتوسط (أ)</option>
+                        <option value="الثالث المتوسط - ب">الثالث المتوسط (ب)</option>
+                        <option value="الثالث المتوسط - ج">الثالث المتوسط (ج)</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">الدخول للوحة التحكم</button>
+            </form>
+        </div>
+
+        <!-- Teacher Dashboard Screen -->
+        <div id="teacherDashboardScreen" class="hidden space-y-6">
+            <!-- Top Summary Card -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">لوحة المعلم المعتمدة</span>
+                    <h2 id="dashWelcome" class="text-xl font-bold text-slate-800 mt-2"></h2>
+                    <p id="dashMeta" class="text-xs text-slate-500 mt-0.5"></p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportReport()" class="bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-4 py-2.5 rounded-xl text-xs transition border border-teal-200 flex items-center gap-2">
+                        📊 تصدير تقرير الأداء
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="flex border-b border-slate-200 gap-6">
+                <button onclick="switchTeacherTab('students')" id="tabBtnStudents" class="pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition">إدارة الطلاب واستيراد الأكسل</button>
+                <button onclick="switchTeacherTab('reports')" id="tabBtnReports" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition">متابعة المستويات والتقارير</button>
+            </div>
+
+            <!-- Tab 1: Students Management & Excel Upload -->
+            <div id="teacherTabStudents" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Add Student Form & Excel Uploader -->
+                <div class="space-y-6">
+                    <!-- Manual Add -->
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-4 text-sm">➕ إضافة طالب جديد فردياً</h3>
+                        <form onsubmit="addSingleStudent(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">اسم الطالب ثلاثي</label>
+                                <input type="text" id="newStudentName" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم الطالب الكامل">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">رقم السجل المدني للطالب</label>
+                                <input type="text" id="newStudentId" required pattern="[0-9]{10}" maxlength="10" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="10 أرقام">
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs transition">حفظ الطالب</button>
+                        </form>
+                    </div>
+
+                    <!-- Excel Upload -->
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-800 mb-2 text-sm">📁 استيراد الطلاب من ملف Excel</h3>
+                        <p class="text-xs text-slate-500 mb-4">يجب أن يحتوي الملف على عمودين: (اسم الطالب) و (رقم السجل المدني).</p>
+                        
+                        <label class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50 transition">
+                            <span class="text-2xl mb-2">📄</span>
+                            <span class="text-xs font-bold text-slate-700">اضغط لرفع ملف أكسل (XLSX / XLS)</span>
+                            <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleExcelUpload(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Students Table List -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 text-sm">قائمة طلاب الصف المسجلين (<span id="studentCount">0</span>)</h3>
+                        <button onclick="clearAllStudents()" class="text-xs text-red-500 hover:text-red-700 font-semibold">حذف الكل</button>
+                    </div>
+                    
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-50 text-slate-500 uppercase">
+                                <tr>
+                                    <th class="p-3 rounded-r-xl">م</th>
+                                    <th class="p-3">اسم الطالب الكامل</th>
+                                    <th class="p-3">رقم السجل المدني</th>
+                                    <th class="p-3">مستوى القراءة</th>
+                                    <th class="p-3 rounded-l-xl text-center">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsTableBody" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Reports & Analytics -->
+            <div id="teacherTabReports" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">إجمالي عدد الطلاب</h4>
+                        <p id="repTotalStudents" class="text-3xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">متوسط إتقان المهارات</h4>
+                        <p id="repAvgMastery" class="text-3xl font-black text-emerald-600">0%</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <h4 class="text-xs text-slate-500 font-bold mb-1">الطلاب المنجزون للاختبارات</h4>
+                        <p id="repCompletedCount" class="text-3xl font-black text-teal-600">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm">تقرير قياس نواتج التعلم التفصيلي للطلاب</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-50 text-slate-500 uppercase">
+                                <tr>
+                                    <th class="p-3 rounded-r-xl">اسم الطالب</th>
+                                    <th class="p-3">السجل المدني</th>
+                                    <th class="p-3">المهارة القرائية</th>
+                                    <th class="p-3">نسبة الإتقان</th>
+                                    <th class="p-3 rounded-l-xl">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Login Screen -->
+        <div id="studentLoginScreen" class="hidden max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <button onclick="backToRoleSelection()" class="text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 text-sm font-semibold">
+                ← رجوع
+            </button>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">دخول الطالب</h2>
+            <p class="text-xs text-slate-500 mb-6">أدخل رقم السجل المدني الخاص بك للوصول للتدريبات</p>
+            
+            <form onsubmit="handleStudentLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رقم السجل المدني للطالب</label>
+                    <input type="text" id="sIdInput" required pattern="[0-9]{10}" maxlength="10" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="أدخل 10 أرقام لسجلك المدني">
+                </div>
+                <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-teal-600/20">دخول المنصة</button>
+            </form>
+        </div>
+
+        <!-- Student Dashboard / Reading Practice Screen -->
+        <div id="studentDashboardScreen" class="hidden space-y-6 max-w-4xl mx-auto">
+            <!-- Student Profile Header -->
+            <div class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs bg-white/20 px-3 py-1 rounded-full font-bold">بوابة الطالب الذكية</span>
+                    <h2 id="studentFullNameDisplay" class="text-2xl font-black mt-2"></h2>
+                    <p id="studentClassDisplay" class="text-xs text-teal-100 mt-1"></p>
+                </div>
+                <button onclick="studentLogout()" class="bg-white/10 hover:bg-white/20 text-white text-xs px-4 py-2 rounded-xl border border-white/20 transition">خروج</button>
+            </div>
+
+            <!-- Reading Exercise Interactive Area -->
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <h3 class="font-bold text-slate-800 text-base">📖 نشاط القياس القرائي والطلاقة</h3>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold">مستوى الصف المستهدف</span>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 leading-loose text-lg text-slate-700 text-justify" id="readingPassageText">
+                    "في الصباح الباكر، ذهب أحمد مع أسرته إلى الحديقة العامة. شاهد أحمد الأزهار الملونة تتفتح وسط المسطحات الخضراء الجميلة. قرأ أحمد لافتة إرشادية تحث على الحفاظ على نظافة المكان، فاستنتج أهمية الوعي البيئي والتعاون في خدمة المجتمع."
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center bg-teal-50/50 p-4 rounded-2xl border border-teal-100">
+                    <div class="text-xs text-teal-900 font-semibold">
+                        ⏱️ قم بقراءة النص بصوت واضح، ثم أجب عن أسئلة قياس نواتج التعلم أدناه.
+                    </div>
+                    <button onclick="startQuizSection()" class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition shadow-md">
+                        ابدأ اختبار الفهم القرائي ➔
+                    </button>
+                </div>
+
+                <!-- Quiz Questions Section -->
+                <div id="quizContainer" class="hidden space-y-6 pt-4 border-t">
+                    <h4 class="font-bold text-slate-800 text-sm">أجب عن الأسئلة التالية لقياس الفهم والاستيعاب:</h4>
+                    
+                    <div class="space-y-4" id="quizQuestionsList">
+                        <!-- Q1 -->
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                            <p class="text-xs font-bold text-slate-800">1. إلى أين ذهب أحمد مع أسرته في الصباح الباكر؟</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500">
+                                    <input type="radio" name="q1" value="wrong"> المدرسة
+                                </label>
+                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500">
+                                    <input type="radio" name="q1" value="correct"> الحديقة العامة
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Q2 -->
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                            <p class="text-xs font-bold text-slate-800">2. ماذا قرأ أحمد على اللافتة الإرشادية؟</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500">
+                                    <input type="radio" name="q2" value="correct"> الحفاظ على نظافة المكان
+                                </label>
+                                <label class="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500">
+                                    <input type="radio" name="q2" value="wrong"> قوانين المرور
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="submitStudentQuiz()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">
+                        إرسال الإجابات وحفظ النتيجة
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-slate-900 text-slate-300 py-6 mt-12 border-t border-slate-800 text-center text-sm">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center gap-2">
+            <p class="font-bold tracking-wide">مشرف دعم التميز المدرسي</p>
+            <p class="font-semibold">جابر عبدالله ال الغبشه</p>
+            <p class="text-slate-400">قطاع تعليم محايل عسير</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data States & LocalStorage Management
+        let currentTeacher = JSON.parse(localStorage.getItem('reading_current_teacher')) || null;
+        let studentsDB = JSON.parse(localStorage.getItem('reading_students_db')) || {}; 
+        // Format of studentsDB: { "TeacherId_Class": [ {name, id, score, status}, ... ] }
+
+        window.onload = function() {
+            checkInitialState();
+        };
+
+        function checkInitialState() {
+            if (currentTeacher) {
+                document.getElementById('roleSelectionScreen').classList.add('hidden');
+                document.getElementById('teacherLoginScreen').classList.add('hidden');
+                document.getElementById('studentLoginScreen').classList.add('hidden');
+                document.getElementById('studentDashboardScreen').classList.add('hidden');
+                
+                document.getElementById('teacherDashboardScreen').classList.remove('hidden');
+                document.getElementById('userInfoHeader').classList.remove('hidden');
+                document.getElementById('headerTeacherName').innerText = currentTeacher.name;
+                document.getElementById('dashWelcome').innerText = `مرحباً بك أستاذ/ة: ${currentTeacher.name}`;
+                document.getElementById('dashMeta').innerText = `المدرسة: ${currentTeacher.school} | الفصل: ${currentTeacher.className}`;
+                
+                loadTeacherStudents();
+            }
+        }
+
+        function showRoleSelection() {
+            document.getElementById('roleSelectionScreen').classList.remove('hidden');
+            document.getElementById('teacherLoginScreen').classList.add('hidden');
+            document.getElementById('studentLoginScreen').classList.add('hidden');
+            document.getElementById('teacherDashboardScreen').classList.add('hidden');
+            document.getElementById('studentDashboardScreen').classList.add('hidden');
+            document.getElementById('userInfoHeader').classList.add('hidden');
+        }
+
+        function backToRoleSelection() {
+            showRoleSelection();
+        }
+
+        function showTeacherLogin() {
+            document.getElementById('roleSelectionScreen').classList.add('hidden');
+            document.getElementById('teacherLoginScreen').classList.remove('hidden');
+            
+            // Auto fill if stored previously
+            let savedTeacherData = localStorage.getItem('reading_teacher_form_data');
+            if (savedTeacherData) {
+                let data = JSON.parse(savedTeacherData);
+                document.getElementById('tName').value = data.name || '';
+                document.getElementById('tId').value = data.id || '';
+                document.getElementById('tSchool').value = data.school || '';
+                document.getElementById('tClass').value = data.className || '';
+            }
+        }
+
+        function handleTeacherLogin(e) {
+            e.preventDefault();
+            let name = document.getElementById('tName').value.trim();
+            let id = document.getElementById('tId').value.trim();
+            let school = document.getElementById('tSchool').value.trim();
+            let className = document.getElementById('tClass').value;
+
+            if (id.length !== 10) {
+                showAlert("السجل المدني يجب أن يكون مكوناً من 10 أرقام.", "تنبيه خطأ");
+                return;
+            }
+
+            currentTeacher = { name, id, school, className };
+            localStorage.setItem('reading_current_teacher', JSON.stringify(currentTeacher));
+            localStorage.setItem('reading_teacher_form_data', JSON.stringify(currentTeacher));
+
+            checkInitialState();
+            showAlert("تم تسجيل الدخول واسترجاع بياناتك بنجاح!", "نجح الدخول");
+        }
+
+        function logout() {
+            localStorage.removeItem('reading_current_teacher');
+            currentTeacher = null;
+            showRoleSelection();
+            showAlert("تم تسجيل الخروج بنجاح.", "إشعار");
+        }
+
+        function showStudentLogin() {
+            document.getElementById('roleSelectionScreen').classList.add('hidden');
+            document.getElementById('studentLoginScreen').classList.remove('hidden');
+        }
+
+        // Teacher Tabs switching
+        function switchTeacherTab(tab) {
+            if (tab === 'students') {
+                document.getElementById('teacherTabStudents').classList.remove('hidden');
+                document.getElementById('teacherTabReports').classList.add('hidden');
+                document.getElementById('tabBtnStudents').className = "pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition";
+                document.getElementById('tabBtnReports').className = "pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition";
+                loadTeacherStudents();
+            } else {
+                document.getElementById('teacherTabStudents').classList.add('hidden');
+                document.getElementById('teacherTabReports').classList.remove('hidden');
+                document.getElementById('tabBtnReports').className = "pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition";
+                document.getElementById('tabBtnStudents').className = "pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition";
+                loadReportsData();
+            }
+        }
+
+        // Student Management Key
+        function getTeacherKey() {
+            if (!currentTeacher) return '';
+            return `${currentTeacher.id}_${currentTeacher.className}`;
+        }
+
+        function loadTeacherStudents() {
+            let key = getTeacherKey();
+            let list = studentsDB[key] || [];
+            
+            document.getElementById('studentCount').innerText = list.length;
+            let tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '';
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">لا يوجد طلاب مسجلين بعد. قم بإضافة طلاب أو ارفع ملف أكسل.</td></tr>`;
+                return;
+            }
+
+            list.forEach((st, index) => {
+                let tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold">${index + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800">${st.name}</td>
+                    <td class="p-3 font-mono text-slate-600">${st.id}</td>
+                    <td class="p-3"><span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg font-bold">${st.score !== undefined ? st.score + '%' : 'لم يقس بعد'}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteStudent(${index})" class="text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded">حذف</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addSingleStudent(e) {
+            e.preventDefault();
+            let name = document.getElementById('newStudentName').value.trim();
+            let id = document.getElementById('newStudentId').value.trim();
+
+            if (id.length !== 10) {
+                showAlert("رقم السجل المدني للطالب يجب أن يكون 10 أرقام.", "تنبيه");
+                return;
+            }
+
+            let key = getTeacherKey();
+            if (!studentsDB[key]) studentsDB[key] = [];
+
+            // Check duplicate
+            if (studentsDB[key].some(s => s.id === id)) {
+                showAlert("رقم السجل المدني هذا مسجل مسبقاً لهذا الصف.", "تنبيه");
+                return;
+            }
+
+            studentsDB[key].push({ name, id, score: undefined, status: 'لم يبدأ' });
+            localStorage.setItem('reading_students_db', JSON.stringify(studentsDB));
+
+            document.getElementById('newStudentName').value = '';
+            document.getElementById('newStudentId').value = '';
+            loadTeacherStudents();
+            showAlert("تم إضافة الطالب بنجاح!", "نجاح");
+        }
+
+        function deleteStudent(index) {
+            let key = getTeacherKey();
+            if (studentsDB[key]) {
+                studentsDB[key].splice(index, 1);
+                localStorage.setItem('reading_students_db', JSON.stringify(studentsDB));
+                loadTeacherStudents();
+            }
+        }
+
+        function clearAllStudents() {
+            let key = getTeacherKey();
+            if (studentsDB[key]) {
+                studentsDB[key] = [];
+                localStorage.setItem('reading_students_db', JSON.stringify(studentsDB));
+                loadTeacherStudents();
+                showAlert("تم حذف جميع الطلاب بنجاح.", "إشعار");
+            }
+        }
+
+        // Excel Upload Handler using SheetJS
+        function handleExcelUpload(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let data = new Uint8Array(e.target.result);
+                    let workbook = XLSX.read(data, { type: 'array' });
+                    let firstSheetName = workbook.SheetNames[0];
+                    let worksheet = workbook.Sheets[firstSheetName];
+                    let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    let key = getTeacherKey();
+                    if (!studentsDB[key]) studentsDB[key] = [];
+
+                    let addedCount = 0;
+                    // Loop rows (assuming header is row 0 or data starts from row 1)
+                    for (let i = 0; i < json.length; i++) {
+                        let row = json[i];
+                        if (!row || row.length < 2) continue;
+                        
+                        // Assume column 0 is Name, Column 1 is ID (or vice versa, let's detect strings vs numbers)
+                        let col1 = String(row[0] || '').trim();
+                        let col2 = String(row[1] || '').trim();
+
+                        let name = '', id = '';
+                        if (/^\d{10}$/.test(col2)) {
+                            name = col1;
+                            id = col2;
+                        } else if (/^\d{10}$/.test(col1)) {
+                            id = col1;
+                            name = col2;
+                        } else {
+                            // If neither is strictly 10 digits, skip header row or malformed row
+                            continue;
+                        }
+
+                        if (name && id && !studentsDB[key].some(s => s.id === id)) {
+                            studentsDB[key].push({ name, id, score: undefined, status: 'لم يبدأ' });
+                            addedCount++;
+                        }
+                    }
+
+                    localStorage.setItem('reading_students_db', JSON.stringify(studentsDB));
+                    loadTeacherStudents();
+                    showAlert(`تم استيراد ${addedCount} طالباً بنجاح من ملف الأكسل!`, "نجاح الاستيراد");
+                } catch (err) {
+                    showAlert("حدث خطأ أثناء قراءة ملف الأكسل. تأكد من صحة التنسيق.", "خطأ");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Reports Data Loader
+        let currentActiveStudent = null;
+
+        function loadReportsData() {
+            let key = getTeacherKey();
+            let list = studentsDB[key] || [];
+
+            document.getElementById('repTotalStudents').innerText = list.length;
+            
+            let completed = list.filter(s => s.score !== undefined);
+            document.getElementById('repCompletedCount').innerText = completed.length;
+
+            let totalScore = completed.reduce((sum, s) => sum + s.score, 0);
+            let avg = completed.length > 0 ? Math.round(totalScore / completed.length) : 0;
+            document.getElementById('repAvgMastery').innerText = avg + '%';
+
+            let tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = '';
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">لا توجد بيانات تقارير متاحة حالياً.</td></tr>`;
+                return;
+            }
+
+            list.forEach(st => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${st.name}</td>
+                    <td class="p-3 font-mono">${st.id}</td>
+                    <td class="p-3">طلاقة وقراءة استيعابية</td>
+                    <td class="p-3 font-bold text-emerald-600">${st.score !== undefined ? st.score + '%' : 'غير محختبر'}</td>
+                    <td class="p-3"><span class="px-2.5 py-1 rounded-full text-[11px] ${st.score !== undefined ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">${st.score !== undefined ? 'منجز' : 'بانتظار الاختبار'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportReport() {
+            let key = getTeacherKey();
+            let list = studentsDB[key] || [];
+            if (list.length === 0) {
+                showAlert("لا توجد بيانات طلاب لتصديرها.", "تنبيه");
+                return;
+            }
+
+            let csvContent = "\uFEFFاسم الطالب,السجل المدني,نسبة الإتقان,الحالة\n";
+            list.forEach(st => {
+                csvContent += `"${st.name}","${st.id}","${st.score !== undefined ? st.score + '%' : 'غير مختبر'}","${st.score !== undefined ? 'منجز' : 'بانتظار الاختبار'}"\n`;
+            });
+
+            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `تقرير_نواتج_التعلم_${currentTeacher.className}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showAlert("تم تصدير التقرير الدوري بنجاح!", "نجاح التصدير");
+        }
+
+        // Student Login & Quiz Portal
+        function handleStudentLogin(e) {
+            e.preventDefault();
+            let sId = document.getElementById('sIdInput').value.trim();
+
+            if (sId.length !== 10) {
+                showAlert("رقم السجل المدني يجب أن يكون 10 أرقام.", "تنبيه");
+                return;
+            }
+
+            // Search student across all teacher lists in studentsDB
+            let foundStudent = null;
+            let foundTeacherKey = null;
+
+            for (let tKey in studentsDB) {
+                let stList = studentsDB[tKey];
+                let found = stList.find(s => s.id === sId);
+                if (found) {
+                    foundStudent = found;
+                    foundTeacherKey = tKey;
+                    break;
+                }
+            }
+
+            if (!foundStudent) {
+                showAlert("عذراً، رقم السجل المدني غير مسجل في النظام. تأكد من المعلم.", "تنبيه دخول");
+                return;
+            }
+
+            currentActiveStudent = { ...foundStudent, teacherKey: foundTeacherKey };
+
+            document.getElementById('studentLoginScreen').classList.add('hidden');
+            document.getElementById('studentDashboardScreen').classList.remove('hidden');
+
+            document.getElementById('studentFullNameDisplay').innerText = `أهلاً بك، ${foundStudent.name}`;
+            document.getElementById('studentClassDisplay').innerText = `رقم السجل المدني: ${foundStudent.id}`;
+        }
+
+        function studentLogout() {
+            currentActiveStudent = null;
+            showRoleSelection();
+            showAlert("تم تسجيل خروج الطالب.", "إشعار");
+        }
+
+        function startQuizSection() {
+            document.getElementById('quizContainer').classList.remove('hidden');
+        }
+
+        function submitStudentQuiz() {
+            let q1Val = document.querySelector('input[name="q1"]:checked');
+            let q2Val = document.querySelector('input[name="q2"]:checked');
+
+            if (!q1Val || !q2Val) {
+                showAlert("الرجاء الإجابة عن جميع الأسئلة قبل الإرسال.", "تنبيه");
+                return;
+            }
+
+            let score = 0;
+            if (q1Val.value === 'correct') score += 50;
+            if (q2Val.value === 'correct') score += 50;
+
+            // Update in studentsDB
+            let key = currentActiveStudent.teacherKey;
+            if (studentsDB[key]) {
+                let st = studentsDB[key].find(s => s.id === currentActiveStudent.id);
+                if (st) {
+                    st.score = score;
+                    st.status = 'منجز';
+                    localStorage.setItem('reading_students_db', JSON.stringify(studentsDB));
+                }
+            }
+
+            showAlert(`ممتاز! لقد أكملت التدريب بنجاح. نتيجتك هي: ${score}%`, "نتيجة الاختبار");
+            studentLogout();
+        }
+
+        // Custom Modal Functions (Alert Alternative)
+        function showAlert(message, title = "تنبيه") {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

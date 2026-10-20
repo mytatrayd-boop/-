@@ -1,0 +1,30 @@
+name: Nafs — deploy website
+
+# ينشر منصة نواتج التعلم (apps/nafs) على Firebase Hosting + قواعد Firestore.
+# يعمل يدوياً فقط (Actions ← Nafs — deploy website ← Run workflow).
+# السر المطلوب — انظر apps/nafs/README.md:
+#   NAFS_FIREBASE_SERVICE_ACCOUNT   Firebase → Project settings → Service accounts → Generate new private key (محتوى ملف JSON كاملاً)
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/nafs } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/nafs/package-lock.json }
+
+      - name: Service account
+        env: { SA: "${{ secrets.NAFS_FIREBASE_SERVICE_ACCOUNT }}" }
+        run: |
+          [ -n "$SA" ] || { echo "::error::Missing secret NAFS_FIREBASE_SERVICE_ACCOUNT (see apps/nafs/README.md)"; exit 1; }
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          jq -e .private_key "$RUNNER_TEMP/sa.json" >/dev/null || { echo "::error::NAFS_FIREBASE_SERVICE_ACCOUNT is not a service account JSON key"; exit 1; }
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+          echo "PROJECT_ID=$(jq -r .project_id "$RUNNER_TEMP/sa.json")" >> "$GITHUB_ENV"
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm run deploy
