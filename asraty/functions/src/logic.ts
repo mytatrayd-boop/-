@@ -3,6 +3,8 @@
 // design/prototype.html (pk/dk/wk, tierOf, ranking, reportText, compDone).
 
 export type Period = "daily" | "weekly";
+/** How a task repeats: every day, every week, or once only. */
+export type TaskRepeat = Period | "once";
 export type Scope = "each" | "family";
 export type Role = "owner" | "admin" | "member";
 
@@ -45,7 +47,9 @@ export function yearKey(ms: number): string {
   return "y" + dayKey(ms).slice(0, 4);
 }
 
-export function periodKey(period: Period, ms: number): string {
+export function periodKey(period: TaskRepeat, ms: number): string {
+  // A one-time task has a single period: done once, it stays done.
+  if (period === "once") return "once";
   return period === "daily" ? dayKey(ms) : weekKey(ms);
 }
 

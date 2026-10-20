@@ -570,7 +570,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
     final members = d.members;
     final memberItems = [for (final m in members) (m.id, m.name)];
     if (_who != 'all' && !members.any((m) => m.id == _who)) _who = 'all';
-    final repItems = [(Period.daily, t.dailyF), (Period.weekly, t.weeklyF)];
+    final repItems = [(Period.daily, t.dailyF), (Period.weekly, t.weeklyF), (Period.once, t.onceF)];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.tileTasks),
       Muted(edit ? t.tasksEditSub : t.tasksViewOnly),
@@ -629,7 +629,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
                         ? StateTag(t.waiting, Tone.wait)
                         : StateTag(t.doneCheck, Tone.ok);
                 return RowCard(children: [
-                  Expanded(child: TitleSub(x.title, t.taskMeta(x.repeat == Period.daily ? t.dailyF : t.weeklyF, '${x.points}'))),
+                  Expanded(child: TitleSub(x.title, t.taskMeta(switch (x.repeat) { Period.daily => t.dailyF, Period.weekly => t.weeklyF, Period.once => t.onceF }, '${x.points}'))),
                   st,
                   if (edit)
                     Row(mainAxisSize: MainAxisSize.min, children: [
@@ -828,13 +828,13 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
     final owners = <String?>[null, for (final m in d.members) m.id];
     final groups = [
       for (final who in owners)
-        for (final p in Period.values)
+        for (final p in rewardPeriods)
           for (final s in Scope.values)
             if (d.tiers.any((x) => x.period == p && x.scope == s && x.personId == who))
               (p, s, who, d.tiers.where((x) => x.period == p && x.scope == s && x.personId == who).toList()..sort((a, b) => b.threshold.compareTo(a.threshold))),
     ];
     final due = <({String who, Tier tier, String whoKey, String pk})>[];
-    for (final p in Period.values) {
+    for (final p in rewardPeriods) {
       for (final m in d.members) {
         final tier = tierOf(d.tiers, d.earned(m.id, p), p, Scope.each, personId: m.id);
         if (tier != null) due.add((who: m.name, tier: tier, whoKey: m.id, pk: periodKey(p, now)));

@@ -112,6 +112,14 @@ test("task → completion → approval → points in summaries", async () => {
   const ledger = await db.collection(`families/${fid}/ledger`).get();
   assert.equal(ledger.size, 1);
 
+  // A one-time task: one completion ever, keyed "once".
+  await call("api", { op: "addTask", title: "تنظيف السيارة", personId: kid.personId, points: 20, repeat: "once" }, owner.idToken);
+  const once = (await db.collection(`families/${fid}/tasks`).where("title", "==", "تنظيف السيارة").get()).docs[0];
+  assert.equal(once.data().repeat, "once");
+  await call("api", { op: "completeTask", taskId: once.id }, kid.idToken);
+  assert.ok((await db.doc(`families/${fid}/completions/${once.id}_once`).get()).exists);
+  await rejects(call("api", { op: "completeTask", taskId: once.id }, kid.idToken), "already-done");
+
   // Reports for each period, sent to the family as a notice.
   for (const [period, title] of [["weekly", "🏆 ترتيب إنجاز الأسبوع"], ["yearly", "🏆 ترتيب إنجاز السنة"]]) {
     await call("api", { op: "sendReport", period }, owner.idToken);

@@ -26,7 +26,8 @@ String monthKey(DateTime t) => 'm${dayKey(t).substring(0, 7)}';
 String yearKey(DateTime t) => 'y${dayKey(t).substring(0, 4)}';
 String honorKey(Honor h, DateTime t) => h == Honor.monthly ? monthKey(t) : yearKey(t);
 
-String periodKey(Period p, DateTime t) => p == Period.daily ? dayKey(t) : weekKey(t);
+/// A one-time task's single period is "once": done once, it stays done.
+String periodKey(Period p, DateTime t) => switch (p) { Period.daily => dayKey(t), Period.weekly => weekKey(t), Period.once => 'once' };
 
 bool can(Person? p, Perm perm) {
   if (p == null) return false;

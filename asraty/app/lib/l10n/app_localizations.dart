@@ -1065,6 +1065,12 @@ abstract class L10n {
   /// **'أسبوعية'**
   String get weeklyF;
 
+  /// No description provided for @onceF.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة واحدة'**
+  String get onceF;
+
   /// No description provided for @points.
   ///
   /// In ar, this message translates to:

@@ -2,7 +2,11 @@ enum Role { owner, admin, member }
 
 enum Perm { addMembers, approve, tasks, report, comps, viewReports }
 
-enum Period { daily, weekly }
+/// How often: tasks repeat daily, weekly or [once]; rewards count daily or weekly.
+enum Period { daily, weekly, once }
+
+/// The periods reward levels count points over.
+const rewardPeriods = [Period.daily, Period.weekly];
 
 enum Scope { each, family }
 

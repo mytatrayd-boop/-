@@ -3,7 +3,7 @@ import {
   FieldValue, Timestamp, Person, CallContext,
 } from "./db";
 import {
-  AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope,
+  AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope, TaskRepeat,
   REPORT_TITLE, ReportPeriod, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
@@ -33,6 +33,7 @@ function checkPhoto(v: unknown): string {
   return b64;
 }
 const period = (v: unknown): Period => (v === "weekly" ? "weekly" : "daily");
+const repeatOf = (v: unknown): TaskRepeat => (v === "once" ? "once" : period(v));
 const scope = (v: unknown): Scope => (v === "family" ? "family" : "each");
 const avatar = (v: unknown) => ((AVATAR_KEYS as readonly string[]).includes(String(v)) ? String(v) : null);
 
@@ -188,7 +189,7 @@ const ops: Record<string, Handler> = {
     const title = str(c.data.title, 80);
     if (!title) fail("bad-title", {}, "invalid-argument");
     const points = int(c.data.points, 1, 1000);
-    const repeat = period(c.data.repeat);
+    const repeat = repeatOf(c.data.repeat);
     const all = await getPeople(c.fid);
     const members = all.filter((p) => p.role === "member");
     const who = c.data.personId === "all" ? members : members.filter((m) => m.id === c.data.personId);
@@ -213,7 +214,7 @@ const ops: Record<string, Handler> = {
     await ref.update({
       title: str(c.data.title, 80) || t.title,
       points: int(c.data.points ?? t.points, 1, 1000),
-      repeat: period(c.data.repeat ?? t.repeat),
+      repeat: repeatOf(c.data.repeat ?? t.repeat),
       personId: target.id,
     });
     return {};

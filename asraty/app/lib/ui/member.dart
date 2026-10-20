@@ -128,7 +128,7 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
                   : StateTag('+${c.points} ✓', Tone.ok);
           return RowCard(children: [
             Expanded(
-              child: TitleSub(x.title, t.memberTaskMeta(x.repeat == Period.daily ? t.todayLabel : t.weekLabel, '${x.points}'),
+              child: TitleSub(x.title, t.memberTaskMeta(switch (x.repeat) { Period.daily => t.todayLabel, Period.weekly => t.weekLabel, Period.once => t.onceF }, '${x.points}'),
                   done: c?.status == Status.approved),
             ),
             s,
@@ -156,7 +156,7 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
   Widget _rewards(BuildContext context) {
     final t = context.t, d = widget.c.data, u = widget.c.me;
     final out = <Widget>[];
-    for (final p in Period.values) {
+    for (final p in rewardPeriods) {
       for (final s in Scope.values) {
         // Only general rewards and this member's private ones.
         if (!d.tiers.any((x) => x.period == p && x.scope == s && tierFor(x, u.id))) continue;

@@ -551,6 +551,9 @@ class L10nAr extends L10n {
   String get weeklyF => 'أسبوعية';
 
   @override
+  String get onceF => 'مرة واحدة';
+
+  @override
   String get points => 'النقاط';
 
   @override
