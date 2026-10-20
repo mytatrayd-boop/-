@@ -318,3 +318,9 @@ List<GridCell> stackCells(List<GridCell> shown) {
 
 /// معرّفات العناصر في خانة (اثنان للخانة المكدسة).
 List<String> cellElements(String cellId) => cellId.split('+');
+
+/// العناصر التي تظهر فعلاً في الودجت: التكديس ثم التوزيع كما ترسمها الودجت والمعاينة.
+Set<String> placedElements(List<GridCell> shown) => {
+      for (final r in packRows(stackCells(shown)))
+        for (final cell in r) ...cellElements(cell.id),
+    };

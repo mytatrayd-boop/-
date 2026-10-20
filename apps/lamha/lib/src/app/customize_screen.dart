@@ -48,13 +48,10 @@ class _Body extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final c = ref.read(settingsControllerProvider.notifier);
     final layout = state.settings.layout;
-    final placed = {
-      for (final r in packRows([
-        for (final t in layout)
-          if (t.visible) (id: t.id.name, span: t.span),
-      ]))
-        for (final cell in r) cell.id,
-    };
+    final placed = placedElements([
+      for (final t in layout)
+        if (t.visible) (id: t.id.name, span: t.span),
+    ]);
     return Column(
       children: [
         Padding(

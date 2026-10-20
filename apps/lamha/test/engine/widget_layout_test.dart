@@ -210,4 +210,14 @@ void main() {
       ]);
     });
   });
+
+  test('placedElements: كل المربعات بعرض ٣ والتاريخ مكدس مع الطقس، فالإيداع (السادس) يظهر', () {
+    final shown = [
+      for (final id in ['clock', 'dates', 'weather', 'prayer', 'qibla', 'deposit', 'season', 'tradSeason'])
+        (id: id, span: 3),
+    ];
+    final placed = placedElements(shown);
+    expect(placed, containsAll(['clock', 'dates', 'weather', 'prayer', 'qibla', 'deposit']));
+    expect(placed.contains('season'), isFalse);
+  });
 }
