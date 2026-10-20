@@ -111,6 +111,14 @@ test("task → completion → approval → points in summaries", async () => {
   assert.ok(sums.every((s) => s.points === 5 && s.count === 1));
   const ledger = await db.collection(`families/${fid}/ledger`).get();
   assert.equal(ledger.size, 1);
+
+  // Reports for each period, sent to the family as a notice.
+  for (const [period, title] of [["weekly", "🏆 ترتيب إنجاز الأسبوع"], ["yearly", "🏆 ترتيب إنجاز السنة"]]) {
+    await call("api", { op: "sendReport", period }, owner.idToken);
+    const n = (await db.collection(`families/${fid}/notifications`).where("title", "==", title).get()).docs;
+    assert.equal(n.length, 1, title);
+    assert.match(n[0].data().body, /: 5 نقطة/);
+  }
 });
 
 test("delegated admin only gets granted permissions", async () => {

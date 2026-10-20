@@ -385,7 +385,7 @@ class FirebaseBackend extends Backend {
   Future<void> deleteGoal(String goalId) => _op('deleteGoal', {'goalId': goalId});
 
   @override
-  Future<void> sendReport() => _op('sendReport');
+  Future<void> sendReport({Span span = Span.daily}) => _op('sendReport', {'period': span.name});
 
   @override
   Future<void> markRead() => _op('markRead');

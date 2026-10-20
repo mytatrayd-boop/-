@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { can, competitionPoints, noticeTargets, dayKey, monthKey, yearKey, periodKey, reportText, tierOf, weekKey, cleanPerms, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
+import { can, competitionPoints, noticeTargets, reportKey, dayKey, monthKey, yearKey, periodKey, reportText, tierOf, weekKey, cleanPerms, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
 
 const riyadh = (iso: string) => Date.parse(iso + "+03:00");
 
@@ -29,6 +29,11 @@ test("notices reach delegated admins too, never the sender", () => {
   assert.deepEqual(noticeTargets(fam, "all", "owner").map((p) => p.id), ["mom", "aseel", "lama"]);
   assert.deepEqual(noticeTargets(fam, "mom", "owner").map((p) => p.id), ["mom"]);
   assert.deepEqual(noticeTargets(fam, "all", "mom").map((p) => p.id), ["owner", "aseel", "lama"]);
+});
+
+test("report keys match the summaries addPoints writes", () => {
+  const t = riyadh("2026-10-20T12:00:00");
+  assert.deepEqual(["daily", "weekly", "monthly", "yearly"].map((p) => reportKey(p as never, t)), ["2026-10-20", "w2026-10-18", "m2026-10", "y2026"]);
 });
 
 test("month and year keys use Riyadh time", () => {

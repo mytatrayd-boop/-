@@ -8,6 +8,9 @@ enum Scope { each, family }
 
 enum Status { pending, approved, rejected }
 
+/// Report periods: day and week (rewards) plus month and year (honor board).
+enum Span { daily, weekly, monthly, yearly }
+
 /// Honor board periods (separate from [Period], which drives tasks and rewards).
 enum Honor { monthly, yearly }
 

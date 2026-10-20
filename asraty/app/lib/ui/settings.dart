@@ -73,7 +73,7 @@ class SettingsPage extends ConsumerWidget {
           if (ok) await signOut();
         }),
       const SizedBox(height: 16),
-      Center(child: Muted(t.version(const String.fromEnvironment('APP_VERSION', defaultValue: '1.0.1')))),
+      Center(child: Muted(t.version(const String.fromEnvironment('APP_VERSION', defaultValue: '1.0.2')))),
     ]);
   }
 }

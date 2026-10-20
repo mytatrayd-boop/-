@@ -497,6 +497,18 @@ class L10nAr extends L10n {
   String get sendToAll => 'إرسال لكل الأعضاء';
 
   @override
+  String get reportTitleDaily => 'ترتيب إنجاز اليوم';
+
+  @override
+  String get reportTitleWeekly => 'ترتيب إنجاز الأسبوع';
+
+  @override
+  String get reportTitleMonthly => 'ترتيب إنجاز الشهر';
+
+  @override
+  String get reportTitleYearly => 'ترتيب إنجاز السنة';
+
+  @override
   String get reportSent => 'أُرسل التقرير لكل الأعضاء';
 
   @override

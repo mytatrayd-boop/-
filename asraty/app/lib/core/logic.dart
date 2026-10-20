@@ -74,6 +74,21 @@ extension SnapshotLogic on FamilySnapshot {
   int earnedCount(String personId, Period p) => (p == Period.daily ? daily : weekly)[personId]?.count ?? 0;
   int familyEarned(Period p) => members.fold(0, (a, m) => a + earned(m.id, p));
 
+  Map<String, PeriodSum> sumsFor(Span s) => switch (s) {
+        Span.daily => daily,
+        Span.weekly => weekly,
+        Span.monthly => monthly,
+        Span.yearly => yearly,
+      };
+
+  /// Report ranking for any period, most points first.
+  List<RankRow> rankingFor(Span s) {
+    final m = sumsFor(s);
+    return members.map((x) => RankRow(x, m[x.id]?.points ?? 0, m[x.id]?.count ?? 0)).toList()..sort((a, b) => b.points.compareTo(a.points));
+  }
+
+  int familyEarnedFor(Span s) => sumsFor(s).entries.where((e) => members.any((m) => m.id == e.key)).fold(0, (a, e) => a + e.value.points);
+
   /// Honor board ranking for this month or year.
   List<RankRow> honorRanking(Honor h) {
     final m = h == Honor.monthly ? monthly : yearly;

@@ -4,7 +4,7 @@ import {
 } from "./db";
 import {
   AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope,
-  can, cleanPerms, cleanText, noticeTargets, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
+  REPORT_TITLE, ReportPeriod, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
 
@@ -247,7 +247,8 @@ const ops: Record<string, Handler> = {
       return t.title as string;
     });
     const all = await getPeople(c.fid);
-    await push(c.fid, all.filter((p) => can(p, "approve")), "مهمة بانتظار موافقتك", `${c.me.name}: ${created}`);
+    // Every parent hears of it (a delegated admin without the approve permission too).
+    await push(c.fid, all.filter((p) => p.role !== "member"), "مهمة بانتظار الموافقة", `${c.me.name}: ${created}`);
     return {};
   },
 
@@ -312,7 +313,7 @@ const ops: Record<string, Handler> = {
       return { rank, points, title: comp.title as string };
     });
     const all = await getPeople(c.fid);
-    await push(c.fid, all.filter((p) => can(p, "approve")), "إنجاز في مسابقة", `${c.me.name}: ${r.title} (المركز ${r.rank})`);
+    await push(c.fid, all.filter((p) => p.role !== "member"), "إنجاز في مسابقة", `${c.me.name}: ${r.title} (المركز ${r.rank})`);
     return { rank: r.rank, points: r.points };
   },
 
@@ -441,14 +442,16 @@ const ops: Record<string, Handler> = {
     need(c, "report");
     const all = await getPeople(c.fid);
     const members = all.filter((p) => p.role === "member");
-    const key = dayKey(Date.now());
+    const period: ReportPeriod = (["daily", "weekly", "monthly", "yearly"] as const).find((p) => p === c.data.period) ?? "daily";
+    const key = reportKey(period, Date.now());
     const sums = await fam(c.fid).collection("summaries").where("periodKey", "==", key).get();
     const byId = new Map(sums.docs.map((d) => [d.data().personId as string, d.data()]));
     const text = reportText(
       members.map((m) => ({ name: m.name, points: byId.get(m.id)?.points ?? 0, count: byId.get(m.id)?.count ?? 0 })),
       Date.now(),
+      period,
     );
-    await notify(c.fid, "all", "🏆 ترتيب إنجاز اليوم", text, c.me);
+    await notify(c.fid, "all", `🏆 ${REPORT_TITLE[period]}`, text, c.me);
     return {};
   },
 
