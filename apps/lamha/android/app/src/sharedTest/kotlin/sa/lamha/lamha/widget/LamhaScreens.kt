@@ -296,7 +296,8 @@ object LamhaScreens {
     }
 
     /// عناصر الميزة ٦: كل عنصر في التخطيط ظاهر بنصه الأساسي، ومواقيت الصلاة خمسة أعمدة كلها ظاهرة
-    /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٣ أعمدة، والكعبة داخل دائرتها.
+    /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٣ أعمدة أو شبكة ٤–٦ بأيام محاذاة،
+    /// والكعبة داخل دائرتها.
     private fun checkV3(root: ViewGroup, placed: Set<String>): List<String> {
         val out = ArrayList<String>()
         fun shownText(id: Int) = root.findViewById<TextView>(id)?.takeIf { shown(it, root) && it.text.isNotEmpty() }
@@ -327,7 +328,16 @@ object LamhaScreens {
                 if (a.left < b.right) out += "مواقيت الصلاة: القادمة ليست أول عمود من اليمين"
             }
         }
-        if ("deposit" in placed && counts.none { it in 1..3 }) out += "الإيداعات: لا أعمدة ($counts)"
+        // شبكة الإيداعات (أكثر من ثلاثة): الأسماء ظاهرة، والأيام كجدول تبدأ من موضع واحد في كل عمود.
+        val gridNames = GRID_NAMES.mapNotNull { root.findViewById<TextView>(it)?.takeIf { v -> shown(v, root) && v.text.isNotEmpty() } }
+        if ("deposit" in placed && counts.none { it in 1..3 } && gridNames.size !in 4..6) {
+            out += "الإيداعات: لا أعمدة ولا شبكة ($counts، ${gridNames.size} خانات)"
+        }
+        val gridDays = GRID_DAYS.map { id -> root.findViewById<TextView>(id)?.takeIf { shown(it, root) && it.text.isNotEmpty() } }
+        for (col in 0..1) {
+            val rights = gridDays.filterIndexed { i, _ -> i % 2 == col }.filterNotNull().map { rect(it, root).right }
+            if (rights.distinct().size > 1) out += "الإيداعات: الأيام غير محاذاة في العمود ${col + 1} ($rights)"
+        }
         root.findViewById<View>(R.id.qibla_kaaba)?.let { k ->
             val circle = root.findViewById<View>(R.id.qibla_circle)
             val kr = rect(k, root)
@@ -352,6 +362,9 @@ object LamhaScreens {
     }
 
     /// ظاهر حتى [root] (isShown يحتاج نافذة).
+    private val GRID_NAMES = listOf(R.id.grid_name0, R.id.grid_name1, R.id.grid_name2, R.id.grid_name3, R.id.grid_name4, R.id.grid_name5)
+    private val GRID_DAYS = listOf(R.id.grid_days0, R.id.grid_days1, R.id.grid_days2, R.id.grid_days3, R.id.grid_days4, R.id.grid_days5)
+
     private fun shown(v: View, root: View): Boolean {
         var c: View = v
         while (true) {
