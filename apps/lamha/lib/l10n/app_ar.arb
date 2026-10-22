@@ -216,7 +216,7 @@
   "@compassUnavailable": {
     "description": "الجهاز بلا حساس بوصلة"
   },
-  "weatherUnknown": "⁦--°⁩",
+  "weatherUnknown": "--°",
   "@weatherUnknown": {
     "description": "لا قراءة طقس أحدث من ٣ ساعات"
   },

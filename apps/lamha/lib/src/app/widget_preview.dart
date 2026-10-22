@@ -234,7 +234,8 @@ class WidgetPreview extends StatelessWidget {
     final nextDay = idx + 1 < days.length ? days[idx + 1] : null;
     final digits = scheduleDigits(schedule);
     final reading = freshWeather(scheduleWeather(schedule), now);
-    final weather = weatherText(reading, now, digits) ?? l.weatherUnknown;
+    final weather =
+        weatherText(reading, now, digits) ?? ltrIsolated(l.weatherUnknown);
     final global = scheduleFontScale(schedule);
 
     final layout = scheduleLayout(schedule);
@@ -314,7 +315,7 @@ class WidgetPreview extends StatelessWidget {
             reading == null ? '' : weatherCondition(reading.code).emoji,
           ).trim(),
           temp: reading == null
-              ? l.weatherUnknown
+              ? ltrIsolated(l.weatherUnknown)
               : temperatureText(reading.temp, digits),
         ),
         WidgetElement.hijri => _CapsuleTile(

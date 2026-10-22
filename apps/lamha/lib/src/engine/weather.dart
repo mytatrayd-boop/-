@@ -105,6 +105,9 @@ const weatherConditions = <int, ({String emoji, String text})>{
 const ltrIsolate = '\u2066';
 const popIsolate = '\u2069';
 
+/// [text] معزولاً باتجاه LTR (مثل «--°» للطقس المجهول).
+String ltrIsolated(String text) => '$ltrIsolate$text$popIsolate';
+
 /// «٣١°» أو «-٣°» بأرقام [style]، معزولاً باتجاه LTR (الميزة ٦).
 String temperatureText(double temp, [DigitStyle style = DigitStyle.arabic]) {
   final t = temp.round();

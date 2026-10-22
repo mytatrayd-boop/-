@@ -72,4 +72,5 @@
   - اللقطات: `mockups/widget_screens/lamha_{wide,narrow}_{black,gold,blue}_{0.9,1.0,1.3}.png`، و`lamha_tall_black_1.0.png` (٤×٥)، و`lamha_latin_*` و`lamha_legacy_*` و`lamha_deposits1_*` و`lamha_prayertimes20_*` و`lamha_clockspan1_*`؛ والمعاينة `mockups/settings_preview.png` و`mockups/customize_screen.png`.
   - `flutter analyze`: No issues found. `flutter test`: ٢٠١ ناجحة. `flutter build apk --debug` نجح. `./gradlew :app:testDebugUnitTest`: ٣٢ (JUnit وRobolectric) ناجحة.
   - ملاحظات للمراجع: (١) في ٤×٤ تُخفى المدينة و«متبقي على:» والسطر الثاني للفصل والموسم؛ تظهر في ٤×٥. (٢) ساعة الودجت والعدّاد القديم بأرقام لغة الجهاز لا الإعداد (قيد RemoteViews). (٣) القبلة بلا زاوية، والإيداع صار أعمدة، لكل المستخدمين. (٤) «١٤ يوماً» بدل «١٤ يوم».
+  - المحاولة ٢ (بعد رفض المراجع): ٤×٥ افتراضي، ونقاط الوسم كاملة، وقبلة أكبر، و«٢٦°». `flutter test`: ٢٠٢ ناجحة، وJUnit/Robolectric ناجحة، وanalyze نظيف، والبناء نجح. لقطات ٤×٤ في `lamha_4x4_*`.
 - التالي: البناء على GitHub وتجربة المالك، ثم الميزة ٤ (ودجت آيفون وشاشة القفل).

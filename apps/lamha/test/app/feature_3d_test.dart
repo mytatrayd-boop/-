@@ -61,7 +61,7 @@ void main() {
         expect(bridge.last['fontScale'], 1.3);
         // خط الاختبار عريض فقد يحدّ العرضُ الهجري؛ نقاط الموسم تكبر.
         expect(sizeOf(tester, const Key('preview-hijri')), greaterThanOrEqualTo(medium - 0.01));
-        expect(sizeOf(tester, const Key('point-0')), closeTo(11 * 1.3, 0.01));
+        expect(sizeOf(tester, const Key('point-0')), closeTo(10 * 1.3, 0.01));
         expect(
           sizeOf(tester, const Key('preview-day')),
           lessThanOrEqualTo(22 * 1.3),

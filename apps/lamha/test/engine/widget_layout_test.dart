@@ -437,10 +437,12 @@ void main() {
   group('fitPoints (الحالات نفسها في LamhaLogicTest.kt)', () {
     test('النقاط كاملة قبل العنوان، ثم تُخفى من الآخر', () {
       // سطر ١٠، وفاصل ٢، والعنوان ١٢: نقطتان بسطرين = ٤٢.
-      expect(fitPoints(height: 60, titleHeight: 12, line: 10, lines: [2, 2], gap: 2),
-          (title: true, lines: [2, 2]));
+      final all = fitPoints(height: 60, titleHeight: 12, line: 10, lines: [2, 2], gap: 2);
+      expect(all.title, isTrue);
+      expect(all.lines, [2, 2]);
       final noTitle = fitPoints(height: 45, titleHeight: 12, line: 10, lines: [2, 2], gap: 2);
-      expect((noTitle.title, noTitle.lines), (false, [2, 2]));
+      expect(noTitle.title, isFalse);
+      expect(noTitle.lines, [2, 2]);
       // ثلاثة أسطر حداً.
       expect(fitPoints(height: 100, line: 10, lines: [4, 1]).lines, [3, 1]);
       expect(fitPoints(height: 25, line: 10, lines: [2, 2], gap: 2).lines, [2]);
