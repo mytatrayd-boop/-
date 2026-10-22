@@ -109,6 +109,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val GRID_DAYS_SP = 14f
         /// بين الاسم وعمود الأيام (gridDaysGap في Dart، layout_marginStart في widget_tile_grid.xml).
         private const val GRID_DAYS_GAP_DP = 6f
+        private const val GRID_DAYS_SLACK_DP = 2f
         private const val QIBLA_TITLE_SP = 14f
         private const val POINT_SP = 10f
         private const val COLUMN_GAP_DP = 4f
@@ -357,7 +358,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 "prayerTimes", "deposit" -> if (cell.id == "deposit" && LamhaLogic.depositsAsGrid(depositCount(env, cell.span))) {
                     // شبكة الإيداعات: بصفوفها.
                     val rows = LamhaLogic.gridRows(depositCount(env, cell.span))
-                    rows * tightDp(env.ctx, GRID_NAME_SP * scale, true) + LINE_GAP_DP * (rows - 1) to 8f + BOX_PAD_V
+                    rows * tightDp(env.ctx, GRID_NAME_SP * scale, false) + LINE_GAP_DP * (rows - 1) to 8f + BOX_PAD_V
                 } else {
                     tightDp(env.ctx, COLUMN_NAME_SP * scale, true) + (if (showSub) tightDp(env.ctx, COLUMN_SUB_SP * scale, false) + LINE_GAP_DP else 0f) to
                         8f + BOX_PAD_V
@@ -807,7 +808,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private fun depositCount(env: Env, span: Int) = minOf(env.day.deposits.size, LamhaLogic.maxDeposits(span))
 
         /// شبكة الإيداعات (_DepositsGridTile، أكثر من ثلاثة): «متبقي على:» ثم صفوف بعمودين، لكل خانة
-        /// الاسم عريضاً وبجانبه الأيام بلون السطر الفرعي في عمود بعرض أعرضها (كجدول، طلب المالك)، الأقرب
+        /// الاسم (عادي، طلب المالك) وبجانبه الأيام بلون السطر الفرعي في عمود بعرض أعرضها (كجدول، طلب المالك)، الأقرب
         /// أولاً من اليمين. الخانات تصغر بالتساوي،
         /// وإن ضاق الارتفاع يُخفى العنوان ثم تصغر الصفوف (fitGrid).
         private fun gridTile(env: Env, spec: LamhaLogic.Tile, span: Int, scale: Float, availDp: Float, innerHeightDp: Float): RemoteViews {
@@ -819,14 +820,16 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val nameSp = GRID_NAME_SP * scale
             val daysSp = GRID_DAYS_SP * scale
             val cellWidth = if (availDp > 0f) (availDp - COLUMN_GAP_DP) / 2 - FIT_MARGIN_DP else 0f
-            val nameW = items.maxOfOrNull { textWidthDp(ctx, it.first, nameSp, true) } ?: 0f
+            val nameW = items.maxOfOrNull { textWidthDp(ctx, it.first, nameSp, false) } ?: 0f
             val daysW = if (spec.showSub) items.maxOfOrNull { textWidthDp(ctx, it.second, daysSp, false) } ?: 0f else 0f
+            // الفاصل وهامش عمود الأيام لا يصغران مع النص، فيُطرحان من العرض.
+            val fixed = if (spec.showSub) GRID_DAYS_GAP_DP + GRID_DAYS_SLACK_DP else 0f
             val fit = LamhaLogic.fitGrid(
-                innerHeightDp, cellWidth, if (spec.showTitle) tightDp(ctx, titleSp, true) else 0f,
-                tightDp(ctx, nameSp, true), nameW + (if (spec.showSub) GRID_DAYS_GAP_DP + daysW else 0f), rows, LINE_GAP_DP,
+                innerHeightDp, if (cellWidth > 0f) maxOf(1f, cellWidth - fixed) else 0f, if (spec.showTitle) tightDp(ctx, titleSp, true) else 0f,
+                tightDp(ctx, nameSp, false), nameW + daysW, rows, LINE_GAP_DP,
             )
-            // عمود الأيام بعرض أعرضها بعد التصغير (+٢ للتقريب). قبل أندرويد ١٢ لا يُضبط العرض فيبقى بعرض نصه.
-            val daysColumn = daysW * fit.scale + 2f
+            // عمود الأيام بعرض أعرضها بعد التصغير (+ هامش للتقريب). قبل أندرويد ١٢ لا يُضبط العرض فيبقى بعرض نصه.
+            val daysColumn = daysW * fit.scale + GRID_DAYS_SLACK_DP
             if (fit.title) {
                 rv.setTextViewText(R.id.grid_title, ctx.getString(R.string.deposits_title))
                 rv.setTextViewTextSize(R.id.grid_title, TypedValue.COMPLEX_UNIT_SP, titleSp)

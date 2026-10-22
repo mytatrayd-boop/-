@@ -25,12 +25,15 @@ const columnTitleSize = 11.0;
 const columnNameSize = 20.0;
 const columnSubSize = 14.0;
 
-/// شبكة الإيداعات (أكثر من ثلاثة): الاسم ١٦ عريض وبجانبه الأيام ١٤.
+/// شبكة الإيداعات (أكثر من ثلاثة): الاسم ١٦ عادي (طلب المالك) وبجانبه الأيام ١٤.
 const gridNameSize = 16.0;
 const gridDaysSize = 14.0;
 
 /// بين الاسم وعمود الأيام في الشبكة.
 const gridDaysGap = 6.0;
+
+/// هامش عمود الأيام لتقريب البكسل.
+const gridDaysSlack = 2.0;
 const qiblaTitleSize = 14.0;
 const pointSize = 10.0;
 
@@ -632,7 +635,7 @@ class _DepositsGridTile extends _Styled {
         );
         final nameStyle = TextStyle(
           fontSize: gridNameSize * s,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
           height: tileLineHeight,
           color: primary,
         );
@@ -648,17 +651,19 @@ class _DepositsGridTile extends _Styled {
         final daysW = look.showSub
             ? widest(items.map((i) => i.sub), daysStyle)
             : 0.0;
+        // الفاصل وهامش عمود الأيام لا يصغران مع النص، فيُطرحان من العرض.
+        final fixed = look.showSub ? gridDaysGap + gridDaysSlack : 0.0;
         final fit = fitGrid(
           height: c.maxHeight,
-          width: cellWidth,
+          width: math.max(1.0, cellWidth - fixed),
           titleHeight: look.showTitle ? columnTitleSize * s * tileLineHeight : 0,
           line: gridNameSize * s * tileLineHeight,
-          cellWidth: nameW + (look.showSub ? gridDaysGap + daysW : 0),
+          cellWidth: nameW + daysW,
           rows: _rows,
           gap: lineGap,
         );
-        // عمود الأيام بعرض أعرضها بعد التصغير (+٢ للتقريب)، والاسم ما بقي.
-        final daysColumn = daysW * fit.scale + 2;
+        // عمود الأيام بعرض أعرضها بعد التصغير (+ هامش للتقريب)، والاسم ما بقي.
+        final daysColumn = daysW * fit.scale + gridDaysSlack;
         Widget text(int i) {
           if (i >= items.length) return const SizedBox.shrink();
           final item = items[i];
