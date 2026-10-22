@@ -1860,7 +1860,7 @@ abstract class L10n {
   /// Quick task suggestions, separated by |
   ///
   /// In ar, this message translates to:
-  /// **'ترتيب السرير|قراءة صفحة قرآن|صلاة الفجر في وقتها|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب'**
+  /// **'ترتيب السرير|قراءة صفحة قرآن|سقي الزرع|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب'**
   String get taskPresets;
 
   /// No description provided for @memberTaskMeta.
@@ -1872,7 +1872,7 @@ abstract class L10n {
   /// No description provided for @signOutConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكود التحقق.'**
+  /// **'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكلمة المرور.'**
   String get signOutConfirm;
 
   /// No description provided for @adminHaveAccount.
@@ -2612,6 +2612,36 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'في الوضع التجريبي: البريد abu@demo.sa وكلمة المرور 123456، أو استخدم «نسيت كلمة المرور؟» واضغط 📧 في الأعلى لرؤية الكود.'**
   String get demoLoginNote;
+
+  /// No description provided for @prizesSubMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'يفوز بالجائزة صاحب أعلى نقاط في فترتها، وتُسلَّم تلقائياً في موعدها.'**
+  String get prizesSubMember;
+
+  /// No description provided for @spanShortDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get spanShortDay;
+
+  /// No description provided for @spanShortWeek.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوع'**
+  String get spanShortWeek;
+
+  /// No description provided for @spanShortMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر'**
+  String get spanShortMonth;
+
+  /// No description provided for @spanShortYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة'**
+  String get spanShortYear;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

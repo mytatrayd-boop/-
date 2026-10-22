@@ -109,7 +109,7 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
               decoration: BoxDecoration(color: context.pal.bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: Palette.sun.withValues(alpha: .6))),
               child: Column(children: [
                 Text(medalOrPlace(d.placeOf(u.id, s)), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: context.pal.brandInk)),
-                Text(spanLabel(t, s), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: context.pal.muted)),
+                Text(switch (s) { Span.daily => t.spanShortDay, Span.weekly => t.spanShortWeek, Span.monthly => t.spanShortMonth, Span.yearly => t.spanShortYear }, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: context.pal.muted)),
               ]),
             ),
           ),

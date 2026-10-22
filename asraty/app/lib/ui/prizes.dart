@@ -61,20 +61,20 @@ class _PrizesPageState extends ConsumerState<PrizesPage> {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.prizesTitle),
-      Muted(t.prizesSub),
+      Muted(owner ? t.prizesSub : t.prizesSubMember),
       if (owner)
         FormBox(children: [
+          TextField(controller: _name, maxLength: 60, decoration: InputDecoration(hintText: t.prizeNameHint, counterText: '')),
           Two(
-            TextField(controller: _name, maxLength: 60, decoration: InputDecoration(hintText: t.prizeNameHint, counterText: '')),
-            Select<String>(value: _emoji, label: t.icon, items: [for (final e in prizeEmoji) (e, e)], onChanged: (v) => setState(() => _emoji = v)),
+            Labeled(t.prizeFor, Select<Span>(value: _period, items: [for (final s in Span.values) (s, spanLabel(t, s))], onChanged: (v) => setState(() => _period = v))),
+            Labeled(t.icon, Select<String>(value: _emoji, label: t.icon, items: [for (final e in prizeEmoji) (e, e)], onChanged: (v) => setState(() => _emoji = v))),
           ),
-          Labeled(t.prizeFor, Select<Span>(value: _period, items: [for (final s in Span.values) (s, spanLabel(t, s))], onChanged: (v) => setState(() => _period = v))),
           Two(
             Labeled(
               t.awardDate,
               OutlinedButton.icon(
                 icon: const Icon(Icons.event_outlined, size: 18),
-                label: Text(loc.formatMediumDate(_day), overflow: TextOverflow.ellipsis),
+                label: Text(loc.formatShortMonthDay(_day), overflow: TextOverflow.ellipsis),
                 onPressed: () async {
                   final n = DateTime.now();
                   final v = await showDatePicker(context: context, initialDate: _day, firstDate: DateTime(n.year, n.month, n.day), lastDate: n.add(const Duration(days: 366)));

@@ -989,7 +989,7 @@ class L10nAr extends L10n {
 
   @override
   String get taskPresets =>
-      'ترتيب السرير|قراءة صفحة قرآن|صلاة الفجر في وقتها|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب';
+      'ترتيب السرير|قراءة صفحة قرآن|سقي الزرع|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب';
 
   @override
   String memberTaskMeta(String when, String points) {
@@ -998,7 +998,7 @@ class L10nAr extends L10n {
 
   @override
   String get signOutConfirm =>
-      'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكود التحقق.';
+      'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكلمة المرور.';
 
   @override
   String get adminHaveAccount => 'لدي حساب';
@@ -1399,4 +1399,20 @@ class L10nAr extends L10n {
   @override
   String get demoLoginNote =>
       'في الوضع التجريبي: البريد abu@demo.sa وكلمة المرور 123456، أو استخدم «نسيت كلمة المرور؟» واضغط 📧 في الأعلى لرؤية الكود.';
+
+  @override
+  String get prizesSubMember =>
+      'يفوز بالجائزة صاحب أعلى نقاط في فترتها، وتُسلَّم تلقائياً في موعدها.';
+
+  @override
+  String get spanShortDay => 'اليوم';
+
+  @override
+  String get spanShortWeek => 'الأسبوع';
+
+  @override
+  String get spanShortMonth => 'الشهر';
+
+  @override
+  String get spanShortYear => 'السنة';
 }
