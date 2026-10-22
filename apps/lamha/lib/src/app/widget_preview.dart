@@ -583,8 +583,8 @@ class WidgetPreview extends StatelessWidget {
         (name: d['label'] as String, sub: d['daysText'] as String),
     ];
     return depositsAsGrid(items.length)
-        ? _DepositsGridTile(title: l.depositsTitle, items: items)
-        : _DepositsTile(title: l.depositsTitle, items: items);
+        ? _DepositsGridTile(items: items)
+        : _DepositsTile(items: items);
   }
 
   _Tile _seasonTile(AppLocalizations l, Map day) {

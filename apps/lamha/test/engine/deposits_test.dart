@@ -57,14 +57,12 @@ void main() {
       'salary', 'citizen_account', 'social_security', 'housing_support',
       'comprehensive_rehab', 'retirement',
     });
-    expect(config.defaultIds,
-        {'salary', 'citizen_account', 'social_security', 'housing_support'});
-    expect(config.rule('comprehensive_rehab').defaultEnabled, isFalse);
+    // الستة كلها مفعّلة افتراضياً (طلب المالك).
+    expect(config.defaultIds, config.ids);
     expect(config.rule('comprehensive_rehab').name, 'التأهيل الشامل');
     expect(config.rule('comprehensive_rehab').day, 26);
     expect(config.rule('retirement').name, 'معاشات المتقاعدين');
     expect(config.rule('retirement').day, 1);
-    expect(config.rule('retirement').defaultEnabled, isFalse);
     expect(config.rule('retirement').weekendShift,
         config.rule('social_security').weekendShift);
     expect(config.rule('salary').name, 'الرواتب');
@@ -146,7 +144,7 @@ void main() {
     });
 
     test('أكثر من إيداع: الأقرب فالأقرب، بحد اثنين', () {
-      final all = config.defaultIds;
+      final all = {'salary', 'citizen_account', 'social_security', 'housing_support'};
       final r = config.nextDeposits(DateTime(2026, 10, 19), all);
       expect(r.map((o) => o.id), ['housing_support', 'salary']);
       expect(r.map((o) => o.daysRemaining), [6, 8]);

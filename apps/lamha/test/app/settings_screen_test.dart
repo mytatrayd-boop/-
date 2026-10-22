@@ -60,17 +60,28 @@ void main() {
 
   testWidgets('لا يمكن إلغاء آخر إيداع', (tester) async {
     final bridge = await pumpApp(tester);
-    // الخامس (المعاشات) ظاهر وغير مفعّل افتراضياً.
+    // الستة مفعّلة افتراضياً (طلب المالك).
     expect(
         tester
             .widget<SwitchListTile>(find.byKey(const Key('deposit-retirement')))
             .value,
-        isFalse);
-    expect(find.text('معاشات المتقاعدين'), findsOneWidget);
-    for (final id in ['salary', 'citizen_account', 'social_security']) {
-      await tester.tap(find.byKey(Key('deposit-$id')));
+        isTrue);
+    expect(
+        find.descendant(
+            of: find.byKey(const Key('deposit-retirement')),
+            matching: find.text('معاشات المتقاعدين')),
+        findsOneWidget);
+    for (final id in [
+      'salary', 'citizen_account', 'social_security', 'comprehensive_rehab', 'retirement',
+    ]) {
+      final sw = find.byKey(Key('deposit-$id'));
+      await tester.ensureVisible(sw);
+      await tester.pumpAndSettle();
+      await tester.tap(sw);
       await tester.pumpAndSettle();
     }
+    await tester.ensureVisible(find.byKey(const Key('deposit-housing_support')));
+    await tester.pumpAndSettle();
     final saves = bridge.saved.length;
     await tester.tap(find.byKey(const Key('deposit-housing_support')));
     await tester.pump();
@@ -320,26 +331,29 @@ void main() {
     expect(sizes, hasLength(1));
     expect(sizes.single, lessThanOrEqualTo(20));
 
-    // الإيداعات الأربعة الافتراضية: شبكة عمودين (أكثر من ثلاثة)، الأقرب أولاً من اليمين، والاسم
-    // وبجانبه الأيام.
+    // الإيداعات الستة الافتراضية: شبكة عمودين وثلاثة صفوف بلا عنوان، الأقرب أولاً من اليمين،
+    // والاسم وبجانبه الأيام.
     final deps = (day['deposits'] as List).cast<Map>();
-    expect(deps.length, 4);
-    for (var i = 0; i < 4; i++) {
+    expect(deps.length, 6);
+    for (var i = 0; i < 6; i++) {
       expect(text('deposit-name-$i'), deps[i]['label']);
       expect(text('deposit-days-$i'), deps[i]['daysText']);
     }
-    expect(find.byKey(const Key('deposit-cell-4')), findsNothing);
+    expect(find.byKey(const Key('deposit-cell-6')), findsNothing);
     expect(find.byKey(const Key('deposit-sub-0')), findsNothing);
+    expect(find.byKey(const Key('deposit-title')), findsNothing);
+    expect(find.text('متبقي على:'), findsNothing);
     // الأيام كجدول (طلب المالك): تبدأ من موضع واحد في كل عمود، والاسم يمينها.
     Rect at(String k) => tester.getRect(find.byKey(Key(k)));
     expect(at('deposit-days-0').right, closeTo(at('deposit-days-2').right, 0.01));
-    expect(at('deposit-days-1').right, closeTo(at('deposit-days-3').right, 0.01));
+    expect(at('deposit-days-0').right, closeTo(at('deposit-days-4').right, 0.01));
+    expect(at('deposit-days-1').right, closeTo(at('deposit-days-5').right, 0.01));
     expect(at('deposit-name-0').left, greaterThanOrEqualTo(at('deposit-days-0').right));
     expect(tester.getRect(find.byKey(const Key('deposit-cell-0'))).left,
         greaterThan(tester.getRect(find.byKey(const Key('deposit-cell-1'))).right));
     expect(tester.getRect(find.byKey(const Key('deposit-cell-2'))).top,
         greaterThan(tester.getRect(find.byKey(const Key('deposit-cell-0'))).bottom));
-    expect(find.byKey(const Key('deposit-row-2')), findsNothing);
+    expect(find.byKey(const Key('deposit-row-2')), findsOneWidget);
 
     // القبلة: دائرة فيها «القبلة» والكعبة، بلا زاوية.
     expect(find.byKey(const Key('preview-qibla-circle')), findsOneWidget);

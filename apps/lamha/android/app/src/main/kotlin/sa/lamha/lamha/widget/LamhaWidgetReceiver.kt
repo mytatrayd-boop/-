@@ -747,7 +747,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         }
 
         /// مربع أعمدة (الميزة ٦، _ColumnsTile): مواقيت الصلاة (خمسة أعمدة تدور فتبدأ بالقادمة المميَّزة
-        /// بلون التمييز، rotatePrayers) أو الإيداعات («متبقي على:» ثم حتى ثلاثة، عمود لكل وحدة عرض).
+        /// بلون التمييز، rotatePrayers) أو الإيداعات (حتى ثلاثة بلا عنوان، عمود لكل وحدة عرض).
         /// الأعمدة تصغر بالتساوي ولا يُخفى عمود (fitColumns).
         private fun columnsTile(env: Env, spec: LamhaLogic.Tile, span: Int, scale: Float, availDp: Float, innerHeightDp: Float): RemoteViews {
             val ctx = env.ctx
@@ -760,27 +760,20 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 day.deposits.take(minOf(3, span)).map { it.label to it.days }
             }
             if (prayers) rv.setImageViewResource(R.id.tile_bg, R.drawable.tile_bg_light)
-            val titleSp = COLUMN_TITLE_SP * scale
             val nameSp = COLUMN_NAME_SP * scale
             val subSp = COLUMN_SUB_SP * scale
             val n = maxOf(1, items.size)
             val colWidth = if (availDp > 0f) (availDp - COLUMN_GAP_DP * (n - 1)) / n - FIT_MARGIN_DP else 0f
             val fit = LamhaLogic.fitColumns(
                 innerHeightDp, colWidth,
-                if (!prayers && spec.showTitle) tightDp(ctx, titleSp, true) else 0f,
+                0f, // بلا عنوان: المواقيت دائماً، والإيداعات بطلب المالك (حُذف «متبقي على:»).
                 tightDp(ctx, nameSp, true), items.maxOfOrNull { textWidthDp(ctx, it.first, nameSp, true) } ?: 0f,
                 if (spec.showSub) tightDp(ctx, subSp, false) else 0f,
                 items.maxOfOrNull { textWidthDp(ctx, it.second, subSp, false) } ?: 0f,
                 LINE_GAP_DP,
             )
-            if (fit.title) {
-                rv.setTextViewText(R.id.columns_title, ctx.getString(R.string.deposits_title))
-                rv.setTextViewTextSize(R.id.columns_title, TypedValue.COMPLEX_UNIT_SP, titleSp)
-                spec.secondaryColor?.let { rv.setTextColor(R.id.columns_title, it) }
-            } else {
-                rv.setViewVisibility(R.id.columns_title, View.GONE)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rv.setViewLayoutMargin(R.id.columns, RemoteViews.MARGIN_TOP, 0f, TypedValue.COMPLEX_UNIT_DIP)
-            }
+            rv.setViewVisibility(R.id.columns_title, View.GONE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rv.setViewLayoutMargin(R.id.columns, RemoteViews.MARGIN_TOP, 0f, TypedValue.COMPLEX_UNIT_DIP)
             for ((i, ids) in COLUMN_IDS.withIndex()) {
                 val (col, name, sub) = ids
                 val item = items.getOrNull(i)
@@ -807,16 +800,15 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// الإيداعات الظاهرة في مربع بعرض [span] (maxDeposits).
         private fun depositCount(env: Env, span: Int) = minOf(env.day.deposits.size, LamhaLogic.maxDeposits(span))
 
-        /// شبكة الإيداعات (_DepositsGridTile، أكثر من ثلاثة): «متبقي على:» ثم صفوف بعمودين، لكل خانة
+        /// شبكة الإيداعات (_DepositsGridTile، أكثر من ثلاثة): صفوف بعمودين بلا عنوان، لكل خانة
         /// الاسم (عادي، طلب المالك) وبجانبه الأيام بلون السطر الفرعي في عمود بعرض أعرضها (كجدول، طلب المالك)، الأقرب
         /// أولاً من اليمين. الخانات تصغر بالتساوي،
-        /// وإن ضاق الارتفاع يُخفى العنوان ثم تصغر الصفوف (fitGrid).
+        /// وإن ضاق الارتفاع تصغر الصفوف (fitGrid).
         private fun gridTile(env: Env, spec: LamhaLogic.Tile, span: Int, scale: Float, availDp: Float, innerHeightDp: Float): RemoteViews {
             val ctx = env.ctx
             val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_grid)
             val items = env.day.deposits.take(depositCount(env, span)).map { it.label to it.days }
             val rows = LamhaLogic.gridRows(items.size)
-            val titleSp = COLUMN_TITLE_SP * scale
             val nameSp = GRID_NAME_SP * scale
             val daysSp = GRID_DAYS_SP * scale
             val cellWidth = if (availDp > 0f) (availDp - COLUMN_GAP_DP) / 2 - FIT_MARGIN_DP else 0f
@@ -825,19 +817,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             // الفاصل وهامش عمود الأيام لا يصغران مع النص، فيُطرحان من العرض.
             val fixed = if (spec.showSub) GRID_DAYS_GAP_DP + GRID_DAYS_SLACK_DP else 0f
             val fit = LamhaLogic.fitGrid(
-                innerHeightDp, if (cellWidth > 0f) maxOf(1f, cellWidth - fixed) else 0f, if (spec.showTitle) tightDp(ctx, titleSp, true) else 0f,
+                innerHeightDp, if (cellWidth > 0f) maxOf(1f, cellWidth - fixed) else 0f, 0f,
                 tightDp(ctx, nameSp, false), nameW + daysW, rows, LINE_GAP_DP,
             )
             // عمود الأيام بعرض أعرضها بعد التصغير (+ هامش للتقريب). قبل أندرويد ١٢ لا يُضبط العرض فيبقى بعرض نصه.
             val daysColumn = daysW * fit.scale + GRID_DAYS_SLACK_DP
-            if (fit.title) {
-                rv.setTextViewText(R.id.grid_title, ctx.getString(R.string.deposits_title))
-                rv.setTextViewTextSize(R.id.grid_title, TypedValue.COMPLEX_UNIT_SP, titleSp)
-                spec.secondaryColor?.let { rv.setTextColor(R.id.grid_title, it) }
-            } else {
-                rv.setViewVisibility(R.id.grid_title, View.GONE)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rv.setViewLayoutMargin(R.id.grid_row0, RemoteViews.MARGIN_TOP, 0f, TypedValue.COMPLEX_UNIT_DIP)
-            }
             for ((r, row) in GRID_ROW_IDS.withIndex()) {
                 if (r >= rows) rv.setViewVisibility(row, View.GONE)
             }

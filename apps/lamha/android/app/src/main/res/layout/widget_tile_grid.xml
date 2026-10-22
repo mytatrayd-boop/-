@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- شبكة الإيداعات (أكثر من ثلاثة، طلب المالك؛ _DepositsGridTile): «متبقي على:» ثم حتى ثلاثة صفوف
+<!-- شبكة الإيداعات (أكثر من ثلاثة، طلب المالك؛ _DepositsGridTile): بلا عنوان، حتى ثلاثة صفوف
      بعمودين، لكل خانة الاسم ١٦ عادي وبجانبه الأيام ١٤ في عمود بعرض أعرضها (كجدول)، الأقرب أولاً من اليمين.
      الصفوف والخانات الزائدة مخفية. الأحجام من fitGrid في LamhaWidgetReceiver. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -25,26 +25,11 @@
         android:paddingTop="2dp"
         android:paddingBottom="2dp">
 
-        <TextView
-            android:id="@+id/grid_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="right|center_vertical"
-            android:textDirection="rtl"
-            android:includeFontPadding="false"
-            android:fallbackLineSpacing="false"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:shadowColor="#66000000"
-            android:shadowRadius="3"
-            android:textColor="#FFB9B0A2"
-            android:textSize="11sp" android:textStyle="bold" />
 
         <LinearLayout
             android:id="@+id/grid_row0"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
             android:baselineAligned="false"
             android:orientation="horizontal">
             <LinearLayout

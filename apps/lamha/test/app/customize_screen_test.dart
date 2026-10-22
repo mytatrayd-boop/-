@@ -227,12 +227,12 @@ void main() {
       '٢.٠',
     );
 
-    await tapKey(tester, 'showtitle-deposit');
-    expect(tileOf(bridge, 'deposit')['showTitle'], isFalse);
+    // الإيداعات بلا عنوان (طلب المالك): لا مفتاح للعنوان.
+    expect(find.byKey(const Key('showtitle-deposit')), findsNothing);
     expect(find.byKey(const Key('deposit-title')), findsNothing);
     await tapKey(tester, 'showsub-deposit');
     expect(tileOf(bridge, 'deposit')['showSub'], isFalse);
-    // أربعة إيداعات افتراضياً = شبكة: بلا السطر الفرعي يبقى الاسم وحده.
+    // ستة إيداعات افتراضياً = شبكة: بلا السطر الفرعي يبقى الاسم وحده.
     expect(find.byKey(const Key('deposit-days-0')), findsNothing);
     expect(find.byKey(const Key('deposit-name-0')), findsOneWidget);
 

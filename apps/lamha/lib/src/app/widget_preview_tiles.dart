@@ -583,39 +583,31 @@ class _PrayerTimesTile extends _ColumnsTile {
       _PrayerTimesTile(items: items, accent: accent!, look: look);
 }
 
-/// الإيداعات: «متبقي على:» ثم عمود لكل إيداع (حتى ثلاثة، الأقرب أولاً): الاسم وتحته الأيام.
+/// الإيداعات: عمود لكل إيداع (حتى ثلاثة، الأقرب أولاً): الاسم وتحته الأيام، بلا عنوان (طلب المالك).
 class _DepositsTile extends _ColumnsTile {
-  const _DepositsTile({
-    required super.items,
-    required String super.title,
-    super.look,
-  }) : super(keyPrefix: 'deposit');
+  const _DepositsTile({required super.items, super.look})
+    : super(keyPrefix: 'deposit');
 
   @override
-  _DepositsTile withLook(_Look look) =>
-      _DepositsTile(items: items, title: title!, look: look);
+  _DepositsTile withLook(_Look look) => _DepositsTile(items: items, look: look);
 }
 
-/// الإيداعات بعد الثلاثة (طلب المالك): «متبقي على:» ثم شبكة عمودين، لكل خانة الاسم وبجانبه الأيام
-/// في سطر واحد، الأقرب أولاً من اليمين. الأيام كجدول: عمود بعرض أعرضها فتبدأ كلها من موضع واحد. الخانات تصغر بالتساوي، وإن ضاق الارتفاع يُخفى العنوان ثم
-/// تصغر الصفوف (fitGrid). مطابقة لـ gridTile في LamhaWidgetReceiver.kt.
+/// الإيداعات بعد الثلاثة (طلب المالك): شبكة عمودين بلا عنوان، لكل خانة الاسم وبجانبه الأيام
+/// في سطر واحد، الأقرب أولاً من اليمين. الأيام كجدول: عمود بعرض أعرضها فتبدأ كلها من موضع واحد.
+/// الخانات تصغر بالتساوي، وإن ضاق الارتفاع تصغر الصفوف (fitGrid). مطابقة لـ gridTile في LamhaWidgetReceiver.kt.
 class _DepositsGridTile extends _Styled {
-  const _DepositsGridTile({
-    required this.items,
-    required this.title,
-    _Look look = _defaultLook,
-  }) : super(look);
+  const _DepositsGridTile({required this.items, _Look look = _defaultLook})
+    : super(look);
 
   final List<_ColumnItem> items;
-  final String title;
 
   int get _rows => gridRows(items.length);
 
   @override
   _DepositsGridTile withLook(_Look look) =>
-      _DepositsGridTile(items: items, title: title, look: look);
+      _DepositsGridTile(items: items, look: look);
 
-  /// مقاسه بالصفوف؛ العنوان إن اتسع.
+  /// مقاسه بالصفوف.
   @override
   ({double text, double pad}) heights(BuildContext context, double width) => (
     text: _rows * gridNameSize * tileLineHeight * s,
@@ -627,12 +619,6 @@ class _DepositsGridTile extends _Styled {
     LayoutBuilder(
       builder: (context, c) {
         final cellWidth = (c.maxWidth - columnGap) / 2 - fitMargin;
-        final titleStyle = TextStyle(
-          fontSize: columnTitleSize * s,
-          fontWeight: FontWeight.w700,
-          height: tileLineHeight,
-          color: secondary,
-        );
         final nameStyle = TextStyle(
           fontSize: gridNameSize * s,
           fontWeight: FontWeight.w400,
@@ -656,7 +642,6 @@ class _DepositsGridTile extends _Styled {
         final fit = fitGrid(
           height: c.maxHeight,
           width: math.max(1.0, cellWidth - fixed),
-          titleHeight: look.showTitle ? columnTitleSize * s * tileLineHeight : 0,
           line: gridNameSize * s * tileLineHeight,
           cellWidth: nameW + daysW,
           rows: _rows,
@@ -708,17 +693,6 @@ class _DepositsGridTile extends _Styled {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (fit.title) ...[
-                Text(
-                  title,
-                  key: const Key('deposit-title'),
-                  textAlign: TextAlign.right,
-                  maxLines: 1,
-                  softWrap: false,
-                  style: titleStyle,
-                ),
-                const SizedBox(height: lineGap),
-              ],
               for (var r = 0; r < _rows; r++) ...[
                 if (r > 0) const SizedBox(height: lineGap),
                 Row(
