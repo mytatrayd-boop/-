@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- الودجت الكبيرة ٤×٤ (DESIGN). updatePeriodMillis = 0: التحديث بمنبهات HomeWidgetScheduler
+<!-- الودجت الكبيرة ٤×٥ افتراضياً (الميزة ٦: تصميم المالك ٣ طولي، DESIGN)، وتعمل في ٤×٤ بإخفاء مرتب.
+     minHeight ٣٢٠ = خمس خلايا (٧٠ × ٥ − ٣٠). updatePeriodMillis = 0: التحديث بمنبهات HomeWidgetScheduler
      عند كل صلاة ومنتصف الليل والظهر، والساعة والعد التنازلي من النظام (DECISIONS ١٠ و١٣). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_setup"
     android:minWidth="250dp"
-    android:minHeight="250dp"
+    android:minHeight="320dp"
     android:minResizeWidth="180dp"
     android:minResizeHeight="180dp"
     android:targetCellWidth="4"
-    android:targetCellHeight="4"
+    android:targetCellHeight="5"
     android:previewImage="@mipmap/ic_launcher"
     android:previewLayout="@layout/widget_preview"
     android:resizeMode="horizontal|vertical"

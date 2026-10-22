@@ -14,8 +14,8 @@ import 'kaaba.dart';
 
 part 'widget_preview_tiles.dart';
 
-/// مقاس الودجت الكبيرة في آيفون (DESIGN، mockups/widget-large-v2.png).
-const previewWidgetSize = Size(338, 354);
+/// مقاس الودجت الافتراضي ٤×٥ (الميزة ٦، تصميم المالك ٣ طولي).
+const previewWidgetSize = Size(338, 440);
 
 /// ألفا خلفية الودجت من قيمة الشريط (ARCHITECTURE: ألفا = قيمة الشريط).
 double backgroundAlpha(int opacity) => opacity.clamp(0, 100) / 100;

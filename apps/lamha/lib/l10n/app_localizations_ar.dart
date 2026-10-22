@@ -189,7 +189,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا يتوفر حساس بوصلة في هذا الجهاز، فلا يمكن عرض السهم. استعن بالزاوية أعلاه وبوصلة أخرى.';
 
   @override
-  String get weatherUnknown => '‎--°';
+  String get weatherUnknown => '⁦--°⁩';
 
   @override
   String get themeLabel => 'لون الودجت';

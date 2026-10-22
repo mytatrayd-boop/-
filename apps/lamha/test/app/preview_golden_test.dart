@@ -65,7 +65,7 @@ void main() {
           ),
         );
 
-        const size = Size(370, 386);
+        const size = Size(370, 472);
         tester.view.physicalSize = size * 2;
         tester.view.devicePixelRatio = 2;
         addTearDown(tester.view.reset);
@@ -130,7 +130,7 @@ void main() {
           days: 2,
           generatedAt: now,
         );
-        tester.view.physicalSize = const Size(370, 386) * 2;
+        tester.view.physicalSize = const Size(370, 472) * 2;
         tester.view.devicePixelRatio = 2;
         addTearDown(tester.view.reset);
         await tester.pumpWidget(

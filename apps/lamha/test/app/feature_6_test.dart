@@ -53,7 +53,7 @@ void main() {
         (tester) async {
       final bridge = await pumpApp(tester, weather: FakeWeather(temp: 31.4));
       expect(bridge.last['digits'], 'arabic');
-      expect(text(tester, 'preview-temp'), '٣١°');
+      expect(text(tester, 'preview-temp'), '\u2066٣١°\u2069');
       expect(text(tester, 'preview-clock'), '١٢:٠٠');
       final chip = find.byKey(const Key('digits-latin'));
       expect(find.text('إنجليزية (123)'), findsOneWidget);
@@ -62,7 +62,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(bridge.last['digits'], 'latin');
       expect(RegExp('[٠-٩]').hasMatch(jsonEncode(bridge.last)), isFalse);
-      expect(text(tester, 'preview-temp'), '31°');
+      expect(text(tester, 'preview-temp'), '\u206631°\u2069');
       expect(text(tester, 'preview-clock'), '12:00');
       expect(text(tester, 'preview-hijri'), contains('1448'));
       // الوقت قد يُخفى بخط الاختبار العريض؛ نصه من الجدول.

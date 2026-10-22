@@ -26,15 +26,16 @@ void main() {
   });
 
   test('الحرارة بالأرقام العربية وتقريب Dart', () {
-    expect(temperatureText(31.4), '٣١°');
-    expect(temperatureText(31.5), '٣٢°');
-    expect(temperatureText(-2.5), '-٣°');
-    expect(temperatureText(-0.4), '٠°');
+    // معزولة باتجاه LTR فتبقى الدرجة يمين الرقم «٢٦°» (الميزة ٦).
+    expect(temperatureText(31.4), '\u2066٣١°\u2069');
+    expect(temperatureText(31.5), '\u2066٣٢°\u2069');
+    expect(temperatureText(-2.5), '\u2066-٣°\u2069');
+    expect(temperatureText(-0.4), '\u2066٠°\u2069');
   });
 
   test('عمر القراءة: حتى ٣ ساعات، وبعدها «--°» (null)', () {
-    expect(weatherText(reading(), now), '☀️ ٣١°');
-    expect(weatherText(reading(age: const Duration(hours: 3)), now), '☀️ ٣١°');
+    expect(weatherText(reading(), now), '☀️ \u2066٣١°\u2069');
+    expect(weatherText(reading(age: const Duration(hours: 3)), now), '☀️ \u2066٣١°\u2069');
     expect(weatherText(reading(age: const Duration(hours: 3, minutes: 1)), now), isNull);
     expect(weatherText(null, now), isNull);
   });

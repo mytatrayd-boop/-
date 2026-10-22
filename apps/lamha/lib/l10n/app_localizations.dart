@@ -341,7 +341,7 @@ abstract class AppLocalizations {
   /// لا قراءة طقس أحدث من ٣ ساعات
   ///
   /// In ar, this message translates to:
-  /// **'‎--°'**
+  /// **'⁦--°⁩'**
   String get weatherUnknown;
 
   /// عنوان أزرار سمة اللون

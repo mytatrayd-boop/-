@@ -263,13 +263,13 @@ class LamhaLogicTest {
         val now = t("2026-10-19T12:00:00.000Z")
         val icons = mapOf(0 to "☀️", 3 to "☁️")
         val fresh = LamhaLogic.Weather(31.4, 0, now - 20 * 60_000L, 24.69, 46.72)
-        assertEquals("☀️ ٣١°", LamhaLogic.weatherText(fresh, now, 180, icons))
+        assertEquals("☀️ \u2066٣١°\u2069", LamhaLogic.weatherText(fresh, now, 180, icons))
         // ٣ ساعات بالضبط مقبولة، وبعدها «--°».
-        assertEquals("☀️ ٣١°", LamhaLogic.weatherText(fresh.copy(fetchedAtMillis = now - 180 * 60_000L), now, 180, icons))
+        assertEquals("☀️ \u2066٣١°\u2069", LamhaLogic.weatherText(fresh.copy(fetchedAtMillis = now - 180 * 60_000L), now, 180, icons))
         assertNull(LamhaLogic.weatherText(fresh.copy(fetchedAtMillis = now - 181 * 60_000L), now, 180, icons))
         assertNull(LamhaLogic.weatherText(null, now, 180, icons))
-        assertEquals("🌡️ -٣°", LamhaLogic.weatherText(fresh.copy(temp = -2.5, code = 99), now, 180, icons))
-        assertEquals("٠°", LamhaLogic.temperatureText(-0.4))
+        assertEquals("🌡️ \u2066-٣°\u2069", LamhaLogic.weatherText(fresh.copy(temp = -2.5, code = 99), now, 180, icons))
+        assertEquals("\u2066٠°\u2069", LamhaLogic.temperatureText(-0.4))
 
         val older = fresh.copy(temp = 20.0, fetchedAtMillis = now - 60 * 60_000L)
         val otherCity = fresh.copy(temp = 10.0, fetchedAtMillis = now, latitude = 18.2)
@@ -300,11 +300,11 @@ class LamhaLogicTest {
         // الحالات نفسها في test/engine/arabic_test.dart.
         assertEquals("٢٠٢٦-١٠", LamhaLogic.formatDigits("2026-10"))
         assertEquals("2026-10 4:56 ص", LamhaLogic.formatDigits("٢٠٢٦-10 ٤:٥٦ ص", latin = true))
-        assertEquals("31°", LamhaLogic.temperatureText(31.4, latin = true))
-        assertEquals("٣١°", LamhaLogic.temperatureText(31.4))
+        assertEquals("\u206631°\u2069", LamhaLogic.temperatureText(31.4, latin = true))
+        assertEquals("\u2066٣١°\u2069", LamhaLogic.temperatureText(31.4))
         val now = t("2026-10-19T12:00:00.000Z")
         val w = LamhaLogic.Weather(31.4, 0, now, 24.69, 46.72)
-        assertEquals("☀️ 31°", LamhaLogic.weatherText(w, now, 180, mapOf(0 to "☀️"), latin = true))
+        assertEquals("☀️ \u206631°\u2069", LamhaLogic.weatherText(w, now, 180, mapOf(0 to "☀️"), latin = true))
     }
 
     // الميزة ٦: الحالات نفسها في test/engine/widget_layout_test.dart (rotatePrayers).
@@ -441,5 +441,14 @@ class LamhaLogicTest {
         val g = fit(200f, 80f, subs = listOf(LamhaLogic.SubLine(17.5f, 1, 100f), LamhaLogic.SubLine(17.5f, 1, 200f)))
         assertEquals(listOf(0), g.subs)
         assertEquals(0.8f, g.subScales.single(), 1e-6f)
+    }
+
+    @Test
+    fun fitPointsCases() {
+        // الحالات نفسها في test/engine/widget_layout_test.dart.
+        assertEquals(true to listOf(2, 2), LamhaLogic.fitPoints(60f, 12f, 10f, listOf(2, 2), 2f))
+        assertEquals(false to listOf(2, 2), LamhaLogic.fitPoints(45f, 12f, 10f, listOf(2, 2), 2f))
+        assertEquals(listOf(3, 1), LamhaLogic.fitPoints(100f, 0f, 10f, listOf(4, 1)).second)
+        assertEquals(listOf(2), LamhaLogic.fitPoints(25f, 0f, 10f, listOf(2, 2), 2f).second)
     }
 }

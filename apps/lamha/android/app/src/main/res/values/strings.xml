@@ -19,7 +19,7 @@
     <string name="countdown_format">باقي %s</string>
     <string name="am">ص</string>
     <string name="pm">م</string>
-    <string name="weather_unknown">‎--°</string>
+    <string name="weather_unknown">⁦--°⁩</string>
     <!-- إشعار شاشة القفل (الميزة ٣ج). -->
     <string name="notification_channel">شاشة القفل</string>
     <string name="notification_channel_description">الصلاة القادمة والقبلة في شاشة القفل، بلا صوت</string>

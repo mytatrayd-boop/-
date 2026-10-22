@@ -594,7 +594,7 @@ ColumnsFit fitColumns({
   return (title: title, nameScale: kName, sub: sub, subScale: kSub);
 }
 
-/// نقاط وصف الموسم (الميزة ٦): لكل نقطة أسطرها [lines] حتى [maxLines] (ثم «…»). إن ضاق [height]:
+/// نقاط وصف الموسم (الميزة ٦): لكل نقطة أسطرها [lines] حتى [maxLines]. إن ضاق [height]:
 /// يُخفى العنوان ([titleHeight]) أولاً، ثم النقاط من الآخر، وآخراً تُقلَّل أسطر الأولى (حتى سطر).
 /// مطابقة لـ fitPoints في LamhaLogic.kt.
 ({bool title, List<int> lines}) fitPoints({
@@ -603,7 +603,7 @@ ColumnsFit fitColumns({
   required double line,
   required List<int> lines,
   double gap = 0,
-  int maxLines = 2,
+  int maxLines = 3,
 }) {
   final kept = [for (final l in lines) l.clamp(1, maxLines)];
   double used() =>

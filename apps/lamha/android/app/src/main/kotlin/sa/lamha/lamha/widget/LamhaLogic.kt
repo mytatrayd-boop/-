@@ -276,7 +276,7 @@ object LamhaLogic {
     /// نقاط وصف الموسم (fitPoints في Dart): لكل نقطة أسطرها حتى [maxLines]. إن ضاق [height]: يُخفى
     /// العنوان ([titleHeight]) أولاً، ثم النقاط من الآخر، وآخراً تُقلَّل أسطر الأولى (حتى سطر). يعيد
     /// (العنوان ظاهر؟، أسطر كل نقطة ظاهرة).
-    fun fitPoints(height: Float, titleHeight: Float, line: Float, lines: List<Int>, gap: Float = 0f, maxLines: Int = 2): Pair<Boolean, List<Int>> {
+    fun fitPoints(height: Float, titleHeight: Float, line: Float, lines: List<Int>, gap: Float = 0f, maxLines: Int = 3): Pair<Boolean, List<Int>> {
         val kept = lines.map { it.coerceIn(1, maxLines) }.toMutableList()
         fun used() = kept.sum() * line + gap * maxOf(0, kept.size - 1)
         if (height <= 0f) return (titleHeight > 0f) to kept
@@ -468,11 +468,12 @@ object LamhaLogic {
     /// رمز الطقس من جدول [icons]، أو ميزان حرارة لرمز غير معروف.
     fun weatherIcon(w: Weather, icons: Map<Int, String>): String = icons[w.code] ?: "🌡️"
 
-    /// «٣١°» أو «-٣°» (أو «31°» مع [latin])، بتقريب النصف بعيداً عن الصفر كـ round() في Dart.
+    /// «٣١°» أو «-٣°» (أو «31°» مع [latin]) معزولاً باتجاه LTR، بتقريب النصف بعيداً عن الصفر كـ round() في Dart.
     fun temperatureText(temp: Double, latin: Boolean = false): String {
         val t = Math.floor(Math.abs(temp) + 0.5).toLong()
         val sign = if (temp < 0 && t > 0) "-" else ""
-        return sign + formatDigits(t.toString(), latin) + "°"
+        // معزول باتجاه LTR (LRI…PDI) فتبقى الدرجة يمين الرقم داخل نص عربي (temperatureText في Dart).
+        return "\u2066" + sign + formatDigits(t.toString(), latin) + "°\u2069"
     }
 
     /// الأرقام إلى العربية الشرقية، أو إلى اللاتينية مع [latin] (formatDigits في Dart، الميزة ٦).

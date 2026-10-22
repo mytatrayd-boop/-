@@ -25,7 +25,7 @@ const columnTitleSize = 11.0;
 const columnNameSize = 20.0;
 const columnSubSize = 14.0;
 const qiblaTitleSize = 14.0;
-const pointSize = 11.0;
+const pointSize = 10.0;
 
 /// ارتفاعات الأسطر.
 const dayLineHeight = 1.15;
@@ -43,8 +43,8 @@ const lineGap = 2.0;
 const boxPadV = 2.0;
 
 /// الكعبة نسبة من قطر دائرة القبلة، والعنوان حتى [qiblaTitleRatio] من القطر.
-const kaabaRatio = 0.42;
-const kaabaAloneRatio = 0.55;
+const kaabaRatio = 0.5;
+const kaabaAloneRatio = 0.6;
 const qiblaTitleRatio = 0.16;
 
 /// مربع في الشبكة: يُرسم بحجمه المطلوب داخل مقاسه، ومقاسه من [base] بالحجم الأساسي.
@@ -586,7 +586,7 @@ class _DepositsTile extends _ColumnsTile {
       _DepositsTile(items: items, title: title!, look: look);
 }
 
-/// وصف الموسم: «في الوسم:» ثم نقاط تبدأ بـ«-». إن ضاق الارتفاع تُخفى النقاط من الآخر، ثم العنوان.
+/// وصف الموسم: «في الوسم:» ثم نقاط ١٠ تبدأ بـ«-»، لكل نقطة حتى ثلاثة أسطر. إن ضاق الارتفاع تُخفى النقاط من الآخر، ثم العنوان.
 class _PointsTile extends _Styled {
   const _PointsTile({
     required this.title,
@@ -633,7 +633,7 @@ class _PointsTile extends _Styled {
         final line = pointSize * s * pointLineHeight;
         final titleFits =
             look.showTitle && _measure(context, title, titleStyle) <= width;
-        // النقاط قبل العنوان، ولكل نقطة سطران حداً (fitPoints).
+        // النقاط قبل العنوان، ولكل نقطة ثلاثة أسطر حداً (fitPoints)؛ نص المالك لا يُقص.
         final fit = fitPoints(
           height: c.maxHeight,
           titleHeight: titleFits ? columnTitleSize * s * tileLineHeight : 0,

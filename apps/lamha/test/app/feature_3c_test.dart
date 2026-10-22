@@ -26,7 +26,7 @@ void main() {
       final weather = FakeWeather(temp: 31.4, code: 0);
       final bridge = await pumpApp(tester, weather: weather);
       expect(weather.calls, hasLength(1));
-      expect(weatherLine(tester), '٣١°');
+      expect(weatherLine(tester), '\u2066٣١°\u2069');
       final w = bridge.last['weather'] as Map;
       expect(w['emoji'], '☀️');
       expect(w['temp'], 31.4);
@@ -50,7 +50,7 @@ void main() {
                 .toJson()),
           };
       await pumpApp(tester, prefs: prefs(const Duration(hours: 2)));
-      expect(weatherLine(tester), '٢٥°');
+      expect(weatherLine(tester), '\u2066٢٥°\u2069');
     });
 
     testWidgets('قراءة أقدم من ٣ ساعات: «--°»', (tester) async {

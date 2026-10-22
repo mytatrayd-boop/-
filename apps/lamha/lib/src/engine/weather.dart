@@ -101,10 +101,14 @@ const weatherConditions = <int, ({String emoji, String text})>{
 ({String emoji, String text}) weatherCondition(int code) =>
     weatherConditions[code] ?? (emoji: '🌡️', text: '');
 
-/// «٣١°» أو «-٣°» بأرقام [style].
+/// عزل اتجاه من اليسار لليمين (LRI…PDI): تبقى الدرجة يمين الرقم («٢٦°» لا «°٢٦») داخل نص عربي.
+const ltrIsolate = '\u2066';
+const popIsolate = '\u2069';
+
+/// «٣١°» أو «-٣°» بأرقام [style]، معزولاً باتجاه LTR (الميزة ٦).
 String temperatureText(double temp, [DigitStyle style = DigitStyle.arabic]) {
   final t = temp.round();
-  return '${t < 0 ? '-' : ''}${formatDigits(t.abs(), style)}°';
+  return '$ltrIsolate${t < 0 ? '-' : ''}${formatDigits(t.abs(), style)}°$popIsolate';
 }
 
 /// القراءة إذا كانت أحدث من [weatherMaxAge]، وإلا null.

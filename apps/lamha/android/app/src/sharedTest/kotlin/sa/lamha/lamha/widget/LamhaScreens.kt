@@ -29,7 +29,9 @@ object LamhaScreens {
 
     /// الجدولان مولّدان من المحرك (android_fixture_test.dart) في src/androidTest/assets.
     val THEMES = listOf("black", "gold", "blue")
-    val SIZES = listOf(Triple("wide", 338, 354), Triple("narrow", 290, 320))
+    /// ٤×٥ الافتراضي (الميزة ٦) بالعرضين، ثم ٤×٤ (إخفاء مرتب) في lamha_4x4_*.
+    val SIZES = listOf(Triple("wide", 338, 440), Triple("narrow", 290, 400))
+    val SIZES_4X4 = listOf(Triple("wide", 338, 354), Triple("narrow", 290, 320))
     val FONT_SCALES = listOf(0.9, 1.0, 1.3)
 
     /// خلفية «الشاشة الرئيسية» خلف الودجت (شفافيتها ٨٠).
@@ -51,8 +53,7 @@ object LamhaScreens {
         }
         // الأرقام الإنجليزية (الميزة ٦). ساعة TextClock تتبع لغة الجهاز (هنا عربي) لا الإعداد.
         for ((size, w, h) in SIZES) out += Triple("lamha_latin_$size.png", base("latin"), w to h)
-        // ٤×٥ تقريباً (نسبة تصميم المالك)، للمقارنة به.
-        out += Triple("lamha_tall_black_1.0.png", base("black"), 338 to 420)
+        for ((size, w, h) in SIZES_4X4) out += Triple("lamha_4x4_${size}_black_1.0.png", base("black"), w to h)
         for ((name, edit) in LAYOUT_CASES) {
             val root = JSONObject(base("black"))
             root.put("layout", edit(root.getJSONArray("layout")))

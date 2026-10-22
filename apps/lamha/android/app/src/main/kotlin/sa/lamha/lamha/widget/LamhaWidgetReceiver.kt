@@ -105,7 +105,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val COLUMN_NAME_SP = 20f
         private const val COLUMN_SUB_SP = 14f
         private const val QIBLA_TITLE_SP = 14f
-        private const val POINT_SP = 11f
+        private const val POINT_SP = 10f
         private const val COLUMN_GAP_DP = 4f
         private const val LINE_GAP_DP = 2f
 
@@ -118,8 +118,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// ما لا يصغر في دائرة القبلة (الكعبة)، كـ heights في _QiblaTile.
         private const val QIBLA_PAD_DP = 36f
-        private const val KAABA_RATIO = 0.42f
-        private const val KAABA_ALONE_RATIO = 0.55f
+        private const val KAABA_RATIO = 0.5f
+        private const val KAABA_ALONE_RATIO = 0.6f
 
         /// أعمدة مربع الأعمدة ونقاط وصف الموسم في تخطيطيهما.
         private val COLUMN_IDS = listOf(

@@ -90,7 +90,7 @@ void main() {
         ),
       );
       expect(bg.width, closeTo(338, 0.5));
-      expect(bg.height, closeTo(354, 0.5));
+      expect(bg.height, closeTo(440, 0.5));
       final preview = tester.getRect(
         find.byKey(const Key('customize-preview')),
       );
