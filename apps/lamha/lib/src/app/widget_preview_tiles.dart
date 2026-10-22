@@ -28,6 +28,9 @@ const columnSubSize = 14.0;
 /// شبكة الإيداعات (أكثر من ثلاثة): الاسم ١٦ عريض وبجانبه الأيام ١٤.
 const gridNameSize = 16.0;
 const gridDaysSize = 14.0;
+
+/// بين الاسم وعمود الأيام في الشبكة.
+const gridDaysGap = 6.0;
 const qiblaTitleSize = 14.0;
 const pointSize = 10.0;
 
@@ -591,7 +594,7 @@ class _DepositsTile extends _ColumnsTile {
 }
 
 /// الإيداعات بعد الثلاثة (طلب المالك): «متبقي على:» ثم شبكة عمودين، لكل خانة الاسم وبجانبه الأيام
-/// في سطر واحد، الأقرب أولاً من اليمين. الخانات تصغر بالتساوي، وإن ضاق الارتفاع يُخفى العنوان ثم
+/// في سطر واحد، الأقرب أولاً من اليمين. الأيام كجدول: عمود بعرض أعرضها فتبدأ كلها من موضع واحد. الخانات تصغر بالتساوي، وإن ضاق الارتفاع يُخفى العنوان ثم
 /// تصغر الصفوف (fitGrid). مطابقة لـ gridTile في LamhaWidgetReceiver.kt.
 class _DepositsGridTile extends _Styled {
   const _DepositsGridTile({
@@ -639,44 +642,59 @@ class _DepositsGridTile extends _Styled {
           height: tileLineHeight,
           color: secondary,
         );
-        double cell(_ColumnItem i) =>
-            _measure(context, i.name, nameStyle) +
-            (look.showSub ? _measure(context, ' ${i.sub}', daysStyle) : 0);
+        double widest(Iterable<String> t, TextStyle st) =>
+            t.fold(0.0, (a, x) => math.max(a, _measure(context, x, st)));
+        final nameW = widest(items.map((i) => i.name), nameStyle);
+        final daysW = look.showSub
+            ? widest(items.map((i) => i.sub), daysStyle)
+            : 0.0;
         final fit = fitGrid(
           height: c.maxHeight,
           width: cellWidth,
           titleHeight: look.showTitle ? columnTitleSize * s * tileLineHeight : 0,
           line: gridNameSize * s * tileLineHeight,
-          cellWidth: items.fold(0.0, (a, i) => math.max(a, cell(i))),
+          cellWidth: nameW + (look.showSub ? gridDaysGap + daysW : 0),
           rows: _rows,
           gap: lineGap,
         );
+        // عمود الأيام بعرض أعرضها بعد التصغير (+٢ للتقريب)، والاسم ما بقي.
+        final daysColumn = daysW * fit.scale + 2;
         Widget text(int i) {
           if (i >= items.length) return const SizedBox.shrink();
           final item = items[i];
-          return Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: item.name,
+          return Row(
+            key: Key('deposit-cell-$i'),
+            children: [
+              Expanded(
+                child: Text(
+                  item.name,
+                  key: Key('deposit-name-$i'),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
                   style: nameStyle.copyWith(
                     fontSize: gridNameSize * s * fit.scale,
                   ),
                 ),
-                if (look.showSub)
-                  TextSpan(
-                    text: ' ${item.sub}',
+              ),
+              if (look.showSub) ...[
+                const SizedBox(width: gridDaysGap),
+                SizedBox(
+                  width: daysColumn,
+                  child: Text(
+                    item.sub,
+                    key: Key('deposit-days-$i'),
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    softWrap: false,
                     style: daysStyle.copyWith(
                       fontSize: gridDaysSize * s * fit.scale,
                     ),
                   ),
+                ),
               ],
-            ),
-            key: Key('deposit-cell-$i'),
-            textAlign: TextAlign.right,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
+            ],
           );
         }
 

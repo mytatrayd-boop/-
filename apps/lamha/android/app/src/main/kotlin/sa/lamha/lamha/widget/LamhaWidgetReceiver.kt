@@ -12,13 +12,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
-import android.text.SpannableStringBuilder
-import android.text.Spanned
 import android.text.StaticLayout
 import android.text.TextPaint
-import android.text.style.ForegroundColorSpan
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
@@ -112,7 +107,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// شبكة الإيداعات (gridNameSize وgridDaysSize في Dart).
         private const val GRID_NAME_SP = 16f
         private const val GRID_DAYS_SP = 14f
-        private const val GRID_DAYS_COLOR = 0xFFB9B0A2.toInt()
+        /// بين الاسم وعمود الأيام (gridDaysGap في Dart، layout_marginStart في widget_tile_grid.xml).
+        private const val GRID_DAYS_GAP_DP = 6f
         private const val QIBLA_TITLE_SP = 14f
         private const val POINT_SP = 10f
         private const val COLUMN_GAP_DP = 4f
@@ -138,7 +134,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         )
         private val POINT_IDS = listOf(R.id.point0, R.id.point1, R.id.point2, R.id.point3)
         private val GRID_ROW_IDS = listOf(R.id.grid_row0, R.id.grid_row1, R.id.grid_row2)
-        private val GRID_CELL_IDS = listOf(R.id.grid_cell0, R.id.grid_cell1, R.id.grid_cell2, R.id.grid_cell3, R.id.grid_cell4, R.id.grid_cell5)
+        private val GRID_CELL_IDS = listOf(
+            Triple(R.id.grid_cell0, R.id.grid_name0, R.id.grid_days0), Triple(R.id.grid_cell1, R.id.grid_name1, R.id.grid_days1),
+            Triple(R.id.grid_cell2, R.id.grid_name2, R.id.grid_days2), Triple(R.id.grid_cell3, R.id.grid_name3, R.id.grid_days3),
+            Triple(R.id.grid_cell4, R.id.grid_name4, R.id.grid_days4), Triple(R.id.grid_cell5, R.id.grid_name5, R.id.grid_days5),
+        )
 
         /// نص قياس ارتفاع السطر (lineDp): عربي وأرقام، والساعة.
         private const val LINE_SAMPLE = "الفجر ٣٢٤° أبها"
@@ -807,7 +807,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private fun depositCount(env: Env, span: Int) = minOf(env.day.deposits.size, LamhaLogic.maxDeposits(span))
 
         /// شبكة الإيداعات (_DepositsGridTile، أكثر من ثلاثة): «متبقي على:» ثم صفوف بعمودين، لكل خانة
-        /// الاسم عريضاً وبجانبه الأيام بلون السطر الفرعي، الأقرب أولاً من اليمين. الخانات تصغر بالتساوي،
+        /// الاسم عريضاً وبجانبه الأيام بلون السطر الفرعي في عمود بعرض أعرضها (كجدول، طلب المالك)، الأقرب
+        /// أولاً من اليمين. الخانات تصغر بالتساوي،
         /// وإن ضاق الارتفاع يُخفى العنوان ثم تصغر الصفوف (fitGrid).
         private fun gridTile(env: Env, spec: LamhaLogic.Tile, span: Int, scale: Float, availDp: Float, innerHeightDp: Float): RemoteViews {
             val ctx = env.ctx
@@ -818,13 +819,14 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val nameSp = GRID_NAME_SP * scale
             val daysSp = GRID_DAYS_SP * scale
             val cellWidth = if (availDp > 0f) (availDp - COLUMN_GAP_DP) / 2 - FIT_MARGIN_DP else 0f
-            val widest = items.maxOfOrNull { (name, days) ->
-                textWidthDp(ctx, name, nameSp, true) + (if (spec.showSub) textWidthDp(ctx, " $days", daysSp, false) else 0f)
-            } ?: 0f
+            val nameW = items.maxOfOrNull { textWidthDp(ctx, it.first, nameSp, true) } ?: 0f
+            val daysW = if (spec.showSub) items.maxOfOrNull { textWidthDp(ctx, it.second, daysSp, false) } ?: 0f else 0f
             val fit = LamhaLogic.fitGrid(
                 innerHeightDp, cellWidth, if (spec.showTitle) tightDp(ctx, titleSp, true) else 0f,
-                tightDp(ctx, nameSp, true), widest, rows, LINE_GAP_DP,
+                tightDp(ctx, nameSp, true), nameW + (if (spec.showSub) GRID_DAYS_GAP_DP + daysW else 0f), rows, LINE_GAP_DP,
             )
+            // عمود الأيام بعرض أعرضها بعد التصغير (+٢ للتقريب). قبل أندرويد ١٢ لا يُضبط العرض فيبقى بعرض نصه.
+            val daysColumn = daysW * fit.scale + 2f
             if (fit.title) {
                 rv.setTextViewText(R.id.grid_title, ctx.getString(R.string.deposits_title))
                 rv.setTextViewTextSize(R.id.grid_title, TypedValue.COMPLEX_UNIT_SP, titleSp)
@@ -836,25 +838,25 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             for ((r, row) in GRID_ROW_IDS.withIndex()) {
                 if (r >= rows) rv.setViewVisibility(row, View.GONE)
             }
-            val daysColor = spec.secondaryColor ?: GRID_DAYS_COLOR
-            for ((i, id) in GRID_CELL_IDS.withIndex()) {
+            for ((i, ids) in GRID_CELL_IDS.withIndex()) {
+                val (cell, name, days) = ids
                 val item = items.getOrNull(i)
                 if (item == null) {
                     // الخانة الأخيرة في صف ناقص تبقى بعرضها فلا تتمدد جارتها.
-                    rv.setViewVisibility(id, if (i / 2 < rows) View.INVISIBLE else View.GONE)
+                    rv.setViewVisibility(cell, if (i / 2 < rows) View.INVISIBLE else View.GONE)
                     continue
                 }
-                val text = SpannableStringBuilder(item.first)
-                text.setSpan(StyleSpan(Typeface.BOLD), 0, item.first.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                rv.setTextViewText(name, item.first)
+                rv.setTextViewTextSize(name, TypedValue.COMPLEX_UNIT_SP, nameSp * fit.scale)
+                spec.primaryColor?.let { rv.setTextColor(name, it) }
                 if (spec.showSub) {
-                    val start = text.length
-                    text.append(" ").append(item.second)
-                    text.setSpan(ForegroundColorSpan(daysColor), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    text.setSpan(RelativeSizeSpan(GRID_DAYS_SP / GRID_NAME_SP), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    rv.setTextViewText(days, item.second)
+                    rv.setTextViewTextSize(days, TypedValue.COMPLEX_UNIT_SP, daysSp * fit.scale)
+                    spec.secondaryColor?.let { rv.setTextColor(days, it) }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rv.setViewLayoutWidth(days, daysColumn, TypedValue.COMPLEX_UNIT_DIP)
+                } else {
+                    rv.setViewVisibility(days, View.GONE)
                 }
-                rv.setTextViewText(id, text)
-                rv.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, nameSp * fit.scale)
-                spec.primaryColor?.let { rv.setTextColor(id, it) }
             }
             return rv
         }

@@ -325,11 +325,16 @@ void main() {
     final deps = (day['deposits'] as List).cast<Map>();
     expect(deps.length, 4);
     for (var i = 0; i < 4; i++) {
-      final cell = tester.widget<Text>(find.byKey(Key('deposit-cell-$i')));
-      expect(cell.textSpan!.toPlainText(), '${deps[i]['label']} ${deps[i]['daysText']}');
+      expect(text('deposit-name-$i'), deps[i]['label']);
+      expect(text('deposit-days-$i'), deps[i]['daysText']);
     }
     expect(find.byKey(const Key('deposit-cell-4')), findsNothing);
-    expect(find.byKey(const Key('deposit-name-0')), findsNothing);
+    expect(find.byKey(const Key('deposit-sub-0')), findsNothing);
+    // الأيام كجدول (طلب المالك): تبدأ من موضع واحد في كل عمود، والاسم يمينها.
+    Rect at(String k) => tester.getRect(find.byKey(Key(k)));
+    expect(at('deposit-days-0').right, closeTo(at('deposit-days-2').right, 0.01));
+    expect(at('deposit-days-1').right, closeTo(at('deposit-days-3').right, 0.01));
+    expect(at('deposit-name-0').left, greaterThanOrEqualTo(at('deposit-days-0').right));
     expect(tester.getRect(find.byKey(const Key('deposit-cell-0'))).left,
         greaterThan(tester.getRect(find.byKey(const Key('deposit-cell-1'))).right));
     expect(tester.getRect(find.byKey(const Key('deposit-cell-2'))).top,

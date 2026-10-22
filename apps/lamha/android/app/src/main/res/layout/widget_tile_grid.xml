@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- شبكة الإيداعات (أكثر من ثلاثة، طلب المالك؛ _DepositsGridTile): «متبقي على:» ثم حتى ثلاثة صفوف
-     بعمودين، لكل خانة الاسم ١٦ عريض وبجانبه الأيام ١٤ (نص واحد بامتدادات)، الأقرب أولاً من اليمين.
+     بعمودين، لكل خانة الاسم ١٦ عريض وبجانبه الأيام ١٤ في عمود بعرض أعرضها (كجدول)، الأقرب أولاً من اليمين.
      الصفوف والخانات الزائدة مخفية. الأحجام من fitGrid في LamhaWidgetReceiver. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
@@ -47,37 +47,81 @@
             android:layout_marginTop="2dp"
             android:baselineAligned="false"
             android:orientation="horizontal">
-            <TextView
+            <LinearLayout
                 android:id="@+id/grid_cell0"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:includeFontPadding="false"
-                android:fallbackLineSpacing="false"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:shadowColor="#66000000"
-                android:shadowRadius="3"
-                android:textColor="#FFF4EFE6"
-                android:textSize="16sp" />
-            <TextView
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/grid_name0"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFF4EFE6"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/grid_days0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFB9B0A2"
+                    android:textSize="14sp" />
+            </LinearLayout>
+            <LinearLayout
                 android:id="@+id/grid_cell1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:includeFontPadding="false"
-                android:fallbackLineSpacing="false"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:shadowColor="#66000000"
-                android:shadowRadius="3"
-                android:textColor="#FFF4EFE6"
-                android:textSize="16sp" />
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/grid_name1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFF4EFE6"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/grid_days1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFB9B0A2"
+                    android:textSize="14sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -87,37 +131,81 @@
             android:layout_marginTop="2dp"
             android:baselineAligned="false"
             android:orientation="horizontal">
-            <TextView
+            <LinearLayout
                 android:id="@+id/grid_cell2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:includeFontPadding="false"
-                android:fallbackLineSpacing="false"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:shadowColor="#66000000"
-                android:shadowRadius="3"
-                android:textColor="#FFF4EFE6"
-                android:textSize="16sp" />
-            <TextView
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/grid_name2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFF4EFE6"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/grid_days2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFB9B0A2"
+                    android:textSize="14sp" />
+            </LinearLayout>
+            <LinearLayout
                 android:id="@+id/grid_cell3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:includeFontPadding="false"
-                android:fallbackLineSpacing="false"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:shadowColor="#66000000"
-                android:shadowRadius="3"
-                android:textColor="#FFF4EFE6"
-                android:textSize="16sp" />
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/grid_name3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFF4EFE6"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/grid_days3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFB9B0A2"
+                    android:textSize="14sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -127,37 +215,81 @@
             android:layout_marginTop="2dp"
             android:baselineAligned="false"
             android:orientation="horizontal">
-            <TextView
+            <LinearLayout
                 android:id="@+id/grid_cell4"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:includeFontPadding="false"
-                android:fallbackLineSpacing="false"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:shadowColor="#66000000"
-                android:shadowRadius="3"
-                android:textColor="#FFF4EFE6"
-                android:textSize="16sp" />
-            <TextView
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/grid_name4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFF4EFE6"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/grid_days4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFB9B0A2"
+                    android:textSize="14sp" />
+            </LinearLayout>
+            <LinearLayout
                 android:id="@+id/grid_cell5"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
-                android:gravity="right|center_vertical"
-                android:textDirection="rtl"
-                android:includeFontPadding="false"
-                android:fallbackLineSpacing="false"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:shadowColor="#66000000"
-                android:shadowRadius="3"
-                android:textColor="#FFF4EFE6"
-                android:textSize="16sp" />
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/grid_name5"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFF4EFE6"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/grid_days5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:gravity="right|center_vertical"
+                    android:textDirection="rtl"
+                    android:includeFontPadding="false"
+                    android:fallbackLineSpacing="false"
+                    android:maxLines="1"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="3"
+                    android:textColor="#FFB9B0A2"
+                    android:textSize="14sp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

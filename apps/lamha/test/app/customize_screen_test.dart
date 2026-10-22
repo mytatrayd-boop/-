@@ -232,12 +232,9 @@ void main() {
     expect(find.byKey(const Key('deposit-title')), findsNothing);
     await tapKey(tester, 'showsub-deposit');
     expect(tileOf(bridge, 'deposit')['showSub'], isFalse);
-    // أربعة إيداعات افتراضياً = شبكة: بلا السطر الفرعي يبقى الاسم وحده في الخانة.
-    expect(
-      (tester.widget<Text>(find.byKey(const Key('deposit-cell-0'))).textSpan! as TextSpan)
-          .children,
-      hasLength(1),
-    );
+    // أربعة إيداعات افتراضياً = شبكة: بلا السطر الفرعي يبقى الاسم وحده.
+    expect(find.byKey(const Key('deposit-days-0')), findsNothing);
+    expect(find.byKey(const Key('deposit-name-0')), findsOneWidget);
 
     // القبلة: عنوانها كلمة «القبلة» في الدائرة، بلا سطر فرعي.
     await select(tester, 'qibla');
