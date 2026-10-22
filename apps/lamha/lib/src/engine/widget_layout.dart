@@ -4,7 +4,8 @@ import 'dart:math' as math;
 /// يُرصّ بالترتيب من اليمين ويلتفّ إلى صف جديد، بحد [maxGridRows] صفوف.
 /// الخوارزمية نفسها في LamhaLogic.kt (packRows وrowHeights) مع اختبار بالحالات نفسها.
 
-/// عناصر الودجت الثمانية بترتيبها الافتراضي.
+/// عناصر الودجت: الثمانية الأولى (الميزة ٥)، ثم عناصر تصميم المالك ٣ (الميزة ٦): اليوم والطقس،
+/// والهجري والميلادي كل في كبسولة، ومواقيت الصلاة، ووصف الموسم.
 enum WidgetElement {
   clock,
   dates,
@@ -14,6 +15,11 @@ enum WidgetElement {
   deposit,
   season,
   tradSeason,
+  dayWeather,
+  hijri,
+  gregorian,
+  prayerTimes,
+  tradPoints,
 }
 
 /// حجم الخط العام (شاشة الإعدادات): معامل يُضرب به كل حجم نص.
@@ -184,9 +190,28 @@ class TileLayout {
   );
 }
 
-/// الترتيب الافتراضي = الشكل السابق: الساعة واليوم يميناً، ويسارها التاريخان وتحتهما المدينة
-/// والطقس (بعرضهما فيُكدَّسان، [stackCells])، ثم الصلاة والقبلة والإيداع، ثم الفصل والموسم.
+/// الترتيب الافتراضي (الميزة ٦، تصميم المالك ٣ `mockups/owner_design_v3.png`)، من اليمين:
+/// الساعة (عرض ٢، بلا يوم تحتها) واليوم والطقس؛ ثم الهجري وتحته الميلادي (مكدسان، [stackCells])
+/// والقبلة؛ ثم مواقيت الصلاة (عرض ٣)؛ ثم الإيداعات (عرض ٣)؛ ثم الفصل والموسم ووصفه (بلا عناوين).
+/// والعناصر القديمة (التاريخان معاً، والمدينة والطقس، والصلاة القادمة) متاحة مخفية.
 const defaultLayout = <TileLayout>[
+  TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false),
+  TileLayout(WidgetElement.dayWeather),
+  TileLayout(WidgetElement.hijri, span: 2),
+  TileLayout(WidgetElement.gregorian, span: 2),
+  TileLayout(WidgetElement.qibla),
+  TileLayout(WidgetElement.prayerTimes, span: 3),
+  TileLayout(WidgetElement.deposit, span: 3),
+  TileLayout(WidgetElement.season, showTitle: false),
+  TileLayout(WidgetElement.tradSeason, showTitle: false),
+  TileLayout(WidgetElement.tradPoints),
+  TileLayout(WidgetElement.dates, visible: false, span: 2),
+  TileLayout(WidgetElement.weather, visible: false, span: 2),
+  TileLayout(WidgetElement.prayer, visible: false),
+];
+
+/// الترتيب الافتراضي السابق (الميزة ٥)، للترحيل: من لم يغيّره ينتقل إلى [defaultLayout].
+const legacyDefaultLayout = <TileLayout>[
   TileLayout(WidgetElement.clock),
   TileLayout(WidgetElement.dates, span: 2),
   TileLayout(WidgetElement.weather, span: 2),
@@ -197,7 +222,8 @@ const defaultLayout = <TileLayout>[
   TileLayout(WidgetElement.tradSeason, span: 2),
 ];
 
-/// كل عنصر مرة واحدة: يُحذف المكرر، ويُضاف الناقص في آخر القائمة بإعداده الافتراضي.
+/// كل عنصر مرة واحدة: يُحذف المكرر، ويُضاف الناقص في آخر القائمة بإعداده الافتراضي مخفياً
+/// (فلا يتغير ما يراه من خصّص ترتيبه).
 List<TileLayout> normalizeLayout(Iterable<TileLayout> layout) {
   final seen = <WidgetElement>{};
   final out = <TileLayout>[
@@ -205,22 +231,41 @@ List<TileLayout> normalizeLayout(Iterable<TileLayout> layout) {
       if (seen.add(t.id)) t,
   ];
   for (final d in defaultLayout) {
-    if (seen.add(d.id)) out.add(d);
+    if (seen.add(d.id)) out.add(d.copyWith(visible: false));
   }
   return List.unmodifiable(out);
 }
 
-/// ترحيل إعدادات ما قبل الميزة ٥ (مفاتيح «ما يظهر على الودجت»): الترتيب الافتراضي، والإظهار
-/// منها. الساعة كانت ثابتة، والتاريخان مربع واحد يظهر إذا ظهر أحدهما.
+/// ترحيل التخطيط المحفوظ (الميزة ٦): الترتيب الافتراضي السابق كما هو تماماً ← [defaultLayout]،
+/// وغيره (مخصص) يبقى وتُضاف العناصر الجديدة في آخره مخفية.
+List<TileLayout> migrateLayout(List<TileLayout> layout) {
+  final legacy =
+      layout.length == legacyDefaultLayout.length &&
+      [
+        for (var i = 0; i < layout.length; i++)
+          layout[i] == legacyDefaultLayout[i],
+      ].every((same) => same);
+  return legacy ? defaultLayout : normalizeLayout(layout);
+}
+
+/// ترحيل إعدادات ما قبل الميزة ٥ (مفاتيح «ما يظهر على الودجت»): لم يُخصَّص فيها ترتيب، فالترتيب
+/// الافتراضي الجديد، والإظهار منها: الساعة ثابتة، وكل تاريخ بمفتاحه، واليوم والطقس بالطقس، ومواقيت
+/// الصلاة بالصلاة، ووصف الموسم بالموسم. العناصر القديمة تبقى مخفية.
 List<TileLayout> layoutFromVisible(Iterable<String> visible) {
   final v = visible.toSet();
-  bool on(WidgetElement e) => switch (e) {
+  bool on(TileLayout t) => switch (t.id) {
     WidgetElement.clock => true,
-    WidgetElement.dates => v.contains('hijri') || v.contains('gregorian'),
-    _ => v.contains(e.name),
+    WidgetElement.hijri => v.contains('hijri'),
+    WidgetElement.gregorian => v.contains('gregorian'),
+    WidgetElement.dayWeather => v.contains('weather'),
+    WidgetElement.prayerTimes => v.contains('prayer'),
+    WidgetElement.tradPoints => v.contains('tradSeason'),
+    WidgetElement.dates || WidgetElement.weather || WidgetElement.prayer =>
+      false,
+    _ => v.contains(t.id.name),
   };
   return List.unmodifiable([
-    for (final t in defaultLayout) t.copyWith(visible: on(t.id)),
+    for (final t in defaultLayout) t.copyWith(visible: on(t)),
   ]);
 }
 
@@ -343,17 +388,30 @@ List<List<GridCell>> packRows(
 /// معرّف خانة التاريخين وتحتهما المدينة والطقس (الشكل السابق).
 const datesWeatherCell = 'dates+weather';
 
-/// إذا جاء مربع المدينة والطقس بعد التاريخين مباشرة وبعرضهما، يُكدَّس تحتهما في خانة واحدة
-/// [datesWeatherCell] (كالعمود الأيسر السابق). قبل [packRows] (stackCells في LamhaLogic.kt).
+/// معرّف خانة الهجري وتحته الميلادي (الميزة ٦، كبسولتان).
+const hijriGregorianCell = 'hijri+gregorian';
+
+/// أزواج تُكدَّس: الثاني تحت الأول إذا جاء بعده مباشرة وبعرضه.
+const _stackPairs = [
+  (WidgetElement.dates, WidgetElement.weather),
+  (WidgetElement.hijri, WidgetElement.gregorian),
+];
+
+/// إذا جاء مربع المدينة والطقس بعد التاريخين مباشرة وبعرضهما، أو الميلادي بعد الهجري، يُكدَّس تحته
+/// في خانة واحدة ([datesWeatherCell] و[hijriGregorianCell]). قبل [packRows] (stackCells في
+/// LamhaLogic.kt).
 List<GridCell> stackCells(List<GridCell> shown) {
   final out = <GridCell>[];
   for (var i = 0; i < shown.length; i++) {
     final c = shown[i];
-    if (c.id == WidgetElement.dates.name &&
+    final pair = _stackPairs
+        .where((p) => p.$1.name == c.id)
+        .firstOrNull;
+    if (pair != null &&
         i + 1 < shown.length &&
-        shown[i + 1].id == WidgetElement.weather.name &&
+        shown[i + 1].id == pair.$2.name &&
         shown[i + 1].span == c.span) {
-      out.add((id: datesWeatherCell, span: c.span));
+      out.add((id: '${c.id}+${pair.$2.name}', span: c.span));
       i++;
     } else {
       out.add(c);
@@ -482,4 +540,80 @@ TileFit fitTile({
     subScales: List.unmodifiable([for (final i in kept) scales[i]!]),
     lastSubLines: lastLines,
   );
+}
+
+/// ما يظهر في مربع أعمدة (مواقيت الصلاة والإيداعات، الميزة ٦) وبأي حجم (fitColumns).
+typedef ColumnsFit = ({
+  bool title,
+  double nameScale,
+  bool sub,
+  double subScale,
+});
+
+/// ملاءمة مربع أعمدة: الأعمدة كلها بعرض [width]، و[nameWidth] و[subWidth] أعرض اسم وأعرض سطر تحته
+/// بالحجم المطلوب، فتصغر الأعمدة كلها بالتساوي إن لم يتسع أعرضها (لا يُخفى عمود). الاسم سطر واحد،
+/// والسطر الفرعي يصغر حتى [minSubFit] وإلا يُخفى ([subLine] = 0: بلا سطر فرعي). إن ضاق الارتفاع
+/// [height]: يُخفى العنوان ([titleHeight]) أولاً، ثم يصغر السطران معاً حتى [minShrink] (السطر الفرعي
+/// أساسي هنا: وقت الصلاة وأيام الإيداع)، ثم يُخفى السطر الفرعي، وآخراً يصغر الاسم ليتسع.
+/// مطابقة لـ fitColumns في LamhaLogic.kt.
+ColumnsFit fitColumns({
+  required double height,
+  required double width,
+  double titleHeight = 0,
+  required double nameLine,
+  required double nameWidth,
+  double subLine = 0,
+  double subWidth = 0,
+  double gap = 0,
+  double minSubFit = 0.6,
+  double minShrink = 0.8,
+}) {
+  var kName = width > 0 && nameWidth > width ? width / nameWidth : 1.0;
+  var kSub = width > 0 && subWidth > width ? width / subWidth : 1.0;
+  var title = titleHeight > 0;
+  var sub = subLine > 0 && kSub >= minSubFit;
+  double used() =>
+      (title ? titleHeight + gap : 0) +
+      nameLine * kName +
+      (sub ? gap + subLine * kSub : 0);
+  if (height > 0) {
+    if (used() > height && title) title = false;
+    if (used() > height && sub) {
+      final f = (height - gap) / (nameLine * kName + subLine * kSub);
+      if (f >= minShrink) {
+        kName *= f;
+        kSub *= f;
+      } else {
+        sub = false;
+      }
+    }
+    if (used() > height && nameLine > 0) {
+      kName = math.min(kName, height / nameLine);
+    }
+  }
+  return (title: title, nameScale: kName, sub: sub, subScale: kSub);
+}
+
+/// صلاة في عمود مواقيت الصلاة: [key] معرّفها (fajr…)، و[text] وقتها جاهزاً («٤:٥٦ ص»).
+typedef PrayerSlot = ({String key, String name, DateTime time, String text});
+
+/// الصلوات الخمس بترتيبها.
+const fivePrayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+/// مواقيت الصلاة تدور (الميزة ٦): الصلاة القادمة أولاً (أول عمود من اليمين)، ثم البقية بترتيبها
+/// الدوري، وما يقع منها غداً بأوقات [nextDay] (أو أوقات اليوم إن لم يوجد). بعد العشاء: فجر الغد
+/// أولاً. مطابقة لـ rotatePrayers في LamhaLogic.kt.
+List<PrayerSlot> rotatePrayers(
+  List<PrayerSlot> day,
+  List<PrayerSlot>? nextDay,
+  DateTime now,
+) {
+  List<PrayerSlot> five(List<PrayerSlot> l) => [
+    for (final k in fivePrayers) ...l.where((p) => p.key == k).take(1),
+  ];
+  final today = five(day);
+  final tomorrow = nextDay == null ? today : five(nextDay);
+  var i = today.indexWhere((p) => p.time.isAfter(now));
+  if (i < 0) i = today.length;
+  return [...today.skip(i), ...tomorrow.take(i)];
 }

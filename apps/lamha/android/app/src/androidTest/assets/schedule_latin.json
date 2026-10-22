@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-19T00:00:00.000Z",
+  "city": {
+    "name": "أبها",
+    "latitude": 18.2,
+    "longitude": 42.33,
+    "timeZone": "Asia/Riyadh"
+  },
+  "prayerMethod": "ummAlQura",
+  "qibla": {
+    "degrees": 324.3,
+    "direction": "شمال غرب",
+    "text": "324° شمال غرب"
+  },
+  "visible": {
+    "clock": true,
+    "dates": false,
+    "weather": false,
+    "prayer": false,
+    "qibla": true,
+    "deposit": true,
+    "season": true,
+    "tradSeason": true,
+    "dayWeather": true,
+    "hijri": true,
+    "gregorian": true,
+    "prayerTimes": true,
+    "tradPoints": true
+  },
+  "layout": [
+    {
+      "id": "clock",
+      "visible": true,
+      "span": 2,
+      "fontScale": 2.0,
+      "showTitle": true,
+      "showSub": false,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "dayWeather",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "hijri",
+      "visible": true,
+      "span": 2,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "gregorian",
+      "visible": true,
+      "span": 2,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "qibla",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "prayerTimes",
+      "visible": true,
+      "span": 3,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "deposit",
+      "visible": true,
+      "span": 3,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "season",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": false,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "tradSeason",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": false,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "tradPoints",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "dates",
+      "visible": false,
+      "span": 2,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "weather",
+      "visible": false,
+      "span": 2,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "prayer",
+      "visible": false,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    }
+  ],
+  "opacity": 80,
+  "background": null,
+  "theme": {
+    "id": "black",
+    "accent": 4292258396,
+    "background": 4278190080
+  },
+  "lockNotification": false,
+  "fontScale": 1.0,
+  "digits": "latin",
+  "weather": {
+    "temp": 26.2,
+    "code": 0,
+    "fetchedAt": "2026-10-18T23:40:00.000Z",
+    "latitude": 18.2,
+    "longitude": 42.33,
+    "emoji": "☀️",
+    "text": "صحو",
+    "tempText": "26°",
+    "maxAgeMinutes": 180,
+    "icons": {
+      "0": "☀️",
+      "1": "🌤️",
+      "2": "⛅",
+      "3": "☁️",
+      "45": "🌫️",
+      "48": "🌫️",
+      "51": "🌦️",
+      "53": "🌦️",
+      "55": "🌦️",
+      "56": "🌧️",
+      "57": "🌧️",
+      "61": "🌧️",
+      "63": "🌧️",
+      "65": "🌧️",
+      "66": "🌧️",
+      "67": "🌧️",
+      "71": "🌨️",
+      "73": "🌨️",
+      "75": "🌨️",
+      "77": "🌨️",
+      "80": "🌦️",
+      "81": "🌧️",
+      "82": "⛈️",
+      "85": "🌨️",
+      "86": "🌨️",
+      "95": "⛈️",
+      "96": "⛈️",
+      "99": "⛈️"
+    }
+  },
+  "days": [
+    {
+      "date": "2026-10-19",
+      "weekday": "الإثنين",
+      "gregorian": {
+        "day": 19,
+        "month": 10,
+        "monthName": "أكتوبر",
+        "year": 2026,
+        "text": "19 أكتوبر 2026"
+      },
+      "hijri": {
+        "day": 8,
+        "month": 5,
+        "monthName": "جمادى الأولى",
+        "year": 1448,
+        "text": "8 جمادى الأولى 1448"
+      },
+      "prayers": {
+        "fajr": {
+          "name": "الفجر",
+          "time": "2026-10-19T04:50:00.000+0300",
+          "text": "4:50 ص"
+        },
+        "sunrise": {
+          "name": "الشروق",
+          "time": "2026-10-19T06:05:00.000+0300",
+          "text": "6:05 ص"
+        },
+        "dhuhr": {
+          "name": "الظهر",
+          "time": "2026-10-19T11:56:00.000+0300",
+          "text": "11:56 ص"
+        },
+        "asr": {
+          "name": "العصر",
+          "time": "2026-10-19T15:16:00.000+0300",
+          "text": "3:16 م"
+        },
+        "maghrib": {
+          "name": "المغرب",
+          "time": "2026-10-19T17:46:00.000+0300",
+          "text": "5:46 م"
+        },
+        "isha": {
+          "name": "العشاء",
+          "time": "2026-10-19T19:16:00.000+0300",
+          "text": "7:16 م"
+        }
+      },
+      "season": {
+        "id": "autumn",
+        "name": "الخريف",
+        "next": {
+          "id": "winter",
+          "name": "الشتاء"
+        },
+        "nextStart": "2026-12-21",
+        "daysRemaining": 63,
+        "remainingText": "باقي 63 يوماً",
+        "afterText": "بعد 63 يوماً"
+      },
+      "tradSeason": {
+        "id": "wasm",
+        "name": "الوسم",
+        "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "points": [
+          "تتدنى درجات الحرارة خلال الليل.",
+          "ترتفع فيه فرص هطول الأمطار النافعة."
+        ],
+        "start": "2026-10-16",
+        "end": "2026-12-06",
+        "next": {
+          "id": "murabbaniya",
+          "name": "المربعانية"
+        },
+        "daysRemaining": 49,
+        "remainingText": "باقي 49 يوماً",
+        "afterText": "بعد 49 يوماً",
+        "approval": "owner_provided"
+      },
+      "deposits": [
+        {
+          "id": "housing_support",
+          "name": "الدعم السكني",
+          "label": "الدعم السكني",
+          "date": "2026-10-25",
+          "daysRemaining": 6,
+          "remainingText": "باقي 6 أيام",
+          "afterText": "بعد 6 أيام",
+          "daysText": "6 أيام"
+        },
+        {
+          "id": "salary",
+          "name": "الرواتب",
+          "label": "راتب أكتوبر",
+          "date": "2026-10-27",
+          "daysRemaining": 8,
+          "remainingText": "باقي 8 أيام",
+          "afterText": "بعد 8 أيام",
+          "daysText": "8 أيام"
+        },
+        {
+          "id": "citizen_account",
+          "name": "حساب المواطن",
+          "label": "حساب المواطن",
+          "date": "2026-11-10",
+          "daysRemaining": 22,
+          "remainingText": "باقي 22 يوماً",
+          "afterText": "بعد 22 يوماً",
+          "daysText": "22 يوماً"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "weekday": "الثلاثاء",
+      "gregorian": {
+        "day": 20,
+        "month": 10,
+        "monthName": "أكتوبر",
+        "year": 2026,
+        "text": "20 أكتوبر 2026"
+      },
+      "hijri": {
+        "day": 9,
+        "month": 5,
+        "monthName": "جمادى الأولى",
+        "year": 1448,
+        "text": "9 جمادى الأولى 1448"
+      },
+      "prayers": {
+        "fajr": {
+          "name": "الفجر",
+          "time": "2026-10-20T04:51:00.000+0300",
+          "text": "4:51 ص"
+        },
+        "sunrise": {
+          "name": "الشروق",
+          "time": "2026-10-20T06:06:00.000+0300",
+          "text": "6:06 ص"
+        },
+        "dhuhr": {
+          "name": "الظهر",
+          "time": "2026-10-20T11:55:00.000+0300",
+          "text": "11:55 ص"
+        },
+        "asr": {
+          "name": "العصر",
+          "time": "2026-10-20T15:15:00.000+0300",
+          "text": "3:15 م"
+        },
+        "maghrib": {
+          "name": "المغرب",
+          "time": "2026-10-20T17:45:00.000+0300",
+          "text": "5:45 م"
+        },
+        "isha": {
+          "name": "العشاء",
+          "time": "2026-10-20T19:15:00.000+0300",
+          "text": "7:15 م"
+        }
+      },
+      "season": {
+        "id": "autumn",
+        "name": "الخريف",
+        "next": {
+          "id": "winter",
+          "name": "الشتاء"
+        },
+        "nextStart": "2026-12-21",
+        "daysRemaining": 62,
+        "remainingText": "باقي 62 يوماً",
+        "afterText": "بعد 62 يوماً"
+      },
+      "tradSeason": {
+        "id": "wasm",
+        "name": "الوسم",
+        "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "points": [
+          "تتدنى درجات الحرارة خلال الليل.",
+          "ترتفع فيه فرص هطول الأمطار النافعة."
+        ],
+        "start": "2026-10-16",
+        "end": "2026-12-06",
+        "next": {
+          "id": "murabbaniya",
+          "name": "المربعانية"
+        },
+        "daysRemaining": 48,
+        "remainingText": "باقي 48 يوماً",
+        "afterText": "بعد 48 يوماً",
+        "approval": "owner_provided"
+      },
+      "deposits": [
+        {
+          "id": "housing_support",
+          "name": "الدعم السكني",
+          "label": "الدعم السكني",
+          "date": "2026-10-25",
+          "daysRemaining": 5,
+          "remainingText": "باقي 5 أيام",
+          "afterText": "بعد 5 أيام",
+          "daysText": "5 أيام"
+        },
+        {
+          "id": "salary",
+          "name": "الرواتب",
+          "label": "راتب أكتوبر",
+          "date": "2026-10-27",
+          "daysRemaining": 7,
+          "remainingText": "باقي 7 أيام",
+          "afterText": "بعد 7 أيام",
+          "daysText": "7 أيام"
+        },
+        {
+          "id": "citizen_account",
+          "name": "حساب المواطن",
+          "label": "حساب المواطن",
+          "date": "2026-11-10",
+          "daysRemaining": 21,
+          "remainingText": "باقي 21 يوماً",
+          "afterText": "بعد 21 يوماً",
+          "daysText": "21 يوماً"
+        }
+      ]
+    }
+  ]
+}

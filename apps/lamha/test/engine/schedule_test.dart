@@ -50,17 +50,18 @@ void main() {
     expect(qibla['degrees'] as double, closeTo(244, 1));
     expect(qibla['direction'], 'جنوب غرب');
     expect(schedule['visible'], {
-      'clock': false, 'dates': true, 'weather': false, 'prayer': true,
-      'qibla': false, 'deposit': false, 'season': false, 'tradSeason': false,
+      for (final e in WidgetElement.values)
+        e.name: e == WidgetElement.dates || e == WidgetElement.prayer,
     });
-    // التخطيط بترتيبه وقيمه الجاهزة (الميزة ٥).
+    // التخطيط بترتيبه وقيمه الجاهزة (الميزة ٥)، والترتيب الافتراضي للميزة ٦.
     final layout = (schedule['layout']! as List).cast<Map>();
-    expect(layout.map((t) => t['id']), [for (final e in WidgetElement.values) e.name]);
-    expect(layout[1], {
-      'id': 'dates', 'visible': true, 'span': 2, 'fontScale': 1.0,
-      'showTitle': true, 'showSub': true,
+    expect(layout.map((t) => t['id']), [for (final t in defaultLayout) t.id.name]);
+    expect(layout.first, {
+      'id': 'clock', 'visible': false, 'span': 2, 'fontScale': 2.0,
+      'showTitle': true, 'showSub': false,
       'primaryColor': null, 'secondaryColor': null,
     });
+    expect(schedule['digits'], 'arabic');
   });
 
   test('مفاتيح كل يوم وقيم اليوم الأول', () {
@@ -71,7 +72,7 @@ void main() {
       ]));
       expect((d['prayers'] as Map).keys,
           ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']);
-      expect((d['deposits'] as List).length, inInclusiveRange(1, 2));
+      expect((d['deposits'] as List).length, inInclusiveRange(1, 3));
     }
     final first = days.first as Map;
     expect(first['weekday'], 'الإثنين');
@@ -119,7 +120,7 @@ void main() {
     final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
     expect(fajr['text'], arabicTimeText(DateTime(2026, 1, 1, t.hour, t.minute)));
     expect(fajr['text'], matches(RegExp(r'^[٠-٩]{1,2}:[٠-٩]{2} ص$')));
-    expect(fajr['text'], startsWith(arabicDigits(h)));
+    expect(fajr['text'], startsWith(formatDigits(h)));
     expect((prayers['maghrib'] as Map)['text'], endsWith(' م'));
     expect(arabicTimeText(DateTime(2026, 1, 1, 0, 5)), '١٢:٠٥ ص');
     expect(arabicTimeText(DateTime(2026, 1, 1, 12, 0)), '١٢:٠٠ م');
@@ -160,5 +161,49 @@ void main() {
     expect(withBg['background'], 'wallpaper.png');
     // generatedAt افتراضياً = لحظة البناء الممررة، لا ساعة الجهاز.
     expect(withBg['generatedAt'], '2026-10-19T09:00:00.000Z');
+  });
+
+  // الميزة ٦: حتى ثلاثة إيداعات بأيامها، ونقاط الموسم، و«بعد» للفصل والموسم، والأرقام الإنجليزية.
+  test('ثلاثة إيداعات الأقرب أولاً، ونقاط الوسم، و«بعد ٦٣ يوماً»', () {
+    final s3 = buildSchedule(
+      DateTime.utc(2026, 10, 19, 9),
+      settings(deposits: {'salary', 'citizen_account', 'housing_support', 'social_security'}),
+      data,
+      days: 1,
+    );
+    final day = (s3['days']! as List).first as Map;
+    final deps = (day['deposits'] as List).cast<Map>();
+    expect([for (final d in deps) d['label']],
+        ['الدعم السكني', 'راتب أكتوبر', 'الضمان الاجتماعي']);
+    expect([for (final d in deps) d['daysText']], ['٦ أيام', '٨ أيام', '١٣ يوماً']);
+    final trad = day['tradSeason'] as Map;
+    expect(trad['points'], [
+      'تتدنى درجات الحرارة خلال الليل.',
+      'ترتفع فيه فرص هطول الأمطار النافعة.',
+    ]);
+    expect((day['season'] as Map)['afterText'], startsWith('بعد '));
+    expect(trad['afterText'], startsWith('بعد '));
+  });
+
+  test('الأرقام الإنجليزية: كل النصوص الجاهزة، وISO كما هو', () {
+    Settings latin() => Settings(
+          latitude: 24.7136,
+          longitude: 46.6753,
+          cityName: 'الرياض',
+          deposits: {'salary'},
+          digits: DigitStyle.latin,
+        );
+    final s = buildSchedule(DateTime.utc(2026, 10, 19, 9), latin(), data,
+        days: 1, generatedAt: DateTime.utc(2026, 10, 19, 9));
+    final text = jsonEncode(s);
+    expect(RegExp('[٠-٩]').hasMatch(text), isFalse);
+    expect(s['digits'], 'latin');
+    final day = (s['days']! as List).first as Map;
+    expect((day['hijri'] as Map)['text'], '8 جمادى الأولى 1448');
+    expect((day['gregorian'] as Map)['text'], '19 أكتوبر 2026');
+    expect(((day['prayers'] as Map)['fajr'] as Map)['text'], matches(RegExp(r'^\d:\d\d ص$')));
+    expect(((day['prayers'] as Map)['fajr'] as Map)['time'], startsWith('2026-10-19T'));
+    expect(s['generatedAt'], '2026-10-19T09:00:00.000Z');
+    expect((day['deposits'] as List).first['remainingText'], 'باقي 8 أيام');
   });
 }

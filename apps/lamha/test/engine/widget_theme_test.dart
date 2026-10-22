@@ -6,11 +6,13 @@ import 'package:lamha/src/engine/widget_theme.dart';
 import '../helpers.dart';
 
 void main() {
-  test('السمات السبع، والذهبي افتراضي وللمجهول', () {
+  test('السمات الثماني، والأسود افتراضي وللمجهول (الميزة ٦)', () {
     expect(WidgetTheme.values.map((t) => t.name),
-        ['gold', 'green', 'blue', 'purple', 'pink', 'gray', 'system']);
-    expect(WidgetTheme.byName(null), WidgetTheme.gold);
-    expect(WidgetTheme.byName('nope'), WidgetTheme.gold);
+        ['black', 'gold', 'green', 'blue', 'purple', 'pink', 'gray', 'system']);
+    expect(WidgetTheme.byName(null), WidgetTheme.black);
+    expect(WidgetTheme.byName('nope'), WidgetTheme.black);
+    expect(WidgetTheme.black.background, 0xFF000000);
+    expect(WidgetTheme.black.accent, 0xFFD6AA5C);
     expect(WidgetTheme.byName('pink'), WidgetTheme.pink);
     expect(WidgetTheme.gold.accent, 0xFFD6AA5C);
   });

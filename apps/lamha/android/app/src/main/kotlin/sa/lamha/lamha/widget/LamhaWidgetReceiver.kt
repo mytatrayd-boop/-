@@ -95,6 +95,36 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val TILE_VALUE_SP = 20f
         private const val TILE_SUB_SP = 14f
 
+        /// أحجام الميزة ٦ (widget_preview_tiles.dart).
+        private const val DAY_WEEKDAY_SP = 22f
+        private const val DAY_CITY_SP = 16f
+        private const val DAY_TEMP_SP = 28f
+        private const val CAPSULE_SP = 16f
+        private const val COLUMN_TITLE_SP = 11f
+        private const val COLUMN_NAME_SP = 20f
+        private const val COLUMN_SUB_SP = 14f
+        private const val QIBLA_TITLE_SP = 14f
+        private const val POINT_SP = 12f
+        private const val COLUMN_GAP_DP = 4f
+        private const val LINE_GAP_DP = 2f
+
+        /// حشوة الصناديق الجديدة: ٩ أفقياً و٥ رأسياً (boxPadV في Dart).
+        private const val BOX_PAD_H = 18f
+        private const val BOX_PAD_V = 8f
+
+        /// ما لا يصغر في دائرة القبلة (الكعبة)، كـ heights في _QiblaTile.
+        private const val QIBLA_PAD_DP = 32f
+        private const val KAABA_RATIO = 0.42f
+        private const val KAABA_ALONE_RATIO = 0.55f
+
+        /// أعمدة مربع الأعمدة ونقاط وصف الموسم في تخطيطيهما.
+        private val COLUMN_IDS = listOf(
+            Triple(R.id.col0, R.id.col_name0, R.id.col_sub0), Triple(R.id.col1, R.id.col_name1, R.id.col_sub1),
+            Triple(R.id.col2, R.id.col_name2, R.id.col_sub2), Triple(R.id.col3, R.id.col_name3, R.id.col_sub3),
+            Triple(R.id.col4, R.id.col_name4, R.id.col_sub4),
+        )
+        private val POINT_IDS = listOf(R.id.point0, R.id.point1, R.id.point2, R.id.point3)
+
         /// نص قياس ارتفاع السطر (lineDp): عربي وأرقام، والساعة.
         private const val LINE_SAMPLE = "الفجر ٣٢٤° أبها"
         private const val CLOCK_SAMPLE = "١٢:٥٨"
@@ -193,13 +223,17 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 day.weather, LamhaSchedule.weatherOf(nativeWeather),
                 day.latitude, day.longitude,
             )
-            val weatherText = LamhaLogic.weatherText(weather, now, day.weatherMaxAgeMinutes, day.weatherIcons)
+            val weatherText = LamhaLogic.weatherText(weather, now, day.weatherMaxAgeMinutes, day.weatherIcons, day.latinDigits)
                 ?: ctx.getString(R.string.weather_unknown)
-            val env = Env(context, ctx, day, accent, now, minWidth, sys, weatherText)
+            val placed = rows.flatten().flatMap { LamhaLogic.cellElements(it.id) }.toSet()
+            val fresh = LamhaLogic.freshWeather(weather, now, day.weatherMaxAgeMinutes)
+            val env = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, placed, fresh)
             fun scaleOf(id: String) = day.fontScale * (byId[id]?.fontScale ?: 1f)
             // الخانة المكدسة (التاريخان وتحتهما المدينة): مجموع ارتفاعيهما، وحشوة الخانة مرة.
             val parts = rows.map { r ->
-                r.map { cell -> LamhaLogic.cellElements(cell.id).map { heightsDp(env, LamhaLogic.Cell(it, cell.span), 1f) } }
+                r.map { cell ->
+                    LamhaLogic.cellElements(cell.id).map { heightsDp(env, LamhaLogic.Cell(it, cell.span), 1f, byId[it] ?: LamhaLogic.Tile(it)) }
+                }
             }
             val sizes = parts.map { r ->
                 r.map { p ->
@@ -234,7 +268,15 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     )
                     val inner = if (maxHeight > 0) heights[r] - 8f else 0f
                     val ids = LamhaLogic.cellElements(cell.id)
-                    if (ids.size == 1) {
+                    if (ids.all { it in CAPSULES }) {
+                        // كبسولتا التاريخين (أو واحدة) تقتسمان الخانة بالوزن (widget_tile_capsule).
+                        val stack = RemoteViews(context.packageName, R.layout.widget_tile_stack)
+                        for (id in ids) {
+                            val spec = byId[id] ?: LamhaLogic.Tile(id)
+                            stack.addView(R.id.stack, tile(env, spec, cell.span, scaleOf(id), if (inner > 0f) inner / ids.size - 6f else 0f))
+                        }
+                        slot.addView(R.id.slot, stack)
+                    } else if (ids.size == 1) {
                         val spec = byId[cell.id] ?: LamhaLogic.Tile(cell.id)
                         slot.addView(R.id.slot, tile(env, spec, cell.span, scaleOf(cell.id), inner))
                     } else {
@@ -257,30 +299,49 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         }
 
         /// خانات بلا صندوق: صفوفها بقدر محتواها (rowHeights: flexible، _lineTiles في المعاينة).
-        private val LINE_TILES = setOf("clock", "dates", "weather", LamhaLogic.DATES_WEATHER)
+        private val LINE_TILES = setOf("clock", "dates", "weather", "dayWeather", LamhaLogic.DATES_WEATHER)
+
+        /// كبسولتا التاريخين (الميزة ٦).
+        private val CAPSULES = setOf("hijri", "gregorian")
 
         /// ما يحتاجه كل مربع: السياقان (الأصلي وبالعربية)، واليوم، والتمييز، والعرض، وخط النظام.
         private class Env(
             val context: Context, val ctx: Context, val day: LamhaDay, val accent: Int, val now: Long,
             val widthDp: Int, val sys: Float, val weatherText: String,
+            /// العناصر الظاهرة فعلاً، وقراءة الطقس الحديثة (أو null).
+            val placed: Set<String>, val weather: LamhaLogic.Weather?,
         )
 
         /// ارتفاعا المربع (dp) بمعامله [scale] كـ heights في المعاينة: النص الذي يصغر مع معامل الملاءمة،
         /// وما لا يصغر (حشوة الخانة ٤+٤، ولمربعات المعلومات حشوتها ٨+٨ والفواصل ٣، والساعة إن صغّرها
         /// عرض مربعها).
-        private fun heightsDp(env: Env, cell: LamhaLogic.Cell, scale: Float): Pair<Float, Float> {
+        /// العنوان والسطر الفرعي المطفآن في [spec] لا يأخذان مكاناً (الميزة ٦: الساعة بلا يوم، والفصل
+        /// والموسم بلا عناوين في الافتراضي).
+        private fun heightsDp(env: Env, cell: LamhaLogic.Cell, scale: Float, spec: LamhaLogic.Tile): Pair<Float, Float> {
+            val showTitle = spec.showTitle
+            val showSub = spec.showSub
             return when (cell.id) {
                 "clock" -> {
                     val (preferred, fitted) = clockSp(env, scale, LamhaLogic.slotInnerDp(env.widthDp, cell.span) - FIT_MARGIN_DP)
-                    val weekday = lineDp(env.ctx, WEEKDAY_SP * scale, true, false)
+                    val weekday = if (showSub) lineDp(env.ctx, WEEKDAY_SP * scale, true, false) else 0f
                     val clock = lineDp(env.ctx, fitted, true, false, CLOCK_SAMPLE)
                     if (fitted < preferred) weekday to clock + 4f else clock + weekday to 4f
                 }
-                "dates" -> lineDp(env.ctx, HIJRI_SP * scale, true) + lineDp(env.ctx, GREGORIAN_SP * scale, false) to 10f
+                "dates" -> lineDp(env.ctx, HIJRI_SP * scale, true) + (if (showSub) lineDp(env.ctx, GREGORIAN_SP * scale, false) else 0f) to 10f
                 "weather" -> lineDp(env.ctx, CITY_WEATHER_SP * scale, false) to 8f
-                else -> lineDp(env.ctx, TILE_TITLE_SP * scale, true) + lineDp(env.ctx, TILE_VALUE_SP * scale, true) +
-                    subCount(env.day, cell.id) * lineDp(env.ctx, TILE_SUB_SP * scale, false) to
-                    8f + 16f + TILE_GAP_DP * (subCount(env.day, cell.id) + 1)
+                // الميزة ٦: المقاس بالأسطر الأساسية (كـ heights في widget_preview_tiles.dart)، والباقي إن اتسع.
+                "dayWeather" -> tightDp(env.ctx, DAY_WEEKDAY_SP * scale, true) + (if (showSub) tightDp(env.ctx, DAY_TEMP_SP * scale, false) else 0f) to 8f
+                "hijri", "gregorian" -> tightDp(env.ctx, CAPSULE_SP * scale, true) to 8f + 10f
+                "qibla" -> (if (showTitle) lineDp(env.ctx, QIBLA_TITLE_SP * scale, true) else 0f) to 8f + QIBLA_PAD_DP
+                "prayerTimes", "deposit" ->
+                    tightDp(env.ctx, COLUMN_NAME_SP * scale, true) + (if (showSub) tightDp(env.ctx, COLUMN_SUB_SP * scale, false) + LINE_GAP_DP else 0f) to
+                        8f + BOX_PAD_V
+                "tradPoints" ->
+                    (if (showTitle) tightDp(env.ctx, COLUMN_TITLE_SP * scale, true) else 0f) + 2 * tightDp(env.ctx, POINT_SP * scale, false) to
+                        8f + BOX_PAD_V + LINE_GAP_DP
+                else -> (if (showTitle) lineDp(env.ctx, TILE_TITLE_SP * scale, true) else 0f) + lineDp(env.ctx, TILE_VALUE_SP * scale, true) +
+                    (if (showSub) subCount(env, cell.id) else 0) * lineDp(env.ctx, TILE_SUB_SP * scale, false) to
+                    8f + 16f + TILE_GAP_DP * ((if (showSub) subCount(env, cell.id) else 0) + 1)
             }
         }
 
@@ -312,13 +373,19 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// ارتفاع سطر واحد (dp) بخط النظام بحجم [sp] كما يرسمه TextView، مع خطوط الاحتياط (العربية)
         /// و[includePad] كـ includeFontPadding. قياس لا تقدير (الميزة ٥ب).
-        private fun lineDp(context: Context, sp: Float, bold: Boolean, includePad: Boolean = true, sample: String = LINE_SAMPLE): Float {
+        /// سطر في مربعات الميزة ٦ (includeFontPadding وfallbackLineSpacing مطفأان في تخطيطاتها).
+        private fun tightDp(context: Context, sp: Float, bold: Boolean): Float = lineDp(context, sp, bold, false, fallback = false)
+
+        private fun lineDp(
+            context: Context, sp: Float, bold: Boolean, includePad: Boolean = true, sample: String = LINE_SAMPLE,
+            fallback: Boolean = true,
+        ): Float {
             val metrics = context.resources.displayMetrics
             val paint = TextPaint(Paint.ANTI_ALIAS_FLAG)
             paint.typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
             paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, metrics)
             val b = StaticLayout.Builder.obtain(sample, 0, sample.length, paint, 100_000).setIncludePad(includePad)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) b.setUseLineSpacingFromFallbacks(true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) b.setUseLineSpacingFromFallbacks(fallback)
             return b.build().height / metrics.density
         }
 
@@ -343,11 +410,13 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// عدد الأسطر الثانوية الأساسية (كل منها سطر واحد) لمربع [element]، كـ coreSizes في المعاينة.
         private fun subCount(day: LamhaDay, element: String): Int = when (element) {
             "prayer" -> if (day.nextPrayer != null) 2 else 0
-            "qibla" -> 1
-            "deposit" -> if (day.deposits.size > 1) 2 else 1
             "season" -> 1
             else -> if (day.tradDescription.isEmpty()) 1 else 2
         }
+
+        /// كـ [subCount] مع مربع «وصف الموسم»: الموسم بلا وصف إن ظهر.
+        private fun subCount(env: Env, element: String): Int =
+            if (element == "tradSeason" && "tradPoints" in env.placed) 1 else subCount(env.day, element)
 
         /// محتوى مربع [tile] بعرض [span] ومعامل خطه الفعلي [scale]، و[innerHeightDp] ارتفاع خانته.
         private fun tile(env: Env, tile: LamhaLogic.Tile, span: Int, scale: Float, innerHeightDp: Float): RemoteViews {
@@ -423,6 +492,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     setInt(R.id.weather, "setMaxLines", fit.valueLines)
                     color(this, R.id.weather, primary)
                 }
+                "dayWeather" -> dayWeatherTile(env, tile, scale, avail, innerHeightDp)
+                "hijri", "gregorian" -> capsuleTile(env, tile, scale, if (inner > 0f) inner - 24f - FIT_MARGIN_DP else 0f, innerHeightDp - 4f)
+                "qibla" -> qiblaTile(env, tile, scale, inner, innerHeightDp)
+                "prayerTimes", "deposit" -> columnsTile(env, tile, span, scale, if (inner > 0f) inner - BOX_PAD_H else 0f, innerHeightDp - BOX_PAD_V)
+                "tradPoints" -> pointsTile(env, tile, scale, if (inner > 0f) inner - BOX_PAD_H - FIT_MARGIN_DP else 0f, innerHeightDp - BOX_PAD_V)
                 else -> infoTile(env, tile, scale, if (inner > 0f) inner - 18f - FIT_MARGIN_DP else 0f, innerHeightDp - 16f).apply {
                     color(this, R.id.tile_value, primary)
                     for (id in intArrayOf(R.id.tile_title, R.id.tile_sub1, R.id.tile_countdown, R.id.tile_sub2, R.id.tile_sub3)) {
@@ -447,8 +521,6 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             var title = ctx.getString(
                 when (element) {
                     "prayer" -> R.string.tile_prayer
-                    "qibla" -> R.string.tile_qibla
-                    "deposit" -> R.string.tile_deposit
                     "season" -> R.string.tile_season
                     else -> R.string.tile_trad_season
                 },
@@ -478,39 +550,20 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                         rv.setChronometerCountDown(R.id.tile_countdown, true)
                     }
                 }
-                "qibla" -> {
-                    value = day.qiblaDegrees
-                    sub1 = day.qiblaDirection
-                    // مربع القبلة وحده يفتح شاشة البوصلة؛ بقية الودجت تفتح التطبيق.
-                    rv.setOnClickPendingIntent(
-                        R.id.tile_box,
-                        HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, Uri.parse(QIBLA_URI)),
-                    )
-                }
-                "deposit" -> {
-                    val first = day.deposits.firstOrNull()
-                    val second = day.deposits.getOrNull(1)
-                    // «الإيداع القادم» إن اتسع سطراً واحداً، وإلا «الإيداع» (كـ _depositTile).
-                    title = LamhaLogic.fittingTitle(
-                        title, ctx.getString(R.string.tile_deposit_short), textWidthDp(ctx, title, titleSp), availDp,
-                    )
-                    value = first?.label ?: "--"
-                    if (second != null) {
-                        // مع إيداعين: الاسم، ثم الباقي، ثم الثاني «راتب أكتوبر · باقي ٨ أيام» كاملاً إن اتسع وإلا «…».
-                        sub1 = first?.remaining
-                        sub2 = ctx.getString(R.string.value_with_suffix, second.label, second.remaining)
-                    } else {
-                        sub3 = first?.remaining
-                    }
-                }
                 "season" -> {
                     value = day.seasonName
-                    sub3 = ctx.getString(R.string.remaining_to_next, day.seasonRemaining, LamhaLogic.withLam(day.seasonNext))
+                    sub3 = ctx.getString(R.string.next_after, day.seasonNext, day.seasonAfter)
                 }
                 else -> {
                     value = day.tradName
-                    sub1 = ctx.getString(R.string.remaining_to_next, day.tradRemaining, LamhaLogic.withLam(day.tradNext))
-                    sub3 = day.tradDescription
+                    // الوصف سطر ثانوي إن لم يظهر مربع «وصف الموسم».
+                    val after = ctx.getString(R.string.next_after, day.tradNext, day.tradAfter)
+                    if ("tradPoints" in env.placed || day.tradDescription.isEmpty()) {
+                        sub3 = after
+                    } else {
+                        sub1 = after
+                        sub3 = day.tradDescription
+                    }
                 }
             }
             // العنوان سطر واحد: يصغر الخط (حتى ٧٠٪) إن لم يتسع، ثم «…». بلا عرض معروف: كما هو.
@@ -555,6 +608,192 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             sub(rv, R.id.tile_sub2, sub2.takeIf { R.id.tile_sub2 in kept })
             sub(rv, R.id.tile_sub3, sub3.takeIf { R.id.tile_sub3 in kept })
             if (R.id.tile_sub3 in kept && innerHeightDp > 0f) rv.setInt(R.id.tile_sub3, "setMaxLines", fit.lastSubLines)
+            return rv
+        }
+
+        /// اليوم والطقس (الميزة ٦، _DayWeatherTile): اليوم كبير، ثم «📍 المدينة ☀️» باللون الفرعي، ثم
+        /// الحرارة. إن ضاق الارتفاع يُخفى سطر المدينة أولاً ثم الحرارة (fitTile).
+        private fun dayWeatherTile(env: Env, spec: LamhaLogic.Tile, scale: Float, avail: Float, innerHeightDp: Float): RemoteViews {
+            val ctx = env.ctx
+            val day = env.day
+            val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_dayweather)
+            val weekdaySp = DAY_WEEKDAY_SP * scale
+            val citySp = DAY_CITY_SP * scale
+            val tempSp = DAY_TEMP_SP * scale
+            val w = env.weather
+            val city = ctx.getString(R.string.city_icon, day.cityName, if (w == null) "" else LamhaLogic.weatherIcon(w, day.weatherIcons)).trim()
+            val temp = if (w == null) ctx.getString(R.string.weather_unknown) else LamhaLogic.temperatureText(w.temp, day.latinDigits)
+            val (words, space) = wordsDp(ctx, day.weekday, weekdaySp, true)
+            val fit = LamhaLogic.fitTile(
+                innerHeightDp, avail, 0f, tightDp(ctx, weekdaySp, true), words, space,
+                subs = if (spec.showSub) {
+                    listOf(
+                        LamhaLogic.SubLine(tightDp(ctx, citySp, false), 1, 0f),
+                        LamhaLogic.SubLine(tightDp(ctx, tempSp, false), 1, textWidthDp(ctx, temp, tempSp, false)),
+                    )
+                } else emptyList(),
+                hideFromStart = true, minSubFit = HEAD_MIN_FIT,
+            )
+            rv.setTextViewText(R.id.day_weekday, day.weekday)
+            rv.setTextViewTextSize(R.id.day_weekday, TypedValue.COMPLEX_UNIT_SP, weekdaySp * fit.valueScale)
+            rv.setInt(R.id.day_weekday, "setMaxLines", fit.valueLines)
+            for ((i, pair) in listOf(Triple(R.id.day_city, city, citySp), Triple(R.id.day_temp, temp, tempSp)).withIndex()) {
+                val j = fit.subs.indexOf(i)
+                if (j < 0) {
+                    rv.setViewVisibility(pair.first, View.GONE)
+                } else {
+                    rv.setTextViewText(pair.first, pair.second)
+                    rv.setTextViewTextSize(pair.first, TypedValue.COMPLEX_UNIT_SP, pair.third * fit.subScales[j])
+                }
+            }
+            spec.primaryColor?.let { rv.setTextColor(R.id.day_weekday, it) }
+            spec.secondaryColor?.let {
+                rv.setTextColor(R.id.day_city, it)
+                rv.setTextColor(R.id.day_temp, it)
+            }
+            return rv
+        }
+
+        /// تاريخ في كبسولة (الميزة ٦، _CapsuleTile): يلتفّ عند المسافات ولا يصغر إلا لضيق (fitTile).
+        private fun capsuleTile(env: Env, spec: LamhaLogic.Tile, scale: Float, avail: Float, innerHeightDp: Float): RemoteViews {
+            val ctx = env.ctx
+            val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_capsule)
+            val text = if (spec.id == "hijri") {
+                ctx.getString(R.string.hijri_date, env.day.hijriText)
+            } else {
+                ctx.getString(R.string.gregorian_date, env.day.gregorianText)
+            }
+            val sp = CAPSULE_SP * scale
+            val (words, space) = wordsDp(ctx, text, sp, true)
+            val fit = LamhaLogic.fitTile(innerHeightDp, avail, 0f, tightDp(ctx, sp, true), words, space)
+            rv.setTextViewText(R.id.capsule_text, text)
+            rv.setTextViewTextSize(R.id.capsule_text, TypedValue.COMPLEX_UNIT_SP, sp * fit.valueScale)
+            rv.setInt(R.id.capsule_text, "setMaxLines", fit.valueLines)
+            spec.primaryColor?.let { rv.setTextColor(R.id.capsule_text, it) }
+            return rv
+        }
+
+        /// القبلة (الميزة ٦، _QiblaTile): دائرة بقطر أصغر بُعدَي الخانة، فيها «القبلة» وتحتها الكعبة،
+        /// والضغط يفتح البوصلة. مقاس الكعبة يُضبط في أندرويد ١٢+ (وإلا ٤٠dp).
+        private fun qiblaTile(env: Env, spec: LamhaLogic.Tile, scale: Float, inner: Float, innerHeightDp: Float): RemoteViews {
+            val ctx = env.ctx
+            val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_qibla)
+            rv.setOnClickPendingIntent(
+                R.id.tile_box,
+                HomeWidgetLaunchIntent.getActivity(env.context, MainActivity::class.java, Uri.parse(QIBLA_URI)),
+            )
+            val d = listOf(inner, innerHeightDp).filter { it > 0f }.minOrNull() ?: 0f
+            val title = ctx.getString(R.string.tile_qibla)
+            val preferred = QIBLA_TITLE_SP * scale
+            if (spec.showTitle) {
+                rv.setTextViewText(R.id.qibla_title, title)
+                val sp = if (d > 0f) LamhaLogic.qiblaTitleFit(preferred, textWidthDp(ctx, title, preferred, true), d) else preferred
+                rv.setTextViewTextSize(R.id.qibla_title, TypedValue.COMPLEX_UNIT_SP, sp)
+                spec.primaryColor?.let { rv.setTextColor(R.id.qibla_title, it) }
+            } else {
+                rv.setViewVisibility(R.id.qibla_title, View.GONE)
+            }
+            if (d > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val kaaba = d * if (spec.showTitle) KAABA_RATIO else KAABA_ALONE_RATIO
+                rv.setViewLayoutWidth(R.id.qibla_kaaba, kaaba, TypedValue.COMPLEX_UNIT_DIP)
+                rv.setViewLayoutHeight(R.id.qibla_kaaba, kaaba, TypedValue.COMPLEX_UNIT_DIP)
+            }
+            return rv
+        }
+
+        /// مربع أعمدة (الميزة ٦، _ColumnsTile): مواقيت الصلاة (خمسة أعمدة تدور فتبدأ بالقادمة المميَّزة
+        /// بلون التمييز، rotatePrayers) أو الإيداعات («متبقي على:» ثم حتى ثلاثة، عمود لكل وحدة عرض).
+        /// الأعمدة تصغر بالتساوي ولا يُخفى عمود (fitColumns).
+        private fun columnsTile(env: Env, spec: LamhaLogic.Tile, span: Int, scale: Float, availDp: Float, innerHeightDp: Float): RemoteViews {
+            val ctx = env.ctx
+            val day = env.day
+            val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_columns)
+            val prayers = spec.id == "prayerTimes"
+            val items = if (prayers) {
+                LamhaLogic.rotatePrayers(day.prayersToday, day.prayersTomorrow, env.now).map { it.name to it.text }
+            } else {
+                day.deposits.take(minOf(3, span)).map { it.label to it.days }
+            }
+            if (prayers) rv.setImageViewResource(R.id.tile_bg, R.drawable.tile_bg_light)
+            val titleSp = COLUMN_TITLE_SP * scale
+            val nameSp = COLUMN_NAME_SP * scale
+            val subSp = COLUMN_SUB_SP * scale
+            val n = maxOf(1, items.size)
+            val colWidth = if (availDp > 0f) (availDp - COLUMN_GAP_DP * (n - 1)) / n - FIT_MARGIN_DP else 0f
+            val fit = LamhaLogic.fitColumns(
+                innerHeightDp, colWidth,
+                if (!prayers && spec.showTitle) tightDp(ctx, titleSp, true) else 0f,
+                tightDp(ctx, nameSp, true), items.maxOfOrNull { textWidthDp(ctx, it.first, nameSp, true) } ?: 0f,
+                if (spec.showSub) tightDp(ctx, subSp, false) else 0f,
+                items.maxOfOrNull { textWidthDp(ctx, it.second, subSp, false) } ?: 0f,
+                LINE_GAP_DP,
+            )
+            if (fit.title) {
+                rv.setTextViewText(R.id.columns_title, ctx.getString(R.string.deposits_title))
+                rv.setTextViewTextSize(R.id.columns_title, TypedValue.COMPLEX_UNIT_SP, titleSp)
+                spec.secondaryColor?.let { rv.setTextColor(R.id.columns_title, it) }
+            } else {
+                rv.setViewVisibility(R.id.columns_title, View.GONE)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rv.setViewLayoutMargin(R.id.columns, RemoteViews.MARGIN_TOP, 0f, TypedValue.COMPLEX_UNIT_DIP)
+            }
+            for ((i, ids) in COLUMN_IDS.withIndex()) {
+                val (col, name, sub) = ids
+                val item = items.getOrNull(i)
+                if (item == null) {
+                    rv.setViewVisibility(col, View.GONE)
+                    continue
+                }
+                rv.setTextViewText(name, item.first)
+                rv.setTextViewTextSize(name, TypedValue.COMPLEX_UNIT_SP, nameSp * fit.nameScale)
+                if (fit.sub) {
+                    rv.setTextViewText(sub, item.second)
+                    rv.setTextViewTextSize(sub, TypedValue.COMPLEX_UNIT_SP, subSp * fit.subScale)
+                } else {
+                    rv.setViewVisibility(sub, View.GONE)
+                }
+                // الصلاة القادمة (أول عمود) بلون التمييز.
+                val highlight = prayers && i == 0
+                (if (highlight) env.accent else spec.primaryColor)?.let { rv.setTextColor(name, it) }
+                (if (highlight) env.accent else spec.secondaryColor)?.let { rv.setTextColor(sub, it) }
+            }
+            return rv
+        }
+
+        /// وصف الموسم (الميزة ٦، _PointsTile): «في الوسم:» ثم النقاط. إن ضاق الارتفاع تُخفى النقاط من
+        /// الآخر ثم العنوان، وآخراً تصغر النقطة الأولى (fitTile).
+        private fun pointsTile(env: Env, spec: LamhaLogic.Tile, scale: Float, availDp: Float, innerHeightDp: Float): RemoteViews {
+            val ctx = env.ctx
+            val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_points)
+            val title = ctx.getString(R.string.trad_points_title, env.day.tradName)
+            val points = env.day.tradPoints.take(POINT_IDS.size).map { ctx.getString(R.string.point_text, it) }
+            val titleSp = COLUMN_TITLE_SP * scale
+            val sp = POINT_SP * scale
+            val line = tightDp(ctx, sp, false)
+            val words = points.map { wordsDp(ctx, it, sp, false) }
+            val lines = words.map { (w, space) -> if (availDp > 0f) LamhaLogic.wrapLines(w, space, availDp) else 1 }
+            val titleFits = spec.showTitle && (availDp <= 0f || textWidthDp(ctx, title, titleSp) <= availDp)
+            val fit = LamhaLogic.fitTile(
+                innerHeightDp, availDp, if (titleFits) tightDp(ctx, titleSp, true) else 0f,
+                if (points.isEmpty()) 0f else line, words.firstOrNull()?.first ?: emptyList(), words.firstOrNull()?.second ?: 0f,
+                subs = if (spec.showSub) (1 until points.size).map { LamhaLogic.SubLine(lines[it] * line, 1, 0f) } else emptyList(),
+                gap = LINE_GAP_DP,
+            )
+            rv.setViewVisibility(R.id.points_title, if (fit.title) View.VISIBLE else View.GONE)
+            rv.setTextViewText(R.id.points_title, title)
+            rv.setTextViewTextSize(R.id.points_title, TypedValue.COMPLEX_UNIT_SP, titleSp)
+            for ((i, id) in POINT_IDS.withIndex()) {
+                val shown = i < points.size && (i == 0 || (i - 1) in fit.subs)
+                if (!shown) {
+                    rv.setViewVisibility(id, View.GONE)
+                    continue
+                }
+                rv.setTextViewText(id, points[i])
+                rv.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, sp * if (i == 0) fit.valueScale else 1f)
+                rv.setInt(id, "setMaxLines", if (i == 0) fit.valueLines else lines[i])
+                spec.primaryColor?.let { rv.setTextColor(id, it) }
+            }
+            if (!fit.title && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rv.setViewLayoutMargin(R.id.point0, RemoteViews.MARGIN_TOP, 0f, TypedValue.COMPLEX_UNIT_DIP)
+            spec.secondaryColor?.let { rv.setTextColor(R.id.points_title, it) }
             return rv
         }
     }

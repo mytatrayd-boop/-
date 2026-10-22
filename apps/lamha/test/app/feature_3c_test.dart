@@ -12,11 +12,13 @@ import 'package:lamha/src/engine/widget_theme.dart';
 import '../helpers.dart';
 import 'app_helpers.dart';
 
+/// لون التمييز في المعاينة: الصلاة القادمة (أول عمود في مواقيت الصلاة، الميزة ٦).
 Color weekdayColor(WidgetTester tester) =>
-    tester.widget<Text>(find.byKey(const Key('preview-weekday'))).style!.color!;
+    tester.widget<Text>(find.byKey(const Key('prayer-name-0'))).style!.color!;
 
+/// الحرارة في مربع اليوم والطقس (الميزة ٦).
 String weatherLine(WidgetTester tester) =>
-    tester.widget<Text>(find.byKey(const Key('preview-weather'))).data!;
+    tester.widget<Text>(find.byKey(const Key('preview-temp'))).data!;
 
 void main() {
   group('الطقس', () {
@@ -24,8 +26,9 @@ void main() {
       final weather = FakeWeather(temp: 31.4, code: 0);
       final bridge = await pumpApp(tester, weather: weather);
       expect(weather.calls, hasLength(1));
-      expect(weatherLine(tester), contains('☀️ ٣١°'));
+      expect(weatherLine(tester), '٣١°');
       final w = bridge.last['weather'] as Map;
+      expect(w['emoji'], '☀️');
       expect(w['temp'], 31.4);
       expect(w['code'], 0);
       expect(w['fetchedAt'], testNow.toIso8601String());
@@ -47,7 +50,7 @@ void main() {
                 .toJson()),
           };
       await pumpApp(tester, prefs: prefs(const Duration(hours: 2)));
-      expect(weatherLine(tester), contains('☁️ ٢٥°'));
+      expect(weatherLine(tester), '٢٥°');
     });
 
     testWidgets('قراءة أقدم من ٣ ساعات: «--°»', (tester) async {
@@ -76,9 +79,11 @@ void main() {
   });
 
   group('السمات', () {
-    testWidgets('الذهبي افتراضي، والزر يغيّر لون اليوم ويحفظ السمة في الجدول', (tester) async {
+    testWidgets('الأسود افتراضي بتمييز ذهبي، والزر يغيّر لون التمييز ويحفظ السمة في الجدول', (tester) async {
       final bridge = await pumpApp(tester);
       expect(weekdayColor(tester), const Color(0xFFD6AA5C));
+      expect((bridge.last['theme'] as Map)['id'], 'black');
+      expect((bridge.last['theme'] as Map)['background'], 0xFF000000);
       expect(find.byKey(const Key('theme-system')), findsOneWidget);
       await tester.tap(find.byKey(const Key('theme-blue')));
       await tester.pumpAndSettle();
@@ -168,12 +173,14 @@ void main() {
           (p.textAlign == TextAlign.start && p.textDirection == TextDirection.rtl);
       expect(right, isTrue, reason: p.text.toPlainText());
     }
-    // التاريخان والمدينة والطقس: أسطرها على يمين مربعاتها.
+    // اليوم والحرارة على يمين مربعهما، والهجري على يمين كبسولته (بعد حشوتها).
+    final day = tester.getRect(find.byKey(const Key('preview-day')));
+    final temp = tester.getRect(find.byKey(const Key('preview-temp')));
+    final box = tester.getRect(find.byKey(const Key('tile-dayWeather')));
+    expect(day.right, closeTo(box.right, 0.5));
+    expect(temp.right, closeTo(box.right, 0.5));
     final hijri = tester.getRect(find.byKey(const Key('preview-hijri')));
-    final weather = tester.getRect(find.byKey(const Key('preview-weather')));
     expect(hijri.right,
-        closeTo(tester.getRect(find.byKey(const Key('tile-dates'))).right, 0.5));
-    expect(weather.right,
-        closeTo(tester.getRect(find.byKey(const Key('tile-weather'))).right, 0.5));
+        closeTo(tester.getRect(find.byKey(const Key('tile-hijri'))).right - 12, 0.5));
   });
 }

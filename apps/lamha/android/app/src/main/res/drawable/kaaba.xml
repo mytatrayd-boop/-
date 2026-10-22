@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- الكعبة في مربع القبلة (الميزة ٦): مطابقة لـ kaabaShapes في lib/src/app/kaaba.dart. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path android:fillColor="#FF3A3A3A" android:pathData="M50,8 L92,24 L50,40 L8,24 Z" />
+    <path android:fillColor="#FF111111" android:pathData="M8,24 L50,40 L50,80 L8,64 Z" />
+    <path android:fillColor="#FF1E1E1E" android:pathData="M50,40 L92,24 L92,64 L50,80 Z" />
+    <path android:fillColor="#FFD4A437" android:pathData="M8,32 L50,48 L50,54 L8,38 Z" />
+    <path android:fillColor="#FFC0922C" android:pathData="M50,48 L92,32 L92,38 L50,54 Z" />
+    <path android:fillColor="#FFEEEEEE" android:pathData="M8,64 L50,80 L50,85 L8,69 Z" />
+    <path android:fillColor="#FFDDDDDD" android:pathData="M50,80 L92,64 L92,69 L50,85 Z" />
+    <path android:fillColor="#FFB5532E" android:pathData="M6,69 L50,85 L50,95 L6,79 Z" />
+    <path android:fillColor="#FF9E4426" android:pathData="M50,85 L94,69 L94,79 L50,95 Z" />
+</vector>

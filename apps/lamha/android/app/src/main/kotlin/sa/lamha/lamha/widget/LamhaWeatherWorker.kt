@@ -33,7 +33,7 @@ class LamhaWeatherWorker(context: Context, params: WorkerParameters) : Worker(co
         val day = LamhaSchedule.read(json, System.currentTimeMillis()) ?: return Result.success()
         val widgets = AppWidgetManager.getInstance(ctx)
             .getAppWidgetIds(ComponentName(ctx, LamhaWidgetReceiver::class.java)).size
-        if (!LamhaLogic.shouldFetchWeather("weather" in day.visible, widgets, day.lockNotification)) {
+        if (!LamhaLogic.shouldFetchWeather("weather" in day.visible || "dayWeather" in day.visible, widgets, day.lockNotification)) {
             return Result.success()
         }
         val (lat, lon) = LamhaSchedule.coordinates(json) ?: return Result.success()

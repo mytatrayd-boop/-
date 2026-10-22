@@ -77,11 +77,16 @@ class AppLocalizationsAr extends AppLocalizations {
       'clock': 'الساعة واليوم',
       'dates': 'التاريخ الهجري والميلادي',
       'weather': 'المدينة والطقس',
-      'prayer': 'الصلاة',
+      'prayer': 'الصلاة القادمة',
       'qibla': 'القبلة',
-      'deposit': 'الإيداع',
+      'deposit': 'الإيداعات',
       'season': 'الفصل',
       'tradSeason': 'الموسم',
+      'dayWeather': 'اليوم والطقس',
+      'hijri': 'التاريخ الهجري',
+      'gregorian': 'التاريخ الميلادي',
+      'prayerTimes': 'مواقيت الصلاة',
+      'tradPoints': 'وصف الموسم',
       'other': '$element',
     });
     return '$_temp0';
@@ -192,6 +197,7 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String themeName(String theme) {
     String _temp0 = intl.Intl.selectLogic(theme, {
+      'black': 'أسود',
       'gold': 'ذهبي',
       'green': 'أخضر',
       'blue': 'أزرق',
@@ -298,6 +304,7 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.selectLogic(color, {
       'auto': 'تلقائي',
       'white': 'أبيض',
+      'black': 'أسود',
       'gold': 'ذهبي',
       'green': 'أخضر',
       'blue': 'أزرق',
@@ -314,4 +321,40 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tileShowSub => 'إظهار السطر الفرعي';
+
+  @override
+  String get digitsLabel => 'الأرقام';
+
+  @override
+  String digitsName(String style) {
+    String _temp0 = intl.Intl.selectLogic(style, {
+      'arabic': 'عربية (١٢٣)',
+      'latin': 'إنجليزية (123)',
+      'other': '$style',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get depositsTitle => 'متبقي على:';
+
+  @override
+  String tradPointsTitle(String season) {
+    return 'في $season:';
+  }
+
+  @override
+  String pointText(String point) {
+    return '- $point';
+  }
+
+  @override
+  String nextAfter(String next, String after) {
+    return '$next $after';
+  }
+
+  @override
+  String cityIcon(String city, String icon) {
+    return '📍 $city $icon';
+  }
 }

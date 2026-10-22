@@ -66,4 +66,10 @@
   - لقطات Robolectric الجديدة: `mockups/widget_screens/lamha_prayer20_*` و`lamha_trad18_*` و`lamha_clock15_*` و`lamha_clock15span2_*`، والتحقق يشمل: لا كلمة مكسورة، وحجم القيمة ≥ ٩٠٪ من المطلوب إن اتسعت كلمة.
   - `flutter analyze`: No issues found. `flutter test`: ١٨٦ ناجحة. `flutter build apk --debug` نجح. JUnit: ٢٧ + Robolectric ناجحة، واختبار المحاكي مترجم ولم يُشغَّل (لا KVM).
   - ملاحظات للمراجع: (١) الساعة بعرض ١ لا تكبر بالشريط (محدودة بالعرض) وقد يُخفى اليوم؛ بعرض ٢ تكبر. (٢) في الحجم المتوسط تلتفّ أسماء الإيداع الطويلة («الدعم السكني») لسطرين بدل التصغير. (٣) القيمة تصغر بأدنى قدر بعد إخفاء كل ما سواها بدل «…» (DECISIONS ١٦). (٤) العنوان الذي لا يتسع حتى بـ٧٠٪ يُخفى. (٥) «العرض» بقي صغير/متوسط/عريض (= ١/٢/٣).
+- الميزة ٦ (تصميم المالك ٣، والأرقام، ودوران مواقيت الصلاة؛ DECISIONS ١٧): **منفذة، بانتظار المراجعة والبناء على GitHub.** لم تُجرَّب على جهاز.
+  - الترتيب الافتراضي الجديد: الساعة واليوم والطقس، ثم كبسولتا التاريخين والقبلة (الكعبة)، ثم مواقيت الصلاة، ثم الإيداعات، ثم الفصل والموسم ووصفه. المعاينة (`widget_preview_tiles.dart` و`kaaba.dart`) وأندرويد (`widget_tile_dayweather`/`capsule`/`qibla`/`columns`/`points`).
+  - المنطق المشترك بالحالات نفسها: `rotatePrayers` و`fitColumns` و`stackCells` و`formatDigits` و`qiblaTitleFit` والترحيل.
+  - اللقطات: `mockups/widget_screens/lamha_{wide,narrow}_{black,gold,blue}_{0.9,1.0,1.3}.png`، و`lamha_tall_black_1.0.png` (٤×٥)، و`lamha_latin_*` و`lamha_legacy_*` و`lamha_deposits1_*` و`lamha_prayertimes20_*` و`lamha_clockspan1_*`؛ والمعاينة `mockups/settings_preview.png` و`mockups/customize_screen.png`.
+  - `flutter analyze`: No issues found. `flutter test`: ٢٠١ ناجحة. `flutter build apk --debug` نجح. `./gradlew :app:testDebugUnitTest`: ٣٢ (JUnit وRobolectric) ناجحة.
+  - ملاحظات للمراجع: (١) في ٤×٤ تُخفى المدينة و«متبقي على:» والسطر الثاني للفصل والموسم؛ تظهر في ٤×٥. (٢) ساعة الودجت والعدّاد القديم بأرقام لغة الجهاز لا الإعداد (قيد RemoteViews). (٣) القبلة بلا زاوية، والإيداع صار أعمدة، لكل المستخدمين. (٤) «١٤ يوماً» بدل «١٤ يوم».
 - التالي: البناء على GitHub وتجربة المالك، ثم الميزة ٤ (ودجت آيفون وشاشة القفل).

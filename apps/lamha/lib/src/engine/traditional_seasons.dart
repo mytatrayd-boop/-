@@ -12,6 +12,7 @@ class TradSeason {
     required this.startMonth,
     required this.startDay,
     required this.description,
+    this.points = const [],
   });
 
   final String id;
@@ -19,6 +20,9 @@ class TradSeason {
   final int startMonth;
   final int startDay;
   final String description;
+
+  /// نقاط مربع «وصف الموسم» (الميزة ٦)، كل نقطة جملة.
+  final List<String> points;
 }
 
 class CurrentTradSeason {
@@ -50,11 +54,13 @@ class CurrentTradSeason {
         'id': season.id,
         'name': season.name,
         'description': season.description,
+        'points': season.points,
         'start': isoDate(start),
         'end': isoDate(end),
         'next': {'id': next.id, 'name': next.name},
         'daysRemaining': daysRemaining,
         'remainingText': remainingText,
+        'afterText': afterDaysText(daysRemaining),
         'approval': approval,
       };
 }
@@ -90,6 +96,7 @@ class TradSeasonsTable {
       startMonth: int.parse(match[1]!),
       startDay: int.parse(match[2]!),
       description: m['description'] as String,
+      points: [...(m['points'] as List? ?? const []).cast<String>()],
     );
   }
 

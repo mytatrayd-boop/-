@@ -40,10 +40,18 @@ data class LamhaDay(
     val fontScale: Float = 1f,
     /// تخطيط المربعات بترتيبه (الميزة ٥)؛ جدول أقدم بلاه: الافتراضي من visible.
     val layout: List<LamhaLogic.Tile> = LamhaLogic.defaultLayout(visible),
+    /// الميزة ٦: الأرقام اللاتينية (إعداد «الأرقام»)، وصلوات اليوم والغد لمواقيت الصلاة، و«بعد ٦٠
+    /// يوماً» للفصل والموسم، ونقاط وصف الموسم.
+    val latinDigits: Boolean = false,
+    val prayersToday: List<LamhaLogic.Prayer> = emptyList(),
+    val prayersTomorrow: List<LamhaLogic.Prayer>? = null,
+    val seasonAfter: String = "",
+    val tradAfter: String = "",
+    val tradPoints: List<String> = emptyList(),
 )
 
-/// [remaining] «باقي ٨ أيام» للمربع، و[after] «بعد ٨ أيام» للإشعار.
-data class Deposit(val label: String, val remaining: String, val after: String)
+/// [remaining] «باقي ٨ أيام»، و[after] «بعد ٨ أيام» للإشعار، و[days] «١٤ يوماً» لأعمدة الإيداعات.
+data class Deposit(val label: String, val remaining: String, val after: String, val days: String = "")
 
 object LamhaSchedule {
 
@@ -157,6 +165,7 @@ object LamhaSchedule {
         val idx = LamhaLogic.dayIndex(dates, LamhaLogic.localDate(nowMillis, tz))
         val day = days.getJSONObject(idx)
         val tomorrow = if (idx + 1 < days.length()) prayersOf(days.getJSONObject(idx + 1)) else null
+        val today = prayersOf(day)
 
         val visibleJson = root.getJSONObject("visible")
         val visible = HashSet<String>()
@@ -169,7 +178,10 @@ object LamhaSchedule {
         val deps = day.optJSONArray("deposits") ?: JSONArray()
         val deposits = (0 until deps.length()).map {
             val d = deps.getJSONObject(it)
-            Deposit(d.getString("label"), d.getString("remainingText"), d.optString("afterText", ""))
+            Deposit(
+                d.getString("label"), d.getString("remainingText"), d.optString("afterText", ""),
+                d.optString("daysText", d.getString("remainingText")),
+            )
         }
         val (qiblaDegrees, qiblaDirection) = LamhaLogic.splitQibla(root.getJSONObject("qibla").getString("text"))
         val season = day.getJSONObject("season")
@@ -194,7 +206,7 @@ object LamhaSchedule {
             weekday = day.getString("weekday"),
             hijriText = day.getJSONObject("hijri").getString("text"),
             gregorianText = day.getJSONObject("gregorian").getString("text"),
-            nextPrayer = LamhaLogic.nextPrayer(prayersOf(day), tomorrow, nowMillis),
+            nextPrayer = LamhaLogic.nextPrayer(today, tomorrow, nowMillis),
             qiblaDegrees = qiblaDegrees,
             qiblaDirection = qiblaDirection,
             deposits = deposits,
@@ -217,6 +229,12 @@ object LamhaSchedule {
             weatherMaxAgeMinutes = weather?.optInt("maxAgeMinutes", 180) ?: 180,
             fontScale = root.optDouble("fontScale", 1.0).toFloat(),
             layout = layoutOf(root) ?: LamhaLogic.defaultLayout(visible),
+            latinDigits = root.optString("digits", "arabic") == "latin",
+            prayersToday = today,
+            prayersTomorrow = tomorrow,
+            seasonAfter = season.optString("afterText", ""),
+            tradAfter = trad.optString("afterText", ""),
+            tradPoints = trad.optJSONArray("points")?.let { a -> (0 until a.length()).map { a.getString(it) } } ?: emptyList(),
         )
     }
 }

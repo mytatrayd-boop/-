@@ -77,11 +77,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'clock': 'Clock and day',
       'dates': 'Hijri and Gregorian dates',
       'weather': 'City and weather',
-      'prayer': 'Prayer',
+      'prayer': 'Next prayer',
       'qibla': 'Qibla',
-      'deposit': 'Deposit',
+      'deposit': 'Deposits',
       'season': 'Season',
       'tradSeason': 'Traditional season',
+      'dayWeather': 'Day and weather',
+      'hijri': 'Hijri date',
+      'gregorian': 'Gregorian date',
+      'prayerTimes': 'Prayer times',
+      'tradPoints': 'Season notes',
       'other': '$element',
     });
     return '$_temp0';
@@ -192,6 +197,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String themeName(String theme) {
     String _temp0 = intl.Intl.selectLogic(theme, {
+      'black': 'Black',
       'gold': 'Gold',
       'green': 'Green',
       'blue': 'Blue',
@@ -298,6 +304,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.selectLogic(color, {
       'auto': 'Automatic',
       'white': 'White',
+      'black': 'Black',
       'gold': 'Gold',
       'green': 'Green',
       'blue': 'Blue',
@@ -314,4 +321,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tileShowSub => 'Show secondary line';
+
+  @override
+  String get digitsLabel => 'Digits';
+
+  @override
+  String digitsName(String style) {
+    String _temp0 = intl.Intl.selectLogic(style, {
+      'arabic': 'Arabic (١٢٣)',
+      'latin': 'English (123)',
+      'other': '$style',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get depositsTitle => 'Remaining until:';
+
+  @override
+  String tradPointsTitle(String season) {
+    return 'In $season:';
+  }
+
+  @override
+  String pointText(String point) {
+    return '- $point';
+  }
+
+  @override
+  String nextAfter(String next, String after) {
+    return '$next $after';
+  }
+
+  @override
+  String cityIcon(String city, String icon) {
+    return '📍 $city $icon';
+  }
 }

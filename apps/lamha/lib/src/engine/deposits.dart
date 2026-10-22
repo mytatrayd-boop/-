@@ -118,6 +118,7 @@ class DepositOccurrence {
         'daysRemaining': daysRemaining,
         'remainingText': remainingText,
         'afterText': afterDaysText(daysRemaining),
+        'daysText': daysCountText(daysRemaining),
       };
 }
 

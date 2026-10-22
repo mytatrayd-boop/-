@@ -66,7 +66,7 @@
       }
     }
   },
-  "elementName": "{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة} qibla{القبلة} deposit{الإيداع} season{الفصل} tradSeason{الموسم} other{{element}}}",
+  "elementName": "{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} other{{element}}}",
   "@elementName": {
     "description": "اسم عنصر الودجت بمعرّفه",
     "placeholders": {
@@ -224,7 +224,7 @@
   "@themeLabel": {
     "description": "عنوان أزرار سمة اللون"
   },
-  "themeName": "{theme, select, gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}",
+  "themeName": "{theme, select, black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}",
   "@themeName": {
     "description": "اسم سمة اللون بمعرّفها",
     "placeholders": {
@@ -336,7 +336,7 @@
       }
     }
   },
-  "tileColorName": "{color, select, auto{تلقائي} white{أبيض} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}",
+  "tileColorName": "{color, select, auto{تلقائي} white{أبيض} black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}",
   "@tileColorName": {
     "description": "ألوان الخط؛ auto حسب السمة",
     "placeholders": {
@@ -352,5 +352,19 @@
   "tileShowSub": "إظهار السطر الفرعي",
   "@tileShowSub": {
     "description": "مفتاح الأسطر الثانوية"
-  }
+  },
+  "digitsLabel": "الأرقام",
+  "@digitsLabel": {"description": "عنوان اختيار شكل الأرقام في الودجت (الميزة ٦)"},
+  "digitsName": "{style, select, arabic{عربية (١٢٣)} latin{إنجليزية (123)} other{{style}}}",
+  "@digitsName": {"description": "اسم شكل الأرقام", "placeholders": {"style": {"type": "String"}}},
+  "depositsTitle": "متبقي على:",
+  "@depositsTitle": {"description": "عنوان مربع الإيداعات (الميزة ٦)"},
+  "tradPointsTitle": "في {season}:",
+  "@tradPointsTitle": {"description": "عنوان مربع وصف الموسم، مثل «في الوسم:»", "placeholders": {"season": {"type": "String"}}},
+  "pointText": "- {point}",
+  "@pointText": {"description": "نقطة في وصف الموسم", "placeholders": {"point": {"type": "String"}}},
+  "nextAfter": "{next} {after}",
+  "@nextAfter": {"description": "مثل: الشتاء بعد ٦٠ يوماً", "placeholders": {"next": {"type": "String"}, "after": {"type": "String"}}},
+  "cityIcon": "📍 {city} {icon}",
+  "@cityIcon": {"description": "سطر المدينة في مربع اليوم والطقس، icon رمز الطقس أو فارغ", "placeholders": {"city": {"type": "String"}, "icon": {"type": "String"}}}
 }

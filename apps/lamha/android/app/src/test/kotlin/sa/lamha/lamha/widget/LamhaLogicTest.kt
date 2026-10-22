@@ -70,17 +70,30 @@ class LamhaLogicTest {
         LamhaLogic.packRows(cells).map { r -> r.map { "${it.id}${it.span}" } }
 
     @Test
-    fun packRowsDefaultMatchesOldShape() {
-        val all = LamhaLogic.defaultLayout(setOf("dates", "weather", "prayer", "qibla", "deposit", "season", "tradSeason"))
-        assertTrue(all.all { it.visible })
+    fun packRowsDefaultMatchesOwnerDesign() {
+        // الميزة ٦: تصميم المالك ٣ (defaultLayout في Dart).
+        val all = LamhaLogic.defaultLayout(setOf("hijri", "gregorian", "weather", "prayer", "qibla", "deposit", "season", "tradSeason"))
+        assertEquals(listOf("dates", "weather", "prayer"), all.filter { !it.visible }.map { it.id })
         assertEquals(
             listOf(
-                listOf("clock1", "dates+weather2"),
-                listOf("prayer1", "qibla1", "deposit1"), listOf("season1", "tradSeason2"),
+                listOf("clock2", "dayWeather1"), listOf("hijri+gregorian2", "qibla1"),
+                listOf("prayerTimes3"), listOf("deposit3"), listOf("season1", "tradSeason1", "tradPoints1"),
             ),
-            shape(LamhaLogic.stackCells(all.map { LamhaLogic.Cell(it.id, it.span) })),
+            shape(LamhaLogic.stackCells(all.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) })),
         )
+        val clock = all.first()
+        assertEquals(LamhaLogic.Tile("clock", span = 2, fontScale = 2f, showSub = false), clock)
+        assertEquals(listOf(false, false), all.filter { it.id == "season" || it.id == "tradSeason" }.map { it.showTitle })
         assertEquals(listOf("dates", "weather"), LamhaLogic.cellElements("dates+weather"))
+    }
+
+    @Test
+    fun legacyDefaultStillStacksDatesAndWeather() {
+        val legacy = cells("clock1 dates2 weather2 prayer1 qibla1 deposit1 season1 tradSeason2")
+        assertEquals(
+            listOf(listOf("clock1", "dates+weather2"), listOf("prayer1", "qibla1", "deposit1"), listOf("season1", "tradSeason2")),
+            shape(LamhaLogic.stackCells(legacy)),
+        )
     }
 
     @Test
@@ -88,6 +101,10 @@ class LamhaLogicTest {
         assertEquals(listOf(listOf("dates2", "weather1"), listOf("qibla3")), shape(LamhaLogic.stackCells(cells("dates2 weather1 qibla1"))))
         assertEquals(listOf(listOf("weather3"), listOf("dates3")), shape(LamhaLogic.stackCells(cells("weather2 dates2"))))
         assertEquals(listOf(listOf("dates+weather3"), listOf("prayer3")), shape(LamhaLogic.stackCells(cells("dates3 weather3 prayer1"))))
+        // الميزة ٦: الميلادي تحت الهجري بالشرط نفسه.
+        assertEquals(listOf(listOf("hijri+gregorian2", "qibla1")), shape(LamhaLogic.stackCells(cells("hijri2 gregorian2 qibla1"))))
+        assertEquals(listOf(listOf("gregorian3"), listOf("hijri3")), shape(LamhaLogic.stackCells(cells("gregorian2 hijri2"))))
+        assertEquals(listOf(listOf("hijri2", "gregorian1")), shape(LamhaLogic.stackCells(cells("hijri2 gregorian1"))))
     }
 
     @Test
@@ -157,12 +174,13 @@ class LamhaLogicTest {
         val l = LamhaLogic.defaultLayout(setOf("gregorian", "prayer", "tradSeason"))
         assertEquals(
             mapOf(
-                "clock" to true, "dates" to true, "weather" to false, "prayer" to true,
-                "qibla" to false, "deposit" to false, "season" to false, "tradSeason" to true,
+                "clock" to true, "dayWeather" to false, "hijri" to false, "gregorian" to true, "qibla" to false,
+                "prayerTimes" to true, "deposit" to false, "season" to false, "tradSeason" to true, "tradPoints" to true,
+                "dates" to false, "weather" to false, "prayer" to false,
             ),
             l.associate { it.id to it.visible },
         )
-        assertEquals(listOf(1, 2, 2, 1, 1, 1, 1, 2), l.map { it.span })
+        assertEquals(listOf(2, 1, 2, 2, 1, 3, 3, 1, 1, 1, 2, 2, 1), l.map { it.span })
         assertEquals(listOf("clock"), LamhaLogic.defaultLayout(emptySet()).filter { it.visible }.map { it.id })
     }
 
@@ -278,8 +296,66 @@ class LamhaLogicTest {
     }
 
     @Test
-    fun arabicDigits() {
-        assertEquals("٢٠٢٦-١٠", LamhaLogic.arabicDigits("2026-10"))
+    fun formatDigitsBothWays() {
+        // الحالات نفسها في test/engine/arabic_test.dart.
+        assertEquals("٢٠٢٦-١٠", LamhaLogic.formatDigits("2026-10"))
+        assertEquals("2026-10 4:56 ص", LamhaLogic.formatDigits("٢٠٢٦-10 ٤:٥٦ ص", latin = true))
+        assertEquals("31°", LamhaLogic.temperatureText(31.4, latin = true))
+        assertEquals("٣١°", LamhaLogic.temperatureText(31.4))
+        val now = t("2026-10-19T12:00:00.000Z")
+        val w = LamhaLogic.Weather(31.4, 0, now, 24.69, 46.72)
+        assertEquals("☀️ 31°", LamhaLogic.weatherText(w, now, 180, mapOf(0 to "☀️"), latin = true))
+    }
+
+    // الميزة ٦: الحالات نفسها في test/engine/widget_layout_test.dart (rotatePrayers).
+    @Test
+    fun rotatePrayersNextFirst() {
+        fun keys(now: String, tomorrow: Boolean = true) =
+            LamhaLogic.rotatePrayers(day("2026-10-19"), if (tomorrow) day("2026-10-20") else null, t(now))
+        val tomorrowStart = t("2026-10-20T00:00:00.000+0300")
+        // قبل الفجر: بالترتيب، كلها اليوم.
+        val beforeFajr = keys("2026-10-19T03:00:00.000+0300")
+        assertEquals(listOf("fajr", "dhuhr", "asr", "maghrib", "isha"), beforeFajr.map { it.key })
+        assertTrue(beforeFajr.all { it.atMillis < tomorrowStart })
+        // بعد الظهر: العصر أولاً، والفجر والظهر من الغد.
+        val afterDhuhr = keys("2026-10-19T12:00:00.000+0300")
+        assertEquals(listOf("asr", "maghrib", "isha", "fajr", "dhuhr"), afterDhuhr.map { it.key })
+        assertEquals(listOf(false, false, false, true, true), afterDhuhr.map { it.atMillis >= tomorrowStart })
+        // بعد العشاء: فجر الغد أولاً، وكلها من الغد.
+        val afterIsha = keys("2026-10-19T21:00:00.000+0300")
+        assertEquals(listOf("fajr", "dhuhr", "asr", "maghrib", "isha"), afterIsha.map { it.key })
+        assertTrue(afterIsha.all { it.atMillis >= tomorrowStart })
+        // بلا يوم تالٍ: أوقات اليوم.
+        assertTrue(keys("2026-10-19T21:00:00.000+0300", tomorrow = false).all { it.atMillis < tomorrowStart })
+    }
+
+    @Test
+    fun fitColumnsCases() {
+        // يتسع كله.
+        assertEquals(LamhaLogic.ColumnsFit(true, 1f, true, 1f), LamhaLogic.fitColumns(80f, 60f, 16f, 25f, 50f, 20f, 40f, 2f))
+        // أعرض اسم ٧٥ في ٦٠: الأعمدة كلها ٠٫٨، والسطر الفرعي ٦٠/١٢٠ = ٠٫٥ < ٠٫٦ فيُخفى.
+        val narrow = LamhaLogic.fitColumns(80f, 60f, 0f, 25f, 75f, 20f, 120f, 2f)
+        assertEquals(0.8f, narrow.nameScale, 1e-6f)
+        assertEquals(false, narrow.sub)
+        // ضيق الارتفاع: العنوان أولاً (٢٥+٢+٢٠ = ٤٧ ≤ ٥٠).
+        assertEquals(LamhaLogic.ColumnsFit(false, 1f, true, 1f), LamhaLogic.fitColumns(50f, 60f, 16f, 25f, 50f, 20f, 40f, 2f))
+        // ثم يصغر السطران معاً حتى ٨٠٪: (٤٢−٢)/٤٥ ≈ ٠٫٨٨٩.
+        val shrunk = LamhaLogic.fitColumns(42f, 60f, 16f, 25f, 50f, 20f, 40f, 2f)
+        assertEquals(false, shrunk.title)
+        assertEquals(true, shrunk.sub)
+        assertEquals(40f / 45f, shrunk.nameScale, 1e-5f)
+        assertEquals(40f / 45f, shrunk.subScale, 1e-5f)
+        // وإلا يُخفى السطر الفرعي، ثم يصغر الاسم.
+        assertEquals(LamhaLogic.ColumnsFit(false, 1f, false, 1f), LamhaLogic.fitColumns(30f, 60f, 16f, 25f, 50f, 20f, 40f, 2f))
+        assertEquals(0.8f, LamhaLogic.fitColumns(20f, 60f, 16f, 25f, 50f, 20f, 40f, 2f).nameScale, 1e-6f)
+    }
+
+    @Test
+    fun qiblaTitleFitByDiameter() {
+        // الحالات نفسها في test/engine/widget_layout_test.dart.
+        assertEquals(15f, LamhaLogic.qiblaTitleFit(15f, 40f, 100f), 1e-5f)
+        assertEquals(8f, LamhaLogic.qiblaTitleFit(15f, 40f, 50f), 1e-5f)
+        assertEquals(15f * 70f / 120f, LamhaLogic.qiblaTitleFit(15f, 120f, 100f), 1e-4f)
     }
 
     @Test

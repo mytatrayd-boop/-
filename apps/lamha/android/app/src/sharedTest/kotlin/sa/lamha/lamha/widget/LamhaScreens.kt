@@ -28,7 +28,7 @@ object LamhaScreens {
     const val NOW_MILLIS = 1792368000000L
 
     /// الجدولان مولّدان من المحرك (android_fixture_test.dart) في src/androidTest/assets.
-    val THEMES = listOf("gold", "blue")
+    val THEMES = listOf("black", "gold", "blue")
     val SIZES = listOf(Triple("wide", 338, 354), Triple("narrow", 290, 320))
     val FONT_SCALES = listOf(0.9, 1.0, 1.3)
 
@@ -49,8 +49,12 @@ object LamhaScreens {
                 }
             }
         }
+        // الأرقام الإنجليزية (الميزة ٦). ساعة TextClock تتبع لغة الجهاز (هنا عربي) لا الإعداد.
+        for ((size, w, h) in SIZES) out += Triple("lamha_latin_$size.png", base("latin"), w to h)
+        // ٤×٥ تقريباً (نسبة تصميم المالك)، للمقارنة به.
+        out += Triple("lamha_tall_black_1.0.png", base("black"), 338 to 420)
         for ((name, edit) in LAYOUT_CASES) {
-            val root = JSONObject(base("gold"))
+            val root = JSONObject(base("black"))
             root.put("layout", edit(root.getJSONArray("layout")))
             for ((size, w, h) in SIZES) out += Triple("lamha_${name}_$size.png", root.toString(), w to h)
         }
@@ -63,8 +67,9 @@ object LamhaScreens {
 
     private fun JSONArray.objects() = (0 until length()).map { getJSONObject(it) }
 
-    /// حالات الميزة ٥: ترتيب مخصص (الصلاة بعرض ٣ في الأعلى، والساعة بعرض ١، وألوان مختلفة)،
-    /// وإخفاء ٤ عناصر، وخط «كبير جداً» لمربع واحد (الإيداع).
+    /// حالات الميزة ٥: ترتيب مخصص بالعناصر القديمة (الصلاة بعرض ٣ في الأعلى، والساعة بعرض ١، وألوان
+    /// مختلفة)، والترتيب الافتراضي السابق كما هو (من خصّصه يبقى)، وإخفاء ٤ عناصر، وخط «كبير جداً»
+    /// لمربع واحد (الإيداعات)، وحالات الميزة ٦.
     private val LAYOUT_CASES: List<Pair<String, (JSONArray) -> JSONArray>> = listOf(
         "custom" to { _ ->
             JSONArray(listOf(
@@ -78,20 +83,29 @@ object LamhaScreens {
                 tile("tradSeason", 2, secondary = 0xFFD6AA5C),
             ))
         },
+        "legacy" to { _ ->
+            JSONArray(listOf(
+                tile("clock", 1), tile("dates", 2), tile("weather", 2), tile("prayer", 1),
+                tile("qibla", 1), tile("deposit", 1), tile("season", 1), tile("tradSeason", 2),
+            ))
+        },
         "hidden4" to { l ->
-            val hide = setOf("dates", "weather", "qibla", "season")
+            val hide = setOf("dayWeather", "hijri", "qibla", "season")
             JSONArray(l.objects().map { it.put("visible", it.getString("id") !in hide) })
         },
         "tilexl" to { l ->
             JSONArray(l.objects().map { if (it.getString("id") == "deposit") it.put("fontScale", 1.3) else it })
         },
-        // الميزة ٥ب: حجم مربع واحد يُحترم داخل مقاسه (الصلاة في صف من ٣، والموسم، والساعة).
-        "prayer20" to { l -> scaled(l, "prayer", 2.0) },
+        // الميزة ٥ب: حجم مربع واحد يُحترم داخل مقاسه (مواقيت الصلاة، والموسم، والساعة بعرض ١).
+        "prayertimes20" to { l -> scaled(l, "prayerTimes", 2.0) },
         "trad18" to { l -> scaled(l, "tradSeason", 1.8) },
-        "clock15" to { l -> scaled(l, "clock", 1.5) },
-        // الساعة بعرض ١ محدودة بعرضها، فبعرض ٢ يظهر أثر الحجم.
-        "clock15span2" to { l -> JSONArray(scaled(l, "clock", 1.5).objects().map { if (it.getString("id") == "clock") it.put("span", 2) else it }) },
+        "clockspan1" to { l -> spanned(l, "clock", 1) },
+        // الإيداعات بعرض ١: عمود واحد (عمود لكل وحدة عرض).
+        "deposits1" to { l -> spanned(l, "deposit", 1) },
     )
+
+    private fun spanned(l: JSONArray, id: String, span: Int) =
+        JSONArray(l.objects().map { if (it.getString("id") == id) it.put("span", span) else it })
 
     private fun scaled(l: JSONArray, id: String, font: Double) =
         JSONArray(l.objects().map { if (it.getString("id") == id) it.put("fontScale", font) else it })
@@ -142,8 +156,7 @@ object LamhaScreens {
         val out = ArrayList<String>()
         val day = LamhaSchedule.read(schedule.toString(), NOW_MILLIS) ?: return out
         val ids = mapOf(
-            day.nextPrayer?.name to "prayer", day.qiblaDegrees to "qibla", day.deposits.firstOrNull()?.label to "deposit",
-            day.seasonName to "season", day.tradName to "tradSeason",
+            day.nextPrayer?.name to "prayer", day.seasonName to "season", day.tradName to "tradSeason",
         )
         val metrics = ctx.resources.displayMetrics
         val texts = ArrayList<TextView>()
@@ -222,8 +235,6 @@ object LamhaScreens {
         // واحد) ثم الثانويات.
         val expected = listOf(
             Triple("prayer", ctx.getString(R.string.tile_prayer), null),
-            Triple("qibla", ctx.getString(R.string.tile_qibla), null),
-            Triple("deposit", ctx.getString(R.string.tile_deposit), ctx.getString(R.string.tile_deposit_short)),
             Triple("season", ctx.getString(R.string.tile_season), null),
             Triple("tradSeason", ctx.getString(R.string.tile_trad_season), null),
         ).filter { it.first in placed }
@@ -269,6 +280,57 @@ object LamhaScreens {
         root.findViewById<TextView>(R.id.weather)?.let {
             if (!it.text.toString().startsWith("📍")) out += "سطر المدينة والطقس «${it.text}»"
         }
+        return out + checkV3(root, placed)
+    }
+
+    /// عناصر الميزة ٦: كل عنصر في التخطيط ظاهر بنصه الأساسي، ومواقيت الصلاة خمسة أعمدة كلها ظاهرة
+    /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٣ أعمدة، والكعبة داخل دائرتها.
+    private fun checkV3(root: ViewGroup, placed: Set<String>): List<String> {
+        val out = ArrayList<String>()
+        fun shownText(id: Int) = root.findViewById<TextView>(id)?.takeIf { shown(it, root) && it.text.isNotEmpty() }
+        for ((element, id) in listOf(
+            "dayWeather" to R.id.day_weekday, "hijri" to R.id.capsule_text, "gregorian" to R.id.capsule_text,
+            "tradPoints" to R.id.point0,
+        )) {
+            if (element in placed && shownText(id) == null) out += "$element غير ظاهر"
+        }
+        val columns = ArrayList<ViewGroup>()
+        fun findColumns(v: View) {
+            if (v.id == R.id.columns) columns += v as ViewGroup
+            if (v is ViewGroup) for (i in 0 until v.childCount) findColumns(v.getChildAt(i))
+        }
+        findColumns(root)
+        val counts = columns.map { c -> (0 until c.childCount).count { c.getChildAt(it).visibility == View.VISIBLE } }
+        if ("prayerTimes" in placed) {
+            val prayers = columns.indexOfFirst { (it.parent as View).findViewById<View>(R.id.columns_title)?.visibility != View.VISIBLE && counts[columns.indexOf(it)] == 5 }
+            if (prayers < 0) {
+                out += "مواقيت الصلاة: ليست خمسة أعمدة ظاهرة ($counts)"
+            } else {
+                val c = columns[prayers]
+                val names = (0 until 5).map { (c.getChildAt(it) as ViewGroup).getChildAt(0) as TextView }
+                if (names.any { !shown(it, root) || it.text.isEmpty() }) out += "مواقيت الصلاة: اسم مخفي"
+                if (names[0].currentTextColor == names[1].currentTextColor) out += "مواقيت الصلاة: القادمة غير مميزة"
+                val a = rect(names[0], root)
+                val b = rect(names[1], root)
+                if (a.left < b.right) out += "مواقيت الصلاة: القادمة ليست أول عمود من اليمين"
+            }
+        }
+        if ("deposit" in placed && counts.none { it in 1..3 }) out += "الإيداعات: لا أعمدة ($counts)"
+        root.findViewById<View>(R.id.qibla_kaaba)?.let { k ->
+            val circle = root.findViewById<View>(R.id.qibla_circle)
+            val kr = rect(k, root)
+            val cr = rect(circle, root)
+            val d = minOf(cr.width(), cr.height())
+            val cx = cr.centerX()
+            val cy = cr.centerY()
+            // زوايا الكعبة داخل الدائرة.
+            for ((x, y) in listOf(kr.left to kr.top, kr.right to kr.top, kr.left to kr.bottom, kr.right to kr.bottom)) {
+                val dx = (x - cx).toDouble()
+                val dy = (y - cy).toDouble()
+                if (Math.sqrt(dx * dx + dy * dy) > d / 2.0 + 1) out += "القبلة: الكعبة خارج الدائرة"
+            }
+        }
+        if ("qibla" in placed && root.findViewById<View>(R.id.qibla_kaaba) == null) out += "القبلة غير ظاهرة"
         return out
     }
 

@@ -26,21 +26,37 @@ object LamhaLogic {
         val secondaryColor: Int? = null,
     )
 
-    /// الترتيب الافتراضي (defaultLayout في Dart).
-    private val DEFAULT_SPANS = listOf(
-        "clock" to 1, "dates" to 2, "weather" to 2, "prayer" to 1,
-        "qibla" to 1, "deposit" to 1, "season" to 1, "tradSeason" to 2,
+    /// الترتيب الافتراضي (defaultLayout في Dart، الميزة ٦: تصميم المالك ٣). القديمة في آخره مخفية.
+    val DEFAULT_LAYOUT = listOf(
+        Tile("clock", span = 2, fontScale = 2f, showSub = false),
+        Tile("dayWeather"),
+        Tile("hijri", span = 2),
+        Tile("gregorian", span = 2),
+        Tile("qibla"),
+        Tile("prayerTimes", span = 3),
+        Tile("deposit", span = 3),
+        Tile("season", showTitle = false),
+        Tile("tradSeason", showTitle = false),
+        Tile("tradPoints"),
+        Tile("dates", visible = false, span = 2),
+        Tile("weather", visible = false, span = 2),
+        Tile("prayer", visible = false),
     )
 
     /// تخطيط جدول أقدم بلا `layout`: الترتيب الافتراضي والإظهار من مفاتيح visible القديمة
-    /// (layoutFromVisible في Dart). الساعة ثابتة، والتاريخان إن ظهر أحدهما.
-    fun defaultLayout(visible: Set<String>): List<Tile> = DEFAULT_SPANS.map { (id, span) ->
-        val on = when (id) {
+    /// (layoutFromVisible في Dart). الساعة ثابتة، والعناصر القديمة مخفية.
+    fun defaultLayout(visible: Set<String>): List<Tile> = DEFAULT_LAYOUT.map { t ->
+        val on = when (t.id) {
             "clock" -> true
-            "dates" -> "dates" in visible || "hijri" in visible || "gregorian" in visible
-            else -> id in visible
+            "hijri" -> "hijri" in visible
+            "gregorian" -> "gregorian" in visible
+            "dayWeather" -> "weather" in visible
+            "prayerTimes" -> "prayer" in visible
+            "tradPoints" -> "tradSeason" in visible
+            "dates", "weather", "prayer" -> false
+            else -> t.id in visible
         }
-        Tile(id, on, span)
+        t.copy(visible = on)
     }
 
     data class Cell(val id: String, val span: Int)
@@ -198,17 +214,21 @@ object LamhaLogic {
         return TileFit(title, k, lines, kept.toList(), kept.map { scales[it]!! }, lastLines)
     }
 
-    /// خانة التاريخين وتحتهما المدينة والطقس (datesWeatherCell في Dart).
+    /// خانة التاريخين وتحتهما المدينة والطقس (datesWeatherCell في Dart)، والهجري وتحته الميلادي.
     const val DATES_WEATHER = "dates+weather"
+    const val HIJRI_GREGORIAN = "hijri+gregorian"
 
-    /// المدينة والطقس بعد التاريخين مباشرة وبعرضهما يُكدَّسان في خانة واحدة (stackCells في Dart).
+    private val STACK_PAIRS = mapOf("dates" to "weather", "hijri" to "gregorian")
+
+    /// الثاني من زوج بعد الأول مباشرة وبعرضه يُكدَّس تحته في خانة واحدة (stackCells في Dart).
     fun stackCells(shown: List<Cell>): List<Cell> {
         val out = ArrayList<Cell>()
         var i = 0
         while (i < shown.size) {
             val c = shown[i]
-            if (c.id == "dates" && i + 1 < shown.size && shown[i + 1].id == "weather" && shown[i + 1].span == c.span) {
-                out += Cell(DATES_WEATHER, c.span)
+            val second = STACK_PAIRS[c.id]
+            if (second != null && i + 1 < shown.size && shown[i + 1].id == second && shown[i + 1].span == c.span) {
+                out += Cell("${c.id}+$second", c.span)
                 i += 2
             } else {
                 out += c
@@ -220,6 +240,52 @@ object LamhaLogic {
 
     /// معرّفات العناصر في خانة.
     fun cellElements(cellId: String): List<String> = cellId.split("+")
+
+    /// نتيجة fitColumns: العنوان ظاهر؟ ومعامل الأسماء، والسطر الفرعي ظاهر؟ ومعامله.
+    data class ColumnsFit(val title: Boolean, val nameScale: Float, val sub: Boolean, val subScale: Float)
+
+    /// ملاءمة مربع أعمدة (fitColumns في Dart، الميزة ٦): الأعمدة تصغر بالتساوي إن لم يتسع أعرضها (لا
+    /// يُخفى عمود)، والسطر الفرعي يصغر حتى [minSubFit] وإلا يُخفى. إن ضاق الارتفاع: العنوان أولاً، ثم
+    /// يصغر السطران معاً حتى [minShrink]، ثم يُخفى السطر الفرعي، وآخراً يصغر الاسم.
+    fun fitColumns(
+        height: Float, width: Float, titleHeight: Float, nameLine: Float, nameWidth: Float,
+        subLine: Float = 0f, subWidth: Float = 0f, gap: Float = 0f, minSubFit: Float = 0.6f,
+        minShrink: Float = 0.8f,
+    ): ColumnsFit {
+        var kName = if (width > 0f && nameWidth > width) width / nameWidth else 1f
+        var kSub = if (width > 0f && subWidth > width) width / subWidth else 1f
+        var title = titleHeight > 0f
+        var sub = subLine > 0f && kSub >= minSubFit
+        fun used() = (if (title) titleHeight + gap else 0f) + nameLine * kName + (if (sub) gap + subLine * kSub else 0f)
+        if (height > 0f) {
+            if (used() > height && title) title = false
+            if (used() > height && sub) {
+                val f = (height - gap) / (nameLine * kName + subLine * kSub)
+                if (f >= minShrink) {
+                    kName *= f
+                    kSub *= f
+                } else {
+                    sub = false
+                }
+            }
+            if (used() > height && nameLine > 0f) kName = minOf(kName, height / nameLine)
+        }
+        return ColumnsFit(title, kName, sub, kSub)
+    }
+
+    /// الصلوات الخمس بترتيبها (fivePrayers في Dart).
+    val FIVE_PRAYERS = listOf("fajr", "dhuhr", "asr", "maghrib", "isha")
+
+    /// مواقيت الصلاة تدور (rotatePrayers في Dart): القادمة أولاً، ثم البقية بترتيبها الدوري، وما يقع
+    /// منها غداً بأوقات [tomorrow] (أو أوقات اليوم إن لم يوجد). بعد العشاء: فجر الغد أولاً.
+    fun rotatePrayers(today: List<Prayer>, tomorrow: List<Prayer>?, nowMillis: Long): List<Prayer> {
+        fun five(l: List<Prayer>) = FIVE_PRAYERS.mapNotNull { k -> l.firstOrNull { it.key == k } }
+        val t = five(today)
+        val n = if (tomorrow == null) t else five(tomorrow)
+        var i = t.indexOfFirst { it.atMillis > nowMillis }
+        if (i < 0) i = t.size
+        return t.drop(i) + n.take(i)
+    }
 
     /// [text] وقت الصلاة جاهزاً للعرض من الجدول (مثل «٤:٣٥ ص»).
     data class Prayer(val key: String, val name: String, val atMillis: Long, val text: String = "")
@@ -317,6 +383,12 @@ object LamhaLogic {
         return maxOf(minSp, preferredSp * maxWidth / widthAtPreferred)
     }
 
+    /// حجم عنوان دائرة القبلة (qiblaTitleFit في Dart): المطلوب، حتى ١٦٪ من القطر [d]، وعرضه حتى ٧٠٪ منه.
+    fun qiblaTitleFit(preferredSp: Float, widthAtPreferred: Float, d: Float): Float {
+        val byHeight = minOf(preferredSp, d * 0.16f)
+        return fitTextSize(byHeight, widthAtPreferred * byHeight / preferredSp, d * 0.7f, 0f)
+    }
+
     /// عرض داخل خانة مربع (dp) بعرض [span] في ودجت بعرض [widthDp]: حشوة الشبكة ١٠+١٠
     /// (widget_lamha.xml)، ثم نصيب المربع من ٣، ناقصاً حشوة الخانة ٤+٤. 0 إذا لم يبلّغ المشغّل العرض.
     fun slotInnerDp(widthDp: Int, span: Int): Float {
@@ -371,21 +443,37 @@ object LamhaLogic {
 
     /// «☀️ ٣١°» إذا كان عمر القراءة ≤ [maxAgeMinutes]، وإلا null (تُعرض «--°»).
     /// الرمز من جدول [icons] الذي يكتبه Dart (weatherScheduleJson).
-    fun weatherText(w: Weather?, nowMillis: Long, maxAgeMinutes: Int, icons: Map<Int, String>): String? {
-        if (w == null || nowMillis - w.fetchedAtMillis > maxAgeMinutes * 60_000L) return null
-        return "${icons[w.code] ?: "🌡️"} ${temperatureText(w.temp)}"
+    fun weatherText(w: Weather?, nowMillis: Long, maxAgeMinutes: Int, icons: Map<Int, String>, latin: Boolean = false): String? {
+        val f = freshWeather(w, nowMillis, maxAgeMinutes) ?: return null
+        return "${weatherIcon(f, icons)} ${temperatureText(f.temp, latin)}"
     }
 
-    /// «٣١°» أو «-٣°»، بتقريب النصف بعيداً عن الصفر كـ round() في Dart.
-    fun temperatureText(temp: Double): String {
+    /// القراءة إن كان عمرها ≤ [maxAgeMinutes]، وإلا null.
+    fun freshWeather(w: Weather?, nowMillis: Long, maxAgeMinutes: Int): Weather? =
+        if (w == null || nowMillis - w.fetchedAtMillis > maxAgeMinutes * 60_000L) null else w
+
+    /// رمز الطقس من جدول [icons]، أو ميزان حرارة لرمز غير معروف.
+    fun weatherIcon(w: Weather, icons: Map<Int, String>): String = icons[w.code] ?: "🌡️"
+
+    /// «٣١°» أو «-٣°» (أو «31°» مع [latin])، بتقريب النصف بعيداً عن الصفر كـ round() في Dart.
+    fun temperatureText(temp: Double, latin: Boolean = false): String {
         val t = Math.floor(Math.abs(temp) + 0.5).toLong()
         val sign = if (temp < 0 && t > 0) "-" else ""
-        return sign + arabicDigits(t.toString()) + "°"
+        return sign + formatDigits(t.toString(), latin) + "°"
     }
 
-    /// الأرقام 0-9 إلى العربية الشرقية (arabicDigits في Dart).
-    fun arabicDigits(s: String): String =
-        buildString { for (ch in s) append(if (ch in '0'..'9') '٠' + (ch - '0') else ch) }
+    /// الأرقام إلى العربية الشرقية، أو إلى اللاتينية مع [latin] (formatDigits في Dart، الميزة ٦).
+    fun formatDigits(s: String, latin: Boolean = false): String = buildString {
+        for (ch in s) {
+            append(
+                when {
+                    !latin && ch in '0'..'9' -> '٠' + (ch - '0')
+                    latin && ch in '٠'..'٩' -> '0' + (ch - '٠')
+                    else -> ch
+                },
+            )
+        }
+    }
 
     /// سطرا إشعار شاشة القفل: «الفجر · ٤:٣٥ ص» و«القبلة ٣٢٤° · راتب أكتوبر بعد ٨ أيام».
     /// الصيغ من strings.xml: [titleFormat] (الاسم، الوقت)، [qiblaFormat] (الزاوية)،

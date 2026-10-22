@@ -15,10 +15,37 @@ List<GridCell> cells(String spec) => [
 
 void main() {
   group('packRows', () {
-    test('الترتيب الافتراضي = الشكل السابق (المدينة تحت التاريخين)', () {
+    test('الترتيب الافتراضي = تصميم المالك ٣ (الميزة ٦)', () {
       expect(
         shape(stackCells([
-          for (final t in defaultLayout) (id: t.id.name, span: t.span),
+          for (final t in defaultLayout)
+            if (t.visible) (id: t.id.name, span: t.span),
+        ])),
+        [
+          ['clock2', 'dayWeather1'],
+          ['hijri+gregorian2', 'qibla1'],
+          ['prayerTimes3'],
+          ['deposit3'],
+          ['season1', 'tradSeason1', 'tradPoints1'],
+        ],
+      );
+      expect(
+        [for (final t in defaultLayout) if (!t.visible) t.id],
+        [WidgetElement.dates, WidgetElement.weather, WidgetElement.prayer],
+      );
+      expect(defaultLayout.first,
+          const TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false));
+      expect([
+        for (final t in defaultLayout)
+          if (t.id == WidgetElement.season || t.id == WidgetElement.tradSeason)
+            t.showTitle,
+      ], [false, false]);
+    });
+
+    test('الترتيب الافتراضي السابق: المدينة تحت التاريخين', () {
+      expect(
+        shape(stackCells([
+          for (final t in legacyDefaultLayout) (id: t.id.name, span: t.span),
         ])),
         [
           ['clock1', 'dates+weather2'],
@@ -41,6 +68,17 @@ void main() {
       expect(shape(stackCells(cells('dates3 weather3 prayer1'))), [
         ['dates+weather3'],
         ['prayer3'],
+      ]);
+      // الميزة ٦: الميلادي تحت الهجري بالشرط نفسه.
+      expect(shape(stackCells(cells('hijri2 gregorian2 qibla1'))), [
+        ['hijri+gregorian2', 'qibla1'],
+      ]);
+      expect(shape(stackCells(cells('gregorian2 hijri2'))), [
+        ['gregorian3'],
+        ['hijri3'],
+      ]);
+      expect(shape(stackCells(cells('hijri2 gregorian1'))), [
+        ['hijri2', 'gregorian1'],
       ]);
     });
 
@@ -148,7 +186,7 @@ void main() {
   });
 
   group('التخطيط', () {
-    test('normalizeLayout: كل عنصر مرة، والناقص في الآخر بالافتراضي', () {
+    test('normalizeLayout: كل عنصر مرة، والناقص في الآخر بالافتراضي مخفياً', () {
       final l = normalizeLayout(const [
         TileLayout(WidgetElement.prayer, span: 3),
         TileLayout(WidgetElement.prayer),
@@ -157,27 +195,54 @@ void main() {
       expect(l.map((t) => t.id).toList(), [
         WidgetElement.prayer,
         WidgetElement.clock,
-        WidgetElement.dates,
-        WidgetElement.weather,
-        WidgetElement.qibla,
-        WidgetElement.deposit,
-        WidgetElement.season,
-        WidgetElement.tradSeason,
+        for (final t in defaultLayout)
+          if (t.id != WidgetElement.prayer && t.id != WidgetElement.clock) t.id,
       ]);
       expect(l.first.span, 3);
+      expect(l.skip(2).every((t) => !t.visible), isTrue);
+      expect(l.firstWhere((t) => t.id == WidgetElement.prayerTimes).span, 3);
     });
 
-    test('ترحيل visible القديم إلى تخطيط افتراضي يطابقه', () {
+    test('الترحيل (الميزة ٦): الافتراضي السابق كما هو ← الجديد، والمخصص يبقى والجديد مخفي', () {
+      expect(migrateLayout(legacyDefaultLayout), defaultLayout);
+      final custom = [
+        legacyDefaultLayout[3].copyWith(span: 3),
+        ...legacyDefaultLayout.where((t) => t.id != WidgetElement.prayer),
+      ];
+      final m = migrateLayout(custom);
+      expect(m.take(custom.length), custom);
+      expect(m.skip(custom.length).map((t) => t.id), [
+        WidgetElement.dayWeather,
+        WidgetElement.hijri,
+        WidgetElement.gregorian,
+        WidgetElement.prayerTimes,
+        WidgetElement.tradPoints,
+      ]);
+      expect(m.skip(custom.length).every((t) => !t.visible), isTrue);
+      // تغيير واحد (لون أو إخفاء) = مخصص.
+      final hidden = [
+        for (final t in legacyDefaultLayout)
+          t.id == WidgetElement.qibla ? t.copyWith(visible: false) : t,
+      ];
+      expect(migrateLayout(hidden).first, legacyDefaultLayout.first);
+    });
+
+    test('ترحيل visible القديم إلى الترتيب الافتراضي الجديد يطابقه', () {
       final l = layoutFromVisible(['gregorian', 'prayer', 'tradSeason']);
       expect({for (final t in l) t.id.name: t.visible}, {
         'clock': true,
-        'dates': true,
-        'weather': false,
-        'prayer': true,
+        'dayWeather': false,
+        'hijri': false,
+        'gregorian': true,
         'qibla': false,
+        'prayerTimes': true,
         'deposit': false,
         'season': false,
         'tradSeason': true,
+        'tradPoints': true,
+        'dates': false,
+        'weather': false,
+        'prayer': false,
       });
       expect(l.map((t) => t.span), defaultLayout.map((t) => t.span));
       expect(layoutFromVisible(const []).where((t) => t.visible).map((t) => t.id),
@@ -306,6 +371,66 @@ void main() {
       ]);
       expect(g.subs, [0]);
       expect(g.subScales.single, closeTo(0.8, 1e-9));
+    });
+  });
+
+  // الميزة ٦: الحالات نفسها في LamhaLogicTest.kt.
+  group('fitColumns', () {
+    test('يتسع، ثم الأعمدة بالتساوي، ثم العنوان، ثم السطران معاً، ثم السطر الفرعي', () {
+      ColumnsFit f(double h, double nameW, double subW, {double title = 16}) =>
+          fitColumns(
+            height: h,
+            width: 60,
+            titleHeight: title,
+            nameLine: 25,
+            nameWidth: nameW,
+            subLine: 20,
+            subWidth: subW,
+            gap: 2,
+          );
+      expect(f(80, 50, 40), (title: true, nameScale: 1.0, sub: true, subScale: 1.0));
+      final narrow = f(80, 75, 120, title: 0);
+      expect(narrow.nameScale, closeTo(0.8, 1e-9));
+      expect(narrow.sub, isFalse);
+      expect(f(50, 50, 40), (title: false, nameScale: 1.0, sub: true, subScale: 1.0));
+      final shrunk = f(42, 50, 40);
+      expect((shrunk.title, shrunk.sub), (false, true));
+      expect(shrunk.nameScale, closeTo(40 / 45, 1e-9));
+      expect(shrunk.subScale, closeTo(40 / 45, 1e-9));
+      expect(f(30, 50, 40), (title: false, nameScale: 1.0, sub: false, subScale: 1.0));
+      expect(f(20, 50, 40).nameScale, closeTo(0.8, 1e-9));
+    });
+  });
+
+  group('rotatePrayers', () {
+    List<PrayerSlot> day(int d) => [
+          for (final (k, h, m) in [
+            ('isha', 19, 0),
+            ('fajr', 4, 30),
+            ('sunrise', 5, 50),
+            ('dhuhr', 11, 40),
+            ('asr', 15, 5),
+            ('maghrib', 17, 30),
+          ])
+            (key: k, name: k, time: DateTime.utc(2026, 10, d, h, m), text: '$k$d'),
+        ];
+    List<String> keys(DateTime now, {bool tomorrow = true}) => [
+          for (final p in rotatePrayers(day(19), tomorrow ? day(20) : null, now))
+            p.text,
+        ];
+
+    test('القادمة أولاً، وما بعدها دورياً، والغد بأوقات الغد', () {
+      // قبل الفجر.
+      expect(keys(DateTime.utc(2026, 10, 19, 3)),
+          ['fajr19', 'dhuhr19', 'asr19', 'maghrib19', 'isha19']);
+      // بعد الظهر.
+      expect(keys(DateTime.utc(2026, 10, 19, 12)),
+          ['asr19', 'maghrib19', 'isha19', 'fajr20', 'dhuhr20']);
+      // بعد العشاء: فجر الغد أولاً.
+      expect(keys(DateTime.utc(2026, 10, 19, 21)),
+          ['fajr20', 'dhuhr20', 'asr20', 'maghrib20', 'isha20']);
+      // بلا يوم تالٍ: أوقات اليوم.
+      expect(keys(DateTime.utc(2026, 10, 19, 21), tomorrow: false).first, 'fajr19');
     });
   });
 }

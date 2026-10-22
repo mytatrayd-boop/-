@@ -15,18 +15,33 @@
   },
   "visible": {
     "clock": true,
-    "dates": true,
-    "weather": true,
-    "prayer": true,
+    "dates": false,
+    "weather": false,
+    "prayer": false,
     "qibla": true,
     "deposit": true,
     "season": true,
-    "tradSeason": true
+    "tradSeason": true,
+    "dayWeather": true,
+    "hijri": true,
+    "gregorian": true,
+    "prayerTimes": true,
+    "tradPoints": true
   },
   "layout": [
     {
       "id": "clock",
       "visible": true,
+      "span": 2,
+      "fontScale": 2.0,
+      "showTitle": true,
+      "showSub": false,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "dayWeather",
+      "visible": true,
       "span": 1,
       "fontScale": 1.0,
       "showTitle": true,
@@ -35,7 +50,7 @@
       "secondaryColor": null
     },
     {
-      "id": "dates",
+      "id": "hijri",
       "visible": true,
       "span": 2,
       "fontScale": 1.0,
@@ -45,19 +60,9 @@
       "secondaryColor": null
     },
     {
-      "id": "weather",
+      "id": "gregorian",
       "visible": true,
       "span": 2,
-      "fontScale": 1.0,
-      "showTitle": true,
-      "showSub": true,
-      "primaryColor": null,
-      "secondaryColor": null
-    },
-    {
-      "id": "prayer",
-      "visible": true,
-      "span": 1,
       "fontScale": 1.0,
       "showTitle": true,
       "showSub": true,
@@ -75,9 +80,19 @@
       "secondaryColor": null
     },
     {
+      "id": "prayerTimes",
+      "visible": true,
+      "span": 3,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
       "id": "deposit",
       "visible": true,
-      "span": 1,
+      "span": 3,
       "fontScale": 1.0,
       "showTitle": true,
       "showSub": true,
@@ -89,7 +104,7 @@
       "visible": true,
       "span": 1,
       "fontScale": 1.0,
-      "showTitle": true,
+      "showTitle": false,
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null
@@ -97,7 +112,47 @@
     {
       "id": "tradSeason",
       "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": false,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "tradPoints",
+      "visible": true,
+      "span": 1,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "dates",
+      "visible": false,
       "span": 2,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "weather",
+      "visible": false,
+      "span": 2,
+      "fontScale": 1.0,
+      "showTitle": true,
+      "showSub": true,
+      "primaryColor": null,
+      "secondaryColor": null
+    },
+    {
+      "id": "prayer",
+      "visible": false,
+      "span": 1,
       "fontScale": 1.0,
       "showTitle": true,
       "showSub": true,
@@ -114,6 +169,7 @@
   },
   "lockNotification": false,
   "fontScale": 1.0,
+  "digits": "arabic",
   "weather": {
     "temp": 26.2,
     "code": 0,
@@ -214,12 +270,17 @@
         },
         "nextStart": "2026-12-21",
         "daysRemaining": 63,
-        "remainingText": "باقي ٦٣ يوماً"
+        "remainingText": "باقي ٦٣ يوماً",
+        "afterText": "بعد ٦٣ يوماً"
       },
       "tradSeason": {
         "id": "wasm",
         "name": "الوسم",
         "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "points": [
+          "تتدنى درجات الحرارة خلال الليل.",
+          "ترتفع فيه فرص هطول الأمطار النافعة."
+        ],
         "start": "2026-10-16",
         "end": "2026-12-06",
         "next": {
@@ -228,6 +289,7 @@
         },
         "daysRemaining": 49,
         "remainingText": "باقي ٤٩ يوماً",
+        "afterText": "بعد ٤٩ يوماً",
         "approval": "owner_provided"
       },
       "deposits": [
@@ -238,7 +300,8 @@
           "date": "2026-10-25",
           "daysRemaining": 6,
           "remainingText": "باقي ٦ أيام",
-          "afterText": "بعد ٦ أيام"
+          "afterText": "بعد ٦ أيام",
+          "daysText": "٦ أيام"
         },
         {
           "id": "salary",
@@ -247,7 +310,18 @@
           "date": "2026-10-27",
           "daysRemaining": 8,
           "remainingText": "باقي ٨ أيام",
-          "afterText": "بعد ٨ أيام"
+          "afterText": "بعد ٨ أيام",
+          "daysText": "٨ أيام"
+        },
+        {
+          "id": "citizen_account",
+          "name": "حساب المواطن",
+          "label": "حساب المواطن",
+          "date": "2026-11-10",
+          "daysRemaining": 22,
+          "remainingText": "باقي ٢٢ يوماً",
+          "afterText": "بعد ٢٢ يوماً",
+          "daysText": "٢٢ يوماً"
         }
       ]
     },
@@ -309,12 +383,17 @@
         },
         "nextStart": "2026-12-21",
         "daysRemaining": 62,
-        "remainingText": "باقي ٦٢ يوماً"
+        "remainingText": "باقي ٦٢ يوماً",
+        "afterText": "بعد ٦٢ يوماً"
       },
       "tradSeason": {
         "id": "wasm",
         "name": "الوسم",
         "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "points": [
+          "تتدنى درجات الحرارة خلال الليل.",
+          "ترتفع فيه فرص هطول الأمطار النافعة."
+        ],
         "start": "2026-10-16",
         "end": "2026-12-06",
         "next": {
@@ -323,6 +402,7 @@
         },
         "daysRemaining": 48,
         "remainingText": "باقي ٤٨ يوماً",
+        "afterText": "بعد ٤٨ يوماً",
         "approval": "owner_provided"
       },
       "deposits": [
@@ -333,7 +413,8 @@
           "date": "2026-10-25",
           "daysRemaining": 5,
           "remainingText": "باقي ٥ أيام",
-          "afterText": "بعد ٥ أيام"
+          "afterText": "بعد ٥ أيام",
+          "daysText": "٥ أيام"
         },
         {
           "id": "salary",
@@ -342,7 +423,18 @@
           "date": "2026-10-27",
           "daysRemaining": 7,
           "remainingText": "باقي ٧ أيام",
-          "afterText": "بعد ٧ أيام"
+          "afterText": "بعد ٧ أيام",
+          "daysText": "٧ أيام"
+        },
+        {
+          "id": "citizen_account",
+          "name": "حساب المواطن",
+          "label": "حساب المواطن",
+          "date": "2026-11-10",
+          "daysRemaining": 21,
+          "remainingText": "باقي ٢١ يوماً",
+          "afterText": "بعد ٢١ يوماً",
+          "daysText": "٢١ يوماً"
         }
       ]
     }

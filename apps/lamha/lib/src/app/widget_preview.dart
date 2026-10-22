@@ -10,6 +10,9 @@ import '../engine/prayer.dart';
 import '../engine/weather.dart';
 import '../engine/widget_layout.dart';
 import '../engine/widget_theme.dart';
+import 'kaaba.dart';
+
+part 'widget_preview_tiles.dart';
 
 /// مقاس الودجت الكبيرة في آيفون (DESIGN، mockups/widget-large-v2.png).
 const previewWidgetSize = Size(338, 354);
@@ -48,7 +51,13 @@ const weekdayLineHeight = 1.2;
 
 /// خانات بلا صندوق: صفوفها بقدر محتواها، وصفوف المربعات تقتسم الباقي (LINE_TILES في
 /// LamhaWidgetReceiver.kt).
-const _lineTiles = {'clock', 'dates', 'weather', datesWeatherCell};
+const _lineTiles = {
+  'clock',
+  'dates',
+  'weather',
+  'dayWeather',
+  datesWeatherCell,
+};
 
 /// حشوة الودجت، والتباعد بين المربعات والصفوف.
 const widgetPadding = 14.0;
@@ -57,6 +66,10 @@ const tileSpacing = 8.0;
 /// معامل حجم الخط العام من الجدول (١ لجدول أقدم بلاه).
 double scheduleFontScale(Map<String, Object?> schedule) =>
     (schedule['fontScale'] as num?)?.toDouble() ?? 1.0;
+
+/// شكل الأرقام من الجدول (عربية لجدول أقدم بلاه).
+DigitStyle scheduleDigits(Map<String, Object?> schedule) =>
+    DigitStyle.byName(schedule['digits'] as String?);
 
 /// مربع من تخطيط الجدول (الميزة ٥): المعامل رقماً واللونان ARGB أو null (تلقائي).
 typedef ScheduleTile = ({
@@ -219,8 +232,9 @@ class WidgetPreview extends StatelessWidget {
     if (idx < 0) idx = 0;
     final day = days[idx];
     final nextDay = idx + 1 < days.length ? days[idx + 1] : null;
-    final weather =
-        weatherText(scheduleWeather(schedule), now) ?? l.weatherUnknown;
+    final digits = scheduleDigits(schedule);
+    final reading = freshWeather(scheduleWeather(schedule), now);
+    final weather = weatherText(reading, now, digits) ?? l.weatherUnknown;
     final global = scheduleFontScale(schedule);
 
     final layout = scheduleLayout(schedule);
@@ -232,11 +246,16 @@ class WidgetPreview extends StatelessWidget {
       ]),
     );
 
-    _Tile tileFor(WidgetElement e) {
+    final placed = placedElements([
+      for (final t in layout)
+        if (t.visible) (id: t.id.name, span: t.span),
+    ]);
+
+    _Cell tileFor(WidgetElement e, int span) {
       final t = byId[e]!;
-      final tile = switch (e) {
+      final _Cell tile = switch (e) {
         WidgetElement.clock => _Tile.clock(
-          time: arabicClock(local),
+          time: formatDigits(arabicClock(local), digits),
           amPm: amPm(local),
           weekday: day['weekday'] as String,
           accent: accent,
@@ -271,11 +290,65 @@ class WidgetPreview extends StatelessWidget {
             ),
           ],
         ),
-        WidgetElement.prayer => _prayerTile(l, accent, day, nextDay),
-        WidgetElement.qibla => _qiblaTile(l),
-        WidgetElement.deposit => _depositTile(l, day),
+        WidgetElement.prayer => _prayerTile(l, accent, day, nextDay, digits),
+        WidgetElement.qibla => _QiblaTile(title: l.tileQibla),
+        WidgetElement.deposit => _DepositsTile(
+          title: l.depositsTitle,
+          items: [
+            for (final d in (day['deposits'] as List).cast<Map>().take(
+              math.min(3, span),
+            ))
+              (name: d['label'] as String, sub: d['daysText'] as String),
+          ],
+        ),
         WidgetElement.season => _seasonTile(l, day),
-        WidgetElement.tradSeason => _tradSeasonTile(l, day),
+        WidgetElement.tradSeason => _tradSeasonTile(
+          l,
+          day,
+          withDescription: !placed.contains(WidgetElement.tradPoints.name),
+        ),
+        WidgetElement.dayWeather => _DayWeatherTile(
+          weekday: day['weekday'] as String,
+          city: l.cityIcon(
+            city['name'] as String,
+            reading == null ? '' : weatherCondition(reading.code).emoji,
+          ).trim(),
+          temp: reading == null
+              ? l.weatherUnknown
+              : temperatureText(reading.temp, digits),
+        ),
+        WidgetElement.hijri => _CapsuleTile(
+          kind: e,
+          text: l.hijriDateText((day['hijri'] as Map)['text'] as String),
+        ),
+        WidgetElement.gregorian => _CapsuleTile(
+          kind: e,
+          text: l.gregorianDateText(
+            (day['gregorian'] as Map)['text'] as String,
+          ),
+        ),
+        WidgetElement.prayerTimes => _PrayerTimesTile(
+          items: [
+            for (final p in rotatePrayers(
+              _slots(day),
+              nextDay == null ? null : _slots(nextDay),
+              now,
+            ))
+              (name: p.name, sub: p.text),
+          ],
+          accent: accent,
+        ),
+        WidgetElement.tradPoints => _PointsTile(
+          title: l.tradPointsTitle(
+            ((day['tradSeason'] as Map)['name'] as String),
+          ),
+          points: [
+            for (final p
+                in ((day['tradSeason'] as Map)['points'] as List? ?? const [])
+                    .cast<String>())
+              l.pointText(p),
+          ],
+        ),
       };
       return tile.styled(
         scale: global * t.fontScale,
@@ -294,7 +367,7 @@ class WidgetPreview extends StatelessWidget {
             for (final cell in row)
               [
                 for (final id in cellElements(cell.id))
-                  tileFor(WidgetElement.values.byName(id)),
+                  tileFor(WidgetElement.values.byName(id), cell.span),
               ],
           ],
       ];
@@ -340,6 +413,20 @@ class WidgetPreview extends StatelessWidget {
           return _tap(
             WidgetElement.values.byName(ids.first),
             tiles[r][i].first,
+          );
+        }
+        // الكبسولتان تقتسمان الخانة بالتساوي.
+        if (rows[r][i].id == hijriGregorianCell) {
+          return Column(
+            children: [
+              for (var k = 0; k < ids.length; k++)
+                Expanded(
+                  child: _tap(
+                    WidgetElement.values.byName(ids[k]),
+                    tiles[r][i][k],
+                  ),
+                ),
+            ],
           );
         }
         return Column(
@@ -427,7 +514,7 @@ class WidgetPreview extends StatelessWidget {
       child: DecoratedBox(
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(tileRadius),
           border: selected == e
               ? Border.all(color: Colors.white, width: 2)
               : null,
@@ -437,7 +524,24 @@ class WidgetPreview extends StatelessWidget {
     );
   }
 
-  _Tile _prayerTile(AppLocalizations l, Color accent, Map day, Map? nextDay) {
+  /// صلوات يوم من الجدول (لـ [rotatePrayers]).
+  static List<PrayerSlot> _slots(Map day) => [
+    for (final e in (day['prayers'] as Map).cast<String, Map>().entries)
+      (
+        key: e.key,
+        name: e.value['name'] as String,
+        time: DateTime.parse(e.value['time'] as String),
+        text: e.value['text'] as String,
+      ),
+  ];
+
+  _Tile _prayerTile(
+    AppLocalizations l,
+    Color accent,
+    Map day,
+    Map? nextDay,
+    DigitStyle digits,
+  ) {
     Map? next;
     DateTime? at;
     final today = (day['prayers'] as Map).cast<String, Map>();
@@ -467,48 +571,11 @@ class WidgetPreview extends StatelessWidget {
         // العدّاد لا يُختصر: بلا «باقي» إن لم يتسع، ثم يصغر قليلاً، وإلا يُخفى.
         if (at != null)
           (
-            text: l.countdownText(countdownClock(at.difference(now))),
+            text: l.countdownText(
+              formatDigits(countdownClock(at.difference(now)), digits),
+            ),
             lines: 1,
-            compact: countdownClock(at.difference(now)),
-          ),
-      ],
-    );
-  }
-
-  _Tile _qiblaTile(AppLocalizations l) {
-    final q = schedule['qibla']! as Map;
-    final deg = (q['degrees'] as num).toDouble();
-    // الزاوية، ثم الاتجاه.
-    return _Tile(
-      kind: WidgetElement.qibla,
-      title: l.tileQibla,
-      value: l.degrees(arabicDigits(deg.round())),
-      subs: [(text: q['direction'] as String, lines: 1, compact: null)],
-    );
-  }
-
-  _Tile _depositTile(AppLocalizations l, Map day) {
-    final deps = (day['deposits'] as List).cast<Map>();
-    final first = deps.first;
-    final two = deps.length > 1;
-    // مع إيداعين: الاسم، ثم الباقي، ثم الثاني «راتب أكتوبر · باقي ٨ أيام» كاملاً إن اتسع وإلا بـ«…».
-    // «الإيداع القادم» إن اتسع سطراً واحداً، وإلا «الإيداع» (كما في LamhaWidgetReceiver.kt).
-    return _Tile(
-      kind: WidgetElement.deposit,
-      title: l.tileDeposit,
-      shortTitle: l.tileDepositShort,
-      value: first['label'] as String,
-      subs: [
-        (
-          text: first['remainingText'] as String,
-          lines: two ? 1 : 2,
-          compact: null,
-        ),
-        if (two)
-          (
-            text: '${deps[1]['label']} · ${deps[1]['remainingText']}',
-            lines: 1,
-            compact: null,
+            compact: formatDigits(countdownClock(at.difference(now)), digits),
           ),
       ],
     );
@@ -522,9 +589,9 @@ class WidgetPreview extends StatelessWidget {
       value: s['name'] as String,
       subs: [
         (
-          text: l.remainingToNext(
-            s['remainingText'] as String,
-            withLam((s['next'] as Map)['name'] as String),
+          text: l.nextAfter(
+            (s['next'] as Map)['name'] as String,
+            s['afterText'] as String,
           ),
           lines: 2,
           compact: null,
@@ -533,20 +600,25 @@ class WidgetPreview extends StatelessWidget {
     );
   }
 
-  _Tile _tradSeasonTile(AppLocalizations l, Map day) {
+  /// الوصف سطر ثانوي إن لم يظهر مربع «وصف الموسم» ([withDescription]).
+  _Tile _tradSeasonTile(
+    AppLocalizations l,
+    Map day, {
+    required bool withDescription,
+  }) {
     final s = day['tradSeason'] as Map;
-    final description = s['description'] as String;
+    final description = withDescription ? s['description'] as String : '';
     return _Tile(
       kind: WidgetElement.tradSeason,
       title: l.tileTradSeason,
       value: s['name'] as String,
       subs: [
         (
-          text: l.remainingToNext(
-            s['remainingText'] as String,
-            withLam((s['next'] as Map)['name'] as String),
+          text: l.nextAfter(
+            (s['next'] as Map)['name'] as String,
+            s['afterText'] as String,
           ),
-          lines: 1,
+          lines: description.isEmpty ? 2 : 1,
           compact: null,
         ),
         if (description.isNotEmpty)
@@ -602,12 +674,11 @@ typedef _Sub = ({String text, int lines, String? compact});
 /// مربع واحد: مربعات المعلومات الخمسة (عنوان وقيمة وثانويات في صندوق)، أو الساعة واليوم، أو
 /// أسطر بلا صندوق (التاريخان، المدينة والطقس) كما كان الصف العلوي.
 /// الحجم المطلوب يُحترم داخل مقاس المربع (fitTile، الميزة ٥ب): تُخفى الأسطر الأقل أولية قبل أي تصغير.
-class _Tile extends StatelessWidget {
+class _Tile extends _Cell {
   const _Tile({
     required this.kind,
     required this.title,
     required this.value,
-    this.shortTitle,
     this.subs = const [],
     this.highlight,
     this.hideFirstSub = false,
@@ -630,7 +701,6 @@ class _Tile extends StatelessWidget {
        amPmText = amPm,
        value = weekday,
        title = null,
-       shortTitle = null,
        subs = const [],
        lines = const [],
        highlight = null,
@@ -643,7 +713,6 @@ class _Tile extends StatelessWidget {
 
   const _Tile.lines({required this.kind, required this.lines})
     : title = null,
-      shortTitle = null,
       value = '',
       subs = const [],
       highlight = null,
@@ -666,7 +735,6 @@ class _Tile extends StatelessWidget {
     required this.secondary,
   }) : kind = t.kind,
        title = t.title,
-       shortTitle = t.shortTitle,
        value = t.value,
        subs = t.subs,
        highlight = t.highlight,
@@ -678,9 +746,6 @@ class _Tile extends StatelessWidget {
 
   final WidgetElement kind;
   final String? title;
-
-  /// يحل محل [title] إذا لم يتسع سطراً واحداً.
-  final String? shortTitle;
 
   /// قيمة المربع، أو اليوم في مربع الساعة.
   final String value;
@@ -712,6 +777,7 @@ class _Tile extends StatelessWidget {
   final Color? primary;
   final Color? secondary;
 
+  @override
   _Tile styled({
     required double scale,
     required bool showTitle,
@@ -727,22 +793,25 @@ class _Tile extends StatelessWidget {
     secondary: secondary,
   );
 
-  /// المربع بالحجم الأساسي وكل أسطره، لحساب مقاس الشبكة (لا يتغير بحجم الخط ولا بالمفتاحين).
+  /// المربع بالحجم الأساسي وكل أسطره، لحساب مقاس الشبكة (لا يتغير بحجم الخط). والعنوان والسطر
+  /// الفرعي المطفآن لا يأخذان مكاناً (الميزة ٦).
+  @override
   _Tile get base => _Tile._copy(
     this,
     scale: 1,
-    showTitle: true,
-    showSub: true,
+    showTitle: showTitle,
+    showSub: showSub,
     primary: primary,
     secondary: secondary,
   );
 
   /// ارتفاع المربع في عرض [width]: [text] نصه، و[pad] ما لا يتغير (الحشوات، والساعة إن صغّرها
   /// العرض).
+  @override
   ({double text, double pad}) heights(BuildContext context, double width) {
     if (time != null) {
       final font = clockSize * scale * _clockFit(context, width);
-      final weekday = weekdaySize * weekdayLineHeight * scale;
+      final weekday = showSub ? weekdaySize * weekdayLineHeight * scale : 0.0;
       return font < clockSize * scale
           ? (text: weekday, pad: font)
           : (text: font + weekday, pad: 0);
@@ -750,7 +819,9 @@ class _Tile extends StatelessWidget {
     if (lines.isNotEmpty) {
       return (
         text:
-            lines.fold<double>(0, (a, l) => a + l.size) *
+            lines
+                .take(showSub ? lines.length : 1)
+                .fold<double>(0, (a, l) => a + l.size) *
             headLineHeight *
             scale,
         pad: 0,
@@ -758,10 +829,12 @@ class _Tile extends StatelessWidget {
     }
     return (
       text:
-          (tileTitleSize + tileValueSize + subs.length * tileSubSize) *
+          ((showTitle ? tileTitleSize : 0) +
+              tileValueSize +
+              (showSub ? subs.length : 0) * tileSubSize) *
           tileLineHeight *
           scale,
-      pad: tilePadV * 2 + tileGap * (subs.length + 1),
+      pad: tilePadV * 2 + tileGap * ((showSub ? subs.length : 0) + 1),
     );
   }
 
@@ -947,13 +1020,9 @@ class _Tile extends StatelessWidget {
     final h = highlight;
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        // مربع الصلاة: لون التمييز بألفا ثابتة (كـ setImageAlpha في أندرويد).
-        color:
-            h?.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.06),
-        border: h == null
-            ? Border.all(color: Colors.white.withValues(alpha: 0.07))
-            : null,
+        borderRadius: BorderRadius.circular(tileRadius),
+        // مربع الصلاة: لون التمييز بألفا ثابتة (كـ setImageAlpha في أندرويد)، وغيره رمادي مزرق.
+        color: h?.withValues(alpha: 0.18) ?? tileBoxColor,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -971,12 +1040,8 @@ class _Tile extends StatelessWidget {
               color: _secondary,
               height: tileLineHeight,
             );
-            // «الإيداع القادم» ← «الإيداع» إن لم يتسع، ثم تصغير الخط حتى يتسع سطراً واحداً.
-            final short = shortTitle;
-            final t =
-                short != null && _measure(context, title!, titleStyle) > width
-                ? short
-                : title!;
+            // العنوان يصغر حتى يتسع سطراً واحداً، وإلا يُخفى.
+            final t = title!;
             final titleSize = fitTextSize(
               tileTitleSize * scale,
               _measure(context, t, titleStyle),

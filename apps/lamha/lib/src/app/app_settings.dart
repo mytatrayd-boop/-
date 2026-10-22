@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
 import '../engine/widget_theme.dart';
@@ -21,6 +22,7 @@ class LamhaSettings {
     this.theme = WidgetTheme.fallback,
     this.lockNotification = false,
     this.fontScale = FontScale.fallback,
+    this.digits = DigitStyle.fallback,
   });
 
   factory LamhaSettings.defaults(City city, Set<String> depositIds) =>
@@ -43,7 +45,7 @@ class LamhaSettings {
         deposits: (j['deposits'] as List).cast<String>().toSet(),
         // الميزة ٥: التخطيط، وإعدادات أقدم بلاه تُرحَّل من مفاتيح visible.
         layout: j['layout'] is List
-            ? normalizeLayout([
+            ? migrateLayout([
                 for (final t in (j['layout'] as List).cast<Map<String, dynamic>>())
                   if (WidgetElement.values.any((e) => e.name == t['id']))
                     TileLayout.fromJson(t),
@@ -53,10 +55,15 @@ class LamhaSettings {
         opacity: j['opacity'] as int,
         backgroundFile: j['backgroundFile'] as String?,
         // مفتاحان جديدان (الميزة ٣ج)؛ الإعدادات القديمة بلاهما.
-        theme: WidgetTheme.byName(j['theme'] as String?),
+        // من حفظ قبل السمات رأى الذهبي، والجديد الأسود (الميزة ٦).
+        theme: j.containsKey('theme')
+            ? WidgetTheme.byName(j['theme'] as String?)
+            : WidgetTheme.gold,
         lockNotification: j['lockNotification'] as bool? ?? false,
         // الميزة ٣د؛ الإعدادات القديمة بلاه = متوسط.
         fontScale: FontScale.byName(j['fontScale'] as String?),
+        // الميزة ٦؛ الإعدادات القديمة بلاه = عربية.
+        digits: DigitStyle.byName(j['digits'] as String?),
       );
 
   static const prefsKey = 'settings';
@@ -83,6 +90,9 @@ class LamhaSettings {
   /// حجم خط الودجت.
   final FontScale fontScale;
 
+  /// شكل الأرقام في الودجت والمعاينة وشاشة القبلة والإشعار.
+  final DigitStyle digits;
+
   /// [withBackground] = false في أندرويد، فيكون `background` في الجدول null.
   Settings toEngine({bool withBackground = true}) => Settings(
         latitude: latitude,
@@ -97,6 +107,7 @@ class LamhaSettings {
         theme: theme,
         lockNotification: lockNotification,
         fontScale: fontScale,
+        digits: digits,
       );
 
   LamhaSettings copyWith({
@@ -113,6 +124,7 @@ class LamhaSettings {
     WidgetTheme? theme,
     bool? lockNotification,
     FontScale? fontScale,
+    DigitStyle? digits,
   }) =>
       LamhaSettings(
         cityId: cityId ?? this.cityId,
@@ -128,6 +140,7 @@ class LamhaSettings {
         theme: theme ?? this.theme,
         lockNotification: lockNotification ?? this.lockNotification,
         fontScale: fontScale ?? this.fontScale,
+        digits: digits ?? this.digits,
       );
 
   Map<String, Object?> toJson() => {
@@ -144,6 +157,7 @@ class LamhaSettings {
         'theme': theme.name,
         'lockNotification': lockNotification,
         'fontScale': fontScale.name,
+        'digits': digits.name,
       };
 
   String encode() => jsonEncode(toJson());

@@ -74,7 +74,7 @@ Future<void> select(WidgetTester tester, String id) async {
 
 void main() {
   testWidgets(
-    'من الإعدادات: المعاينة بالحجم الحقيقي في الأعلى، ثم اللوحة، ثم شريط عرضي بالعناصر الثمانية',
+    'من الإعدادات: المعاينة بالحجم الحقيقي في الأعلى، ثم اللوحة، ثم شريط عرضي بكل العناصر',
     (tester) async {
       await openCustomize(tester);
       expect(find.text('تخصيص الودجت'), findsWidgets);
@@ -104,8 +104,8 @@ void main() {
             .scrollDirection,
         Axis.horizontal,
       );
-      for (final e in WidgetElement.values) {
-        expect(tile(e.name), findsOneWidget);
+      for (final t in defaultLayout) {
+        expect(tile(t.id.name), t.visible ? findsOneWidget : findsNothing);
       }
       for (final e in WidgetElement.values) {
         await revealChip(tester, find.byKey(ValueKey('chip-${e.name}')));
@@ -114,8 +114,8 @@ void main() {
       await revealChip(tester, find.byKey(const ValueKey('chip-clock')));
       // الرقاقات بالترتيب من اليمين لليسار.
       final xs = [
-        for (final e in WidgetElement.values.take(4))
-          tester.getRect(find.byKey(ValueKey('chip-${e.name}'))).center.dx,
+        for (final t in defaultLayout.take(4))
+          tester.getRect(find.byKey(ValueKey('chip-${t.id.name}'))).center.dx,
       ];
       for (var i = 1; i < xs.length; i++) {
         expect(xs[i], lessThan(xs[i - 1]));
@@ -123,15 +123,18 @@ void main() {
       // المختار افتراضياً أول عنصر، ولوحته وحدها ظاهرة.
       expect(find.byKey(const Key('visible-clock')), findsOneWidget);
       expect(find.byKey(const Key('visible-prayer')), findsNothing);
-      // الترتيب الافتراضي كالشكل السابق: الساعة يميناً، ويسارها التاريخان وتحتهما المدينة والطقس.
+      // الترتيب الافتراضي (تصميم المالك ٣): الساعة يميناً ويسارها اليوم والطقس، ثم الهجري وتحته
+      // الميلادي، ثم مواقيت الصلاة.
       final clock = tester.getRect(tile('clock'));
-      final dates = tester.getRect(tile('dates'));
-      final weather = tester.getRect(tile('weather'));
-      final prayer = tester.getRect(tile('prayer'));
-      expect(clock.left, greaterThan(dates.right));
-      expect(weather.top, greaterThanOrEqualTo(dates.bottom - 0.5));
-      expect(weather.right, closeTo(dates.right, 0.5));
-      expect(prayer.top, greaterThan(clock.bottom));
+      final day = tester.getRect(tile('dayWeather'));
+      final hijri = tester.getRect(tile('hijri'));
+      final gregorian = tester.getRect(tile('gregorian'));
+      final prayer = tester.getRect(tile('prayerTimes'));
+      expect(clock.left, greaterThan(day.right));
+      expect(hijri.top, greaterThan(clock.bottom));
+      expect(gregorian.top, greaterThanOrEqualTo(hijri.bottom - 0.5));
+      expect(gregorian.right, closeTo(hijri.right, 0.5));
+      expect(prayer.top, greaterThan(gregorian.bottom));
     },
   );
 
@@ -162,28 +165,26 @@ void main() {
 
   testWidgets('الإظهار يحفظ في الجدول، والمخفي باهت في الشريط', (tester) async {
     final bridge = await openCustomize(tester);
-    await select(tester, 'prayer');
-    await tapKey(tester, 'visible-prayer');
-    expect(tile('prayer'), findsNothing);
-    expect((bridge.last['visible'] as Map)['prayer'], isFalse);
-    expect(tileOf(bridge, 'prayer')['visible'], isFalse);
+    await select(tester, 'prayerTimes');
+    await tapKey(tester, 'visible-prayerTimes');
+    expect(tile('prayerTimes'), findsNothing);
+    expect((bridge.last['visible'] as Map)['prayerTimes'], isFalse);
+    expect(tileOf(bridge, 'prayerTimes')['visible'], isFalse);
     final faded = find.ancestor(
-      of: find.byKey(const Key('chip-tap-prayer')),
+      of: find.byKey(const Key('chip-tap-prayerTimes')),
       matching: find.byType(Opacity),
     );
     expect(tester.widget<Opacity>(faded.first).opacity, lessThan(1));
-    // القبلة والإيداع والفصل في صف، والموسم وحده يمتد بعرض الصف.
-    final q = tester.getRect(tile('qibla'));
-    final s = tester.getRect(tile('season'));
-    final t = tester.getRect(tile('tradSeason'));
-    expect(s.top, q.top);
-    expect(t.top, greaterThan(q.bottom));
-    expect(t.width, closeTo(338 - 28, 0.5));
+    // الإيداعات تصعد تحت التاريخين بعرض الصف.
+    final g = tester.getRect(tile('gregorian'));
+    final d = tester.getRect(tile('deposit'));
+    expect(d.top, greaterThan(g.bottom));
+    expect(d.width, closeTo(338 - 28, 0.5));
     final prefs = await SharedPreferences.getInstance();
     final saved = jsonDecode(prefs.getString(LamhaSettings.prefsKey)!) as Map;
     expect(
       (saved['layout'] as List).cast<Map>().firstWhere(
-        (t) => t['id'] == 'prayer',
+        (t) => t['id'] == 'prayerTimes',
       )['visible'],
       isFalse,
     );
@@ -228,39 +229,37 @@ void main() {
 
     await tapKey(tester, 'showtitle-deposit');
     expect(tileOf(bridge, 'deposit')['showTitle'], isFalse);
-    expect(
-      find.descendant(
-        of: tile('deposit'),
-        matching: find.byKey(const Key('tile-title')),
-      ),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('deposit-title')), findsNothing);
     await tapKey(tester, 'showsub-deposit');
     expect(tileOf(bridge, 'deposit')['showSub'], isFalse);
-    expect(
-      find.descendant(
-        of: tile('deposit'),
-        matching: find.byKey(const Key('tile-sub-0')),
-      ),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('deposit-sub-0')), findsNothing);
+    expect(find.byKey(const Key('deposit-name-0')), findsOneWidget);
 
+    // القبلة: عنوانها كلمة «القبلة» في الدائرة، بلا سطر فرعي.
     await select(tester, 'qibla');
-    await tapKey(tester, 'primary-qibla-pink');
-    await tapKey(tester, 'secondary-qibla-blue');
-    expect(tileOf(bridge, 'qibla')['primaryColor'], TileColor.pink.argb);
-    expect(tileOf(bridge, 'qibla')['secondaryColor'], TileColor.blue.argb);
+    expect(find.byKey(const Key('showsub-qibla')), findsNothing);
+    await tapKey(tester, 'showtitle-qibla');
+    expect(find.byKey(const Key('preview-qibla-title')), findsNothing);
+    expect(find.byKey(const Key('preview-kaaba')), findsOneWidget);
+
+    await select(tester, 'season');
+    await tapKey(tester, 'primary-season-pink');
+    await tapKey(tester, 'secondary-season-blue');
+    expect(tileOf(bridge, 'season')['primaryColor'], TileColor.pink.argb);
+    expect(tileOf(bridge, 'season')['secondaryColor'], TileColor.blue.argb);
     Color colorOf(String key) => tester
         .widget<Text>(
-          find.descendant(of: tile('qibla'), matching: find.byKey(Key(key))),
+          find.descendant(of: tile('season'), matching: find.byKey(Key(key))),
         )
         .style!
         .color!;
     expect(colorOf('tile-value'), Color(TileColor.pink.argb));
-    expect(colorOf('tile-sub-0'), Color(TileColor.blue.argb));
+    if (find.descendant(of: tile('season'), matching: find.byKey(const Key('tile-sub-0'))).evaluate().isNotEmpty) {
+      expect(colorOf('tile-sub-0'), Color(TileColor.blue.argb));
+    }
     // «تلقائي» يعيد لون السمة.
-    await tapKey(tester, 'primary-qibla-auto');
-    expect(tileOf(bridge, 'qibla')['primaryColor'], isNull);
+    await tapKey(tester, 'primary-season-auto');
+    expect(tileOf(bridge, 'season')['primaryColor'], isNull);
     expect(colorOf('tile-value'), isNot(Color(TileColor.pink.argb)));
   });
 
@@ -268,8 +267,8 @@ void main() {
     'السحب العرضي بالضغط المطوّل يعيد الترتيب، و«استعادة الافتراضي»',
     (tester) async {
       final bridge = await openCustomize(tester);
-      // الصلاة (الرابعة) إلى أول الشريط (أقصى اليمين).
-      final chip = find.byKey(const ValueKey('chip-prayer'));
+      // اليوم والطقس (الثاني) إلى أول الشريط (أقصى اليمين).
+      final chip = find.byKey(const ValueKey('chip-dayWeather'));
       final target = tester.getRect(find.byKey(const ValueKey('chip-clock')));
       final start = tester.getCenter(chip);
       final g = await tester.startGesture(start);
@@ -281,14 +280,14 @@ void main() {
       }
       await g.up();
       await tester.pumpAndSettle();
-      expect(layoutOf(bridge).first['id'], 'prayer');
-      // الصلاة أول الصف من اليمين، والساعة بعدها تمتد لتملأه (والتاريخان في صف جديد).
+      expect(layoutOf(bridge).first['id'], 'dayWeather');
+      // اليوم والطقس أول الصف من اليمين، والساعة بعده (والتاريخان في صف جديد).
       expect(
-        tester.getRect(tile('prayer')).left,
+        tester.getRect(tile('dayWeather')).left,
         greaterThan(tester.getRect(tile('clock')).right),
       );
       expect(
-        tester.getRect(tile('dates')).top,
+        tester.getRect(tile('hijri')).top,
         greaterThan(tester.getRect(tile('clock')).bottom),
       );
 
@@ -303,14 +302,14 @@ void main() {
       expect([for (final t in layoutOf(bridge)) t['id']], before);
 
       await select(tester, 'clock');
-      await tapKey(tester, 'span-clock-2');
+      await tapKey(tester, 'span-clock-1');
       await tester.tap(find.byKey(const Key('reset-layout')));
       await tester.pumpAndSettle();
       expect(
         [for (final t in layoutOf(bridge)) t['id']],
-        [for (final e in WidgetElement.values) e.name],
+        [for (final t in defaultLayout) t.id.name],
       );
-      expect(tileOf(bridge, 'clock')['span'], 1);
+      expect(tileOf(bridge, 'clock')['span'], 2);
     },
   );
 
@@ -318,17 +317,17 @@ void main() {
     tester,
   ) async {
     await openCustomize(tester);
-    for (final e in ['clock', 'dates', 'prayer']) {
-      await select(tester, e);
-      await tapKey(tester, 'span-$e-3');
-    }
-    // أربعة صفوف بعرض ٣، ثم القبلة والإيداع والفصل، والموسم خارج الودجت.
-    expect(find.byKey(const Key('chip-overflow-season')), findsNothing);
-    expect(find.byKey(const Key('chip-overflow-tradSeason')), findsOneWidget);
-    expect(tile('tradSeason'), findsNothing);
-    expect(tile('season'), findsOneWidget);
-    await select(tester, 'tradSeason');
-    expect(find.byKey(const Key('overflow-tradSeason')), findsOneWidget);
+    await select(tester, 'dayWeather');
+    await tapKey(tester, 'span-dayWeather-3');
+    // الساعة ثم اليوم والطقس في صف جديد، فالصف الأخير (الفصل والموسم ووصفه) خارج الودجت.
+    await revealChip(tester, find.byKey(const Key('chip-overflow-season')));
+    expect(find.byKey(const Key('chip-overflow-season')), findsOneWidget);
+    await revealChip(tester, find.byKey(const ValueKey('chip-deposit')));
+    expect(find.byKey(const Key('chip-overflow-deposit')), findsNothing);
+    expect(tile('season'), findsNothing);
+    expect(tile('deposit'), findsOneWidget);
+    await select(tester, 'tradPoints');
+    expect(find.byKey(const Key('overflow-tradPoints')), findsOneWidget);
   });
 
   testWidgets('كل نصوص الشاشة والمعاينة محاذاة يمين', (tester) async {
@@ -359,21 +358,26 @@ void main() {
         {for (final t in layoutOf(bridge)) t['id']: t['visible']},
         {
           'clock': true,
-          'dates': true,
-          'weather': false,
-          'prayer': true,
+          'dayWeather': false,
+          'hijri': true,
+          'gregorian': false,
           'qibla': false,
+          'prayerTimes': true,
           'deposit': false,
           'season': true,
           'tradSeason': false,
+          'tradPoints': false,
+          'dates': false,
+          'weather': false,
+          'prayer': false,
         },
       );
-      expect(tile('weather'), findsNothing);
+      expect(tile('dayWeather'), findsNothing);
       expect(tile('season'), findsOneWidget);
       final prefs = await SharedPreferences.getInstance();
       final saved = jsonDecode(prefs.getString(LamhaSettings.prefsKey)!) as Map;
       expect(saved.containsKey('visible'), isFalse);
-      expect((saved['layout'] as List), hasLength(8));
+      expect((saved['layout'] as List), hasLength(WidgetElement.values.length));
     },
   );
 }

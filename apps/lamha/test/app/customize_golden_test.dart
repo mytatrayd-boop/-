@@ -19,7 +19,7 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 void main() {
-  testWidgets('لقطة شاشة التخصيص (الصلاة مختارة)', (tester) async {
+  testWidgets('لقطة شاشة التخصيص (مواقيت الصلاة مختارة)', (tester) async {
     await _loadFont('Tajawal', [
       'assets/fonts/Tajawal-Regular.ttf',
       'assets/fonts/Tajawal-Medium.ttf',
@@ -29,7 +29,7 @@ void main() {
     tester.view.physicalSize = const Size(412 * 2, 915 * 2);
     tester.view.devicePixelRatio = 2;
     await tester.pumpAndSettle();
-    await select(tester, 'prayer');
+    await select(tester, 'prayerTimes');
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../mockups/customize_screen.png'),

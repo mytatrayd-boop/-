@@ -48,7 +48,7 @@ Map<String, Object> hijriJson(UmmAlQuraCalendar calendar, DateTime day) {
     'month': h.month,
     'monthName': monthName,
     'year': h.year,
-    'text': '${arabicDigits(h.day)} $monthName ${arabicDigits(h.year)}',
+    'text': '${formatDigits(h.day)} $monthName ${formatDigits(h.year)}',
   };
 }
 
@@ -89,19 +89,21 @@ Map<String, Object?> buildSchedule(
         'month': d.month,
         'monthName': monthName,
         'year': d.year,
-        'text': '${arabicDigits(d.day)} $monthName ${arabicDigits(d.year)}',
+        'text': '${formatDigits(d.day)} $monthName ${formatDigits(d.year)}',
       },
       'hijri': hijriJson(data.hijri, d),
       'prayers': prayers.forDate(d).toJson(),
       'season': astroSeasonOn(d, noon.timeZoneOffset).toJson(),
       'tradSeason': data.tradSeasons.on(d).toJson(),
       'deposits': [
-        for (final o in data.deposits.nextDeposits(d, s.deposits)) o.toJson(),
+        // حتى ثلاثة إيداعات، الأقرب أولاً (أعمدة الإيداعات، الميزة ٦).
+        for (final o in data.deposits.nextDeposits(d, s.deposits, count: 3))
+          o.toJson(),
       ],
     });
   }
 
-  return {
+  final schedule = <String, Object?>{
     'schemaVersion': scheduleSchemaVersion,
     'generatedAt': (generatedAt ?? from).toUtc().toIso8601String(),
     'city': {
@@ -114,7 +116,7 @@ Map<String, Object?> buildSchedule(
     'qibla': {
       'degrees': double.parse(qibla.toStringAsFixed(1)),
       'direction': directionName(qibla),
-      'text': '${arabicDigits(qibla.round())}° ${directionName(qibla)}',
+      'text': '${formatDigits(qibla.round())}° ${directionName(qibla)}',
     },
     // ما يظهر (يقرؤه عامل الطقس في أندرويد)، ثم التخطيط بترتيبه (الميزة ٥).
     'visible': {
@@ -128,9 +130,16 @@ Map<String, Object?> buildSchedule(
     'lockNotification': s.lockNotification,
     // معامل حجم الخط تضرب به المعاينة والودجت كل حجم نص.
     'fontScale': s.fontScale.factor,
+    // شكل الأرقام (الميزة ٦): نصوص الجدول الجاهزة به، والودجت تبني به ما تحسبه (الحرارة).
+    'digits': s.digits.name,
     // آخر قراءة للمدينة نفسها فقط؛ عمرها يُفحص عند العرض (weatherMaxAge).
     'weather': weatherScheduleJson(
         weather != null && weather.isFor(s.latitude, s.longitude) ? weather : null),
     'days': dayList,
   };
+  // النصوص تُبنى بالأرقام العربية، وبالإنجليزية تُحوَّل كلها مرة واحدة (التواريخ والأوقات والأيام
+  // المتبقية والحرارة والقبلة). ISO والمعرّفات بأرقام لاتينية أصلاً فلا تتغير.
+  return s.digits == DigitStyle.arabic
+      ? schedule
+      : localizeDigits(schedule, s.digits)! as Map<String, Object?>;
 }

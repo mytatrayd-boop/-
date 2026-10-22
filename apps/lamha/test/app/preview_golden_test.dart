@@ -101,7 +101,7 @@ void main() {
 
   // الميزة ٥ب: حجم مربع واحد يُحترم داخل مقاسه، كحالات لقطات أندرويد (LamhaScreens).
   for (final (id, scale) in [
-    (WidgetElement.prayer, 2.0),
+    (WidgetElement.prayerTimes, 2.0),
     (WidgetElement.tradSeason, 1.8),
     (WidgetElement.clock, 1.5),
     (WidgetElement.deposit, 2.0),
@@ -146,7 +146,8 @@ void main() {
         );
         await tester.pumpAndSettle();
         final values = find.byKey(const Key('tile-value'));
-        expect(values, findsNWidgets(5));
+        // مربعات المعلومات الظاهرة في الترتيب الافتراضي: الفصل والموسم.
+        expect(values, findsNWidgets(2));
         for (final e in values.evaluate()) {
           final text = e.widget as Text;
           final p = tester.renderObject<RenderParagraph>(
@@ -161,6 +162,25 @@ void main() {
           of: find.byKey(Key('tile-${id.name}')),
           matching: find.byKey(const Key('tile-value')),
         );
+        // مربعات الأعمدة: كل الأعمدة ظاهرة بحجم واحد، والاسم سطر واحد كامل.
+        if (id == WidgetElement.prayerTimes || id == WidgetElement.deposit) {
+          final prefix = id == WidgetElement.prayerTimes ? 'prayer' : 'deposit';
+          final n = id == WidgetElement.prayerTimes ? 5 : 2;
+          final sizes = <double?>{};
+          for (var i = 0; i < n; i++) {
+            final f = find.byKey(Key('$prefix-name-$i'));
+            expect(f, findsOneWidget);
+            sizes.add(tester.widget<Text>(f).style!.fontSize);
+            final p = tester.renderObject<RenderParagraph>(
+              find.descendant(of: f, matching: find.byType(RichText)),
+            );
+            expect(p.didExceedMaxLines, isFalse);
+            expect(p.size.width, lessThanOrEqualTo(tester.getSize(f).width + 0.5));
+          }
+          expect(sizes, hasLength(1));
+          expect(sizes.single, lessThanOrEqualTo(20 * scale));
+          return;
+        }
         if (id == WidgetElement.clock) {
           final clock = tester.widget<Text>(
             find.byKey(const Key('preview-clock')),

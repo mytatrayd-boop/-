@@ -24,4 +24,9 @@
     <string name="notification_qibla">Qibla %1$s</string>
     <string name="notification_deposit">%1$s %2$s</string>
     <string name="notification_join">%1$s · %2$s</string>
+    <string name="deposits_title">Remaining until:</string>
+    <string name="trad_points_title">In %1$s:</string>
+    <string name="point_text">- %1$s</string>
+    <string name="next_after">%1$s %2$s</string>
+    <string name="city_icon">📍 %1$s %2$s</string>
 </resources>

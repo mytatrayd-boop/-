@@ -9,7 +9,6 @@ import 'package:lamha/src/app/places.dart';
 import 'package:lamha/src/app/providers.dart';
 import 'package:lamha/src/app/services.dart';
 import 'package:lamha/src/app/widget_preview.dart' show withLam;
-import 'package:lamha/src/engine/arabic.dart';
 import 'package:lamha/src/engine/qibla.dart';
 import 'package:lamha/src/engine/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,13 +18,10 @@ import 'app_helpers.dart';
 
 Finder tile(WidgetElement e) => find.byKey(Key('tile-${e.name}'));
 
-/// مربعات المعلومات الخمسة بترتيبها الافتراضي.
-const infoTiles = [
-  WidgetElement.prayer,
-  WidgetElement.qibla,
-  WidgetElement.deposit,
-  WidgetElement.season,
-  WidgetElement.tradSeason,
+/// العناصر الظاهرة في الترتيب الافتراضي (الميزة ٦) بترتيبها.
+final shownTiles = [
+  for (final t in defaultLayout)
+    if (t.visible) t.id,
 ];
 
 double bgAlpha(WidgetTester tester) {
@@ -34,23 +30,32 @@ double bgAlpha(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('من اليمين لليسار، والمعاينة فيها المربعات الخمسة بالترتيب', (tester) async {
+  testWidgets('من اليمين لليسار، والمعاينة بترتيب تصميم المالك ٣', (tester) async {
     await pumpApp(tester);
     final dir = Directionality.of(tester.element(find.byType(Scaffold)));
     expect(dir, TextDirection.rtl);
-    for (final e in infoTiles) {
-      expect(tile(e), findsOneWidget);
+    for (final e in WidgetElement.values) {
+      expect(tile(e), shownTiles.contains(e) ? findsOneWidget : findsNothing,
+          reason: e.name);
     }
-    // الصف الأول من اليمين: الصلاة ثم القبلة ثم الإيداع.
-    final prayer = tester.getRect(tile(WidgetElement.prayer));
-    final qibla = tester.getRect(tile(WidgetElement.qibla));
-    final deposit = tester.getRect(tile(WidgetElement.deposit));
-    expect(prayer.right, greaterThan(qibla.right));
-    expect(qibla.right, greaterThan(deposit.right));
-    // الموسم بعرض عمودين.
-    final trad = tester.getRect(tile(WidgetElement.tradSeason));
-    expect(trad.width / qibla.width, inInclusiveRange(2.0, 2.15));
-    expect(trad.top, greaterThan(prayer.bottom));
+    Rect at(WidgetElement e) => tester.getRect(tile(e));
+    // الصف ١: الساعة (عرض ٢) يميناً ثم اليوم والطقس.
+    expect(at(WidgetElement.clock).left, greaterThan(at(WidgetElement.dayWeather).right));
+    expect(at(WidgetElement.clock).width / at(WidgetElement.dayWeather).width,
+        inInclusiveRange(1.99, 2.15));
+    // الصف ٢: الهجري فوق الميلادي، والقبلة يسارهما.
+    expect(at(WidgetElement.hijri).bottom,
+        lessThanOrEqualTo(at(WidgetElement.gregorian).top + 0.5));
+    expect(at(WidgetElement.hijri).left, greaterThan(at(WidgetElement.qibla).right));
+    expect(at(WidgetElement.hijri).top, greaterThan(at(WidgetElement.clock).bottom));
+    // الصف ٣ و٤: مواقيت الصلاة ثم الإيداعات، بعرض الودجت.
+    expect(at(WidgetElement.prayerTimes).top, greaterThan(at(WidgetElement.gregorian).bottom));
+    expect(at(WidgetElement.deposit).top, greaterThan(at(WidgetElement.prayerTimes).bottom));
+    expect(at(WidgetElement.prayerTimes).width, closeTo(at(WidgetElement.deposit).width, 0.5));
+    // الصف ٥: الفصل ثم الموسم ثم وصفه.
+    expect(at(WidgetElement.season).left, greaterThan(at(WidgetElement.tradSeason).right));
+    expect(at(WidgetElement.tradSeason).left, greaterThan(at(WidgetElement.tradPoints).right));
+    expect(at(WidgetElement.season).top, greaterThan(at(WidgetElement.deposit).bottom));
   });
 
   testWidgets('لا يمكن إلغاء آخر إيداع', (tester) async {
@@ -281,97 +286,112 @@ void main() {
     expect(bridge.last['background'], isNull);
   });
 
-  testWidgets('المعاينة: القيمة تحت العنوان مباشرة، والأحجام ١٣/٢٠/١٤ بلا رموز', (tester) async {
+  testWidgets('المعاينة (الميزة ٦): مواقيت تدور بالقادمة مميزة، وأعمدة الإيداعات، والقبلة، ونقاط الموسم',
+      (tester) async {
     final bridge = await pumpApp(tester);
-    Finder inTile(WidgetElement e, String key) => find.descendant(
-        of: tile(e),
-        matching: key == 'tile-sub'
-            ? find.byWidgetPredicate((w) =>
-                w.key is ValueKey<String> &&
-                (w.key! as ValueKey<String>).value.startsWith('tile-sub-'))
-            : find.byKey(Key(key)));
-    for (final e in infoTiles) {
-      final value = tester.widget<Text>(inTile(e, 'tile-value'));
-      // العنوان سطر واحد بلا كسر، يصغر (حتى ٧٠٪) ليتسع وإلا يُخفى (الميزة ٥ب). القيمة ٢٠ تلتفّ عند
-      // المسافات، ولا تصغر إلا إن لم تتسع كلمة (خط الاختبار عريض).
-      final hasTitle = inTile(e, 'tile-title').evaluate().isNotEmpty;
-      if (hasTitle) {
-        final title = tester.widget<Text>(inTile(e, 'tile-title'));
-        expect(title.style!.fontSize, inInclusiveRange(13 * 0.7, 13));
-        expect(title.maxLines, 1);
-        expect(title.softWrap, isFalse);
-      }
-      expect(value.style!.fontSize, lessThanOrEqualTo(20));
-      expect(value.style!.fontWeight, FontWeight.w700);
-      for (final sub in tester.widgetList<Text>(inTile(e, 'tile-sub'))) {
-        // العدّاد وحده يصغر (حتى ٧٠٪) ليتسع بلا «…».
-        expect(sub.style!.fontSize, inInclusiveRange(14 * 0.7, 14));
-      }
-      // لا رموز تعبيرية في المربعات.
-      final texts = tester
-          .widgetList<Text>(
-              find.descendant(of: tile(e), matching: find.byType(Text)))
-          .map((t) => t.data!);
-      final emoji =
-          RegExp(r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]', unicode: true);
-      for (final t in texts) {
-        expect(emoji.hasMatch(t), isFalse, reason: '${e.name}: $t');
-      }
-      // تتابع من الأعلى: لا فراغ كبير بين العنوان والقيمة.
-      if (hasTitle) {
-        final gap = tester.getRect(inTile(e, 'tile-value')).top -
-            tester.getRect(inTile(e, 'tile-title')).bottom;
-        expect(gap, inInclusiveRange(0, 8), reason: e.name);
+    final day = (bridge.last['days'] as List).first as Map;
+    final next = (bridge.last['days'] as List)[1] as Map;
+    String text(String key) => tester.widget<Text>(find.byKey(Key(key))).data!;
+    Color? color(String key) => tester.widget<Text>(find.byKey(Key(key))).style!.color;
+
+    // ٩:٠٠Z = ١٢:٠٠ بالرياض: العصر أولاً، والفجر والظهر من الغد بأوقات الغد.
+    Map p(Map d, String k) => (d['prayers'] as Map)[k] as Map;
+    final expected = [
+      p(day, 'asr'), p(day, 'maghrib'), p(day, 'isha'), p(next, 'fajr'), p(next, 'dhuhr'),
+    ];
+    for (var i = 0; i < 5; i++) {
+      expect(text('prayer-name-$i'), expected[i]['name']);
+      // الوقت يصغر مع الاسم، ويُخفى إن لم يتسع حتى ٨٠٪ (خط الاختبار عريض).
+      if (find.byKey(Key('prayer-sub-$i')).evaluate().isNotEmpty) {
+        expect(text('prayer-sub-$i'), expected[i]['text']);
       }
     }
+    const accent = Color(0xFFD6AA5C);
+    expect(color('prayer-name-0'), accent);
+    if (find.byKey(const Key('prayer-sub-0')).evaluate().isNotEmpty) {
+      expect(color('prayer-sub-0'), accent);
+    }
+    expect(color('prayer-name-1'), isNot(accent));
+    // أول عمود من اليمين.
+    expect(tester.getRect(find.byKey(const Key('prayer-name-0'))).left,
+        greaterThan(tester.getRect(find.byKey(const Key('prayer-name-1'))).right));
+    // الأعمدة بحجم واحد (تصغر بالتساوي إن لزم).
+    final sizes = {for (var i = 0; i < 5; i++) tester.widget<Text>(find.byKey(Key('prayer-name-$i'))).style!.fontSize};
+    expect(sizes, hasLength(1));
+    expect(sizes.single, lessThanOrEqualTo(20));
 
-    // القبلة: الزاوية سطر والاتجاه سطر تحته.
-    final q = bridge.last['qibla'] as Map;
-    final qValue = tester.widget<Text>(inTile(WidgetElement.qibla, 'tile-value'));
-    expect(qValue.data, '${arabicDigits((q['degrees'] as num).round())}°');
-    final qSub = inTile(WidgetElement.qibla, 'tile-sub');
-    expect(tester.widget<Text>(qSub).data, q['direction']);
-    expect(tester.getRect(qSub).top,
-        greaterThan(tester.getRect(inTile(WidgetElement.qibla, 'tile-value')).bottom - 0.5));
+    // الإيداعات: حتى ثلاثة أعمدة، الأقرب أولاً، والاسم وتحته الأيام.
+    final deps = (day['deposits'] as List).cast<Map>();
+    expect(deps.length, 3);
+    for (var i = 0; i < 3; i++) {
+      expect(text('deposit-name-$i'), deps[i]['label']);
+      if (find.byKey(Key('deposit-sub-$i')).evaluate().isNotEmpty) {
+        expect(text('deposit-sub-$i'), deps[i]['daysText']);
+      }
+    }
+    expect(find.byKey(const Key('deposit-name-3')), findsNothing);
 
-    // الصلاة: الاسم، ثم وقتها من الجدول (text)، ثم الباقي.
-    // ٩:٠٠Z = ١٢:٠٠ بالرياض، فالقادمة العصر.
-    final day = (bridge.last['days'] as List).first as Map;
-    final asr = (day['prayers'] as Map)['asr'] as Map;
-    expect(tester.widget<Text>(inTile(WidgetElement.prayer, 'tile-value')).data,
-        asr['name']);
-    final subs = tester
-        .widgetList<Text>(inTile(WidgetElement.prayer, 'tile-sub'))
+    // القبلة: دائرة فيها «القبلة» والكعبة، بلا زاوية.
+    expect(find.byKey(const Key('preview-qibla-circle')), findsOneWidget);
+    expect(find.byKey(const Key('preview-kaaba')), findsOneWidget);
+    if (find.byKey(const Key('preview-qibla-title')).evaluate().isNotEmpty) {
+      expect(text('preview-qibla-title'), 'القبلة');
+    }
+
+    // الفصل والموسم بلا عناوين، وتحتهما «الشتاء بعد … يوماً».
+    final season = day['season'] as Map;
+    final seasonTexts = tester
+        .widgetList<Text>(find.descendant(of: tile(WidgetElement.season), matching: find.byType(Text)))
         .map((t) => t.data)
         .toList();
-    expect(subs.first, asr['text']);
-    // العدّاد بصيغة Chronometer: ١٢:٠٠ ← العصر، وبلا «باقي» إن لم يتسع.
-    expect(subs.last, matches(RegExp(r'^(باقي )?[٠-٩]+:[٠-٩]{2}:[٠-٩]{2}$')));
+    expect(seasonTexts.first, season['name']);
+    expect(seasonTexts, isNot(contains('الفصل')));
+    if (seasonTexts.length > 1) {
+      expect(seasonTexts[1], '${(season['next'] as Map)['name']} ${season['afterText']}');
+    }
 
-    // الإيداع مع إيداعين: الاسم يلتفّ عند المسافات (الميزة ٥ب)، ثم الباقي، ثم الثاني سطر بـ«…»؛
-    // وإن ضاق المربع يُخفى الثاني قبل الباقي. والعنوان المختصر إذا لم يتسع.
-    final deps = (day['deposits'] as List).cast<Map>();
-    expect(deps.length, greaterThan(1));
-    final dValue = tester.widget<Text>(inTile(WidgetElement.deposit, 'tile-value'));
-    expect(dValue.data, deps.first['label']);
-    expect(dValue.maxLines, greaterThanOrEqualTo(1));
-    expect(dValue.softWrap, isNot(isFalse));
-    final dSubs =
-        tester.widgetList<Text>(inTile(WidgetElement.deposit, 'tile-sub')).toList();
-    final expected = [
-      deps.first['remainingText'],
-      '${deps[1]['label']} · ${deps[1]['remainingText']}',
+    // وصف الموسم: «في الوسم:» ثم نقاط تبدأ بـ«-».
+    final trad = day['tradSeason'] as Map;
+    expect(text('point-0'), '- ${(trad['points'] as List).first}');
+    if (find.byKey(const Key('points-title')).evaluate().isNotEmpty) {
+      expect(text('points-title'), 'في ${trad['name']}:');
+    }
+    // والموسم بلا وصف تحته ما دام مربع الوصف ظاهراً.
+    expect(
+        find.descendant(of: tile(WidgetElement.tradSeason), matching: find.text(trad['description'] as String)),
+        findsNothing);
+
+    // لا رموز تعبيرية في الصناديق.
+    final emoji = RegExp(r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]', unicode: true);
+    for (final e in [WidgetElement.prayerTimes, WidgetElement.deposit, WidgetElement.season,
+        WidgetElement.tradSeason, WidgetElement.tradPoints, WidgetElement.qibla]) {
+      for (final t in tester.widgetList<Text>(find.descendant(of: tile(e), matching: find.byType(Text)))) {
+        expect(emoji.hasMatch(t.data!), isFalse, reason: '${e.name}: ${t.data}');
+      }
+    }
+  });
+
+  testWidgets('الصلاة القادمة القديمة في ترتيب مخصص: الاسم ثم الوقت ثم العدّاد', (tester) async {
+    final city = parseCities(readAsset('assets/cities.json')).first;
+    // مخصص (لون واحد مختلف)، فلا يُرحَّل إلى الترتيب الجديد.
+    final custom = [
+      for (final t in legacyDefaultLayout)
+        t.id == WidgetElement.season ? t.copyWith(primaryColor: () => TileColor.white) : t,
     ];
-    expect(dSubs.map((t) => t.data), expected.take(dSubs.length));
-    for (final t in dSubs) {
-      expect(t.maxLines, 1);
-      expect(t.overflow, TextOverflow.ellipsis);
-    }
-    final dTitle = inTile(WidgetElement.deposit, 'tile-title');
-    // خط الاختبار عريض فلا يتسع «الإيداع القادم» سطراً واحداً، فيصير «الإيداع» (أو يُخفى).
-    if (dTitle.evaluate().isNotEmpty) {
-      expect(tester.widget<Text>(dTitle).data, 'الإيداع');
-    }
+    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'}).copyWith(layout: custom);
+    final bridge = await pumpApp(tester, prefs: {LamhaSettings.prefsKey: s.encode()});
+    expect(tile(WidgetElement.prayer), findsOneWidget);
+    expect(tile(WidgetElement.prayerTimes), findsNothing);
+    final day = (bridge.last['days'] as List).first as Map;
+    final asr = (day['prayers'] as Map)['asr'] as Map;
+    Finder inTile(String key) => find.descendant(of: tile(WidgetElement.prayer), matching: find.byKey(Key(key)));
+    expect(tester.widget<Text>(inTile('tile-value')).data, asr['name']);
+    final subs = [
+      for (var i = 0; i < 2; i++)
+        if (inTile('tile-sub-$i').evaluate().isNotEmpty) tester.widget<Text>(inTile('tile-sub-$i')).data,
+    ];
+    if (subs.length == 2) expect(subs.first, asr['text']);
+    expect(subs.last, matches(RegExp(r'^(باقي )?[٠-٩]+:[٠-٩]{2}:[٠-٩]{2}$')));
   });
 
   test('لام الجر', () {

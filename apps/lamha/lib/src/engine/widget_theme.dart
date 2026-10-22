@@ -1,6 +1,8 @@
 /// سمات لون الودجت (الميزة ٣ج). اللون المميز للصلاة واليوم، والخلفية تتأثر بشريط الشفافية.
 /// القيم ARGB، وتُكتب في الجدول (`theme`) لتطبقها المعاينة والودجت كما هي.
 enum WidgetTheme {
+  /// أسود (الافتراضي، تصميم المالك ٣) بتمييز ذهبي.
+  black(0xFFD6AA5C, 0xFF000000),
   gold(0xFFD6AA5C, 0xFF2A241D),
   green(0xFF78BE96, 0xFF212A24),
   blue(0xFF7FB2E5, 0xFF1C2430),
@@ -17,7 +19,7 @@ enum WidgetTheme {
   final int accent;
   final int background;
 
-  static const fallback = WidgetTheme.gold;
+  static const fallback = WidgetTheme.black;
 
   static WidgetTheme byName(String? name) =>
       WidgetTheme.values.firstWhere((t) => t.name == name, orElse: () => fallback);

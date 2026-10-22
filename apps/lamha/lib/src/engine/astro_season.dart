@@ -36,6 +36,7 @@ class CurrentAstroSeason {
         'nextStart': isoDate(nextStart),
         'daysRemaining': daysRemaining,
         'remainingText': remainingText,
+        'afterText': afterDaysText(daysRemaining),
       };
 }
 

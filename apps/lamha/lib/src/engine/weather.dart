@@ -101,16 +101,25 @@ const weatherConditions = <int, ({String emoji, String text})>{
 ({String emoji, String text}) weatherCondition(int code) =>
     weatherConditions[code] ?? (emoji: '🌡️', text: '');
 
-/// «٣١°» أو «-٣°» بالأرقام العربية.
-String temperatureText(double temp) {
+/// «٣١°» أو «-٣°» بأرقام [style].
+String temperatureText(double temp, [DigitStyle style = DigitStyle.arabic]) {
   final t = temp.round();
-  return '${t < 0 ? '-' : ''}${arabicDigits(t.abs())}°';
+  return '${t < 0 ? '-' : ''}${formatDigits(t.abs(), style)}°';
 }
 
+/// القراءة إذا كانت أحدث من [weatherMaxAge]، وإلا null.
+WeatherReading? freshWeather(WeatherReading? r, DateTime now) =>
+    r == null || now.difference(r.fetchedAt) > weatherMaxAge ? null : r;
+
 /// «☀️ ٣١°» إذا كانت القراءة أحدث من [weatherMaxAge]، وإلا null (تُعرض «--°»).
-String? weatherText(WeatherReading? r, DateTime now) {
-  if (r == null || now.difference(r.fetchedAt) > weatherMaxAge) return null;
-  return '${weatherCondition(r.code).emoji} ${temperatureText(r.temp)}';
+String? weatherText(
+  WeatherReading? r,
+  DateTime now, [
+  DigitStyle style = DigitStyle.arabic,
+]) {
+  final f = freshWeather(r, now);
+  if (f == null) return null;
+  return '${weatherCondition(f.code).emoji} ${temperatureText(f.temp, style)}';
 }
 
 /// الجزء الذي يحمله الجدول: القراءة مع رمزها ونصها، وجدول الرموز لتعرض الودجت

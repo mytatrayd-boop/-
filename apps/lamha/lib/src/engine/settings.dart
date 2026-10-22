@@ -1,3 +1,4 @@
+import 'arabic.dart';
 import 'prayer.dart';
 import 'widget_layout.dart';
 import 'widget_theme.dart';
@@ -19,6 +20,7 @@ class Settings {
     this.theme = WidgetTheme.fallback,
     this.lockNotification = false,
     this.fontScale = FontScale.fallback,
+    this.digits = DigitStyle.fallback,
   })  : deposits = Set.unmodifiable(deposits),
         layout = normalizeLayout(layout ?? defaultLayout) {
     if (deposits.isEmpty) {
@@ -72,4 +74,7 @@ class Settings {
 
   /// حجم الخط (متوسط افتراضياً).
   final FontScale fontScale;
+
+  /// شكل الأرقام في نصوص الجدول (عربية افتراضياً).
+  final DigitStyle digits;
 }

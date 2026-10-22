@@ -50,19 +50,21 @@ void main() {
       (tester) async {
         final bridge = await pumpApp(tester);
         expect(bridge.last['fontScale'], 1.0);
-        // الهجري ١٨ × المعامل، يصغر فقط إن لم يتسع (الميزة ٥ب).
+        // الهجري ١٦ × المعامل، يصغر فقط إن لم يتسع (الميزة ٥ب).
         final medium = sizeOf(tester, const Key('preview-hijri'));
-        expect(medium, lessThanOrEqualTo(18));
+        expect(medium, lessThanOrEqualTo(16));
         final chip = find.byKey(const Key('font-xlarge'));
         expect(find.text('كبير جداً'), findsOneWidget);
         await tester.ensureVisible(chip);
         await tester.tap(chip);
         await tester.pumpAndSettle();
         expect(bridge.last['fontScale'], 1.3);
-        expect(sizeOf(tester, const Key('preview-hijri')), greaterThan(medium));
+        // خط الاختبار عريض فقد يحدّ العرضُ الهجري؛ الحرارة تكبر.
+        expect(sizeOf(tester, const Key('preview-hijri')), greaterThanOrEqualTo(medium - 0.01));
+        expect(sizeOf(tester, const Key('preview-temp')), greaterThan(28));
         expect(
-          sizeOf(tester, const Key('preview-weather')),
-          lessThanOrEqualTo(16 * 1.3),
+          sizeOf(tester, const Key('preview-day')),
+          lessThanOrEqualTo(22 * 1.3),
         );
         final prefs = await SharedPreferences.getInstance();
         final saved =
@@ -71,13 +73,14 @@ void main() {
       },
     );
 
-    testWidgets('الساعة ٥٢ في الحجم المتوسط، والعمودان متوسطان رأسياً', (
+    testWidgets('الساعة أكبر عنصر بعرض عمودين، بلا يوم تحتها (الميزة ٦)', (
       tester,
     ) async {
       await pumpApp(tester);
       final clock = sizeOf(tester, const Key('preview-clock'));
-      expect(clock, lessThanOrEqualTo(52));
-      // تصغر الساعة بقدر عرض مربعها فقط، فتبقى داخله.
+      // ٥٢ × ٢ مطلوب، وتصغر بقدر مربعها فقط.
+      expect(clock, lessThanOrEqualTo(104));
+      expect(clock, greaterThan(sizeOf(tester, const Key('preview-day')) * 2));
       final cell = tester.getRect(
         find.descendant(
           of: find.byKey(const Key('preview-background')),
@@ -87,24 +90,11 @@ void main() {
       final face = tester.getRect(find.byKey(const Key('preview-clock')));
       expect(face.left, greaterThanOrEqualTo(cell.left - 0.5));
       expect(face.right, lessThanOrEqualTo(cell.right + 0.5));
-      // الساعة والتاريخان في الصف الأول (الترتيب الافتراضي)، والعمودان متوسطان رأسياً.
-      final right = tester.getRect(
-        find.byKey(const Key('preview-clock-column')),
-      );
-      final hijri = tester.getRect(find.byKey(const Key('preview-hijri')));
-      // الميلادي يُخفى إن لم يتسع (خط الاختبار عريض).
-      final greg = find.byKey(const Key('preview-gregorian'));
-      final gregorian = greg.evaluate().isEmpty ? hijri : tester.getRect(greg);
-      // والعمود الأيسر: التاريخان وتحتهما المدينة والطقس.
-      final weather = tester.getRect(find.byKey(const Key('preview-weather')));
-      expect(weather.top, greaterThanOrEqualTo(gregorian.bottom - 0.5));
-      expect(right.center.dy, closeTo((hijri.top + weather.bottom) / 2, 2.5));
-      expect(right.left, greaterThan(hijri.right));
-      // اليوم تحت الساعة مباشرة.
-      final gap =
-          tester.getRect(find.byKey(const Key('preview-weekday'))).top -
-          tester.getRect(find.byKey(const Key('preview-clock'))).bottom;
-      expect(gap, inInclusiveRange(-0.5, 2));
+      expect(find.byKey(const Key('preview-weekday')), findsNothing);
+      // اليوم والطقس يسار الساعة، والعمودان متوسطان رأسياً في صفهما.
+      final day = tester.getRect(find.byKey(const Key('tile-dayWeather')));
+      expect(cell.left, greaterThan(day.right));
+      expect(cell.center.dy, closeTo(day.center.dy, 0.5));
     });
   });
 

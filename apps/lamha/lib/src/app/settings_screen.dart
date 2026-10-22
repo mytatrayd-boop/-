@@ -93,7 +93,7 @@ class _Body extends ConsumerWidget {
             Text(l.opacityLabel, style: textTheme.titleMedium),
             const Spacer(),
             // الشريط يعرض الشفافية: ١٠٠٪ = خلفية شفافة تماماً (opacity = 0).
-            Text(l.percent(arabicDigits(100 - s.opacity))),
+            Text(l.percent(formatDigits(100 - s.opacity))),
           ],
         ),
         Slider(
@@ -124,6 +124,23 @@ class _Body extends ConsumerWidget {
                 label: Text(l.fontScaleName(f.name)),
                 selected: s.fontScale == f,
                 onSelected: (_) => c.setFontScale(f),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // الميزة ٦: شكل الأرقام في الودجت والمعاينة وشاشة القبلة والإشعار.
+        Text(l.digitsLabel, style: textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final d in DigitStyle.values)
+              ChoiceChip(
+                key: Key('digits-${d.name}'),
+                label: Text(l.digitsName(d.name)),
+                selected: s.digits == d,
+                onSelected: (_) => c.setDigits(d),
               ),
           ],
         ),

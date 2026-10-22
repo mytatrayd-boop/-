@@ -80,14 +80,16 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
               padding: const EdgeInsets.all(24),
               children: [
                 Text(
-                  l.qiblaFromNorth(l.degrees(arabicDigits(qibla.round()))),
+                  l.qiblaFromNorth(
+                    l.degrees(formatDigits(qibla.round(), app!.settings.digits)),
+                  ),
                   key: const Key('qibla-angle'),
                   textAlign: TextAlign.right,
                   style: textTheme.headlineSmall
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  '${q!['direction']} · ${app!.settings.cityName}',
+                  '${q!['direction']} · ${app.settings.cityName}',
                   textAlign: TextAlign.right,
                   style: textTheme.bodyLarge,
                 ),

@@ -185,7 +185,7 @@ abstract class AppLocalizations {
   /// اسم عنصر الودجت بمعرّفه
   ///
   /// In ar, this message translates to:
-  /// **'{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة} qibla{القبلة} deposit{الإيداع} season{الفصل} tradSeason{الموسم} other{{element}}}'**
+  /// **'{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} other{{element}}}'**
   String elementName(String element);
 
   /// عند محاولة إلغاء آخر إيداع
@@ -353,7 +353,7 @@ abstract class AppLocalizations {
   /// اسم سمة اللون بمعرّفها
   ///
   /// In ar, this message translates to:
-  /// **'{theme, select, gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}'**
+  /// **'{theme, select, black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}'**
   String themeName(String theme);
 
   /// مفتاح الإشعار الثابت (أندرويد)
@@ -491,7 +491,7 @@ abstract class AppLocalizations {
   /// ألوان الخط؛ auto حسب السمة
   ///
   /// In ar, this message translates to:
-  /// **'{color, select, auto{تلقائي} white{أبيض} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}'**
+  /// **'{color, select, auto{تلقائي} white{أبيض} black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}'**
   String tileColorName(String color);
 
   /// مفتاح عنوان المربع
@@ -505,6 +505,48 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إظهار السطر الفرعي'**
   String get tileShowSub;
+
+  /// عنوان اختيار شكل الأرقام في الودجت (الميزة ٦)
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام'**
+  String get digitsLabel;
+
+  /// اسم شكل الأرقام
+  ///
+  /// In ar, this message translates to:
+  /// **'{style, select, arabic{عربية (١٢٣)} latin{إنجليزية (123)} other{{style}}}'**
+  String digitsName(String style);
+
+  /// عنوان مربع الإيداعات (الميزة ٦)
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي على:'**
+  String get depositsTitle;
+
+  /// عنوان مربع وصف الموسم، مثل «في الوسم:»
+  ///
+  /// In ar, this message translates to:
+  /// **'في {season}:'**
+  String tradPointsTitle(String season);
+
+  /// نقطة في وصف الموسم
+  ///
+  /// In ar, this message translates to:
+  /// **'- {point}'**
+  String pointText(String point);
+
+  /// مثل: الشتاء بعد ٦٠ يوماً
+  ///
+  /// In ar, this message translates to:
+  /// **'{next} {after}'**
+  String nextAfter(String next, String after);
+
+  /// سطر المدينة في مربع اليوم والطقس، icon رمز الطقس أو فارغ
+  ///
+  /// In ar, this message translates to:
+  /// **'📍 {city} {icon}'**
+  String cityIcon(String city, String icon);
 }
 
 class _AppLocalizationsDelegate

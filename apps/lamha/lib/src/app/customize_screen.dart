@@ -262,16 +262,28 @@ class TileSettings extends ConsumerWidget {
   static const spanNames = {1: 'small', 2: 'medium', 3: 'wide'};
 
   /// مربعات لها عنوان (مربعات المعلومات)، ولها سطر فرعي (وكذلك اليوم تحت الساعة والميلادي).
+  /// الميزة ٦: عنوان القبلة كلمة «القبلة» في دائرتها، وعنوان الإيداعات «متبقي على:»، ووصف الموسم
+  /// «في الوسم:». والسطر الفرعي لليوم والطقس سطرا المدينة والحرارة، وللأعمدة الأوقات والأيام،
+  /// ولوصف الموسم النقاط بعد الأولى.
   static bool hasTitle(WidgetElement e) => !const {
     WidgetElement.clock,
     WidgetElement.dates,
     WidgetElement.weather,
+    WidgetElement.dayWeather,
+    WidgetElement.hijri,
+    WidgetElement.gregorian,
+    WidgetElement.prayerTimes,
   }.contains(e);
 
-  static bool hasSub(WidgetElement e) => e != WidgetElement.weather;
+  static bool hasSub(WidgetElement e) => !const {
+    WidgetElement.weather,
+    WidgetElement.qibla,
+    WidgetElement.hijri,
+    WidgetElement.gregorian,
+  }.contains(e);
 
   /// «١.٥» بالأرقام العربية (خط Tajawal بلا الفاصلة العشرية العربية ٫).
-  static String scaleText(double v) => arabicDigits(v.toStringAsFixed(1));
+  static String scaleText(double v) => formatDigits(v.toStringAsFixed(1));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

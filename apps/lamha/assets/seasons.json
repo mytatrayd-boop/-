@@ -6,19 +6,19 @@
     "author": "أ.د عبدالله المسند",
     "url": "https://almisnid.com"
   },
-  "note": "المواسم الدارجة من مصدر المالك. start = بداية الموسم (شهر-يوم ميلادي)، والنهاية اليوم السابق لبداية الموسم التالي. descriptionApproval لكل موسم: حالة الوصف وحده.",
+  "note": "المواسم الدارجة من مصدر المالك. start = بداية الموسم (شهر-يوم ميلادي)، والنهاية اليوم السابق لبداية الموسم التالي. descriptionApproval لكل موسم: حالة الوصف وحده. points: نقاط مربع «وصف الموسم» (الميزة ٦)، وpointsApproval حالتها: نقاط الوسم من المالك (owner_provided)، والبقية مقسومة من الوصف (draft).",
   "seasons": [
-    {"id": "suhail", "name": "سهيل", "start": "08-24", "description": "يبدأ فيه انكسار الحر ويلطف الليل تدريجياً", "descriptionApproval": "draft"},
-    {"id": "wasm", "name": "الوسم", "start": "10-16", "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية", "descriptionApproval": "draft"},
-    {"id": "murabbaniya", "name": "المربعانية", "start": "12-07", "description": "أبرد أيام السنة وأطول لياليها", "descriptionApproval": "draft"},
-    {"id": "shabat", "name": "الشبط", "start": "01-15", "description": "يشتد فيه البرد مع تقلّب الأجواء", "descriptionApproval": "draft"},
-    {"id": "aqarib", "name": "العقارب", "start": "02-10", "description": "يخف فيه البرد تدريجياً وتنشط الرياح", "descriptionApproval": "draft"},
-    {"id": "humaimain", "name": "الحميمين", "start": "03-21", "description": "يبدأ فيه الدفء وترتفع الحرارة تدريجياً", "descriptionApproval": "draft"},
-    {"id": "dhiraan", "name": "الذراعين", "start": "04-16", "description": "تعتدل فيه الأجواء وتكثر أمطار الربيع", "descriptionApproval": "draft"},
-    {"id": "thurayya", "name": "الثريا", "start": "05-12", "description": "ترتفع فيه الحرارة ويبدأ القيظ", "descriptionApproval": "draft"},
-    {"id": "tuwaibi", "name": "التويبع", "start": "06-20", "description": "من أيام القيظ وتستمر فيه الحرارة بالارتفاع", "descriptionApproval": "draft"},
-    {"id": "jawza", "name": "الجوزاء", "start": "07-03", "description": "من أشد أيام الحر وتهب فيه الرياح الحارة", "descriptionApproval": "draft"},
-    {"id": "mirzam", "name": "المرزم", "start": "07-29", "description": "من أيام القيظ الشديد", "descriptionApproval": "draft"},
-    {"id": "kulaibain", "name": "الكليبين", "start": "08-11", "description": "آخر أيام القيظ قبل دخول سهيل", "descriptionApproval": "draft"}
+    {"id": "suhail", "name": "سهيل", "start": "08-24", "description": "يبدأ فيه انكسار الحر ويلطف الليل تدريجياً", "descriptionApproval": "draft", "points": ["يبدأ فيه انكسار الحر.", "يلطف الليل تدريجياً."], "pointsApproval": "draft"},
+    {"id": "wasm", "name": "الوسم", "start": "10-16", "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية", "descriptionApproval": "draft", "points": ["تتدنى درجات الحرارة خلال الليل.", "ترتفع فيه فرص هطول الأمطار النافعة."], "pointsApproval": "owner_provided"},
+    {"id": "murabbaniya", "name": "المربعانية", "start": "12-07", "description": "أبرد أيام السنة وأطول لياليها", "descriptionApproval": "draft", "points": ["أبرد أيام السنة.", "أطول لياليها."], "pointsApproval": "draft"},
+    {"id": "shabat", "name": "الشبط", "start": "01-15", "description": "يشتد فيه البرد مع تقلّب الأجواء", "descriptionApproval": "draft", "points": ["يشتد فيه البرد.", "تتقلب فيه الأجواء."], "pointsApproval": "draft"},
+    {"id": "aqarib", "name": "العقارب", "start": "02-10", "description": "يخف فيه البرد تدريجياً وتنشط الرياح", "descriptionApproval": "draft", "points": ["يخف فيه البرد تدريجياً.", "تنشط فيه الرياح."], "pointsApproval": "draft"},
+    {"id": "humaimain", "name": "الحميمين", "start": "03-21", "description": "يبدأ فيه الدفء وترتفع الحرارة تدريجياً", "descriptionApproval": "draft", "points": ["يبدأ فيه الدفء.", "ترتفع الحرارة تدريجياً."], "pointsApproval": "draft"},
+    {"id": "dhiraan", "name": "الذراعين", "start": "04-16", "description": "تعتدل فيه الأجواء وتكثر أمطار الربيع", "descriptionApproval": "draft", "points": ["تعتدل فيه الأجواء.", "تكثر فيه أمطار الربيع."], "pointsApproval": "draft"},
+    {"id": "thurayya", "name": "الثريا", "start": "05-12", "description": "ترتفع فيه الحرارة ويبدأ القيظ", "descriptionApproval": "draft", "points": ["ترتفع فيه الحرارة.", "يبدأ فيه القيظ."], "pointsApproval": "draft"},
+    {"id": "tuwaibi", "name": "التويبع", "start": "06-20", "description": "من أيام القيظ وتستمر فيه الحرارة بالارتفاع", "descriptionApproval": "draft", "points": ["من أيام القيظ.", "تستمر فيه الحرارة بالارتفاع."], "pointsApproval": "draft"},
+    {"id": "jawza", "name": "الجوزاء", "start": "07-03", "description": "من أشد أيام الحر وتهب فيه الرياح الحارة", "descriptionApproval": "draft", "points": ["من أشد أيام الحر.", "تهب فيه الرياح الحارة."], "pointsApproval": "draft"},
+    {"id": "mirzam", "name": "المرزم", "start": "07-29", "description": "من أيام القيظ الشديد", "descriptionApproval": "draft", "points": ["من أيام القيظ الشديد."], "pointsApproval": "draft"},
+    {"id": "kulaibain", "name": "الكليبين", "start": "08-11", "description": "آخر أيام القيظ قبل دخول سهيل", "descriptionApproval": "draft", "points": ["آخر أيام القيظ قبل دخول سهيل."], "pointsApproval": "draft"}
   ]
 }
