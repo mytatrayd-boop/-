@@ -178,6 +178,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hold the phone flat, then turn until the arrow points up.';
 
   @override
+  String get qiblaAligned => 'You\'re facing the Qibla';
+
+  @override
   String get compassWaiting => 'Reading the compass…';
 
   @override

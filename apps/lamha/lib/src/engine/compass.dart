@@ -18,3 +18,19 @@ const calibrationThreshold = 30.0;
 /// تُطلب المعايرة إذا كانت الدقة منخفضة أو غير معروفة.
 bool needsCalibration(double? accuracy) =>
     accuracy == null || accuracy > calibrationThreshold;
+
+/// السهم «على القبلة» إذا انحرف عن أعلى الجهاز بهذا القدر أو أقل.
+const alignedWithin = 5.0;
+
+/// ولا يخرج منها إلا بعد هذا الانحراف، كي لا تتذبذب الإشارة عند الحد.
+const alignedRelease = 8.0;
+
+/// انحراف السهم عن أعلى الجهاز بالدرجات في [0، 180].
+double arrowDeviation(double arrow) {
+  final a = normalizeDegrees(arrow);
+  return a > 180 ? 360 - a : a;
+}
+
+/// هل الجهاز متجه إلى القبلة؟ [wasAligned] الحالة السابقة (تخلّف بين ٥° و٨°).
+bool isAligned(double arrow, {required bool wasAligned}) =>
+    arrowDeviation(arrow) <= (wasAligned ? alignedRelease : alignedWithin);

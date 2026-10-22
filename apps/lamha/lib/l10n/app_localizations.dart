@@ -320,6 +320,12 @@ abstract class AppLocalizations {
   /// **'ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.'**
   String get compassHint;
 
+  /// الجهاز متجه إلى القبلة (ضمن ٥°)
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت باتجاه القبلة'**
+  String get qiblaAligned;
+
   /// قبل أول قراءة من الحساس
   ///
   /// In ar, this message translates to:

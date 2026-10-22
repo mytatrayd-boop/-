@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -20,6 +21,12 @@ class QiblaScreen extends ConsumerStatefulWidget {
   /// مدة انتظار أول قراءة قبل اعتبار الحساس غير متوفر.
   static const sensorTimeout = Duration(seconds: 4);
 
+  /// لون الشاشة والسهم حين يتجه الجهاز إلى القبلة.
+  static const alignedColor = Color(0xFF2E9E5B);
+
+  /// الفاصل بين نبضتي الاهتزاز عند الوصول إلى القبلة.
+  static const pulseGap = Duration(milliseconds: 150);
+
   @override
   ConsumerState<QiblaScreen> createState() => _QiblaScreenState();
 }
@@ -31,6 +38,8 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   Timer? _timeout;
   var _sensor = _Sensor.waiting;
   CompassReading? _last;
+  var _aligned = false;
+  Timer? _pulse;
 
   @override
   void initState() {
@@ -44,10 +53,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
       if (_last == null) setState(() => _sensor = _Sensor.unavailable);
     });
     _sub = stream.listen(
-      (r) => setState(() {
-        _last = r;
-        _sensor = r.heading == null ? _Sensor.unavailable : _Sensor.available;
-      }),
+      _onReading,
       onError: (Object e) {
         debugPrint('compass: $e');
         setState(() => _sensor = _Sensor.unavailable);
@@ -55,8 +61,34 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     );
   }
 
+  void _onReading(CompassReading r) {
+    final q =
+        ref.read(settingsControllerProvider).value?.schedule['qibla'] as Map?;
+    final qibla = (q?['degrees'] as num?)?.toDouble();
+    final heading = r.heading;
+    final aligned =
+        qibla != null &&
+        heading != null &&
+        isAligned(
+          qiblaArrowAngle(qibla: qibla, heading: heading),
+          wasAligned: _aligned,
+        );
+    // عند الوصول إلى القبلة فقط: نبضتان قويتان (لا اهتزاز مستمر).
+    if (aligned && !_aligned) {
+      HapticFeedback.heavyImpact();
+      _pulse?.cancel();
+      _pulse = Timer(QiblaScreen.pulseGap, HapticFeedback.heavyImpact);
+    }
+    setState(() {
+      _last = r;
+      _aligned = aligned;
+      _sensor = heading == null ? _Sensor.unavailable : _Sensor.available;
+    });
+  }
+
   @override
   void dispose() {
+    _pulse?.cancel();
     _timeout?.cancel();
     _sub?.cancel();
     super.dispose();
@@ -71,62 +103,108 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     final q = app?.schedule['qibla'] as Map?;
     final qibla = (q?['degrees'] as num?)?.toDouble();
     final heading = _last?.heading;
+    final aligned = _aligned && _sensor == _Sensor.available;
 
     return Scaffold(
       appBar: AppBar(title: Text(l.qiblaTitle)),
-      body: qibla == null
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                Text(
-                  l.qiblaFromNorth(
-                    l.degrees(formatDigits(qibla.round(), app!.settings.digits)),
-                  ),
-                  key: const Key('qibla-angle'),
-                  textAlign: TextAlign.right,
-                  style: textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  '${q!['direction']} · ${app.settings.cityName}',
-                  textAlign: TextAlign.right,
-                  style: textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                if (_sensor == _Sensor.available && heading != null) ...[
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: CustomPaint(
-                      key: const Key('qibla-compass'),
-                      painter: QiblaCompassPainter(
-                        heading: heading,
-                        arrow: qiblaArrowAngle(qibla: qibla, heading: heading),
-                        accent: accent,
-                        color: Theme.of(context).colorScheme.onSurface,
+      body: AnimatedContainer(
+        key: const Key('qibla-background'),
+        duration: const Duration(milliseconds: 250),
+        color: aligned
+            ? QiblaScreen.alignedColor.withValues(alpha: 0.25)
+            : Colors.transparent,
+        child: qibla == null
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  Text(
+                    l.qiblaFromNorth(
+                      l.degrees(
+                        formatDigits(qibla.round(), app!.settings.digits),
                       ),
                     ),
+                    key: const Key('qibla-angle'),
+                    textAlign: TextAlign.right,
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(l.compassHint,
-                      textAlign: TextAlign.right, style: textTheme.bodyMedium),
-                  if (needsCalibration(_last?.accuracy)) ...[
-                    const SizedBox(height: 12),
-                    _Notice(key: const Key('compass-calibrate'), text: l.compassCalibrate),
-                  ],
-                ] else if (_sensor == _Sensor.unavailable)
-                  _Notice(key: const Key('compass-unavailable'), text: l.compassUnavailable)
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const CircularProgressIndicator(),
+                  Text(
+                    '${q!['direction']} · ${app.settings.cityName}',
+                    textAlign: TextAlign.right,
+                    style: textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  if (_sensor == _Sensor.available && heading != null) ...[
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: CustomPaint(
+                        key: const Key('qibla-compass'),
+                        painter: QiblaCompassPainter(
+                          heading: heading,
+                          arrow: qiblaArrowAngle(
+                            qibla: qibla,
+                            heading: heading,
+                          ),
+                          accent: aligned ? QiblaScreen.alignedColor : accent,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (aligned)
+                      Row(
+                        key: const Key('qibla-aligned'),
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            color: QiblaScreen.alignedColor,
+                            size: 32,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              l.qiblaAligned,
+                              textAlign: TextAlign.right,
+                              style: textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: QiblaScreen.alignedColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        l.compassHint,
+                        textAlign: TextAlign.right,
+                        style: textTheme.bodyMedium,
+                      ),
+                    if (needsCalibration(_last?.accuracy)) ...[
                       const SizedBox(height: 12),
-                      Text(l.compassWaiting),
+                      _Notice(
+                        key: const Key('compass-calibrate'),
+                        text: l.compassCalibrate,
+                      ),
                     ],
-                  ),
-              ],
-            ),
+                  ] else if (_sensor == _Sensor.unavailable)
+                    _Notice(
+                      key: const Key('compass-unavailable'),
+                      text: l.compassUnavailable,
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 12),
+                        Text(l.compassWaiting),
+                      ],
+                    ),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -138,17 +216,17 @@ class _Notice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const Icon(Icons.info_outline),
-              const SizedBox(width: 12),
-              Expanded(child: Text(text, textAlign: TextAlign.right)),
-            ],
-          ),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline),
+          const SizedBox(width: 12),
+          Expanded(child: Text(text, textAlign: TextAlign.right)),
+        ],
+      ),
+    ),
+  );
 }
 
 /// قرص يدور مع الجهاز (الشمال في مكانه الحقيقي)، وسهم القبلة بزاوية [arrow] من أعلى الجهاز.
@@ -184,10 +262,15 @@ class QiblaCompassPainter extends CustomPainter {
     for (var d = 0; d < 360; d += 30) {
       final a = d * _rad;
       final dir = Offset(math.sin(a), -math.cos(a));
-      canvas.drawLine(dir * (r - (d == 0 ? 18 : 10)), dir * r,
-          Paint()
-            ..strokeWidth = d == 0 ? 4 : 2
-            ..color = d == 0 ? const Color(0xFFE05A47) : color.withValues(alpha: 0.6));
+      canvas.drawLine(
+        dir * (r - (d == 0 ? 18 : 10)),
+        dir * r,
+        Paint()
+          ..strokeWidth = d == 0 ? 4 : 2
+          ..color = d == 0
+              ? const Color(0xFFE05A47)
+              : color.withValues(alpha: 0.6),
+      );
     }
     canvas.restore();
 
@@ -197,13 +280,14 @@ class QiblaCompassPainter extends CustomPainter {
     canvas.rotate(arrow * _rad);
     final s = r / 100;
     canvas.drawPath(
-        Path()
-          ..moveTo(0, -80 * s)
-          ..lineTo(18 * s, 0)
-          ..lineTo(0, -12 * s)
-          ..lineTo(-18 * s, 0)
-          ..close(),
-        Paint()..color = accent);
+      Path()
+        ..moveTo(0, -80 * s)
+        ..lineTo(18 * s, 0)
+        ..lineTo(0, -12 * s)
+        ..lineTo(-18 * s, 0)
+        ..close(),
+      Paint()..color = accent,
+    );
     canvas.drawCircle(Offset.zero, 6 * s, Paint()..color = color);
     canvas.restore();
   }
