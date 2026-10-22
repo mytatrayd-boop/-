@@ -47,6 +47,8 @@ final weatherServiceProvider =
 final systemColorsProvider =
     Provider<SystemColorsSource>((ref) => AndroidSystemColorsSource());
 
+final vibrationProvider = Provider<Vibration>((ref) => DeviceVibration());
+
 final notificationPermissionProvider =
     Provider<NotificationPermission>((ref) => AndroidNotificationPermission());
 

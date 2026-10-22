@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -24,9 +23,6 @@ class QiblaScreen extends ConsumerStatefulWidget {
   /// لون الشاشة والسهم حين يتجه الجهاز إلى القبلة.
   static const alignedColor = Color(0xFF2E9E5B);
 
-  /// الفاصل بين نبضتي الاهتزاز عند الوصول إلى القبلة.
-  static const pulseGap = Duration(milliseconds: 150);
-
   @override
   ConsumerState<QiblaScreen> createState() => _QiblaScreenState();
 }
@@ -39,7 +35,6 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   var _sensor = _Sensor.waiting;
   CompassReading? _last;
   var _aligned = false;
-  Timer? _pulse;
 
   @override
   void initState() {
@@ -75,9 +70,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
         );
     // عند الوصول إلى القبلة فقط: نبضتان قويتان (لا اهتزاز مستمر).
     if (aligned && !_aligned) {
-      HapticFeedback.heavyImpact();
-      _pulse?.cancel();
-      _pulse = Timer(QiblaScreen.pulseGap, HapticFeedback.heavyImpact);
+      ref.read(vibrationProvider).alignedPulse();
     }
     setState(() {
       _last = r;
@@ -88,7 +81,6 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
 
   @override
   void dispose() {
-    _pulse?.cancel();
     _timeout?.cancel();
     _sub?.cancel();
     super.dispose();

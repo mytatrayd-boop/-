@@ -134,6 +134,13 @@ class FakeSystemColors implements SystemColorsSource {
   Future<SystemColors?> read() async => colors;
 }
 
+class FakeVibration implements Vibration {
+  var pulses = 0;
+
+  @override
+  Future<void> alignedPulse() async => pulses++;
+}
+
 class FakePermission implements NotificationPermission {
   FakePermission([this.granted = true]);
 
@@ -163,6 +170,7 @@ Future<FakeBridge> pumpApp(
   WeatherService? weather,
   SystemColorsSource? systemColors,
   NotificationPermission? permission,
+  Vibration? vibration,
   Map<String, Object> prefs = const {},
 }) async {
   tester.view.physicalSize = const Size(1000, 3200);
@@ -187,6 +195,7 @@ Future<FakeBridge> pumpApp(
       systemColorsProvider.overrideWithValue(systemColors ?? FakeSystemColors()),
       notificationPermissionProvider
           .overrideWithValue(permission ?? FakePermission()),
+      vibrationProvider.overrideWithValue(vibration ?? FakeVibration()),
     ],
     child: const LamhaApp(),
   ));
