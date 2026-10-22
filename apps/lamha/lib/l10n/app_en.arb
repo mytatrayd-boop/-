@@ -37,6 +37,7 @@
   "qiblaTitle": "Qibla direction",
   "qiblaFromNorth": "{degrees} from north",
   "compassHint": "Hold the phone flat, then turn until the arrow points up.",
+  "qiblaAligned": "You're facing the Qibla",
   "compassWaiting": "Reading the compass…",
   "compassCalibrate": "Compass accuracy is low. Move the phone in a figure-8 to calibrate it, away from metal and magnets.",
   "compassUnavailable": "This device has no compass sensor, so the arrow can't be shown. Use the angle above with another compass.",

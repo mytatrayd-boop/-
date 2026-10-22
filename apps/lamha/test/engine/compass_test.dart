@@ -28,4 +28,23 @@ void main() {
     expect(needsCalibration(45), isTrue);
     expect(needsCalibration(null), isTrue);
   });
+
+  test('الانحراف عن أعلى الجهاز من الجهتين', () {
+    expect(arrowDeviation(0), 0);
+    expect(arrowDeviation(4), 4);
+    expect(arrowDeviation(356), 4);
+    expect(arrowDeviation(180), 180);
+    expect(arrowDeviation(-3), 3);
+  });
+
+  test('على القبلة ضمن ٥°، ولا يخرج إلا بعد ٨°', () {
+    expect(isAligned(0, wasAligned: false), isTrue);
+    expect(isAligned(5, wasAligned: false), isTrue);
+    expect(isAligned(355, wasAligned: false), isTrue);
+    expect(isAligned(6, wasAligned: false), isFalse);
+    expect(isAligned(6, wasAligned: true), isTrue);
+    expect(isAligned(352, wasAligned: true), isTrue);
+    expect(isAligned(9, wasAligned: true), isFalse);
+    expect(isAligned(180, wasAligned: true), isFalse);
+  });
 }

@@ -142,6 +142,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// أعرض نص للساعة (بالأرقام العربية أو اللاتينية حسب لغة الجهاز)، لتثبيت حجمها طوال اليوم.
         private val WIDEST_CLOCK = listOf("١٢:٥٨", "12:58")
 
+        /// ما لا يصغر مع الساعة: الفاصل ٤dp قبل «ص/م» (widget_tile_clock.xml)، وهامش ٣dp لتقريب البكسل في
+        /// TextClock وLinearLayout. يُطرح من العرض المتاح؛ لو أُضيف إلى عرض النص لصغر معه فتُضغط «ص/م»
+        /// حين تكون الساعة بخانتين (١٠–١٢) في المربع الضيق.
+        private const val CLOCK_FIXED_DP = 4f + 3f
+
         /// التطبيق عربي فقط (main.dart: locale ar)، فنصوص الودجت بالعربية أياً كانت لغة الجهاز.
         fun arabic(context: Context): Context {
             val config = Configuration(context.resources.configuration)
@@ -356,14 +361,15 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private fun clockSp(env: Env, scale: Float, avail: Float): Pair<Float, Float> {
             val preferred = LamhaLogic.clockSizeSp(env.widthDp) * scale
             val w = clockWidthDp(env, scale)
-            return preferred to if (avail > 0f && w > avail) preferred * avail / w else preferred
+            val room = avail - CLOCK_FIXED_DP
+            return preferred to if (avail > 0f && w > room) preferred * maxOf(room, 0f) / w else preferred
         }
 
-        /// عرض أعرض نص للساعة و«ص/م» بجانبها، بالحجم المطلوب.
+        /// عرض أعرض نص للساعة و«ص/م» بجانبها، بالحجم المطلوب (بلا CLOCK_FIXED_DP).
         private fun clockWidthDp(env: Env, scale: Float): Float {
             val preferred = LamhaLogic.clockSizeSp(env.widthDp) * scale
             val amPm = env.ctx.getString(if (LamhaLogic.isAm(env.now, env.day.timeZone)) R.string.am else R.string.pm)
-            return WIDEST_CLOCK.maxOf { textWidthDp(env.ctx, it, preferred, true) } + 4f +
+            return WIDEST_CLOCK.maxOf { textWidthDp(env.ctx, it, preferred, true) } +
                 textWidthDp(env.ctx, amPm, AM_PM_SP * scale, true)
         }
 
@@ -441,8 +447,14 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     val amPm = ctx.getString(if (LamhaLogic.isAm(env.now, day.timeZone)) R.string.am else R.string.pm)
                     val preferred = LamhaLogic.clockSizeSp(env.widthDp) * scale
                     val weekdaySp = WEEKDAY_SP * scale
+                    // CLOCK_FIXED_DP لا يصغر: يُكبَّر عرض النص بنسبة avail/(avail − الثابت) فيكون التصغير
+                    // (avail − الثابت)/النص كما في clockSp، ويبقى عرض اليوم avail كاملاً.
+                    val textW = clockWidthDp(env, scale)
+                    val room = avail - CLOCK_FIXED_DP
+                    val clockW = if (avail > 0f) textW * avail / maxOf(room, 1f) else textW
                     val fit = LamhaLogic.fitTile(
-                        innerHeightDp, avail, 0f, lineDp(ctx, preferred, true, false, CLOCK_SAMPLE, fallback = false), listOf(clockWidthDp(env, scale)),
+                        innerHeightDp, avail, 0f,
+                        lineDp(ctx, preferred, true, false, CLOCK_SAMPLE, fallback = false), listOf(clockW),
                         subs = if (tile.showSub) {
                             listOf(LamhaLogic.SubLine(lineDp(ctx, weekdaySp, true, false), 1, w(day.weekday, weekdaySp, true)))
                         } else emptyList(),

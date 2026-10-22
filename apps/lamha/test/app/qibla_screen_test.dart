@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lamha/src/app/qibla_screen.dart';
 import 'package:lamha/src/engine/qibla.dart';
@@ -44,6 +45,60 @@ void main() {
     compass.controller.add((heading: 300, accuracy: 15));
     await tester.pump();
     expect(painter(tester).arrow, closeTo((riyadhQibla - 300 + 360) % 360, 0.01));
+  });
+
+  testWidgets('الاتجاه إلى القبلة: الشاشة تخضرّ والجوال يهتز مرة عند الوصول', (tester) async {
+    final haptics = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') haptics.add('${call.arguments}');
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    Color background() => (tester
+            .widget<AnimatedContainer>(find.byKey(const Key('qibla-background')))
+            .decoration! as BoxDecoration)
+        .color!;
+
+    final compass = FakeCompass();
+    await pumpApp(tester, compass: compass);
+    await openQibla(tester);
+
+    compass.controller.add((heading: riyadhQibla - 30, accuracy: 15));
+    await tester.pump();
+    expect(find.byKey(const Key('qibla-aligned')), findsNothing);
+    expect(background(), Colors.transparent);
+    expect(haptics, isEmpty);
+
+    compass.controller.add((heading: riyadhQibla - 3, accuracy: 15));
+    await tester.pump();
+    await tester.pump(QiblaScreen.pulseGap);
+    expect(find.byKey(const Key('qibla-aligned')), findsOneWidget);
+    expect(find.text('أنت باتجاه القبلة'), findsOneWidget);
+    expect(painter(tester).accent, QiblaScreen.alignedColor);
+    expect(background(), isNot(Colors.transparent));
+    expect(haptics, ['HapticFeedbackType.heavyImpact', 'HapticFeedbackType.heavyImpact']);
+
+    // اهتزاز اليد داخل ٨° لا يكرر الاهتزاز ولا يطفئ الإشارة.
+    compass.controller.add((heading: riyadhQibla + 7, accuracy: 15));
+    await tester.pump();
+    await tester.pump(QiblaScreen.pulseGap);
+    expect(find.byKey(const Key('qibla-aligned')), findsOneWidget);
+    expect(haptics, hasLength(2));
+
+    compass.controller.add((heading: riyadhQibla + 12, accuracy: 15));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(const Key('qibla-aligned')), findsNothing);
+    expect(find.text('ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.'), findsOneWidget);
+
+    // العودة مرة أخرى تهتز من جديد.
+    compass.controller.add((heading: riyadhQibla, accuracy: 15));
+    await tester.pump();
+    await tester.pump(QiblaScreen.pulseGap);
+    expect(haptics, hasLength(4));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('دقة منخفضة: رسالة معايرة', (tester) async {

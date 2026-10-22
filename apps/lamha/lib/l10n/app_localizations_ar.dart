@@ -178,6 +178,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.';
 
   @override
+  String get qiblaAligned => 'أنت باتجاه القبلة';
+
+  @override
   String get compassWaiting => 'جارٍ قراءة البوصلة…';
 
   @override

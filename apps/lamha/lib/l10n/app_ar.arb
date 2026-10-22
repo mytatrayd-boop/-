@@ -204,6 +204,10 @@
   "@compassHint": {
     "description": "إرشاد استخدام البوصلة"
   },
+  "qiblaAligned": "أنت باتجاه القبلة",
+  "@qiblaAligned": {
+    "description": "الجهاز متجه إلى القبلة (ضمن ٥°)"
+  },
   "compassWaiting": "جارٍ قراءة البوصلة…",
   "@compassWaiting": {
     "description": "قبل أول قراءة من الحساس"
