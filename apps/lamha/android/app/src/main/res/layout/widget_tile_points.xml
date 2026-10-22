@@ -19,8 +19,8 @@
         android:orientation="vertical"
         android:paddingStart="9dp"
         android:paddingEnd="9dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp">
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp">
 
         <TextView
             android:id="@+id/points_title"
@@ -35,7 +35,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFB9B0A2"
-            android:textSize="12sp" android:textStyle="bold" />
+            android:textSize="11sp" android:textStyle="bold" />
         <TextView
             android:id="@+id/point0"
             android:layout_width="match_parent"
@@ -49,7 +49,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFF4EFE6"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:layout_marginTop="2dp" />
         <TextView
             android:id="@+id/point1"
@@ -64,7 +64,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFF4EFE6"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:layout_marginTop="2dp" />
         <TextView
             android:id="@+id/point2"
@@ -79,7 +79,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFF4EFE6"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:layout_marginTop="2dp" />
         <TextView
             android:id="@+id/point3"
@@ -94,7 +94,7 @@
             android:shadowColor="#66000000"
             android:shadowRadius="3"
             android:textColor="#FFF4EFE6"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:layout_marginTop="2dp" />
     </LinearLayout>
 </FrameLayout>

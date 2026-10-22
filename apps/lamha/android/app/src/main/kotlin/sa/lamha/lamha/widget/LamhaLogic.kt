@@ -273,6 +273,19 @@ object LamhaLogic {
         return ColumnsFit(title, kName, sub, kSub)
     }
 
+    /// نقاط وصف الموسم (fitPoints في Dart): لكل نقطة أسطرها حتى [maxLines]. إن ضاق [height]: يُخفى
+    /// العنوان ([titleHeight]) أولاً، ثم النقاط من الآخر، وآخراً تُقلَّل أسطر الأولى (حتى سطر). يعيد
+    /// (العنوان ظاهر؟، أسطر كل نقطة ظاهرة).
+    fun fitPoints(height: Float, titleHeight: Float, line: Float, lines: List<Int>, gap: Float = 0f, maxLines: Int = 2): Pair<Boolean, List<Int>> {
+        val kept = lines.map { it.coerceIn(1, maxLines) }.toMutableList()
+        fun used() = kept.sum() * line + gap * maxOf(0, kept.size - 1)
+        if (height <= 0f) return (titleHeight > 0f) to kept
+        while (kept.size > 1 && used() > height) kept.removeAt(kept.size - 1)
+        while (kept.isNotEmpty() && kept[0] > 1 && used() > height) kept[0] = kept[0] - 1
+        val title = titleHeight > 0f && used() + titleHeight + (if (kept.isEmpty()) 0f else gap) <= height
+        return title to kept
+    }
+
     /// الصلوات الخمس بترتيبها (fivePrayers في Dart).
     val FIVE_PRAYERS = listOf("fajr", "dhuhr", "asr", "maghrib", "isha")
 

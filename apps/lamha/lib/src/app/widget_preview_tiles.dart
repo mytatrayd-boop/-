@@ -16,28 +16,31 @@ const capsuleRadius = 14.0;
 /// الحرارة واليوم، ثم أسماء الصلوات والإيداعات بحجم القيم، والأوقات والأيام أصغر قليلاً.
 const dayWeekdaySize = 22.0;
 const dayCitySize = 16.0;
-const dayTempSize = 28.0;
+const dayTempSize = 24.0;
+
+/// سطر المدينة يصغر حتى هذا الحجم ثم «…»، ولا يُخفى.
+const dayCityMinSize = 13.0;
 const capsuleSize = 16.0;
 const columnTitleSize = 11.0;
 const columnNameSize = 20.0;
 const columnSubSize = 14.0;
 const qiblaTitleSize = 14.0;
-const pointSize = 12.0;
+const pointSize = 11.0;
 
 /// ارتفاعات الأسطر.
-const dayLineHeight = 1.25;
+const dayLineHeight = 1.15;
 const tempLineHeight = 1.15;
 const pointLineHeight = 1.3;
 
 /// تباعد: بين الأعمدة، وحول الكبسولة رأسياً، وحشوتها الأفقية والرأسية، وبين أسطر المربع.
 const columnGap = 4.0;
-const capsuleMargin = 3.0;
+const capsuleMargin = 2.0;
 const capsulePadH = 12.0;
-const capsulePadV = 2.0;
+const capsulePadV = 1.0;
 const lineGap = 2.0;
 
 /// حشوة الصناديق الجديدة الرأسية (أقل من المربعات القديمة لتتسع الصفوف الخمسة).
-const boxPadV = 4.0;
+const boxPadV = 2.0;
 
 /// الكعبة نسبة من قطر دائرة القبلة، والعنوان حتى [qiblaTitleRatio] من القطر.
 const kaabaRatio = 0.42;
@@ -157,12 +160,15 @@ class _DayWeatherTile extends _Styled {
   _DayWeatherTile withLook(_Look look) =>
       _DayWeatherTile(weekday: weekday, city: city, temp: temp, look: look);
 
-  /// مقاسه بالسطرين الأساسيين (اليوم والحرارة)؛ سطر المدينة إن اتسع.
+  /// مقاسه بأسطره الثلاثة (المدينة بحجمها الأدنى).
   @override
   ({double text, double pad}) heights(BuildContext context, double width) => (
     text:
         (dayWeekdaySize * dayLineHeight +
-            (look.showSub ? dayTempSize * tempLineHeight : 0)) *
+            (look.showSub
+                ? dayCityMinSize * headLineHeight +
+                      dayTempSize * tempLineHeight
+                : 0)) *
         s,
     pad: 0,
   );
@@ -183,20 +189,41 @@ class _DayWeatherTile extends _Styled {
       );
       final tempStyle = TextStyle(
         fontSize: dayTempSize * s,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w700,
         height: tempLineHeight,
         color: secondary,
       );
       final words = _words(context, weekday, dayStyle);
+      // المدينة تصغر حتى ١٣ ثم «…»، ولا تُخفى.
+      final cityWidth = _measure(context, city, cityStyle);
+      final avail = c.maxWidth - fitMargin;
+      final cityK = cityWidth > avail
+          ? math.max(dayCityMinSize / dayCitySize, avail / cityWidth)
+          : 1.0;
+      var cityK2 = cityK;
+      // وإن لم تتسع الأسطر الثلاثة رأسياً تصغر المدينة إلى ١٣ قبل إخفاء الحرارة.
+      if (c.maxHeight > 0 &&
+          (dayWeekdaySize * dayLineHeight +
+                      dayCitySize * cityK * headLineHeight +
+                      dayTempSize * tempLineHeight) *
+                  s >
+              c.maxHeight) {
+        cityK2 = math.min(cityK, dayCityMinSize / dayCitySize);
+      }
+      final citySized = cityStyle.copyWith(fontSize: dayCitySize * s * cityK2);
       final fit = fitTile(
         height: c.maxHeight,
-        width: c.maxWidth - fitMargin,
+        width: avail,
         valueLineHeight: dayWeekdaySize * s * dayLineHeight,
         valueWords: words.words,
         valueSpace: words.space,
         subs: [
           if (look.showSub) ...[
-            (height: dayCitySize * s * headLineHeight, maxLines: 1, fitWidth: 0),
+            (
+              height: dayCitySize * s * cityK2 * headLineHeight,
+              maxLines: 1,
+              fitWidth: 0,
+            ),
             (
               height: dayTempSize * s * tempLineHeight,
               maxLines: 1,
@@ -204,11 +231,10 @@ class _DayWeatherTile extends _Styled {
             ),
           ],
         ],
-        hideFromStart: true,
         minSubFit: headMinFit,
       );
       final texts = [city, temp];
-      final styles = [cityStyle, tempStyle];
+      final styles = [citySized, tempStyle];
       final keys = const [Key('preview-city'), Key('preview-temp')];
       return _centered(
         Column(
@@ -334,7 +360,7 @@ class _QiblaTile extends _Styled {
 
   @override
   ({double text, double pad}) heights(BuildContext context, double width) =>
-      (text: look.showTitle ? qiblaTitleSize * tileLineHeight * s : 0, pad: 32);
+      (text: look.showTitle ? qiblaTitleSize * tileLineHeight * s : 0, pad: 36);
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -575,15 +601,10 @@ class _PointsTile extends _Styled {
   _PointsTile withLook(_Look look) =>
       _PointsTile(title: title, points: points, look: look);
 
-  /// مقاسه بالعنوان وسطرين؛ بقية النقاط إن اتسعت.
+  /// مقاسه بنقطتين بسطرين لكل منهما؛ العنوان إن اتسع.
   @override
-  ({double text, double pad}) heights(BuildContext context, double width) => (
-    text:
-        ((look.showTitle ? columnTitleSize * tileLineHeight : 0) +
-            pointSize * pointLineHeight * 2) *
-        s,
-    pad: boxPadV * 2 + lineGap,
-  );
+  ({double text, double pad}) heights(BuildContext context, double width) =>
+      (text: pointSize * pointLineHeight * 4 * s, pad: boxPadV * 2 + lineGap);
 
   @override
   Widget build(BuildContext context) => _boxed(
@@ -601,25 +622,23 @@ class _PointsTile extends _Styled {
           height: pointLineHeight,
           color: primary,
         );
-        final words = [for (final p in points) _words(context, p, pointStyle)];
+        final shown = look.showSub ? points : points.take(1).toList();
         final lines = [
-          for (final w in words) wrapLines(w.words, w.space, width),
+          for (final p in shown)
+            () {
+              final w = _words(context, p, pointStyle);
+              return wrapLines(w.words, w.space, width);
+            }(),
         ];
         final line = pointSize * s * pointLineHeight;
         final titleFits =
             look.showTitle && _measure(context, title, titleStyle) <= width;
-        final fit = fitTile(
+        // النقاط قبل العنوان، ولكل نقطة سطران حداً (fitPoints).
+        final fit = fitPoints(
           height: c.maxHeight,
-          width: width,
           titleHeight: titleFits ? columnTitleSize * s * tileLineHeight : 0,
-          valueLineHeight: points.isEmpty ? 0 : line,
-          valueWords: points.isEmpty ? const [] : words.first.words,
-          valueSpace: points.isEmpty ? 0 : words.first.space,
-          subs: [
-            if (look.showSub)
-              for (var i = 1; i < points.length; i++)
-                (height: lines[i] * line, maxLines: 1, fitWidth: 0),
-          ],
+          line: line,
+          lines: lines,
           gap: lineGap,
         );
         return ClipRect(
@@ -639,25 +658,14 @@ class _PointsTile extends _Styled {
                     softWrap: false,
                     style: titleStyle,
                   ),
-                if (points.isNotEmpty) ...[
-                  if (fit.title) const SizedBox(height: lineGap),
+                for (final (i, max) in fit.lines.indexed) ...[
+                  if (i > 0 || fit.title) const SizedBox(height: lineGap),
                   Text(
-                    points.first,
-                    key: const Key('point-0'),
+                    shown[i],
+                    key: Key('point-$i'),
                     textAlign: TextAlign.right,
-                    maxLines: fit.valueLines,
-                    style: pointStyle.copyWith(
-                      fontSize: pointSize * s * fit.valueScale,
-                    ),
-                  ),
-                ],
-                for (final i in fit.subs) ...[
-                  const SizedBox(height: lineGap),
-                  Text(
-                    points[i + 1],
-                    key: Key('point-${i + 1}'),
-                    textAlign: TextAlign.right,
-                    maxLines: lines[i + 1],
+                    maxLines: max,
+                    overflow: TextOverflow.ellipsis,
                     style: pointStyle,
                   ),
                 ],

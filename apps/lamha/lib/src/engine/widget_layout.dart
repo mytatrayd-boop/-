@@ -594,6 +594,34 @@ ColumnsFit fitColumns({
   return (title: title, nameScale: kName, sub: sub, subScale: kSub);
 }
 
+/// نقاط وصف الموسم (الميزة ٦): لكل نقطة أسطرها [lines] حتى [maxLines] (ثم «…»). إن ضاق [height]:
+/// يُخفى العنوان ([titleHeight]) أولاً، ثم النقاط من الآخر، وآخراً تُقلَّل أسطر الأولى (حتى سطر).
+/// مطابقة لـ fitPoints في LamhaLogic.kt.
+({bool title, List<int> lines}) fitPoints({
+  required double height,
+  double titleHeight = 0,
+  required double line,
+  required List<int> lines,
+  double gap = 0,
+  int maxLines = 2,
+}) {
+  final kept = [for (final l in lines) l.clamp(1, maxLines)];
+  double used() =>
+      kept.fold<int>(0, (a, l) => a + l) * line +
+      gap * math.max(0, kept.length - 1);
+  if (height <= 0) return (title: titleHeight > 0, lines: kept);
+  while (kept.length > 1 && used() > height) {
+    kept.removeLast();
+  }
+  while (kept.isNotEmpty && kept[0] > 1 && used() > height) {
+    kept[0]--;
+  }
+  final title =
+      titleHeight > 0 &&
+      used() + titleHeight + (kept.isEmpty ? 0 : gap) <= height;
+  return (title: title, lines: kept);
+}
+
 /// صلاة في عمود مواقيت الصلاة: [key] معرّفها (fajr…)، و[text] وقتها جاهزاً («٤:٥٦ ص»).
 typedef PrayerSlot = ({String key, String name, DateTime time, String text});
 

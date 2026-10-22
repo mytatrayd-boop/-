@@ -6,8 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="0dp"
     android:layout_weight="1"
-    android:layout_marginTop="3dp"
-    android:layout_marginBottom="3dp">
+    android:layout_marginTop="2dp"
+    android:layout_marginBottom="2dp">
 
     <ImageView
         android:id="@+id/capsule_bg"
@@ -24,8 +24,8 @@
         android:layout_gravity="center_vertical"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp"
         android:gravity="right|center_vertical"
         android:textDirection="rtl"
         android:includeFontPadding="false"

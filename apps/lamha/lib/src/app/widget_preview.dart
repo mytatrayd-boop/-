@@ -634,11 +634,11 @@ class WidgetPreview extends StatelessWidget {
 const tileTitleSize = 13.0;
 const tileValueSize = 20.0;
 const tileSubSize = 14.0;
-const tileGap = 3.0;
+const tileGap = 2.0;
 const tileLineHeight = 1.25;
 
 /// حشوة المربع الرأسية (٨ + ٨) والأفقية (٩ + ٩).
-const tilePadV = 8.0;
+const tilePadV = 4.0;
 const tilePadH = 9.0;
 
 /// هامش أمان (بكسل) عند قياس ما يتسع سطراً واحداً، كي لا يُقص بفرق التقريب.
@@ -831,12 +831,17 @@ class _Tile extends _Cell {
       text:
           ((showTitle ? tileTitleSize : 0) +
               tileValueSize +
-              (showSub ? subs.length : 0) * tileSubSize) *
+              (showSub ? _subLines : 0) * tileSubSize) *
           tileLineHeight *
           scale,
       pad: tilePadV * 2 + tileGap * ((showSub ? subs.length : 0) + 1),
     );
   }
+
+  /// أسطر الثانويات في المقاس: الثانوي الوحيد ذو السطرين (الفصل والموسم) بسطريه (الميزة ٦).
+  int get _subLines => kind == WidgetElement.prayer
+      ? subs.length
+      : math.max(subs.length, subs.isEmpty ? 0 : 2);
 
   TextStyle get _clockStyle => TextStyle(
     fontSize: clockSize * scale,
