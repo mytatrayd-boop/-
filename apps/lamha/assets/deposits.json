@@ -28,6 +28,14 @@
       "weekendRule": {"friday": -1, "saturday": 1}
     },
     {
+      "id": "comprehensive_rehab",
+      "name": "التأهيل الشامل",
+      "day": 26,
+      "weekendRule": {"friday": -1, "saturday": 1},
+      "defaultEnabled": false,
+      "source": "المالك: يوم ٢٦ من الشهر الميلادي، الجمعة ← الخميس قبله، السبت ← الأحد بعده (SOURCES.md)"
+    },
+    {
       "id": "retirement",
       "name": "معاشات المتقاعدين",
       "day": 1,

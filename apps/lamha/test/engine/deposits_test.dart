@@ -40,18 +40,28 @@ const expected = {
     '2027-04-25', '2027-05-24', '2027-06-24', '2027-07-25', '2027-08-24',
     '2027-09-23', '2027-10-24', '2027-11-24', '2027-12-23',
   ],
+  'comprehensive_rehab': [
+    '2026-01-26', '2026-02-26', '2026-03-26', '2026-04-26', '2026-05-26',
+    '2026-06-25', '2026-07-26', '2026-08-26', '2026-09-27', '2026-10-26',
+    '2026-11-26', '2026-12-27', '2027-01-26', '2027-02-25', '2027-03-25',
+    '2027-04-26', '2027-05-26', '2027-06-27', '2027-07-26', '2027-08-26',
+    '2027-09-26', '2027-10-26', '2027-11-25', '2027-12-26',
+  ],
 };
 
 void main() {
   final config = loadDeposits();
 
-  test('الملف فيه الإيداعات الخمسة بأسمائها وأيامها', () {
+  test('الملف فيه الإيداعات الستة بأسمائها وأيامها', () {
     expect(config.ids, {
       'salary', 'citizen_account', 'social_security', 'housing_support',
-      'retirement',
+      'comprehensive_rehab', 'retirement',
     });
     expect(config.defaultIds,
         {'salary', 'citizen_account', 'social_security', 'housing_support'});
+    expect(config.rule('comprehensive_rehab').defaultEnabled, isFalse);
+    expect(config.rule('comprehensive_rehab').name, 'التأهيل الشامل');
+    expect(config.rule('comprehensive_rehab').day, 26);
     expect(config.rule('retirement').name, 'معاشات المتقاعدين');
     expect(config.rule('retirement').day, 1);
     expect(config.rule('retirement').defaultEnabled, isFalse);
