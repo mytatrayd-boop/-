@@ -13,6 +13,7 @@
     "dev": "tsc && npx -y firebase-tools@15 emulators:exec --only auth,firestore --project demo-asraty \"node build/src/devServer.js\""
   },
   "dependencies": {
+    "adhan": "^4.4.6",
     "firebase-admin": "^14.5.0",
     "firebase-functions": "^7.4.0",
     "nodemailer": "^7.0.13"

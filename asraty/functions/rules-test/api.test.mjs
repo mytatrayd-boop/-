@@ -215,6 +215,82 @@ test("removed member loses access; account deletion", async () => {
   await rejects(call("api", { op: "deleteAccount" }, owner.idToken), "owner-must-delete-family");
 });
 
+test("password sign-up, login and lockout", async () => {
+  await rejects(call("login", { email: "abu@test.sa", password: "whatever1" }), "no-password");
+  await clearRate();
+  await rejects(call("requestCode", { email: "abu@test.sa", role: "admin", password: "123" }), "weak-password");
+  await call("requestCode", { email: "abu@test.sa", role: "admin", password: "secret123" });
+  await call("verifyCode", { email: "abu@test.sa", code: await lastCode("abu@test.sa") });
+  const ok = await call("login", { email: "abu@test.sa", password: "secret123" });
+  assert.equal(ok.familyId, fid);
+  assert.equal(ok.role, "owner");
+  await rejects(call("login", { email: "nobody@test.sa", password: "secret123" }), "bad-login");
+  for (let i = 0; i < 5; i++) await rejects(call("login", { email: "abu@test.sa", password: "wrong-one" }), "bad-login");
+  await rejects(call("login", { email: "abu@test.sa", password: "secret123" }), "locked");
+  await db.collection("credentials").get().then((s) => Promise.all(s.docs.map((d) => d.ref.update({ lockUntil: null }))));
+});
+
+test("avatar photo, parent lock, monthly tasks", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).toString("base64");
+  await call("api", { op: "setAvatar", personId: kid.personId, avatar: "photo", photo: png }, kid.idToken);
+  const ref = db.doc(`families/${fid}/people/${kid.personId}`);
+  assert.equal((await ref.get()).data().photo, png);
+  await call("api", { op: "setAvatar", personId: kid.personId, avatar: "girl_rose" }, kid.idToken);
+  assert.equal((await ref.get()).data().photo, undefined, "choosing a portrait drops the photo");
+  await rejects(call("api", { op: "setAvatarLock", personId: kid.personId, locked: true }, kid.idToken), "no-permission");
+  await call("api", { op: "setAvatarLock", personId: kid.personId, locked: true }, owner.idToken);
+  await rejects(call("api", { op: "setAvatar", personId: kid.personId, avatar: "girl_pink" }, kid.idToken), "avatar-locked");
+  await call("api", { op: "setAvatar", personId: kid.personId, avatar: "girl_pink" }, owner.idToken);
+
+  await call("api", { op: "addTask", title: "تنظيف الغرفة", personId: kid.personId, points: 30, repeat: "monthly" }, owner.idToken);
+  const t = (await db.collection(`families/${fid}/tasks`).where("title", "==", "تنظيف الغرفة").get()).docs[0];
+  assert.equal(t.data().repeat, "monthly");
+  await call("api", { op: "completeTask", taskId: t.id }, kid.idToken);
+  const c = (await db.collection(`families/${fid}/completions`).where("taskId", "==", t.id).get()).docs[0];
+  assert.match(c.data().periodKey, /^m\d{4}-\d{2}$/);
+  await call("api", { op: "decideCompletion", completionId: c.id, approve: true }, owner.idToken);
+  const day = (await db.collection(`families/${fid}/summaries`).where("personId", "==", kid.personId).get()).docs.map((d) => d.data()).find((x) => /^\d/.test(x.periodKey));
+  assert.equal(day.tasks, 1, "reports count done tasks apart from prayers and competitions");
+});
+
+test("prayer tasks only for the running prayer", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  await rejects(call("api", { op: "setPrayer", lat: 24.7, lng: 46.7 }, kid.idToken), "no-permission");
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
+  const { currentPrayer } = await import("../build/src/prayer.js");
+  const now = currentPrayer(24.7136, 46.6753, Date.now());
+  const other = now.key === "fajr" ? "dhuhr" : "fajr";
+  await rejects(call("api", { op: "completeTask", taskId: `prayer-${other}-${kid.personId}` }, kid.idToken), "prayer-over");
+  await rejects(call("api", { op: "completeTask", taskId: `prayer-${now.key}-${owner.personId}` }, kid.idToken), "task-not-found");
+  await call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken);
+  const c = await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).get();
+  assert.equal(c.data().points, 4);
+  assert.equal(c.data().kind, "prayer");
+});
+
+test("prizes: reminder an hour before, then the top member wins with a card for all", async () => {
+  await rejects(call("api", { op: "addPrize", name: "x", period: "daily", awardAt: Date.now() - 1000 }, owner.idToken), "bad-time");
+  await call("api", { op: "addPrize", name: "رحلة", emoji: "🏆", period: "daily", awardAt: Date.now() + 30 * 60000 }, owner.idToken);
+  const prize = (await db.collection(`families/${fid}/prizes`).get()).docs[0];
+  await call("api", { op: "tick" }, owner.idToken);
+  assert.equal((await prize.ref.get()).data().reminded, true);
+  assert.equal((await db.collection(`families/${fid}/notifications`).where("title", "==", "⏰ باقي ساعة على الجائزة").get()).size, 1);
+  // Time's up: the member with today's most points wins.
+  await prize.ref.update({ awardAt: new Date(Date.now() - 1000) });
+  await call("api", { op: "tick" }, owner.idToken);
+  const done = (await prize.ref.get()).data();
+  assert.equal(done.status, "awarded");
+  assert.ok(done.winnerId);
+  const card = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "prize").get()).docs;
+  assert.equal(card.length, 1);
+  assert.equal(card[0].data().to, "all");
+  await call("api", { op: "tick" }, owner.idToken);
+  assert.equal((await db.collection(`families/${fid}/notifications`).where("kind", "==", "prize").get()).size, 1, "handed over once");
+});
+
 test("feedback works before sign-in", async () => {
   await call("sendFeedback", { type: "suggestion", text: "أتمنى إضافة مهام خاصة برمضان", platform: "test" });
   const fb = await db.collection("feedback").get();

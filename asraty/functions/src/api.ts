@@ -3,10 +3,12 @@ import {
   FieldValue, Timestamp, Person, CallContext,
 } from "./db";
 import {
-  AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope, TaskRepeat,
-  REPORT_TITLE, ReportPeriod, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
+  AVATAR_KEYS, EMAIL_RE, PHOTO_AVATAR, PermKey, Period, REWARD_EMOJI, SPANS, Scope, Span, TaskRepeat,
+  REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
+import { credRef } from "./passwords";
+import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId } from "./prayer";
 
 interface Ctx {
   fid: string;
@@ -24,16 +26,17 @@ const int = (v: unknown, min: number, max: number) => {
   return n;
 };
 /** Optional proof photo: base64 JPEG/PNG, resized on the device (~720px). */
-function checkPhoto(v: unknown): string {
+function checkPhoto(v: unknown, max = 900_000): string {
   const b64 = String(v);
-  if (b64.length > 900_000 || !/^[A-Za-z0-9+/=]+$/.test(b64)) fail("bad-photo", {}, "invalid-argument");
+  if (b64.length > max || !/^[A-Za-z0-9+/=]+$/.test(b64)) fail("bad-photo", {}, "invalid-argument");
   const head = Buffer.from(b64.slice(0, 16), "base64");
   const jpeg = head[0] === 0xff && head[1] === 0xd8, png = head[0] === 0x89 && head[1] === 0x50;
   if (!jpeg && !png) fail("bad-photo", {}, "invalid-argument");
   return b64;
 }
 const period = (v: unknown): Period => (v === "weekly" ? "weekly" : "daily");
-const repeatOf = (v: unknown): TaskRepeat => (v === "once" ? "once" : period(v));
+const span = (v: unknown): Span => SPANS.find((x) => x === v) ?? "daily";
+const repeatOf = (v: unknown): TaskRepeat => (v === "once" ? "once" : span(v));
 const scope = (v: unknown): Scope => (v === "family" ? "family" : "each");
 const avatar = (v: unknown) => ((AVATAR_KEYS as readonly string[]).includes(String(v)) ? String(v) : null);
 
@@ -47,11 +50,16 @@ async function person(fid: string, id: unknown): Promise<Person> {
   return { id: snap.id, ...(snap.data() as Omit<Person, "id">) };
 }
 
-async function notify(fid: string, to: string, title: string, body: string, sender: Person, expiresAt: Timestamp | null = null) {
+async function notify(fid: string, to: string, title: string, body: string, sender: { id: string; name: string }, expiresAt: Timestamp | null = null, kind = "notice") {
   const coll = fam(fid).collection("notifications");
   await coll.add({
-    to, title, body, from: sender.name, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt,
+    to, title, body, from: sender.name, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt, kind,
   });
+  await Promise.all([cleanNotices(fid), getPeople(fid).then((all) => push(fid, noticeTargets(all, to, sender.id), title, body))]);
+}
+
+async function cleanNotices(fid: string) {
+  const coll = fam(fid).collection("notifications");
   // Keep the list small (members load it without ordering): drop notices older than
   // 60 days, and timed alerts one day after they end (the app shows them as ended until then).
   const [old, ended] = await Promise.all([
@@ -64,13 +72,12 @@ async function notify(fid: string, to: string, title: string, body: string, send
     new Map(stale.map((d) => [d.id, d.ref])).forEach((ref) => b.delete(ref));
     await b.commit();
   }
-  const all = await getPeople(fid);
-  const targets = noticeTargets(all, to, sender.id);
-  await push(fid, targets, title, body);
 }
 
 /** Writes a ledger entry and bumps the per-person day/week summaries in one transaction. */
-function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: string, delta: number, reason: string, source: string) {
+type PointKind = "task" | "prayer" | "comp";
+
+function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: string, delta: number, reason: string, source: string, kind: PointKind) {
   const now = Date.now();
   const f = fam(fid);
   tx.set(f.collection("ledger").doc(), {
@@ -80,6 +87,8 @@ function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: str
   for (const key of [dayKey(now), weekKey(now), monthKey(now), yearKey(now)]) {
     tx.set(f.collection("summaries").doc(`${personId}_${key}`), {
       personId, periodKey: key, points: FieldValue.increment(delta), count: FieldValue.increment(1),
+      // Reports split done tasks from prayers and competitions.
+      [kind === "task" ? "tasks" : kind === "prayer" ? "prayers" : "comps"]: FieldValue.increment(1),
     }, { merge: true });
   }
 }
@@ -98,6 +107,7 @@ async function removePersonData(fid: string, p: Person) {
   const batch = db.batch();
   batch.delete(f.collection("people").doc(p.id));
   batch.delete(db.collection("emailIndex").doc(p.email));
+  batch.delete(credRef(p.email));
   // Their tasks, the alerts sent to them, and their private rewards and goals go with them.
   const owned = await Promise.all([
     f.collection("tasks").where("personId", "==", p.id).get(),
@@ -127,7 +137,7 @@ const ops: Record<string, Handler> = {
       if ((await tx.get(idxRef)).exists) fail("email-taken");
       tx.set(ref, {
         name, email, role, perms: role === "admin" ? cleanPerms(c.data.perms) : {},
-        avatar: avatar(c.data.avatar) ?? (role === "admin" ? "mom" : "boy"),
+        avatar: avatar(c.data.avatar) ?? (role === "admin" ? "mom_black" : "boy_shemagh"), avatarLocked: false,
         status: "invited", authUid: null, fcmTokens: [], createdAt: FieldValue.serverTimestamp(),
       });
       tx.set(idxRef, { familyId: c.fid, personId: ref.id, role });
@@ -162,11 +172,27 @@ const ops: Record<string, Handler> = {
 
   async setAvatar(c) {
     const p = await person(c.fid, c.data.personId);
-    const ok = p.id === c.me.id || c.me.role === "owner" || (p.role === "member" && can(c.me, "addMembers"));
-    if (!ok) fail("no-permission", {}, "permission-denied");
+    const manager = c.me.role === "owner" || (p.role === "member" && can(c.me, "addMembers"));
+    // A member changes their own avatar unless a parent locked it.
+    const ok = manager || (p.id === c.me.id && !(p.role === "member" && p.avatarLocked));
+    if (!ok) fail("avatar-locked", {}, "permission-denied");
+    if (c.data.avatar === PHOTO_AVATAR) {
+      // Own photo from the device, resized to ~256px there.
+      const photo = checkPhoto(c.data.photo, 200_000);
+      await people(c.fid).doc(p.id).update({ avatar: PHOTO_AVATAR, photo });
+      return {};
+    }
     const a = avatar(c.data.avatar);
     if (!a) fail("bad-avatar", {}, "invalid-argument");
-    await people(c.fid).doc(p.id).update({ avatar: a });
+    await people(c.fid).doc(p.id).update({ avatar: a, photo: FieldValue.delete() });
+    return {};
+  },
+
+  async setAvatarLock(c) {
+    const p = await person(c.fid, c.data.personId);
+    if (p.role !== "member") fail("person-not-found", {}, "not-found");
+    need(c, "addMembers");
+    await people(c.fid).doc(p.id).update({ avatarLocked: c.data.locked === true });
     return {};
   },
 
@@ -228,18 +254,30 @@ const ops: Record<string, Handler> = {
 
   async completeTask(c) {
     if (c.me.role !== "member") fail("members-only", {}, "permission-denied");
-    const tRef = fam(c.fid).collection("tasks").doc(String(c.data.taskId ?? ""));
+    const taskId = String(c.data.taskId ?? "");
     const photo = c.data.photo ? checkPhoto(c.data.photo) : null;
+    const prayer = parsePrayerTaskId(taskId);
+    // Prayers are not stored tasks: one per member per prayer time, open until the next prayer comes in.
+    const prayerTask = prayer ? await (async () => {
+      if (prayer.personId !== c.me.id) fail("task-not-found", {}, "not-found");
+      const s = (await fam(c.fid).get()).data()?.prayer as PrayerSettings | undefined;
+      if (!s?.enabled) fail("task-not-found", {}, "not-found");
+      const w = currentPrayer(s.lat, s.lng, Date.now());
+      if (w.key !== prayer.key) fail("prayer-over");
+      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: s.points, pk: w.dayKey };
+    })() : null;
+    const tRef = fam(c.fid).collection("tasks").doc(taskId);
     const created = await db.runTransaction(async (tx) => {
-      const t = (await tx.get(tRef)).data();
-      if (!t || t.personId !== c.me.id) fail("task-not-found", {}, "not-found");
-      const pk = periodKey(t.repeat, Date.now());
+      const stored = prayerTask ? null : (await tx.get(tRef)).data();
+      if (!prayerTask && (!stored || stored.personId !== c.me.id)) fail("task-not-found", {}, "not-found");
+      const t = (prayerTask ?? stored) as { title: string; points: number };
+      const pk = prayerTask ? prayerTask.pk : periodKey(stored!.repeat, Date.now());
       // One completion per task per period; a rejected one may be retried.
-      const cRef = fam(c.fid).collection("completions").doc(`${tRef.id}_${pk}`);
+      const cRef = fam(c.fid).collection("completions").doc(`${taskId}_${pk}`);
       const prev = (await tx.get(cRef)).data();
       if (prev && prev.status !== "rejected") fail("already-done");
       tx.set(cRef, {
-        taskId: tRef.id, personId: c.me.id, title: t.title, points: t.points, periodKey: pk,
+        taskId, personId: c.me.id, title: t.title, points: t.points, periodKey: pk, kind: prayerTask ? "prayer" : "task",
         status: "pending", hasPhoto: !!photo, createdAt: FieldValue.serverTimestamp(), decidedBy: null,
       });
       const proof = proofRef(c.fid, cRef.id);
@@ -263,7 +301,7 @@ const ops: Record<string, Handler> = {
       if (d.status !== "pending") fail("already-decided");
       tx.update(ref, { status: approve ? "approved" : "rejected", decidedBy: c.me.id, decidedAt: FieldValue.serverTimestamp(), hasPhoto: false });
       if (d.hasPhoto) tx.delete(proofRef(c.fid, ref.id));
-      if (approve) addPoints(tx, c.fid, d.personId, d.points, `إنجاز: ${d.title}`, d.taskId);
+      if (approve) addPoints(tx, c.fid, d.personId, d.points, `إنجاز: ${d.title}`, d.taskId, d.kind === "prayer" ? "prayer" : "task");
       return d;
     });
     const kid = (await people(c.fid).doc(done.personId).get()).data() as Person | undefined;
@@ -329,7 +367,7 @@ const ops: Record<string, Handler> = {
       if (!comp || !entry) fail("not-found", {}, "not-found");
       if (entry.status !== "pending") fail("already-decided");
       tx.update(ref, { [`entries.${pid}.status`]: approve ? "approved" : "rejected" });
-      if (approve) addPoints(tx, c.fid, pid, entry.points, `مسابقة: ${comp.title} (المركز ${entry.rank})`, ref.id);
+      if (approve) addPoints(tx, c.fid, pid, entry.points, `مسابقة: ${comp.title} (المركز ${entry.rank})`, ref.id, "comp");
       return { ...entry, title: comp.title };
     });
     const kid = (await people(c.fid).doc(pid).get()).data() as Person | undefined;
@@ -370,6 +408,45 @@ const ops: Record<string, Handler> = {
     await fam(c.fid).collection("deliveries").doc(`${tierId}_${who}_${pk}`).set({
       tierId, who, periodKey: pk, deliveredBy: c.me.id, at: FieldValue.serverTimestamp(),
     });
+    return {};
+  },
+
+  // ---------- prizes: the top member of a period wins, handed over automatically at a set time
+  async addPrize(c) {
+    need(c, "owner");
+    const name = str(c.data.name, 60);
+    if (!name) fail("bad-title", {}, "invalid-argument");
+    const emoji = REWARD_EMOJI.includes(String(c.data.emoji)) ? String(c.data.emoji) : "🎁";
+    const p = span(c.data.period);
+    const awardAt = Number(c.data.awardAt);
+    if (!Number.isFinite(awardAt) || awardAt <= Date.now() || awardAt > Date.now() + 400 * 86400e3) fail("bad-time", {}, "invalid-argument");
+    await fam(c.fid).collection("prizes").add({
+      name, emoji, period: p, awardAt: Timestamp.fromMillis(awardAt), status: "scheduled", reminded: false,
+      winnerId: null, winnerPoints: 0, createdBy: c.me.id, createdAt: FieldValue.serverTimestamp(),
+    });
+    await notify(c.fid, "all", `${emoji} جائزة جديدة`,
+      `${name}\nلصاحب أعلى نقاط ${PERIOD_LABEL[p]}، وتُسلَّم ${arabicDateTime(awardAt)}.`, c.me);
+    return {};
+  },
+
+  async deletePrize(c) {
+    need(c, "owner");
+    await fam(c.fid).collection("prizes").doc(String(c.data.prizeId ?? "")).delete();
+    return {};
+  },
+
+  /** Called by the app when it opens and when a prize is due; every other call also sweeps. */
+  async tick() {
+    return {};
+  },
+
+  // ---------- prayer reminders: the owner sets the family's location once
+  async setPrayer(c) {
+    need(c, "owner");
+    const lat = Number(c.data.lat), lng = Number(c.data.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 66 || Math.abs(lng) > 180) fail("bad-location", {}, "invalid-argument");
+    const points = int(c.data.points ?? 5, 1, 1000);
+    await fam(c.fid).update({ prayer: { enabled: c.data.enabled !== false, lat, lng, points } });
     return {};
   },
 
@@ -481,7 +558,7 @@ const ops: Record<string, Handler> = {
   async deleteFamily(c) {
     need(c, "owner");
     const all = await getPeople(c.fid);
-    await Promise.all(all.map((p) => db.collection("emailIndex").doc(p.email).delete()));
+    await Promise.all(all.flatMap((p) => [db.collection("emailIndex").doc(p.email).delete(), credRef(p.email).delete()]));
     await deleteTree(fam(c.fid));
     await Promise.all(all.map(async (p) => {
       await auth.revokeRefreshTokens(p.id).catch(() => undefined);
@@ -503,5 +580,61 @@ export async function api(data: unknown, ctx: CallContext) {
   // A removed person keeps a valid token until it expires; the people doc is the source of truth.
   if (!meSnap.exists || !famSnap.exists) fail("removed", {}, "permission-denied");
   const me = { id: meSnap.id, ...(meSnap.data() as Omit<Person, "id">) };
-  return handler({ fid, me, famName: famSnap.data()!.name, data: d });
+  // Prizes are handed over by whichever call comes first after their time (no scheduler on the free plan).
+  const [out] = await Promise.all([handler({ fid, me, famName: famSnap.data()!.name, data: d }), sweepPrizes(fid).catch((e) => console.warn("sweep", e))]);
+  return out;
+}
+
+const PERIOD_LABEL: Record<Span, string> = { daily: "اليوم", weekly: "الأسبوع", monthly: "الشهر", yearly: "السنة" };
+
+function arabicDateTime(ms: number): string {
+  const d = new Date(ms + 3 * 3600e3);
+  const h = d.getUTCHours(), m = d.getUTCMinutes();
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${arabicDate(ms)} الساعة ${h12}:${String(m).padStart(2, "0")} ${h < 12 ? "ص" : "م"}`;
+}
+
+/** Sends the one-hour reminder and hands due prizes to the top member of their period. */
+export async function sweepPrizes(fid: string, now = Date.now()) {
+  // Single-field query (no composite index needed); a family has few scheduled prizes.
+  const due = await fam(fid).collection("prizes").where("status", "==", "scheduled").get();
+  const system = { id: "", name: "أسرتي" };
+  for (const doc of due.docs) {
+    const p = doc.data();
+    const at = (p.awardAt as Timestamp).toMillis();
+    if (at > now + 3600e3) continue;
+    if (at > now) {
+      if (p.reminded) continue;
+      const first = await db.runTransaction(async (tx) => {
+        if ((await tx.get(doc.ref)).data()?.reminded) return false;
+        tx.update(doc.ref, { reminded: true });
+        return true;
+      });
+      if (first) await notify(fid, "all", "⏰ باقي ساعة على الجائزة", `${p.emoji} ${p.name}: تُسلَّم بعد ساعة لصاحب أعلى نقاط ${PERIOD_LABEL[p.period as Span]}.`, system);
+      continue;
+    }
+    // The period that ended at (or contains) the hand-over time.
+    const key = reportKey(p.period as ReportPeriod, at - 1000);
+    const [sums, all] = await Promise.all([fam(fid).collection("summaries").where("periodKey", "==", key).get(), getPeople(fid)]);
+    const members = new Map(all.filter((x) => x.role === "member").map((x) => [x.id, x]));
+    let winner: { id: string; points: number } | null = null;
+    for (const s of sums.docs) {
+      const x = s.data();
+      if (!members.has(x.personId) || !(x.points > 0)) continue;
+      if (!winner || x.points > winner.points) winner = { id: x.personId, points: x.points };
+    }
+    const awarded = await db.runTransaction(async (tx) => {
+      if ((await tx.get(doc.ref)).data()?.status !== "scheduled") return false;
+      tx.update(doc.ref, { status: "awarded", winnerId: winner?.id ?? null, winnerPoints: winner?.points ?? 0, awardedAt: FieldValue.serverTimestamp() });
+      return true;
+    });
+    if (!awarded) continue;
+    if (winner) {
+      const w = members.get(winner.id)!;
+      await notify(fid, "all", `🎉 مبروك يا ${w.name}!`,
+        `فاز ${w.name} بجائزة ${p.emoji} ${p.name}\nبأعلى نقاط ${PERIOD_LABEL[p.period as Span]}: ${winner.points} نقطة. ألف مبروك!`, system, null, "prize");
+    } else {
+      await notify(fid, "all", `${p.emoji} ${p.name}`, `حان موعد الجائزة ولم يجمع أحد نقاطاً ${PERIOD_LABEL[p.period as Span]}.`, system, null, "prize");
+    }
+  }
 }

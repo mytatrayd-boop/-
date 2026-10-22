@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "bom1"
+  ],
   "buildCommand": "npm run build",
   "outputDirectory": "public",
   "cleanUrls": true,
