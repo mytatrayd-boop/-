@@ -8,21 +8,20 @@ import '../l10n/app_localizations.dart';
 import 'common.dart';
 import 'competitions.dart';
 import 'honor.dart';
+import 'prayer_page.dart';
+import 'prizes.dart';
 import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
 import 'theme.dart';
 
-const rewardEmoji = ['🏞️', '🍔', '🎮', '🍦', '🎡', '🎁', '📚', '🏖️'];
-
 final _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
-bool canEditAvatar(Person me, Person target) =>
-    me.id == target.id || me.role == Role.owner || (target.role == Role.member && can(me, Perm.addMembers));
 
 class _Tile {
-  const _Tile(this.page, this.emoji, this.label, this.visible, [this.badge = 0]);
-  final String page, emoji, label;
+  const _Tile(this.page, this.icon, this.label, this.visible, [this.badge = 0]);
+  final String page, label;
+  final IconData icon;
   final bool visible;
   final int badge;
 }
@@ -38,41 +37,27 @@ class AdminHome extends ConsumerWidget {
     final owner = me.role == Role.owner;
     final unread = d.noticesFor(me).where((n) => n.activeAt(now) && !n.readBy.contains(me.id)).length;
     final tiles = [
-      _Tile('approvals', '✅', t.tileApprovals, can(me, Perm.approve), d.pendingCount()),
-      _Tile('addAdmin', '🛡️', t.tileAddAdmin, owner),
-      _Tile('addMember', '➕', t.tileAddMember, can(me, Perm.addMembers)),
-      _Tile('reports', '📊', t.tileReports, can(me, Perm.viewReports) || can(me, Perm.report)),
-      _Tile('honor', '🏆', t.tileHonor, true),
-      _Tile('tasks', '📝', t.tileTasks, true),
-      _Tile('alerts', '🔔', t.tileAlerts, owner),
+      _Tile('approvals', Icons.fact_check_outlined, t.tileApprovals, can(me, Perm.approve), d.pendingCount()),
+      _Tile('tasks', Icons.checklist_rounded, t.tileTasks, true),
+      _Tile('addMember', Icons.person_add_alt_1_outlined, t.tileAddMember, can(me, Perm.addMembers)),
+      _Tile('addAdmin', Icons.admin_panel_settings_outlined, t.tileAddAdmin, owner),
+      _Tile('prayer', Icons.mosque_outlined, t.prayerTitle, owner),
+      _Tile('honor', Icons.emoji_events_outlined, t.tileHonor, true),
+      _Tile('alerts', Icons.campaign_outlined, t.tileAlerts, owner),
       // Delegated admins get the family's alerts too (the owner sees them all under "send alert").
-      _Tile('inbox', '📬', t.tabNotices, !owner, unread),
-      _Tile('comps', '🏁', t.tileComps, can(me, Perm.comps)),
-      _Tile('rewards', '🎁', t.tileRewards, owner),
+      _Tile('inbox', Icons.notifications_none_rounded, t.tabNotices, !owner, unread),
+      _Tile('comps', Icons.flag_outlined, t.tileComps, can(me, Perm.comps)),
     ].where((x) => x.visible);
     final active = d.competitions.where((x) => x.activeAt(now)).length;
     final perms = Perm.values.where((p) => me.perms[p] ?? false).toList();
 
-    Widget stat(int n, String label) => Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: context.pal.bg, borderRadius: BorderRadius.circular(14)),
-            child: Column(children: [
-              Text('$n', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: context.pal.brandInk)),
-              Text(label, style: TextStyle(fontSize: 13, color: context.pal.muted)),
-            ]),
-          ),
-        );
-
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.adminDashboard),
       const SizedBox(height: 8),
-      Row(children: [
-        stat(d.members.length, t.statMembers),
-        const SizedBox(width: 8),
-        stat(d.familyEarned(Period.daily), t.statTodayPoints),
-        const SizedBox(width: 8),
-        stat(active, t.statActiveComps),
+      StatRow([
+        StatBox('${d.members.length}', t.statMembers),
+        StatBox('${d.familyEarnedFor(Span.daily)}', t.statTodayPoints),
+        StatBox('$active', t.statActiveComps),
       ]),
       if (me.role == Role.admin) ...[
         const SizedBox(height: 12),
@@ -85,25 +70,30 @@ class AdminHome extends ConsumerWidget {
       ],
       const SizedBox(height: 14),
       LayoutBuilder(builder: (context, box) {
-        final cols = (box.maxWidth / 155).floor().clamp(2, 4);
+        final cols = (box.maxWidth / 150).floor().clamp(2, 4);
         final w = (box.maxWidth - (cols - 1) * 10) / cols;
         return Wrap(spacing: 10, runSpacing: 10, children: [
           for (final tile in tiles)
             SizedBox(
               width: w,
+              height: 96,
               child: Material(
                 color: context.pal.card,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: context.pal.line)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: Palette.sun.withValues(alpha: .7))),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(18),
                   onTap: () => context.push('/admin/${tile.page}'),
                   child: Stack(children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(tile.emoji, style: const TextStyle(fontSize: 26)),
-                        const SizedBox(height: 6),
-                        Text(tile.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      padding: const EdgeInsets.all(12),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(color: context.pal.mintBg, borderRadius: BorderRadius.circular(12)),
+                          child: Icon(tile.icon, color: context.pal.brandInk, size: 22),
+                        ),
+                        Text(tile.label, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, height: 1.2)),
                       ]),
                     ),
                     if (tile.badge > 0) PositionedDirectional(top: 10, end: 10, child: Badge2(tile.badge)),
@@ -133,22 +123,13 @@ class AdminPage extends ConsumerWidget {
       'tasks' => TasksPage(c),
       'alerts' => AlertsPage(c),
       'comps' => CompsPage(c),
-      'rewards' => RewardsPage(c),
+      'prizes' => PrizesPage(c),
+      'prayer' => PrayerPage(c),
       'honor' => HonorBoard(c),
       'inbox' => InboxPage(c),
       _ => const SizedBox(),
     };
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: TextButton(
-          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
-          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 4), foregroundColor: context.pal.brandInk),
-          child: Text(context.t.backToDashboard, style: const TextStyle(fontWeight: FontWeight.w700)),
-        ),
-      ),
-      body,
-    ]);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [BackLink(context.t.backToDashboard), body]);
   }
 }
 
@@ -180,7 +161,7 @@ class ApprovalsPage extends ConsumerWidget {
             if (x.photoPath != null)
               ProofThumb(comp: x, onTap: () => showProof(context, ref, x, k, canDecide: allowed))
             else
-              AvatarView(k?.avatar ?? 'boy'),
+              k == null ? const AvatarView('boy') : AvatarView.of(k),
             Expanded(
               child: TitleSub(x.title,
                   '${k?.name ?? '—'} · ${t.pointsPlus('${x.points}')} · ${ago(t, x.createdAt, now)}${x.photoPath != null ? ' · ${t.photoAttached}' : ''}'),
@@ -404,6 +385,12 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
               Row(children: [
                 StateTag(m.active ? t.linked : t.pendingVerification, m.active ? Tone.ok : Tone.wait),
                 const Spacer(),
+                XButton(
+                  icon: m.avatarLocked ? Icons.lock_outline : Icons.lock_open_outlined,
+                  color: m.avatarLocked ? Palette.sunDeep : null,
+                  tooltip: m.avatarLocked ? t.avatarLockOn : t.avatarLockOff,
+                  onPressed: () => run(context, () => b.setAvatarLock(m.id, !m.avatarLocked), ok: !m.avatarLocked ? t.avatarLockOn : t.avatarLockOff),
+                ),
                 if (!m.active)
                   XButton(icon: Icons.refresh, tooltip: t.resendCode, onPressed: () => run(context, () => b.resendInvite(m.id), ok: t.inviteSent(m.email))),
                 XButton(
@@ -437,46 +424,24 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t, d = widget.c.data;
-    // Reward levels exist for days and weeks only.
-    final p = switch (_s) { Span.daily => Period.daily, Span.weekly => Period.weekly, _ => null };
     final r = d.rankingFor(_s), fam = d.familyEarnedFor(_s);
-    final ft = p == null ? null : tierOf(d.tiers, fam, p, Scope.family);
-    Widget stat(int n, String l) => Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: context.pal.bg, borderRadius: BorderRadius.circular(14)),
-            child: Column(children: [
-              Text('$n', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: context.pal.brandInk)),
-              Text(l, style: TextStyle(fontSize: 13, color: context.pal.muted)),
-            ]),
-          ),
-        );
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.tileReports),
-      SegTabs<Span>(
-        tabs: [(Span.daily, t.today, 0), (Span.weekly, t.thisWeek, 0), (Span.monthly, t.thisMonth, 0), (Span.yearly, t.thisYear, 0)],
-        value: _s,
-        onChanged: (v) => setState(() => _s = v),
-      ),
-      Row(children: [stat(fam, t.familyTotal), const SizedBox(width: 8), stat(r.fold(0, (a, x) => a + x.count), t.achievements)]),
-      if (ft != null)
-        TierBox(
-          margin: const EdgeInsets.only(top: 10),
-          emoji: ft.emoji,
-          child: Text.rich(TextSpan(children: [TextSpan(text: '${t.familyEarned} '), TextSpan(text: ft.name, style: const TextStyle(fontWeight: FontWeight.w700))])),
-        ),
+      SegTabs<Span>(tabs: spanTabs(t), value: _s, onChanged: (v) => setState(() => _s = v)),
+      StatRow([
+        StatBox('$fam', t.familyTotal),
+        StatBox('${r.fold(0, (a, x) => a + x.done)}', t.doneCount, color: Palette.mint),
+        StatBox('${r.fold(0, (a, x) => a + x.notDone)}', t.notDoneCount, color: Palette.red),
+      ]),
       H3(t.ranking),
       if (r.isEmpty) EmptyState('📊', t.reportsEmpty),
       for (var i = 0; i < r.length; i++)
-        Builder(builder: (context) {
-          final x = r[i], tier = p == null ? null : tierOf(d.tiers, x.points, p, Scope.each, personId: x.person.id);
-          return RowCard(children: [
-            MedalText(medal(i)),
-            AvatarView(x.person.avatar),
-            Expanded(child: TitleSub(x.person.name, '${t.countAchievements('${x.count}')}${tier != null ? ' · ${t.earnedTier('${tier.emoji} ${tier.name}')}' : ''}')),
-            Pts('${x.points}'),
-          ]);
-        }),
+        RowCard(children: [
+          MedalText(medal(i)),
+          AvatarView.of(r[i].person, size: 40),
+          Expanded(child: TitleSub(r[i].person.name, t.reportDoneLine('${r[i].done}', '${r[i].notDone}'))),
+          Pts('${r[i].points}'),
+        ]),
       if (can(widget.c.me, Perm.report)) ...[
         const SizedBox(height: 12),
         Muted(t.sendReportSub),
@@ -524,6 +489,8 @@ class _TasksPageState extends ConsumerState<TasksPage> {
   final _title = TextEditingController(), _pts = TextEditingController(text: '10');
   String _who = 'all';
   var _rep = Period.daily;
+  // The member whose tasks are listed (one at a time, not the whole family).
+  String? _view;
   String? _editing;
   final _eTitle = TextEditingController(), _ePts = TextEditingController();
   String _eWho = '';
@@ -542,7 +509,10 @@ class _TasksPageState extends ConsumerState<TasksPage> {
     final title = _title.text.trim(), pts = parseDigits(_pts.text) ?? 0;
     if (title.isEmpty || pts < 1) return toast(context, t.errTaskInput);
     final ok = await run(context, () => ref.read(backendProvider).addTask(title: title, personId: _who, points: pts, repeat: _rep), ok: t.taskAdded);
-    if (ok) _title.clear();
+    if (ok) {
+      _title.clear();
+      if (_who != 'all') setState(() => _view = _who);
+    }
   }
 
   void _startEdit(TaskItem x) => setState(() {
@@ -562,15 +532,73 @@ class _TasksPageState extends ConsumerState<TasksPage> {
     if (ok) setState(() => _editing = null);
   }
 
+  Future<void> _delete(TaskItem x) async {
+    final t = context.t;
+    if (!await confirm(context, '${t.deleteTaskConfirm}\n«${x.title}»', ok: t.delete, danger: true) || !mounted) return;
+    final ok = await run(context, () => ref.read(backendProvider).deleteTask(x.id), ok: t.deleted);
+    if (ok && _editing == x.id) setState(() => _editing = null);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final t = context.t, d = widget.c.data, b = ref.read(backendProvider);
+    final t = context.t, d = widget.c.data;
     final edit = can(widget.c.me, Perm.tasks);
     final now = DateTime.now();
     final members = d.members;
     final memberItems = [for (final m in members) (m.id, m.name)];
     if (_who != 'all' && !members.any((m) => m.id == _who)) _who = 'all';
-    final repItems = [(Period.daily, t.dailyF), (Period.weekly, t.weeklyF), (Period.once, t.onceF)];
+    if (_view == null || !members.any((m) => m.id == _view)) _view = members.firstOrNull?.id;
+    final repItems = [for (final p in Period.values) (p, repeatLabel(t, p))];
+    final view = _view == null ? null : d.person(_view!);
+    final ts = view == null ? <TaskItem>[] : d.tasksOf(view.id, now);
+    final done = <TaskItem>[], waiting = <TaskItem>[], open = <TaskItem>[];
+    for (final x in ts) {
+      final c = d.completionOf(x, now);
+      (c == null ? open : c.status == Status.pending ? waiting : done).add(x);
+    }
+
+    Widget row(TaskItem x) {
+      if (_editing == x.id) {
+        return FormBox(margin: const EdgeInsets.only(bottom: 8), children: [
+          TextField(controller: _eTitle, decoration: InputDecoration(hintText: t.taskTitleHint)),
+          Two(
+            Select<String>(value: _eWho, items: memberItems, onChanged: (v) => setState(() => _eWho = v)),
+            Select<Period>(value: _eRep, items: repItems, onChanged: (v) => setState(() => _eRep = v)),
+          ),
+          Labeled(t.points, TextField(controller: _ePts, keyboardType: TextInputType.number)),
+          // Full-width buttons so their labels never wrap or get cut.
+          Row(children: [
+            Expanded(child: Btn(t.save, onPressed: () => _save(x))),
+            const SizedBox(width: 8),
+            Expanded(child: Btn(t.cancel, kind: BtnKind.ghost, onPressed: () => setState(() => _editing = null))),
+          ]),
+          Btn(t.delete, kind: BtnKind.no, icon: Icons.delete_outline, expand: true, onPressed: () => _delete(x)),
+        ]);
+      }
+      final comp = d.completionOf(x, now);
+      final st = comp == null
+          ? (x.prayer?.lateAt(now) ?? false ? StateTag(t.prayerLate, Tone.wait) : StateTag(t.notDone, Tone.off))
+          : comp.status == Status.pending
+              ? StateTag(t.waiting, Tone.wait)
+              : StateTag(t.doneCheck, Tone.ok);
+      return RowCard(children: [
+        if (x.prayer != null) const Icon(Icons.mosque_outlined, color: Palette.sunDeep),
+        Expanded(child: TitleSub(x.title, t.taskMeta(repeatLabel(t, x.repeat), '${x.points}'), done: comp?.status == Status.approved)),
+        st,
+        if (edit && x.prayer == null)
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            XButton(icon: Icons.edit_outlined, tooltip: t.edit, onPressed: () => _startEdit(x)),
+            XButton(icon: Icons.delete_outline, color: Palette.red, tooltip: t.delete, onPressed: () => _delete(x)),
+          ]),
+      ]);
+    }
+
+    List<Widget> section(String title, List<TaskItem> xs) => [
+          H3('$title (${xs.length})'),
+          if (xs.isEmpty) Muted(t.noneHere),
+          for (final x in xs) row(x),
+        ];
+
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.tileTasks),
       Muted(edit ? t.tasksEditSub : t.tasksViewOnly),
@@ -592,52 +620,54 @@ class _TasksPageState extends ConsumerState<TasksPage> {
                 ),
             ]),
             Two(
-              Select<String>(value: _who, label: t.forWhom, items: [...memberItems, ('all', t.allMembers)], onChanged: (v) => setState(() => _who = v)),
-              Select<Period>(value: _rep, label: t.repeat, items: repItems, onChanged: (v) => setState(() => _rep = v)),
+              Labeled(t.forWhom, Select<String>(value: _who, label: t.forWhom, items: [('all', t.allMembers), ...memberItems], onChanged: (v) => setState(() => _who = v))),
+              Labeled(t.repeat, Select<Period>(value: _rep, label: t.repeat, items: repItems, onChanged: (v) => setState(() => _rep = v))),
             ),
             Two(
               TextField(controller: _pts, keyboardType: TextInputType.number, decoration: InputDecoration(hintText: t.points, semanticCounterText: t.points)),
               Btn(t.addTask, onPressed: _add),
             ),
           ]),
-        for (final m in members) ...[
-          H3(m.name, leading: AvatarView(m.avatar, size: 26)),
-          if (!d.tasks.any((x) => x.personId == m.id)) Muted(t.noTasks),
-          for (final x in d.tasks.where((x) => x.personId == m.id))
-            if (_editing == x.id)
-              FormBox(margin: const EdgeInsets.only(bottom: 8), children: [
-                TextField(controller: _eTitle),
-                Two(
-                  Select<String>(value: _eWho, items: memberItems, onChanged: (v) => setState(() => _eWho = v)),
-                  Select<Period>(value: _eRep, items: repItems, onChanged: (v) => setState(() => _eRep = v)),
+        H3(t.pickMember),
+        // One member at a time: pick them, then see their done and not-done tasks.
+        SizedBox(
+          height: 92,
+          child: ListView(scrollDirection: Axis.horizontal, children: [
+            for (final m in members)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 8),
+                child: Semantics(
+                  selected: m.id == _view,
+                  button: true,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => setState(() {
+                      _view = m.id;
+                      _editing = null;
+                    }),
+                    child: Container(
+                      width: 70,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: m.id == _view ? context.pal.mintBg : null,
+                        border: Border.all(color: m.id == _view ? Palette.brand : context.pal.line, width: m.id == _view ? 2 : 1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(children: [
+                        AvatarView.of(m, size: 46),
+                        const SizedBox(height: 2),
+                        Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      ]),
+                    ),
+                  ),
                 ),
-                Two(
-                  TextField(controller: _ePts, keyboardType: TextInputType.number),
-                  Row(children: [
-                    Expanded(child: Btn(t.save, onPressed: () => _save(x))),
-                    const SizedBox(width: 6),
-                    Expanded(child: Btn(t.cancel, kind: BtnKind.ghost, onPressed: () => setState(() => _editing = null))),
-                  ]),
-                ),
-              ])
-            else
-              Builder(builder: (context) {
-                final comp = d.completionOf(x, now);
-                final st = comp == null
-                    ? StateTag(t.notDone, Tone.off)
-                    : comp.status == Status.pending
-                        ? StateTag(t.waiting, Tone.wait)
-                        : StateTag(t.doneCheck, Tone.ok);
-                return RowCard(children: [
-                  Expanded(child: TitleSub(x.title, t.taskMeta(switch (x.repeat) { Period.daily => t.dailyF, Period.weekly => t.weeklyF, Period.once => t.onceF }, '${x.points}'))),
-                  st,
-                  if (edit)
-                    Row(mainAxisSize: MainAxisSize.min, children: [
-                      XButton(icon: Icons.edit_outlined, tooltip: t.edit, onPressed: () => _startEdit(x)),
-                      XButton(tooltip: t.delete, onPressed: () => run(context, () => b.deleteTask(x.id))),
-                    ]),
-                ]);
-              }),
+              ),
+          ]),
+        ),
+        if (view != null) ...[
+          ...section(t.notDoneTasks, open),
+          if (waiting.isNotEmpty) ...section(t.pendingTasks, waiting),
+          ...section(t.doneTasks, done),
         ],
       ],
     ]);
@@ -792,114 +822,6 @@ class _CompsPageState extends ConsumerState<CompsPage> {
       ]),
       if (d.competitions.isEmpty) EmptyState('🏁', t.noComps),
       for (final comp in d.competitions) CompCard(comp: comp, data: d, admin: true),
-    ]);
-  }
-}
-
-// ------------------------------------------------------------------ rewards
-
-class RewardsPage extends ConsumerStatefulWidget {
-  const RewardsPage(this.c, {super.key});
-  final Ctx c;
-  @override
-  ConsumerState<RewardsPage> createState() => _RewardsPageState();
-}
-
-class _RewardsPageState extends ConsumerState<RewardsPage> {
-  final _name = TextEditingController(), _thr = TextEditingController(text: '66');
-  var _emoji = rewardEmoji.first;
-  var _period = Period.weekly;
-  // 'each', 'family', or a member id for a private reward.
-  var _for = 'each';
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _thr.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t, d = widget.c.data, b = ref.read(backendProvider);
-    final now = DateTime.now();
-    if (_for != 'each' && _for != 'family' && !d.members.any((m) => m.id == _for)) _for = 'each';
-    // Groups: general rewards per period and scope, then each member's private ones.
-    final owners = <String?>[null, for (final m in d.members) m.id];
-    final groups = [
-      for (final who in owners)
-        for (final p in rewardPeriods)
-          for (final s in Scope.values)
-            if (d.tiers.any((x) => x.period == p && x.scope == s && x.personId == who))
-              (p, s, who, d.tiers.where((x) => x.period == p && x.scope == s && x.personId == who).toList()..sort((a, b) => b.threshold.compareTo(a.threshold))),
-    ];
-    final due = <({String who, Tier tier, String whoKey, String pk})>[];
-    for (final p in rewardPeriods) {
-      for (final m in d.members) {
-        final tier = tierOf(d.tiers, d.earned(m.id, p), p, Scope.each, personId: m.id);
-        if (tier != null) due.add((who: m.name, tier: tier, whoKey: m.id, pk: periodKey(p, now)));
-      }
-      final ft = tierOf(d.tiers, d.familyEarned(p), p, Scope.family);
-      if (ft != null) due.add((who: t.wholeFamily, tier: ft, whoKey: 'family', pk: periodKey(p, now)));
-    }
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      H2(t.tileRewards),
-      Muted(t.rewardsSub),
-      FormBox(children: [
-        Two(
-          TextField(controller: _name, decoration: InputDecoration(hintText: t.rewardNameHint)),
-          Select<String>(value: _emoji, label: t.icon, items: [for (final e in rewardEmoji) (e, e)], onChanged: (v) => setState(() => _emoji = v)),
-        ),
-        Two(
-          Labeled(t.minPoints, TextField(controller: _thr, keyboardType: TextInputType.number)),
-          Labeled(t.period, Select<Period>(value: _period, items: [(Period.weekly, t.weeklyF), (Period.daily, t.dailyF)], onChanged: (v) => setState(() => _period = v))),
-        ),
-        Labeled(
-          t.countedFor,
-          Select<String>(
-            value: _for,
-            items: [('each', t.scopeEach), ('family', t.scopeFamily), for (final m in d.members) (m.id, t.privateFor(m.name))],
-            onChanged: (v) => setState(() => _for = v),
-          ),
-        ),
-        if (_for != 'each' && _for != 'family') Muted(t.privateRewardsNote),
-        Btn(t.addTier, onPressed: () async {
-          final name = _name.text.trim(), thr = parseDigits(_thr.text) ?? 0;
-          if (name.isEmpty || thr < 1) return toast(context, t.errTierInput);
-          final private = _for != 'each' && _for != 'family';
-          final ok = await run(
-              context,
-              () => b.addTier(
-                  name: name, emoji: _emoji, threshold: thr, period: _period,
-                  scope: _for == 'family' ? Scope.family : Scope.each, personId: private ? _for : null),
-              ok: t.tierAdded);
-          if (ok) _name.clear();
-        }),
-      ]),
-      if (groups.isEmpty) EmptyState('🎁', t.noTiers),
-      for (final (p, s, who, tiers) in groups) ...[
-        H3('${p == Period.daily ? t.dailyF : t.weeklyF} · ${who != null ? '🔒 ${t.privateFor(d.person(who)?.name ?? '—')}' : s == Scope.each ? t.groupEach : t.groupFamily}'),
-        for (final x in tiers)
-          RowCard(children: [
-            EmojiCircle(x.emoji),
-            Expanded(child: Text(x.name, style: const TextStyle(fontWeight: FontWeight.w700))),
-            Pts(t.tierPoints('${x.threshold}')),
-            XButton(tooltip: t.delete, onPressed: () => run(context, () => b.deleteTier(x.id))),
-          ]),
-      ],
-      if (groups.isNotEmpty) ...[
-        H3(t.dueNow),
-        if (due.isEmpty) Muted(t.noDue),
-        for (final x in due)
-          RowCard(children: [
-            EmojiCircle(x.tier.emoji),
-            Expanded(child: TitleSub(x.tier.name, '${x.who} · ${x.tier.period == Period.daily ? t.daily : t.weekly}')),
-            if (d.deliveries.contains('${x.tier.id}_${x.whoKey}_${x.pk}'))
-              StateTag(t.delivered, Tone.ok)
-            else
-              Btn(t.markDelivered, kind: BtnKind.ok, small: true, onPressed: () => run(context, () => b.deliver(x.tier.id, x.whoKey, x.pk), ok: t.deliveredToast)),
-          ]),
-      ],
     ]);
   }
 }

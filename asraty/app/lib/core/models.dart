@@ -2,17 +2,12 @@ enum Role { owner, admin, member }
 
 enum Perm { addMembers, approve, tasks, report, comps, viewReports }
 
-/// How often: tasks repeat daily, weekly or [once]; rewards count daily or weekly.
-enum Period { daily, weekly, once }
-
-/// The periods reward levels count points over.
-const rewardPeriods = [Period.daily, Period.weekly];
-
-enum Scope { each, family }
+/// How often a task repeats: every day, week, month or year, or [once] only.
+enum Period { daily, weekly, monthly, yearly, once }
 
 enum Status { pending, approved, rejected }
 
-/// Report periods: day and week (rewards) plus month and year (honor board).
+/// Report and prize periods.
 enum Span { daily, weekly, monthly, yearly }
 
 /// Honor board periods (separate from [Period], which drives tasks and rewards).
@@ -27,7 +22,7 @@ T _enum<T extends Enum>(List<T> values, Object? v, T fallback) {
 
 Role roleFrom(Object? v) => _enum(Role.values, v, Role.member);
 Period periodFrom(Object? v) => _enum(Period.values, v, Period.daily);
-Scope scopeFrom(Object? v) => _enum(Scope.values, v, Scope.each);
+Span spanFrom(Object? v) => _enum(Span.values, v, Span.daily);
 Status statusFrom(Object? v) => _enum(Status.values, v, Status.pending);
 
 Map<Perm, bool> permsFrom(Object? v) {
@@ -53,6 +48,8 @@ class Person {
     required this.avatar,
     required this.active,
     Map<Perm, bool>? perms,
+    this.avatarLocked = false,
+    this.photo,
   }) : perms = perms ?? {};
 
   final String id;
@@ -62,15 +59,56 @@ class Person {
   String avatar;
   bool active;
   Map<Perm, bool> perms;
+
+  /// A parent locked this member's avatar.
+  bool avatarLocked;
+
+  /// Base64 JPEG when [avatar] is "photo" (uploaded from the device).
+  String? photo;
 }
 
 class TaskItem {
-  TaskItem({required this.id, required this.title, required this.personId, required this.points, required this.repeat});
+  TaskItem({required this.id, required this.title, required this.personId, required this.points, required this.repeat, this.prayer});
   final String id;
   String title;
   String personId;
   int points;
   Period repeat;
+
+  /// Set on the generated task of the prayer whose time is running.
+  final PrayerSlot? prayer;
+}
+
+/// The running prayer for a member: open from its adhan until the next one.
+class PrayerSlot {
+  const PrayerSlot({required this.key, required this.start, required this.end, required this.dayKey});
+  final String key; // fajr | dhuhr | asr | maghrib | isha
+  final DateTime start, end;
+  final String dayKey;
+
+  /// Shown as late once half an hour has passed without it.
+  bool lateAt(DateTime now) => now.difference(start) > const Duration(minutes: 30);
+}
+
+/// Prayer reminders, set by the owner from their phone's location.
+class PrayerSettings {
+  const PrayerSettings({required this.enabled, required this.lat, required this.lng, required this.points});
+  final bool enabled;
+  final double lat, lng;
+  final int points;
+}
+
+/// A prize: the member with the most points in [period] wins it at [awardAt].
+class Prize {
+  Prize({required this.id, required this.name, required this.emoji, required this.period, required this.awardAt, this.awarded = false, this.winnerId, this.winnerPoints = 0});
+  final String id;
+  final String name;
+  final String emoji;
+  final Span period;
+  final DateTime awardAt;
+  bool awarded;
+  String? winnerId;
+  int winnerPoints;
 }
 
 class Completion {
@@ -84,9 +122,11 @@ class Completion {
     required this.status,
     required this.createdAt,
     this.photoPath,
+    this.prayer = false,
   });
   final String id;
   final String taskId;
+  final bool prayer;
   final String personId;
   final String title;
   final int points;
@@ -125,19 +165,6 @@ class Competition {
   bool activeAt(DateTime now) => !ended && (deadline == null || now.isBefore(deadline!));
 }
 
-class Tier {
-  Tier({required this.id, required this.name, required this.emoji, required this.threshold, required this.period, required this.scope, this.personId});
-  final String id;
-  final String name;
-  final String emoji;
-  final int threshold;
-  final Period period;
-  final Scope scope;
-
-  /// Private reward: only this member earns it and sees it.
-  final String? personId;
-}
-
 /// A family goal on the honor board (e.g. read 12 books this year).
 class Goal {
   Goal({required this.id, required this.title, required this.target, required this.progress, required this.personId, required this.period, required this.periodKey});
@@ -153,8 +180,11 @@ class Goal {
 }
 
 class Notice {
-  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy})
+  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice'})
       : readBy = readBy ?? [];
+
+  /// 'prize' for the congratulation card sent to everyone when a prize is won.
+  final String kind;
   final String id;
   final String to; // 'all' or personId
   final String title;
@@ -170,9 +200,12 @@ class Notice {
 }
 
 class PeriodSum {
-  const PeriodSum(this.points, this.count);
+  const PeriodSum(this.points, this.count, [this.tasks = 0]);
   final int points;
   final int count;
+
+  /// Approved tasks only (no prayers or competitions), for the done / not-done report.
+  final int tasks;
 }
 
 /// A sent email, shown only in the local demo (the prototype's "📧" mailbox).
@@ -199,14 +232,14 @@ class FamilySnapshot {
     required this.tasks,
     required this.completions,
     required this.competitions,
-    required this.tiers,
-    required this.deliveries,
     required this.notices,
     required this.daily,
     required this.weekly,
     this.monthly = const {},
     this.yearly = const {},
     this.goals = const [],
+    this.prizes = const [],
+    this.prayer,
   });
 
   final String familyName;
@@ -214,12 +247,12 @@ class FamilySnapshot {
   final List<TaskItem> tasks;
   final List<Completion> completions;
   final List<Competition> competitions;
-  final List<Tier> tiers;
-  final Set<String> deliveries; // "{tierId}_{who}_{periodKey}"
   final List<Notice> notices;
   final Map<String, PeriodSum> daily; // personId -> today's points
   final Map<String, PeriodSum> weekly; // personId -> this week's points
   final Map<String, PeriodSum> monthly; // personId -> this month's points (honor board)
   final Map<String, PeriodSum> yearly; // personId -> this year's points (honor board)
   final List<Goal> goals;
+  final List<Prize> prizes;
+  final PrayerSettings? prayer;
 }

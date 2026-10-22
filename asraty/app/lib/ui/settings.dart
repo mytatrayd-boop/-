@@ -8,7 +8,6 @@ import '../core/models.dart';
 import 'common.dart';
 import 'providers.dart';
 import 'shell.dart';
-import 'theme.dart';
 
 /// Appearance, privacy policy, sign-out and in-app account / family deletion
 /// (required by the App Store for apps with account creation).
@@ -32,14 +31,6 @@ class SettingsPage extends ConsumerWidget {
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: TextButton(
-          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
-          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 4), foregroundColor: context.pal.brandInk),
-          child: Text(t.back, style: const TextStyle(fontWeight: FontWeight.w700)),
-        ),
-      ),
       H2(t.settings),
       H3(t.appearance),
       SegTabs<ThemeMode>(

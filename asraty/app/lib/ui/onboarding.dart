@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../backend/backend.dart';
 import '../core/models.dart';
@@ -8,12 +11,37 @@ import 'common.dart';
 import 'providers.dart';
 import 'theme.dart';
 
-enum _Step { choose, email, code }
+/// login: email + password · register: account type, (family), email, password,
+/// then the emailed code · reset: email + new password, then the code.
+enum _Step { login, register, reset, code }
 
 final _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
 /// Last email that signed in on this device, to pre-fill the next sign-in.
 const _lastEmailKey = 'lastEmail';
+
+/// "Remember me": email → password, in the phone's keychain / keystore.
+class SavedLogins {
+  static const _key = 'savedLogins';
+  static const _store = FlutterSecureStorage();
+
+  static Future<Map<String, String>> read() async {
+    try {
+      final raw = await _store.read(key: _key);
+      return raw == null ? {} : Map<String, String>.from(jsonDecode(raw) as Map);
+    } catch (_) {
+      return {};
+    }
+  }
+
+  static Future<void> save(String email, String? password) async {
+    try {
+      final m = await read();
+      password == null ? m.remove(email) : m[email] = password;
+      await _store.write(key: _key, value: jsonEncode(m));
+    } catch (_) {}
+  }
+}
 
 class Onboarding extends ConsumerStatefulWidget {
   const Onboarding({super.key});
@@ -22,31 +50,49 @@ class Onboarding extends ConsumerStatefulWidget {
 }
 
 class _OnboardingState extends ConsumerState<Onboarding> {
-  var _step = _Step.choose;
-  var _role = Role.member;
+  var _step = _Step.login;
+  // The step that sent the code (register or reset), to go back to.
+  var _codeFrom = _Step.register;
+  var _role = Role.admin;
   String? _err;
   var _busy = false;
-  // Admin: sign in to an existing family (email only) or create a new one.
-  var _newFamily = false;
-  final _fam = TextEditingController(), _name = TextEditingController(), _email = TextEditingController(), _code = TextEditingController();
+  var _remember = true;
+  var _show = false;
+  Map<String, String> _saved = {};
+  final _fam = TextEditingController(), _name = TextEditingController(), _email = TextEditingController();
+  final _pass = TextEditingController(), _code = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _email.text = ref.read(prefsProvider).getString(_lastEmailKey) ?? '';
-    // A returning device logs in; a fresh install most likely creates a family.
-    _newFamily = _email.text.isEmpty;
+    _email.addListener(_fill);
+    _pass.addListener(() => setState(() {}));
+    SavedLogins.read().then((m) {
+      if (!mounted) return;
+      _saved = m;
+      _fill();
+    });
+  }
+
+  /// Typing a remembered email brings back its password, and the sign-in button wakes up.
+  void _fill() {
+    final p = _saved[_email.text.trim().toLowerCase()];
+    if (_step == _Step.login && p != null && _pass.text.isEmpty) _pass.text = p;
+    setState(() {});
   }
 
   @override
   void dispose() {
-    for (final c in [_fam, _name, _email, _code]) {
+    for (final c in [_fam, _name, _email, _pass, _code]) {
       c.dispose();
     }
     super.dispose();
   }
 
   Backend get _b => ref.read(backendProvider);
+  String get _mail => _email.text.trim().toLowerCase();
+  bool get _canLogin => _emailRe.hasMatch(_mail) && _pass.text.length >= 6;
 
   Future<void> _guard(Future<void> Function() f) async {
     setState(() {
@@ -62,41 +108,55 @@ class _OnboardingState extends ConsumerState<Onboarding> {
     }
   }
 
+  Future<void> _signedIn(VerifyResult r) async {
+    final t = context.t;
+    if (!_b.isDemo) {
+      await ref.read(prefsProvider).setString(_lastEmailKey, _mail);
+      await SavedLogins.save(_mail, _remember ? _pass.text : null);
+    }
+    TextInput.finishAutofillContext();
+    if (!mounted) return;
+    toast(context, r.first ? t.linkedTo(r.familyName) : t.hello(r.name.isEmpty ? r.familyName : r.name));
+  }
+
+  Future<void> _login() => _guard(() async {
+        final r = await _b.login(email: _mail, password: _pass.text);
+        await _signedIn(r);
+      });
+
+  /// Sign-up or reset: the code proves the email, then the password is set.
   Future<void> _requestCode({bool resend = false}) => _guard(() async {
         final t = context.t;
-        final email = _email.text.trim().toLowerCase();
-        if (!_emailRe.hasMatch(email)) throw AppError('bad-email');
-        final setup = _role == Role.admin && _newFamily;
+        if (!_emailRe.hasMatch(_mail)) throw AppError('bad-email');
+        if (_pass.text.length < 6) throw AppError('weak-password');
+        final setup = _step == _Step.register && _role == Role.admin;
         final fam = setup ? _fam.text.trim() : '', name = setup ? _name.text.trim() : '';
-        final bool sent;
-        try {
-          sent = await _b.requestCode(
-            email: email,
-            role: _role,
-            familyName: fam.isEmpty ? null : fam,
-            name: name.isEmpty ? null : name,
-            resend: resend,
-          );
-        } on AppError catch (e) {
-          // No account for this email yet: offer to create the family instead.
-          if (e.code == 'setup-needed' && !setup && mounted) {
-            setState(() => _newFamily = true);
-            throw AppError('no-account-yet');
+        Future<bool> ask(Role r) => _b.requestCode(
+              email: _mail, role: r, password: _pass.text, resend: resend,
+              familyName: fam.isEmpty ? null : fam, name: name.isEmpty ? null : name);
+        bool sent;
+        if (_step == _Step.reset || (_step == _Step.code && _codeFrom == _Step.reset)) {
+          // Reset: the account type is whatever the email was registered as.
+          try {
+            sent = await ask(Role.member);
+          } on AppError catch (e) {
+            if (e.code != 'registered-as-admin') rethrow;
+            sent = await ask(Role.admin);
           }
-          rethrow;
+        } else {
+          sent = await ask(_role);
         }
         if (!mounted) return;
-        toast(context, sent ? t.codeSent(email) : t.codeAlreadySent);
-        setState(() => _step = _Step.code);
+        toast(context, sent ? t.codeSent(_mail) : t.codeAlreadySent);
+        setState(() {
+          if (_step != _Step.code) _codeFrom = _step;
+          _step = _Step.code;
+        });
       });
 
   Future<void> _verify() => _guard(() async {
-        final t = context.t;
-        final email = _email.text.trim().toLowerCase();
-        final r = await _b.verifyCode(email: email, code: _code.text.trim());
-        if (!_b.isDemo) await ref.read(prefsProvider).setString(_lastEmailKey, email);
-        if (!mounted) return;
-        toast(context, r.first ? t.linkedTo(r.familyName) : t.hello(r.name.isEmpty ? r.familyName : r.name));
+        final r = await _b.verifyCode(email: _mail, code: _code.text.trim());
+        await _signedIn(r);
       });
 
   /// Pastes a 6-digit code copied from the email and verifies it right away.
@@ -110,77 +170,142 @@ class _OnboardingState extends ConsumerState<Onboarding> {
     await _verify();
   }
 
+  void _go(_Step s) => setState(() {
+        _step = s;
+        _err = null;
+        if (s != _Step.login) _pass.clear();
+      });
+
+  Widget _emailField() => TextField(
+        controller: _email,
+        keyboardType: TextInputType.emailAddress,
+        textDirection: TextDirection.ltr,
+        autocorrect: false,
+        textInputAction: TextInputAction.next,
+        // Offers the email accounts saved on the phone.
+        autofillHints: const [AutofillHints.email, AutofillHints.username],
+        decoration: InputDecoration(hintText: context.t.emailHint, semanticCounterText: context.t.email, prefixIcon: const Icon(Icons.alternate_email_rounded)),
+      );
+
+  Widget _passField({required bool newPassword, required VoidCallback onSubmit}) => TextField(
+        controller: _pass,
+        obscureText: !_show,
+        textDirection: TextDirection.ltr,
+        autocorrect: false,
+        enableSuggestions: false,
+        autofillHints: [newPassword ? AutofillHints.newPassword : AutofillHints.password],
+        onSubmitted: (_) => onSubmit(),
+        decoration: InputDecoration(
+          hintText: context.t.passwordHint,
+          semanticCounterText: context.t.password,
+          prefixIcon: const Icon(Icons.lock_outline_rounded),
+          suffixIcon: IconButton(
+            tooltip: context.t.showPassword,
+            icon: Icon(_show ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+            onPressed: () => setState(() => _show = !_show),
+          ),
+        ),
+      );
+
+  Widget _link(String text, VoidCallback onTap) => Center(
+        child: TextButton(
+          onPressed: onTap,
+          style: TextButton.styleFrom(foregroundColor: context.pal.brandInk),
+          child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final err = _err == null ? null : ErrBox(_err!);
+    final demo = _b.isDemo;
     switch (_step) {
-      case _Step.choose:
-        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          H2(t.welcome),
-          Muted(t.howUse),
-          _Choice(emoji: '👨‍👩‍👧', title: t.chooseAdmin, sub: t.chooseAdminSub, onTap: () => _go(Role.admin)),
-          _Choice(emoji: '🧒', title: t.chooseMember, sub: t.chooseMemberSub, onTap: () => _go(Role.member)),
-          const SizedBox(height: 18),
-          Center(
-            child: Btn(t.tryDemo, kind: BtnKind.ghost, onPressed: () {
-              ref.read(backendProvider.notifier).startDemo();
-              toast(context, t.demoWelcome);
-            }),
-          ),
-          const SizedBox(height: 6),
-          Muted(t.demoNote, align: TextAlign.center),
-          const SizedBox(height: 14),
-          NoteBox('🔐 ${t.stayLoggedIn}'),
-        ]);
-      case _Step.email:
-        final demoNoFamily = _b.isDemo && _b.current.session == null;
-        final admin = _role == Role.admin, setup = admin && _newFamily;
-        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _Back(() => setState(() {
-                _step = _Step.choose;
-                _err = null;
-              })),
-          H2(admin ? t.loginAdmin : t.loginMember),
-          if (admin)
-            SegTabs<bool>(
-              tabs: [(false, t.adminHaveAccount, 0), (true, t.adminNewFamily, 0)],
-              value: _newFamily,
-              onChanged: (v) => setState(() {
-                _newFamily = v;
-                _err = null;
+      case _Step.login:
+        return AutofillGroup(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            H2(t.welcome),
+            Muted(t.loginTitle),
+            FormBox(children: [
+              _emailField(),
+              _passField(newPassword: false, onSubmit: () => _canLogin ? _login() : null),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => setState(() => _remember = !_remember),
+                child: Row(children: [
+                  Checkbox(value: _remember, onChanged: (v) => setState(() => _remember = v ?? false), visualDensity: VisualDensity.compact),
+                  Expanded(child: Text(t.rememberMe, style: const TextStyle(fontSize: 14))),
+                ]),
+              ),
+              ?err,
+              Btn(t.loginBtn, onPressed: _busy || !_canLogin ? null : _login),
+            ]),
+            _link(t.forgotPassword, () => _go(_Step.reset)),
+            Btn(t.noAccountRegister, kind: BtnKind.ghost, onPressed: () => _go(_Step.register)),
+            const SizedBox(height: 18),
+            Center(
+              child: Btn(t.tryDemo, kind: BtnKind.sun, onPressed: () {
+                ref.read(backendProvider.notifier).startDemo();
+                toast(context, t.demoWelcome);
               }),
             ),
-          Muted(setup ? t.hintSetup : admin ? t.hintAdminLogin : t.hintMember),
-          FormBox(children: [
-            if (setup) ...[
-              TextField(controller: _fam, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: t.familyNameHint)),
-              TextField(controller: _name, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: t.yourNameHint)),
-            ],
-            TextField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              textDirection: TextDirection.ltr,
-              autocorrect: false,
-              autofillHints: const [AutofillHints.email],
-              onSubmitted: (_) => _requestCode(),
-              decoration: InputDecoration(hintText: t.emailHint, semanticCounterText: t.email),
-            ),
-            ?err,
-            Btn(t.sendCode, onPressed: _busy ? null : _requestCode),
+            const SizedBox(height: 6),
+            Muted(t.demoNote, align: TextAlign.center),
+            if (demo) NoteBox(t.demoLoginNote),
+            const SizedBox(height: 10),
+            NoteBox('🔐 ${t.stayLoggedIn}'),
           ]),
-          if (demoNoFamily) NoteBox(t.demoCodeNote),
-        ]);
+        );
+      case _Step.register:
+      case _Step.reset:
+        final register = _step == _Step.register;
+        final setup = register && _role == Role.admin;
+        return AutofillGroup(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            _Back(() => _go(_Step.login)),
+            H2(register ? t.registerTitle : t.resetTitle),
+            Muted(register ? t.registerSub : t.resetSub),
+            FormBox(children: [
+              if (register)
+                Labeled(
+                  t.accountType,
+                  Select<Role>(
+                    value: _role,
+                    label: t.accountType,
+                    items: [(Role.admin, t.chooseAdmin), (Role.member, t.chooseMember)],
+                    onChanged: (v) => setState(() {
+                      _role = v;
+                      _err = null;
+                    }),
+                  ),
+                ),
+              if (setup) ...[
+                TextField(controller: _fam, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: t.familyNameHint)),
+                TextField(
+                    controller: _name,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.name],
+                    decoration: InputDecoration(hintText: t.yourNameHint)),
+              ],
+              _emailField(),
+              _passField(newPassword: true, onSubmit: _requestCode),
+              ?err,
+              Btn(register ? t.registerBtn : t.sendCode, onPressed: _busy ? null : _requestCode),
+            ]),
+            if (register) _link(t.haveAccountLogin, () => _go(_Step.login)),
+            if (demo) NoteBox(t.demoCodeNote),
+          ]),
+        );
       case _Step.code:
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           _Back(() => setState(() {
-                _step = _Step.email;
+                _step = _codeFrom;
                 _err = null;
               })),
           H2(t.enterCode),
           Text.rich(TextSpan(style: TextStyle(color: context.pal.muted, fontSize: 14), children: [
             TextSpan(text: '${t.codeSentTo} '),
-            TextSpan(text: _email.text.trim(), style: const TextStyle(fontWeight: FontWeight.w700)),
+            TextSpan(text: _mail, style: const TextStyle(fontWeight: FontWeight.w700)),
           ])),
           FormBox(children: [
             TextField(
@@ -204,16 +329,10 @@ class _OnboardingState extends ConsumerState<Onboarding> {
             Btn('📋 ${t.pasteCode}', kind: BtnKind.ghost, onPressed: _busy ? null : _paste),
             Btn(t.resendCode, kind: BtnKind.ghost, onPressed: _busy ? null : () => _requestCode(resend: true)),
           ]),
-          if (_b.isDemo) NoteBox(t.demoCodeNote),
+          if (demo) NoteBox(t.demoCodeNote),
         ]);
     }
   }
-
-  void _go(Role r) => setState(() {
-        _role = r;
-        _step = _Step.email;
-        _err = null;
-      });
 }
 
 class _Back extends StatelessWidget {
@@ -222,41 +341,11 @@ class _Back extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Align(
         alignment: AlignmentDirectional.centerStart,
-        child: TextButton(
+        child: TextButton.icon(
           onPressed: onTap,
-          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 4), foregroundColor: context.pal.brandInk),
-          child: Text(context.t.back, style: const TextStyle(fontWeight: FontWeight.w700)),
-        ),
-      );
-}
-
-class _Choice extends StatelessWidget {
-  const _Choice({required this.emoji, required this.title, required this.sub, required this.onTap});
-  final String emoji, title, sub;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Material(
-          color: context.pal.card,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: context.pal.line, width: 2)),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                Text(emoji, style: const TextStyle(fontSize: 32)),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                    Muted(sub),
-                  ]),
-                ),
-              ]),
-            ),
-          ),
+          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6), foregroundColor: context.pal.brandInk),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 14),
+          label: Text(context.t.back, style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
       );
 }

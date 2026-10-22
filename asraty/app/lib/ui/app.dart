@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../backend/backend.dart';
+import '../backend/reminders.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
 import 'admin.dart';
 import 'common.dart';
 import 'member.dart';
 import 'onboarding.dart';
+import 'prizes.dart';
 import 'providers.dart';
+import 'report_page.dart';
 import 'settings.dart';
 import 'shell.dart';
 import 'theme.dart';
@@ -48,6 +51,8 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => Shell(child: signedIn((c) => AdminPage(state.pathParameters['page']!, c))),
       ),
       GoRoute(path: '/settings', builder: (context, state) => Shell(child: signedIn(SettingsPage.new))),
+      GoRoute(path: '/report', builder: (context, state) => Shell(child: signedIn(ReportRoute.new))),
+      GoRoute(path: '/prizes', builder: (context, state) => Shell(child: signedIn(PrizesPage.new))),
     ],
   );
 });
@@ -73,7 +78,27 @@ class AsratyApp extends ConsumerWidget {
   const AsratyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Phone reminders follow the family's prayer settings and prizes.
+    ref.listen(appStateProvider, (_, next) {
+      final st = next.value;
+      Reminders.sync(st?.signedIn == true ? st!.data : null, st?.signedIn == true ? st!.me : null);
+    });
+    // While the app is open, a prize's reminder or hand-over time asks the server
+    // to act right away (it also does so on any other request).
+    ref.listen(clockProvider, (prev, next) {
+      final a = prev?.value, b = next.value;
+      final d = ref.read(appStateProvider).value?.data;
+      if (a == null || b == null || d == null) return;
+      bool crossed(DateTime t) => t.isAfter(a) && !t.isAfter(b);
+      if (d.prizes.any((p) => !p.awarded && (crossed(p.awardAt) || crossed(p.awardAt.subtract(const Duration(hours: 1)))))) {
+        ref.read(backendProvider).tick().ignore();
+      }
+    });
+    return _app(ref);
+  }
+
+  Widget _app(WidgetRef ref) => MaterialApp.router(
         onGenerateTitle: (c) => L10n.of(c).appName,
         debugShowCheckedModeBanner: false,
         locale: const Locale('ar'),

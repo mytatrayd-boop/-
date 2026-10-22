@@ -28,7 +28,7 @@
   "chooseMemberSub": "انضم لأسرتك بالبريد الذي أضافه المسؤول",
   "tryDemo": "تجربة سريعة بأسرة جاهزة",
   "demoNote": "التجربة السريعة تعمل على جهازك فقط، ولا تُرسل أي بيانات.",
-  "back": "‹ رجوع",
+  "back": "رجوع",
   "loginAdmin": "دخول مسؤول الأسرة",
   "loginMember": "دخول فرد من الأسرة",
   "hintSetup": "أنشئ أسرتك الآن: اكتب اسم الأسرة واسمك وبريدك، وسنرسل كود تحقق إلى بريدك. هذا مرة واحدة فقط.",
@@ -110,10 +110,25 @@
   "errRemoved": "لم تعد ضمن هذه الأسرة.",
   "errGeneric": "حدث خطأ غير متوقع. حاول مجدداً.",
   "errGenericCode": "حدث خطأ غير متوقع ({code}). حاول مجدداً، وإن تكرر أرسل صورة هذه الرسالة.",
-  "@errGenericCode": {"placeholders": {"code": {"type": "String"}}},
+  "@errGenericCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "errNameEmail": "اكتب الاسم وبريداً صحيحاً",
   "errBadNumber": "اكتب رقماً صحيحاً بين {min} و{max}.",
-  "@errBadNumber": {"placeholders": {"min": {"type": "String"}, "max": {"type": "String"}}},
+  "@errBadNumber": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "errMissingTitle": "اكتب الاسم أولاً.",
   "errPersonNotFound": "لم نجد هذا العضو في الأسرة. أضف عضواً أولاً أو حدّث الصفحة.",
   "errSession": "انتهت الجلسة. اخرج ثم ادخل من جديد.",
@@ -130,7 +145,7 @@
   "statActiveComps": "مسابقات جارية",
   "yourPerms": "صلاحياتك المفوَّضة:",
   "viewTasksOnly": "عرض المهام فقط",
-  "backToDashboard": "‹ لوحة المسؤول",
+  "backToDashboard": "لوحة المسؤول",
   "tileApprovals": "الموافقات",
   "tileAddAdmin": "إضافة مسؤول أسرة",
   "tileAddMember": "إضافة عضو أسرة",
@@ -139,7 +154,7 @@
   "tileTasks": "مهام أفراد الأسرة",
   "tileAlerts": "إرسال تنبيه",
   "tileComps": "المسابقات",
-  "tileRewards": "الجوائز والمكافآت",
+  "tileRewards": "الجوائز",
   "permAddMembers": "إضافة أعضاء للأسرة",
   "permApprove": "الموافقة على إنجاز المهام",
   "permTasks": "إضافة وتعديل وحذف المهام",
@@ -455,7 +470,7 @@
   },
   "tabMyTasks": "مهامي",
   "tabComps": "المسابقات",
-  "tabRewards": "المكافآت",
+  "tabRewards": "الجوائز",
   "tabNotices": "التنبيهات",
   "noTasksNow": "لا توجد مهام لك الآن.",
   "doneIt": "أنجزتها",
@@ -593,7 +608,7 @@
   "adminHaveAccount": "لدي حساب",
   "adminNewFamily": "أسرة جديدة",
   "hintAdminLogin": "اكتب بريدك فقط وسنرسل لك كود تحقق. لا حاجة لاسم الأسرة ولا لاسمك مرة أخرى.",
-  "stayLoggedIn": "بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج الكود مرة أخرى إلا إذا سجّلت الخروج.",
+  "stayLoggedIn": "بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج كلمة المرور مرة أخرى إلا إذا سجّلت الخروج.",
   "pasteCode": "لصق الكود",
   "noCodeInClipboard": "انسخ الكود المكوّن من 6 أرقام من الإيميل أولاً",
   "tileHonor": "لوحة الشرف",
@@ -630,9 +645,162 @@
   "yourPrivateRewards": "مكافآت خاصة بك",
   "privateRewardsNote": "المكافأة الخاصة لا تظهر إلا للابن المحدد ولمسؤولي الأسرة.",
   "endsAt": "ينتهي الساعة {time}",
-  "@endsAt": {"placeholders": {"time": {"type": "String"}}},
+  "@endsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "privateFor": "{name} فقط",
-  "@privateFor": {"placeholders": {"name": {"type": "String"}}},
+  "@privateFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "goalForName": "لـ{name}",
-  "@goalForName": {"placeholders": {"name": {"type": "String"}}}
+  "@goalForName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "navHome": "الرئيسية",
+  "navReports": "التقارير",
+  "navPrizes": "الجوائز",
+  "monthlyF": "شهرية",
+  "yearlyF": "سنوية",
+  "thisMonthLabel": "هذا الشهر",
+  "thisYearLabel": "هذه السنة",
+  "avatarLockedNote": "ثبّت مسؤول الأسرة رمزك، فلا يمكنك تغييره الآن.",
+  "uploadPhoto": "صورة من جهازي",
+  "avatarLock": "السماح بتغيير الرمز والصورة",
+  "avatarLockOn": "🔒 الرمز مثبّت",
+  "avatarLockOff": "يمكنه تغيير رمزه",
+  "doneTasks": "المنجزة",
+  "notDoneTasks": "غير المنجزة",
+  "pendingTasks": "بانتظار الموافقة",
+  "noneHere": "لا شيء هنا.",
+  "deleteTaskConfirm": "حذف هذه المهمة؟",
+  "doneCount": "منجزة",
+  "notDoneCount": "غير منجزة",
+  "myReport": "تقريري",
+  "myRanks": "ترتيبي",
+  "pointsWord": "نقطة",
+  "prizesTitle": "الجوائز",
+  "prizesSub": "حدّد جائزة لفترة (يوم، أسبوع، شهر، سنة) وموعد تسليمها. تظهر للجميع، وقبل الموعد بساعة يصل تذكير، وعند الموعد يفوز بها صاحب أعلى نقاط في الفترة تلقائياً وتصل الجميع بطاقة تهنئة.",
+  "prizeNameHint": "الجائزة، مثل: رحلة إلى الحديقة",
+  "prizeFor": "لصاحب أعلى نقاط",
+  "awardDate": "يوم التسليم",
+  "awardTime": "ساعة التسليم",
+  "addPrize": "إضافة الجائزة",
+  "prizeAdded": "أُضيفت الجائزة ✓ وأُبلغ الجميع",
+  "noPrizes": "لا توجد جوائز بعد.",
+  "noPrizesMember": "لم يحدد المسؤول جوائز بعد.",
+  "upcomingPrizes": "الجوائز القادمة",
+  "pastPrizes": "جوائز سُلّمت",
+  "noWinner": "لم يفز أحد",
+  "errPrizeInput": "اكتب اسم الجائزة واختر موعداً قادماً",
+  "prizeLeading": "المتصدّر الآن",
+  "prayerTitle": "تذكير الصلاة",
+  "prayerSub": "حدّد موقع الأسرة مرة واحدة من جوالك، فتُحسب مواقيت الصلاة تلقائياً (أم القرى) ويصل كل عضو تنبيه عند دخول الوقت، وتظهر الصلاة في مهامه. إن لم يؤدّها تظهر متأخرة، ومع دخول الصلاة التالية تختفي ونقاطها.",
+  "useMyLocation": "تحديد موقعي الآن",
+  "locationSet": "حُفظ الموقع ✓",
+  "prayerPoints": "نقاط كل صلاة",
+  "prayerEnabled": "تفعيل تذكير الصلاة",
+  "prayerSaved": "حُفظت إعدادات الصلاة ✓",
+  "errLocation": "تعذّر تحديد الموقع. فعّل خدمة الموقع واسمح للتطبيق باستخدامها.",
+  "prayerTimesToday": "مواقيت اليوم",
+  "prayerNotSet": "لم يُحدَّد الموقع بعد.",
+  "prayerLate": "متأخرة",
+  "prayerNow": "وقتها الآن",
+  "prayerReminder": "حان الآن وقت صلاة",
+  "loginTitle": "تسجيل الدخول",
+  "registerTitle": "تسجيل جديد",
+  "accountType": "نوع الحساب",
+  "password": "كلمة المرور",
+  "passwordHint": "كلمة المرور (٦ أحرف على الأقل)",
+  "rememberMe": "تذكّرني",
+  "loginBtn": "دخول",
+  "registerBtn": "تسجيل ومتابعة",
+  "forgotPassword": "نسيت كلمة المرور؟",
+  "noAccountRegister": "ليس لديك حساب؟ تسجيل جديد",
+  "haveAccountLogin": "لديك حساب؟ تسجيل الدخول",
+  "resetTitle": "تعيين كلمة مرور",
+  "resetSub": "اكتب بريدك وكلمة مرور جديدة، ثم أدخل الكود الذي يصلك.",
+  "registerSub": "مسؤول الأسرة ينشئ أسرته، وفرد الأسرة يسجّل ببريده الذي أضافه به المسؤول. بعدها يصلك كود للتحقق.",
+  "accountFromDevice": "البريد المحفوظ في الجهاز",
+  "showPassword": "إظهار كلمة المرور",
+  "errBadLogin": "البريد أو كلمة المرور غير صحيحة.",
+  "errNoPassword": "هذا الحساب لم تُعيَّن له كلمة مرور بعد. اضغط «نسيت كلمة المرور؟» لتعيينها بكود يصل بريدك.",
+  "errWeakPassword": "كلمة المرور قصيرة: ٦ أحرف على الأقل.",
+  "errPrayerOver": "انتهى وقت هذه الصلاة.",
+  "errAvatarLocked": "ثبّت مسؤول الأسرة رمز هذا العضو.",
+  "errBadTime": "اختر موعداً قادماً.",
+  "prayerLocationSaved": "موقع الأسرة محفوظ",
+  "errLocked": "محاولات كثيرة. حاول بعد {minutes} دقيقة.",
+  "@errLocked": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "rankIn": "{place} من {total}",
+  "@rankIn": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "prizeMeta": "{period} · تُسلَّم {when}",
+  "@prizeMeta": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "prizeWonBy": "فاز بها {name} ({points} نقطة)",
+  "@prizeWonBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDoneLine": "{done} منجزة · {notDone} غير منجزة",
+  "@reportDoneLine": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "notDone": {
+        "type": "String"
+      }
+    }
+  },
+  "prizeForPeriod": "لصاحب أعلى نقاط {period}",
+  "@prizeForPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "pickMember": "اختر العضو",
+  "demoLoginNote": "في الوضع التجريبي: البريد abu@demo.sa وكلمة المرور 123456، أو استخدم «نسيت كلمة المرور؟» واضغط 📧 في الأعلى لرؤية الكود."
 }

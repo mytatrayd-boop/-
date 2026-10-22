@@ -77,7 +77,7 @@ class L10nAr extends L10n {
       'التجربة السريعة تعمل على جهازك فقط، ولا تُرسل أي بيانات.';
 
   @override
-  String get back => '‹ رجوع';
+  String get back => 'رجوع';
 
   @override
   String get loginAdmin => 'دخول مسؤول الأسرة';
@@ -295,7 +295,7 @@ class L10nAr extends L10n {
   String get viewTasksOnly => 'عرض المهام فقط';
 
   @override
-  String get backToDashboard => '‹ لوحة المسؤول';
+  String get backToDashboard => 'لوحة المسؤول';
 
   @override
   String get tileApprovals => 'الموافقات';
@@ -322,7 +322,7 @@ class L10nAr extends L10n {
   String get tileComps => 'المسابقات';
 
   @override
-  String get tileRewards => 'الجوائز والمكافآت';
+  String get tileRewards => 'الجوائز';
 
   @override
   String get permAddMembers => 'إضافة أعضاء للأسرة';
@@ -788,7 +788,7 @@ class L10nAr extends L10n {
   String get tabComps => 'المسابقات';
 
   @override
-  String get tabRewards => 'المكافآت';
+  String get tabRewards => 'الجوائز';
 
   @override
   String get tabNotices => 'التنبيهات';
@@ -1012,7 +1012,7 @@ class L10nAr extends L10n {
 
   @override
   String get stayLoggedIn =>
-      'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج الكود مرة أخرى إلا إذا سجّلت الخروج.';
+      'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج كلمة المرور مرة أخرى إلا إذا سجّلت الخروج.';
 
   @override
   String get pasteCode => 'لصق الكود';
@@ -1136,4 +1136,267 @@ class L10nAr extends L10n {
   String goalForName(String name) {
     return 'لـ$name';
   }
+
+  @override
+  String get navHome => 'الرئيسية';
+
+  @override
+  String get navReports => 'التقارير';
+
+  @override
+  String get navPrizes => 'الجوائز';
+
+  @override
+  String get monthlyF => 'شهرية';
+
+  @override
+  String get yearlyF => 'سنوية';
+
+  @override
+  String get thisMonthLabel => 'هذا الشهر';
+
+  @override
+  String get thisYearLabel => 'هذه السنة';
+
+  @override
+  String get avatarLockedNote =>
+      'ثبّت مسؤول الأسرة رمزك، فلا يمكنك تغييره الآن.';
+
+  @override
+  String get uploadPhoto => 'صورة من جهازي';
+
+  @override
+  String get avatarLock => 'السماح بتغيير الرمز والصورة';
+
+  @override
+  String get avatarLockOn => '🔒 الرمز مثبّت';
+
+  @override
+  String get avatarLockOff => 'يمكنه تغيير رمزه';
+
+  @override
+  String get doneTasks => 'المنجزة';
+
+  @override
+  String get notDoneTasks => 'غير المنجزة';
+
+  @override
+  String get pendingTasks => 'بانتظار الموافقة';
+
+  @override
+  String get noneHere => 'لا شيء هنا.';
+
+  @override
+  String get deleteTaskConfirm => 'حذف هذه المهمة؟';
+
+  @override
+  String get doneCount => 'منجزة';
+
+  @override
+  String get notDoneCount => 'غير منجزة';
+
+  @override
+  String get myReport => 'تقريري';
+
+  @override
+  String get myRanks => 'ترتيبي';
+
+  @override
+  String get pointsWord => 'نقطة';
+
+  @override
+  String get prizesTitle => 'الجوائز';
+
+  @override
+  String get prizesSub =>
+      'حدّد جائزة لفترة (يوم، أسبوع، شهر، سنة) وموعد تسليمها. تظهر للجميع، وقبل الموعد بساعة يصل تذكير، وعند الموعد يفوز بها صاحب أعلى نقاط في الفترة تلقائياً وتصل الجميع بطاقة تهنئة.';
+
+  @override
+  String get prizeNameHint => 'الجائزة، مثل: رحلة إلى الحديقة';
+
+  @override
+  String get prizeFor => 'لصاحب أعلى نقاط';
+
+  @override
+  String get awardDate => 'يوم التسليم';
+
+  @override
+  String get awardTime => 'ساعة التسليم';
+
+  @override
+  String get addPrize => 'إضافة الجائزة';
+
+  @override
+  String get prizeAdded => 'أُضيفت الجائزة ✓ وأُبلغ الجميع';
+
+  @override
+  String get noPrizes => 'لا توجد جوائز بعد.';
+
+  @override
+  String get noPrizesMember => 'لم يحدد المسؤول جوائز بعد.';
+
+  @override
+  String get upcomingPrizes => 'الجوائز القادمة';
+
+  @override
+  String get pastPrizes => 'جوائز سُلّمت';
+
+  @override
+  String get noWinner => 'لم يفز أحد';
+
+  @override
+  String get errPrizeInput => 'اكتب اسم الجائزة واختر موعداً قادماً';
+
+  @override
+  String get prizeLeading => 'المتصدّر الآن';
+
+  @override
+  String get prayerTitle => 'تذكير الصلاة';
+
+  @override
+  String get prayerSub =>
+      'حدّد موقع الأسرة مرة واحدة من جوالك، فتُحسب مواقيت الصلاة تلقائياً (أم القرى) ويصل كل عضو تنبيه عند دخول الوقت، وتظهر الصلاة في مهامه. إن لم يؤدّها تظهر متأخرة، ومع دخول الصلاة التالية تختفي ونقاطها.';
+
+  @override
+  String get useMyLocation => 'تحديد موقعي الآن';
+
+  @override
+  String get locationSet => 'حُفظ الموقع ✓';
+
+  @override
+  String get prayerPoints => 'نقاط كل صلاة';
+
+  @override
+  String get prayerEnabled => 'تفعيل تذكير الصلاة';
+
+  @override
+  String get prayerSaved => 'حُفظت إعدادات الصلاة ✓';
+
+  @override
+  String get errLocation =>
+      'تعذّر تحديد الموقع. فعّل خدمة الموقع واسمح للتطبيق باستخدامها.';
+
+  @override
+  String get prayerTimesToday => 'مواقيت اليوم';
+
+  @override
+  String get prayerNotSet => 'لم يُحدَّد الموقع بعد.';
+
+  @override
+  String get prayerLate => 'متأخرة';
+
+  @override
+  String get prayerNow => 'وقتها الآن';
+
+  @override
+  String get prayerReminder => 'حان الآن وقت صلاة';
+
+  @override
+  String get loginTitle => 'تسجيل الدخول';
+
+  @override
+  String get registerTitle => 'تسجيل جديد';
+
+  @override
+  String get accountType => 'نوع الحساب';
+
+  @override
+  String get password => 'كلمة المرور';
+
+  @override
+  String get passwordHint => 'كلمة المرور (٦ أحرف على الأقل)';
+
+  @override
+  String get rememberMe => 'تذكّرني';
+
+  @override
+  String get loginBtn => 'دخول';
+
+  @override
+  String get registerBtn => 'تسجيل ومتابعة';
+
+  @override
+  String get forgotPassword => 'نسيت كلمة المرور؟';
+
+  @override
+  String get noAccountRegister => 'ليس لديك حساب؟ تسجيل جديد';
+
+  @override
+  String get haveAccountLogin => 'لديك حساب؟ تسجيل الدخول';
+
+  @override
+  String get resetTitle => 'تعيين كلمة مرور';
+
+  @override
+  String get resetSub =>
+      'اكتب بريدك وكلمة مرور جديدة، ثم أدخل الكود الذي يصلك.';
+
+  @override
+  String get registerSub =>
+      'مسؤول الأسرة ينشئ أسرته، وفرد الأسرة يسجّل ببريده الذي أضافه به المسؤول. بعدها يصلك كود للتحقق.';
+
+  @override
+  String get accountFromDevice => 'البريد المحفوظ في الجهاز';
+
+  @override
+  String get showPassword => 'إظهار كلمة المرور';
+
+  @override
+  String get errBadLogin => 'البريد أو كلمة المرور غير صحيحة.';
+
+  @override
+  String get errNoPassword =>
+      'هذا الحساب لم تُعيَّن له كلمة مرور بعد. اضغط «نسيت كلمة المرور؟» لتعيينها بكود يصل بريدك.';
+
+  @override
+  String get errWeakPassword => 'كلمة المرور قصيرة: ٦ أحرف على الأقل.';
+
+  @override
+  String get errPrayerOver => 'انتهى وقت هذه الصلاة.';
+
+  @override
+  String get errAvatarLocked => 'ثبّت مسؤول الأسرة رمز هذا العضو.';
+
+  @override
+  String get errBadTime => 'اختر موعداً قادماً.';
+
+  @override
+  String get prayerLocationSaved => 'موقع الأسرة محفوظ';
+
+  @override
+  String errLocked(String minutes) {
+    return 'محاولات كثيرة. حاول بعد $minutes دقيقة.';
+  }
+
+  @override
+  String rankIn(String place, String total) {
+    return '$place من $total';
+  }
+
+  @override
+  String prizeMeta(String period, String when) {
+    return '$period · تُسلَّم $when';
+  }
+
+  @override
+  String prizeWonBy(String name, String points) {
+    return 'فاز بها $name ($points نقطة)';
+  }
+
+  @override
+  String reportDoneLine(String done, String notDone) {
+    return '$done منجزة · $notDone غير منجزة';
+  }
+
+  @override
+  String prizeForPeriod(String period) {
+    return 'لصاحب أعلى نقاط $period';
+  }
+
+  @override
+  String get pickMember => 'اختر العضو';
+
+  @override
+  String get demoLoginNote =>
+      'في الوضع التجريبي: البريد abu@demo.sa وكلمة المرور 123456، أو استخدم «نسيت كلمة المرور؟» واضغط 📧 في الأعلى لرؤية الكود.';
 }

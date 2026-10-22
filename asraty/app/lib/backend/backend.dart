@@ -57,8 +57,10 @@ abstract class Backend {
 
   // ---- auth
   /// Returns false when a still-valid code was already sent (not re-sent).
-  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, bool resend = false});
+  /// With [password], verifying the code also sets it (sign-up or reset).
+  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, String? password, bool resend = false});
   Future<VerifyResult> verifyCode({required String email, required String code});
+  Future<VerifyResult> login({required String email, required String password});
   Future<void> signOut();
 
   // ---- people
@@ -66,7 +68,9 @@ abstract class Backend {
   Future<void> resendInvite(String personId);
   Future<void> updatePerms(String personId, Map<Perm, bool> perms);
   Future<void> removePerson(String personId);
-  Future<void> setAvatar(String personId, String avatar);
+  /// [photo] (JPEG bytes) goes with avatar "photo".
+  Future<void> setAvatar(String personId, String avatar, {Uint8List? photo});
+  Future<void> setAvatarLock(String personId, bool locked);
 
   // ---- tasks
   Future<void> addTask({required String title, required String personId, required int points, required Period repeat});
@@ -82,11 +86,15 @@ abstract class Backend {
   Future<({int rank, int points})> enterCompetition(String compId);
   Future<void> decideEntry(String compId, String personId, bool approve);
 
-  // ---- rewards
-  /// [personId] makes it a private reward for that member only.
-  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope, String? personId});
-  Future<void> deleteTier(String tierId);
-  Future<void> deliver(String tierId, String who, String periodKey);
+  // ---- prizes
+  Future<void> addPrize({required String name, required String emoji, required Span period, required DateTime awardAt});
+  Future<void> deletePrize(String prizeId);
+
+  /// Lets the server hand over prizes whose time came (the app calls it when one is due).
+  Future<void> tick();
+
+  // ---- prayer reminders
+  Future<void> setPrayer({required double lat, required double lng, required int points, required bool enabled});
 
   // ---- notices
   /// [minutes] > 0 makes a timed alert that ends after that many minutes.
