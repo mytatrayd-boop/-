@@ -142,6 +142,10 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// أعرض نص للساعة (بالأرقام العربية أو اللاتينية حسب لغة الجهاز)، لتثبيت حجمها طوال اليوم.
         private val WIDEST_CLOCK = listOf("١٢:٥٨", "12:58")
 
+        /// هامش أمان لعرض الساعة و«ص/م»: تقريب البكسل في TextClock وLinearLayout يزيد ٢–٣px على القياس،
+        /// فتُضغط «ص/م» حين تكون الساعة بخانتين (١٠–١٢) في المربع الضيق.
+        private const val CLOCK_SLACK_DP = 3f
+
         /// التطبيق عربي فقط (main.dart: locale ar)، فنصوص الودجت بالعربية أياً كانت لغة الجهاز.
         fun arabic(context: Context): Context {
             val config = Configuration(context.resources.configuration)
@@ -364,7 +368,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val preferred = LamhaLogic.clockSizeSp(env.widthDp) * scale
             val amPm = env.ctx.getString(if (LamhaLogic.isAm(env.now, env.day.timeZone)) R.string.am else R.string.pm)
             return WIDEST_CLOCK.maxOf { textWidthDp(env.ctx, it, preferred, true) } + 4f +
-                textWidthDp(env.ctx, amPm, AM_PM_SP * scale, true)
+                textWidthDp(env.ctx, amPm, AM_PM_SP * scale, true) + CLOCK_SLACK_DP
         }
 
         /// عرض كلمات [text] (للالتفاف عند المسافات فقط) والمسافة بينها.
