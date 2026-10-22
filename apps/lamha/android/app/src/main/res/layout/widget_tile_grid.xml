@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- شبكة الإيداعات (أكثر من ثلاثة، طلب المالك؛ _DepositsGridTile): «متبقي على:» ثم حتى ثلاثة صفوف
+     بعمودين، لكل خانة الاسم ١٦ عريض وبجانبه الأيام ١٤ (نص واحد بامتدادات)، الأقرب أولاً من اليمين.
+     الصفوف والخانات الزائدة مخفية. الأحجام من fitGrid في LamhaWidgetReceiver. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile_box"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/tile_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/tile_bg"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingStart="9dp"
+        android:paddingEnd="9dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp">
+
+        <TextView
+            android:id="@+id/grid_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFB9B0A2"
+            android:textSize="11sp" android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/grid_row0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/grid_cell0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:includeFontPadding="false"
+                android:fallbackLineSpacing="false"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="16sp" />
+            <TextView
+                android:id="@+id/grid_cell1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:includeFontPadding="false"
+                android:fallbackLineSpacing="false"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/grid_row1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/grid_cell2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:includeFontPadding="false"
+                android:fallbackLineSpacing="false"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="16sp" />
+            <TextView
+                android:id="@+id/grid_cell3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:includeFontPadding="false"
+                android:fallbackLineSpacing="false"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/grid_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/grid_cell4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:includeFontPadding="false"
+                android:fallbackLineSpacing="false"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="16sp" />
+            <TextView
+                android:id="@+id/grid_cell5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:includeFontPadding="false"
+                android:fallbackLineSpacing="false"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

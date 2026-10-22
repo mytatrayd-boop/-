@@ -24,6 +24,10 @@ const capsuleSize = 16.0;
 const columnTitleSize = 11.0;
 const columnNameSize = 20.0;
 const columnSubSize = 14.0;
+
+/// شبكة الإيداعات (أكثر من ثلاثة): الاسم ١٦ عريض وبجانبه الأيام ١٤.
+const gridNameSize = 16.0;
+const gridDaysSize = 14.0;
 const qiblaTitleSize = 14.0;
 const pointSize = 10.0;
 
@@ -584,6 +588,131 @@ class _DepositsTile extends _ColumnsTile {
   @override
   _DepositsTile withLook(_Look look) =>
       _DepositsTile(items: items, title: title!, look: look);
+}
+
+/// الإيداعات بعد الثلاثة (طلب المالك): «متبقي على:» ثم شبكة عمودين، لكل خانة الاسم وبجانبه الأيام
+/// في سطر واحد، الأقرب أولاً من اليمين. الخانات تصغر بالتساوي، وإن ضاق الارتفاع يُخفى العنوان ثم
+/// تصغر الصفوف (fitGrid). مطابقة لـ gridTile في LamhaWidgetReceiver.kt.
+class _DepositsGridTile extends _Styled {
+  const _DepositsGridTile({
+    required this.items,
+    required this.title,
+    _Look look = _defaultLook,
+  }) : super(look);
+
+  final List<_ColumnItem> items;
+  final String title;
+
+  int get _rows => gridRows(items.length);
+
+  @override
+  _DepositsGridTile withLook(_Look look) =>
+      _DepositsGridTile(items: items, title: title, look: look);
+
+  /// مقاسه بالصفوف؛ العنوان إن اتسع.
+  @override
+  ({double text, double pad}) heights(BuildContext context, double width) => (
+    text: _rows * gridNameSize * tileLineHeight * s,
+    pad: boxPadV * 2 + lineGap * (_rows - 1),
+  );
+
+  @override
+  Widget build(BuildContext context) => _boxed(
+    LayoutBuilder(
+      builder: (context, c) {
+        final cellWidth = (c.maxWidth - columnGap) / 2 - fitMargin;
+        final titleStyle = TextStyle(
+          fontSize: columnTitleSize * s,
+          fontWeight: FontWeight.w700,
+          height: tileLineHeight,
+          color: secondary,
+        );
+        final nameStyle = TextStyle(
+          fontSize: gridNameSize * s,
+          fontWeight: FontWeight.w700,
+          height: tileLineHeight,
+          color: primary,
+        );
+        final daysStyle = TextStyle(
+          fontSize: gridDaysSize * s,
+          fontWeight: FontWeight.w500,
+          height: tileLineHeight,
+          color: secondary,
+        );
+        double cell(_ColumnItem i) =>
+            _measure(context, i.name, nameStyle) +
+            (look.showSub ? _measure(context, ' ${i.sub}', daysStyle) : 0);
+        final fit = fitGrid(
+          height: c.maxHeight,
+          width: cellWidth,
+          titleHeight: look.showTitle ? columnTitleSize * s * tileLineHeight : 0,
+          line: gridNameSize * s * tileLineHeight,
+          cellWidth: items.fold(0.0, (a, i) => math.max(a, cell(i))),
+          rows: _rows,
+          gap: lineGap,
+        );
+        Widget text(int i) {
+          if (i >= items.length) return const SizedBox.shrink();
+          final item = items[i];
+          return Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: item.name,
+                  style: nameStyle.copyWith(
+                    fontSize: gridNameSize * s * fit.scale,
+                  ),
+                ),
+                if (look.showSub)
+                  TextSpan(
+                    text: ' ${item.sub}',
+                    style: daysStyle.copyWith(
+                      fontSize: gridDaysSize * s * fit.scale,
+                    ),
+                  ),
+              ],
+            ),
+            key: Key('deposit-cell-$i'),
+            textAlign: TextAlign.right,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+          );
+        }
+
+        return _centered(
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (fit.title) ...[
+                Text(
+                  title,
+                  key: const Key('deposit-title'),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: titleStyle,
+                ),
+                const SizedBox(height: lineGap),
+              ],
+              for (var r = 0; r < _rows; r++) ...[
+                if (r > 0) const SizedBox(height: lineGap),
+                Row(
+                  key: Key('deposit-row-$r'),
+                  children: [
+                    Expanded(child: text(r * 2)),
+                    const SizedBox(width: columnGap),
+                    Expanded(child: text(r * 2 + 1)),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    ),
+  );
 }
 
 /// وصف الموسم: «في الوسم:» ثم نقاط ١٠ تبدأ بـ«-»، لكل نقطة حتى ثلاثة أسطر. إن ضاق الارتفاع تُخفى النقاط من الآخر، ثم العنوان.

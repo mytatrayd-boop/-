@@ -594,6 +594,44 @@ ColumnsFit fitColumns({
   return (title: title, nameScale: kName, sub: sub, subScale: kSub);
 }
 
+/// أقصى عدد إيداعات في مربع الإيداعات: حتى ثلاثة أعمدة (عمود لكل وحدة عرض)، وبعرض ٣ حتى ستة في
+/// شبكة عمودين (طلب المالك). مطابقة لـ maxDeposits في LamhaLogic.kt.
+const maxDepositsGrid = 6;
+int maxDeposits(int span) => span >= 3 ? maxDepositsGrid : span;
+
+/// أكثر من ثلاثة إيداعات: شبكة عمودين، لكل خانة «الاسم الأيام» في سطر واحد.
+bool depositsAsGrid(int count) => count > 3;
+
+/// صفوف الشبكة لـ [count] إيداعاً.
+int gridRows(int count) => (count + 1) ~/ 2;
+
+/// ما يظهر في شبكة الإيداعات وبأي حجم (fitGrid).
+typedef GridFit = ({bool title, double scale});
+
+/// ملاءمة شبكة الإيداعات: [rows] صفاً بارتفاع [line] لكل منها وبينها [gap]، وأعرض خانة [cellWidth]
+/// بالحجم المطلوب في عرض الخانة [width]. تصغر الخانات كلها بالتساوي إن لم يتسع أعرضها. إن ضاق
+/// الارتفاع [height]: يُخفى العنوان ([titleHeight]) أولاً، ثم تصغر الصفوف لتتسع.
+/// مطابقة لـ fitGrid في LamhaLogic.kt.
+GridFit fitGrid({
+  required double height,
+  required double width,
+  double titleHeight = 0,
+  required double line,
+  required double cellWidth,
+  required int rows,
+  double gap = 0,
+}) {
+  var k = width > 0 && cellWidth > width ? width / cellWidth : 1.0;
+  var title = titleHeight > 0;
+  final gaps = gap * math.max(0, rows - 1);
+  double used() => (title ? titleHeight + gap : 0) + rows * line * k + gaps;
+  if (height > 0 && rows > 0 && line > 0) {
+    if (used() > height && title) title = false;
+    if (used() > height) k = math.max(0.0, math.min(k, (height - gaps) / (rows * line)));
+  }
+  return (title: title, scale: k);
+}
+
 /// نقاط وصف الموسم (الميزة ٦): لكل نقطة أسطرها [lines] حتى [maxLines]. إن ضاق [height]:
 /// يُخفى العنوان ([titleHeight]) أولاً، ثم النقاط من الآخر، وآخراً تُقلَّل أسطر الأولى (حتى سطر).
 /// مطابقة لـ fitPoints في LamhaLogic.kt.

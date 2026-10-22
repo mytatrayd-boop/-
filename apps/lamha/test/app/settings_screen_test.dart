@@ -320,16 +320,21 @@ void main() {
     expect(sizes, hasLength(1));
     expect(sizes.single, lessThanOrEqualTo(20));
 
-    // الإيداعات: حتى ثلاثة أعمدة، الأقرب أولاً، والاسم وتحته الأيام.
+    // الإيداعات الأربعة الافتراضية: شبكة عمودين (أكثر من ثلاثة)، الأقرب أولاً من اليمين، والاسم
+    // وبجانبه الأيام.
     final deps = (day['deposits'] as List).cast<Map>();
-    expect(deps.length, 3);
-    for (var i = 0; i < 3; i++) {
-      expect(text('deposit-name-$i'), deps[i]['label']);
-      if (find.byKey(Key('deposit-sub-$i')).evaluate().isNotEmpty) {
-        expect(text('deposit-sub-$i'), deps[i]['daysText']);
-      }
+    expect(deps.length, 4);
+    for (var i = 0; i < 4; i++) {
+      final cell = tester.widget<Text>(find.byKey(Key('deposit-cell-$i')));
+      expect(cell.textSpan!.toPlainText(), '${deps[i]['label']} ${deps[i]['daysText']}');
     }
-    expect(find.byKey(const Key('deposit-name-3')), findsNothing);
+    expect(find.byKey(const Key('deposit-cell-4')), findsNothing);
+    expect(find.byKey(const Key('deposit-name-0')), findsNothing);
+    expect(tester.getRect(find.byKey(const Key('deposit-cell-0'))).left,
+        greaterThan(tester.getRect(find.byKey(const Key('deposit-cell-1'))).right));
+    expect(tester.getRect(find.byKey(const Key('deposit-cell-2'))).top,
+        greaterThan(tester.getRect(find.byKey(const Key('deposit-cell-0'))).bottom));
+    expect(find.byKey(const Key('deposit-row-2')), findsNothing);
 
     // القبلة: دائرة فيها «القبلة» والكعبة، بلا زاوية.
     expect(find.byKey(const Key('preview-qibla-circle')), findsOneWidget);
@@ -366,7 +371,8 @@ void main() {
     for (final e in [WidgetElement.prayerTimes, WidgetElement.deposit, WidgetElement.season,
         WidgetElement.tradSeason, WidgetElement.tradPoints, WidgetElement.qibla]) {
       for (final t in tester.widgetList<Text>(find.descendant(of: tile(e), matching: find.byType(Text)))) {
-        expect(emoji.hasMatch(t.data!), isFalse, reason: '${e.name}: ${t.data}');
+        final s = t.data ?? t.textSpan!.toPlainText();
+        expect(emoji.hasMatch(s), isFalse, reason: '${e.name}: $s');
       }
     }
   });

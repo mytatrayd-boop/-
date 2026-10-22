@@ -12,8 +12,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.StaticLayout
 import android.text.TextPaint
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.StyleSpan
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
@@ -104,6 +109,10 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val COLUMN_TITLE_SP = 11f
         private const val COLUMN_NAME_SP = 20f
         private const val COLUMN_SUB_SP = 14f
+        /// شبكة الإيداعات (gridNameSize وgridDaysSize في Dart).
+        private const val GRID_NAME_SP = 16f
+        private const val GRID_DAYS_SP = 14f
+        private const val GRID_DAYS_COLOR = 0xFFB9B0A2.toInt()
         private const val QIBLA_TITLE_SP = 14f
         private const val POINT_SP = 10f
         private const val COLUMN_GAP_DP = 4f
@@ -128,6 +137,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             Triple(R.id.col4, R.id.col_name4, R.id.col_sub4),
         )
         private val POINT_IDS = listOf(R.id.point0, R.id.point1, R.id.point2, R.id.point3)
+        private val GRID_ROW_IDS = listOf(R.id.grid_row0, R.id.grid_row1, R.id.grid_row2)
+        private val GRID_CELL_IDS = listOf(R.id.grid_cell0, R.id.grid_cell1, R.id.grid_cell2, R.id.grid_cell3, R.id.grid_cell4, R.id.grid_cell5)
 
         /// نص قياس ارتفاع السطر (lineDp): عربي وأرقام، والساعة.
         private const val LINE_SAMPLE = "الفجر ٣٢٤° أبها"
@@ -343,9 +354,14 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     (if (showSub) tightDp(env.ctx, DAY_CITY_MIN_SP * scale, false) + tightDp(env.ctx, DAY_TEMP_SP * scale, true) else 0f) to 8f
                 "hijri", "gregorian" -> tightDp(env.ctx, CAPSULE_SP * scale, true) to 8f + 6f
                 "qibla" -> (if (showTitle) lineDp(env.ctx, QIBLA_TITLE_SP * scale, true) else 0f) to 8f + QIBLA_PAD_DP
-                "prayerTimes", "deposit" ->
+                "prayerTimes", "deposit" -> if (cell.id == "deposit" && LamhaLogic.depositsAsGrid(depositCount(env, cell.span))) {
+                    // شبكة الإيداعات: بصفوفها.
+                    val rows = LamhaLogic.gridRows(depositCount(env, cell.span))
+                    rows * tightDp(env.ctx, GRID_NAME_SP * scale, true) + LINE_GAP_DP * (rows - 1) to 8f + BOX_PAD_V
+                } else {
                     tightDp(env.ctx, COLUMN_NAME_SP * scale, true) + (if (showSub) tightDp(env.ctx, COLUMN_SUB_SP * scale, false) + LINE_GAP_DP else 0f) to
                         8f + BOX_PAD_V
+                }
                 // نقطتان بسطرين لكل منهما؛ العنوان إن اتسع.
                 "tradPoints" ->
                     4 * tightDp(env.ctx, POINT_SP * scale, false) to 8f + BOX_PAD_V + LINE_GAP_DP
@@ -513,7 +529,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 "dayWeather" -> dayWeatherTile(env, tile, scale, avail, innerHeightDp)
                 "hijri", "gregorian" -> capsuleTile(env, tile, scale, if (inner > 0f) inner - 24f - FIT_MARGIN_DP else 0f, innerHeightDp - 2f)
                 "qibla" -> qiblaTile(env, tile, scale, inner, innerHeightDp)
-                "prayerTimes", "deposit" -> columnsTile(env, tile, span, scale, if (inner > 0f) inner - BOX_PAD_H else 0f, innerHeightDp - BOX_PAD_V)
+                "prayerTimes", "deposit" -> if (tile.id == "deposit" && LamhaLogic.depositsAsGrid(depositCount(env, span))) {
+                    gridTile(env, tile, span, scale, if (inner > 0f) inner - BOX_PAD_H else 0f, innerHeightDp - BOX_PAD_V)
+                } else {
+                    columnsTile(env, tile, span, scale, if (inner > 0f) inner - BOX_PAD_H else 0f, innerHeightDp - BOX_PAD_V)
+                }
                 "tradPoints" -> pointsTile(env, tile, scale, if (inner > 0f) inner - BOX_PAD_H - FIT_MARGIN_DP else 0f, innerHeightDp - BOX_PAD_V)
                 else -> infoTile(env, tile, scale, if (inner > 0f) inner - 18f - FIT_MARGIN_DP else 0f, innerHeightDp - INFO_PAD_V).apply {
                     color(this, R.id.tile_value, primary)
@@ -779,6 +799,62 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 val highlight = prayers && i == 0
                 (if (highlight) env.accent else spec.primaryColor)?.let { rv.setTextColor(name, it) }
                 (if (highlight) env.accent else spec.secondaryColor)?.let { rv.setTextColor(sub, it) }
+            }
+            return rv
+        }
+
+        /// الإيداعات الظاهرة في مربع بعرض [span] (maxDeposits).
+        private fun depositCount(env: Env, span: Int) = minOf(env.day.deposits.size, LamhaLogic.maxDeposits(span))
+
+        /// شبكة الإيداعات (_DepositsGridTile، أكثر من ثلاثة): «متبقي على:» ثم صفوف بعمودين، لكل خانة
+        /// الاسم عريضاً وبجانبه الأيام بلون السطر الفرعي، الأقرب أولاً من اليمين. الخانات تصغر بالتساوي،
+        /// وإن ضاق الارتفاع يُخفى العنوان ثم تصغر الصفوف (fitGrid).
+        private fun gridTile(env: Env, spec: LamhaLogic.Tile, span: Int, scale: Float, availDp: Float, innerHeightDp: Float): RemoteViews {
+            val ctx = env.ctx
+            val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_grid)
+            val items = env.day.deposits.take(depositCount(env, span)).map { it.label to it.days }
+            val rows = LamhaLogic.gridRows(items.size)
+            val titleSp = COLUMN_TITLE_SP * scale
+            val nameSp = GRID_NAME_SP * scale
+            val daysSp = GRID_DAYS_SP * scale
+            val cellWidth = if (availDp > 0f) (availDp - COLUMN_GAP_DP) / 2 - FIT_MARGIN_DP else 0f
+            val widest = items.maxOfOrNull { (name, days) ->
+                textWidthDp(ctx, name, nameSp, true) + (if (spec.showSub) textWidthDp(ctx, " $days", daysSp, false) else 0f)
+            } ?: 0f
+            val fit = LamhaLogic.fitGrid(
+                innerHeightDp, cellWidth, if (spec.showTitle) tightDp(ctx, titleSp, true) else 0f,
+                tightDp(ctx, nameSp, true), widest, rows, LINE_GAP_DP,
+            )
+            if (fit.title) {
+                rv.setTextViewText(R.id.grid_title, ctx.getString(R.string.deposits_title))
+                rv.setTextViewTextSize(R.id.grid_title, TypedValue.COMPLEX_UNIT_SP, titleSp)
+                spec.secondaryColor?.let { rv.setTextColor(R.id.grid_title, it) }
+            } else {
+                rv.setViewVisibility(R.id.grid_title, View.GONE)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rv.setViewLayoutMargin(R.id.grid_row0, RemoteViews.MARGIN_TOP, 0f, TypedValue.COMPLEX_UNIT_DIP)
+            }
+            for ((r, row) in GRID_ROW_IDS.withIndex()) {
+                if (r >= rows) rv.setViewVisibility(row, View.GONE)
+            }
+            val daysColor = spec.secondaryColor ?: GRID_DAYS_COLOR
+            for ((i, id) in GRID_CELL_IDS.withIndex()) {
+                val item = items.getOrNull(i)
+                if (item == null) {
+                    // الخانة الأخيرة في صف ناقص تبقى بعرضها فلا تتمدد جارتها.
+                    rv.setViewVisibility(id, if (i / 2 < rows) View.INVISIBLE else View.GONE)
+                    continue
+                }
+                val text = SpannableStringBuilder(item.first)
+                text.setSpan(StyleSpan(Typeface.BOLD), 0, item.first.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                if (spec.showSub) {
+                    val start = text.length
+                    text.append(" ").append(item.second)
+                    text.setSpan(ForegroundColorSpan(daysColor), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    text.setSpan(RelativeSizeSpan(GRID_DAYS_SP / GRID_NAME_SP), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+                rv.setTextViewText(id, text)
+                rv.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, nameSp * fit.scale)
+                spec.primaryColor?.let { rv.setTextColor(id, it) }
             }
             return rv
         }

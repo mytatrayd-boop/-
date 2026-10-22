@@ -17,7 +17,11 @@ const _dir = 'android/app/src/androidTest/assets';
 /// اللحظة الثابتة للاختبار (LamhaScreensTest.NOW_MILLIS): ٣:٠٠ ص بتوقيت أبها، قبل الفجر.
 final fixtureNow = DateTime.utc(2026, 10, 19, 0, 0);
 
-String fixture(WidgetTheme theme, {DigitStyle digits = DigitStyle.arabic}) {
+String fixture(
+  WidgetTheme theme, {
+  DigitStyle digits = DigitStyle.arabic,
+  Set<String> deposits = const {'salary', 'housing_support', 'citizen_account'},
+}) {
   // قرب أبها، حيث القبلة ٣٢٤° (كلقطة المالك؛ مركز أبها ٣٢٢°).
   const lat = 18.20, lon = 42.33;
   final schedule = buildSchedule(
@@ -26,7 +30,7 @@ String fixture(WidgetTheme theme, {DigitStyle digits = DigitStyle.arabic}) {
       latitude: lat,
       longitude: lon,
       cityName: 'أبها',
-      deposits: {'salary', 'housing_support', 'citizen_account'},
+      deposits: deposits,
       opacity: 80,
       theme: theme,
       digits: digits,
@@ -45,6 +49,19 @@ String fixture(WidgetTheme theme, {DigitStyle digits = DigitStyle.arabic}) {
 }
 
 void main() {
+  // الإيداعات الستة (شبكة الإيداعات، طلب المالك): الأسود.
+  test('جدول لقطات أندرويد (six) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_six.json');
+    final json = fixture(WidgetTheme.black,
+        deposits: loadEngineDataFromFiles().deposits.ids);
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final day = (jsonDecode(json)['days'] as List).first as Map;
+    expect((day['deposits'] as List).length, 6);
+  });
+
   // الأسود الافتراضي والذهبي والأزرق، ونسخة بالأرقام الإنجليزية (الميزة ٦).
   for (final (name, theme, digits) in [
     ('black', WidgetTheme.black, DigitStyle.arabic),

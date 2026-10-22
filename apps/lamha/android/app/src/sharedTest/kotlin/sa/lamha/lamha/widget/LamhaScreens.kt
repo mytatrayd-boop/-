@@ -54,6 +54,17 @@ object LamhaScreens {
         // الأرقام الإنجليزية (الميزة ٦). ساعة TextClock تتبع لغة الجهاز (هنا عربي) لا الإعداد.
         for ((size, w, h) in SIZES) out += Triple("lamha_latin_$size.png", base("latin"), w to h)
         for ((size, w, h) in SIZES_4X4) out += Triple("lamha_4x4_${size}_black_1.0.png", base("black"), w to h)
+        // شبكة الإيداعات (أكثر من ثلاثة، طلب المالك): الستة، وخمسة (صف ناقص)، والستة في ٤×٤.
+        val six = base("six")
+        val five = JSONObject(six).apply {
+            val days = getJSONArray("days")
+            for (i in 0 until days.length()) days.getJSONObject(i).getJSONArray("deposits").remove(5)
+        }.toString()
+        for ((size, w, h) in SIZES) {
+            out += Triple("lamha_deposits6_$size.png", six, w to h)
+            out += Triple("lamha_deposits5_$size.png", five, w to h)
+        }
+        for ((size, w, h) in SIZES_4X4) out += Triple("lamha_deposits6_4x4_$size.png", six, w to h)
         for ((name, edit) in LAYOUT_CASES) {
             val root = JSONObject(base("black"))
             root.put("layout", edit(root.getJSONArray("layout")))
