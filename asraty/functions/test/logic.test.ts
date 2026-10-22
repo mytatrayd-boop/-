@@ -95,3 +95,28 @@ test("push payload pops up with sound on Android and iOS", () => {
   assert.equal(p.apns.headers["apns-push-type"], "alert");
   assert.ok(pushPayload("t", "x".repeat(500), "f").notification.body.length <= 178);
 });
+
+test("tasks repeat monthly and yearly too", () => {
+  const t = riyadh("2026-10-20T12:00:00");
+  assert.equal(periodKey("monthly", t), "m2026-10");
+  assert.equal(periodKey("yearly", t), "y2026");
+  assert.equal(periodKey("once", t), "once");
+});
+
+test("prayer window runs from its adhan until the next prayer (Riyadh)", async () => {
+  const { currentPrayer, prayerTimes, parsePrayerTaskId, prayerTaskId } = await import("../src/prayer");
+  const lat = 24.7136, lng = 46.6753;
+  const day = prayerTimes(lat, lng, riyadh("2026-10-20T12:00:00"));
+  // Riyadh in October: dhuhr around 11:40, asr around 15:00, isha around 19:00.
+  assert.equal(dayKey(day.fajr), "2026-10-20");
+  assert.ok(day.fajr < day.dhuhr && day.dhuhr < day.asr && day.asr < day.maghrib && day.maghrib < day.isha);
+  const noon = currentPrayer(lat, lng, day.dhuhr + 60e3);
+  assert.equal(noon.key, "dhuhr");
+  assert.equal(noon.end, day.asr);
+  // After midnight, isha of the previous day is still running until fajr.
+  const night = currentPrayer(lat, lng, riyadh("2026-10-21T01:00:00"));
+  assert.equal(night.key, "isha");
+  assert.equal(night.dayKey, "2026-10-20");
+  assert.deepEqual(parsePrayerTaskId(prayerTaskId("asr", "abc123")), { key: "asr", personId: "abc123" });
+  assert.equal(parsePrayerTaskId("prayer-xx-abc"), null);
+});

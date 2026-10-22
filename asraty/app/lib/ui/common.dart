@@ -1,10 +1,12 @@
-import 'dart:math' as math;
+import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../backend/backend.dart';
 import '../core/avatars.dart';
+import '../core/logic.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
 import 'theme.dart';
@@ -62,6 +64,13 @@ String errorText(L10n t, Object e) {
     'bad-number' => t.errBadNumber('${e.details['min'] ?? 1}', '${e.details['max'] ?? ''}'),
     'person-not-found' => t.errPersonNotFound,
     'unauthenticated' => t.errSession,
+    'bad-login' => t.errBadLogin,
+    'no-password' => t.errNoPassword,
+    'weak-password' => t.errWeakPassword,
+    'locked' => t.errLocked('${e.details['waitMinutes'] ?? 15}'),
+    'prayer-over' => t.errPrayerOver,
+    'avatar-locked' => t.errAvatarLocked,
+    'bad-time' => t.errBadTime,
     // Unknown codes show the code (and the server's reason for internal errors) so a screenshot is enough to diagnose.
     _ => t.errGenericCode([e.code, if (e.details['reason'] is String) e.details['reason'] as String].join(' · ')),
   };
@@ -111,17 +120,90 @@ String permLabel(L10n t, Perm p) => switch (p) {
 
 // ------------------------------------------------------------------ avatars
 
-class AvatarView extends StatelessWidget {
-  const AvatarView(this.avatar, {super.key, this.size = 44});
-  final String avatar;
-  final double size;
-  @override
-  Widget build(BuildContext context) => ClipOval(
-        child: SizedBox.square(dimension: size, child: SvgPicture.string(avatarSvg(avatar), fit: BoxFit.cover)),
-      );
+/// A pointed arch, the frame of the portrait avatars (and of uploaded photos).
+Path archPath(Size s) {
+  final w = s.width, h = s.height, shoulder = h * .3;
+  return Path()
+    ..moveTo(0, h)
+    ..lineTo(0, shoulder)
+    ..quadraticBezierTo(0, shoulder * .35, w * .28, shoulder * .2)
+    ..quadraticBezierTo(w * .44, shoulder * .12, w / 2, 0)
+    ..quadraticBezierTo(w * .56, shoulder * .12, w * .72, shoulder * .2)
+    ..quadraticBezierTo(w, shoulder * .35, w, shoulder)
+    ..lineTo(w, h)
+    ..close();
 }
 
-/// Avatar that opens the picker when the viewer may change it (the ✎ badge).
+class _ArchClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) => archPath(size);
+  @override
+  bool shouldReclip(_ArchClipper old) => false;
+}
+
+class _ArchBorder extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawPath(
+      archPath(size),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.width * .06
+        ..shader = const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFF3D98B), Palette.sunDeep])
+            .createShader(Offset.zero & size));
+  @override
+  bool shouldRepaint(_ArchBorder old) => false;
+}
+
+/// Width-to-height ratio of the portrait avatars.
+const avatarAspect = .94;
+
+/// A person's avatar: one of the gold-arch portraits, their own photo in the
+/// same arch, or (older accounts) a cartoon drawn in a circle. [size] is the width.
+class AvatarView extends StatelessWidget {
+  const AvatarView(this.avatar, {super.key, this.size = 44, this.photo});
+  AvatarView.of(Person p, {super.key, this.size = 44})
+      : avatar = p.avatar,
+        photo = p.photo;
+  final String avatar;
+  final String? photo;
+  final double size;
+
+  static final _photos = <String, MemoryImage>{};
+
+  @override
+  Widget build(BuildContext context) {
+    final h = size / avatarAspect;
+    if (avatar == photoAvatar && photo != null) {
+      final img = _photos.putIfAbsent(photo!, () => MemoryImage(base64Decode(photo!)));
+      return SizedBox(
+        width: size,
+        height: h,
+        child: CustomPaint(
+          foregroundPainter: _ArchBorder(),
+          child: ClipPath(clipper: _ArchClipper(), child: Image(image: img, fit: BoxFit.cover, gaplessPlayback: true)),
+        ),
+      );
+    }
+    if (isPortrait(avatar)) {
+      return SizedBox(
+        width: size,
+        height: h,
+        child: Image.asset('assets/avatars/$avatar.webp', fit: BoxFit.contain, cacheWidth: (size * 3).round(), excludeFromSemantics: true),
+      );
+    }
+    return SizedBox(
+      width: size,
+      height: h,
+      child: Center(child: ClipOval(child: SizedBox.square(dimension: size, child: SvgPicture.string(avatarSvg(avatar), fit: BoxFit.cover)))),
+    );
+  }
+}
+
+/// Who may change whose avatar (a member's own lock is checked in the picker).
+bool canEditAvatar(Person me, Person target) =>
+    me.id == target.id || me.role == Role.owner || (target.role == Role.member && can(me, Perm.addMembers));
+
+/// Avatar that opens the picker when tapped by someone allowed to change it.
 class EditableAvatar extends StatelessWidget {
   const EditableAvatar({super.key, required this.person, required this.canEdit, required this.onTap, this.size = 44});
   final Person person;
@@ -130,42 +212,23 @@ class EditableAvatar extends StatelessWidget {
   final double size;
   @override
   Widget build(BuildContext context) {
-    if (!canEdit) return AvatarView(person.avatar, size: size);
+    if (!canEdit) return AvatarView.of(person, size: size);
     return Semantics(
       button: true,
       label: context.t.changeAvatarOf(person.name),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Stack(clipBehavior: Clip.none, children: [
-          AvatarView(person.avatar, size: size),
-          PositionedDirectional(
-            bottom: -3,
-            start: -3,
-            child: Container(
-              width: 20,
-              height: 20,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: context.pal.card,
-                shape: BoxShape.circle,
-                boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 3, offset: Offset(0, 1))],
-              ),
-              child: Icon(Icons.edit, size: 12, color: context.pal.ink),
-            ),
-          ),
-        ]),
-      ),
+      child: GestureDetector(onTap: onTap, child: AvatarView.of(person, size: size)),
     );
   }
 }
 
-/// Family member in the header: the avatar fills the whole circle, faded like a
-/// watermark. No name on it; the name is in the tooltip and screen-reader label.
-/// Invited (not yet linked) members get a dashed border and are dimmed.
+/// Family member in the header: their arch portrait, sized so five fit on a
+/// line. No name on it (it is in the tooltip and screen-reader label).
+/// Invited (not yet linked) members are dimmed.
 class NameRing extends StatelessWidget {
-  const NameRing({super.key, required this.person, this.size = 80});
+  const NameRing({super.key, required this.person, this.size = 56, this.onTap});
   final Person person;
   final double size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -177,51 +240,14 @@ class NameRing extends StatelessWidget {
       child: Semantics(
         label: label,
         image: true,
-        child: Opacity(
-        opacity: inv ? .6 : 1,
-        child: SizedBox.square(
-          dimension: size,
-          child: CustomPaint(
-            foregroundPainter: _BorderPainter(dashed: inv),
-            child: ClipOval(
-              child: Stack(fit: StackFit.expand, children: [
-                const ColoredBox(color: Colors.white),
-                // Watermark: the avatar, faded.
-                Opacity(opacity: .32, child: SvgPicture.string(avatarSvg(person.avatar), fit: BoxFit.cover)),
-              ]),
-            ),
-          ),
+        button: onTap != null,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Opacity(opacity: inv ? .5 : 1, child: AvatarView.of(person, size: size)),
         ),
-      ),
       ),
     );
   }
-}
-
-class _BorderPainter extends CustomPainter {
-  _BorderPainter({required this.dashed});
-  final bool dashed;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final r = size.width / 2 - 1.5;
-    final c = size.center(Offset.zero);
-    final stroke = Paint()
-      ..color = Palette.sun
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    if (!dashed) {
-      canvas.drawCircle(c, r, stroke);
-      return;
-    }
-    const dash = 6.0, gap = 4.0;
-    for (var a = 0.0; a < 2 * math.pi; a += (dash + gap) / r) {
-      canvas.drawArc(Rect.fromCircle(center: c, radius: r), a, dash / r, false, stroke);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_BorderPainter old) => old.dashed != dashed;
 }
 
 // ------------------------------------------------------------------ building blocks
@@ -384,55 +410,101 @@ class Badge2 extends StatelessWidget {
 
 enum BtnKind { main, sun, ok, no, ghost }
 
-class Btn extends StatelessWidget {
-  const Btn(this.label, {super.key, required this.onPressed, this.kind = BtnKind.main, this.small = false, this.expand = false, this.semantic});
+/// Button that answers the tap at once: an async action shows a spinner and
+/// blocks repeat taps until the server replies.
+class Btn extends StatefulWidget {
+  const Btn(this.label, {super.key, required this.onPressed, this.kind = BtnKind.main, this.small = false, this.expand = false, this.semantic, this.icon});
   final String label;
-  final VoidCallback? onPressed;
+  final FutureOr<void> Function()? onPressed;
   final BtnKind kind;
   final bool small;
   final bool expand;
   final String? semantic;
+  final IconData? icon;
+
+  @override
+  State<Btn> createState() => _BtnState();
+}
+
+class _BtnState extends State<Btn> {
+  var _busy = false;
+
+  Future<void> _tap() async {
+    final r = widget.onPressed!();
+    if (r is! Future) return;
+    setState(() => _busy = true);
+    try {
+      await r;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final p = context.pal;
-    final (bg, fg) = switch (kind) {
+    final p = context.pal, w = widget;
+    final (bg, fg) = switch (w.kind) {
       BtnKind.main => (Palette.brand, Colors.white),
       BtnKind.sun => (Palette.sun, Palette.onSun),
       BtnKind.ok => (Palette.mint, Colors.white),
       BtnKind.no => (p.redBg, Palette.red),
       BtnKind.ghost => (p.bg, p.ink),
     };
+    final text = Text(w.label, semanticsLabel: w.semantic, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false);
     final b = FilledButton(
-      onPressed: onPressed,
+      onPressed: w.onPressed == null || _busy ? null : _tap,
       style: FilledButton.styleFrom(
         backgroundColor: bg,
         foregroundColor: fg,
-        disabledBackgroundColor: bg.withValues(alpha: .45),
+        disabledBackgroundColor: bg.withValues(alpha: _busy ? .8 : .45),
         disabledForegroundColor: fg.withValues(alpha: .7),
-        padding: small ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6) : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        minimumSize: small ? const Size(0, 32) : const Size(0, 44),
+        padding: w.small ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6) : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        minimumSize: w.small ? const Size(0, 34) : const Size(0, 46),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(small ? 10 : 12)),
-        textStyle: TextStyle(fontFamily: bodyFont, fontWeight: FontWeight.w700, fontSize: small ? 13 : 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(w.small ? 10 : 12)),
+        textStyle: TextStyle(fontFamily: bodyFont, fontWeight: FontWeight.w700, fontSize: w.small ? 13 : 16),
       ),
-      child: Text(label, semanticsLabel: semantic),
+      child: _busy
+          ? SizedBox.square(dimension: w.small ? 16 : 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: fg))
+          : w.icon == null
+              ? text
+              : Row(mainAxisSize: MainAxisSize.min, children: [Icon(w.icon, size: w.small ? 16 : 20), const SizedBox(width: 6), Flexible(child: text)]),
     );
-    return expand ? SizedBox(width: double.infinity, child: b) : b;
+    return w.expand ? SizedBox(width: double.infinity, child: b) : b;
   }
 }
 
-class XButton extends StatelessWidget {
-  const XButton({super.key, required this.onPressed, required this.tooltip, this.icon = Icons.close});
-  final VoidCallback onPressed;
+class XButton extends StatefulWidget {
+  const XButton({super.key, required this.onPressed, required this.tooltip, this.icon = Icons.close, this.color});
+  final FutureOr<void> Function() onPressed;
   final String tooltip;
   final IconData icon;
+  final Color? color;
+  @override
+  State<XButton> createState() => _XButtonState();
+}
+
+class _XButtonState extends State<XButton> {
+  var _busy = false;
   @override
   Widget build(BuildContext context) => IconButton(
-        onPressed: onPressed,
-        tooltip: tooltip,
+        onPressed: _busy
+            ? null
+            : () async {
+                final r = widget.onPressed();
+                if (r is! Future) return;
+                setState(() => _busy = true);
+                try {
+                  await r;
+                } finally {
+                  if (mounted) setState(() => _busy = false);
+                }
+              },
+        tooltip: widget.tooltip,
         visualDensity: VisualDensity.compact,
-        icon: Icon(icon, size: 20, color: context.pal.muted),
+        icon: _busy
+            ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            : Icon(widget.icon, size: 20, color: widget.color ?? context.pal.muted),
       );
 }
 
@@ -660,7 +732,7 @@ class MiniName extends StatelessWidget {
   final TextStyle? style;
   @override
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
-        AvatarView(person.avatar, size: 26),
+        AvatarView.of(person, size: 24),
         const SizedBox(width: 6),
         Flexible(child: Text(person.name, style: style, overflow: TextOverflow.ellipsis)),
       ]);
@@ -696,7 +768,7 @@ class NoticeList extends StatelessWidget {
     final t = context.t, ns = notices;
     if (ns.isEmpty) return EmptyState('🔔', t.noNotices);
     final active = ns.where((n) => n.activeAt(now)).toList(), ended = ns.where((n) => !n.activeAt(now)).take(5).toList();
-    Widget card(Notice n) => OutlineCard(
+    Widget card(Notice n) => n.kind == 'prize' ? PrizeCard(n, now: now) : OutlineCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(child: Text(n.title, style: const TextStyle(fontWeight: FontWeight.w700))),
@@ -719,4 +791,73 @@ class NoticeList extends StatelessWidget {
       ],
     ]);
   }
+}
+
+/// Congratulation card sent to the whole family when a prize is won.
+class PrizeCard extends StatelessWidget {
+  const PrizeCard(this.n, {super.key, required this.now});
+  final Notice n;
+  final DateTime now;
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFFF7E3A8), Palette.sun, Palette.sunDeep]),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [BoxShadow(color: Color(0x33B8893A), blurRadius: 14, offset: Offset(0, 5))],
+        ),
+        child: Column(children: [
+          const Text('🎉🏆🎉', style: TextStyle(fontSize: 30)),
+          const SizedBox(height: 6),
+          Text(n.title, textAlign: TextAlign.center, style: const TextStyle(fontFamily: headFont, fontSize: 22, fontWeight: FontWeight.w800, color: Palette.onSun)),
+          const SizedBox(height: 6),
+          Text(n.body, textAlign: TextAlign.center, style: const TextStyle(color: Palette.onSun, fontSize: 15, height: 1.5)),
+          const SizedBox(height: 6),
+          Text(ago(context.t, n.createdAt, now), style: const TextStyle(color: Color(0xAA2B2410), fontSize: 12)),
+        ]),
+      );
+}
+
+String repeatLabel(L10n t, Period p) => switch (p) {
+      Period.daily => t.dailyF,
+      Period.weekly => t.weeklyF,
+      Period.monthly => t.monthlyF,
+      Period.yearly => t.yearlyF,
+      Period.once => t.onceF,
+    };
+
+String spanLabel(L10n t, Span s) => switch (s) { Span.daily => t.today, Span.weekly => t.thisWeek, Span.monthly => t.thisMonth, Span.yearly => t.thisYear };
+
+List<(Span, String, int)> spanTabs(L10n t) => [for (final s in Span.values) (s, spanLabel(t, s), 0)];
+
+/// Stat box with a gold outline (dashboard and reports).
+class StatBox extends StatelessWidget {
+  const StatBox(this.value, this.label, {super.key, this.color});
+  final String value, label;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        decoration: BoxDecoration(
+          color: context.pal.bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Palette.sun.withValues(alpha: .7)),
+        ),
+        child: Column(children: [
+          FittedBox(child: Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color ?? context.pal.brandInk))),
+          Text(label, textAlign: TextAlign.center, maxLines: 2, style: TextStyle(fontSize: 12.5, color: context.pal.muted, height: 1.2)),
+        ]),
+      );
+}
+
+/// A row of [StatBox]es sharing the width.
+class StatRow extends StatelessWidget {
+  const StatRow(this.items, {super.key});
+  final List<StatBox> items;
+  @override
+  Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        for (var i = 0; i < items.length; i++) ...[if (i > 0) const SizedBox(width: 8), Expanded(child: items[i])],
+      ]);
 }

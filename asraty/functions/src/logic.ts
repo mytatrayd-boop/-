@@ -3,8 +3,11 @@
 // design/prototype.html (pk/dk/wk, tierOf, ranking, reportText, compDone).
 
 export type Period = "daily" | "weekly";
-/** How a task repeats: every day, every week, or once only. */
-export type TaskRepeat = Period | "once";
+/** Report / prize periods (day and week, plus month and year). */
+export type Span = "daily" | "weekly" | "monthly" | "yearly";
+export const SPANS: readonly Span[] = ["daily", "weekly", "monthly", "yearly"];
+/** How a task repeats: every day, week, month or year, or once only. */
+export type TaskRepeat = Span | "once";
 export type Scope = "each" | "family";
 export type Role = "owner" | "admin" | "member";
 
@@ -12,12 +15,18 @@ export const PERM_KEYS = ["addMembers", "approve", "tasks", "report", "comps", "
 export type PermKey = (typeof PERM_KEYS)[number];
 export type Perms = Partial<Record<PermKey, boolean>>;
 
+/** Portrait avatars (app/assets/avatars), then the older cartoon ones kept for existing accounts. */
 export const AVATAR_KEYS = [
-  "dad", "dad2", "grandpa", "mom", "mom2", "grandma",
-  "teen", "boy", "boy2", "girl", "girl2", "baby",
+  "dad_shemagh", "dad_bisht", "grandpa", "grandpa2", "grandpa3", "mom_black", "mom_brown", "mom_green",
+  "mom_purple", "woman_black", "grandma", "teen_shemagh", "teen_shemagh2", "teen_ghutra", "teen_ghutra2", "teen_hijab",
+  "teen_brown", "teen_black", "girl_rose", "boy_shemagh", "boy_ghutra", "boy_kuma", "girl_curly", "girl_pink",
+  "dad", "dad2", "mom", "mom2", "teen", "boy", "boy2", "girl", "girl2", "baby",
 ] as const;
 
-export const REWARD_EMOJI = ["🏞️", "🍔", "🎮", "🍦", "🎡", "🎁", "📚", "🏖️"];
+/** Avatar value of a member who uploaded their own photo (stored in people/{id}.photo). */
+export const PHOTO_AVATAR = "photo";
+
+export const REWARD_EMOJI = ["🎁", "🏆", "🏞️", "🍔", "🎮", "🍦", "🎡", "📚", "🏖️", "💵", "🚲", "📱"];
 
 // Asia/Riyadh is UTC+3 all year (no DST), so a fixed offset is exact.
 const RIYADH_OFFSET_MS = 3 * 3600 * 1000;
@@ -50,7 +59,7 @@ export function yearKey(ms: number): string {
 export function periodKey(period: TaskRepeat, ms: number): string {
   // A one-time task has a single period: done once, it stays done.
   if (period === "once") return "once";
-  return period === "daily" ? dayKey(ms) : weekKey(ms);
+  return { daily: dayKey, weekly: weekKey, monthly: monthKey, yearly: yearKey }[period](ms);
 }
 
 export function can(person: { role: Role; perms?: Perms } | undefined, perm: PermKey): boolean {
@@ -109,7 +118,7 @@ export function arabicDate(ms: number): string {
   return `${AR_WEEKDAYS[d.getUTCDay()]}، ${d.getUTCDate()} ${AR_MONTHS[d.getUTCMonth()]}`;
 }
 
-export type ReportPeriod = "daily" | "weekly" | "monthly" | "yearly";
+export type ReportPeriod = Span;
 
 /** Title of a ranking report for its period. */
 export const REPORT_TITLE: Record<ReportPeriod, string> = {

@@ -13,13 +13,16 @@ Family chores & rewards app for Saudi families. Parents/admins assign tasks, mem
 - **API server**: TypeScript in `functions/`, deployed to **Vercel** (`api/[name].ts`) or **Netlify** (`netlify/functions/api.mts`) — route `/api/:name` — speaking the Firebase callable protocol; the app calls it with `httpsCallableFromUri(SERVER_URL/api/<name>)`. `functions/src/index.ts` can still deploy the same handlers as Cloud Functions if the project moves to Blaze.
 - Email: Gmail SMTP with an app password (`GMAIL_USER`, `GMAIL_APP_PASSWORD`), or Resend (`RESEND_API_KEY`, `MAIL_FROM`). Server env vars only, never in the app.
 - Fonts: Tajawal (body), Baloo Bhaijaan 2 (headings), bundled in `app/assets/fonts` (no runtime download).
-- SVG avatars via `flutter_svg`; port the 12 avatars from `avatarSVG()` in the prototype as SVG strings.
+- Avatars: 24 gold-arch portraits in `app/assets/avatars/*.webp` (from the owner's design, Oct 2026), or the member's own photo (`avatar: "photo"` + `photo` base64 on the people doc). The 12 older SVG cartoons stay drawn for accounts that chose them. Keep `AVATAR_KEYS` (functions/src/logic.ts) and `portraitKeys` (app/lib/core/avatars.dart) in sync.
+- Sign-in: email + password (scrypt hashes in `credentials/`, server-only); the 6-digit email code proves the email at sign-up / password reset.
+- Prayer times: `adhan` (Umm al-Qura) on both sides — `functions/src/prayer.ts` and `app/lib/core/prayer.dart` must agree. Prayer and prize reminders are scheduled on each phone (`app/lib/backend/reminders.dart`); prizes are handed over by the server on the first request after their time (`sweepPrizes`).
 
 ## Non-negotiable rules
 - App is RTL Arabic everywhere (`Locale('ar')`, `TextDirection.rtl`). All user-facing strings in an `l10n` ARB file, copy taken from the prototype.
 - **All point changes, approvals, competition ranking and permission checks happen server-side** (callable Cloud Functions + Firestore security rules). The client never writes points or ledger entries directly.
 - Competition rank must be assigned inside a Firestore transaction (race-safe).
 - Time periods use `Asia/Riyadh`; the week starts on **Sunday**.
+- Vercel functions run in `bom1` (vercel.json) — next to Firestore `me-central2`; the default US region made every tap wait ~2 s.
 - Auth codes: 6 digits, stored **hashed** with expiry (30 min) and max 5 attempts; rate-limit sends per email.
 - Children's data: collect the minimum (name, email, avatar key). No ads, no third-party analytics SDKs that collect personal data. Support in-app account deletion (App Store requirement) and family deletion by the owner.
 - Proof photos are optional; resized on device, stored as base64 in `families/{fid}/proofs/{completionId}` (server-written), deleted on approve/reject.

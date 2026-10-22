@@ -49,7 +49,7 @@ class _HonorBoardState extends ConsumerState<HonorBoard> {
       for (var i = 0; i < r.length; i++)
         RowCard(children: [
           MedalText(medal(i)),
-          AvatarView(r[i].person.avatar),
+          AvatarView.of(r[i].person, size: 40),
           Expanded(child: TitleSub(r[i].person.name, t.countAchievements('${r[i].count}'))),
           Pts('${r[i].points}'),
         ]),

@@ -1,5 +1,6 @@
 import 'package:asraty/core/logic.dart';
 import 'package:asraty/core/models.dart';
+import 'package:asraty/core/prayer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 DateTime riyadh(String iso) => DateTime.parse('$iso+03:00');
@@ -23,24 +24,34 @@ void main() {
     expect(yearKey(DateTime.parse('2026-12-31T21:30:00Z')), 'y2027');
   });
 
-  test('private rewards only count for their member', () {
-    final tiers = [
-      Tier(id: 'all', name: 'وجبة', emoji: '🍔', threshold: 10, period: Period.weekly, scope: Scope.each),
-      Tier(id: 'lama', name: 'دراجة', emoji: '🎁', threshold: 20, period: Period.weekly, scope: Scope.each, personId: 'lama'),
-    ];
-    expect(tierOf(tiers, 25, Period.weekly, Scope.each, personId: 'lama')?.id, 'lama');
-    expect(tierOf(tiers, 25, Period.weekly, Scope.each, personId: 'aseel')?.id, 'all');
-    expect(nextTier(tiers, 12, Period.weekly, Scope.each, personId: 'aseel'), isNull);
+  test('tasks repeat monthly and yearly; due counts per report period', () {
+    final t = riyadh('2026-10-20T12:00:00'); // a Tuesday, day 20 of the month
+    expect(periodKey(Period.monthly, t), 'm2026-10');
+    expect(periodKey(Period.yearly, t), 'y2026');
+    expect(dueCount(Period.daily, Span.daily, t), 1);
+    expect(dueCount(Period.daily, Span.weekly, t), 3, reason: 'Sunday to Tuesday');
+    expect(dueCount(Period.daily, Span.monthly, t), 20);
+    expect(dueCount(Period.weekly, Span.daily, t), 0);
+    expect(dueCount(Period.weekly, Span.weekly, t), 1);
+    expect(dueCount(Period.weekly, Span.monthly, t), 4, reason: 'Oct 1 (Thu) to Oct 20 touches 4 weeks');
+    expect(dueCount(Period.monthly, Span.yearly, t), 10);
+    expect(dueCount(Period.yearly, Span.monthly, t), 0);
+    expect(dueCount(Period.once, Span.yearly, t), 0);
   });
 
-  test('tierOf picks the highest reached tier only within period and scope', () {
-    Tier tier(String id, int thr, Period p) => Tier(id: id, name: id, emoji: '🎁', threshold: thr, period: p, scope: Scope.each);
-    final tiers = [tier('trip', 66, Period.weekly), tier('meal', 30, Period.weekly), tier('games', 15, Period.daily)];
-    expect(tierOf(tiers, 66, Period.weekly, Scope.each)?.id, 'trip');
-    expect(tierOf(tiers, 30, Period.weekly, Scope.each)?.id, 'meal');
-    expect(tierOf(tiers, 29, Period.weekly, Scope.each), isNull);
-    expect(nextTier(tiers, 40, Period.weekly, Scope.each)?.id, 'trip');
-    expect(tierOf(tiers, 100, Period.weekly, Scope.family), isNull);
+  test('prayer window runs from its adhan until the next prayer (matches the server)', () {
+    const s = PrayerSettings(enabled: true, lat: 24.7136, lng: 46.6753, points: 5);
+    final day = prayerTimesOn(s, riyadh('2026-10-20T12:00:00'));
+    expect(dayKey(day['fajr']!), '2026-10-20');
+    expect(day['dhuhr']!.isBefore(day['asr']!), isTrue);
+    final noon = currentPrayer(s, day['dhuhr']!.add(const Duration(minutes: 1)));
+    expect(noon.key, 'dhuhr');
+    expect(noon.end, day['asr']);
+    expect(noon.lateAt(day['dhuhr']!.add(const Duration(minutes: 10))), isFalse);
+    expect(noon.lateAt(day['dhuhr']!.add(const Duration(minutes: 45))), isTrue);
+    final night = currentPrayer(s, riyadh('2026-10-21T01:00:00'));
+    expect(night.key, 'isha');
+    expect(night.dayKey, '2026-10-20');
   });
 
   test('permissions', () {

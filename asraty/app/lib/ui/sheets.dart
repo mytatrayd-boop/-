@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../core/avatars.dart';
 import '../core/models.dart';
@@ -32,17 +33,17 @@ class SheetHeader extends StatelessWidget {
       ]);
 }
 
-/// Grid of the 12 avatars (.avgrid).
+/// Grid of the portrait avatars (.avgrid).
 class AvatarGrid extends StatelessWidget {
   const AvatarGrid({super.key, required this.selected, required this.onPick});
   final String selected;
   final ValueChanged<String> onPick;
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
-        final n = (c.maxWidth / 70).floor().clamp(4, 8);
+        final n = (c.maxWidth / 64).floor().clamp(4, 8);
         final size = (c.maxWidth - (n - 1) * 8) / n;
         return Wrap(spacing: 8, runSpacing: 8, children: [
-          for (final k in avatarKeys)
+          for (final k in portraitKeys)
             Semantics(
               selected: k == selected,
               button: true,
@@ -50,13 +51,13 @@ class AvatarGrid extends StatelessWidget {
                 onTap: () => onPick(k),
                 child: Container(
                   width: size,
-                  height: size,
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: k == selected ? Palette.brand : Colors.transparent, width: 3),
-                    boxShadow: k == selected ? const [BoxShadow(color: Palette.sun, spreadRadius: 2)] : null,
+                    color: k == selected ? context.pal.mintBg : null,
+                    border: Border.all(color: k == selected ? Palette.brand : Colors.transparent, width: 2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: AvatarView(k, size: size),
+                  child: AvatarView(k, size: size - 10),
                 ),
               ),
             ),
@@ -64,20 +65,44 @@ class AvatarGrid extends StatelessWidget {
       });
 }
 
+/// Picker for a person's avatar: a portrait, or their own photo from the
+/// device. A member whose avatar a parent locked only sees why.
 Future<void> showAvatarPicker(BuildContext context, WidgetRef ref, Person p) => openSheet(context, (c) {
       final t = c.t;
+      final me = ref.read(appStateProvider).value?.me;
+      final self = p.id == me?.id;
+      final locked = self && p.role == Role.member && p.avatarLocked;
+      Future<void> pick(String k, {Uint8List? photo}) async {
+        Navigator.pop(c);
+        await run(context, () => ref.read(backendProvider).setAvatar(p.id, k, photo: photo),
+            ok: self ? t.avatarChangedMine : t.avatarChanged(p.name));
+      }
+
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         SheetHeader(t.chooseAvatarFor(p.name)),
-        const SizedBox(height: 12),
-        AvatarGrid(
-          selected: p.avatar,
-          onPick: (k) async {
-            Navigator.pop(c);
-            final me = ref.read(appStateProvider).value?.session?.personId;
-            await run(context, () => ref.read(backendProvider).setAvatar(p.id, k),
-                ok: p.id == me ? t.avatarChangedMine : t.avatarChanged(p.name));
-          },
-        ),
+        if (locked)
+          NoteBox('🔒 ${t.avatarLockedNote}')
+        else ...[
+          const SizedBox(height: 4),
+          Btn(t.uploadPhoto, kind: BtnKind.ghost, icon: Icons.photo_camera_outlined, expand: true, onPressed: () async {
+            final src = await openSheet<ImageSource>(c, (s) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  SheetHeader(s.t.uploadPhoto),
+                  ListTile(leading: const Icon(Icons.photo_camera_outlined), title: Text(s.t.camera), onTap: () => Navigator.pop(s, ImageSource.camera)),
+                  ListTile(leading: const Icon(Icons.photo_library_outlined), title: Text(s.t.gallery), onTap: () => Navigator.pop(s, ImageSource.gallery)),
+                ]));
+            if (src == null) return;
+            try {
+              // Small and square-ish: it is shown in the header for the whole family.
+              final f = await ImagePicker().pickImage(source: src, maxWidth: 320, maxHeight: 340, imageQuality: 75);
+              if (f == null) return;
+              await pick(photoAvatar, photo: await f.readAsBytes());
+            } catch (_) {
+              if (context.mounted) toast(context, t.errImage);
+            }
+          }),
+          const SizedBox(height: 12),
+          AvatarGrid(selected: p.avatar, onPick: pick),
+        ],
       ]);
     });
 

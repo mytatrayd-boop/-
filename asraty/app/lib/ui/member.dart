@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../core/logic.dart';
@@ -9,6 +10,7 @@ import '../core/models.dart';
 import 'common.dart';
 import 'competitions.dart';
 import 'honor.dart';
+import 'prizes.dart';
 import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
@@ -57,7 +59,7 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
   Widget build(BuildContext context) {
     final t = context.t, d = widget.c.data, u = widget.c.me;
     final now = ref.watch(clockProvider).value ?? DateTime.now();
-    final ts = d.tasks.where((x) => x.personId == u.id).toList();
+    final ts = d.tasksOf(u.id, now);
     final done = ts.where((x) => d.completionOf(x, now)?.status == Status.approved).length;
     final pct = ts.isEmpty ? 0.0 : done / ts.length;
     final notes = d.noticesFor(u);
@@ -74,8 +76,8 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
         Container(
-          width: 96,
-          height: 96,
+          width: 88,
+          height: 88,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(center: Alignment(-.3, -.4), colors: [Color(0xFFF0D9A6), Palette.sun, Palette.sunDeep], stops: [0, .55, 1]),
@@ -83,8 +85,8 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
           ),
           alignment: Alignment.center,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('${d.earned(u.id, Period.weekly)}',
-                style: const TextStyle(fontFamily: headFont, fontSize: 32, height: 1, color: Palette.onSun, fontVariations: [FontVariation('wght', 800)])),
+            Text('${d.earned(u.id, Span.weekly)}',
+                style: const TextStyle(fontFamily: headFont, fontSize: 30, height: 1, color: Palette.onSun, fontVariations: [FontVariation('wght', 800)])),
             Text(t.weekPoints, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Palette.onSun)),
           ]),
         ),
@@ -92,10 +94,28 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             H2(t.helloMember(u.name)),
-            Muted(t.todaySummary('${d.earned(u.id, Period.daily)}', '$done', '${ts.length}')),
+            Muted(t.todaySummary('${d.earned(u.id, Span.daily)}', '$done', '${ts.length}')),
             ProgressBar(pct),
           ]),
         ),
+      ]),
+      const SizedBox(height: 12),
+      // Their place today, this week, month and year, and their own report.
+      Row(children: [
+        for (final s in Span.values) ...[
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+              decoration: BoxDecoration(color: context.pal.bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: Palette.sun.withValues(alpha: .6))),
+              child: Column(children: [
+                Text(medalOrPlace(d.placeOf(u.id, s)), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: context.pal.brandInk)),
+                Text(switch (s) { Span.daily => t.spanShortDay, Span.weekly => t.spanShortWeek, Span.monthly => t.spanShortMonth, Span.yearly => t.spanShortYear }, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: context.pal.muted)),
+              ]),
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+        Btn(t.myReport, small: true, icon: Icons.insert_chart_outlined, onPressed: () => context.go('/report')),
       ]),
       SegTabs<MTab>(
         tabs: [(MTab.tasks, t.tabMyTasks, 0), (MTab.comps, t.tabComps, openC), (MTab.rewards, t.tabRewards, 0), (MTab.notes, t.tabNotices, unread)],
@@ -117,20 +137,30 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
         Builder(builder: (context) {
           final c = d.completionOf(x, now);
           final busy = _busy.contains(x.id);
+          final late = x.prayer != null && c == null && x.prayer!.lateAt(now);
           final Widget s = c == null
               ? Row(mainAxisSize: MainAxisSize.min, children: [
-                  Btn('📷', kind: BtnKind.ghost, semantic: t.doneWithPhoto, onPressed: busy ? null : () => _done(x, withPhoto: true)),
-                  const SizedBox(width: 6),
+                  if (x.prayer == null) ...[
+                    XButton(icon: Icons.photo_camera_outlined, tooltip: t.doneWithPhoto, onPressed: busy ? () {} : () => _done(x, withPhoto: true)),
+                    const SizedBox(width: 2),
+                  ],
                   Btn(t.doneIt, kind: BtnKind.sun, onPressed: busy ? null : () => _done(x)),
                 ])
               : c.status == Status.pending
                   ? StateTag('${t.awaitingApproval}${c.photoPath != null ? ' 📷' : ''}', Tone.wait)
                   : StateTag('+${c.points} ✓', Tone.ok);
+          final when = x.prayer != null
+              ? (late ? t.prayerLate : t.prayerNow)
+              : switch (x.repeat) {
+                  Period.daily => t.todayLabel,
+                  Period.weekly => t.weekLabel,
+                  Period.monthly => t.thisMonthLabel,
+                  Period.yearly => t.thisYearLabel,
+                  Period.once => t.onceF,
+                };
           return RowCard(children: [
-            Expanded(
-              child: TitleSub(x.title, t.memberTaskMeta(switch (x.repeat) { Period.daily => t.todayLabel, Period.weekly => t.weekLabel, Period.once => t.onceF }, '${x.points}'),
-                  done: c?.status == Status.approved),
-            ),
+            if (x.prayer != null) Icon(Icons.mosque_outlined, color: late ? Palette.red : Palette.sunDeep),
+            Expanded(child: TitleSub(x.title, t.memberTaskMeta(when, '${x.points}'), done: c?.status == Status.approved)),
             s,
           ]);
         }),
@@ -153,54 +183,13 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
     ]);
   }
 
-  Widget _rewards(BuildContext context) {
-    final t = context.t, d = widget.c.data, u = widget.c.me;
-    final out = <Widget>[];
-    for (final p in rewardPeriods) {
-      for (final s in Scope.values) {
-        // Only general rewards and this member's private ones.
-        if (!d.tiers.any((x) => x.period == p && x.scope == s && tierFor(x, u.id))) continue;
-        final pts = s == Scope.each ? d.earned(u.id, p) : d.familyEarned(p);
-        final cur = tierOf(d.tiers, pts, p, s, personId: u.id), nx = nextTier(d.tiers, pts, p, s, personId: u.id);
-        out.addAll([
-          H3('${p == Period.daily ? t.rewardToday : t.rewardWeek}${s == Scope.family ? t.forWholeFamily : ''}'),
-          TierBox(
-            emoji: cur?.emoji ?? '🎯',
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text.rich(TextSpan(children: [
-                TextSpan(text: '${s == Scope.each ? t.yourPoints : t.familyPoints}: '),
-                TextSpan(text: '$pts', style: const TextStyle(fontWeight: FontWeight.w700)),
-              ])),
-              Muted('${cur != null ? t.youEarned(cur.name) : t.notYet}${nx != null ? t.remainingFor('${nx.threshold - pts}', '${nx.emoji} ${nx.name}') : ''}'),
-              if (nx != null) ProgressBar(pts / nx.threshold),
-            ]),
-          ),
-        ]);
-      }
-    }
-    // Private rewards set by the parents for this member only, each with its own progress.
-    final mine = d.tiers.where((x) => x.personId == u.id).toList()..sort((a, b) => a.threshold.compareTo(b.threshold));
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      if (out.isEmpty && mine.isEmpty) EmptyState('🎁', t.noRewardsYet) else ...out,
-      if (mine.isNotEmpty) ...[
-        H3('🔒 ${t.yourPrivateRewards}'),
-        for (final x in mine)
-          Builder(builder: (context) {
-            final pts = d.earned(u.id, x.period);
-            return TierBox(
-              emoji: x.emoji,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(x.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                Muted('${x.period == Period.daily ? t.rewardToday : t.rewardWeek}: $pts / ${x.threshold}'),
-                ProgressBar(pts / x.threshold),
-              ]),
-            );
-          }),
-      ],
-      H2('🏆 ${t.tileHonor}'),
-      HonorBoard(widget.c, title: false),
-    ]);
-  }
-
-
+  Widget _rewards(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        PrizesPage(widget.c),
+        const SizedBox(height: 8),
+        H2('🏆 ${context.t.tileHonor}'),
+        HonorBoard(widget.c, title: false),
+      ]);
 }
+
+/// 🥇🥈🥉 for the first three places, the number after.
+String medalOrPlace(int place) => medal(place - 1);

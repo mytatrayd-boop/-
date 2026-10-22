@@ -16,7 +16,7 @@ void main() {
     await tester.pumpWidget(ProviderScope(overrides: [prefsProvider.overrideWithValue(prefs)], child: const AsratyApp()));
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('أهلاً بك في أسرتي'), findsOneWidget);
-    expect(find.text('مسؤول الأسرة'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsOneWidget);
 
     await tester.tap(find.text('تجربة سريعة بأسرة جاهزة'));
     await tester.pump(const Duration(milliseconds: 300));

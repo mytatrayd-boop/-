@@ -2,6 +2,8 @@ import 'package:asraty/backend/demo_backend.dart';
 import 'package:asraty/core/logic.dart';
 import 'package:asraty/core/models.dart';
 import 'package:asraty/ui/app.dart';
+import 'package:asraty/ui/common.dart';
+import 'package:asraty/ui/member.dart';
 import 'package:asraty/ui/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,26 +31,35 @@ Future<ProviderContainer> openAs(WidgetTester tester, String email, Role role) a
 }
 
 void main() {
-  testWidgets('member: sign-out in the header, honor board, private rewards only for their owner', (tester) async {
+  testWidgets('member: sign-out in the header, ranks and report, prizes and honor board', (tester) async {
     await openAs(tester, 'aseel@demo.sa', Role.member);
-    expect(find.text('🚪 خروج'), findsOneWidget);
+    expect(find.text('خروج'), findsOneWidget);
+    // The prayer whose time is running is among the tasks.
+    expect(find.textContaining('صلاة '), findsWidgets);
+    expect(find.text('تقريري'), findsOneWidget);
 
-    await tester.tap(find.text('المكافآت'));
+    await tester.tap(find.descendant(of: find.byType(SegTabs<MTab>), matching: find.text('الجوائز')));
     await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('آيسكريم من اختيارك'), findsOneWidget, reason: 'prizes show for everyone');
     expect(find.text('🏆 لوحة الشرف'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('حفظ سورة الملك'), 200);
     expect(find.text('حفظ سورة الملك'), findsOneWidget, reason: "Aseel's own monthly goal");
-    // Lama's private reward never shows for Aseel.
-    expect(find.textContaining('كتاب تختاره'), findsNothing);
-    // Members cannot add goals.
+    // Members cannot add goals or prizes.
     expect(find.text('إضافة الهدف'), findsNothing);
+    expect(find.text('إضافة الجائزة'), findsNothing);
   });
 
-  testWidgets('member sees their private reward', (tester) async {
-    await openAs(tester, 'lama@demo.sa', Role.member);
-    await tester.tap(find.text('المكافآت'));
+  testWidgets("member's own report for each period", (tester) async {
+    await openAs(tester, 'aseel@demo.sa', Role.member);
+    await tester.tap(find.text('تقريري'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('منجزة'), findsOneWidget);
+    expect(find.text('غير منجزة'), findsOneWidget);
+    await tester.tap(find.text('هذا الشهر'));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.textContaining('كتاب تختاره'), findsOneWidget);
+    expect(find.text('🥇'), findsWidgets, reason: 'Aseel leads the month in the seed');
   });
 
   testWidgets('ended alerts move to their own list', (tester) async {
@@ -93,11 +104,10 @@ void main() {
   testWidgets('reports for day, week, month and year, each sendable to the family', (tester) async {
     final c = await openAs(tester, 'abu@demo.sa', Role.admin);
     final b = c.read(backendProvider) as DemoBackend;
-    await tester.tap(find.text('تقارير الإنجاز'));
+    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('التقارير')));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('→'), findsNothing);
-    expect(find.text('‹ رجوع'), findsWidgets, reason: 'back button beside sign-out');
     await tester.tap(find.text('هذه السنة'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.textContaining('ترتيب إنجاز السنة'), findsOneWidget);

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:asraty/backend/backend.dart';
 import 'package:asraty/backend/demo_backend.dart';
 import 'package:asraty/core/logic.dart';
@@ -22,7 +24,7 @@ void main() {
     expect(s.signedIn, isTrue);
     expect(s.me!.role, Role.owner);
     expect(s.data!.members.length, 3);
-    expect(s.data!.familyEarned(Period.daily), 30);
+    expect(s.data!.familyEarnedFor(Span.daily), 30);
     expect(s.data!.pendingCount(), 1);
   });
 
@@ -41,14 +43,14 @@ void main() {
     final newTask = b.current.data!.tasks.singleWhere((t) => t.title == 'سقي النباتات');
 
     await login(b, 'aseel@demo.sa', Role.member);
-    final before = b.current.data!.earned(aseel.id, Period.daily);
+    final before = b.current.data!.earned(aseel.id, Span.daily);
     await b.completeTask(newTask.id);
     final pending = b.current.data!.completions.singleWhere((c) => c.taskId == newTask.id);
     expect(pending.status, Status.pending);
 
     await login(b, 'um@demo.sa', Role.admin);
     await b.decideCompletion(pending.id, true); // um has `approve`
-    expect(b.current.data!.earned(aseel.id, Period.daily), before + 7);
+    expect(b.current.data!.earned(aseel.id, Span.daily), before + 7);
     expect(() => b.decideCompletion(pending.id, true), throwsA(isA<AppError>()));
   });
 
@@ -114,7 +116,7 @@ void main() {
         throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
   });
 
-  test('timed alerts end, and removing a member removes their alerts and private rewards', () async {
+  test('timed alerts end, and removing a member removes their alerts', () async {
     var now = clock;
     final b = DemoBackend(clock: () => now);
     final lama = b.current.data!.members.firstWhere((m) => m.name == 'لمى');
@@ -123,12 +125,10 @@ void main() {
     expect(alert.activeAt(now), isTrue);
     now = now.add(const Duration(minutes: 31));
     expect(alert.activeAt(now), isFalse);
-    expect(b.current.data!.tiers.where((t) => t.personId == lama.id), isNotEmpty);
 
     await b.removePerson(lama.id);
     final d = b.current.data!;
     expect(d.notices.where((n) => n.to == lama.id), isEmpty);
-    expect(d.tiers.where((t) => t.personId == lama.id), isEmpty);
   });
 
   test('one-time tasks, for one member or everyone, stay done once approved', () async {
@@ -150,5 +150,77 @@ void main() {
     now = now.add(const Duration(days: 9)); // a later day and week
     await login(b, 'aseel@demo.sa', Role.member);
     await expectLater(b.completeTask(task.id), throwsA(isA<AppError>().having((e) => e.code, 'code', 'already-done')));
+  });
+
+  test('password: set with a code, then sign in; wrong password refused', () async {
+    final b = DemoBackend(clock: () => clock);
+    await b.signOut();
+    Future<String> code(Future<void> f) => f.then((_) => 'ok', onError: (Object e) => (e as AppError).code);
+    expect(await code(b.login(email: 'aseel@demo.sa', password: 'abcdef')), 'no-password');
+    expect(await code(b.requestCode(email: 'aseel@demo.sa', role: Role.member, password: '123')), 'weak-password');
+    await b.requestCode(email: 'aseel@demo.sa', role: Role.member, password: 'abcdef');
+    final c = RegExp(r'كود التحقق: (\d{6})').firstMatch(b.outbox.first.body)!.group(1)!;
+    await b.verifyCode(email: 'aseel@demo.sa', code: c);
+    await b.signOut();
+    expect(await code(b.login(email: 'aseel@demo.sa', password: 'wrong1')), 'bad-login');
+    await b.login(email: 'aseel@demo.sa', password: 'abcdef');
+    expect(b.current.me!.name, 'أصيل');
+    await b.signOut();
+    await b.login(email: 'abu@demo.sa', password: '123456');
+    expect(b.current.me!.role, Role.owner);
+  });
+
+  test('prizes: reminder an hour before, then the top member wins with a card for everyone', () async {
+    var now = clock;
+    final b = DemoBackend(clock: () => now);
+    await b.addPrize(name: 'رحلة', emoji: '🏆', period: Span.daily, awardAt: now.add(const Duration(hours: 2)));
+    await expectLater(b.addPrize(name: 'x', emoji: '🎁', period: Span.daily, awardAt: now.subtract(const Duration(minutes: 1))),
+        throwsA(isA<AppError>().having((e) => e.code, 'code', 'bad-time')));
+    now = now.add(const Duration(minutes: 70));
+    await b.tick();
+    expect(b.current.data!.notices.where((n) => n.title == '⏰ باقي ساعة على الجائزة').length, 1);
+    now = now.add(const Duration(hours: 1));
+    await b.tick();
+    await b.tick();
+    final prize = b.current.data!.prizes.firstWhere((p) => p.name == 'رحلة');
+    expect(prize.awarded, isTrue);
+    final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
+    expect(prize.winnerId, aseel.id, reason: 'most points today in the seed (15)');
+    final cards = b.current.data!.notices.where((n) => n.kind == 'prize' && n.title.contains('أصيل'));
+    expect(cards.length, 1);
+    expect(cards.single.to, 'all');
+  });
+
+  test('avatar: portraits, own photo, and a parent lock', () async {
+    final b = DemoBackend(clock: () => clock);
+    final lama = b.current.data!.members.firstWhere((m) => m.name == 'لمى');
+    await login(b, 'lama@demo.sa', Role.member);
+    await b.setAvatar(lama.id, 'photo', photo: Uint8List.fromList([0xff, 0xd8, 1, 2]));
+    expect(b.current.me!.photo, isNotNull);
+    await b.setAvatar(lama.id, 'girl_rose');
+    expect(b.current.me!.photo, isNull);
+    await expectLater(b.setAvatarLock(lama.id, true), throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+    await login(b, 'abu@demo.sa', Role.admin);
+    await b.setAvatarLock(lama.id, true);
+    await login(b, 'lama@demo.sa', Role.member);
+    await expectLater(b.setAvatar(lama.id, 'girl_pink'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'avatar-locked')));
+  });
+
+  test('prayer: the running prayer is a task worth its points; reports count done and not-done tasks', () async {
+    final b = DemoBackend(clock: () => clock);
+    final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
+    await login(b, 'aseel@demo.sa', Role.member);
+    final ts = b.current.data!.tasksOf(aseel.id, clock);
+    final prayer = ts.first;
+    expect(prayer.prayer, isNotNull);
+    expect(prayer.title, startsWith('صلاة '));
+    await b.completeTask(prayer.id);
+    await login(b, 'abu@demo.sa', Role.admin);
+    final c = b.current.data!.completions.firstWhere((c) => c.taskId == prayer.id);
+    await b.decideCompletion(c.id, true);
+    final row = b.current.data!.rankingFor(Span.daily, clock).firstWhere((r) => r.person.id == aseel.id);
+    expect(row.points, 15 + 5);
+    expect(row.done, 2, reason: 'the prayer is not counted as a task');
+    expect(row.notDone, 0, reason: 'both daily tasks are done (the monthly task is not due in a daily report)');
   });
 }
