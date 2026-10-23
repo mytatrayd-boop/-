@@ -124,8 +124,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// ما لا يصغر في دائرة القبلة (الكعبة)، كـ heights في _QiblaTile.
         private const val QIBLA_PAD_DP = 36f
-        private const val KAABA_RATIO = 0.5f
-        private const val KAABA_ALONE_RATIO = 0.6f
+        /// بين أيقونة القبلة و«القبلة» تحتها (qiblaIconGap في Dart، layout_marginTop في widget_tile_qibla.xml).
+        private const val QIBLA_ICON_GAP_DP = 2f
+        private const val INFO_FIT_SLACK_DP = 1f
 
         /// أعمدة مربع الأعمدة ونقاط وصف الموسم في تخطيطيهما.
         private val COLUMN_IDS = listOf(
@@ -618,8 +619,10 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 .filter { !it.second.isNullOrEmpty() && spec.showSub }
             val subLine = tightDp(ctx, subSp, false)
             val (words, space) = wordsDp(ctx, value, valueSp, true)
+            // هامش ١dp: تقريب البكسل في أسطر TextView قد يزيد ١–٢px على القياس فيُقص آخر سطر حين يتسع
+            // المحتوى بالضبط (الفصل والموسم في ٤×٤ مع ستة إيداعات).
             val fit = LamhaLogic.fitTile(
-                innerHeightDp, availDp,
+                if (innerHeightDp > 0f) maxOf(1f, innerHeightDp - INFO_FIT_SLACK_DP) else 0f, availDp,
                 if (spec.showTitle && titleFits) tightDp(ctx, titleFit, true) else 0f,
                 tightDp(ctx, valueSp, true), words, space,
                 subs = lines.map { (id, _) ->
@@ -727,21 +730,24 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 R.id.tile_box,
                 HomeWidgetLaunchIntent.getActivity(env.context, MainActivity::class.java, Uri.parse(QIBLA_URI)),
             )
-            val d = listOf(inner, innerHeightDp).filter { it > 0f }.minOrNull() ?: 0f
+            // الأيقونة أكبر مربع يتسع مع «القبلة» تحتها، والعنوان يصغر ليتسع عرض المربع (_QiblaTile).
             val title = ctx.getString(R.string.tile_qibla)
             val preferred = QIBLA_TITLE_SP * scale
+            val sp = if (inner > 0f) {
+                LamhaLogic.fitTextSize(preferred, textWidthDp(ctx, title, preferred, true), inner - FIT_MARGIN_DP, preferred * 0.6f)
+            } else preferred
+            val titleLine = if (spec.showTitle) tightDp(ctx, sp, true) + QIBLA_ICON_GAP_DP else 0f
             if (spec.showTitle) {
                 rv.setTextViewText(R.id.qibla_title, title)
-                val sp = if (d > 0f) LamhaLogic.qiblaTitleFit(preferred, textWidthDp(ctx, title, preferred, true), d) else preferred
                 rv.setTextViewTextSize(R.id.qibla_title, TypedValue.COMPLEX_UNIT_SP, sp)
                 spec.primaryColor?.let { rv.setTextColor(R.id.qibla_title, it) }
             } else {
                 rv.setViewVisibility(R.id.qibla_title, View.GONE)
             }
-            if (d > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val kaaba = d * if (spec.showTitle) KAABA_RATIO else KAABA_ALONE_RATIO
-                rv.setViewLayoutWidth(R.id.qibla_kaaba, kaaba, TypedValue.COMPLEX_UNIT_DIP)
-                rv.setViewLayoutHeight(R.id.qibla_kaaba, kaaba, TypedValue.COMPLEX_UNIT_DIP)
+            val icon = listOf(inner, if (innerHeightDp > 0f) innerHeightDp - titleLine else 0f).filter { it > 0f }.minOrNull() ?: 0f
+            if (icon > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                rv.setViewLayoutWidth(R.id.qibla_icon, icon, TypedValue.COMPLEX_UNIT_DIP)
+                rv.setViewLayoutHeight(R.id.qibla_icon, icon, TypedValue.COMPLEX_UNIT_DIP)
             }
             return rv
         }

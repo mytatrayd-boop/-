@@ -241,7 +241,7 @@ void main() {
     expect(find.byKey(const Key('showsub-qibla')), findsNothing);
     await tapKey(tester, 'showtitle-qibla');
     expect(find.byKey(const Key('preview-qibla-title')), findsNothing);
-    expect(find.byKey(const Key('preview-kaaba')), findsOneWidget);
+    expect(find.byKey(const Key('preview-qibla-icon')), findsOneWidget);
 
     await select(tester, 'season');
     await tapKey(tester, 'primary-season-pink');

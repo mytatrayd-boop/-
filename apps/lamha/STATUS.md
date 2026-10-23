@@ -83,5 +83,6 @@
   - الاهتزاز بمحرك الاهتزاز في أندرويد (`MainActivity.vibrate`).
   - التأهيل الشامل (`comprehensive_rehab`) يوم ٢٦.
   - بعدها: الأسماء عادية، وبلا «متبقي على:»، والستة مفعّلة افتراضياً.
+  - أيقونة القبلة من المالك وتحتها «القبلة».
   - حتى ستة إيداعات، وبعد الثلاثة شبكة عمودين (`_DepositsGridTile` و`gridTile` و`widget_tile_grid.xml`، و`fitGrid` في Dart وKotlin). لقطات المحاكي `lamha_deposits6_*` و`lamha_deposits5_*` من `schedule_six.json`.
 - التالي: البناء على GitHub وتجربة المالك، ثم الميزة ٤ (ودجت آيفون وشاشة القفل).

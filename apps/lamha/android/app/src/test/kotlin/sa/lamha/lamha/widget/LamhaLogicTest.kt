@@ -367,14 +367,6 @@ class LamhaLogicTest {
     }
 
     @Test
-    fun qiblaTitleFitByDiameter() {
-        // الحالات نفسها في test/engine/widget_layout_test.dart.
-        assertEquals(15f, LamhaLogic.qiblaTitleFit(15f, 40f, 100f), 1e-5f)
-        assertEquals(8f, LamhaLogic.qiblaTitleFit(15f, 40f, 50f), 1e-5f)
-        assertEquals(15f * 70f / 120f, LamhaLogic.qiblaTitleFit(15f, 120f, 100f), 1e-4f)
-    }
-
-    @Test
     fun shouldFetchWeatherOnlyWhenShownSomewhere() {
         assertTrue(LamhaLogic.shouldFetchWeather(true, 1, false))
         assertTrue(LamhaLogic.shouldFetchWeather(true, 0, true))

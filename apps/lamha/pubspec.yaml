@@ -82,6 +82,7 @@ flutter:
     - assets/tables/hijri_umm_al_qura.json
     - assets/cities.json
     - assets/fonts/OFL-Tajawal.txt
+    - assets/branding/qibla_icon.png
 
   # Tajawal برخصة SIL OFL 1.1 (assets/fonts/OFL-Tajawal.txt).
   fonts:

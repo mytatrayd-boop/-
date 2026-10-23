@@ -10,7 +10,6 @@ import '../engine/prayer.dart';
 import '../engine/weather.dart';
 import '../engine/widget_layout.dart';
 import '../engine/widget_theme.dart';
-import 'kaaba.dart';
 
 part 'widget_preview_tiles.dart';
 

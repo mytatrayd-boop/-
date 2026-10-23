@@ -1,14 +1,13 @@
 part of 'widget_preview.dart';
 
 /// مربعات تصميم المالك ٣ (الميزة ٦، `mockups/owner_design_v3.png`): اليوم والطقس، وكبسولتا
-/// التاريخين، ودائرة القبلة، ومربعا الأعمدة (مواقيت الصلاة والإيداعات)، ووصف الموسم. مطابقة لـ
+/// التاريخين، وأيقونة القبلة، ومربعا الأعمدة (مواقيت الصلاة والإيداعات)، ووصف الموسم. مطابقة لـ
 /// LamhaWidgetReceiver.kt وتخطيطاتها (widget_tile_dayweather وcapsule وqibla وcolumns وpoints).
 
 /// الصناديق رمادية مزرقة نصف شفافة فوق خلفية السمة (tile_bg.xml)، ومربع مواقيت الصلاة أفتح
-/// (tile_bg_light.xml)، ودائرة القبلة زرقاء داكنة (qibla_circle.xml).
+/// (tile_bg_light.xml).
 const tileBoxColor = Color(0x4096AAD2);
 const tileBoxLightColor = Color(0x5C96AAD2);
-const qiblaCircleColor = Color(0xFF1F2A44);
 const tileRadius = 18.0;
 const capsuleRadius = 14.0;
 
@@ -52,10 +51,9 @@ const lineGap = 2.0;
 /// حشوة الصناديق الجديدة الرأسية (أقل من المربعات القديمة لتتسع الصفوف الخمسة).
 const boxPadV = 2.0;
 
-/// الكعبة نسبة من قطر دائرة القبلة، والعنوان حتى [qiblaTitleRatio] من القطر.
-const kaabaRatio = 0.5;
-const kaabaAloneRatio = 0.6;
-const qiblaTitleRatio = 0.16;
+/// أيقونة القبلة (طلب المالك) وبينها وبين «القبلة» تحتها.
+const qiblaIconAsset = 'assets/branding/qibla_icon.png';
+const qiblaIconGap = 2.0;
 
 /// مربع في الشبكة: يُرسم بحجمه المطلوب داخل مقاسه، ومقاسه من [base] بالحجم الأساسي.
 abstract class _Cell extends StatelessWidget {
@@ -176,8 +174,7 @@ class _DayWeatherTile extends _Styled {
     text:
         (dayWeekdaySize * dayLineHeight +
             (look.showSub
-                ? dayCityMinSize * headLineHeight +
-                      dayTempSize * tempLineHeight
+                ? dayCityMinSize * headLineHeight + dayTempSize * tempLineHeight
                 : 0)) *
         s,
     pad: 0,
@@ -346,19 +343,9 @@ class _CapsuleTile extends _Styled {
   );
 }
 
-/// حجم عنوان دائرة القبلة: المطلوب، حتى [qiblaTitleRatio] من القطر [d]، وعرضه حتى ٧٠٪ منه
-/// (qiblaTitleSp في LamhaWidgetReceiver.kt).
-double qiblaTitleFit(double preferred, double widthAtPreferred, double d) {
-  final byHeight = math.min(preferred, d * qiblaTitleRatio);
-  return fitTextSize(
-    byHeight,
-    widthAtPreferred * byHeight / preferred,
-    d * 0.7,
-    0,
-  );
-}
-
-/// القبلة: دائرة زرقاء داكنة فيها «القبلة» وتحتها الكعبة (استثناء «لا أيقونات»: رسمها المالك).
+/// القبلة (طلب المالك): أيقونة القبلة (assets/branding/qibla_icon.png، الكعبة في دائرة ذهبية وسهم)
+/// وتحتها «القبلة». الأيقونة أكبر مربع يتسع مع العنوان، والعنوان يصغر ليتسع عرض المربع.
+/// مطابقة لـ qiblaTile في LamhaWidgetReceiver.kt.
 class _QiblaTile extends _Styled {
   const _QiblaTile({required this.title, _Look look = _defaultLook})
     : super(look);
@@ -375,46 +362,46 @@ class _QiblaTile extends _Styled {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
-      final d = math.min(c.maxWidth, c.maxHeight);
       final style = TextStyle(
         fontSize: qiblaTitleSize * s,
         fontWeight: FontWeight.w700,
-        height: 1.2,
+        height: tileLineHeight,
         color: primary,
       );
-      final size = qiblaTitleFit(
+      final size = fitTextSize(
         qiblaTitleSize * s,
         _measure(context, title, style),
-        d,
+        c.maxWidth - fitMargin,
+        qiblaTitleSize * s * 0.6,
       );
-      final kaaba = d * (look.showTitle ? kaabaRatio : kaabaAloneRatio);
-      return Center(
-        child: SizedBox.square(
-          dimension: d,
-          child: DecoratedBox(
-            key: const Key('preview-qibla-circle'),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: qiblaCircleColor,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (look.showTitle)
-                  Text(
-                    title,
-                    key: const Key('preview-qibla-title'),
-                    maxLines: 1,
-                    softWrap: false,
-                    style: style.copyWith(fontSize: size),
-                  ),
-                SizedBox.square(
-                  key: const Key('preview-kaaba'),
-                  dimension: kaaba,
-                  child: const CustomPaint(painter: KaabaPainter()),
+      // +١ لتقريب ارتفاع السطر.
+      final titleLine = look.showTitle
+          ? size * tileLineHeight + qiblaIconGap + 1
+          : 0;
+      final icon = math.max(0.0, math.min(c.maxWidth, c.maxHeight - titleLine));
+      return _centered(
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                qiblaIconAsset,
+                key: const Key('preview-qibla-icon'),
+                width: icon,
+                height: icon,
+                filterQuality: FilterQuality.medium,
+              ),
+              if (look.showTitle) ...[
+                const SizedBox(height: qiblaIconGap),
+                Text(
+                  title,
+                  key: const Key('preview-qibla-title'),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: style.copyWith(fontSize: size),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       );
@@ -550,9 +537,7 @@ class _ColumnsTile extends _Styled {
                               softWrap: false,
                               style: subStyle.copyWith(
                                 fontSize: columnSubSize * s * fit.subScale,
-                                color: i == 0 && accent != null
-                                    ? accent
-                                    : null,
+                                color: i == 0 && accent != null ? accent : null,
                               ),
                             ),
                           ],

@@ -420,12 +420,6 @@ object LamhaLogic {
         return maxOf(minSp, preferredSp * maxWidth / widthAtPreferred)
     }
 
-    /// حجم عنوان دائرة القبلة (qiblaTitleFit في Dart): المطلوب، حتى ١٦٪ من القطر [d]، وعرضه حتى ٧٠٪ منه.
-    fun qiblaTitleFit(preferredSp: Float, widthAtPreferred: Float, d: Float): Float {
-        val byHeight = minOf(preferredSp, d * 0.16f)
-        return fitTextSize(byHeight, widthAtPreferred * byHeight / preferredSp, d * 0.7f, 0f)
-    }
-
     /// عرض داخل خانة مربع (dp) بعرض [span] في ودجت بعرض [widthDp]: حشوة الشبكة ١٠+١٠
     /// (widget_lamha.xml)، ثم نصيب المربع من ٣، ناقصاً حشوة الخانة ٤+٤. 0 إذا لم يبلّغ المشغّل العرض.
     fun slotInnerDp(widthDp: Int, span: Int): Float {

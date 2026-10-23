@@ -355,12 +355,11 @@ void main() {
         greaterThan(tester.getRect(find.byKey(const Key('deposit-cell-0'))).bottom));
     expect(find.byKey(const Key('deposit-row-2')), findsOneWidget);
 
-    // القبلة: دائرة فيها «القبلة» والكعبة، بلا زاوية.
-    expect(find.byKey(const Key('preview-qibla-circle')), findsOneWidget);
-    expect(find.byKey(const Key('preview-kaaba')), findsOneWidget);
-    if (find.byKey(const Key('preview-qibla-title')).evaluate().isNotEmpty) {
-      expect(text('preview-qibla-title'), 'القبلة');
-    }
+    // القبلة (طلب المالك): الأيقونة وتحتها «القبلة»، بلا زاوية.
+    expect(find.byKey(const Key('preview-qibla-icon')), findsOneWidget);
+    expect(text('preview-qibla-title'), 'القبلة');
+    expect(tester.getRect(find.byKey(const Key('preview-qibla-title'))).top,
+        greaterThanOrEqualTo(tester.getRect(find.byKey(const Key('preview-qibla-icon'))).bottom));
 
     // الفصل والموسم بلا عناوين، وتحتهما «الشتاء بعد … يوماً».
     final season = day['season'] as Map;

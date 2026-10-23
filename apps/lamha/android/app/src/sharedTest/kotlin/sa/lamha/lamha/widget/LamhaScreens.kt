@@ -297,7 +297,7 @@ object LamhaScreens {
 
     /// عناصر الميزة ٦: كل عنصر في التخطيط ظاهر بنصه الأساسي، ومواقيت الصلاة خمسة أعمدة كلها ظاهرة
     /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٣ أعمدة أو شبكة ٤–٦ بأيام محاذاة،
-    /// والكعبة داخل دائرتها.
+    /// وأيقونة القبلة وتحتها عنوانها.
     private fun checkV3(root: ViewGroup, placed: Set<String>): List<String> {
         val out = ArrayList<String>()
         fun shownText(id: Int) = root.findViewById<TextView>(id)?.takeIf { shown(it, root) && it.text.isNotEmpty() }
@@ -338,21 +338,17 @@ object LamhaScreens {
             val rights = gridDays.filterIndexed { i, _ -> i % 2 == col }.filterNotNull().map { rect(it, root).right }
             if (rights.distinct().size > 1) out += "الإيداعات: الأيام غير محاذاة في العمود ${col + 1} ($rights)"
         }
-        root.findViewById<View>(R.id.qibla_kaaba)?.let { k ->
-            val circle = root.findViewById<View>(R.id.qibla_circle)
-            val kr = rect(k, root)
-            val cr = rect(circle, root)
-            val d = minOf(cr.width(), cr.height())
-            val cx = cr.centerX()
-            val cy = cr.centerY()
-            // زوايا الكعبة داخل الدائرة.
-            for ((x, y) in listOf(kr.left to kr.top, kr.right to kr.top, kr.left to kr.bottom, kr.right to kr.bottom)) {
-                val dx = (x - cx).toDouble()
-                val dy = (y - cy).toDouble()
-                if (Math.sqrt(dx * dx + dy * dy) > d / 2.0 + 1) out += "القبلة: الكعبة خارج الدائرة"
+        // القبلة (طلب المالك): الأيقونة ظاهرة بمقاس غير صفري و«القبلة» تحتها داخل المربع.
+        val icon = root.findViewById<View>(R.id.qibla_icon)
+        if ("qibla" in placed) {
+            if (icon == null || !shown(icon, root) || icon.width <= 0 || icon.height <= 0) {
+                out += "القبلة: الأيقونة غير ظاهرة"
+            } else {
+                root.findViewById<TextView>(R.id.qibla_title)?.takeIf { shown(it, root) && it.text.isNotEmpty() }?.let { t ->
+                    if (rect(t, root).top < rect(icon, root).bottom) out += "القبلة: العنوان ليس تحت الأيقونة"
+                }
             }
         }
-        if ("qibla" in placed && root.findViewById<View>(R.id.qibla_kaaba) == null) out += "القبلة غير ظاهرة"
         return out
     }
 
