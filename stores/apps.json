@@ -1,0 +1,15 @@
+[
+  {"name": "لمحة", "folder": "apps/lamha", "app_dir": "apps/lamha", "pubspec_name": "lamha", "version": "1.0.1+2",
+   "android": "sa.lamha.lamha", "ios_bundle": "sa.lamha.lamha",
+   "play_workflow": "lamha-play.yml", "play_workflow_id": 393655176,
+   "ios_workflow": "lamha-ios.yml", "ios_workflow_id": 393643146,
+   "play_first_manual_upload": "2026-10-24 confirmed by owner"},
+  {"name": "أسرتي", "folder": "asraty", "app_dir": "asraty/app", "pubspec_name": "asraty", "version": "1.0.3+1",
+   "android": "sa.asraty.app", "ios_bundle": "sa.asraty.app",
+   "play_workflow": "asraty-android.yml", "play_workflow_id": 370291878,
+   "ios_workflow": "asraty-ios.yml", "ios_workflow_id": 370291882},
+  {"name": "موعد", "folder": "apps/mawid", "app_dir": "apps/mawid", "pubspec_name": "mawid", "version": "1.0.1+1",
+   "android": "sa.mawid.app", "ios_bundle": "sa.mawid.app",
+   "play_workflow": "mawid-play.yml", "play_workflow_id": 379551945,
+   "ios_workflow": "mawid-ios.yml", "ios_workflow_id": 380260349}
+]
