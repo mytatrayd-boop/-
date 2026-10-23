@@ -90,5 +90,6 @@
   - أيقونة القبلة أكبر (`qiblaIconTarget`).
   - كل إيداع في مستطيل، والاسم والأيام بحجم واحد.
   - `flutter test` و`./gradlew :app:testDebugUnitTest` (مع Robolectric) ناجحة محلياً.
-- تجهيز النشر (طلب المالك): **أندرويد جاهز للرفع اليدوي الأول.** `RELEASE.md`، و`store/STORE_LISTING.md` (النصوص وإجابات App content وData safety)، و`store/PRIVACY.md`، وصور `store/play/` (مولّدة بـ `test/store/store_screenshots_test.dart`)، وتوقيع الإصدار من الأسرار، و`lamha-play.yml` لحزمة AAB. آيفون ينتظر الميزة ٤.
+- تجهيز النشر (طلب المالك): **أندرويد جاهز للرفع اليدوي الأول.** `RELEASE.md`، و`store/STORE_LISTING.md` (النصوص وإجابات App content وData safety)، و`store/PRIVACY.md`، وصور `store/play/` (مولّدة بـ `test/store/store_screenshots_test.dart`)، وتوقيع الإصدار من الأسرار، و`lamha-play.yml` لحزمة AAB.
+- الميزة ٤ (ودجت آيفون): **منفذة، تُرجمت على GitHub (`lamha-ios.yml`)، لم تُجرَّب على جهاز ولم تُرَ صورتها.** `ios/LamhaWidget` (SwiftUI/WidgetKit، iOS 17+): كبيرة ومتوسطة وصغيرة، ومستطيلة وسطر لشاشة القفل. تقرأ الجدول من App Group `group.sa.lamha.shared`. مكان الساعة الصلاة القادمة بعدّاد حي (لا ساعة حية في ودجت آيفون). الهدف أُضيف بـ xcodeproj، و`ios_signing.py` يدعم عدة معرّفات. لقطات App Store في `store/appstore/`.
 - التالي: البناء على GitHub وتجربة المالك، ثم الميزة ٤ (ودجت آيفون وشاشة القفل).
