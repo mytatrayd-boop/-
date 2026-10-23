@@ -175,17 +175,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compassHint =>
-      'Hold the phone flat, then turn until the arrow points up.';
+      'Turn the phone until the Kaaba reaches the arrow at the top';
 
   @override
   String get qiblaAligned => 'You\'re facing the Qibla';
+
+  @override
+  String get qiblaDistance => 'Distance to Makkah';
+
+  @override
+  String qiblaDistanceKm(String km) {
+    return '$km km';
+  }
+
+  @override
+  String get compassAccuracyTitle => 'Compass accuracy';
+
+  @override
+  String compassAccuracy(String level) {
+    String _temp0 = intl.Intl.selectLogic(level, {
+      'excellent': 'Excellent',
+      'good': 'Good',
+      'other': 'Poor',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get compassWaiting => 'Reading the compass…';
 
   @override
   String get compassCalibrate =>
-      'Compass accuracy is low. Move the phone in a figure-8 to calibrate it, away from metal and magnets.';
+      'Move the phone in a figure 8 to calibrate the compass';
 
   @override
   String get compassUnavailable =>

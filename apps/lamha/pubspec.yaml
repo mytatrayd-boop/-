@@ -85,6 +85,7 @@ flutter:
     - assets/branding/qibla_shape.png
     - assets/branding/qibla_ring.png
     - assets/branding/qibla_kaaba.png
+    - assets/branding/kaaba.png
 
   # Tajawal برخصة SIL OFL 1.1 (assets/fonts/OFL-Tajawal.txt).
   fonts:

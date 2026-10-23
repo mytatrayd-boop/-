@@ -200,7 +200,7 @@
       }
     }
   },
-  "compassHint": "ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.",
+  "compassHint": "أدر الجوال حتى تصل الكعبة للسهم بالأعلى",
   "@compassHint": {
     "description": "إرشاد استخدام البوصلة"
   },
@@ -208,11 +208,37 @@
   "@qiblaAligned": {
     "description": "الجهاز متجه إلى القبلة (ضمن ٥°)"
   },
+  "qiblaDistance": "المسافة إلى مكة",
+  "@qiblaDistance": {
+    "description": "عنوان بطاقة المسافة إلى مكة"
+  },
+  "qiblaDistanceKm": "{km} كم",
+  "@qiblaDistanceKm": {
+    "description": "المسافة بالكيلومتر",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "compassAccuracyTitle": "دقة البوصلة",
+  "@compassAccuracyTitle": {
+    "description": "عنوان بطاقة دقة البوصلة"
+  },
+  "compassAccuracy": "{level, select, excellent{ممتازة} good{جيدة} other{ضعيفة}}",
+  "@compassAccuracy": {
+    "description": "مستوى دقة البوصلة",
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
   "compassWaiting": "جارٍ قراءة البوصلة…",
   "@compassWaiting": {
     "description": "قبل أول قراءة من الحساس"
   },
-  "compassCalibrate": "دقة البوصلة منخفضة. حرّك الجوال في الهواء على شكل الرقم ٨ لمعايرتها، وابتعد عن المعادن والمغناطيس.",
+  "compassCalibrate": "حرّك الجوال على شكل رقم ٨ لمعايرة البوصلة",
   "@compassCalibrate": {
     "description": "دقة الحساس منخفضة"
   },

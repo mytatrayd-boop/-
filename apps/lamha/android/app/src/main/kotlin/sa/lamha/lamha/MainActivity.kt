@@ -38,7 +38,7 @@ class MainActivity : FlutterActivity() {
         )
     }
 
-    /// نبضتان بمحرك الاهتزاز نفسه (لا يتبع إعداد «اهتزاز اللمس» كـ HapticFeedback). false بلا محرك.
+    /// نبضة خفيفة واحدة بمحرك الاهتزاز نفسه (لا يتبع إعداد «اهتزاز اللمس» كـ HapticFeedback). false بلا محرك.
     private fun vibrate(): Boolean {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
@@ -47,12 +47,11 @@ class MainActivity : FlutterActivity() {
             getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
         if (!vibrator.hasVibrator()) return false
-        val pattern = longArrayOf(0, 120, 100, 120)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            vibrator.vibrate(VibrationEffect.createOneShot(PULSE_MS, VibrationEffect.DEFAULT_AMPLITUDE))
         } else {
             @Suppress("DEPRECATION")
-            vibrator.vibrate(pattern, -1)
+            vibrator.vibrate(PULSE_MS)
         }
         return true
     }
@@ -85,6 +84,9 @@ class MainActivity : FlutterActivity() {
     companion object {
         private const val CHANNEL = "sa.lamha/android"
         private const val REQUEST_NOTIFICATIONS = 4127
+
+        /// نبضة التطابق مع القبلة: خفيفة وقصيرة.
+        private const val PULSE_MS = 70L
 
         /// Manifest.permission.POST_NOTIFICATIONS (API 33) نصاً، ليعمل مع أي compileSdk.
         private const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"

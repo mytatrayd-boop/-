@@ -5,9 +5,9 @@ import 'package:lamha/src/engine/qibla.dart';
 
 import 'app_helpers.dart';
 
-QiblaCompassPainter painter(WidgetTester tester) => tester
+QiblaDialPainter painter(WidgetTester tester) => tester
     .widget<CustomPaint>(find.byKey(const Key('qibla-compass')))
-    .painter! as QiblaCompassPainter;
+    .painter! as QiblaDialPainter;
 
 Future<void> openQibla(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('qibla-button')));
@@ -26,7 +26,7 @@ void main() {
   // الرياض (أول مدينة في القائمة، الافتراضية).
   final riyadhQibla = double.parse(qiblaDegrees(24.6877, 46.7219).toStringAsFixed(1));
 
-  testWidgets('زر «اتجاه القبلة» يفتح البوصلة الحية والسهم يتبع الجهاز', (tester) async {
+  testWidgets('زر «اتجاه القبلة» يفتح البوصلة الحية والقرص يتبع الجهاز', (tester) async {
     final compass = FakeCompass();
     await pumpApp(tester, compass: compass);
     await openQibla(tester);
@@ -38,12 +38,19 @@ void main() {
 
     compass.controller.add((heading: 0, accuracy: 15));
     await tester.pump();
-    expect(painter(tester).arrow, closeTo(riyadhQibla, 0.01));
+    expect(painter(tester).heading, 0);
+    expect(painter(tester).qibla, closeTo(riyadhQibla, 0.01));
     expect(find.byKey(const Key('compass-calibrate')), findsNothing);
+    expect(find.text('أدر الجوال حتى تصل الكعبة للسهم بالأعلى'), findsOneWidget);
+    expect(find.text('المسافة إلى مكة'), findsOneWidget);
+    expect(find.text('دقة البوصلة'), findsOneWidget);
+    expect(find.text('ممتازة'), findsOneWidget);
+    expect(find.byKey(const Key('qibla-kaaba')), findsOneWidget);
 
+    // التنعيم يمر عبر الشمال (٠ → ٣٠٠ يمرّ بـ ٣٤٥ لا بـ ٧٥).
     compass.controller.add((heading: 300, accuracy: 15));
     await tester.pump();
-    expect(painter(tester).arrow, closeTo((riyadhQibla - 300 + 360) % 360, 0.01));
+    expect(painter(tester).heading, closeTo(345, 0.01));
   });
 
   testWidgets('الاتجاه إلى القبلة: الشاشة تخضرّ والجوال يهتز مرة عند الوصول', (tester) async {
@@ -60,30 +67,32 @@ void main() {
     compass.controller.add((heading: riyadhQibla - 30, accuracy: 15));
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsNothing);
-    expect(background(), Colors.transparent);
+    expect(background(), QiblaScreen.background);
+    expect(painter(tester).aligned, isFalse);
     expect(vibration.pulses, 0);
 
-    compass.controller.add((heading: riyadhQibla - 3, accuracy: 15));
+    compass.controller.add((heading: riyadhQibla - 2, accuracy: 15));
     await tester.pump();
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsOneWidget);
     expect(find.text('أنت باتجاه القبلة'), findsOneWidget);
-    expect(painter(tester).accent, QiblaScreen.alignedColor);
-    expect(background(), isNot(Colors.transparent));
+    expect(painter(tester).aligned, isTrue);
+    expect(background(), QiblaScreen.alignedBackground);
     expect(vibration.pulses, 1);
 
-    // اهتزاز اليد داخل ٨° لا يكرر الاهتزاز ولا يطفئ الإشارة.
-    compass.controller.add((heading: riyadhQibla + 7, accuracy: 15));
+    // اهتزاز اليد داخل ٥° لا يكرر الاهتزاز ولا يطفئ الإشارة.
+    compass.controller.add((heading: riyadhQibla + 4, accuracy: 15));
     await tester.pump();
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsOneWidget);
     expect(vibration.pulses, 1);
 
-    compass.controller.add((heading: riyadhQibla + 12, accuracy: 15));
+    compass.controller.add((heading: riyadhQibla + 7, accuracy: 15));
     await tester.pump();
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsNothing);
-    expect(find.text('ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.'), findsOneWidget);
+    expect(background(), QiblaScreen.background);
+    expect(find.text('أدر الجوال حتى تصل الكعبة للسهم بالأعلى'), findsOneWidget);
 
     // العودة مرة أخرى تهتز من جديد.
     compass.controller.add((heading: riyadhQibla, accuracy: 15));
@@ -93,14 +102,28 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('دقة منخفضة: رسالة معايرة', (tester) async {
+  testWidgets('دقة البوصلة: ممتازة ثم جيدة ثم ضعيفة مع رسالة المعايرة', (tester) async {
     final compass = FakeCompass();
     await pumpApp(tester, compass: compass);
     await openQibla(tester);
+    compass.controller.add((heading: 10, accuracy: 25));
+    await tester.pump();
+    expect(find.text('جيدة'), findsOneWidget);
+    expect(find.byKey(const Key('compass-calibrate')), findsNothing);
     compass.controller.add((heading: 10, accuracy: 45));
     await tester.pump();
+    expect(find.text('ضعيفة'), findsOneWidget);
     expect(find.byKey(const Key('compass-calibrate')), findsOneWidget);
-    expect(find.textContaining('على شكل الرقم ٨'), findsOneWidget);
+    expect(find.textContaining('على شكل رقم ٨'), findsOneWidget);
+  });
+
+  testWidgets('المسافة إلى مكة من الرياض', (tester) async {
+    await pumpApp(tester, compass: FakeCompass());
+    await openQibla(tester);
+    final km = distanceToKaabaKm(24.6877, 46.7219).round();
+    expect(km, inInclusiveRange(780, 800));
+    expect(find.textContaining('كم'), findsOneWidget);
+    expect(find.byKey(const Key('qibla-distance')), findsOneWidget);
   });
 
   testWidgets('بلا حساس: رسالة واضحة والزاوية ظاهرة', (tester) async {
