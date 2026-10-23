@@ -11,8 +11,14 @@ certificate limit, the oldest distribution certificate is revoked.
 
 Stdlib + /usr/bin/openssl only.
 
-  ios_signing.py setup <bundle_id> <path/to/project.pbxproj> <export_options_out>
+  ios_signing.py setup <bundle_id>[,<extension_bundle_id>...] <path/to/project.pbxproj> <export_options_out>
   ios_signing.py cleanup
+
+Several bundle ids (app first, then app extensions such as a widget) get one App
+Store profile each, all signed by the same temporary certificate. With
+IOS_CAPABILITIES=APP_GROUPS, missing bundle ids are registered and the App Groups
+capability is enabled on each; the group itself must still be created and ticked
+for each id in developer.apple.com (the API cannot assign groups).
 
 Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID, RUNNER_TEMP.
 """
@@ -121,9 +127,35 @@ def create_certificate(csr_body: str) -> dict:
     sys.exit("::error::Could not create a distribution certificate (account limit)")
 
 
-def setup(bundle_id: str, pbxproj: str, export_options: str):
+def bundle_resource(bundle_id: str, capabilities: list) -> str:
+    """The bundleIds resource id, registering the id and enabling [capabilities] if asked."""
+    found = api("GET", f"/bundleIds?filter[identifier]={bundle_id}&limit=200")["data"]
+    match = [b for b in found if b["attributes"]["identifier"] == bundle_id]
+    if match:
+        rid = match[0]["id"]
+    elif capabilities:
+        rid = api("POST", "/bundleIds", {"data": {"type": "bundleIds", "attributes": {
+            "identifier": bundle_id, "name": bundle_id.replace(".", " "), "platform": "IOS"}}})["data"]["id"]
+        print(f"Registered bundle id {bundle_id}")
+    else:
+        sys.exit(f"::error::Bundle ID {bundle_id} not found in developer.apple.com Identifiers")
+    if capabilities:
+        have = {c["attributes"]["capabilityType"]
+                for c in api("GET", f"/bundleIds/{rid}/bundleIdCapabilities")["data"]}
+        for cap in capabilities:
+            if cap not in have:
+                api("POST", "/bundleIdCapabilities", {"data": {"type": "bundleIdCapabilities",
+                    "attributes": {"capabilityType": cap},
+                    "relationships": {"bundleId": {"data": {"type": "bundleIds", "id": rid}}}}})
+                print(f"Enabled {cap} on {bundle_id}")
+    return rid
+
+
+def setup(bundle_ids: str, pbxproj: str, export_options: str):
     TMP.mkdir(parents=True, exist_ok=True)
     team = os.environ["APPLE_TEAM_ID"]
+    ids = [b for b in bundle_ids.split(",") if b]
+    capabilities = [c for c in os.environ.get("IOS_CAPABILITIES", "").split(",") if c]
 
     # 1. Distribution certificate from a fresh key + CSR.
     key, csr = TMP / "dist.key", TMP / "dist.csr"
@@ -136,27 +168,27 @@ def setup(bundle_id: str, pbxproj: str, export_options: str):
     der = TMP / "dist.cer"
     der.write_bytes(base64.b64decode(cert["attributes"]["certificateContent"]))
 
-    # 2. App Store profile for the bundle id.
-    found = api("GET", f"/bundleIds?filter[identifier]={bundle_id}&limit=200")["data"]
-    match = [b for b in found if b["attributes"]["identifier"] == bundle_id]
-    if not match:
-        sys.exit(f"::error::Bundle ID {bundle_id} not found in developer.apple.com Identifiers")
-    name = f"{bundle_id} CI {os.environ.get('GITHUB_RUN_ID', int(time.time()))}"
-    prof = api("POST", "/profiles", {"data": {
-        "type": "profiles",
-        "attributes": {"name": name, "profileType": "IOS_APP_STORE"},
-        "relationships": {
-            "bundleId": {"data": {"type": "bundleIds", "id": match[0]["id"]}},
-            "certificates": {"data": [{"type": "certificates", "id": cert["id"]}]}}}})["data"]
-    state["profile"] = prof["id"]
-    STATE.write_text(json.dumps(state))
-    content = base64.b64decode(prof["attributes"]["profileContent"])
-    uuid = prof["attributes"]["uuid"]
+    # 2. App Store profile for each bundle id.
+    names = {}
     home = pathlib.Path.home()
-    for d in (home / "Library/MobileDevice/Provisioning Profiles",
-              home / "Library/Developer/Xcode/UserData/Provisioning Profiles"):
-        d.mkdir(parents=True, exist_ok=True)
-        (d / f"{uuid}.mobileprovision").write_bytes(content)
+    for bundle_id in ids:
+        rid = bundle_resource(bundle_id, capabilities)
+        name = f"{bundle_id} CI {os.environ.get('GITHUB_RUN_ID', int(time.time()))}"
+        prof = api("POST", "/profiles", {"data": {
+            "type": "profiles",
+            "attributes": {"name": name, "profileType": "IOS_APP_STORE"},
+            "relationships": {
+                "bundleId": {"data": {"type": "bundleIds", "id": rid}},
+                "certificates": {"data": [{"type": "certificates", "id": cert["id"]}]}}}})["data"]
+        state.setdefault("profiles", []).append(prof["id"])
+        STATE.write_text(json.dumps(state))
+        content = base64.b64decode(prof["attributes"]["profileContent"])
+        uuid = prof["attributes"]["uuid"]
+        for d in (home / "Library/MobileDevice/Provisioning Profiles",
+                  home / "Library/Developer/Xcode/UserData/Provisioning Profiles"):
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f"{uuid}.mobileprovision").write_bytes(content)
+        names[bundle_id] = name
 
     # 3. Throwaway keychain with the identity and Apple's intermediate.
     pem, p12 = TMP / "dist.pem", TMP / "dist.p12"
@@ -180,29 +212,31 @@ def setup(bundle_id: str, pbxproj: str, export_options: str):
     for f in (key, p12):
         f.unlink()
 
-    # 4. Manual signing on the Runner target only (pods stay unsigned).
+    # 4. Manual signing on the app and extension targets only (pods stay unsigned).
     src = pathlib.Path(pbxproj).read_text()
-    anchor = f"PRODUCT_BUNDLE_IDENTIFIER = {bundle_id};"
-    if anchor not in src:
-        sys.exit(f"::error::{anchor} not found in {pbxproj}")
     indent = "\t\t\t\t"
-    extra = "".join(f"\n{indent}{k} = {v};" for k, v in [
-        ("CODE_SIGN_STYLE", "Manual"),
-        ("DEVELOPMENT_TEAM", team),
-        ('"CODE_SIGN_IDENTITY[sdk=iphoneos*]"', f'"{IDENTITY}"'),
-        ("PROVISIONING_PROFILE_SPECIFIER", f'"{name}"'),
-    ])
-    pathlib.Path(pbxproj).write_text(src.replace(anchor, anchor + extra))
+    for bundle_id, name in names.items():
+        anchor = f"PRODUCT_BUNDLE_IDENTIFIER = {bundle_id};"
+        if anchor not in src:
+            sys.exit(f"::error::{anchor} not found in {pbxproj}")
+        extra = "".join(f"\n{indent}{k} = {v};" for k, v in [
+            ("CODE_SIGN_STYLE", "Manual"),
+            ("DEVELOPMENT_TEAM", team),
+            ('"CODE_SIGN_IDENTITY[sdk=iphoneos*]"', f'"{IDENTITY}"'),
+            ("PROVISIONING_PROFILE_SPECIFIER", f'"{name}"'),
+        ])
+        src = src.replace(anchor, anchor + extra)
+    pathlib.Path(pbxproj).write_text(src)
 
     # 5. Export options: sign with this profile and upload to App Store Connect.
     with open(export_options, "wb") as f:
         plistlib.dump({
             "method": "app-store-connect", "destination": "upload", "teamID": team,
             "signingStyle": "manual", "signingCertificate": IDENTITY,
-            "provisioningProfiles": {bundle_id: name},
+            "provisioningProfiles": names,
             "uploadSymbols": True, "manageAppVersionAndBuildNumber": False,
         }, f)
-    print(f"Signing ready: certificate {cert['id']}, profile '{name}'")
+    print(f"Signing ready: certificate {cert['id']}, profiles {list(names.values())}")
 
 
 def cleanup():
