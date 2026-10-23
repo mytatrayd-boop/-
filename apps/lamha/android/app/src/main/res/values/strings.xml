@@ -6,6 +6,7 @@
     <string name="widget_setup">افتح لمحة لإعداد الودجت</string>
     <string name="widget_error">تعذّر عرض الودجت. افتح لمحة، وإن بقيت هذه الرسالة فصوّرها للمطوّر: %1$s</string>
     <string name="tile_prayer">الصلاة القادمة</string>
+    <string name="qibla_tile_sub">من الشمال · %1$s</string>
     <string name="tile_qibla">القبلة</string>
     <string name="tile_deposit">الإيداع القادم</string>
     <string name="tile_deposit_short">الإيداع</string>

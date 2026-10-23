@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- القبلة (طلب المالك، _QiblaTile): أيقونة القبلة وتحتها «القبلة». الأيقونة ثلاث طبقات
-     (drawable-nodpi): الشكل بلون الخلفية، والحلقة والسهم بلون التمييز أو لون المربع، والكعبة كما هي.
-     الضغط عليها يفتح البوصلة. مقاس الأيقونة وألوانها والخط من LamhaWidgetReceiver. -->
+<!-- القبلة (lamha_qibla_update.md، _QiblaTile): خلفية أيقونة القبلة (qibla_shape بلون الخلفية) وفوقها
+     دائرة الاتجاه الثابت (صورة من drawQiblaDial)، وتحتها الزاوية ثم «من الشمال · الاتجاه».
+     الضغط عليها يفتح البوصلة. المقاس والألوان والخط من LamhaWidgetReceiver. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
     android:layout_width="match_parent"
@@ -28,19 +28,10 @@
                 android:importantForAccessibility="no" />
 
             <ImageView
-                android:id="@+id/qibla_ring"
+                android:id="@+id/qibla_dial"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="fitCenter"
-                android:src="@drawable/qibla_ring"
-                android:importantForAccessibility="no" />
-
-            <ImageView
-                android:id="@+id/qibla_kaaba"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="fitCenter"
-                android:src="@drawable/qibla_kaaba"
                 android:importantForAccessibility="no" />
         </FrameLayout>
 
@@ -59,5 +50,19 @@
             android:textColor="#FFF4EFE6"
             android:textSize="14sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/qibla_sub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFB9B0A2"
+            android:textSize="9sp" />
     </LinearLayout>
 </FrameLayout>

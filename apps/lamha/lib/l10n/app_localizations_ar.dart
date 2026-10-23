@@ -180,6 +180,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get qiblaAligned => 'أنت باتجاه القبلة';
 
   @override
+  String qiblaTileSub(String direction) {
+    return 'من الشمال · $direction';
+  }
+
+  @override
   String get qiblaDistance => 'المسافة إلى مكة';
 
   @override

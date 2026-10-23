@@ -181,6 +181,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qiblaAligned => 'You\'re facing the Qibla';
 
   @override
+  String qiblaTileSub(String direction) {
+    return 'from north · $direction';
+  }
+
+  @override
   String get qiblaDistance => 'Distance to Makkah';
 
   @override

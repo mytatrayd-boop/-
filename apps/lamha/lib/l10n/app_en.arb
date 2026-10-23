@@ -39,6 +39,7 @@
   "compassHint": "Turn the phone until the Kaaba reaches the arrow at the top",
   "qiblaAligned": "You're facing the Qibla",
   "qiblaDistance": "Distance to Makkah",
+  "qiblaTileSub": "from north · {direction}",
   "qiblaDistanceKm": "{km} km",
   "compassAccuracyTitle": "Compass accuracy",
   "compassAccuracy": "{level, select, excellent{Excellent} good{Good} other{Poor}}",

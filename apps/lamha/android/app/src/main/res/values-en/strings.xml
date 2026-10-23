@@ -4,6 +4,7 @@
     <string name="widget_description">Clock, next prayer, qibla, deposit and season at a glance</string>
     <string name="widget_setup">Open Lamha to set up the widget</string>
     <string name="tile_prayer">Next prayer</string>
+    <string name="qibla_tile_sub">from north · %1$s</string>
     <string name="tile_qibla">Qibla</string>
     <string name="tile_deposit">Next deposit</string>
     <string name="tile_deposit_short">Deposit</string>

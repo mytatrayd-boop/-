@@ -10,6 +10,7 @@ import '../engine/compass.dart';
 import '../engine/qibla.dart';
 import 'providers.dart';
 import 'services.dart';
+import 'widget_preview.dart' show kaabaAsset;
 
 /// شاشة «اتجاه القبلة» (تصميم المالك، lamha_qibla_update.md): القرص هو الذي يدور والمؤشر ثابت
 /// أعلاه، وعليه خط ذهبي منقّط من الكعبة في المركز باتجاه القبلة. يدير المستخدم الجوال حتى يصل الخط
@@ -279,9 +280,6 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     );
   }
 }
-
-/// صورة الكعبة الأصلية (من أيقونة القبلة) بخلفية شفافة.
-const kaabaAsset = 'assets/branding/kaaba.png';
 
 class _InfoCard extends StatelessWidget {
   const _InfoCard({super.key, required this.title, required this.value});

@@ -320,11 +320,17 @@ abstract class AppLocalizations {
   /// **'أدر الجوال حتى تصل الكعبة للسهم بالأعلى'**
   String get compassHint;
 
-  /// الجهاز متجه إلى القبلة (ضمن ٥°)
+  /// الجهاز متجه إلى القبلة (ضمن ٣°)
   ///
   /// In ar, this message translates to:
   /// **'أنت باتجاه القبلة'**
   String get qiblaAligned;
+
+  /// السطر الصغير تحت زاوية القبلة في مربع الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'من الشمال · {direction}'**
+  String qiblaTileSub(String direction);
 
   /// عنوان بطاقة المسافة إلى مكة
   ///

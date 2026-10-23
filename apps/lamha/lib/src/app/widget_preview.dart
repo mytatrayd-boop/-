@@ -236,6 +236,8 @@ class WidgetPreview extends StatelessWidget {
     final weather =
         weatherText(reading, now, digits) ?? ltrIsolated(l.weatherUnknown);
     final global = scheduleFontScale(schedule);
+    final qibla = (schedule['qibla'] as Map?) ?? const {};
+    final qiblaDeg = (qibla['degrees'] as num?)?.toDouble() ?? 0;
 
     final layout = scheduleLayout(schedule);
     final byId = {for (final t in layout) t.id: t};
@@ -291,7 +293,12 @@ class WidgetPreview extends StatelessWidget {
           ],
         ),
         WidgetElement.prayer => _prayerTile(l, accent, day, nextDay, digits),
-        WidgetElement.qibla => _QiblaTile(title: l.tileQibla, accent: accent),
+        WidgetElement.qibla => _QiblaTile(
+          angle: '${formatDigits(qiblaDeg.round(), digits)}°',
+          sub: l.qiblaTileSub(qibla['direction'] as String? ?? ''),
+          degrees: qiblaDeg,
+          accent: accent,
+        ),
         WidgetElement.deposit => _depositsTile(day, span),
         WidgetElement.season => _seasonTile(l, day),
         WidgetElement.tradSeason => _tradSeasonTile(
