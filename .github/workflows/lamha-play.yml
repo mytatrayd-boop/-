@@ -3,7 +3,7 @@ name: Lamha — Google Play bundle
 # يبني حزمة المتجر (.aab) لـ «لمحة» موقّعة بمفتاح الرفع نفسه المحفوظ في أسرار المستودع
 # (ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD).
 # التشغيل يدوي فقط. لا Release علني: الملف يُنزَّل من Artifacts لمن لديه صلاحية.
-# إذا اختير upload ووُجد سر PLAY_SERVICE_ACCOUNT_JSON يُرفع مسودة (أول رفع لأي تطبيق جديد يدوي من Play Console).
+# إذا اختير upload ووُجد سر PLAY_SERVICE_ACCOUNT_JSON يُرفع إصداراً مكتملاً (completed) على المسار المختار (أول رفع لأي تطبيق جديد يدوي من Play Console).
 on:
   workflow_dispatch:
     inputs:
@@ -15,7 +15,7 @@ on:
         description: "مسار Play"
         default: internal
         type: choice
-        options: [internal, alpha, beta, production]
+        options: [internal, alpha, beta]
 
 permissions:
   contents: read
@@ -64,4 +64,4 @@ jobs:
           packageName: sa.lamha.lamha
           releaseFiles: apps/lamha/build/app/outputs/bundle/release/app-release.aab
           track: ${{ inputs.track }}
-          status: draft
+          status: completed

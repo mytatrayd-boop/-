@@ -11,11 +11,6 @@ on:
         default: internal
         type: choice
         options: [internal, alpha, beta]
-      status:
-        description: "Release status (use 'draft' until the app has passed its first review)"
-        default: completed
-        type: choice
-        options: [completed, draft]
 
 permissions:
   contents: write
@@ -86,4 +81,4 @@ jobs:
           packageName: sa.asraty.app
           releaseFiles: asraty/app/build/app/outputs/bundle/release/app-release.aab
           track: ${{ inputs.track }}
-          status: ${{ inputs.status }}
+          status: completed
