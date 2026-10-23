@@ -37,6 +37,9 @@ const gridDaysGap = 6.0;
 /// هامش عمود الأيام لتقريب البكسل.
 const gridDaysSlack = 2.0;
 const qiblaTitleSize = 14.0;
+
+/// السطر الصغير تحت زاوية القبلة («من الشمال · شمال غرب»).
+const qiblaSubSize = 9.0;
 const pointSize = 10.0;
 
 /// ارتفاعات الأسطر.
@@ -54,11 +57,27 @@ const lineGap = 2.0;
 /// حشوة الصناديق الجديدة الرأسية (أقل من المربعات القديمة لتتسع الصفوف الخمسة).
 const boxPadV = 2.0;
 
-/// طبقات أيقونة القبلة (طلب المالك) وبينها وبين «القبلة» تحتها.
+/// مربع القبلة (lamha_qibla_update.md): خلفية أيقونة القبلة، وفوقها دائرة بإطار أزرق فاتح وN أحمر
+/// أعلاها، والكعبة في الوسط، ورأس سهم أبيض على المحيط بزاوية القبلة. وبين المربع والزاوية تحته.
 const qiblaShapeAsset = 'assets/branding/qibla_shape.png';
-const qiblaRingAsset = 'assets/branding/qibla_ring.png';
-const qiblaKaabaAsset = 'assets/branding/qibla_kaaba.png';
 const qiblaIconGap = 2.0;
+
+/// صورة الكعبة الأصلية (من أيقونة القبلة) بخلفية شفافة، للمربع وشاشة البوصلة.
+const kaabaAsset = 'assets/branding/kaaba.png';
+const qiblaDialRing = Color(0xFF85B7EB);
+const qiblaDialNorth = Color(0xFFF09595);
+
+/// أبعاد الدائرة نسبةً لضلع المربع (مطابقة لـ drawQiblaDial في LamhaWidgetReceiver.kt وQiblaIcon في
+/// LamhaWidget.swift): نصف القطر، وسمك الإطار، ورأس السهم (طرفه خارج الدائرة وقاعدته داخلها
+/// ونصف عرضه)، وموضع N وحجمه، وضلع الكعبة.
+const qiblaDialRadius = 0.36;
+const qiblaDialStroke = 0.03;
+const qiblaArrowOut = 0.09;
+const qiblaArrowIn = 0.03;
+const qiblaArrowHalf = 0.065;
+const qiblaNorthAt = 0.265;
+const qiblaNorthSize = 0.12;
+const qiblaKaabaSize = 0.34;
 
 /// مربع في الشبكة: يُرسم بحجمه المطلوب داخل مقاسه، ومقاسه من [base] بالحجم الأساسي.
 abstract class _Cell extends StatelessWidget {
@@ -348,52 +367,66 @@ class _CapsuleTile extends _Styled {
   );
 }
 
-/// القبلة (طلب المالك): أيقونة القبلة وتحتها «القبلة». الأيقونة ثلاث طبقات من صورة المالك: الشكل
-/// بلون الخلفية (qiblaIconBackground)، والحلقة والسهم بلون التمييز أو اللون الرئيسي للمربع، والكعبة
-/// كما هي، فتتسق مع أي لون. الأيقونة أكبر مربع يتسع مع العنوان، والعنوان يصغر ليتسع عرض المربع.
-/// مطابقة لـ qiblaTile في LamhaWidgetReceiver.kt.
+/// القبلة (lamha_qibla_update.md): دائرة اتجاه ثابت محسوب من الموقع (الودجت لا تقرأ الحساس) فوق خلفية
+/// أيقونة القبلة (qiblaIconBackground بلون التمييز أو اللون الرئيسي للمربع)، وتحتها الزاوية بخط كبير
+/// («٣٢٥°») ثم سطر صغير («من الشمال · شمال غرب»). الدائرة أكبر مربع يتسع مع السطرين، والسطران يصغران
+/// ليتسعا عرض المربع. الضغط يفتح شاشة البوصلة. مطابقة لـ qiblaTile في LamhaWidgetReceiver.kt.
 class _QiblaTile extends _Styled {
   const _QiblaTile({
-    required this.title,
+    required this.angle,
+    required this.sub,
+    required this.degrees,
     required this.accent,
     _Look look = _defaultLook,
   }) : super(look);
 
-  final String title;
+  final String angle;
+  final String sub;
+  final double degrees;
   final Color accent;
 
   @override
-  _QiblaTile withLook(_Look look) =>
-      _QiblaTile(title: title, accent: accent, look: look);
+  _QiblaTile withLook(_Look look) => _QiblaTile(
+    angle: angle,
+    sub: sub,
+    degrees: degrees,
+    accent: accent,
+    look: look,
+  );
 
   @override
-  ({double text, double pad}) heights(BuildContext context, double width) =>
-      (
-        text: look.showTitle ? qiblaTitleSize * tileLineHeight * s : 0,
-        pad: qiblaIconTarget(width),
-      );
+  ({double text, double pad}) heights(BuildContext context, double width) => (
+    text: look.showTitle
+        ? (qiblaTitleSize + qiblaSubSize) * tileLineHeight * s
+        : 0,
+    pad: qiblaIconTarget(width),
+  );
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
-      final style = TextStyle(
-        fontSize: qiblaTitleSize * s,
-        fontWeight: FontWeight.w700,
+      TextStyle style(double size, Color color, FontWeight weight) => TextStyle(
+        fontSize: size,
+        fontWeight: weight,
         height: tileLineHeight,
-        color: primary,
+        color: color,
       );
-      final size = fitTextSize(
-        qiblaTitleSize * s,
-        _measure(context, title, style),
+      double fit(String text, TextStyle st) => fitTextSize(
+        st.fontSize!,
+        _measure(context, text, st),
         c.maxWidth - fitMargin,
-        qiblaTitleSize * s * 0.6,
+        st.fontSize! * 0.6,
       );
-      // +١ لتقريب ارتفاع السطر.
+      final angleStyle = style(qiblaTitleSize * s, primary, FontWeight.w700);
+      final subStyle = style(qiblaSubSize * s, secondary, FontWeight.w500);
+      final angleSize = fit(angle, angleStyle);
+      final subSize = fit(sub, subStyle);
       final ring = look.primary ?? accent;
-      final titleLine = look.showTitle
-          ? size * tileLineHeight + qiblaIconGap + 1
+      // +١ لتقريب ارتفاع السطر.
+      final textLines = look.showTitle
+          ? (angleSize + subSize) * tileLineHeight + qiblaIconGap + 1
           : 0;
-      final icon = math.max(0.0, math.min(c.maxWidth, c.maxHeight - titleLine));
+      final icon = math.max(0.0, math.min(c.maxWidth, c.maxHeight - textLines));
       return _centered(
         Center(
           child: Column(
@@ -405,31 +438,43 @@ class _QiblaTile extends _Styled {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    for (final (asset, color) in [
-                      (
-                        qiblaShapeAsset,
-                        Color(qiblaIconBackground(ring.toARGB32())),
+                    Image.asset(
+                      qiblaShapeAsset,
+                      color: Color(qiblaIconBackground(ring.toARGB32())),
+                      colorBlendMode: BlendMode.srcIn,
+                      filterQuality: FilterQuality.medium,
+                    ),
+                    CustomPaint(
+                      key: const Key('preview-qibla-dial'),
+                      painter: QiblaTileDialPainter(degrees),
+                    ),
+                    Center(
+                      child: SizedBox.square(
+                        dimension: icon * qiblaKaabaSize,
+                        child: Image.asset(
+                          kaabaAsset,
+                          filterQuality: FilterQuality.medium,
+                        ),
                       ),
-                      (qiblaRingAsset, ring),
-                      (qiblaKaabaAsset, null),
-                    ])
-                      Image.asset(
-                        asset,
-                        color: color,
-                        colorBlendMode: BlendMode.srcIn,
-                        filterQuality: FilterQuality.medium,
-                      ),
+                    ),
                   ],
                 ),
               ),
               if (look.showTitle) ...[
                 const SizedBox(height: qiblaIconGap),
                 Text(
-                  title,
+                  angle,
                   key: const Key('preview-qibla-title'),
                   maxLines: 1,
                   softWrap: false,
-                  style: style.copyWith(fontSize: size),
+                  style: angleStyle.copyWith(fontSize: angleSize),
+                ),
+                Text(
+                  sub,
+                  key: const Key('preview-qibla-sub'),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: subStyle.copyWith(fontSize: subSize),
                 ),
               ],
             ],
@@ -438,6 +483,60 @@ class _QiblaTile extends _Styled {
       );
     },
   );
+}
+
+/// دائرة مربع القبلة: إطار أزرق فاتح، وN أحمر أعلاها، ورأس سهم أبيض على المحيط مُدار بـ[degrees]
+/// من الشمال. الكعبة صورة فوقها في الوسط.
+class QiblaTileDialPainter extends CustomPainter {
+  QiblaTileDialPainter(this.degrees);
+
+  final double degrees;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final side = size.shortestSide;
+    final c = size.center(Offset.zero);
+    final r = side * qiblaDialRadius;
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = side * qiblaDialStroke
+        ..color = qiblaDialRing,
+    );
+    final n = TextPainter(
+      text: TextSpan(
+        text: 'N',
+        style: TextStyle(
+          color: qiblaDialNorth,
+          fontSize: side * qiblaNorthSize,
+          fontWeight: FontWeight.w700,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    n.paint(
+      canvas,
+      c + Offset(-n.width / 2, -side * qiblaNorthAt - n.height / 2),
+    );
+    canvas.save();
+    canvas.translate(c.dx, c.dy);
+    canvas.rotate(degrees * math.pi / 180);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, -(r + side * qiblaArrowOut))
+        ..lineTo(side * qiblaArrowHalf, -(r - side * qiblaArrowIn))
+        ..lineTo(-side * qiblaArrowHalf, -(r - side * qiblaArrowIn))
+        ..close(),
+      Paint()..color = const Color(0xFFFFFFFF),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(QiblaTileDialPainter old) => old.degrees != degrees;
 }
 
 typedef _ColumnItem = ({String name, String sub});

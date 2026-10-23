@@ -38,4 +38,11 @@ void main() {
           closeTo(adhan.Qibla.qibla(adhan.Coordinates(lat, lon)), 0.1));
     }
   });
+
+  test('المسافة إلى مكة: محايل عسير ≈ ٣٩٥ كم، والرياض ≈ ٧٩٣ كم', () {
+    expect(distanceToKaabaKm(18.54, 42.05), closeTo(396, 3));
+    expect(distanceToKaabaKm(24.6877, 46.7219), closeTo(793, 3));
+    expect(distanceToKaabaKm(kaabaLatitude, kaabaLongitude), closeTo(0, 1e-6));
+    expect(qiblaDegrees(18.54, 42.05), closeTo(324.4, 0.3));
+  });
 }

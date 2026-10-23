@@ -9,6 +9,7 @@ import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import java.io.File
 import java.util.Locale
@@ -336,14 +337,22 @@ object LamhaScreens {
             val rights = gridDays.filterIndexed { i, _ -> i % 2 == col }.filterNotNull().map { rect(it, root).right }
             if (rights.distinct().size > 1) out += "الإيداعات: الأيام غير محاذاة في العمود ${col + 1} ($rights)"
         }
-        // القبلة (طلب المالك): الأيقونة ظاهرة بمقاس غير صفري و«القبلة» تحتها داخل المربع.
+        // القبلة (lamha_qibla_update.md): الدائرة ظاهرة بمقاس غير صفري وبصورتها، وتحتها الزاوية ثم سطر الاتجاه.
         val icon = root.findViewById<View>(R.id.qibla_icon)
         if ("qibla" in placed) {
+            val dial = root.findViewById<ImageView>(R.id.qibla_dial)
             if (icon == null || !shown(icon, root) || icon.width <= 0 || icon.height <= 0) {
                 out += "القبلة: الأيقونة غير ظاهرة"
+            } else if (dial?.drawable == null) {
+                out += "القبلة: الدائرة بلا صورة"
             } else {
-                root.findViewById<TextView>(R.id.qibla_title)?.takeIf { shown(it, root) && it.text.isNotEmpty() }?.let { t ->
-                    if (rect(t, root).top < rect(icon, root).bottom) out += "القبلة: العنوان ليس تحت الأيقونة"
+                val title = root.findViewById<TextView>(R.id.qibla_title)?.takeIf { shown(it, root) && it.text.isNotEmpty() }
+                title?.let { t ->
+                    if (rect(t, root).top < rect(icon, root).bottom) out += "القبلة: الزاوية ليست تحت الدائرة"
+                    if (!t.text.contains('°')) out += "القبلة: الزاوية «${t.text}»"
+                }
+                root.findViewById<TextView>(R.id.qibla_sub)?.takeIf { shown(it, root) && it.text.isNotEmpty() }?.let { sub ->
+                    if (title != null && rect(sub, root).top < rect(title, root).bottom) out += "القبلة: سطر الاتجاه ليس تحت الزاوية"
                 }
             }
         }

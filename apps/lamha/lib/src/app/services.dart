@@ -230,9 +230,6 @@ abstract class Vibration {
 /// أندرويد: محرك الاهتزاز عبر MainActivity (HapticFeedback يتبع إعداد «اهتزاز اللمس» وكثيراً ما
 /// يُتجاهل). غيره: HapticFeedback.
 class DeviceVibration implements Vibration {
-  /// الفاصل بين النبضتين في غير أندرويد.
-  static const pulseGap = Duration(milliseconds: 150);
-
   @override
   Future<void> alignedPulse() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -243,8 +240,7 @@ class DeviceVibration implements Vibration {
       }
       return;
     }
-    await HapticFeedback.heavyImpact();
-    await Future<void>.delayed(pulseGap);
-    await HapticFeedback.heavyImpact();
+    // نبضة خفيفة واحدة (lamha_qibla_update.md).
+    await HapticFeedback.mediumImpact();
   }
 }

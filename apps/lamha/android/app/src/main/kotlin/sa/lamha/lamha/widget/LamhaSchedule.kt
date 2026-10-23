@@ -13,9 +13,10 @@ data class LamhaDay(
     val hijriText: String,
     val gregorianText: String,
     val nextPrayer: LamhaLogic.Prayer?,
-    /// الزاوية («٣٢٤°») والاتجاه («شمال غرب») سطران في المربع.
+    /// الزاوية («٣٢٤°») والاتجاه («شمال غرب») سطران في المربع، والزاوية رقماً لتدوير السهم.
     val qiblaDegrees: String,
     val qiblaDirection: String,
+    val qiblaAngle: Float,
     /// بالترتيب: الأقرب ثم الذي بعده.
     val deposits: List<Deposit>,
     val seasonId: String,
@@ -183,7 +184,8 @@ object LamhaSchedule {
                 d.optString("daysText", d.getString("remainingText")),
             )
         }
-        val (qiblaDegrees, qiblaDirection) = LamhaLogic.splitQibla(root.getJSONObject("qibla").getString("text"))
+        val qibla = root.getJSONObject("qibla")
+        val (qiblaDegrees, qiblaDirection) = LamhaLogic.splitQibla(qibla.getString("text"))
         val season = day.getJSONObject("season")
         val trad = day.getJSONObject("tradSeason")
         // سمة وطقس (الميزة ٣ج)؛ جدول أقدم بلاهما يأخذ الذهبي وبلا طقس.
@@ -209,6 +211,7 @@ object LamhaSchedule {
             nextPrayer = LamhaLogic.nextPrayer(today, tomorrow, nowMillis),
             qiblaDegrees = qiblaDegrees,
             qiblaDirection = qiblaDirection,
+            qiblaAngle = qibla.optDouble("degrees", 0.0).toFloat(),
             deposits = deposits,
             seasonId = season.getString("id"),
             seasonName = season.getString("name"),

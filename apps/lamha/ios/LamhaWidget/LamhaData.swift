@@ -37,6 +37,10 @@ struct LamhaSnapshot {
     let city: String
     let timeZone: TimeZone
     let qiblaText: String
+    /// الزاوية («٣٢٤°») والاتجاه («شمال غرب») تحت دائرة القبلة، والزاوية رقماً لتدوير السهم.
+    let qiblaAngleText: String
+    let qiblaDirection: String
+    let qiblaDegrees: Double
     let accent: Color
     /// خلفية أيقونة القبلة: التمييز معتّماً إلى ٢٨٪ (qiblaIconBackground في Dart وKotlin).
     let iconBackground: Color
@@ -142,6 +146,9 @@ func loadSnapshot() -> LamhaSnapshot? {
         city: city["name"] as? String ?? "",
         timeZone: TimeZone(identifier: city["timeZone"] as? String ?? "Asia/Riyadh") ?? .current,
         qiblaText: qibla["text"] as? String ?? "",
+        qiblaAngleText: (qibla["text"] as? String ?? "").components(separatedBy: "°").first.map { $0 + "°" } ?? "",
+        qiblaDirection: qibla["direction"] as? String ?? "",
+        qiblaDegrees: (qibla["degrees"] as? NSNumber)?.doubleValue ?? 0,
         accent: color(theme["accent"], 0xFFD6AA5C),
         iconBackground: color(NSNumber(value: darkened(argb(theme["accent"], 0xFFD6AA5C))), 0xFF3C301A),
         background: color(theme["background"], 0xFF000000),

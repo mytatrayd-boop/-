@@ -174,18 +174,42 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get compassHint =>
-      'ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.';
+  String get compassHint => 'أدر الجوال حتى تصل الكعبة للسهم بالأعلى';
 
   @override
   String get qiblaAligned => 'أنت باتجاه القبلة';
 
   @override
+  String qiblaTileSub(String direction) {
+    return 'من الشمال · $direction';
+  }
+
+  @override
+  String get qiblaDistance => 'المسافة إلى مكة';
+
+  @override
+  String qiblaDistanceKm(String km) {
+    return '$km كم';
+  }
+
+  @override
+  String get compassAccuracyTitle => 'دقة البوصلة';
+
+  @override
+  String compassAccuracy(String level) {
+    String _temp0 = intl.Intl.selectLogic(level, {
+      'excellent': 'ممتازة',
+      'good': 'جيدة',
+      'other': 'ضعيفة',
+    });
+    return '$_temp0';
+  }
+
+  @override
   String get compassWaiting => 'جارٍ قراءة البوصلة…';
 
   @override
-  String get compassCalibrate =>
-      'دقة البوصلة منخفضة. حرّك الجوال في الهواء على شكل الرقم ٨ لمعايرتها، وابتعد عن المعادن والمغناطيس.';
+  String get compassCalibrate => 'حرّك الجوال على شكل رقم ٨ لمعايرة البوصلة';
 
   @override
   String get compassUnavailable =>

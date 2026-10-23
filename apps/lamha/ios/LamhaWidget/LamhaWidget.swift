@@ -47,17 +47,51 @@ struct LamhaProvider: TimelineProvider {
 
 // MARK: - العناصر
 
-/// أيقونة القبلة بثلاث طبقات (كـ qiblaTile في أندرويد): الشكل بلون التمييز معتّماً، والحلقة بالتمييز، والكعبة كما هي.
+/// مربع القبلة (lamha_qibla_update.md، qiblaTile في أندرويد): خلفية أيقونة القبلة، وفوقها دائرة بإطار
+/// أزرق فاتح وN أحمر أعلاها، والكعبة في الوسط، ورأس سهم أبيض على المحيط مُدار بزاوية القبلة. الأبعاد
+/// نسبةً للضلع كـ qiblaDial* في widget_preview_tiles.dart.
 struct QiblaIcon: View {
-    let accent: Color
+    let degrees: Double
     let dark: Color
     var body: some View {
-        ZStack {
-            Image("qibla_shape").resizable().renderingMode(.template).foregroundStyle(dark)
-            Image("qibla_ring").resizable().renderingMode(.template).foregroundStyle(accent)
-            Image("qibla_kaaba").resizable()
+        GeometryReader { g in
+            let side = min(g.size.width, g.size.height)
+            let r = side * 0.36
+            ZStack {
+                Image("qibla_shape").resizable().renderingMode(.template).foregroundStyle(dark)
+                Circle()
+                    .stroke(Color(red: 133.0 / 255, green: 183.0 / 255, blue: 235.0 / 255), lineWidth: side * 0.03)
+                    .frame(width: r * 2, height: r * 2)
+                Image("kaaba").resizable().aspectRatio(1, contentMode: .fit).frame(width: side * 0.34)
+                Text("N")
+                    .font(.system(size: side * 0.12, weight: .bold))
+                    .foregroundStyle(Color(red: 240.0 / 255, green: 149.0 / 255, blue: 149.0 / 255))
+                    .offset(y: -side * 0.265)
+                QiblaArrow(radius: r, side: side)
+                    .fill(Color.white)
+                    .frame(width: side, height: side)
+                    .rotationEffect(.degrees(degrees))
+            }
+            .frame(width: side, height: side)
+            .position(x: g.size.width / 2, y: g.size.height / 2)
         }
         .aspectRatio(1, contentMode: .fit)
+        .environment(\.layoutDirection, .leftToRight)
+    }
+}
+
+/// رأس السهم متجهاً للأعلى على محيط الدائرة: طرفه خارجها وقاعدته داخلها.
+struct QiblaArrow: Shape {
+    let radius: CGFloat
+    let side: CGFloat
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        var p = Path()
+        p.move(to: CGPoint(x: c.x, y: c.y - (radius + side * 0.09)))
+        p.addLine(to: CGPoint(x: c.x + side * 0.065, y: c.y - (radius - side * 0.03)))
+        p.addLine(to: CGPoint(x: c.x - side * 0.065, y: c.y - (radius - side * 0.03)))
+        p.closeSubpath()
+        return p
     }
 }
 
@@ -195,9 +229,12 @@ struct LamhaWidgetView: View {
 
     private func qibla(_ s: LamhaSnapshot) -> some View {
         Link(destination: qiblaURL) {
-            VStack(spacing: 2) {
-                QiblaIcon(accent: s.accent, dark: s.iconBackground)
-                Text("القبلة").font(.system(size: 12, weight: .bold)).foregroundStyle(textColor)
+            VStack(spacing: 1) {
+                QiblaIcon(degrees: s.qiblaDegrees, dark: s.iconBackground)
+                Text(s.qiblaAngleText).font(.system(size: 14, weight: .bold)).foregroundStyle(textColor)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                Text("من الشمال · " + s.qiblaDirection).font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(dimColor).lineLimit(1).minimumScaleFactor(0.6)
             }
         }
     }

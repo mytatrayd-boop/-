@@ -34,3 +34,13 @@ String directionName(double degrees) {
   final i = (((degrees % 360) + 360) % 360 / 45).round() % 8;
   return directionNames[i];
 }
+
+/// المسافة إلى الكعبة بالكيلومتر (هافرساين، نصف قطر الأرض ٦٣٧١ كم).
+double distanceToKaabaKm(double latitude, double longitude) {
+  const r = math.pi / 180;
+  final dLat = (kaabaLatitude - latitude) * r;
+  final dLon = (kaabaLongitude - longitude) * r;
+  final a = math.pow(math.sin(dLat / 2), 2) +
+      math.cos(latitude * r) * math.cos(kaabaLatitude * r) * math.pow(math.sin(dLon / 2), 2);
+  return 2 * 6371 * math.asin(math.sqrt(a));
+}

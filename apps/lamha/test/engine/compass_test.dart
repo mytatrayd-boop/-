@@ -39,12 +39,28 @@ void main() {
 
   test('على القبلة ضمن ٥°، ولا يخرج إلا بعد ٨°', () {
     expect(isAligned(0, wasAligned: false), isTrue);
-    expect(isAligned(5, wasAligned: false), isTrue);
-    expect(isAligned(355, wasAligned: false), isTrue);
-    expect(isAligned(6, wasAligned: false), isFalse);
-    expect(isAligned(6, wasAligned: true), isTrue);
-    expect(isAligned(352, wasAligned: true), isTrue);
-    expect(isAligned(9, wasAligned: true), isFalse);
+    expect(isAligned(3, wasAligned: false), isTrue);
+    expect(isAligned(357, wasAligned: false), isTrue);
+    expect(isAligned(4, wasAligned: false), isFalse);
+    expect(isAligned(4, wasAligned: true), isTrue);
+    expect(isAligned(355, wasAligned: true), isTrue);
+    expect(isAligned(6, wasAligned: true), isFalse);
     expect(isAligned(180, wasAligned: true), isFalse);
+  });
+
+  test('تنعيم الاتجاه عبر أقصر طريق', () {
+    expect(smoothHeading(null, 120), 120);
+    expect(smoothHeading(100, 140, factor: 0.25), closeTo(110, 1e-9));
+    // من ٣٥٠ إلى ١٠: يعبر الصفر (+٥) لا يرجع للخلف.
+    expect(smoothHeading(350, 10, factor: 0.25), closeTo(355, 1e-9));
+    expect(smoothHeading(10, 350, factor: 0.5), closeTo(0, 1e-9));
+  });
+
+  test('دقة البوصلة', () {
+    expect(compassAccuracy(15), CompassAccuracy.excellent);
+    expect(compassAccuracy(30), CompassAccuracy.good);
+    expect(compassAccuracy(45), CompassAccuracy.poor);
+    expect(compassAccuracy(null), CompassAccuracy.poor);
+    expect(compassAccuracy(-1), CompassAccuracy.poor);
   });
 }

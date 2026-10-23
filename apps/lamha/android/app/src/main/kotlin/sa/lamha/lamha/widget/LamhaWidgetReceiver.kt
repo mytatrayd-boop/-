@@ -6,7 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
@@ -122,6 +128,24 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val GRID_DAYS_GAP_DP = 6f
         private const val GRID_DAYS_SLACK_DP = 2f
         private const val QIBLA_TITLE_SP = 14f
+
+        /// السطر الصغير تحت الزاوية (qiblaSubSize في Dart).
+        private const val QIBLA_SUB_SP = 9f
+
+        /// دائرة مربع القبلة (lamha_qibla_update.md): الألوان، والأبعاد نسبةً لضلع المربع كـ qiblaDial*
+        /// في widget_preview_tiles.dart. أقصى ضلع للصورة بالبكسل (ذاكرة RemoteViews).
+        private const val QIBLA_RING = 0xFF85B7EB.toInt()
+        private const val QIBLA_NORTH = 0xFFF09595.toInt()
+        private const val QIBLA_DIAL_RADIUS = 0.36f
+        private const val QIBLA_DIAL_STROKE = 0.03f
+        private const val QIBLA_ARROW_OUT = 0.09f
+        private const val QIBLA_ARROW_IN = 0.03f
+        private const val QIBLA_ARROW_HALF = 0.065f
+        private const val QIBLA_NORTH_AT = 0.265f
+        private const val QIBLA_NORTH_SIZE = 0.12f
+        private const val QIBLA_KAABA_SIZE = 0.34f
+        private const val QIBLA_DIAL_MAX_PX = 360
+        private const val QIBLA_ICON_DEFAULT_DP = 56f
         private const val POINT_SP = 10f
         private const val COLUMN_GAP_DP = 4f
         private const val LINE_GAP_DP = 2f
@@ -134,7 +158,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val INFO_PAD_V = 8f
 
         /// ما لا يصغر في دائرة القبلة (الكعبة)، كـ heights في _QiblaTile.
-        /// بين أيقونة القبلة و«القبلة» تحتها (qiblaIconGap في Dart، layout_marginTop في widget_tile_qibla.xml).
+        /// بين دائرة القبلة والزاوية تحتها (qiblaIconGap في Dart، layout_marginTop في widget_tile_qibla.xml).
         private const val QIBLA_ICON_GAP_DP = 2f
         private const val INFO_FIT_SLACK_DP = 1f
 
@@ -379,7 +403,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     (if (showSub) tightDp(env.ctx, DAY_CITY_MIN_SP * scale, false) + tightDp(env.ctx, DAY_TEMP_SP * scale, true) else 0f) to 8f
                 "hijri", "gregorian" -> tightDp(env.ctx, CAPSULE_SP * scale, true) to 8f + 6f
                 // الأيقونة بأكبر ما تسمح به الخانة (طلب المالك).
-                "qibla" -> (if (showTitle) lineDp(env.ctx, QIBLA_TITLE_SP * scale, true) else 0f) to
+                "qibla" -> (if (showTitle) lineDp(env.ctx, QIBLA_TITLE_SP * scale, true) + lineDp(env.ctx, QIBLA_SUB_SP * scale, false) else 0f) to
                     8f + LamhaLogic.qiblaIconTarget(LamhaLogic.slotInnerDp(env.widthDp, cell.span))
                 // كل إيداع في مستطيل: الصفوف وحشواتها، بلا صندوق خارجي.
                 "deposit" -> {
@@ -744,8 +768,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             return rv
         }
 
-        /// القبلة (الميزة ٦، _QiblaTile): دائرة بقطر أصغر بُعدَي الخانة، فيها «القبلة» وتحتها الكعبة،
-        /// والضغط يفتح البوصلة. مقاس الكعبة يُضبط في أندرويد ١٢+ (وإلا ٤٠dp).
+        /// القبلة (lamha_qibla_update.md، _QiblaTile): خلفية أيقونة القبلة وفوقها دائرة الاتجاه الثابت (صورة
+        /// يرسمها drawQiblaDial)، وتحتها الزاوية بخط كبير ثم «من الشمال · الاتجاه». الضغط يفتح البوصلة.
+        /// مقاس المربع يُضبط في أندرويد ١٢+ (وإلا ٥٦dp).
         private fun qiblaTile(env: Env, spec: LamhaLogic.Tile, scale: Float, inner: Float, innerHeightDp: Float): RemoteViews {
             val ctx = env.ctx
             val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_qibla)
@@ -753,30 +778,79 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 R.id.tile_box,
                 HomeWidgetLaunchIntent.getActivity(env.context, MainActivity::class.java, Uri.parse(QIBLA_URI)),
             )
-            // الأيقونة أكبر مربع يتسع مع «القبلة» تحتها، والعنوان يصغر ليتسع عرض المربع (_QiblaTile).
-            val title = ctx.getString(R.string.tile_qibla)
-            val preferred = QIBLA_TITLE_SP * scale
-            val sp = if (inner > 0f) {
-                LamhaLogic.fitTextSize(preferred, textWidthDp(ctx, title, preferred, true), inner - FIT_MARGIN_DP, preferred * 0.6f)
+            rv.setContentDescription(R.id.tile_box, ctx.getString(R.string.tile_qibla))
+            // الدائرة أكبر مربع يتسع مع السطرين تحتها، والسطران يصغران ليتسعا عرض المربع (_QiblaTile).
+            fun fit(text: String, preferred: Float, bold: Boolean) = if (inner > 0f) {
+                LamhaLogic.fitTextSize(preferred, textWidthDp(ctx, text, preferred, bold), inner - FIT_MARGIN_DP, preferred * 0.6f)
             } else preferred
-            val titleLine = if (spec.showTitle) tightDp(ctx, sp, true) + QIBLA_ICON_GAP_DP else 0f
+            val angle = env.day.qiblaDegrees
+            val sub = ctx.getString(R.string.qibla_tile_sub, env.day.qiblaDirection)
+            val angleSp = fit(angle, QIBLA_TITLE_SP * scale, true)
+            val subSp = fit(sub, QIBLA_SUB_SP * scale, false)
+            val textLines = if (spec.showTitle) {
+                tightDp(ctx, angleSp, true) + tightDp(ctx, subSp, false) + QIBLA_ICON_GAP_DP
+            } else 0f
             if (spec.showTitle) {
-                rv.setTextViewText(R.id.qibla_title, title)
-                rv.setTextViewTextSize(R.id.qibla_title, TypedValue.COMPLEX_UNIT_SP, sp)
+                rv.setTextViewText(R.id.qibla_title, angle)
+                rv.setTextViewTextSize(R.id.qibla_title, TypedValue.COMPLEX_UNIT_SP, angleSp)
                 spec.primaryColor?.let { rv.setTextColor(R.id.qibla_title, it) }
+                rv.setTextViewText(R.id.qibla_sub, sub)
+                rv.setTextViewTextSize(R.id.qibla_sub, TypedValue.COMPLEX_UNIT_SP, subSp)
+                spec.secondaryColor?.let { rv.setTextColor(R.id.qibla_sub, it) }
             } else {
                 rv.setViewVisibility(R.id.qibla_title, View.GONE)
+                rv.setViewVisibility(R.id.qibla_sub, View.GONE)
             }
-            // الحلقة والسهم بلون المربع الرئيسي إن اختير وإلا بالتمييز، والشكل بلونها معتّماً.
+            // الخلفية بلون المربع الرئيسي إن اختير وإلا بالتمييز، معتّماً (كالأيقونة السابقة).
             val ring = spec.primaryColor ?: env.accent
-            rv.setInt(R.id.qibla_ring, "setColorFilter", ring)
             rv.setInt(R.id.qibla_shape, "setColorFilter", LamhaLogic.qiblaIconBackground(ring))
-            val icon = listOf(inner, if (innerHeightDp > 0f) innerHeightDp - titleLine else 0f).filter { it > 0f }.minOrNull() ?: 0f
-            if (icon > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val icon = listOf(inner, if (innerHeightDp > 0f) innerHeightDp - textLines else 0f).filter { it > 0f }.minOrNull() ?: 0f
+            val resizable = icon > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            if (resizable) {
                 rv.setViewLayoutWidth(R.id.qibla_icon, icon, TypedValue.COMPLEX_UNIT_DIP)
                 rv.setViewLayoutHeight(R.id.qibla_icon, icon, TypedValue.COMPLEX_UNIT_DIP)
             }
+            val px = ((if (resizable) icon else QIBLA_ICON_DEFAULT_DP) * ctx.resources.displayMetrics.density)
+                .toInt().coerceIn(48, QIBLA_DIAL_MAX_PX)
+            rv.setImageViewBitmap(R.id.qibla_dial, drawQiblaDial(ctx, px, env.day.qiblaAngle))
             return rv
+        }
+
+        /// دائرة مربع القبلة بضلع [px]: إطار أزرق فاتح، وN أحمر أعلاها، والكعبة في الوسط، ورأس سهم أبيض
+        /// على المحيط مُدار بـ[degrees] من الشمال (QiblaTileDialPainter في Dart). رسم فقط، لا حساب.
+        internal fun drawQiblaDial(context: Context, px: Int, degrees: Float): Bitmap {
+            val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            val side = px.toFloat()
+            val c = side / 2
+            val r = side * QIBLA_DIAL_RADIUS
+            canvas.drawCircle(c, c, r, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = side * QIBLA_DIAL_STROKE
+                color = QIBLA_RING
+            })
+            val k = side * QIBLA_KAABA_SIZE / 2
+            BitmapFactory.decodeResource(context.resources, R.drawable.kaaba)?.let { kaaba ->
+                canvas.drawBitmap(kaaba, null, RectF(c - k, c - k, c + k, c + k), Paint(Paint.FILTER_BITMAP_FLAG))
+                kaaba.recycle()
+            }
+            val n = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = QIBLA_NORTH
+                textSize = side * QIBLA_NORTH_SIZE
+                typeface = Typeface.DEFAULT_BOLD
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText("N", c, c - side * QIBLA_NORTH_AT - (n.ascent() + n.descent()) / 2, n)
+            canvas.save()
+            canvas.rotate(degrees, c, c)
+            canvas.drawPath(Path().apply {
+                moveTo(c, c - (r + side * QIBLA_ARROW_OUT))
+                lineTo(c + side * QIBLA_ARROW_HALF, c - (r - side * QIBLA_ARROW_IN))
+                lineTo(c - side * QIBLA_ARROW_HALF, c - (r - side * QIBLA_ARROW_IN))
+                close()
+            }, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
+            canvas.restore()
+            return bmp
         }
 
         /// مربع أعمدة (الميزة ٦، _ColumnsTile): مواقيت الصلاة (خمسة أعمدة تدور فتبدأ بالقادمة المميَّزة

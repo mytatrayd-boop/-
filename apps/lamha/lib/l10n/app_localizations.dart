@@ -317,14 +317,44 @@ abstract class AppLocalizations {
   /// إرشاد استخدام البوصلة
   ///
   /// In ar, this message translates to:
-  /// **'ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.'**
+  /// **'أدر الجوال حتى تصل الكعبة للسهم بالأعلى'**
   String get compassHint;
 
-  /// الجهاز متجه إلى القبلة (ضمن ٥°)
+  /// الجهاز متجه إلى القبلة (ضمن ٣°)
   ///
   /// In ar, this message translates to:
   /// **'أنت باتجاه القبلة'**
   String get qiblaAligned;
+
+  /// السطر الصغير تحت زاوية القبلة في مربع الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'من الشمال · {direction}'**
+  String qiblaTileSub(String direction);
+
+  /// عنوان بطاقة المسافة إلى مكة
+  ///
+  /// In ar, this message translates to:
+  /// **'المسافة إلى مكة'**
+  String get qiblaDistance;
+
+  /// المسافة بالكيلومتر
+  ///
+  /// In ar, this message translates to:
+  /// **'{km} كم'**
+  String qiblaDistanceKm(String km);
+
+  /// عنوان بطاقة دقة البوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'دقة البوصلة'**
+  String get compassAccuracyTitle;
+
+  /// مستوى دقة البوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'{level, select, excellent{ممتازة} good{جيدة} other{ضعيفة}}'**
+  String compassAccuracy(String level);
 
   /// قبل أول قراءة من الحساس
   ///
@@ -335,7 +365,7 @@ abstract class AppLocalizations {
   /// دقة الحساس منخفضة
   ///
   /// In ar, this message translates to:
-  /// **'دقة البوصلة منخفضة. حرّك الجوال في الهواء على شكل الرقم ٨ لمعايرتها، وابتعد عن المعادن والمغناطيس.'**
+  /// **'حرّك الجوال على شكل رقم ٨ لمعايرة البوصلة'**
   String get compassCalibrate;
 
   /// الجهاز بلا حساس بوصلة

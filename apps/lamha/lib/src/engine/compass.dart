@@ -19,11 +19,11 @@ const calibrationThreshold = 30.0;
 bool needsCalibration(double? accuracy) =>
     accuracy == null || accuracy > calibrationThreshold;
 
-/// السهم «على القبلة» إذا انحرف عن أعلى الجهاز بهذا القدر أو أقل.
-const alignedWithin = 5.0;
+/// الجهاز «على القبلة» إذا كان الفرق بهذا القدر أو أقل (طلب المالك: ٣°).
+const alignedWithin = 3.0;
 
-/// ولا يخرج منها إلا بعد هذا الانحراف، كي لا تتذبذب الإشارة عند الحد.
-const alignedRelease = 8.0;
+/// ولا يخرج منها إلا بعد هذا الفرق، كي لا تتذبذب الإشارة ولا يتكرر الاهتزاز عند الحد.
+const alignedRelease = 5.0;
 
 /// انحراف السهم عن أعلى الجهاز بالدرجات في [0، 180].
 double arrowDeviation(double arrow) {
@@ -31,6 +31,26 @@ double arrowDeviation(double arrow) {
   return a > 180 ? 360 - a : a;
 }
 
-/// هل الجهاز متجه إلى القبلة؟ [wasAligned] الحالة السابقة (تخلّف بين ٥° و٨°).
+/// هل الجهاز متجه إلى القبلة؟ [wasAligned] الحالة السابقة (تخلّف بين ٣° و٥°).
 bool isAligned(double arrow, {required bool wasAligned}) =>
     arrowDeviation(arrow) <= (wasAligned ? alignedRelease : alignedWithin);
+
+/// تنعيم اتجاه الحساس (مرشح منخفض التمرير دائري): يقترب من [next] بنسبة [factor] عبر أقصر
+/// طريق، فلا يقفز القرص بين ٣٥٩° و٠°.
+double smoothHeading(double? previous, double next, {double factor = 0.25}) {
+  if (previous == null) return normalizeDegrees(next);
+  final delta = (next - previous + 540) % 360 - 180;
+  return normalizeDegrees(previous + delta * factor);
+}
+
+/// دقة البوصلة لبطاقة «دقة البوصلة».
+enum CompassAccuracy { excellent, good, poor }
+
+/// من خطأ الحساس بالدرجات (أندرويد ١٥/٣٠/٤٥، وآيفون headingAccuracy): ≤١٥ ممتازة، و≤٣٠ جيدة،
+/// وغير ذلك أو مجهولة أو سالبة (غير صالحة في آيفون) ضعيفة.
+CompassAccuracy compassAccuracy(double? accuracy) {
+  if (accuracy == null || accuracy < 0) return CompassAccuracy.poor;
+  if (accuracy <= 15) return CompassAccuracy.excellent;
+  if (accuracy <= calibrationThreshold) return CompassAccuracy.good;
+  return CompassAccuracy.poor;
+}

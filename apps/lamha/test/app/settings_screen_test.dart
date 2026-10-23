@@ -355,9 +355,13 @@ void main() {
         greaterThan(tester.getRect(find.byKey(const Key('deposit-cell-0'))).bottom));
     expect(find.byKey(const Key('deposit-row-2')), findsOneWidget);
 
-    // القبلة (طلب المالك): الأيقونة وتحتها «القبلة»، بلا زاوية.
+    // القبلة (lamha_qibla_update.md): الدائرة وتحتها الزاوية ثم «من الشمال · الاتجاه».
     expect(find.byKey(const Key('preview-qibla-icon')), findsOneWidget);
-    expect(text('preview-qibla-title'), 'القبلة');
+    expect(find.byKey(const Key('preview-qibla-dial')), findsOneWidget);
+    expect(text('preview-qibla-title'), '٢٤٤°');
+    expect(text('preview-qibla-sub'), 'من الشمال · جنوب غرب');
+    expect(tester.getRect(find.byKey(const Key('preview-qibla-sub'))).top,
+        greaterThanOrEqualTo(tester.getRect(find.byKey(const Key('preview-qibla-title'))).bottom));
     expect(tester.getRect(find.byKey(const Key('preview-qibla-title'))).top,
         greaterThanOrEqualTo(tester.getRect(find.byKey(const Key('preview-qibla-icon'))).bottom));
 
