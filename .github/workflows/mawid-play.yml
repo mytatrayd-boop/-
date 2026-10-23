@@ -64,7 +64,7 @@ jobs:
           packageName: sa.mawid.app
           releaseFiles: apps/mawid/build/app/outputs/bundle/release/app-release.aab
           track: ${{ inputs.track }}
-          status: completed
+          status: ${{ inputs.track == 'production' && 'draft' || 'completed' }}
           # Play refuses to send an edit for review by API while the app has a
           # rejection; the owner sends it from Publishing overview instead.
           changesNotSentForReview: true

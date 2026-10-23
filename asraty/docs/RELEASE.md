@@ -81,7 +81,7 @@ base64 -w0 upload.jks > upload.b64      # على Mac: base64 -i upload.jks -o up
 
 ### د) الرفع التلقائي لاحقاً (اختياري)
 Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأنشئ Service account، وامنحه صلاحية «Release to testing tracks» للتطبيق. ضع ملف JSON في السر `PLAY_SERVICE_ACCOUNT_JSON`. بعدها كل تشغيل للـ workflow يرفع الإصدار مباشرة إلى المسار الذي تختاره (internal افتراضياً).
-> إذا ظهر خطأ «Only releases with status draft may be created on draft app» شغّل الـ workflow مع `status = draft` ثم اعتمد الإصدار من Play Console.
+> إذا ظهر خطأ «Only releases with status draft may be created on draft app» فالتطبيق لم يُنشر بعد في Play: ارفع الـ .aab من Artifacts يدوياً في Play Console (الـ workflow صار يرفع `completed` لمسارات الاختبار و`draft` لـ production فقط).
 
 ---
 
