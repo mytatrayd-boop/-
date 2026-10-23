@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- الودجت الكبيرة ٤×٤ (الميزة ٥): RemoteViews عادية. مطابقة للمعاينة في
+     lib/src/app/widget_preview.dart، وهي المرجع. الشبكة صفوف (widget_row) تملؤها
+     LamhaWidgetReceiver من `layout` في الجدول بـ addView، وفي كل صف خانات بعرض ١ أو ٢ أو ٣
+     (widget_tile*.xml) داخل كل منها محتوى مربعها. من اليمين لليسار بالترتيب المنطقي
+     (الأول = الأيمن). حشوة الشبكة ١٠ + حشوة الخانة ٤ = ١٤ كالمعاينة. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layoutDirection="rtl">
+
+    <ImageView
+        android:id="@+id/bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:id="@+id/grid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="10dp" />
+</FrameLayout>

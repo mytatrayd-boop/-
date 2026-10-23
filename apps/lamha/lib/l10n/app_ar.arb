@@ -1,0 +1,374 @@
+{
+  "@@locale": "ar",
+  "appTitle": "لمحة",
+  "@appTitle": {
+    "description": "اسم التطبيق"
+  },
+  "loadError": "تعذّر تحميل الإعدادات",
+  "retry": "إعادة المحاولة",
+  "@retry": {
+    "description": "زر إعادة التحميل بعد الخطأ"
+  },
+  "@loadError": {
+    "description": "خطأ عند فشل تحميل البيانات"
+  },
+  "opacityLabel": "الشفافية",
+  "@opacityLabel": {
+    "description": "عنوان شريط الشفافية (SPEC ٢)"
+  },
+  "percent": "{value}٪",
+  "@percent": {
+    "description": "نسبة مئوية؛ value رقم منسق مسبقاً",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "backgroundButton": "لقطة الخلفية",
+  "@backgroundButton": {
+    "description": "زر اختيار لقطة خلفية الشاشة (آيفون فقط)"
+  },
+  "backgroundSaved": "حُفظت لقطة الخلفية",
+  "@backgroundSaved": {
+    "description": "تأكيد حفظ اللقطة"
+  },
+  "backgroundError": "تعذّر حفظ لقطة الخلفية. تأكد من إذن الصور وحاول مرة أخرى.",
+  "@backgroundError": {
+    "description": "فشل اختيار اللقطة أو حفظها"
+  },
+  "cityLabel": "المدينة",
+  "@cityLabel": {
+    "description": "عنوان اختيار المدينة"
+  },
+  "myLocation": "موقعي",
+  "@myLocation": {
+    "description": "زر تحديد المدينة من الموقع"
+  },
+  "locationDenied": "لم يُسمح بالوصول إلى الموقع، أو خدمة الموقع مغلقة. ابحث عن مدينتك أو اخترها من القائمة.",
+  "@locationDenied": {
+    "description": "رفض إذن الموقع"
+  },
+  "locationFailed": "تعذّر تحديد الموقع. ابحث عن مدينتك أو اخترها من القائمة.",
+  "@locationFailed": {
+    "description": "فشل قراءة الموقع"
+  },
+  "prayerMethodLabel": "طريقة حساب الصلاة",
+  "@prayerMethodLabel": {
+    "description": "عنوان قائمة طرق الحساب"
+  },
+  "prayerMethodName": "{method, select, ummAlQura{أم القرى} muslimWorldLeague{رابطة العالم الإسلامي} egyptian{الهيئة المصرية العامة للمساحة} karachi{جامعة العلوم الإسلامية بكراتشي} dubai{دبي} kuwait{الكويت} qatar{قطر} gulfRegion{منطقة الخليج} northAmerica{أمريكا الشمالية} turkiye{تركيا} other{{method}}}",
+  "@prayerMethodName": {
+    "description": "اسم طريقة الحساب بمعرّفها",
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "elementName": "{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} other{{element}}}",
+  "@elementName": {
+    "description": "اسم عنصر الودجت بمعرّفه",
+    "placeholders": {
+      "element": {
+        "type": "String"
+      }
+    }
+  },
+  "lastDepositMessage": "يلزم إيداع واحد على الأقل. لإخفاء المربع استخدم «تخصيص الودجت».",
+  "@lastDepositMessage": {
+    "description": "عند محاولة إلغاء آخر إيداع"
+  },
+  "tilePrayer": "الصلاة القادمة",
+  "@tilePrayer": {
+    "description": "عنوان مربع الصلاة"
+  },
+  "tileQibla": "القبلة",
+  "@tileQibla": {
+    "description": "عنوان مربع القبلة"
+  },
+  "tileDeposit": "الإيداع القادم",
+  "@tileDeposit": {
+    "description": "عنوان مربع الإيداع"
+  },
+  "tileDepositShort": "الإيداع",
+  "@tileDepositShort": {
+    "description": "عنوان مربع الإيداع المختصر إذا لم يتسع العنوان الكامل سطراً واحداً"
+  },
+  "tileSeason": "الفصل",
+  "@tileSeason": {
+    "description": "عنوان مربع الفصل الفلكي"
+  },
+  "tileTradSeason": "الموسم",
+  "@tileTradSeason": {
+    "description": "عنوان مربع الموسم التراثي"
+  },
+  "hijriDateText": "{date} هـ",
+  "@hijriDateText": {
+    "description": "التاريخ الهجري في المعاينة",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "gregorianDateText": "{date} م",
+  "@gregorianDateText": {
+    "description": "التاريخ الميلادي في المعاينة",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cityWeather": "📍 {city} · {weather}",
+  "@cityWeather": {
+    "description": "سطر المدينة والطقس في المعاينة؛ weather مثل «☀️ ٣١°» أو weatherUnknown",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "weather": {
+        "type": "String"
+      }
+    }
+  },
+  "remainingToNext": "{remaining} {next}",
+  "@remainingToNext": {
+    "description": "مثل: باقي ٣٤ يوماً للشتاء؛ next مسبوق باللام",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "degrees": "{value}°",
+  "@degrees": {
+    "description": "زاوية بالدرجات",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "dataLicense": "إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0. الخط Tajawal برخصة SIL OFL 1.1.",
+  "@dataLicense": {
+    "description": "إشارة رخص البيانات والخط"
+  },
+  "nearCity": "قرب {city}",
+  "@nearCity": {
+    "description": "اسم المكان من «موقعي» إذا تعذّر geocoding",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "locationNearest": "تعذّر جلب اسم المكان، فظهر اسم أقرب مدينة. الحساب بموقعك الفعلي.",
+  "@locationNearest": {
+    "description": "«موقعي» بلا إنترنت"
+  },
+  "searchHint": "ابحث عن مدينة أو محافظة",
+  "@searchHint": {
+    "description": "حقل البحث عن المكان"
+  },
+  "searchNoResults": "لا توجد نتائج. جرّب اسماً آخر.",
+  "@searchNoResults": {
+    "description": "البحث بلا نتائج"
+  },
+  "searchFailed": "تعذّر البحث. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.",
+  "@searchFailed": {
+    "description": "فشل البحث (لا إنترنت)"
+  },
+  "quickPick": "اختيار سريع",
+  "@quickPick": {
+    "description": "تلميح قائمة المدن الجاهزة"
+  },
+  "qiblaTitle": "اتجاه القبلة",
+  "@qiblaTitle": {
+    "description": "عنوان شاشة البوصلة وزرها في الإعدادات"
+  },
+  "qiblaFromNorth": "{degrees} من الشمال",
+  "@qiblaFromNorth": {
+    "description": "زاوية القبلة من الشمال",
+    "placeholders": {
+      "degrees": {
+        "type": "String"
+      }
+    }
+  },
+  "compassHint": "ضع الجوال مستوياً، ثم استدر حتى يشير السهم إلى الأعلى.",
+  "@compassHint": {
+    "description": "إرشاد استخدام البوصلة"
+  },
+  "qiblaAligned": "أنت باتجاه القبلة",
+  "@qiblaAligned": {
+    "description": "الجهاز متجه إلى القبلة (ضمن ٥°)"
+  },
+  "compassWaiting": "جارٍ قراءة البوصلة…",
+  "@compassWaiting": {
+    "description": "قبل أول قراءة من الحساس"
+  },
+  "compassCalibrate": "دقة البوصلة منخفضة. حرّك الجوال في الهواء على شكل الرقم ٨ لمعايرتها، وابتعد عن المعادن والمغناطيس.",
+  "@compassCalibrate": {
+    "description": "دقة الحساس منخفضة"
+  },
+  "compassUnavailable": "لا يتوفر حساس بوصلة في هذا الجهاز، فلا يمكن عرض السهم. استعن بالزاوية أعلاه وبوصلة أخرى.",
+  "@compassUnavailable": {
+    "description": "الجهاز بلا حساس بوصلة"
+  },
+  "weatherUnknown": "--°",
+  "@weatherUnknown": {
+    "description": "لا قراءة طقس أحدث من ٣ ساعات"
+  },
+  "themeLabel": "لون الودجت",
+  "@themeLabel": {
+    "description": "عنوان أزرار سمة اللون"
+  },
+  "themeName": "{theme, select, black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}",
+  "@themeName": {
+    "description": "اسم سمة اللون بمعرّفها",
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "lockNotificationLabel": "إظهار في شاشة القفل (إشعار)",
+  "@lockNotificationLabel": {
+    "description": "مفتاح الإشعار الثابت (أندرويد)"
+  },
+  "lockNotificationHint": "أغلب جوالات أندرويد لا تسمح بودجت على شاشة القفل، فيظهر إشعار هادئ بالصلاة القادمة والقبلة.",
+  "@lockNotificationHint": {
+    "description": "شرح تحت المفتاح"
+  },
+  "notificationPermissionTitle": "إذن الإشعارات",
+  "@notificationPermissionTitle": {
+    "description": "عنوان رسالة شرح الإذن"
+  },
+  "notificationPermissionBody": "لعرض الصلاة القادمة والعد التنازلي والقبلة في شاشة القفل، تحتاج لمحة إذن الإشعارات. الإشعار ثابت وهادئ: بلا صوت ولا اهتزاز، ويمكنك إطفاؤه من هنا في أي وقت.",
+  "@notificationPermissionBody": {
+    "description": "سبب طلب POST_NOTIFICATIONS"
+  },
+  "continueAction": "متابعة",
+  "@continueAction": {
+    "description": "زر متابعة"
+  },
+  "cancelAction": "إلغاء",
+  "@cancelAction": {
+    "description": "زر إلغاء"
+  },
+  "notificationDenied": "لم يُسمح بالإشعارات، فلن يظهر شيء في شاشة القفل. يمكنك السماح بها من إعدادات الجوال.",
+  "@notificationDenied": {
+    "description": "رفض إذن الإشعارات"
+  },
+  "fontScaleLabel": "حجم الخط",
+  "@fontScaleLabel": {
+    "description": "عنوان اختيار حجم خط الودجت"
+  },
+  "fontScaleName": "{scale, select, small{صغير} medium{متوسط} large{كبير} xlarge{كبير جداً} other{{scale}}}",
+  "@fontScaleName": {
+    "description": "أسماء أحجام الخط",
+    "placeholders": {
+      "scale": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownText": "باقي {time}",
+  "@countdownText": {
+    "description": "العد التنازلي للصلاة في المعاينة (كـ countdown_format في أندرويد)",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "depositsSection": "الإيداعات الظاهرة",
+  "@depositsSection": {
+    "description": "عنوان مفاتيح الإيداعات في الإعدادات"
+  },
+  "customizeTitle": "تخصيص الودجت",
+  "@customizeTitle": {
+    "description": "زر الإعدادات وعنوان شاشة التخصيص (الميزة ٥)"
+  },
+  "resetLayout": "استعادة الافتراضي",
+  "@resetLayout": {
+    "description": "زر إعادة التخطيط الافتراضي"
+  },
+  "tileVisible": "إظهار",
+  "@tileVisible": {
+    "description": "مفتاح إظهار المربع"
+  },
+  "tileSpanLabel": "العرض",
+  "@tileSpanLabel": {
+    "description": "عنوان اختيار عرض المربع"
+  },
+  "tileFontLabel": "حجم الخط",
+  "@tileFontLabel": {
+    "description": "عنوان حجم خط المربع"
+  },
+  "primaryColorLabel": "لون الخط الرئيسي",
+  "@primaryColorLabel": {
+    "description": "لون القيمة"
+  },
+  "secondaryColorLabel": "لون الخط الفرعي",
+  "@secondaryColorLabel": {
+    "description": "لون العنوان والثانويات"
+  },
+  "tileOverflow": "لا يتسع في الودجت (أكثر من ٥ صفوف)",
+  "@tileOverflow": {
+    "description": "مربع ظاهر بعد الصف الخامس"
+  },
+  "dragHandle": "اضغط مطولاً واسحب لإعادة الترتيب",
+  "@dragHandle": {
+    "description": "تلميح مقبض السحب"
+  },
+  "tileHint": "اضغط على مربع في المعاينة أو في الشريط لتعديله، واضغط مطولاً على عنصر في الشريط واسحبه لإعادة الترتيب.",
+  "@tileHint": {
+    "description": "إرشاد أعلى القائمة"
+  },
+  "tileSpanName": "{span, select, small{صغير} medium{متوسط} wide{عريض} other{{span}}}",
+  "@tileSpanName": {
+    "description": "عرض المربع ١/٢/٣",
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
+  },
+  "tileColorName": "{color, select, auto{تلقائي} white{أبيض} black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}",
+  "@tileColorName": {
+    "description": "ألوان الخط؛ auto حسب السمة",
+    "placeholders": {
+      "color": {
+        "type": "String"
+      }
+    }
+  },
+  "tileShowTitle": "إظهار العنوان",
+  "@tileShowTitle": {
+    "description": "مفتاح عنوان المربع"
+  },
+  "tileShowSub": "إظهار السطر الفرعي",
+  "@tileShowSub": {
+    "description": "مفتاح الأسطر الثانوية"
+  },
+  "digitsLabel": "الأرقام",
+  "@digitsLabel": {"description": "عنوان اختيار شكل الأرقام في الودجت (الميزة ٦)"},
+  "digitsName": "{style, select, arabic{عربية (١٢٣)} latin{إنجليزية (123)} other{{style}}}",
+  "@digitsName": {"description": "اسم شكل الأرقام", "placeholders": {"style": {"type": "String"}}},
+  "depositsTitle": "متبقي على:",
+  "@depositsTitle": {"description": "عنوان مربع الإيداعات (الميزة ٦)"},
+  "tradPointsTitle": "في {season}:",
+  "@tradPointsTitle": {"description": "عنوان مربع وصف الموسم، مثل «في الوسم:»", "placeholders": {"season": {"type": "String"}}},
+  "pointText": "- {point}",
+  "@pointText": {"description": "نقطة في وصف الموسم", "placeholders": {"point": {"type": "String"}}},
+  "nextAfter": "{next} {after}",
+  "@nextAfter": {"description": "مثل: الشتاء بعد ٦٠ يوماً", "placeholders": {"next": {"type": "String"}, "after": {"type": "String"}}},
+  "cityIcon": "📍 {city} {icon}",
+  "@cityIcon": {"description": "سطر المدينة في مربع اليوم والطقس، icon رمز الطقس أو فارغ", "placeholders": {"city": {"type": "String"}, "icon": {"type": "String"}}}
+}

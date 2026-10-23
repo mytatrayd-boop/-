@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- اليوم والطقس (الميزة ٦، بلا صندوق، _DayWeatherTile): اليوم ٢٤ عريض، ثم «📍 المدينة ☀️» ١٥
+     باللون الفرعي، ثم الحرارة ٣٠. الأحجام من LamhaWidgetReceiver. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile_box"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/day_weekday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFF4EFE6"
+            android:textSize="22sp" android:textStyle="bold" />
+        <TextView
+            android:id="@+id/day_city"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFB9B0A2"
+            android:textSize="16sp" />
+        <TextView
+            android:id="@+id/day_temp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFB9B0A2"
+            android:textSize="24sp" android:textStyle="bold" />
+    </LinearLayout>
+</FrameLayout>

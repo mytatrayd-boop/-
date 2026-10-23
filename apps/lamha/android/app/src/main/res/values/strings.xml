@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نصوص ودجت أندرويد. العربية هي الافتراضية (التطبيق عربي فقط)، والإنجليزية في values-en. -->
+<resources>
+    <string name="widget_name">لمحة</string>
+    <string name="widget_description">الساعة والصلاة القادمة والقبلة والإيداع والموسم في لمحة</string>
+    <string name="widget_setup">افتح لمحة لإعداد الودجت</string>
+    <string name="widget_error">تعذّر عرض الودجت. افتح لمحة، وإن بقيت هذه الرسالة فصوّرها للمطوّر: %1$s</string>
+    <string name="tile_prayer">الصلاة القادمة</string>
+    <string name="tile_qibla">القبلة</string>
+    <string name="tile_deposit">الإيداع القادم</string>
+    <string name="tile_deposit_short">الإيداع</string>
+    <string name="tile_season">الفصل</string>
+    <string name="tile_trad_season">الموسم</string>
+    <string name="hijri_date">%1$s هـ</string>
+    <string name="gregorian_date">%1$s م</string>
+    <string name="city_weather">📍 %1$s · %2$s</string>
+    <string name="remaining_to_next">%1$s %2$s</string>
+    <string name="value_with_suffix">%1$s · %2$s</string>
+    <!-- صيغة Chronometer للعد التنازلي؛ %s هو الوقت الباقي. -->
+    <string name="countdown_format">باقي %s</string>
+    <string name="am">ص</string>
+    <string name="pm">م</string>
+    <string name="weather_unknown">\u2066--°\u2069</string>
+    <!-- إشعار شاشة القفل (الميزة ٣ج). -->
+    <string name="notification_channel">شاشة القفل</string>
+    <string name="notification_channel_description">الصلاة القادمة والقبلة في شاشة القفل، بلا صوت</string>
+    <string name="notification_title">%1$s · %2$s</string>
+    <string name="notification_qibla">القبلة %1$s</string>
+    <string name="notification_deposit">%1$s %2$s</string>
+    <string name="notification_join">%1$s · %2$s</string>
+    <!-- الميزة ٦. -->
+    <string name="deposits_title">متبقي على:</string>
+    <string name="trad_points_title">في %1$s:</string>
+    <string name="point_text">- %1$s</string>
+    <string name="next_after">%1$s %2$s</string>
+    <string name="city_icon">📍 %1$s %2$s</string>
+</resources>

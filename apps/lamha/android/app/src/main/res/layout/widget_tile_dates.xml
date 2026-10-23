@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- مربع التاريخين (الميزة ٥، بلا صندوق): الهجري ١٨ عريض (يلتفّ عند المسافات) ثم الميلادي ١٦
+     (يُخفى إن لم يتسع)، محاذاة يمين، بحجم fitTile (الميزة ٥ب). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile_box"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:id="@+id/hijri"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFF4EFE6"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:id="@+id/gregorian"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFCFC6B8"
+            android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>

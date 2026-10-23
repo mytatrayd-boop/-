@@ -1,0 +1,245 @@
+{
+ "source": "منسوخة من apps/durur/assets/tables/cities.json (المدن السعودية فقط). الإحداثيات من GeoNames (geonames.org) برخصة CC BY 4.0؛ عُدّلت: اختيار المدن السعودية وحذف حقول المناطق.",
+ "license": "CC BY 4.0 https://creativecommons.org/licenses/by/4.0/",
+ "timeZone": "Asia/Riyadh",
+ "cities": [
+  {
+   "id": "riyadh",
+   "name": "الرياض",
+   "lat": 24.6877,
+   "lon": 46.7219,
+   "geonames": "https://www.geonames.org/108410"
+  },
+  {
+   "id": "al_kharj",
+   "name": "الخرج",
+   "lat": 24.1554,
+   "lon": 47.3346,
+   "geonames": "https://www.geonames.org/109353"
+  },
+  {
+   "id": "diriyah",
+   "name": "الدرعية",
+   "lat": 24.7519,
+   "lon": 46.5387,
+   "geonames": "https://www.geonames.org/110312"
+  },
+  {
+   "id": "al_majmaah",
+   "name": "المجمعة",
+   "lat": 25.911,
+   "lon": 45.3567,
+   "geonames": "https://www.geonames.org/109194"
+  },
+  {
+   "id": "az_zulfi",
+   "name": "الزلفي",
+   "lat": 26.2995,
+   "lon": 44.8154,
+   "geonames": "https://www.geonames.org/107781"
+  },
+  {
+   "id": "shaqra",
+   "name": "شقراء",
+   "lat": 25.2402,
+   "lon": 45.251,
+   "geonames": "https://www.geonames.org/102170"
+  },
+  {
+   "id": "ad_dawadmi",
+   "name": "الدوادمي",
+   "lat": 24.5077,
+   "lon": 44.3924,
+   "geonames": "https://www.geonames.org/110325"
+  },
+  {
+   "id": "afif",
+   "name": "عفيف",
+   "lat": 23.9065,
+   "lon": 42.9172,
+   "geonames": "https://www.geonames.org/110250"
+  },
+  {
+   "id": "as_sulayyil",
+   "name": "السليل",
+   "lat": 20.4607,
+   "lon": 45.5779,
+   "geonames": "https://www.geonames.org/108048"
+  },
+  {
+   "id": "buraydah",
+   "name": "بريدة",
+   "lat": 26.326,
+   "lon": 43.975,
+   "geonames": "https://www.geonames.org/107304"
+  },
+  {
+   "id": "unaizah",
+   "name": "عنيزة",
+   "lat": 26.1,
+   "lon": 44.0,
+   "geonames": "https://www.geonames.org/101732"
+  },
+  {
+   "id": "ar_rass",
+   "name": "الرس",
+   "lat": 25.8694,
+   "lon": 43.4973,
+   "geonames": "https://www.geonames.org/108435"
+  },
+  {
+   "id": "hail",
+   "name": "حائل",
+   "lat": 27.5219,
+   "lon": 41.6907,
+   "geonames": "https://www.geonames.org/106281"
+  },
+  {
+   "id": "dammam",
+   "name": "الدمام",
+   "lat": 26.4344,
+   "lon": 50.1033,
+   "geonames": "https://www.geonames.org/110336"
+  },
+  {
+   "id": "khobar",
+   "name": "الخبر",
+   "lat": 26.2794,
+   "lon": 50.2083,
+   "geonames": "https://www.geonames.org/109323"
+  },
+  {
+   "id": "dhahran",
+   "name": "الظهران",
+   "lat": 26.2886,
+   "lon": 50.114,
+   "geonames": "https://www.geonames.org/107797"
+  },
+  {
+   "id": "qatif",
+   "name": "القطيف",
+   "lat": 26.5654,
+   "lon": 50.0089,
+   "geonames": "https://www.geonames.org/108927"
+  },
+  {
+   "id": "al_ahsa",
+   "name": "الأحساء",
+   "lat": 25.3647,
+   "lon": 49.5876,
+   "geonames": "https://www.geonames.org/109571"
+  },
+  {
+   "id": "jubail",
+   "name": "الجبيل",
+   "lat": 27.0174,
+   "lon": 49.6225,
+   "geonames": "https://www.geonames.org/109435"
+  },
+  {
+   "id": "hafar_al_batin",
+   "name": "حفر الباطن",
+   "lat": 28.4328,
+   "lon": 45.9708,
+   "geonames": "https://www.geonames.org/106297"
+  },
+  {
+   "id": "makkah",
+   "name": "مكة المكرمة",
+   "lat": 21.4266,
+   "lon": 39.8256,
+   "geonames": "https://www.geonames.org/104515"
+  },
+  {
+   "id": "jeddah",
+   "name": "جدة",
+   "lat": 21.4901,
+   "lon": 39.1862,
+   "geonames": "https://www.geonames.org/105343"
+  },
+  {
+   "id": "madinah",
+   "name": "المدينة المنورة",
+   "lat": 24.4686,
+   "lon": 39.6142,
+   "geonames": "https://www.geonames.org/109223"
+  },
+  {
+   "id": "taif",
+   "name": "الطائف",
+   "lat": 21.2703,
+   "lon": 40.4158,
+   "geonames": "https://www.geonames.org/107968"
+  },
+  {
+   "id": "yanbu",
+   "name": "ينبع",
+   "lat": 24.0895,
+   "lon": 38.0618,
+   "geonames": "https://www.geonames.org/100425"
+  },
+  {
+   "id": "abha",
+   "name": "أبها",
+   "lat": 18.2164,
+   "lon": 42.5053,
+   "geonames": "https://www.geonames.org/110690"
+  },
+  {
+   "id": "khamis_mushait",
+   "name": "خميس مشيط",
+   "lat": 18.3,
+   "lon": 42.7333,
+   "geonames": "https://www.geonames.org/105072"
+  },
+  {
+   "id": "al_bahah",
+   "name": "الباحة",
+   "lat": 20.0129,
+   "lon": 41.4677,
+   "geonames": "https://www.geonames.org/109953"
+  },
+  {
+   "id": "bisha",
+   "name": "بيشة",
+   "lat": 20.0005,
+   "lon": 42.6052,
+   "geonames": "https://www.geonames.org/103369"
+  },
+  {
+   "id": "najran",
+   "name": "نجران",
+   "lat": 17.4933,
+   "lon": 44.1277,
+   "geonames": "https://www.geonames.org/103630"
+  },
+  {
+   "id": "jazan",
+   "name": "جازان",
+   "lat": 16.8892,
+   "lon": 42.5511,
+   "geonames": "https://www.geonames.org/105299"
+  },
+  {
+   "id": "tabuk",
+   "name": "تبوك",
+   "lat": 28.3998,
+   "lon": 36.5715,
+   "geonames": "https://www.geonames.org/101628"
+  },
+  {
+   "id": "sakaka",
+   "name": "سكاكا",
+   "lat": 29.9697,
+   "lon": 40.2064,
+   "geonames": "https://www.geonames.org/102527"
+  },
+  {
+   "id": "arar",
+   "name": "عرعر",
+   "lat": 30.9753,
+   "lon": 41.0381,
+   "geonames": "https://www.geonames.org/108512"
+  }
+ ]
+}

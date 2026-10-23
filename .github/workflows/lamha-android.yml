@@ -1,0 +1,127 @@
+name: Lamha — Android test APK
+
+# يبني APK تجريبياً لـ «لمحة» موقّعاً بمفتاح debug (android/app/build.gradle.kts: للاختبار فقط).
+# - كل push على apps/lamha/** أو هذا الملف، أو تشغيل يدوي: فحص + اختبارات Dart + اختبارات JUnit للودجت + بناء.
+# - يُرفع الملف كـ artifact فقط. لا نشر ولا prerelease ولا أسرار ولا keystore.
+on:
+  push:
+    paths: ['apps/lamha/**', '.github/workflows/lamha-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/lamha } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      # البناء أولاً: يولّد gradlew وlocal.properties (مستثناة من git) قبل اختبارات JUnit.
+      - name: Build APK (debug-signed)
+        run: flutter build apk --release --build-number=${{ github.run_number }}
+
+      - name: Widget unit tests (JUnit)
+        working-directory: apps/lamha/android
+        run: ./gradlew :app:testDebugUnitTest
+
+      - run: cp build/app/outputs/flutter-apk/app-release.apk lamha-test.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "lamha-test-apk-${{ github.run_number }}"
+          path: apps/lamha/lamha-test.apk
+
+      - name: Upload JUnit reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "lamha-junit-reports-${{ github.run_number }}"
+          path: apps/lamha/build/app/reports/tests/
+          if-no-files-found: ignore
+
+  # لقطات الودجت الحقيقية على محاكي أندرويد (LamhaScreensTest): تُرفع artifact وتُدفع إلى فرع
+  # lamha-screens (مجلد screens فقط، force push). لا أسرار ولا نشر؛ الكتابة لهذا الـ job وحده.
+  screens:
+    needs: apk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults: { run: { working-directory: apps/lamha } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+
+      # خطوات KVM الموثقة في reactivecircus/android-emulator-runner لـ ubuntu-latest.
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - run: flutter pub get
+      # يولّد gradlew وlocal.properties، ثم يُترجم التطبيق والاختبار قبل تشغيل المحاكي.
+      - run: flutter build apk --debug
+      - name: Assemble instrumentation test
+        working-directory: apps/lamha/android
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+
+      # يبقى التطبيق مثبتاً بعد الاختبار (leaveApksInstalledAfterRun) كي لا تُحذف مجلداته قبل السحب.
+      # فشل الاختبار لا يمنع سحب اللقطات؛ يُبلَّغ عنه في الخطوة الأخيرة.
+      - name: Emulator screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          working-directory: apps/lamha/android
+          script: |
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || touch "$GITHUB_WORKSPACE/screens-failed"
+            mkdir -p "$GITHUB_WORKSPACE/screens"
+            adb pull /sdcard/Android/data/sa.lamha.lamha/files/screens/. "$GITHUB_WORKSPACE/screens/" || touch "$GITHUB_WORKSPACE/screens-failed"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "lamha-screens-${{ github.run_number }}"
+          path: screens/
+          if-no-files-found: warn
+
+      - name: Upload instrumentation reports on failure
+        if: always() && hashFiles('screens-failed') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: "lamha-android-test-reports-${{ github.run_number }}"
+          path: apps/lamha/build/app/reports/androidTests/
+          if-no-files-found: ignore
+
+      # فرع منفصل بلا تاريخ: مجلد screens وحده، يُستبدل في كل تشغيل.
+      - name: Push screens to lamha-screens branch
+        if: always() && hashFiles('screens/*.png') != ''
+        working-directory: .
+        run: |
+          git switch --orphan lamha-screens-tmp
+          git add -f screens
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "lamha screens: run ${{ github.run_number }} (${{ github.sha }})"
+          git push --force origin HEAD:refs/heads/lamha-screens
+
+      - name: Fail if screenshot test failed
+        working-directory: .
+        run: test ! -f screens-failed

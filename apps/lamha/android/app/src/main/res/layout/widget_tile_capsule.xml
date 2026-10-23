@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- كبسولة تاريخ (الميزة ٦، _CapsuleTile): تُضاف داخل widget_tile_stack وتقتسم الخانة بالوزن. النص ١٨
+     عريض محاذى يميناً ومتوسط رأسياً. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile_box"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:layout_marginTop="2dp"
+    android:layout_marginBottom="2dp">
+
+    <ImageView
+        android:id="@+id/capsule_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/capsule_bg"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/capsule_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp"
+        android:gravity="right|center_vertical"
+        android:textDirection="rtl"
+        android:includeFontPadding="false"
+        android:fallbackLineSpacing="false"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:shadowColor="#66000000"
+        android:shadowRadius="3"
+        android:textColor="#FFF4EFE6"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+</FrameLayout>
