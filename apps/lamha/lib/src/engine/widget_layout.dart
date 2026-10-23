@@ -594,16 +594,26 @@ ColumnsFit fitColumns({
   return (title: title, nameScale: kName, sub: sub, subScale: kSub);
 }
 
+/// مقاس أيقونة القبلة المرغوب في خانة عرضها [width] (طلب المالك: أكبر ما تسمح به الخانة): ٨٥٪ من
+/// العرض حتى ١١٠، و٣٦ إن لم يُعرف العرض. يدخل في ارتفاع الصف فيتسع لها. مطابقة لـ qiblaIconTarget
+/// في LamhaLogic.kt.
+double qiblaIconTarget(double width) =>
+    width <= 0 ? 36 : math.min(width * 0.85, 110);
+
 /// أقصى عدد إيداعات في مربع الإيداعات: حتى ثلاثة أعمدة (عمود لكل وحدة عرض)، وبعرض ٣ حتى ستة في
 /// شبكة عمودين (طلب المالك). مطابقة لـ maxDeposits في LamhaLogic.kt.
 const maxDepositsGrid = 6;
 int maxDeposits(int span) => span >= 3 ? maxDepositsGrid : span;
 
-/// أكثر من ثلاثة إيداعات: شبكة عمودين، لكل خانة «الاسم الأيام» في سطر واحد.
-bool depositsAsGrid(int count) => count > 3;
+/// أعمدة الإيداعات (طلب المالك: كل إيداع في مستطيل، «الاسم الأيام» في سطر): عمود حتى ثلاثة، وعمودان
+/// بعدها.
+int depositColumns(int count) => count > 3 ? 2 : 1;
 
-/// صفوف الشبكة لـ [count] إيداعاً.
-int gridRows(int count) => (count + 1) ~/ 2;
+/// صفوف الإيداعات لـ [count] إيداعاً.
+int gridRows(int count) {
+  final cols = depositColumns(count);
+  return (count + cols - 1) ~/ cols;
+}
 
 /// ما يظهر في شبكة الإيداعات وبأي حجم (fitGrid).
 typedef GridFit = ({bool title, double scale});

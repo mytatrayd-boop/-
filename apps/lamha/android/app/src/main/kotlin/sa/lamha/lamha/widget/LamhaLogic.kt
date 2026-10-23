@@ -279,13 +279,19 @@ object LamhaLogic {
         return (0xFF shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
     }
 
+    /// مقاس أيقونة القبلة المرغوب (qiblaIconTarget في Dart): ٨٥٪ من عرض الخانة حتى ١١٠، و٣٦ بلا عرض.
+    fun qiblaIconTarget(width: Float): Float = if (width <= 0f) 36f else minOf(width * 0.85f, 110f)
+
     /// أقصى عدد إيداعات في مربعها (maxDeposits في Dart): عمود لكل وحدة عرض، وبعرض ٣ حتى ستة في شبكة.
     fun maxDeposits(span: Int): Int = if (span >= 3) 6 else span
 
-    /// أكثر من ثلاثة إيداعات: شبكة عمودين، لكل خانة «الاسم الأيام» في سطر.
-    fun depositsAsGrid(count: Int): Boolean = count > 3
+    /// أعمدة الإيداعات (depositColumns في Dart): عمود حتى ثلاثة، وعمودان بعدها.
+    fun depositColumns(count: Int): Int = if (count > 3) 2 else 1
 
-    fun gridRows(count: Int): Int = (count + 1) / 2
+    fun gridRows(count: Int): Int {
+        val cols = depositColumns(count)
+        return (count + cols - 1) / cols
+    }
 
     data class GridFit(val title: Boolean, val scale: Float)
 

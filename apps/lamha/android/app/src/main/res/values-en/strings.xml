@@ -29,4 +29,5 @@
     <string name="point_text">- %1$s</string>
     <string name="next_after">%1$s %2$s</string>
     <string name="city_icon">📍 %1$s %2$s</string>
+    <string name="widget_error">The widget couldn\'t be shown. Open Lamha; if this stays, send a screenshot: %1$s</string>
 </resources>

@@ -1,30 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- شبكة الإيداعات (أكثر من ثلاثة، طلب المالك؛ _DepositsGridTile): بلا عنوان، حتى ثلاثة صفوف
-     بعمودين، لكل خانة الاسم ١٦ عادي وبجانبه الأيام ١٤ في عمود بعرض أعرضها (كجدول)، الأقرب أولاً من اليمين.
-     الصفوف والخانات الزائدة مخفية. الأحجام من fitGrid في LamhaWidgetReceiver. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- الإيداعات (طلب المالك، _DepositsTile): كل إيداع في مستطيل (deposit_bg)، الاسم ١٦ عادي وبجانبه الأيام ١٦
+     في عمود بعرض أعرضها (كجدول)، الأقرب أولاً من اليمين. عمود حتى ثلاثة وعمودان بعدها؛ الصفوف والخانات
+     الزائدة مخفية. الأحجام من fitGrid في LamhaWidgetReceiver. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <ImageView
-        android:id="@+id/tile_bg"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/tile_bg"
-        android:importantForAccessibility="no" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
-        android:paddingStart="9dp"
-        android:paddingEnd="9dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp">
-
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/grid_row0"
@@ -37,6 +20,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/deposit_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
@@ -67,7 +55,7 @@
                     android:shadowColor="#66000000"
                     android:shadowRadius="3"
                     android:textColor="#FFB9B0A2"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
             <LinearLayout
                 android:id="@+id/grid_cell1"
@@ -75,6 +63,11 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
+                android:background="@drawable/deposit_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
@@ -105,7 +98,7 @@
                     android:shadowColor="#66000000"
                     android:shadowRadius="3"
                     android:textColor="#FFB9B0A2"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -113,7 +106,7 @@
             android:id="@+id/grid_row1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="4dp"
             android:baselineAligned="false"
             android:orientation="horizontal">
             <LinearLayout
@@ -121,6 +114,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/deposit_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
@@ -151,7 +149,7 @@
                     android:shadowColor="#66000000"
                     android:shadowRadius="3"
                     android:textColor="#FFB9B0A2"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
             <LinearLayout
                 android:id="@+id/grid_cell3"
@@ -159,6 +157,11 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
+                android:background="@drawable/deposit_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
@@ -189,7 +192,7 @@
                     android:shadowColor="#66000000"
                     android:shadowRadius="3"
                     android:textColor="#FFB9B0A2"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -197,7 +200,7 @@
             android:id="@+id/grid_row2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="4dp"
             android:baselineAligned="false"
             android:orientation="horizontal">
             <LinearLayout
@@ -205,6 +208,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/deposit_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
@@ -235,7 +243,7 @@
                     android:shadowColor="#66000000"
                     android:shadowRadius="3"
                     android:textColor="#FFB9B0A2"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
             <LinearLayout
                 android:id="@+id/grid_cell5"
@@ -243,6 +251,11 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
+                android:background="@drawable/deposit_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
@@ -273,8 +286,7 @@
                     android:shadowColor="#66000000"
                     android:shadowRadius="3"
                     android:textColor="#FFB9B0A2"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
             </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
-</FrameLayout>
+</LinearLayout>

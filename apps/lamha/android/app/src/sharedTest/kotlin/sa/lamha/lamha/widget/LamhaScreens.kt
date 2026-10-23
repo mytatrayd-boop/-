@@ -296,7 +296,7 @@ object LamhaScreens {
     }
 
     /// عناصر الميزة ٦: كل عنصر في التخطيط ظاهر بنصه الأساسي، ومواقيت الصلاة خمسة أعمدة كلها ظاهرة
-    /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٣ أعمدة أو شبكة ٤–٦ بأيام محاذاة،
+    /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٦ مستطيلات بأيام محاذاة،
     /// وأيقونة القبلة وتحتها عنوانها.
     private fun checkV3(root: ViewGroup, placed: Set<String>): List<String> {
         val out = ArrayList<String>()
@@ -328,11 +328,9 @@ object LamhaScreens {
                 if (a.left < b.right) out += "مواقيت الصلاة: القادمة ليست أول عمود من اليمين"
             }
         }
-        // شبكة الإيداعات (أكثر من ثلاثة): الأسماء ظاهرة، والأيام كجدول تبدأ من موضع واحد في كل عمود.
+        // الإيداعات (كل إيداع في مستطيل): الأسماء ظاهرة، والأيام كجدول تبدأ من موضع واحد في كل عمود.
         val gridNames = GRID_NAMES.mapNotNull { root.findViewById<TextView>(it)?.takeIf { v -> shown(v, root) && v.text.isNotEmpty() } }
-        if ("deposit" in placed && counts.none { it in 1..3 } && gridNames.size !in 4..6) {
-            out += "الإيداعات: لا أعمدة ولا شبكة ($counts، ${gridNames.size} خانات)"
-        }
+        if ("deposit" in placed && gridNames.size !in 1..6) out += "الإيداعات: ${gridNames.size} مستطيلات"
         val gridDays = GRID_DAYS.map { id -> root.findViewById<TextView>(id)?.takeIf { shown(it, root) && it.text.isNotEmpty() } }
         for (col in 0..1) {
             val rights = gridDays.filterIndexed { i, _ -> i % 2 == col }.filterNotNull().map { rect(it, root).right }

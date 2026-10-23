@@ -24,9 +24,12 @@ const columnTitleSize = 11.0;
 const columnNameSize = 20.0;
 const columnSubSize = 14.0;
 
-/// شبكة الإيداعات (أكثر من ثلاثة): الاسم ١٦ عادي (طلب المالك) وبجانبه الأيام ١٤.
-const gridNameSize = 16.0;
-const gridDaysSize = 14.0;
+/// الإيداعات (طلب المالك): كل إيداع في مستطيل، الاسم والأيام بحجم واحد ١٦.
+const depositSize = 16.0;
+const depositPadH = 10.0;
+const depositPadV = 4.0;
+const depositRowGap = 4.0;
+const depositRadius = 12.0;
 
 /// بين الاسم وعمود الأيام في الشبكة.
 const gridDaysGap = 6.0;
@@ -365,7 +368,10 @@ class _QiblaTile extends _Styled {
 
   @override
   ({double text, double pad}) heights(BuildContext context, double width) =>
-      (text: look.showTitle ? qiblaTitleSize * tileLineHeight * s : 0, pad: 36);
+      (
+        text: look.showTitle ? qiblaTitleSize * tileLineHeight * s : 0,
+        pad: qiblaIconTarget(width),
+      );
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -593,132 +599,133 @@ class _PrayerTimesTile extends _ColumnsTile {
       _PrayerTimesTile(items: items, accent: accent!, look: look);
 }
 
-/// الإيداعات: عمود لكل إيداع (حتى ثلاثة، الأقرب أولاً): الاسم وتحته الأيام، بلا عنوان (طلب المالك).
-class _DepositsTile extends _ColumnsTile {
-  const _DepositsTile({required super.items, super.look})
-    : super(keyPrefix: 'deposit');
-
-  @override
-  _DepositsTile withLook(_Look look) => _DepositsTile(items: items, look: look);
-}
-
-/// الإيداعات بعد الثلاثة (طلب المالك): شبكة عمودين بلا عنوان، لكل خانة الاسم وبجانبه الأيام
-/// في سطر واحد، الأقرب أولاً من اليمين. الأيام كجدول: عمود بعرض أعرضها فتبدأ كلها من موضع واحد.
-/// الخانات تصغر بالتساوي، وإن ضاق الارتفاع تصغر الصفوف (fitGrid). مطابقة لـ gridTile في LamhaWidgetReceiver.kt.
-class _DepositsGridTile extends _Styled {
-  const _DepositsGridTile({required this.items, _Look look = _defaultLook})
+/// الإيداعات (طلب المالك): كل إيداع في مستطيل بلون الصناديق، «الاسم الأيام» في سطر، الأقرب أولاً من
+/// اليمين؛ عمود حتى ثلاثة وعمودان بعدها (depositColumns). الاسم والأيام بحجم واحد، والأيام كجدول: عمود
+/// بعرض أعرضها فتبدأ كلها من موضع واحد. الخانات تصغر بالتساوي، وإن ضاق الارتفاع تصغر الصفوف
+/// (fitGrid). مطابقة لـ depositsTile في LamhaWidgetReceiver.kt.
+class _DepositsTile extends _Styled {
+  const _DepositsTile({required this.items, _Look look = _defaultLook})
     : super(look);
 
   final List<_ColumnItem> items;
 
+  int get _cols => depositColumns(items.length);
   int get _rows => gridRows(items.length);
 
   @override
-  _DepositsGridTile withLook(_Look look) =>
-      _DepositsGridTile(items: items, look: look);
+  _DepositsTile withLook(_Look look) => _DepositsTile(items: items, look: look);
 
-  /// مقاسه بالصفوف.
+  /// مقاسه بالصفوف وحشوات مستطيلاتها.
   @override
   ({double text, double pad}) heights(BuildContext context, double width) => (
-    text: _rows * gridNameSize * tileLineHeight * s,
-    pad: boxPadV * 2 + lineGap * (_rows - 1),
+    text: _rows * depositSize * tileLineHeight * s,
+    pad: _rows * depositPadV * 2 + depositRowGap * (_rows - 1),
   );
 
   @override
-  Widget build(BuildContext context) => _boxed(
-    LayoutBuilder(
-      builder: (context, c) {
-        final cellWidth = (c.maxWidth - columnGap) / 2 - fitMargin;
-        final nameStyle = TextStyle(
-          fontSize: gridNameSize * s,
-          fontWeight: FontWeight.w400,
-          height: tileLineHeight,
-          color: primary,
-        );
-        final daysStyle = TextStyle(
-          fontSize: gridDaysSize * s,
-          fontWeight: FontWeight.w500,
-          height: tileLineHeight,
-          color: secondary,
-        );
-        double widest(Iterable<String> t, TextStyle st) =>
-            t.fold(0.0, (a, x) => math.max(a, _measure(context, x, st)));
-        final nameW = widest(items.map((i) => i.name), nameStyle);
-        final daysW = look.showSub
-            ? widest(items.map((i) => i.sub), daysStyle)
-            : 0.0;
-        // الفاصل وهامش عمود الأيام لا يصغران مع النص، فيُطرحان من العرض.
-        final fixed = look.showSub ? gridDaysGap + gridDaysSlack : 0.0;
-        final fit = fitGrid(
-          height: c.maxHeight,
-          width: math.max(1.0, cellWidth - fixed),
-          line: gridNameSize * s * tileLineHeight,
-          cellWidth: nameW + daysW,
-          rows: _rows,
-          gap: lineGap,
-        );
-        // عمود الأيام بعرض أعرضها بعد التصغير (+ هامش للتقريب)، والاسم ما بقي.
-        final daysColumn = daysW * fit.scale + gridDaysSlack;
-        Widget text(int i) {
-          if (i >= items.length) return const SizedBox.shrink();
-          final item = items[i];
-          return Row(
-            key: Key('deposit-cell-$i'),
-            children: [
-              Expanded(
-                child: Text(
-                  item.name,
-                  key: Key('deposit-name-$i'),
-                  textAlign: TextAlign.right,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: nameStyle.copyWith(
-                    fontSize: gridNameSize * s * fit.scale,
-                  ),
-                ),
-              ),
-              if (look.showSub) ...[
-                const SizedBox(width: gridDaysGap),
-                SizedBox(
-                  width: daysColumn,
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, c) {
+      final cellWidth =
+          (c.maxWidth - columnGap * (_cols - 1)) / _cols -
+          depositPadH * 2 -
+          fitMargin;
+      final nameStyle = TextStyle(
+        fontSize: depositSize * s,
+        fontWeight: FontWeight.w400,
+        height: tileLineHeight,
+        color: primary,
+      );
+      final daysStyle = nameStyle.copyWith(
+        fontWeight: FontWeight.w500,
+        color: secondary,
+      );
+      double widest(Iterable<String> t, TextStyle st) =>
+          t.fold(0.0, (a, x) => math.max(a, _measure(context, x, st)));
+      final nameW = widest(items.map((i) => i.name), nameStyle);
+      final daysW = look.showSub
+          ? widest(items.map((i) => i.sub), daysStyle)
+          : 0.0;
+      // الفاصل وهامش عمود الأيام وحشوات المستطيلات لا تصغر مع النص، فتُطرح.
+      final fixed = look.showSub ? gridDaysGap + gridDaysSlack : 0.0;
+      final fit = fitGrid(
+        height: c.maxHeight - _rows * depositPadV * 2,
+        width: math.max(1.0, cellWidth - fixed),
+        line: depositSize * s * tileLineHeight,
+        cellWidth: nameW + daysW,
+        rows: _rows,
+        gap: depositRowGap,
+      );
+      // عمود الأيام بعرض أعرضها بعد التصغير (+ هامش للتقريب)، والاسم ما بقي.
+      final daysColumn = daysW * fit.scale + gridDaysSlack;
+      final size = depositSize * s * fit.scale;
+      Widget cell(int i) {
+        if (i >= items.length) return const SizedBox.shrink();
+        final item = items[i];
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(depositRadius),
+            color: tileBoxColor,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: depositPadH,
+              vertical: depositPadV,
+            ),
+            child: Row(
+              key: Key('deposit-cell-$i'),
+              children: [
+                Expanded(
                   child: Text(
-                    item.sub,
-                    key: Key('deposit-days-$i'),
+                    item.name,
+                    key: Key('deposit-name-$i'),
                     textAlign: TextAlign.right,
                     maxLines: 1,
                     softWrap: false,
-                    style: daysStyle.copyWith(
-                      fontSize: gridDaysSize * s * fit.scale,
-                    ),
+                    overflow: TextOverflow.ellipsis,
+                    style: nameStyle.copyWith(fontSize: size),
                   ),
                 ),
+                if (look.showSub) ...[
+                  const SizedBox(width: gridDaysGap),
+                  SizedBox(
+                    width: daysColumn,
+                    child: Text(
+                      item.sub,
+                      key: Key('deposit-days-$i'),
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: daysStyle.copyWith(fontSize: size),
+                    ),
+                  ),
+                ],
               ],
-            ],
-          );
-        }
-
-        return _centered(
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var r = 0; r < _rows; r++) ...[
-                if (r > 0) const SizedBox(height: lineGap),
-                Row(
-                  key: Key('deposit-row-$r'),
-                  children: [
-                    Expanded(child: text(r * 2)),
-                    const SizedBox(width: columnGap),
-                    Expanded(child: text(r * 2 + 1)),
-                  ],
-                ),
-              ],
-            ],
+            ),
           ),
         );
-      },
-    ),
+      }
+
+      return _centered(
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var r = 0; r < _rows; r++) ...[
+              if (r > 0) const SizedBox(height: depositRowGap),
+              Row(
+                key: Key('deposit-row-$r'),
+                children: [
+                  for (var k = 0; k < _cols; k++) ...[
+                    if (k > 0) const SizedBox(width: columnGap),
+                    Expanded(child: cell(r * _cols + k)),
+                  ],
+                ],
+              ),
+            ],
+          ],
+        ),
+      );
+    },
   );
 }
 

@@ -292,7 +292,7 @@ class WidgetPreview extends StatelessWidget {
         ),
         WidgetElement.prayer => _prayerTile(l, accent, day, nextDay, digits),
         WidgetElement.qibla => _QiblaTile(title: l.tileQibla, accent: accent),
-        WidgetElement.deposit => _depositsTile(l, day, span),
+        WidgetElement.deposit => _depositsTile(day, span),
         WidgetElement.season => _seasonTile(l, day),
         WidgetElement.tradSeason => _tradSeasonTile(
           l,
@@ -573,17 +573,15 @@ class WidgetPreview extends StatelessWidget {
     );
   }
 
-  /// حتى ثلاثة أعمدة (عمود لكل وحدة عرض)، وبعرض ٣ حتى ستة: بعد الثلاثة شبكة عمودين (maxDeposits).
-  _Cell _depositsTile(AppLocalizations l, Map day, int span) {
+  /// حتى إيداع لكل وحدة عرض، وبعرض ٣ حتى ستة (maxDeposits)، كل منها في مستطيل.
+  _Cell _depositsTile(Map day, int span) {
     final items = <_ColumnItem>[
       for (final d in (day['deposits'] as List).cast<Map>().take(
         maxDeposits(span),
       ))
         (name: d['label'] as String, sub: d['daysText'] as String),
     ];
-    return depositsAsGrid(items.length)
-        ? _DepositsGridTile(items: items)
-        : _DepositsTile(items: items);
+    return _DepositsTile(items: items);
   }
 
   _Tile _seasonTile(AppLocalizations l, Map day) {
