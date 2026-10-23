@@ -49,6 +49,10 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
+            <!-- بعد تحديث التطبيق تتغير معرّفات الموارد، فتُعاد الودجت فوراً بدل شجرة الإصدار السابق. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/lamha_widget_info"/>

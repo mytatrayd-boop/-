@@ -359,11 +359,18 @@ class LamhaLogicTest {
     }
 
     @Test
+    fun qiblaIconTargetFillsSlot() {
+        assertEquals(85f, LamhaLogic.qiblaIconTarget(100f), 1e-4f)
+        assertEquals(110f, LamhaLogic.qiblaIconTarget(200f), 1e-6f)
+        assertEquals(36f, LamhaLogic.qiblaIconTarget(0f), 1e-6f)
+    }
+
+    @Test
     fun depositsGrid() {
         // الحالات نفسها في test/engine/widget_layout_test.dart.
         assertEquals(listOf(1, 2, 6, 6), listOf(1, 2, 3, 4).map { LamhaLogic.maxDeposits(it) })
-        assertEquals(listOf(false, false, true, true), listOf(1, 3, 4, 6).map { LamhaLogic.depositsAsGrid(it) })
-        assertEquals(listOf(2, 3, 3), listOf(4, 5, 6).map { LamhaLogic.gridRows(it) })
+        assertEquals(listOf(1, 1, 2, 2), listOf(1, 3, 4, 6).map { LamhaLogic.depositColumns(it) })
+        assertEquals(listOf(1, 3, 2, 3, 3), listOf(1, 3, 4, 5, 6).map { LamhaLogic.gridRows(it) })
         assertEquals(LamhaLogic.GridFit(true, 1f), LamhaLogic.fitGrid(100f, 60f, 16f, 20f, 50f, 3, 2f))
         val narrow = LamhaLogic.fitGrid(100f, 60f, 16f, 20f, 75f, 3, 2f)
         assertEquals(true, narrow.title)

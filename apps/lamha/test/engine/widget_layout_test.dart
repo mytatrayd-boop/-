@@ -402,12 +402,18 @@ void main() {
     });
   });
 
+  test('مقاس أيقونة القبلة: ٨٥٪ من العرض حتى ١١٠ (الحالات نفسها في LamhaLogicTest.kt)', () {
+    expect(qiblaIconTarget(100), closeTo(85, 1e-9));
+    expect(qiblaIconTarget(200), 110);
+    expect(qiblaIconTarget(0), 36);
+  });
+
   // الحالات نفسها في LamhaLogicTest.kt.
   group('شبكة الإيداعات', () {
     test('العدد: حتى ستة بعرض ٣، والشبكة بعد ثلاثة', () {
       expect([for (final s in [1, 2, 3, 4]) maxDeposits(s)], [1, 2, 6, 6]);
-      expect([for (final n in [1, 3, 4, 6]) depositsAsGrid(n)], [false, false, true, true]);
-      expect([for (final n in [4, 5, 6]) gridRows(n)], [2, 3, 3]);
+      expect([for (final n in [1, 3, 4, 6]) depositColumns(n)], [1, 1, 2, 2]);
+      expect([for (final n in [1, 3, 4, 5, 6]) gridRows(n)], [1, 3, 2, 3, 3]);
     });
 
     test('fitGrid: يتسع، ثم الخانات بالتساوي، ثم العنوان، ثم الصفوف', () {
