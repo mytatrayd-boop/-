@@ -51,8 +51,10 @@ const lineGap = 2.0;
 /// حشوة الصناديق الجديدة الرأسية (أقل من المربعات القديمة لتتسع الصفوف الخمسة).
 const boxPadV = 2.0;
 
-/// أيقونة القبلة (طلب المالك) وبينها وبين «القبلة» تحتها.
-const qiblaIconAsset = 'assets/branding/qibla_icon.png';
+/// طبقات أيقونة القبلة (طلب المالك) وبينها وبين «القبلة» تحتها.
+const qiblaShapeAsset = 'assets/branding/qibla_shape.png';
+const qiblaRingAsset = 'assets/branding/qibla_ring.png';
+const qiblaKaabaAsset = 'assets/branding/qibla_kaaba.png';
 const qiblaIconGap = 2.0;
 
 /// مربع في الشبكة: يُرسم بحجمه المطلوب داخل مقاسه، ومقاسه من [base] بالحجم الأساسي.
@@ -343,17 +345,23 @@ class _CapsuleTile extends _Styled {
   );
 }
 
-/// القبلة (طلب المالك): أيقونة القبلة (assets/branding/qibla_icon.png، الكعبة في دائرة ذهبية وسهم)
-/// وتحتها «القبلة». الأيقونة أكبر مربع يتسع مع العنوان، والعنوان يصغر ليتسع عرض المربع.
+/// القبلة (طلب المالك): أيقونة القبلة وتحتها «القبلة». الأيقونة ثلاث طبقات من صورة المالك: الشكل
+/// بلون الخلفية (qiblaIconBackground)، والحلقة والسهم بلون التمييز أو اللون الرئيسي للمربع، والكعبة
+/// كما هي، فتتسق مع أي لون. الأيقونة أكبر مربع يتسع مع العنوان، والعنوان يصغر ليتسع عرض المربع.
 /// مطابقة لـ qiblaTile في LamhaWidgetReceiver.kt.
 class _QiblaTile extends _Styled {
-  const _QiblaTile({required this.title, _Look look = _defaultLook})
-    : super(look);
+  const _QiblaTile({
+    required this.title,
+    required this.accent,
+    _Look look = _defaultLook,
+  }) : super(look);
 
   final String title;
+  final Color accent;
 
   @override
-  _QiblaTile withLook(_Look look) => _QiblaTile(title: title, look: look);
+  _QiblaTile withLook(_Look look) =>
+      _QiblaTile(title: title, accent: accent, look: look);
 
   @override
   ({double text, double pad}) heights(BuildContext context, double width) =>
@@ -375,6 +383,7 @@ class _QiblaTile extends _Styled {
         qiblaTitleSize * s * 0.6,
       );
       // +١ لتقريب ارتفاع السطر.
+      final ring = look.primary ?? accent;
       final titleLine = look.showTitle
           ? size * tileLineHeight + qiblaIconGap + 1
           : 0;
@@ -384,12 +393,28 @@ class _QiblaTile extends _Styled {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(
-                qiblaIconAsset,
+              SizedBox.square(
                 key: const Key('preview-qibla-icon'),
-                width: icon,
-                height: icon,
-                filterQuality: FilterQuality.medium,
+                dimension: icon,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    for (final (asset, color) in [
+                      (
+                        qiblaShapeAsset,
+                        Color(qiblaIconBackground(ring.toARGB32())),
+                      ),
+                      (qiblaRingAsset, ring),
+                      (qiblaKaabaAsset, null),
+                    ])
+                      Image.asset(
+                        asset,
+                        color: color,
+                        colorBlendMode: BlendMode.srcIn,
+                        filterQuality: FilterQuality.medium,
+                      ),
+                  ],
+                ),
               ),
               if (look.showTitle) ...[
                 const SizedBox(height: qiblaIconGap),

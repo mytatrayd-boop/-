@@ -351,6 +351,14 @@ class LamhaLogicTest {
     }
 
     @Test
+    fun qiblaIconBackgroundDarkensRing() {
+        // الحالات نفسها في test/engine/widget_theme_test.dart.
+        assertEquals(0xFF3C301A.toInt(), LamhaLogic.qiblaIconBackground(0xFFD6AA5C.toInt()))
+        assertEquals(0xFF243240.toInt(), LamhaLogic.qiblaIconBackground(0xFF7FB2E5.toInt()))
+        assertEquals(0xFF474747.toInt(), LamhaLogic.qiblaIconBackground(0xFFFFFFFF.toInt()))
+    }
+
+    @Test
     fun depositsGrid() {
         // الحالات نفسها في test/engine/widget_layout_test.dart.
         assertEquals(listOf(1, 2, 6, 6), listOf(1, 2, 3, 4).map { LamhaLogic.maxDeposits(it) })

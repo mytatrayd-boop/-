@@ -273,6 +273,12 @@ object LamhaLogic {
         return ColumnsFit(title, kName, sub, kSub)
     }
 
+    /// خلفية أيقونة القبلة (qiblaIconBackground في Dart): لون الحلقة معتّماً إلى ٢٨٪.
+    fun qiblaIconBackground(color: Int): Int {
+        fun ch(shift: Int) = Math.round(((color shr shift) and 0xFF) * 0.28f)
+        return (0xFF shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
     /// أقصى عدد إيداعات في مربعها (maxDeposits في Dart): عمود لكل وحدة عرض، وبعرض ٣ حتى ستة في شبكة.
     fun maxDeposits(span: Int): Int = if (span >= 3) 6 else span
 

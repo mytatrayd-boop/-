@@ -12,6 +12,8 @@ import 'package:lamha/src/engine/weather.dart';
 
 import '../helpers.dart';
 
+import 'app_helpers.dart' show loadImages;
+
 /// لقطة المعاينة بخط Tajawal (تُحدَّث بـ --update-goldens، وتُنسخ يدوياً إلى
 /// mockups/settings_preview.png).
 Future<void> _loadFont(String family, List<String> paths) async {
@@ -90,6 +92,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        await loadImages(tester);
         await expectLater(
           find.byKey(const Key('golden')),
           matchesGoldenFile('goldens/$file'),

@@ -202,3 +202,14 @@ Future<FakeBridge> pumpApp(
   await tester.pumpAndSettle();
   return b;
 }
+
+/// يحمّل صور الأصول الظاهرة (أيقونة القبلة) قبل لقطات golden؛ فك الصور غير متزامن ولا ينتظره
+/// pumpAndSettle.
+Future<void> loadImages(WidgetTester tester) async {
+  await tester.runAsync(() async {
+    for (final e in find.byType(Image).evaluate()) {
+      await precacheImage((e.widget as Image).image, e);
+    }
+  });
+  await tester.pumpAndSettle();
+}

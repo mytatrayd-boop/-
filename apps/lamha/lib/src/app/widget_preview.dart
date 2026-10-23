@@ -291,7 +291,7 @@ class WidgetPreview extends StatelessWidget {
           ],
         ),
         WidgetElement.prayer => _prayerTile(l, accent, day, nextDay, digits),
-        WidgetElement.qibla => _QiblaTile(title: l.tileQibla),
+        WidgetElement.qibla => _QiblaTile(title: l.tileQibla, accent: accent),
         WidgetElement.deposit => _depositsTile(l, day, span),
         WidgetElement.season => _seasonTile(l, day),
         WidgetElement.tradSeason => _tradSeasonTile(

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- القبلة (طلب المالك، _QiblaTile): أيقونة القبلة (drawable-nodpi/qibla_icon.png) وتحتها «القبلة».
-     الضغط عليها يفتح البوصلة. مقاس الأيقونة والخط من LamhaWidgetReceiver. -->
+<!-- القبلة (طلب المالك، _QiblaTile): أيقونة القبلة وتحتها «القبلة». الأيقونة ثلاث طبقات
+     (drawable-nodpi): الشكل بلون الخلفية، والحلقة والسهم بلون التمييز أو لون المربع، والكعبة كما هي.
+     الضغط عليها يفتح البوصلة. مقاس الأيقونة وألوانها والخط من LamhaWidgetReceiver. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
     android:layout_width="match_parent"
@@ -13,13 +14,35 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
-        <ImageView
+        <FrameLayout
             android:id="@+id/qibla_icon"
             android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/qibla_icon"
-            android:importantForAccessibility="no" />
+            android:layout_height="56dp">
+
+            <ImageView
+                android:id="@+id/qibla_shape"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/qibla_shape"
+                android:importantForAccessibility="no" />
+
+            <ImageView
+                android:id="@+id/qibla_ring"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/qibla_ring"
+                android:importantForAccessibility="no" />
+
+            <ImageView
+                android:id="@+id/qibla_kaaba"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/qibla_kaaba"
+                android:importantForAccessibility="no" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/qibla_title"

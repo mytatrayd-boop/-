@@ -744,6 +744,10 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             } else {
                 rv.setViewVisibility(R.id.qibla_title, View.GONE)
             }
+            // الحلقة والسهم بلون المربع الرئيسي إن اختير وإلا بالتمييز، والشكل بلونها معتّماً.
+            val ring = spec.primaryColor ?: env.accent
+            rv.setInt(R.id.qibla_ring, "setColorFilter", ring)
+            rv.setInt(R.id.qibla_shape, "setColorFilter", LamhaLogic.qiblaIconBackground(ring))
             val icon = listOf(inner, if (innerHeightDp > 0f) innerHeightDp - titleLine else 0f).filter { it > 0f }.minOrNull() ?: 0f
             if (icon > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 rv.setViewLayoutWidth(R.id.qibla_icon, icon, TypedValue.COMPLEX_UNIT_DIP)

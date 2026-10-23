@@ -48,4 +48,10 @@ void main() {
     final dep = ((s['days']! as List).first as Map)['deposits'] as List;
     expect((dep.first as Map)['afterText'], 'بعد ٨ أيام');
   });
+
+  test('خلفية أيقونة القبلة: لون الحلقة معتّماً إلى ٢٨٪ (الحالات نفسها في LamhaLogicTest.kt)', () {
+    expect(qiblaIconBackground(0xFFD6AA5C), 0xFF3C301A);
+    expect(qiblaIconBackground(0xFF7FB2E5), 0xFF243240);
+    expect(qiblaIconBackground(0xFFFFFFFF), 0xFF474747);
+  });
 }
