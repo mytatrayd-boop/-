@@ -1,9 +1,18 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// توقيع الإصدار: android/key.properties محلياً، أو متغيرات البيئة في CI (نفس أسرار «أسرتي» و«موعد»).
+val keyProps = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun signingValue(prop: String, env: String): String? = keyProps.getProperty(prop) ?: System.getenv(env)
 
 android {
     namespace = "sa.lamha.lamha"
@@ -42,12 +51,23 @@ android {
         unitTests.isIncludeAndroidResources = true
     }
 
+    signingConfigs {
+        create("release") {
+            val store = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")
+            if (store != null) {
+                storeFile = file(store)
+                storePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            // للاختبار فقط: APK الـ CI موقّع بمفتاح debug، وليس للمتجر.
-            signingConfig = signingConfigs.getByName("debug")
+            // مفتاح الرفع في lamha-play.yml؛ وبدونه توقيع debug (APK التجربة في lamha-android.yml، لا المتجر).
+            signingConfig = if (signingValue("storeFile", "ANDROID_KEYSTORE_PATH") != null)
+                signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }

@@ -90,4 +90,5 @@
   - أيقونة القبلة أكبر (`qiblaIconTarget`).
   - كل إيداع في مستطيل، والاسم والأيام بحجم واحد.
   - `flutter test` و`./gradlew :app:testDebugUnitTest` (مع Robolectric) ناجحة محلياً.
+- تجهيز النشر (طلب المالك): **أندرويد جاهز للرفع اليدوي الأول.** `RELEASE.md`، و`store/STORE_LISTING.md` (النصوص وإجابات App content وData safety)، و`store/PRIVACY.md`، وصور `store/play/` (مولّدة بـ `test/store/store_screenshots_test.dart`)، وتوقيع الإصدار من الأسرار، و`lamha-play.yml` لحزمة AAB. آيفون ينتظر الميزة ٤.
 - التالي: البناء على GitHub وتجربة المالك، ثم الميزة ٤ (ودجت آيفون وشاشة القفل).
