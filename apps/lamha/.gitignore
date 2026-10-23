@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# صور مقارنة اختبارات golden الفاشلة (يولّدها flutter test).
+test/app/failures/
