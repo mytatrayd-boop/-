@@ -116,6 +116,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val DEPOSIT_PAD_H_DP = 10f
         private const val DEPOSIT_PAD_V_DP = 4f
         private const val DEPOSIT_ROW_GAP_DP = 4f
+        /// هامش لكل صف: على المحاكي زاد تقريب البكسل في السطر والحشوة ٢dp تقريباً على ثلاثة صفوف فقُص الأخير.
+        private const val DEPOSIT_ROW_SLACK_DP = 1.5f
         /// بين الاسم وعمود الأيام (gridDaysGap في Dart، layout_marginStart في widget_tile_grid.xml).
         private const val GRID_DAYS_GAP_DP = 6f
         private const val GRID_DAYS_SLACK_DP = 2f
@@ -842,7 +844,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             // الفاصل وهامش عمود الأيام وحشوات المستطيلات لا تصغر مع النص، فتُطرح.
             val fixed = if (spec.showSub) GRID_DAYS_GAP_DP + GRID_DAYS_SLACK_DP else 0f
             val fit = LamhaLogic.fitGrid(
-                if (innerHeightDp > 0f) innerHeightDp - rows * DEPOSIT_PAD_V_DP * 2 else 0f,
+                if (innerHeightDp > 0f) innerHeightDp - rows * (DEPOSIT_PAD_V_DP * 2 + DEPOSIT_ROW_SLACK_DP) else 0f,
                 if (cellWidth > 0f) maxOf(1f, cellWidth - fixed) else 0f, 0f,
                 tightDp(ctx, sp, false), nameW + daysW, rows, DEPOSIT_ROW_GAP_DP,
             )
