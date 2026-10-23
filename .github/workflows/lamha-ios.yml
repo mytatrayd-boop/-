@@ -38,6 +38,12 @@ jobs:
       - name: Flutter build (no codesign, app + widget)
         run: flutter build ios --release --no-codesign --build-number=${{ github.run_number }}
 
+      - name: Widget extension is embedded
+        run: |
+          ls -la build/ios/iphoneos/Runner.app/PlugIns/
+          test -f build/ios/iphoneos/Runner.app/PlugIns/LamhaWidget.appex/LamhaWidget
+          plutil -p build/ios/iphoneos/Runner.app/PlugIns/LamhaWidget.appex/Info.plist | grep -E "CFBundle(Identifier|ShortVersionString|Version)|widgetkit"
+
       - name: Write API key
         if: env.UPLOAD == 'true'
         env: { KEY: "${{ secrets.APPSTORE_API_KEY_P8 }}" }
