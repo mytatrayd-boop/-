@@ -14,7 +14,8 @@ import '../app/app_helpers.dart';
 import '../app/customize_screen_test.dart' show openCustomize, select;
 import '../helpers.dart';
 
-/// صور متجر Google Play في store/play (لقطات ١٠٨٠×١٩٢٠، وصورة العرض ١٠٢٤×٥٠٠).
+/// صور المتجرين: Google Play في store/play (لقطات ١٠٨٠×١٩٢٠، وصورة العرض ١٠٢٤×٥٠٠)، وApp Store
+/// في store/appstore (لقطات آيفون ٦٫٩ بوصة ١٢٩٠×٢٧٩٦).
 /// لا تعمل في الاختبارات العادية: تُولَّد بـ
 ///   LAMHA_STORE=1 flutter test test/store/store_screenshots_test.dart --update-goldens
 final _enabled = Platform.environment['LAMHA_STORE'] == '1';
@@ -120,7 +121,8 @@ Widget _frame(String title, String sub, WidgetTheme theme) => DecoratedBox(
       ),
     );
 
-Future<void> _shot(WidgetTester tester, Size logical, double dpr, Widget child, String file) async {
+Future<void> _shot(WidgetTester tester, Size logical, double dpr, Widget child, String file,
+    {String dir = 'play'}) async {
   await _loadFonts();
   tester.view.physicalSize = logical * dpr;
   tester.view.devicePixelRatio = dpr;
@@ -128,51 +130,54 @@ Future<void> _shot(WidgetTester tester, Size logical, double dpr, Widget child, 
   await tester.pumpWidget(_app(child));
   await tester.pumpAndSettle();
   await loadImages(tester);
-  await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../store/play/$file'));
+  await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../store/$dir/$file'));
 }
 
 void main() {
-  // ١٠٨٠×١٩٢٠ = ٤١١٫٤٣ × ٧٣١٫٤٣ بكثافة ٢٫٦٢٥.
-  const phone = Size(1080 / 2.625, 1920 / 2.625);
-
-  for (final (file, title, sub, theme) in [
-    ('01-widget.png', 'يومك كله في لمحة',
-        'الساعة والتاريخان والطقس والصلاة والإيداعات والمواسم في ودجت عربية واحدة',
-        WidgetTheme.black),
-    ('02-deposits.png', 'مواعيد الإيداعات',
-        'الراتب والضمان وحساب المواطن والدعم السكني والتأهيل الشامل والمعاشات، مع الأيام المتبقية',
-        WidgetTheme.blue),
-    ('03-colors.png', 'بالألوان التي تحبها',
-        'سبع سمات وشفافية تختارها، وأيقونة القبلة تتلون معها',
-        WidgetTheme.green),
+  // (المجلد، المقاس المنطقي، الكثافة): ١٠٨٠×١٩٢٠ لـ Play، و١٢٩٠×٢٧٩٦ لآيفون ٦٫٩ بوصة.
+  for (final (dir, logical, dpr) in [
+    ('play', const Size(1080 / 2.625, 1920 / 2.625), 2.625),
+    ('appstore', const Size(430, 932), 3.0),
   ]) {
-    testWidgets('store $file', (tester) async {
-      await _shot(tester, phone, 2.625, _frame(title, sub, theme), file);
+    for (final (file, title, sub, theme) in [
+      ('01-widget.png', 'يومك كله في لمحة',
+          'الساعة والتاريخان والطقس والصلاة والإيداعات والمواسم في ودجت عربية واحدة',
+          WidgetTheme.black),
+      ('02-deposits.png', 'مواعيد الإيداعات',
+          'الراتب والضمان وحساب المواطن والدعم السكني والتأهيل الشامل والمعاشات، مع الأيام المتبقية',
+          WidgetTheme.blue),
+      ('03-colors.png', 'بالألوان التي تحبها',
+          'سبع سمات وشفافية تختارها، وأيقونة القبلة تتلون معها',
+          WidgetTheme.green),
+    ]) {
+      testWidgets('store $dir/$file', (tester) async {
+        await _shot(tester, logical, dpr, _frame(title, sub, theme), file, dir: dir);
+      }, skip: !_enabled);
+    }
+
+    testWidgets('store $dir/04-customize.png', (tester) async {
+      await _loadFonts();
+      await openCustomize(tester);
+      tester.view.physicalSize = logical * dpr;
+      tester.view.devicePixelRatio = dpr;
+      addTearDown(tester.view.reset);
+      await tester.pumpAndSettle();
+      await select(tester, 'deposit');
+      await loadImages(tester);
+      await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../store/$dir/04-customize.png'));
+    }, skip: !_enabled);
+
+    testWidgets('store $dir/05-settings.png', (tester) async {
+      await _loadFonts();
+      await pumpApp(tester);
+      tester.view.physicalSize = logical * dpr;
+      tester.view.devicePixelRatio = dpr;
+      addTearDown(tester.view.reset);
+      await tester.pumpAndSettle();
+      await loadImages(tester);
+      await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../store/$dir/05-settings.png'));
     }, skip: !_enabled);
   }
-
-  testWidgets('store 04-customize.png', (tester) async {
-    await _loadFonts();
-    await openCustomize(tester);
-    tester.view.physicalSize = const Size(1080, 1920);
-    tester.view.devicePixelRatio = 2.625;
-    addTearDown(tester.view.reset);
-    await tester.pumpAndSettle();
-    await select(tester, 'deposit');
-    await loadImages(tester);
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../store/play/04-customize.png'));
-  }, skip: !_enabled);
-
-  testWidgets('store 05-settings.png', (tester) async {
-    await _loadFonts();
-    await pumpApp(tester);
-    tester.view.physicalSize = const Size(1080, 1920);
-    tester.view.devicePixelRatio = 2.625;
-    addTearDown(tester.view.reset);
-    await tester.pumpAndSettle();
-    await loadImages(tester);
-    await expectLater(find.byType(MaterialApp), matchesGoldenFile('../../store/play/05-settings.png'));
-  }, skip: !_enabled);
 
   testWidgets('store feature-graphic.png', (tester) async {
     await _shot(
