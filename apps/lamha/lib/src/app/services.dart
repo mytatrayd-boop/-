@@ -187,7 +187,7 @@ class OpenMeteoWeatherService implements WeatherService {
   }
 }
 
-/// قناة MainActivity.kt في أندرويد: ألوان النظام وإذن الإشعارات.
+/// قناة MainActivity.kt في أندرويد: ألوان النظام وإذن الإشعارات والاهتزاز.
 const androidChannel = MethodChannel('sa.lamha/android');
 
 /// ألوان Material You (أندرويد ١٢+)؛ null في غيره.
@@ -220,4 +220,31 @@ class AndroidNotificationPermission implements NotificationPermission {
   Future<bool> request() async =>
       await androidChannel.invokeMethod<bool>('requestNotificationPermission') ??
       false;
+}
+
+/// نبضتا اهتزاز عند الاتجاه إلى القبلة.
+abstract class Vibration {
+  Future<void> alignedPulse();
+}
+
+/// أندرويد: محرك الاهتزاز عبر MainActivity (HapticFeedback يتبع إعداد «اهتزاز اللمس» وكثيراً ما
+/// يُتجاهل). غيره: HapticFeedback.
+class DeviceVibration implements Vibration {
+  /// الفاصل بين النبضتين في غير أندرويد.
+  static const pulseGap = Duration(milliseconds: 150);
+
+  @override
+  Future<void> alignedPulse() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await androidChannel.invokeMethod<bool>('vibrate');
+      } catch (e) {
+        debugPrint('vibrate: $e');
+      }
+      return;
+    }
+    await HapticFeedback.heavyImpact();
+    await Future<void>.delayed(pulseGap);
+    await HapticFeedback.heavyImpact();
+  }
 }

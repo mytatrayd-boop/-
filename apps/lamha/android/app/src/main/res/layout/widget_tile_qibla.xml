@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- القبلة (الميزة ٦، _QiblaTile): دائرة زرقاء داكنة فيها «القبلة» وتحتها الكعبة (drawable/kaaba.xml).
-     الضغط عليها يفتح البوصلة. مقاس الكعبة والخط من LamhaWidgetReceiver. -->
+<!-- القبلة (طلب المالك، _QiblaTile): أيقونة القبلة وتحتها «القبلة». الأيقونة ثلاث طبقات
+     (drawable-nodpi): الشكل بلون الخلفية، والحلقة والسهم بلون التمييز أو لون المربع، والكعبة كما هي.
+     الضغط عليها يفتح البوصلة. مقاس الأيقونة وألوانها والخط من LamhaWidgetReceiver. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_box"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <ImageView
-        android:id="@+id/qibla_circle"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        android:src="@drawable/qibla_circle"
-        android:importantForAccessibility="no" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -21,24 +14,50 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
+        <FrameLayout
+            android:id="@+id/qibla_icon"
+            android:layout_width="56dp"
+            android:layout_height="56dp">
+
+            <ImageView
+                android:id="@+id/qibla_shape"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/qibla_shape"
+                android:importantForAccessibility="no" />
+
+            <ImageView
+                android:id="@+id/qibla_ring"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/qibla_ring"
+                android:importantForAccessibility="no" />
+
+            <ImageView
+                android:id="@+id/qibla_kaaba"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/qibla_kaaba"
+                android:importantForAccessibility="no" />
+        </FrameLayout>
+
         <TextView
             android:id="@+id/qibla_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:gravity="center"
             android:textDirection="rtl"
             android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
             android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
             android:textColor="#FFF4EFE6"
             android:textSize="14sp"
             android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/qibla_kaaba"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/kaaba"
-            android:importantForAccessibility="no" />
     </LinearLayout>
 </FrameLayout>

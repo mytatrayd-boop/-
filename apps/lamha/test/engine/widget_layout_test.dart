@@ -402,6 +402,35 @@ void main() {
     });
   });
 
+  // الحالات نفسها في LamhaLogicTest.kt.
+  group('شبكة الإيداعات', () {
+    test('العدد: حتى ستة بعرض ٣، والشبكة بعد ثلاثة', () {
+      expect([for (final s in [1, 2, 3, 4]) maxDeposits(s)], [1, 2, 6, 6]);
+      expect([for (final n in [1, 3, 4, 6]) depositsAsGrid(n)], [false, false, true, true]);
+      expect([for (final n in [4, 5, 6]) gridRows(n)], [2, 3, 3]);
+    });
+
+    test('fitGrid: يتسع، ثم الخانات بالتساوي، ثم العنوان، ثم الصفوف', () {
+      GridFit f(double h, double cellW) => fitGrid(
+            height: h,
+            width: 60,
+            titleHeight: 16,
+            line: 20,
+            cellWidth: cellW,
+            rows: 3,
+            gap: 2,
+          );
+      expect(f(100, 50), (title: true, scale: 1.0));
+      final narrow = f(100, 75);
+      expect(narrow.title, isTrue);
+      expect(narrow.scale, closeTo(0.8, 1e-9));
+      expect(f(70, 50), (title: false, scale: 1.0));
+      final short = f(49, 50);
+      expect(short.title, isFalse);
+      expect(short.scale, closeTo(0.75, 1e-9));
+    });
+  });
+
   group('rotatePrayers', () {
     List<PrayerSlot> day(int d) => [
           for (final (k, h, m) in [

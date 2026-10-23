@@ -273,6 +273,36 @@ object LamhaLogic {
         return ColumnsFit(title, kName, sub, kSub)
     }
 
+    /// خلفية أيقونة القبلة (qiblaIconBackground في Dart): لون الحلقة معتّماً إلى ٢٨٪.
+    fun qiblaIconBackground(color: Int): Int {
+        fun ch(shift: Int) = Math.round(((color shr shift) and 0xFF) * 0.28f)
+        return (0xFF shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
+    /// أقصى عدد إيداعات في مربعها (maxDeposits في Dart): عمود لكل وحدة عرض، وبعرض ٣ حتى ستة في شبكة.
+    fun maxDeposits(span: Int): Int = if (span >= 3) 6 else span
+
+    /// أكثر من ثلاثة إيداعات: شبكة عمودين، لكل خانة «الاسم الأيام» في سطر.
+    fun depositsAsGrid(count: Int): Boolean = count > 3
+
+    fun gridRows(count: Int): Int = (count + 1) / 2
+
+    data class GridFit(val title: Boolean, val scale: Float)
+
+    /// ملاءمة شبكة الإيداعات (fitGrid في Dart): الخانات تصغر بالتساوي إن لم يتسع أعرضها، وإن ضاق
+    /// الارتفاع يُخفى العنوان أولاً ثم تصغر الصفوف لتتسع.
+    fun fitGrid(height: Float, width: Float, titleHeight: Float, line: Float, cellWidth: Float, rows: Int, gap: Float = 0f): GridFit {
+        var k = if (width > 0f && cellWidth > width) width / cellWidth else 1f
+        var title = titleHeight > 0f
+        val gaps = gap * maxOf(0, rows - 1)
+        fun used() = (if (title) titleHeight + gap else 0f) + rows * line * k + gaps
+        if (height > 0f && rows > 0 && line > 0f) {
+            if (used() > height && title) title = false
+            if (used() > height) k = maxOf(0f, minOf(k, (height - gaps) / (rows * line)))
+        }
+        return GridFit(title, k)
+    }
+
     /// نقاط وصف الموسم (fitPoints في Dart): لكل نقطة أسطرها حتى [maxLines]. إن ضاق [height]: يُخفى
     /// العنوان ([titleHeight]) أولاً، ثم النقاط من الآخر، وآخراً تُقلَّل أسطر الأولى (حتى سطر). يعيد
     /// (العنوان ظاهر؟، أسطر كل نقطة ظاهرة).
@@ -394,12 +424,6 @@ object LamhaLogic {
     fun fitTextSize(preferredSp: Float, widthAtPreferred: Float, maxWidth: Float, minSp: Float): Float {
         if (widthAtPreferred <= 0f || widthAtPreferred <= maxWidth) return preferredSp
         return maxOf(minSp, preferredSp * maxWidth / widthAtPreferred)
-    }
-
-    /// حجم عنوان دائرة القبلة (qiblaTitleFit في Dart): المطلوب، حتى ١٦٪ من القطر [d]، وعرضه حتى ٧٠٪ منه.
-    fun qiblaTitleFit(preferredSp: Float, widthAtPreferred: Float, d: Float): Float {
-        val byHeight = minOf(preferredSp, d * 0.16f)
-        return fitTextSize(byHeight, widthAtPreferred * byHeight / preferredSp, d * 0.7f, 0f)
     }
 
     /// عرض داخل خانة مربع (dp) بعرض [span] في ودجت بعرض [widthDp]: حشوة الشبكة ١٠+١٠

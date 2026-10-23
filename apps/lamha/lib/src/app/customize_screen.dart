@@ -262,8 +262,8 @@ class TileSettings extends ConsumerWidget {
   static const spanNames = {1: 'small', 2: 'medium', 3: 'wide'};
 
   /// مربعات لها عنوان (مربعات المعلومات)، ولها سطر فرعي (وكذلك اليوم تحت الساعة والميلادي).
-  /// الميزة ٦: عنوان القبلة كلمة «القبلة» في دائرتها، وعنوان الإيداعات «متبقي على:»، ووصف الموسم
-  /// «في الوسم:». والسطر الفرعي لليوم والطقس سطرا المدينة والحرارة، وللأعمدة الأوقات والأيام،
+  /// الميزة ٦: عنوان القبلة كلمة «القبلة» في دائرتها، ووصف الموسم «في الوسم:». الإيداعات بلا عنوان
+  /// (طلب المالك: حُذف «متبقي على:»). والسطر الفرعي لليوم والطقس سطرا المدينة والحرارة، وللأعمدة الأوقات والأيام،
   /// ولوصف الموسم النقاط بعد الأولى.
   static bool hasTitle(WidgetElement e) => !const {
     WidgetElement.clock,
@@ -273,6 +273,7 @@ class TileSettings extends ConsumerWidget {
     WidgetElement.hijri,
     WidgetElement.gregorian,
     WidgetElement.prayerTimes,
+    WidgetElement.deposit,
   }.contains(e);
 
   static bool hasSub(WidgetElement e) => !const {

@@ -1,13 +1,17 @@
 package sa.lamha.lamha
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import sa.lamha.lamha.widget.LamhaWeatherWorker
 
-/// قناة sa.lamha/android (services.dart): ألوان النظام (Material You) وإذن الإشعارات.
+/// قناة sa.lamha/android (services.dart): ألوان النظام (Material You) وإذن الإشعارات والاهتزاز.
 class MainActivity : FlutterActivity() {
     private var pendingPermission: MethodChannel.Result? = null
 
@@ -19,6 +23,7 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "systemColors" -> result.success(systemColors())
                 "requestNotificationPermission" -> requestNotificationPermission(result)
+                "vibrate" -> result.success(vibrate())
                 else -> result.notImplemented()
             }
         }
@@ -31,6 +36,25 @@ class MainActivity : FlutterActivity() {
             "accent" to getColor(android.R.color.system_accent1_200),
             "background" to getColor(android.R.color.system_neutral1_900),
         )
+    }
+
+    /// نبضتان بمحرك الاهتزاز نفسه (لا يتبع إعداد «اهتزاز اللمس» كـ HapticFeedback). false بلا محرك.
+    private fun vibrate(): Boolean {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+        if (!vibrator.hasVibrator()) return false
+        val pattern = longArrayOf(0, 120, 100, 120)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(pattern, -1)
+        }
+        return true
     }
 
     /// POST_NOTIFICATIONS في أندرويد ١٣+؛ الأقدم لا يحتاج إذناً.

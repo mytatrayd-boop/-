@@ -54,6 +54,17 @@ object LamhaScreens {
         // الأرقام الإنجليزية (الميزة ٦). ساعة TextClock تتبع لغة الجهاز (هنا عربي) لا الإعداد.
         for ((size, w, h) in SIZES) out += Triple("lamha_latin_$size.png", base("latin"), w to h)
         for ((size, w, h) in SIZES_4X4) out += Triple("lamha_4x4_${size}_black_1.0.png", base("black"), w to h)
+        // شبكة الإيداعات (أكثر من ثلاثة، طلب المالك): الستة، وخمسة (صف ناقص)، والستة في ٤×٤.
+        val six = base("six")
+        val five = JSONObject(six).apply {
+            val days = getJSONArray("days")
+            for (i in 0 until days.length()) days.getJSONObject(i).getJSONArray("deposits").remove(5)
+        }.toString()
+        for ((size, w, h) in SIZES) {
+            out += Triple("lamha_deposits6_$size.png", six, w to h)
+            out += Triple("lamha_deposits5_$size.png", five, w to h)
+        }
+        for ((size, w, h) in SIZES_4X4) out += Triple("lamha_deposits6_4x4_$size.png", six, w to h)
         for ((name, edit) in LAYOUT_CASES) {
             val root = JSONObject(base("black"))
             root.put("layout", edit(root.getJSONArray("layout")))
@@ -285,7 +296,8 @@ object LamhaScreens {
     }
 
     /// عناصر الميزة ٦: كل عنصر في التخطيط ظاهر بنصه الأساسي، ومواقيت الصلاة خمسة أعمدة كلها ظاهرة
-    /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٣ أعمدة، والكعبة داخل دائرتها.
+    /// (لا يُخفى عمود) وأولها بلون مختلف (التمييز)، والإيداعات ١–٣ أعمدة أو شبكة ٤–٦ بأيام محاذاة،
+    /// وأيقونة القبلة وتحتها عنوانها.
     private fun checkV3(root: ViewGroup, placed: Set<String>): List<String> {
         val out = ArrayList<String>()
         fun shownText(id: Int) = root.findViewById<TextView>(id)?.takeIf { shown(it, root) && it.text.isNotEmpty() }
@@ -316,22 +328,27 @@ object LamhaScreens {
                 if (a.left < b.right) out += "مواقيت الصلاة: القادمة ليست أول عمود من اليمين"
             }
         }
-        if ("deposit" in placed && counts.none { it in 1..3 }) out += "الإيداعات: لا أعمدة ($counts)"
-        root.findViewById<View>(R.id.qibla_kaaba)?.let { k ->
-            val circle = root.findViewById<View>(R.id.qibla_circle)
-            val kr = rect(k, root)
-            val cr = rect(circle, root)
-            val d = minOf(cr.width(), cr.height())
-            val cx = cr.centerX()
-            val cy = cr.centerY()
-            // زوايا الكعبة داخل الدائرة.
-            for ((x, y) in listOf(kr.left to kr.top, kr.right to kr.top, kr.left to kr.bottom, kr.right to kr.bottom)) {
-                val dx = (x - cx).toDouble()
-                val dy = (y - cy).toDouble()
-                if (Math.sqrt(dx * dx + dy * dy) > d / 2.0 + 1) out += "القبلة: الكعبة خارج الدائرة"
+        // شبكة الإيداعات (أكثر من ثلاثة): الأسماء ظاهرة، والأيام كجدول تبدأ من موضع واحد في كل عمود.
+        val gridNames = GRID_NAMES.mapNotNull { root.findViewById<TextView>(it)?.takeIf { v -> shown(v, root) && v.text.isNotEmpty() } }
+        if ("deposit" in placed && counts.none { it in 1..3 } && gridNames.size !in 4..6) {
+            out += "الإيداعات: لا أعمدة ولا شبكة ($counts، ${gridNames.size} خانات)"
+        }
+        val gridDays = GRID_DAYS.map { id -> root.findViewById<TextView>(id)?.takeIf { shown(it, root) && it.text.isNotEmpty() } }
+        for (col in 0..1) {
+            val rights = gridDays.filterIndexed { i, _ -> i % 2 == col }.filterNotNull().map { rect(it, root).right }
+            if (rights.distinct().size > 1) out += "الإيداعات: الأيام غير محاذاة في العمود ${col + 1} ($rights)"
+        }
+        // القبلة (طلب المالك): الأيقونة ظاهرة بمقاس غير صفري و«القبلة» تحتها داخل المربع.
+        val icon = root.findViewById<View>(R.id.qibla_icon)
+        if ("qibla" in placed) {
+            if (icon == null || !shown(icon, root) || icon.width <= 0 || icon.height <= 0) {
+                out += "القبلة: الأيقونة غير ظاهرة"
+            } else {
+                root.findViewById<TextView>(R.id.qibla_title)?.takeIf { shown(it, root) && it.text.isNotEmpty() }?.let { t ->
+                    if (rect(t, root).top < rect(icon, root).bottom) out += "القبلة: العنوان ليس تحت الأيقونة"
+                }
             }
         }
-        if ("qibla" in placed && root.findViewById<View>(R.id.qibla_kaaba) == null) out += "القبلة غير ظاهرة"
         return out
     }
 
@@ -341,6 +358,9 @@ object LamhaScreens {
     }
 
     /// ظاهر حتى [root] (isShown يحتاج نافذة).
+    private val GRID_NAMES = listOf(R.id.grid_name0, R.id.grid_name1, R.id.grid_name2, R.id.grid_name3, R.id.grid_name4, R.id.grid_name5)
+    private val GRID_DAYS = listOf(R.id.grid_days0, R.id.grid_days1, R.id.grid_days2, R.id.grid_days3, R.id.grid_days4, R.id.grid_days5)
+
     private fun shown(v: View, root: View): Boolean {
         var c: View = v
         while (true) {

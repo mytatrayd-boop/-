@@ -37,3 +37,10 @@ typedef SystemColors = ({int accent, int background});
 /// ما يحمله الجدول للسمة.
 Map<String, Object> themeScheduleJson(WidgetTheme t) =>
     {'id': t.name, 'accent': t.accent, 'background': t.background};
+
+/// خلفية أيقونة القبلة: لون حلقتها (التمييز، أو اللون الرئيسي للمربع إن اختير) معتّماً إلى ٢٨٪، فتتسق
+/// الأيقونة مع أي لون (طلب المالك). مطابقة لـ qiblaIconBackground في LamhaLogic.kt.
+int qiblaIconBackground(int color) {
+  int ch(int shift) => (((color >> shift) & 0xFF) * 0.28).round();
+  return 0xFF000000 | ch(16) << 16 | ch(8) << 8 | ch(0);
+}

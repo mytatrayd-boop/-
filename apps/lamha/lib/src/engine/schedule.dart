@@ -96,8 +96,9 @@ Map<String, Object?> buildSchedule(
       'season': astroSeasonOn(d, noon.timeZoneOffset).toJson(),
       'tradSeason': data.tradSeasons.on(d).toJson(),
       'deposits': [
-        // حتى ثلاثة إيداعات، الأقرب أولاً (أعمدة الإيداعات، الميزة ٦).
-        for (final o in data.deposits.nextDeposits(d, s.deposits, count: 3))
+        // حتى ستة إيداعات، الأقرب أولاً (أعمدة الإيداعات، وبعد ثلاثة شبكة عمودين).
+        for (final o
+            in data.deposits.nextDeposits(d, s.deposits, count: maxDepositsGrid))
           o.toJson(),
       ],
     });

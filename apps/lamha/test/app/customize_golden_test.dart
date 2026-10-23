@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'app_helpers.dart' show loadImages;
 import 'customize_screen_test.dart' show openCustomize, select;
 
 /// لقطة شاشة «تخصيص الودجت» (الميزة ٥ب) بخط Tajawal بمقاس جوال، في mockups/customize_screen.png
@@ -30,6 +31,7 @@ void main() {
     tester.view.devicePixelRatio = 2;
     await tester.pumpAndSettle();
     await select(tester, 'prayerTimes');
+    await loadImages(tester);
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../mockups/customize_screen.png'),

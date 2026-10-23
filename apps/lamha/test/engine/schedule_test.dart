@@ -163,8 +163,8 @@ void main() {
     expect(withBg['generatedAt'], '2026-10-19T09:00:00.000Z');
   });
 
-  // الميزة ٦: حتى ثلاثة إيداعات بأيامها، ونقاط الموسم، و«بعد» للفصل والموسم، والأرقام الإنجليزية.
-  test('ثلاثة إيداعات الأقرب أولاً، ونقاط الوسم، و«بعد ٦٣ يوماً»', () {
+  // الميزة ٦: الإيداعات بأيامها (حتى ستة)، ونقاط الموسم، و«بعد» للفصل والموسم، والأرقام الإنجليزية.
+  test('الإيداعات الأقرب أولاً، ونقاط الوسم، و«بعد ٦٣ يوماً»', () {
     final s3 = buildSchedule(
       DateTime.utc(2026, 10, 19, 9),
       settings(deposits: {'salary', 'citizen_account', 'housing_support', 'social_security'}),
@@ -174,8 +174,23 @@ void main() {
     final day = (s3['days']! as List).first as Map;
     final deps = (day['deposits'] as List).cast<Map>();
     expect([for (final d in deps) d['label']],
-        ['الدعم السكني', 'راتب أكتوبر', 'الضمان الاجتماعي']);
-    expect([for (final d in deps) d['daysText']], ['٦ أيام', '٨ أيام', '١٣ يوماً']);
+        ['الدعم السكني', 'راتب أكتوبر', 'الضمان الاجتماعي', 'حساب المواطن']);
+    expect([for (final d in deps) d['daysText']],
+        ['٦ أيام', '٨ أيام', '١٣ يوماً', '٢٢ يوماً']);
+
+    // الستة كلها (طلب المالك): التأهيل الشامل ٢٦ أكتوبر، والمعاشات مع الضمان.
+    final all = buildSchedule(
+      DateTime.utc(2026, 10, 19, 9),
+      settings(deposits: data.deposits.ids),
+      data,
+      days: 1,
+    );
+    final six = (((all['days']! as List).first as Map)['deposits'] as List).cast<Map>();
+    expect([for (final d in six) d['label']], [
+      'الدعم السكني', 'التأهيل الشامل', 'راتب أكتوبر', 'الضمان الاجتماعي',
+      'معاشات المتقاعدين', 'حساب المواطن',
+    ]);
+    expect(six[1]['daysText'], '٧ أيام');
     final trad = day['tradSeason'] as Map;
     expect(trad['points'], [
       'تتدنى درجات الحرارة خلال الليل.',

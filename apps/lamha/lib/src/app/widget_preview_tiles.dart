@@ -1,14 +1,13 @@
 part of 'widget_preview.dart';
 
 /// مربعات تصميم المالك ٣ (الميزة ٦، `mockups/owner_design_v3.png`): اليوم والطقس، وكبسولتا
-/// التاريخين، ودائرة القبلة، ومربعا الأعمدة (مواقيت الصلاة والإيداعات)، ووصف الموسم. مطابقة لـ
+/// التاريخين، وأيقونة القبلة، ومربعا الأعمدة (مواقيت الصلاة والإيداعات)، ووصف الموسم. مطابقة لـ
 /// LamhaWidgetReceiver.kt وتخطيطاتها (widget_tile_dayweather وcapsule وqibla وcolumns وpoints).
 
 /// الصناديق رمادية مزرقة نصف شفافة فوق خلفية السمة (tile_bg.xml)، ومربع مواقيت الصلاة أفتح
-/// (tile_bg_light.xml)، ودائرة القبلة زرقاء داكنة (qibla_circle.xml).
+/// (tile_bg_light.xml).
 const tileBoxColor = Color(0x4096AAD2);
 const tileBoxLightColor = Color(0x5C96AAD2);
-const qiblaCircleColor = Color(0xFF1F2A44);
 const tileRadius = 18.0;
 const capsuleRadius = 14.0;
 
@@ -24,6 +23,16 @@ const capsuleSize = 16.0;
 const columnTitleSize = 11.0;
 const columnNameSize = 20.0;
 const columnSubSize = 14.0;
+
+/// شبكة الإيداعات (أكثر من ثلاثة): الاسم ١٦ عادي (طلب المالك) وبجانبه الأيام ١٤.
+const gridNameSize = 16.0;
+const gridDaysSize = 14.0;
+
+/// بين الاسم وعمود الأيام في الشبكة.
+const gridDaysGap = 6.0;
+
+/// هامش عمود الأيام لتقريب البكسل.
+const gridDaysSlack = 2.0;
 const qiblaTitleSize = 14.0;
 const pointSize = 10.0;
 
@@ -42,10 +51,11 @@ const lineGap = 2.0;
 /// حشوة الصناديق الجديدة الرأسية (أقل من المربعات القديمة لتتسع الصفوف الخمسة).
 const boxPadV = 2.0;
 
-/// الكعبة نسبة من قطر دائرة القبلة، والعنوان حتى [qiblaTitleRatio] من القطر.
-const kaabaRatio = 0.5;
-const kaabaAloneRatio = 0.6;
-const qiblaTitleRatio = 0.16;
+/// طبقات أيقونة القبلة (طلب المالك) وبينها وبين «القبلة» تحتها.
+const qiblaShapeAsset = 'assets/branding/qibla_shape.png';
+const qiblaRingAsset = 'assets/branding/qibla_ring.png';
+const qiblaKaabaAsset = 'assets/branding/qibla_kaaba.png';
+const qiblaIconGap = 2.0;
 
 /// مربع في الشبكة: يُرسم بحجمه المطلوب داخل مقاسه، ومقاسه من [base] بالحجم الأساسي.
 abstract class _Cell extends StatelessWidget {
@@ -166,8 +176,7 @@ class _DayWeatherTile extends _Styled {
     text:
         (dayWeekdaySize * dayLineHeight +
             (look.showSub
-                ? dayCityMinSize * headLineHeight +
-                      dayTempSize * tempLineHeight
+                ? dayCityMinSize * headLineHeight + dayTempSize * tempLineHeight
                 : 0)) *
         s,
     pad: 0,
@@ -336,27 +345,23 @@ class _CapsuleTile extends _Styled {
   );
 }
 
-/// حجم عنوان دائرة القبلة: المطلوب، حتى [qiblaTitleRatio] من القطر [d]، وعرضه حتى ٧٠٪ منه
-/// (qiblaTitleSp في LamhaWidgetReceiver.kt).
-double qiblaTitleFit(double preferred, double widthAtPreferred, double d) {
-  final byHeight = math.min(preferred, d * qiblaTitleRatio);
-  return fitTextSize(
-    byHeight,
-    widthAtPreferred * byHeight / preferred,
-    d * 0.7,
-    0,
-  );
-}
-
-/// القبلة: دائرة زرقاء داكنة فيها «القبلة» وتحتها الكعبة (استثناء «لا أيقونات»: رسمها المالك).
+/// القبلة (طلب المالك): أيقونة القبلة وتحتها «القبلة». الأيقونة ثلاث طبقات من صورة المالك: الشكل
+/// بلون الخلفية (qiblaIconBackground)، والحلقة والسهم بلون التمييز أو اللون الرئيسي للمربع، والكعبة
+/// كما هي، فتتسق مع أي لون. الأيقونة أكبر مربع يتسع مع العنوان، والعنوان يصغر ليتسع عرض المربع.
+/// مطابقة لـ qiblaTile في LamhaWidgetReceiver.kt.
 class _QiblaTile extends _Styled {
-  const _QiblaTile({required this.title, _Look look = _defaultLook})
-    : super(look);
+  const _QiblaTile({
+    required this.title,
+    required this.accent,
+    _Look look = _defaultLook,
+  }) : super(look);
 
   final String title;
+  final Color accent;
 
   @override
-  _QiblaTile withLook(_Look look) => _QiblaTile(title: title, look: look);
+  _QiblaTile withLook(_Look look) =>
+      _QiblaTile(title: title, accent: accent, look: look);
 
   @override
   ({double text, double pad}) heights(BuildContext context, double width) =>
@@ -365,46 +370,63 @@ class _QiblaTile extends _Styled {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
-      final d = math.min(c.maxWidth, c.maxHeight);
       final style = TextStyle(
         fontSize: qiblaTitleSize * s,
         fontWeight: FontWeight.w700,
-        height: 1.2,
+        height: tileLineHeight,
         color: primary,
       );
-      final size = qiblaTitleFit(
+      final size = fitTextSize(
         qiblaTitleSize * s,
         _measure(context, title, style),
-        d,
+        c.maxWidth - fitMargin,
+        qiblaTitleSize * s * 0.6,
       );
-      final kaaba = d * (look.showTitle ? kaabaRatio : kaabaAloneRatio);
-      return Center(
-        child: SizedBox.square(
-          dimension: d,
-          child: DecoratedBox(
-            key: const Key('preview-qibla-circle'),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: qiblaCircleColor,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (look.showTitle)
-                  Text(
-                    title,
-                    key: const Key('preview-qibla-title'),
-                    maxLines: 1,
-                    softWrap: false,
-                    style: style.copyWith(fontSize: size),
-                  ),
-                SizedBox.square(
-                  key: const Key('preview-kaaba'),
-                  dimension: kaaba,
-                  child: const CustomPaint(painter: KaabaPainter()),
+      // +١ لتقريب ارتفاع السطر.
+      final ring = look.primary ?? accent;
+      final titleLine = look.showTitle
+          ? size * tileLineHeight + qiblaIconGap + 1
+          : 0;
+      final icon = math.max(0.0, math.min(c.maxWidth, c.maxHeight - titleLine));
+      return _centered(
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox.square(
+                key: const Key('preview-qibla-icon'),
+                dimension: icon,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    for (final (asset, color) in [
+                      (
+                        qiblaShapeAsset,
+                        Color(qiblaIconBackground(ring.toARGB32())),
+                      ),
+                      (qiblaRingAsset, ring),
+                      (qiblaKaabaAsset, null),
+                    ])
+                      Image.asset(
+                        asset,
+                        color: color,
+                        colorBlendMode: BlendMode.srcIn,
+                        filterQuality: FilterQuality.medium,
+                      ),
+                  ],
+                ),
+              ),
+              if (look.showTitle) ...[
+                const SizedBox(height: qiblaIconGap),
+                Text(
+                  title,
+                  key: const Key('preview-qibla-title'),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: style.copyWith(fontSize: size),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       );
@@ -540,9 +562,7 @@ class _ColumnsTile extends _Styled {
                               softWrap: false,
                               style: subStyle.copyWith(
                                 fontSize: columnSubSize * s * fit.subScale,
-                                color: i == 0 && accent != null
-                                    ? accent
-                                    : null,
+                                color: i == 0 && accent != null ? accent : null,
                               ),
                             ),
                           ],
@@ -573,17 +593,133 @@ class _PrayerTimesTile extends _ColumnsTile {
       _PrayerTimesTile(items: items, accent: accent!, look: look);
 }
 
-/// الإيداعات: «متبقي على:» ثم عمود لكل إيداع (حتى ثلاثة، الأقرب أولاً): الاسم وتحته الأيام.
+/// الإيداعات: عمود لكل إيداع (حتى ثلاثة، الأقرب أولاً): الاسم وتحته الأيام، بلا عنوان (طلب المالك).
 class _DepositsTile extends _ColumnsTile {
-  const _DepositsTile({
-    required super.items,
-    required String super.title,
-    super.look,
-  }) : super(keyPrefix: 'deposit');
+  const _DepositsTile({required super.items, super.look})
+    : super(keyPrefix: 'deposit');
 
   @override
-  _DepositsTile withLook(_Look look) =>
-      _DepositsTile(items: items, title: title!, look: look);
+  _DepositsTile withLook(_Look look) => _DepositsTile(items: items, look: look);
+}
+
+/// الإيداعات بعد الثلاثة (طلب المالك): شبكة عمودين بلا عنوان، لكل خانة الاسم وبجانبه الأيام
+/// في سطر واحد، الأقرب أولاً من اليمين. الأيام كجدول: عمود بعرض أعرضها فتبدأ كلها من موضع واحد.
+/// الخانات تصغر بالتساوي، وإن ضاق الارتفاع تصغر الصفوف (fitGrid). مطابقة لـ gridTile في LamhaWidgetReceiver.kt.
+class _DepositsGridTile extends _Styled {
+  const _DepositsGridTile({required this.items, _Look look = _defaultLook})
+    : super(look);
+
+  final List<_ColumnItem> items;
+
+  int get _rows => gridRows(items.length);
+
+  @override
+  _DepositsGridTile withLook(_Look look) =>
+      _DepositsGridTile(items: items, look: look);
+
+  /// مقاسه بالصفوف.
+  @override
+  ({double text, double pad}) heights(BuildContext context, double width) => (
+    text: _rows * gridNameSize * tileLineHeight * s,
+    pad: boxPadV * 2 + lineGap * (_rows - 1),
+  );
+
+  @override
+  Widget build(BuildContext context) => _boxed(
+    LayoutBuilder(
+      builder: (context, c) {
+        final cellWidth = (c.maxWidth - columnGap) / 2 - fitMargin;
+        final nameStyle = TextStyle(
+          fontSize: gridNameSize * s,
+          fontWeight: FontWeight.w400,
+          height: tileLineHeight,
+          color: primary,
+        );
+        final daysStyle = TextStyle(
+          fontSize: gridDaysSize * s,
+          fontWeight: FontWeight.w500,
+          height: tileLineHeight,
+          color: secondary,
+        );
+        double widest(Iterable<String> t, TextStyle st) =>
+            t.fold(0.0, (a, x) => math.max(a, _measure(context, x, st)));
+        final nameW = widest(items.map((i) => i.name), nameStyle);
+        final daysW = look.showSub
+            ? widest(items.map((i) => i.sub), daysStyle)
+            : 0.0;
+        // الفاصل وهامش عمود الأيام لا يصغران مع النص، فيُطرحان من العرض.
+        final fixed = look.showSub ? gridDaysGap + gridDaysSlack : 0.0;
+        final fit = fitGrid(
+          height: c.maxHeight,
+          width: math.max(1.0, cellWidth - fixed),
+          line: gridNameSize * s * tileLineHeight,
+          cellWidth: nameW + daysW,
+          rows: _rows,
+          gap: lineGap,
+        );
+        // عمود الأيام بعرض أعرضها بعد التصغير (+ هامش للتقريب)، والاسم ما بقي.
+        final daysColumn = daysW * fit.scale + gridDaysSlack;
+        Widget text(int i) {
+          if (i >= items.length) return const SizedBox.shrink();
+          final item = items[i];
+          return Row(
+            key: Key('deposit-cell-$i'),
+            children: [
+              Expanded(
+                child: Text(
+                  item.name,
+                  key: Key('deposit-name-$i'),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: nameStyle.copyWith(
+                    fontSize: gridNameSize * s * fit.scale,
+                  ),
+                ),
+              ),
+              if (look.showSub) ...[
+                const SizedBox(width: gridDaysGap),
+                SizedBox(
+                  width: daysColumn,
+                  child: Text(
+                    item.sub,
+                    key: Key('deposit-days-$i'),
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: daysStyle.copyWith(
+                      fontSize: gridDaysSize * s * fit.scale,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        }
+
+        return _centered(
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var r = 0; r < _rows; r++) ...[
+                if (r > 0) const SizedBox(height: lineGap),
+                Row(
+                  key: Key('deposit-row-$r'),
+                  children: [
+                    Expanded(child: text(r * 2)),
+                    const SizedBox(width: columnGap),
+                    Expanded(child: text(r * 2 + 1)),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    ),
+  );
 }
 
 /// وصف الموسم: «في الوسم:» ثم نقاط ١٠ تبدأ بـ«-»، لكل نقطة حتى ثلاثة أسطر. إن ضاق الارتفاع تُخفى النقاط من الآخر، ثم العنوان.

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lamha/src/app/app_settings.dart';
 import 'package:lamha/src/app/cities.dart';
-import 'package:lamha/src/app/widget_preview.dart';
 import 'package:lamha/src/engine/arabic.dart';
 import 'package:lamha/src/engine/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,12 +75,6 @@ void main() {
       final old = (saved.cast<String, dynamic>())..remove('digits');
       expect(LamhaSettings.fromJson(old).digits, DigitStyle.arabic);
     });
-  });
-
-  test('qiblaTitleFit: الحالات نفسها في LamhaLogicTest.kt', () {
-    expect(qiblaTitleFit(15, 40, 100), 15);
-    expect(qiblaTitleFit(15, 40, 50), closeTo(8, 1e-9));
-    expect(qiblaTitleFit(15, 120, 100), closeTo(15 * 70 / 120, 1e-9));
   });
 
   testWidgets('الإيداعات بعرض ١: عمود واحد، وبعرض ٣: حتى ثلاثة', (tester) async {

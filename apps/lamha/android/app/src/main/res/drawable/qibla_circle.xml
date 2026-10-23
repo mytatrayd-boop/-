@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- دائرة القبلة (الميزة ٦، qiblaCircleColor): مقاسها الذاتي مربع، فتبقى دائرة مع fitCenter. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <solid android:color="#FF1F2A44" />
-    <size android:width="100dp" android:height="100dp" />
-</shape>

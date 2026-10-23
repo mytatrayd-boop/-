@@ -227,12 +227,13 @@ void main() {
       '٢.٠',
     );
 
-    await tapKey(tester, 'showtitle-deposit');
-    expect(tileOf(bridge, 'deposit')['showTitle'], isFalse);
+    // الإيداعات بلا عنوان (طلب المالك): لا مفتاح للعنوان.
+    expect(find.byKey(const Key('showtitle-deposit')), findsNothing);
     expect(find.byKey(const Key('deposit-title')), findsNothing);
     await tapKey(tester, 'showsub-deposit');
     expect(tileOf(bridge, 'deposit')['showSub'], isFalse);
-    expect(find.byKey(const Key('deposit-sub-0')), findsNothing);
+    // ستة إيداعات افتراضياً = شبكة: بلا السطر الفرعي يبقى الاسم وحده.
+    expect(find.byKey(const Key('deposit-days-0')), findsNothing);
     expect(find.byKey(const Key('deposit-name-0')), findsOneWidget);
 
     // القبلة: عنوانها كلمة «القبلة» في الدائرة، بلا سطر فرعي.
@@ -240,7 +241,7 @@ void main() {
     expect(find.byKey(const Key('showsub-qibla')), findsNothing);
     await tapKey(tester, 'showtitle-qibla');
     expect(find.byKey(const Key('preview-qibla-title')), findsNothing);
-    expect(find.byKey(const Key('preview-kaaba')), findsOneWidget);
+    expect(find.byKey(const Key('preview-qibla-icon')), findsOneWidget);
 
     await select(tester, 'season');
     await tapKey(tester, 'primary-season-pink');
