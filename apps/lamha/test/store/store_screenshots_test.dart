@@ -15,7 +15,7 @@ import '../app/customize_screen_test.dart' show openCustomize, select;
 import '../helpers.dart';
 
 /// صور المتجرين: Google Play في store/play (لقطات ١٠٨٠×١٩٢٠، وصورة العرض ١٠٢٤×٥٠٠)، وApp Store
-/// في store/appstore (لقطات آيفون ٦٫٩ بوصة ١٢٩٠×٢٧٩٦).
+/// في store/appstore (لقطات آيفون ٦٫٩ بوصة ١٢٩٠×٢٧٩٦، وآيباد ١٣ بوصة ٢٠٤٨×٢٧٣٢ في store/appstore/ipad).
 /// لا تعمل في الاختبارات العادية: تُولَّد بـ
 ///   LAMHA_STORE=1 flutter test test/store/store_screenshots_test.dart --update-goldens
 final _enabled = Platform.environment['LAMHA_STORE'] == '1';
@@ -134,10 +134,12 @@ Future<void> _shot(WidgetTester tester, Size logical, double dpr, Widget child, 
 }
 
 void main() {
-  // (المجلد، المقاس المنطقي، الكثافة): ١٠٨٠×١٩٢٠ لـ Play، و١٢٩٠×٢٧٩٦ لآيفون ٦٫٩ بوصة.
+  // (المجلد، المقاس المنطقي، الكثافة): ١٠٨٠×١٩٢٠ لـ Play، و١٢٩٠×٢٧٩٦ لآيفون ٦٫٩ بوصة،
+  // و٢٠٤٨×٢٧٣٢ لآيباد ١٣ بوصة (أبل تشترطها لأن التطبيق يعمل على آيباد).
   for (final (dir, logical, dpr) in [
     ('play', const Size(1080 / 2.625, 1920 / 2.625), 2.625),
     ('appstore', const Size(430, 932), 3.0),
+    ('appstore/ipad', const Size(1024, 1366), 2.0),
   ]) {
     for (final (file, title, sub, theme) in [
       ('01-widget.png', 'يومك كله في لمحة',
