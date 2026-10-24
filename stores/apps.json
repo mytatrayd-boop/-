@@ -8,7 +8,7 @@
    "android": "sa.asraty.app", "ios_bundle": "sa.asraty.app",
    "play_workflow": "asraty-android.yml", "play_workflow_id": 370291878,
    "ios_workflow": "asraty-ios.yml", "ios_workflow_id": 370291882},
-  {"name": "موعد", "folder": "apps/mawid", "app_dir": "apps/mawid", "pubspec_name": "mawid", "version": "1.0.1+1",
+  {"name": "موعد", "folder": "apps/mawid", "app_dir": "apps/mawid", "pubspec_name": "mawid", "version": "1.0.2+1",
    "android": "sa.mawid.app", "ios_bundle": "sa.mawid.app",
    "play_workflow": "mawid-play.yml", "play_workflow_id": 379551945,
    "ios_workflow": "mawid-ios.yml", "ios_workflow_id": 380260349}

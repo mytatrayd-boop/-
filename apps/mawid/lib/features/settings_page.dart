@@ -9,6 +9,7 @@ import '../core/settings.dart';
 import '../main.dart';
 import '../model/programs.dart';
 import 'common.dart';
+import 'sources_page.dart';
 
 class SettingsPage extends StatelessWidget {
   final AppState state;
@@ -139,16 +140,19 @@ class SettingsPage extends StatelessWidget {
           ]),
         ),
         Card1(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('المصادر الرسمية', style: TextStyle(fontWeight: FontWeight.w700)),
-            for (final p in programs) SourceLink('${p.name}: ${p.source}', p.sourceUrl),
-            for (final (label, url) in holidaySources) SourceLink(label, url),
-          ]),
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.verified_outlined),
+            title: const Text('المصادر الرسمية', style: TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: const Text('روابط الجهات الحكومية لكل موعد وإجازة'),
+            trailing: const Icon(Icons.chevron_left),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SourcesPage())),
+          ),
         ),
         const Padding(
           padding: EdgeInsets.fromLTRB(8, 4, 8, 16),
           child: Text(
-              'تطبيق مستقل غير تابع لأي جهة حكومية. المواعيد محسوبة من قواعد الصرف المعلنة وقد تتغير؛ المرجع هو الجهة الرسمية في الروابط أعلاه.',
+              'تطبيق مستقل غير تابع لأي جهة حكومية. المواعيد محسوبة من قواعد الصرف المعلنة وقد تتغير؛ المرجع هو الجهة الرسمية في «المصادر الرسمية».',
               style: TextStyle(color: muted, fontSize: 12)),
         ),
       ]);
