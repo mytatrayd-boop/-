@@ -149,6 +149,19 @@ class Play:
     def edit(self, path: str = "") -> str:
         return f"{API}/{self.package}/edits/{self.edit_id}{path}"
 
+    def finish(self, action: str):
+        """Validate or commit. Apps under managed review (e.g. after a policy rejection) refuse
+        automatic sending; then the edit is kept with changesNotSentForReview=true and the owner
+        sends it from Publishing overview."""
+        try:
+            self.call("POST", self.edit(action))
+        except SystemExit as e:
+            if "changesNotSentForReview" not in str(e):
+                raise
+            self.call("POST", self.edit(action) + "?changesNotSentForReview=true")
+            print("::notice::Changes are not sent for review automatically: "
+                  "send them from Play Console › Publishing overview.")
+
     def run(self, listing: dict, images: dict, image_lang: str, dry_run: bool):
         self.edit_id = self.call("POST", f"{API}/{self.package}/edits", {})["id"]
         for lang, texts in listing.items():
@@ -164,11 +177,11 @@ class Play:
                 self.call("POST", url, data=p.read_bytes(), content_type="image/png")
             print(f"images {image_lang} {kind}: {', '.join(p.name for p in paths)}")
         if dry_run:
-            self.call("POST", self.edit(":validate"))
+            self.finish(":validate")
             self.call("DELETE", self.edit())
             print("Dry run: the edit is valid and was discarded; nothing changed in Play.")
         else:
-            self.call("POST", self.edit(":commit"))
+            self.finish(":commit")
             print("Committed: the store listing is updated in Play.")
 
 
