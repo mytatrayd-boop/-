@@ -9,3 +9,9 @@ android/build/
 android/app/build/
 lab/data/
 reports/
+# مفاتيح Google Play/Cloud: تُحفظ خارج المستودع (مثل ~/.secrets/) ولا تُرفع أبداً
+*service-account*.json
+*play-key*.json
+play-api-*.json
+*.p12.json
+.secrets/

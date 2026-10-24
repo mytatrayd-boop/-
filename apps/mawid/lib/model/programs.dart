@@ -9,7 +9,7 @@ class Program {
 }
 
 const programs = <Program>[
-  Program('ss', 'الضمان الاجتماعي', 1, 'وزارة الموارد البشرية والتنمية الاجتماعية', 'https://sbis.hrsd.gov.sa'),
+  Program('ss', 'الضمان الاجتماعي', 1, 'وزارة الموارد البشرية والتنمية الاجتماعية', 'https://www.hrsd.gov.sa'),
   Program('pension', 'الراتب التقاعدي', 1, 'المؤسسة العامة للتأمينات الاجتماعية', 'https://www.gosi.gov.sa'),
   Program('hafiz', 'حافز', 5, 'صندوق تنمية الموارد البشرية (هدف)', 'https://www.hrdf.org.sa'),
   Program('citizen', 'حساب المواطن', 10, 'برنامج حساب المواطن', 'https://www.ca.gov.sa'),
