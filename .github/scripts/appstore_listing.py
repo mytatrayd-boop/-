@@ -99,7 +99,9 @@ class Store:
             return None
         status, res = request(method, path, body)
         if status >= 300:
-            msg = f"{method} {path} -> {status}: {json.dumps(res)[:600]}"
+            # Every error's detail, so all missing fields show at once (the raw JSON was cut off).
+            details = "; ".join(e.get("detail") or e.get("title", "") for e in (res or {}).get("errors", []))
+            msg = f"{method} {path} -> {status}: {details or json.dumps(res)[:600]}"
             if fatal:
                 sys.exit(f"::error::{msg}")
             print(f"::warning::{msg}")
