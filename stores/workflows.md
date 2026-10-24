@@ -90,4 +90,5 @@
 ## مختبرو جوجل بمجموعة — `play-testers.yml` («Google Play testers (Google Group)»)
 - **on:** `workflow_dispatch`: `group` (إيميل المجموعة)، `app` (اسم من `stores/apps.json` أو `all`)، `track` (alpha افتراضيًا)، `mode` (dry-run/apply).
 - يضيف المجموعة لمختبري المسار دون حذف المجموعات الموجودة، ولا يمس قوائم الإيميلات.
+- **قيد جوجل (تحقق ٢٤ أكتوبر ٢٠٢٦):** مسارات Closed testing الجديدة (alpha في لمحة وأسرتي) ترفض تعديل المختبرين عبر API: «The alpha track has been upgraded to use open or closed testing». في هذه المسارات يضيف المالك المجموعة يدويًا من Play Console (Testers ← Google Groups). موعد يطلب أيضًا `changesNotSentForReview=true`.
 - **مجموعة المختبرين المعتمدة من المالك (٢٤ أكتوبر ٢٠٢٦):** `social1776@googlegroups.com` لكل التطبيقات على alpha.
