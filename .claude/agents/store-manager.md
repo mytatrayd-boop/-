@@ -43,6 +43,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
   - ثم التحديث: نفس الأمر مع `-f mode=apply`. لربط نسخة آيفون بالصفحة أضف `-f build=<رقم>`.
   - الملفات: `<app_dir>/store/metadata/play/<lang>/` و`metadata/appstore/<locale>/` و`review_notes.txt` و`age_rating.json`، والصور في `<app_dir>/store/play/` و`store/appstore/`. لتطبيق جديد أنشئ هذه الملفات من صفحة متجره (`STORE_LISTING.md`) بنفس أسماء ملفات لمحة.
   - بيانات تواصل المراجع في أبل من أسرار اختيارية (`ASC_REVIEW_FIRST_NAME` و`ASC_REVIEW_LAST_NAME` و`ASC_REVIEW_EMAIL` و`ASC_REVIEW_PHONE`)؛ إن لم توجد فاطلب من المالك إضافتها في GitHub Secrets، ولا تكتبها في أي ملف (المستودع عام).
+- **صلاحيات حساب الخدمة في Play Console لكل تطبيق** (App permissions): View app information، وRelease to testing tracks (للرفع)، وManage store presence (لصفحة المتجر). خطأ 403 يعني صلاحية ناقصة: ارفعه للمالك ولا تكرر.
 - **ما يمكن آليًا:** في جوجل: الوصف القصير والكامل، والصور (الأيقونة وصورة العرض واللقطات)، وتفاصيل التواصل، ونموذج أمان البيانات. في أبل: الوصف والكلمات المفتاحية والنص الترويجي وروابط الدعم والخصوصية، واللقطات، وأسئلة التصنيف العمري، ومعلومات المراجعة.
 - **ما يبقى يدويًا فتجهّز إجاباته للمالك خطوة بخطوة:** استبيان تصنيف المحتوى في جوجل (IARC)، وإعلانات App content الأخرى التي لا يتيحها API، وقسم App Privacy في أبل، وContent Rights.
 - قبل أي تعديل على صفحة تطبيق منشور للعامة، اعرض التغيير على المالك أولًا.
