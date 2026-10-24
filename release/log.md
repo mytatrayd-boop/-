@@ -22,3 +22,4 @@
 | 2026-10-24 | لمحة (صفحة المتجر، وصف بالمصادر) | Google Play | dry-run | 40104017755 | — | نجح بلا تحذيرات. |
 | 2026-10-24 | لمحة (صفحة المتجر، وصف بالمصادر) | Google Play | apply | 40104097521 | — | نجح بلا تحذيرات. |
 | 2026-10-24 | موعد 1.0.1 | Android | alpha | 40104182468 | 7 | فشل في Upload to Google Play (البناء نجح، artifact mawid-aab-7): "Changes are sent for review automatically. The query parameter changesNotSentForReview must not be set." لم يُكرر. |
+| 2026-10-24 | موعد 1.0.1 | Android | alpha | 40104922804 | 8 | نجح: رُفع الإصدار 8 إلى alpha بحالة completed (artifact mawid-aab-8). صفحة المتجر لم تُلمس. |
