@@ -14,5 +14,7 @@
   "gambling": false,
   "unrestrictedWebAccess": false,
   "lootBox": false,
-  "ageAssurance": false
+  "ageAssurance": false,
+  "messagingAndChat": false,
+  "advertising": false
 }

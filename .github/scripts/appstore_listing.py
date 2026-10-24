@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Fill an app's App Store page (texts, screenshots, age rating, review notes) from the repo.
+"""Fill an app's App Store page (texts, screenshots, age rating, review notes, copyright,
+content rights, category) from the repo.
 
 Reads from <store_dir>:
   metadata/appstore/<locale>/{name,subtitle,description,keywords,promotional_text,
                               support_url,privacy_url[,marketing_url]}.txt   (e.g. locale ar-SA)
   metadata/appstore/review_notes.txt     notes for App Review (sign-in not required)
   metadata/appstore/age_rating.json      ageRatingDeclaration attributes
+  metadata/appstore/copyright.txt        e.g. «© 2026 …» (optional)
+  metadata/appstore/content_rights.txt   USES_THIRD_PARTY_CONTENT or DOES_NOT_USE_THIRD_PARTY_CONTENT (optional)
+  metadata/appstore/categories.json      {"primary": "UTILITIES", "secondary": "LIFESTYLE"} (optional)
   appstore/*.png                         iPhone screenshots, in name order, for every locale
+  appstore/ipad/*.png                    iPad 13-inch screenshots (needed when the app runs on iPad)
 
 Works on the version that is still editable (Prepare for Submission or rejected). --build N
 attaches build N to that version. Only with --submit is the version then sent to App Review
@@ -39,9 +44,10 @@ VERSION_FIELDS = {"description": "description", "keywords": "keywords",
 INFO_FIELDS = {"name": "name", "subtitle": "subtitle", "privacy_url": "privacyPolicyUrl"}
 EDITABLE = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED",
             "INVALID_BINARY"}
-# iPhone screenshot sizes -> display type (6.9"/6.7" and 6.5").
+# Screenshot sizes -> display type: iPhone 6.9"/6.7" and 6.5", iPad 13".
 DISPLAY = {(1290, 2796): "APP_IPHONE_67", (1320, 2868): "APP_IPHONE_67", (1284, 2778): "APP_IPHONE_65",
-           (1242, 2688): "APP_IPHONE_65"}
+           (1242, 2688): "APP_IPHONE_65", (2048, 2732): "APP_IPAD_PRO_3GEN_129",
+           (2064, 2752): "APP_IPAD_PRO_3GEN_129"}
 
 
 def png_size(path: pathlib.Path) -> tuple:
@@ -72,15 +78,31 @@ def read_store(store: pathlib.Path) -> tuple:
         sys.exit(f"::error::No locale folders in {root}")
     notes = root / "review_notes.txt"
     age = root / "age_rating.json"
-    shots = sorted((store / "appstore").glob("*.png")) if (store / "appstore").is_dir() else []
-    types = {DISPLAY.get(png_size(p)) for p in shots}
-    if shots and (None in types or len(types) != 1):
-        sys.exit(f"::error::Screenshots must all be one supported iPhone size: "
-                 + ", ".join(f"{p.name} {png_size(p)}" for p in shots))
-    if len(shots) > 10:
-        sys.exit("::error::At most 10 screenshots")
+    # {display type: [paths]}: one folder per device (appstore/ for iPhone, appstore/ipad/ for iPad).
+    shots = {}
+    for folder in [store / "appstore", store / "appstore" / "ipad"]:
+        files = sorted(folder.glob("*.png")) if folder.is_dir() else []
+        if not files:
+            continue
+        types = {DISPLAY.get(png_size(p)) for p in files}
+        if None in types or len(types) != 1:
+            sys.exit(f"::error::{folder}: screenshots must all be one supported size: "
+                     + ", ".join(f"{p.name} {png_size(p)}" for p in files))
+        if len(files) > 10:
+            sys.exit(f"::error::{folder}: at most 10 screenshots")
+        shots[types.pop()] = files
+    extra = {}
+    for name in ["copyright", "content_rights"]:
+        f = root / f"{name}.txt"
+        if f.exists():
+            extra[name] = f.read_text(encoding="utf-8").strip()
+    if extra.get("content_rights") not in (None, "USES_THIRD_PARTY_CONTENT", "DOES_NOT_USE_THIRD_PARTY_CONTENT"):
+        sys.exit(f"::error::content_rights.txt: {extra['content_rights']}")
+    cats = root / "categories.json"
+    if cats.exists():
+        extra["categories"] = json.loads(cats.read_text())
     return (locales, notes.read_text(encoding="utf-8").strip() if notes.exists() else None,
-            json.loads(age.read_text()) if age.exists() else None, shots, types.pop() if shots else None)
+            json.loads(age.read_text()) if age.exists() else None, shots, extra)
 
 
 class Store:
@@ -99,7 +121,9 @@ class Store:
             return None
         status, res = request(method, path, body)
         if status >= 300:
-            msg = f"{method} {path} -> {status}: {json.dumps(res)[:600]}"
+            # Every error's detail, so all missing fields show at once (the raw JSON was cut off).
+            details = "; ".join(e.get("detail") or e.get("title", "") for e in (res or {}).get("errors", []))
+            msg = f"{method} {path} -> {status}: {details or json.dumps(res)[:600]}"
             if fatal:
                 sys.exit(f"::error::{msg}")
             print(f"::warning::{msg}")
@@ -123,9 +147,11 @@ def main():
     if len(args) != 2 or flags - {"--dry-run", "--check", "--submit"}:
         sys.exit(__doc__)
     bundle_id, store_dir = args[0], pathlib.Path(args[1])
-    locales, notes, age, shots, display = read_store(store_dir)
-    print(f"{bundle_id}: locales {', '.join(locales)}; {len(shots)} screenshots ({display}); "
-          f"review notes {'yes' if notes else 'no'}; age rating {'yes' if age else 'no'}")
+    locales, notes, age, shots, extra = read_store(store_dir)
+    print(f"{bundle_id}: locales {', '.join(locales)}; screenshots "
+          + (", ".join(f"{d} {len(p)}" for d, p in shots.items()) or "none")
+          + f"; review notes {'yes' if notes else 'no'}; age rating {'yes' if age else 'no'}; "
+          + (", ".join(extra) or "no extras"))
     if "--check" in flags:
         print("Check only: files are valid; nothing was sent.")
         return
@@ -181,10 +207,30 @@ def main():
                     {"data": {"type": "appInfoLocalizations", "attributes": {"locale": locale, **wanted},
                               "relationships": {"appInfo": {"data": {"type": "appInfos", "id": iid}}}}},
                     "new app info localization")
-        if shots and loc_id:
-            upload_screenshots(s, loc_id, display, shots)
-        elif shots:
-            print(f"  would upload {len(shots)} screenshots")
+        for display, files in shots.items():
+            if loc_id:
+                upload_screenshots(s, loc_id, display, files)
+            else:
+                print(f"  would upload {len(files)} screenshots {display}")
+
+    if "copyright" in extra and (version["attributes"].get("copyright") or "") != extra["copyright"]:
+        s.write("PATCH", f"/appStoreVersions/{vid}",
+                {"data": {"type": "appStoreVersions", "id": vid, "attributes": {"copyright": extra["copyright"]}}},
+                "copyright")
+    if "content_rights" in extra:
+        current = s.get(f"/apps/{app}")["data"]["attributes"].get("contentRightsDeclaration")
+        if current != extra["content_rights"]:
+            s.write("PATCH", f"/apps/{app}",
+                    {"data": {"type": "apps", "id": app,
+                              "attributes": {"contentRightsDeclaration": extra["content_rights"]}}},
+                    "content rights: " + extra["content_rights"])
+    if "categories" in extra:
+        rel = {}
+        for key, name in [("primary", "primaryCategory"), ("secondary", "secondaryCategory")]:
+            if extra["categories"].get(key):
+                rel[name] = {"data": {"type": "appCategories", "id": extra["categories"][key]}}
+        s.write("PATCH", f"/appInfos/{iid}", {"data": {"type": "appInfos", "id": iid, "relationships": rel}},
+                "categories: " + ", ".join(c for c in extra["categories"].values() if c))
 
     if notes is not None:
         status, res = request("GET", f"/appStoreVersions/{vid}/appStoreReviewDetail")
