@@ -8,13 +8,14 @@ Reads from <store_dir>:
   metadata/appstore/age_rating.json      ageRatingDeclaration attributes
   appstore/*.png                         iPhone screenshots, in name order, for every locale
 
-Works on the version that is still editable (Prepare for Submission or rejected). It never
-submits for review. --build N attaches build N to that version. Review contact details
+Works on the version that is still editable (Prepare for Submission or rejected). --build N
+attaches build N to that version. Only with --submit is the version then sent to App Review
+(the owner's explicit «ارفع» for this app and version; see store-manager.md). Review contact details
 come only from the optional env ASC_REVIEW_FIRST_NAME, ASC_REVIEW_LAST_NAME,
 ASC_REVIEW_EMAIL, ASC_REVIEW_PHONE (GitHub Secrets), never from the repo.
 --dry-run reads App Store Connect and prints what would change; --check sends nothing.
 
-  appstore_listing.py <bundle_id> <store_dir> [--dry-run | --check] [--build N]
+  appstore_listing.py <bundle_id> <store_dir> [--dry-run | --check] [--build N] [--submit]
 
 Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID (as ios_signing.py).
 """
@@ -119,7 +120,7 @@ def main():
         del argv[i:i + 2]
     args = [a for a in argv if not a.startswith("--")]
     flags = {a for a in argv if a.startswith("--")}
-    if len(args) != 2 or flags - {"--dry-run", "--check"}:
+    if len(args) != 2 or flags - {"--dry-run", "--check", "--submit"}:
         sys.exit(__doc__)
     bundle_id, store_dir = args[0], pathlib.Path(args[1])
     locales, notes, age, shots, display = read_store(store_dir)
@@ -221,7 +222,32 @@ def main():
         s.write("PATCH", f"/appStoreVersions/{vid}/relationships/build",
                 {"data": {"type": "builds", "id": found[0]["id"]}}, f"attached build {build}")
 
-    print("Dry run: nothing changed." if s.dry else "Done. Nothing was submitted for review.")
+    if "--submit" in flags:
+        submit(s, app, vid)
+    else:
+        print("Dry run: nothing changed." if s.dry else "Done. Nothing was submitted for review.")
+
+
+def submit(s: Store, app: str, vid: str):
+    """Send the version to App Review: a review submission holding this version, then submitted."""
+    if not s.dry:
+        status, res = request("GET", f"/appStoreVersions/{vid}/build")
+        if status >= 300 or not (res or {}).get("data"):
+            sys.exit("::error::No build attached to the version; pass --build N")
+    res = s.write("POST", "/reviewSubmissions",
+                  {"data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
+                            "relationships": {"app": {"data": {"type": "apps", "id": app}}}}},
+                  "new review submission")
+    sub = res["data"]["id"] if res else "<new>"
+    s.write("POST", "/reviewSubmissionItems",
+            {"data": {"type": "reviewSubmissionItems",
+                      "relationships": {"reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub}},
+                                        "appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}},
+            "added the version to the submission")
+    s.write("PATCH", f"/reviewSubmissions/{sub}",
+            {"data": {"type": "reviewSubmissions", "id": sub, "attributes": {"submitted": True}}},
+            "submitted for App Review")
+    print("Dry run: nothing changed." if s.dry else "Submitted for App Review.")
 
 
 def upload_screenshots(s: Store, loc_id: str, display: str, shots: list):

@@ -2,7 +2,8 @@ name: Store listing (Google Play + App Store)
 
 # صفحة المتجر لأي تطبيق من stores/apps.json: النصوص والصور، وفي أبل أيضاً التصنيف العمري
 # وملاحظات المراجع واختيار النسخة. المصدر <app_dir>/store/metadata و<app_dir>/store/{play,appstore}.
-# التشغيل يدوي (مدير المتاجر). لا يرسل شيئاً للمراجعة ولا ينشر نسخة: يعدّل صفحة المتجر فقط.
+# التشغيل يدوي (مدير المتاجر). يعدّل صفحة المتجر فقط، إلا إذا اختير submit_review فيرسل نسخة آيفون
+# لمراجعة أبل (بكلمة «ارفع» من المالك لهذا التطبيق وهذه النسخة).
 # mode=dry-run يقرأ ويتحقق ولا يغيّر شيئاً.
 on:
   workflow_dispatch:
@@ -25,6 +26,10 @@ on:
         description: "آيفون: رقم build يُربط بالنسخة القابلة للتعديل (اختياري)"
         required: false
         default: ""
+      submit_review:
+        description: "آيفون: أرسل النسخة لمراجعة App Store بعد التحديث (بموافقة المالك فقط)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -89,8 +94,9 @@ jobs:
           ASC_REVIEW_EMAIL: ${{ secrets.ASC_REVIEW_EMAIL }}
           ASC_REVIEW_PHONE: ${{ secrets.ASC_REVIEW_PHONE }}
           BUILD: ${{ inputs.build }}
+          SUBMIT: ${{ inputs.submit_review && inputs.mode == 'apply' && '--submit' || '' }}
         run: |
           python3 .github/scripts/appstore_listing.py ${{ needs.resolve.outputs.ios }} ${{ needs.resolve.outputs.store_dir }} \
-            ${{ inputs.mode == 'dry-run' && '--dry-run' || '' }} ${BUILD:+--build "$BUILD"}
+            ${{ inputs.mode == 'dry-run' && '--dry-run' || '' }} ${BUILD:+--build "$BUILD"} $SUBMIT
       - if: always()
         run: rm -f "$RUNNER_TEMP/AuthKey.p8"
