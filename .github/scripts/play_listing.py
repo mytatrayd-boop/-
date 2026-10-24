@@ -133,7 +133,15 @@ class Play:
                 raw = r.read()
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as e:
-            msg = e.read().decode()[:800]
+            raw = e.read().decode()
+            # Plain words only: GitHub masks every line of the secret JSON (even «{» and «}»),
+            # which hid the whole raw error body.
+            try:
+                err = json.loads(raw).get("error", {})
+                msg = " | ".join(filter(None, [err.get("status"), err.get("message")]))
+                msg = msg.replace("{", "(").replace("}", ")").replace('"', "'")
+            except (ValueError, AttributeError):
+                msg = raw[:800]
             hint = " (give the service account access to this app in Play Console › Users and permissions)" \
                 if e.code == 403 else ""
             sys.exit(f"::error::Play API {method} {url.split('/applications/')[-1]} -> {e.code}{hint}: {msg}")
