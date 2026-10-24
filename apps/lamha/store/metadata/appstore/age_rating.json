@@ -16,5 +16,9 @@
   "lootBox": false,
   "ageAssurance": false,
   "messagingAndChat": false,
-  "advertising": false
+  "advertising": false,
+  "gunsOrOtherWeapons": "NONE",
+  "parentalControls": false,
+  "userGeneratedContent": false,
+  "healthOrWellnessTopics": false
 }
