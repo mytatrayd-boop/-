@@ -23,3 +23,5 @@
 | 2026-10-24 | لمحة (صفحة المتجر، وصف بالمصادر) | Google Play | apply | 40104097521 | — | نجح بلا تحذيرات. |
 | 2026-10-24 | موعد 1.0.1 | Android | alpha | 40104182468 | 7 | فشل في Upload to Google Play (البناء نجح، artifact mawid-aab-7): "Changes are sent for review automatically. The query parameter changesNotSentForReview must not be set." لم يُكرر. |
 | 2026-10-24 | موعد 1.0.1 | Android | alpha | 40104922804 | 8 | نجح: رُفع الإصدار 8 إلى alpha بحالة completed (artifact mawid-aab-8). صفحة المتجر لم تُلمس. |
+| 2026-10-24 | موعد 1.0.2 (شاشة المصادر الرسمية) | Android | alpha | 40118369566 | 9 | نجح: رُفع الإصدار 9 إلى alpha بحالة completed (artifact mawid-aab-9). |
+| 2026-10-24 | موعد (صفحة المتجر، رابط الضمان hrsd.gov.sa) | Google Play | dry-run | 40118385890 | — | فشل 403 PERMISSION_DENIED عند validate (الملفات سليمة). يحتاج حساب الخدمة صلاحية Manage store presence على موعد. لم يُشغّل apply. |
