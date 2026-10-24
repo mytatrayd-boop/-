@@ -13,3 +13,6 @@
 | 2026-10-24 | لمحة (صفحة المتجر) | App Store | apply + build 8 | 40060235070 | 8 | نجح التشغيل (الصفحة وملاحظات المراجع وربط build 8 بلا تحذير). التصنيف العمري لم يُحدَّث: 409 ENTITY_ERROR.ATTRIBUTE.REQUIRED للحقلين messagingAndChat وadvertising (الرسالة مقطوعة). لم يُرسل للمراجعة. |
 | 2026-10-24 | لمحة (صفحة المتجر) | App Store | apply + build 8 | 40062366810 | 8 | نجح التشغيل بلا أخطاء غير التصنيف العمري: 409 ينقصه gunsOrOtherWeapons وparentalControls وuserGeneratedContent وhealthOrWellnessTopics. لم يُرسل للمراجعة. |
 | 2026-10-24 | لمحة (صفحة المتجر) | App Store | apply + build 8 | 40063900063 | 8 | نجح بلا أي تحذير: قبلت أبل التصنيف العمري وبقية الصفحة وربط build 8. لم يُرسل للمراجعة. |
+| 2026-10-24 | لمحة (صفحة المتجر) | Google Play | dry-run | 40070651787 | — | نجح بلا تحذيرات. |
+| 2026-10-24 | لمحة (صفحة المتجر) | Google Play | apply | 40070711242 | — | نجح بلا تحذيرات. |
+| 2026-10-24 | لمحة 1.0.1 | Android | alpha | 40070770259 | 7 | نجح: رُفع الإصدار 7 إلى alpha بحالة completed (artifact lamha-aab-7). |
