@@ -24,6 +24,14 @@
 
 تنبيه: تطبيق مستقل غير تابع لأي جهة حكومية. مواعيد الإيداعات محسوبة من قواعد الصرف المعلنة، والمرجع النهائي هو الجهة الرسمية.
 
+المصادر الرسمية:
+• رواتب الموظفين الحكوميين: وزارة المالية https://www.mof.gov.sa
+• معاشات المتقاعدين: المؤسسة العامة للتأمينات الاجتماعية https://www.gosi.gov.sa
+• الضمان الاجتماعي: وزارة الموارد البشرية والتنمية الاجتماعية https://sbis.hrsd.gov.sa
+• التأهيل الشامل: وزارة الموارد البشرية والتنمية الاجتماعية https://www.hrsd.gov.sa
+• حساب المواطن: https://www.ca.gov.sa
+• الدعم السكني: سكني https://sakani.sa
+
 **رابط الخصوصية:** https://github.com/mytatrayd-boop/-/blob/claude/mobile-app-design-gxh65v/apps/lamha/store/PRIVACY.md
 **رابط الدعم:** https://github.com/mytatrayd-boop/-/issues
 
