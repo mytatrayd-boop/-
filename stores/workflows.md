@@ -7,7 +7,7 @@
 
 | التطبيق | المنصة | الملف | ID | المُشغِّل | يدعم alpha؟ | حالة رفع Play |
 |---|---|---|---|---|---|---|
-| لمحة | Android | lamha-play.yml | 393655176 | يدوي | نعم (`track`) | `draft` ثابت |
+| لمحة | Android | lamha-play.yml | 393655176 | يدوي | نعم (`track`) | `completed` ثابت |
 | لمحة | iOS | lamha-ios.yml | 393643146 | يدوي + push | — | — |
 | أسرتي | Android | asraty-android.yml | 370291878 | يدوي | نعم (`track`) | من المدخل `status` |
 | أسرتي | iOS | asraty-ios.yml | 370291882 | يدوي | — | — |
@@ -24,11 +24,11 @@
   | الاسم | الوصف | النوع | إلزامي | الافتراضي | الخيارات |
   |---|---|---|---|---|---|
   | upload | ارفع إلى Google Play (يتطلب PLAY_SERVICE_ACCOUNT_JSON وأن يكون أول رفع قد تم يدوياً) | boolean | لا | false | — |
-  | track | مسار Play | choice | لا | internal | internal, alpha, beta, production |
-- **يبني:** `apps/lamha` ← `.aab` موقّع، artifact `lamha-aab-<run>`؛ الرفع فقط إذا `upload=true`، الحزمة `sa.lamha.lamha`، **status: draft** (يحتاج Review and roll out يدوياً).
+  | track | مسار Play | choice | لا | internal | internal, alpha, beta |
+- **يبني:** `apps/lamha` ← `.aab` موقّع، artifact `lamha-aab-<run>`؛ الرفع فقط إذا `upload=true`، الحزمة `sa.lamha.lamha`، **status: completed** (تحقق 2026-10-24: لم يعد draft).
 - **خطوات قبل البناء:** flutter analyze + flutter test.
 - **Secrets:** ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD, PLAY_SERVICE_ACCOUNT_JSON.
-- **تنبيه:** قائمة track تتضمن `production` — ممنوع استخدامها بدون أمر مكتوب من المالك. بدون `-f upload=true` يُبنى فقط ولا يُرفع.
+- **تنبيه:** بدون `-f upload=true` يُبنى فقط ولا يُرفع.
 
 ## 2) لمحة — `lamha-ios.yml` («Lamha — iOS (TestFlight)»)
 - **on:** `push` على المسارات `apps/lamha/**`, `.github/workflows/lamha-ios.yml`, `.github/scripts/ios_signing.py` (بناء بلا توقيع فقط، لا رفع) + `workflow_dispatch` بلا مدخلات (يوقّع ويرفع).
