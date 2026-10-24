@@ -9,3 +9,4 @@
 | 2026-10-24 | لمحة (صفحة المتجر) | Google Play | dry-run | 40058591359 | — | فشل 403 عند validate (حساب الخدمة بلا صلاحية كافية على sa.lamha.lamha). لم يُكرر ولم يُشغّل apply. |
 | 2026-10-24 | لمحة (صفحة المتجر) | App Store | dry-run | 40058591359 | — | نجح. |
 | 2026-10-24 | لمحة (صفحة المتجر) | App Store | apply + build 8 | 40058701314 | 8 | نجح: النصوص واللقطات وملاحظات المراجع، وربط build 8. لم يُرسل للمراجعة. تحذير: التصنيف العمري لم يُحدَّث (409، أبل تطلب الحقل ageAssurance غير الموجود في age_rating.json). |
+| 2026-10-24 | لمحة (صفحة المتجر) | App Store | apply + build 8 | 40060109983 | 8 | فشل قبل الوصول للتصنيف العمري: PATCH appStoreReviewDetails -> 409 ENTITY_ERROR.ATTRIBUTE.REQUIRED (contactFirstName, contactLastName، والرسالة مقطوعة بعدها). أسرار ASC_REVIEW_* غير مضافة على الأرجح. لم يُرسل للمراجعة. |
