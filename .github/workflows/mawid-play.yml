@@ -16,6 +16,10 @@ on:
         default: internal
         type: choice
         options: [internal, alpha, beta]
+      not_sent_for_review:
+        description: "لا ترسل للمراجعة آلياً (فقط إن طلبت جوجل ذلك بعد رفض؛ يرسله المالك من Publishing overview)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -65,6 +69,6 @@ jobs:
           releaseFiles: apps/mawid/build/app/outputs/bundle/release/app-release.aab
           track: ${{ inputs.track }}
           status: completed
-          # Play refuses to send an edit for review by API while the app has a
-          # rejection; the owner sends it from Publishing overview instead.
-          changesNotSentForReview: true
+          # Only while the app has an open rejection does Play refuse automatic sending
+          # (then the owner sends it from Publishing overview); otherwise Play refuses the flag.
+          changesNotSentForReview: ${{ inputs.not_sent_for_review }}

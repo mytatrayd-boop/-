@@ -18,3 +18,7 @@
 | 2026-10-24 | لمحة 1.0.1 | Android | alpha | 40070770259 | 7 | نجح: رُفع الإصدار 7 إلى alpha بحالة completed (artifact lamha-aab-7). |
 | 2026-10-24 | كل التطبيقات (مختبرون: social1776@googlegroups.com) | Google Play | alpha dry-run | 40091378717 | — | فشل للثلاثة، فلم يُشغّل apply: لمحة 403 وأسرتي 403 عند edits:validate، وموعد 400 عند validate (التفاصيل مخفية ***). |
 | 2026-10-24 | كل التطبيقات (مختبرون: social1776@googlegroups.com) | Google Play | alpha dry-run | 40099695909 | — | فشل للثلاثة، لم يُشغّل apply. لمحة وأسرتي 403 PERMISSION_DENIED: مسار alpha مُرقّى لـ closed testing ولا يقبل تعديل المختبرين عبر API. موعد 400 INVALID_ARGUMENT: يلزم changesNotSentForReview=true. |
+| 2026-10-24 | موعد (صفحة المتجر) | Google Play | dry-run | 40103948537 | — | فشل 403 PERMISSION_DENIED "The caller does not have permission" عند validate. لم يُشغّل apply. |
+| 2026-10-24 | لمحة (صفحة المتجر، وصف بالمصادر) | Google Play | dry-run | 40104017755 | — | نجح بلا تحذيرات. |
+| 2026-10-24 | لمحة (صفحة المتجر، وصف بالمصادر) | Google Play | apply | 40104097521 | — | نجح بلا تحذيرات. |
+| 2026-10-24 | موعد 1.0.1 | Android | alpha | 40104182468 | 7 | فشل في Upload to Google Play (البناء نجح، artifact mawid-aab-7): "Changes are sent for review automatically. The query parameter changesNotSentForReview must not be set." لم يُكرر. |

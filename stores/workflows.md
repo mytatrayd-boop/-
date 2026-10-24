@@ -11,7 +11,7 @@
 | لمحة | iOS | lamha-ios.yml | 393643146 | يدوي + push | — | — |
 | أسرتي | Android | asraty-android.yml | 370291878 | يدوي | نعم (`track`) | من المدخل `status` |
 | أسرتي | iOS | asraty-ios.yml | 370291882 | يدوي | — | — |
-| موعد | Android | mawid-play.yml | 379551945 | يدوي | نعم (`track`) | `completed` + `changesNotSentForReview: true` |
+| موعد | Android | mawid-play.yml | 379551945 | يدوي | نعم (`track`) | `completed` (+ `changesNotSentForReview` من المدخل `not_sent_for_review`، افتراضيًا لا) |
 | موعد | iOS | mawid-ios.yml | 380260349 | يدوي | — | — |
 
 الثلاثة الأندرويد تدعم alpha، فلا حاجة لطلب إضافة اختيار المسار.
