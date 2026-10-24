@@ -80,3 +80,9 @@
 ## ملاحظات أعطال سابقة
 - أسرتي أندرويد: يفشل إن أُعيد تشغيل run بنفس الرقم (`a release with the same tag name already exists`) — لا تستخدم «Re-run»، شغّل تشغيلاً جديداً.
 - iOS: قد يُلغى التشغيل إن لم يتوفر macOS runner (`job was not acquired by Runner`) — خطأ مؤقت، يُعاد مرة واحدة.
+
+## صفحات المتجر — `store-listing.yml` («Store listing (Google Play + App Store)»)
+- **on:** `workflow_dispatch` بالمدخلات: `app` (الاسم في `stores/apps.json`)، `store` (both/google/apple)، `mode` (dry-run/apply)، `build` (اختياري، رقم build آيفون).
+- **جوجل:** `.github/scripts/play_listing.py`: العنوان والوصفان لكل لغة في `metadata/play/`، والأيقونة وصورة العرض واللقطات من `store/play/`. dry-run يتحقق من التعديل ويحذفه.
+- **أبل:** `.github/scripts/appstore_listing.py`: الاسم والعنوان الفرعي والوصف والكلمات والنص الترويجي وروابط الدعم والخصوصية، واللقطات، وملاحظات المراجع، والتصنيف العمري، وربط build. على النسخة القابلة للتعديل فقط، ولا يرسل للمراجعة.
+- **Secrets:** PLAY_SERVICE_ACCOUNT_JSON، APPSTORE_API_KEY_P8/ID/ISSUER_ID، واختياريًا ASC_REVIEW_FIRST_NAME/LAST_NAME/EMAIL/PHONE.
