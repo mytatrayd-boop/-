@@ -86,3 +86,8 @@
 - **جوجل:** `.github/scripts/play_listing.py`: العنوان والوصفان لكل لغة في `metadata/play/`، والأيقونة وصورة العرض واللقطات من `store/play/`. dry-run يتحقق من التعديل ويحذفه.
 - **أبل:** `.github/scripts/appstore_listing.py`: الاسم والعنوان الفرعي والوصف والكلمات والنص الترويجي وروابط الدعم والخصوصية، واللقطات، وملاحظات المراجع، والتصنيف العمري، وربط build. على النسخة القابلة للتعديل فقط، ولا يرسل للمراجعة.
 - **Secrets:** PLAY_SERVICE_ACCOUNT_JSON، APPSTORE_API_KEY_P8/ID/ISSUER_ID، واختياريًا ASC_REVIEW_FIRST_NAME/LAST_NAME/EMAIL/PHONE.
+
+## مختبرو جوجل بمجموعة — `play-testers.yml` («Google Play testers (Google Group)»)
+- **on:** `workflow_dispatch`: `group` (إيميل المجموعة)، `app` (اسم من `stores/apps.json` أو `all`)، `track` (alpha افتراضيًا)، `mode` (dry-run/apply).
+- يضيف المجموعة لمختبري المسار دون حذف المجموعات الموجودة، ولا يمس قوائم الإيميلات.
+- **مجموعة المختبرين المعتمدة من المالك (٢٤ أكتوبر ٢٠٢٦):** `social1776@googlegroups.com` لكل التطبيقات على alpha.
