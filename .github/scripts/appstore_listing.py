@@ -193,16 +193,23 @@ def main():
                          ("ASC_REVIEW_EMAIL", "contactEmail"), ("ASC_REVIEW_PHONE", "contactPhone")]:
             if os.environ.get(env):
                 attrs[key] = os.environ[env]
+        # Non-fatal, and only changed fields: Apple rejects the write while the contact name is
+        # empty (no ASC_REVIEW_* secrets); the owner then fills the contact in App Store Connect.
         if status < 300 and res and res.get("data"):
             rid = res["data"]["id"]
-            s.write("PATCH", f"/appStoreReviewDetails/{rid}",
-                    {"data": {"type": "appStoreReviewDetails", "id": rid, "attributes": attrs}},
-                    "review details: " + ", ".join(attrs))
+            current = res["data"]["attributes"]
+            diff = {k: v for k, v in attrs.items() if current.get(k) != v}
+            if diff:
+                s.write("PATCH", f"/appStoreReviewDetails/{rid}",
+                        {"data": {"type": "appStoreReviewDetails", "id": rid, "attributes": diff}},
+                        "review details: " + ", ".join(diff), fatal=False)
+            else:
+                print("  review details: unchanged")
         else:
             s.write("POST", "/appStoreReviewDetails",
                     {"data": {"type": "appStoreReviewDetails", "attributes": attrs,
                               "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}},
-                    "review details: " + ", ".join(attrs))
+                    "review details: " + ", ".join(attrs), fatal=False)
 
     if age:
         status, res = request("GET", f"/appInfos/{iid}/ageRatingDeclaration")
