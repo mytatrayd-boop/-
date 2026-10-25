@@ -1,11 +1,16 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../backend/demo/demo_analysis_repository.dart';
 import '../backend/demo/demo_auth_repository.dart';
+import '../backend/demo/demo_reviews_repository.dart';
+import '../backend/demo/demo_shops_repository.dart';
+import '../domain/demo_controls.dart';
 import '../domain/models/auth_session.dart';
 import '../domain/models/usage.dart';
 import '../domain/repositories/account_repository.dart';
@@ -14,6 +19,9 @@ import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/purchases_repository.dart';
 import '../domain/repositories/reviews_repository.dart';
 import '../domain/repositories/shops_repository.dart';
+import '../services/image_capture_service.dart';
+import '../services/location_service.dart';
+import '../services/maps_launcher.dart';
 import 'env.dart';
 
 Never _notConfigured(String name) =>
@@ -37,17 +45,39 @@ final purchasesRepositoryProvider =
 final accountRepositoryProvider =
     Provider<AccountRepository>((ref) => _notConfigured('AccountRepository'));
 
-/// تنفيذات وضع العرض المتوفرة حتى الآن (الدفعة أ).
+/// أدوات وضع العرض (null في البناء الحقيقي).
+final rejectionSimulatorProvider = Provider<RejectionSimulator?>((ref) => null);
+
+// خدمات بتنفيذ واحد (ARCHITECTURE §3)؛ تُستبدل في الاختبارات فقط.
+final locationServiceProvider =
+    Provider<LocationService>((ref) => const GeolocatorLocationService());
+final mapsLauncherProvider = Provider<MapsLauncher>((ref) => const UrlMapsLauncher());
+final imageCaptureServiceProvider =
+    Provider<ImageCaptureService>((ref) => ImagePickerCaptureService());
+
+/// مجلد صور وضع العرض داخل مجلد التطبيق.
+Future<Directory> demoImagesDirectory() async =>
+    Directory('${(await getApplicationDocumentsDirectory()).path}/demo_reviews');
+
+/// تنفيذات وضع العرض (بلا إنترنت).
 List<Override> demoOverrides(
   SharedPreferences prefs, {
   Duration latency = const Duration(milliseconds: 600),
-}) =>
-    [
-      appConfigProvider.overrideWithValue(const AppConfig.demo()),
-      sharedPreferencesProvider.overrideWithValue(prefs),
-      authRepositoryProvider.overrideWithValue(DemoAuthRepository(prefs, latency: latency)),
-      analysisRepositoryProvider.overrideWithValue(DemoAnalysisRepository(prefs)),
-    ];
+  Duration analysisLatency = const Duration(seconds: 2),
+  Future<Directory> Function() imagesDirectory = demoImagesDirectory,
+}) {
+  final analysis = DemoAnalysisRepository(prefs, latency: analysisLatency);
+  final reviews = DemoReviewsRepository(prefs, imagesDirectory);
+  return [
+    appConfigProvider.overrideWithValue(const AppConfig.demo()),
+    sharedPreferencesProvider.overrideWithValue(prefs),
+    authRepositoryProvider.overrideWithValue(DemoAuthRepository(prefs, latency: latency)),
+    analysisRepositoryProvider.overrideWithValue(analysis),
+    rejectionSimulatorProvider.overrideWithValue(analysis),
+    reviewsRepositoryProvider.overrideWithValue(reviews),
+    shopsRepositoryProvider.overrideWithValue(DemoShopsRepository(prefs, reviews.all)),
+  ];
+}
 
 /// حالة الجلسة؛ يعتمد عليها redirect في go_router.
 class SessionNotifier extends Notifier<AuthSession?> {

@@ -207,4 +207,295 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signOutConfirm => 'Sign out of your account?';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navHistory => 'History';
+
+  @override
+  String get openCamera => 'Open camera';
+
+  @override
+  String get seeAll => 'See all';
+
+  @override
+  String get recentReviews => 'Recent reviews';
+
+  @override
+  String get favoriteShops => 'My favourite cafés';
+
+  @override
+  String get coffeeEspresso => 'Espresso';
+
+  @override
+  String get coffeeV60 => 'V60';
+
+  @override
+  String get coffeeFrenchPress => 'French press';
+
+  @override
+  String get visualLimitedNote =>
+      'Visual analysis is limited for this type; your taste rating matters more';
+
+  @override
+  String get cameraGuide =>
+      'Place the cup inside the circle, with light from the front';
+
+  @override
+  String get capturePhoto => 'Take photo';
+
+  @override
+  String get pickFromGallery => 'Choose from gallery';
+
+  @override
+  String get analyzing => 'The barista is examining your cup…';
+
+  @override
+  String get analyzingLong => 'A few more moments…';
+
+  @override
+  String get cameraDenied =>
+      'We need the camera to photograph your cup and rate its look';
+
+  @override
+  String get galleryDenied =>
+      'We need photo access to choose your cup\'s picture';
+
+  @override
+  String get openSettings => 'Open settings';
+
+  @override
+  String get attemptNotCounted => 'This attempt was not counted';
+
+  @override
+  String get retakePhoto => 'Take again';
+
+  @override
+  String get tryLater => 'Try later';
+
+  @override
+  String get resubmit => 'Send again';
+
+  @override
+  String get demoSimulateRejection => 'Simulate rejected image';
+
+  @override
+  String get resultTitle => 'Result';
+
+  @override
+  String get appearanceScore => 'Appearance score';
+
+  @override
+  String get scoreOutOf => '/10';
+
+  @override
+  String scoreSemantics(String score) {
+    return 'Appearance score $score out of 10';
+  }
+
+  @override
+  String get scoreNeedsCare => 'Needs care';
+
+  @override
+  String get scoreGood => 'Good';
+
+  @override
+  String get scoreExcellent => 'Excellent';
+
+  @override
+  String get scoreExceptional => 'Exceptional';
+
+  @override
+  String get baristaReport => 'Barista report';
+
+  @override
+  String tipLine(String tip) {
+    return 'Tip for next time: $tip';
+  }
+
+  @override
+  String get tasteRatingPrompt => 'After tasting, how would you rate it?';
+
+  @override
+  String ratingSemantics(int rating) {
+    return 'Your rating $rating of 5';
+  }
+
+  @override
+  String starSemantics(int count) {
+    return '$count of 5';
+  }
+
+  @override
+  String get userNotesLabel => 'Your notes (optional)';
+
+  @override
+  String get shopPrompt => 'Where did you have it? (optional)';
+
+  @override
+  String get addFavorite => 'Add to favourites';
+
+  @override
+  String get removeFavorite => 'Remove from favourites';
+
+  @override
+  String get addedToFavorites => 'Added to favourites';
+
+  @override
+  String get removedFromFavorites => 'Removed from favourites';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get saveReview => 'Save review';
+
+  @override
+  String get savedDone => 'Saved';
+
+  @override
+  String get viewInHistory => 'View in history';
+
+  @override
+  String get discardTitle => 'Discard the result?';
+
+  @override
+  String get discardBody => 'The attempt stays counted';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get stay => 'Stay';
+
+  @override
+  String get shopNameLabel => 'Café name';
+
+  @override
+  String get previousShops => 'Your previous cafés';
+
+  @override
+  String get hasSavedLocation => 'Has a saved location';
+
+  @override
+  String get saveMyLocation => 'Save my current location as the café\'s';
+
+  @override
+  String get locating => 'Finding your location…';
+
+  @override
+  String get locationSaved => 'Location saved';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get usingSavedLocation => 'The saved location will be used';
+
+  @override
+  String get locationFailed =>
+      'We couldn\'t find your location — only the name will be saved';
+
+  @override
+  String get enableLocation => 'Enable location';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get noShop => 'No café';
+
+  @override
+  String get historyTitle => 'History';
+
+  @override
+  String get tabMyReviews => 'My reviews';
+
+  @override
+  String get tabFavorites => 'Favourite cafés';
+
+  @override
+  String get notRated => 'Not rated';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String daysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favoritesEmpty =>
+      'No favourite cafés yet — add one from the result screen';
+
+  @override
+  String get noRatingYet => '—';
+
+  @override
+  String shopRating(String rating) {
+    return '★ $rating';
+  }
+
+  @override
+  String shopScore(String score) {
+    return 'Look $score';
+  }
+
+  @override
+  String reviewsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reviews',
+      one: '1 review',
+      zero: 'No reviews',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get openInGoogleMaps => 'Open in Google Maps';
+
+  @override
+  String get mapsFailed => 'Couldn\'t open maps';
+
+  @override
+  String get reviewDetailTitle => 'Review details';
+
+  @override
+  String get saveChanges => 'Save changes';
+
+  @override
+  String get moreOptions => 'More options';
+
+  @override
+  String get deleteReview => 'Delete review';
+
+  @override
+  String get deleteReviewConfirm =>
+      'Delete this review and its photo permanently?';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get reviewDeleted => 'Review deleted';
+
+  @override
+  String get paywallRenews => 'Renews at midnight Riyadh time';
 }

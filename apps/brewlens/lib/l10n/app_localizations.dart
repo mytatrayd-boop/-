@@ -451,6 +451,516 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تسجيل الخروج من حسابك؟'**
   String get signOutConfirm;
+
+  /// No description provided for @close.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get close;
+
+  /// No description provided for @navHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرئيسية'**
+  String get navHome;
+
+  /// No description provided for @navHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'السجل'**
+  String get navHistory;
+
+  /// No description provided for @openCamera.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الكاميرا'**
+  String get openCamera;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الكل'**
+  String get seeAll;
+
+  /// No description provided for @recentReviews.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر التقييمات'**
+  String get recentReviews;
+
+  /// No description provided for @favoriteShops.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقاهيّ المفضلة'**
+  String get favoriteShops;
+
+  /// No description provided for @coffeeEspresso.
+  ///
+  /// In ar, this message translates to:
+  /// **'إسبريسو'**
+  String get coffeeEspresso;
+
+  /// No description provided for @coffeeV60.
+  ///
+  /// In ar, this message translates to:
+  /// **'V60'**
+  String get coffeeV60;
+
+  /// No description provided for @coffeeFrenchPress.
+  ///
+  /// In ar, this message translates to:
+  /// **'فرنش بريس'**
+  String get coffeeFrenchPress;
+
+  /// No description provided for @visualLimitedNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحليل البصري لهذا النوع محدود؛ تقييمك الذوقي أهم'**
+  String get visualLimitedNote;
+
+  /// No description provided for @cameraGuide.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضع الكوب داخل الدائرة، والإضاءة من الأمام'**
+  String get cameraGuide;
+
+  /// No description provided for @capturePhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقاط صورة'**
+  String get capturePhoto;
+
+  /// No description provided for @pickFromGallery.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار من المعرض'**
+  String get pickFromGallery;
+
+  /// No description provided for @analyzing.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباريستا يتفحص كوبك…'**
+  String get analyzing;
+
+  /// No description provided for @analyzingLong.
+  ///
+  /// In ar, this message translates to:
+  /// **'لحظات إضافية…'**
+  String get analyzingLong;
+
+  /// No description provided for @cameraDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج الكاميرا لتصوير كوبك وتقييم مظهره'**
+  String get cameraDenied;
+
+  /// No description provided for @galleryDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج الوصول للصور لاختيار صورة كوبك'**
+  String get galleryDenied;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الإعدادات'**
+  String get openSettings;
+
+  /// No description provided for @attemptNotCounted.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تُحتسب هذه المحاولة'**
+  String get attemptNotCounted;
+
+  /// No description provided for @retakePhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقط مجدداً'**
+  String get retakePhoto;
+
+  /// No description provided for @tryLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاول لاحقاً'**
+  String get tryLater;
+
+  /// No description provided for @resubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الإرسال'**
+  String get resubmit;
+
+  /// No description provided for @demoSimulateRejection.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاكاة صورة مرفوضة'**
+  String get demoSimulateRejection;
+
+  /// No description provided for @resultTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة'**
+  String get resultTitle;
+
+  /// No description provided for @appearanceScore.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقييم المظهر'**
+  String get appearanceScore;
+
+  /// No description provided for @scoreOutOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'/10'**
+  String get scoreOutOf;
+
+  /// No description provided for @scoreSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقييم المظهر {score} من 10'**
+  String scoreSemantics(String score);
+
+  /// No description provided for @scoreNeedsCare.
+  ///
+  /// In ar, this message translates to:
+  /// **'يحتاج عناية'**
+  String get scoreNeedsCare;
+
+  /// No description provided for @scoreGood.
+  ///
+  /// In ar, this message translates to:
+  /// **'جيد'**
+  String get scoreGood;
+
+  /// No description provided for @scoreExcellent.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممتاز'**
+  String get scoreExcellent;
+
+  /// No description provided for @scoreExceptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'استثنائي'**
+  String get scoreExceptional;
+
+  /// No description provided for @baristaReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقرير الباريستا'**
+  String get baristaReport;
+
+  /// No description provided for @tipLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'نصيحة للمرة القادمة: {tip}'**
+  String tipLine(String tip);
+
+  /// No description provided for @tasteRatingPrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد التذوق، كم تعطيه؟'**
+  String get tasteRatingPrompt;
+
+  /// No description provided for @ratingSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقييمك {rating} من 5'**
+  String ratingSemantics(int rating);
+
+  /// No description provided for @starSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} من 5'**
+  String starSemantics(int count);
+
+  /// No description provided for @userNotesLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظاتك (اختياري)'**
+  String get userNotesLabel;
+
+  /// No description provided for @shopPrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'أين شربته؟ (اختياري)'**
+  String get shopPrompt;
+
+  /// No description provided for @addFavorite.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة للمفضلة'**
+  String get addFavorite;
+
+  /// No description provided for @removeFavorite.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة من المفضلة'**
+  String get removeFavorite;
+
+  /// No description provided for @addedToFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف للمفضلة'**
+  String get addedToFavorites;
+
+  /// No description provided for @removedFromFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُزيل من المفضلة'**
+  String get removedFromFavorites;
+
+  /// No description provided for @undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get undo;
+
+  /// No description provided for @saveReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ التقييم'**
+  String get saveReview;
+
+  /// No description provided for @savedDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الحفظ'**
+  String get savedDone;
+
+  /// No description provided for @viewInHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض في السجل'**
+  String get viewInHistory;
+
+  /// No description provided for @discardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاهل النتيجة؟'**
+  String get discardTitle;
+
+  /// No description provided for @discardBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستبقى المحاولة محتسبة'**
+  String get discardBody;
+
+  /// No description provided for @discard.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاهل'**
+  String get discard;
+
+  /// No description provided for @stay.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقاء'**
+  String get stay;
+
+  /// No description provided for @shopNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المقهى'**
+  String get shopNameLabel;
+
+  /// No description provided for @previousShops.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقاهيك السابقة'**
+  String get previousShops;
+
+  /// No description provided for @hasSavedLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'له موقع محفوظ'**
+  String get hasSavedLocation;
+
+  /// No description provided for @saveMyLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ موقعي الحالي كموقع المقهى'**
+  String get saveMyLocation;
+
+  /// No description provided for @locating.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحديد الموقع…'**
+  String get locating;
+
+  /// No description provided for @locationSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ الموقع'**
+  String get locationSaved;
+
+  /// No description provided for @remove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة'**
+  String get remove;
+
+  /// No description provided for @usingSavedLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُستخدم الموقع المحفوظ'**
+  String get usingSavedLocation;
+
+  /// No description provided for @locationFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نتمكن من تحديد موقعك — سيُحفظ الاسم فقط'**
+  String get locationFailed;
+
+  /// No description provided for @enableLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل الموقع'**
+  String get enableLocation;
+
+  /// No description provided for @done.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get done;
+
+  /// No description provided for @noShop.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون مقهى'**
+  String get noShop;
+
+  /// No description provided for @historyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'السجل'**
+  String get historyTitle;
+
+  /// No description provided for @tabMyReviews.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقييماتي'**
+  String get tabMyReviews;
+
+  /// No description provided for @tabFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقاهي المفضلة'**
+  String get tabFavorites;
+
+  /// No description provided for @notRated.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تُقيّم'**
+  String get notRated;
+
+  /// No description provided for @today.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In ar, this message translates to:
+  /// **'أمس'**
+  String get yesterday;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{قبل يوم} =2{قبل يومين} few{قبل {count} أيام} many{قبل {count} يوماً} other{قبل {count} يوم}}'**
+  String daysAgo(int count);
+
+  /// No description provided for @favoritesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا مقاهٍ مفضلة بعد — أضف مقهى من شاشة النتيجة'**
+  String get favoritesEmpty;
+
+  /// No description provided for @noRatingYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'—'**
+  String get noRatingYet;
+
+  /// No description provided for @shopRating.
+  ///
+  /// In ar, this message translates to:
+  /// **'★ {rating}'**
+  String shopRating(String rating);
+
+  /// No description provided for @shopScore.
+  ///
+  /// In ar, this message translates to:
+  /// **'مظهر {score}'**
+  String shopScore(String score);
+
+  /// No description provided for @reviewsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لا تقييمات} =1{تقييم واحد} =2{تقييمان} few{{count} تقييمات} many{{count} تقييماً} other{{count} تقييم}}'**
+  String reviewsCount(int count);
+
+  /// No description provided for @openInGoogleMaps.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح في خرائط جوجل'**
+  String get openInGoogleMaps;
+
+  /// No description provided for @mapsFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح الخرائط'**
+  String get mapsFailed;
+
+  /// No description provided for @reviewDetailTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل التقييم'**
+  String get reviewDetailTitle;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ التعديلات'**
+  String get saveChanges;
+
+  /// No description provided for @moreOptions.
+  ///
+  /// In ar, this message translates to:
+  /// **'خيارات أخرى'**
+  String get moreOptions;
+
+  /// No description provided for @deleteReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف التقييم'**
+  String get deleteReview;
+
+  /// No description provided for @deleteReviewConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذا التقييم وصورته نهائياً؟'**
+  String get deleteReviewConfirm;
+
+  /// No description provided for @delete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get delete;
+
+  /// No description provided for @reviewDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذف التقييم'**
+  String get reviewDeleted;
+
+  /// No description provided for @paywallRenews.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتجدد منتصف الليل بتوقيت الرياض'**
+  String get paywallRenews;
 }
 
 class _AppLocalizationsDelegate

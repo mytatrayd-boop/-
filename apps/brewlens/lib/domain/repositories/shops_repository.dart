@@ -1,8 +1,8 @@
 import '../models/shop.dart';
 
 abstract interface class ShopsRepository {
-  /// مقاهي المستخدم نفسه فقط، مع حالة المفضلة.
-  Future<List<Shop>> list({String query = ''});
+  /// مقاهي المستخدم نفسه فقط (الأحدث أولاً)، مع حالة المفضلة والمتوسطات.
+  Future<List<Shop>> list();
 
   /// ينشئ مقهى أو يعيد الموجود بنفس الاسم (بعد التطبيع)، ويحدّث الموقع إن أُعطي.
   Future<Shop> create({required String name, double? latitude, double? longitude});

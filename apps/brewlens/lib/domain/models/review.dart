@@ -1,5 +1,7 @@
 import 'coffee_type.dart';
 
+const _keep = Object();
+
 /// تقييم محفوظ. لا موقع عليه (D20)؛ الموقع على المقهى فقط.
 class Review {
   const Review({
@@ -15,6 +17,9 @@ class Review {
     this.shopId,
   });
 
+  /// أقصى طول لملاحظات المستخدم في الواجهة (DESIGN §3.6).
+  static const maxUserNotes = 300;
+
   final String id;
   final CoffeeType coffeeType;
   final String imagePath;
@@ -25,6 +30,27 @@ class Review {
   final String? userNotes;
   final String? shopId;
   final DateTime createdAt;
+
+  /// الحقول القابلة للإفراغ تُمرَّر بـ null صراحةً لإفراغها.
+  Review copyWith({
+    String? id,
+    String? imagePath,
+    Object? userRating = _keep,
+    Object? userNotes = _keep,
+    Object? shopId = _keep,
+  }) =>
+      Review(
+        id: id ?? this.id,
+        coffeeType: coffeeType,
+        imagePath: imagePath ?? this.imagePath,
+        aiScore: aiScore,
+        aiNotes: aiNotes,
+        aiTip: aiTip,
+        createdAt: createdAt,
+        userRating: identical(userRating, _keep) ? this.userRating : userRating as int?,
+        userNotes: identical(userNotes, _keep) ? this.userNotes : userNotes as String?,
+        shopId: identical(shopId, _keep) ? this.shopId : shopId as String?,
+      );
 
   factory Review.fromJson(Map<String, dynamic> json) {
     final ai = json['ai_notes'] as Map<String, dynamic>;
@@ -41,6 +67,14 @@ class Review {
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
+
+  /// المساواة بالمعرّف ومسار الصورة (مفتاح تحميل الصورة).
+  @override
+  bool operator ==(Object other) =>
+      other is Review && other.id == id && other.imagePath == imagePath;
+
+  @override
+  int get hashCode => Object.hash(id, imagePath);
 
   Map<String, dynamic> toJson() => {
         'id': id,

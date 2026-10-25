@@ -1,0 +1,31 @@
+name: BrewLens — Android demo APK
+
+# يبني APK تجريبياً لـ «عدسة البُن» بوضع العرض (بلا أي --dart-define، فلا
+# Supabase ولا مفاتيح)، موقّعاً بمفتاح debug (ليس للمتجر). لا رفع لأي متجر.
+on:
+  push:
+    paths: ['apps/brewlens/**', '.github/workflows/brewlens-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/brewlens } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Build APK (demo mode, debug-signed)
+        run: flutter build apk --release --build-number=${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brewlens-demo-apk
+          path: apps/brewlens/build/app/outputs/flutter-apk/app-release.apk

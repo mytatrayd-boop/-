@@ -112,3 +112,9 @@ ThemeData buildTheme(Brightness brightness) {
     ),
   );
 }
+
+/// لون النجاح (امتداد DESIGN §1.1): «تم الحفظ»، «تم تحديد الموقع».
+Color successColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.light
+        ? const Color(0xFF2E7D32)
+        : const Color(0xFF81C995);

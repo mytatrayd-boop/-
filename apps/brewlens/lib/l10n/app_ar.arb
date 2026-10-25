@@ -21,7 +21,13 @@
   "signUpTitle": "إنشاء حساب",
   "signUpReason": "نحتاج حساباً لحفظ سجلك ومقاهيك وحماية محاولاتك اليومية",
   "passwordHint": "{count} أحرف على الأقل",
-  "@passwordHint": {"placeholders": {"count": {"type": "int"}}},
+  "@passwordHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "termsNotice": "بالتسجيل توافق على الشروط وسياسة الخصوصية",
   "signUpButton": "إنشاء الحساب",
   "haveAccountPrompt": "لديك حساب؟",
@@ -30,14 +36,32 @@
   "forgotBody": "سنرسل رابطاً لبريدك",
   "sendLinkButton": "إرسال الرابط",
   "resetSentBody": "أرسلنا الرابط إلى {email}، تحقق من البريد المزعج أيضاً",
-  "@resetSentBody": {"placeholders": {"email": {"type": "String"}}},
+  "@resetSentBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "backToSignIn": "العودة للدخول",
   "resendButton": "إعادة الإرسال",
   "resendIn": "إعادة الإرسال ({seconds})",
-  "@resendIn": {"placeholders": {"seconds": {"type": "int"}}},
+  "@resendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "errorInvalidEmail": "أدخل بريداً إلكترونياً صحيحاً",
   "errorPasswordShort": "كلمة المرور {count} أحرف على الأقل",
-  "@errorPasswordShort": {"placeholders": {"count": {"type": "int"}}},
+  "@errorPasswordShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "errorPasswordMismatch": "كلمتا المرور غير متطابقتين",
   "errorUnknown": "حدث خطأ، حاول مجدداً",
   "failureUnauthorized": "انتهت الجلسة، سجّل الدخول مجدداً",
@@ -60,9 +84,168 @@
   "homeHeroBody": "احصل على تقييم المظهر ونصيحة باريستا",
   "homeEmpty": "لا تقييمات بعد — صوّر كوبك الأول",
   "usageRemainingDay": "متبقٍّ لك اليوم: {remaining} من {limit}",
-  "@usageRemainingDay": {"placeholders": {"remaining": {"type": "int"}, "limit": {"type": "int"}}},
+  "@usageRemainingDay": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
   "usageRemainingMonth": "متبقٍّ لك هذا الشهر: {remaining} من {limit}",
-  "@usageRemainingMonth": {"placeholders": {"remaining": {"type": "int"}, "limit": {"type": "int"}}},
+  "@usageRemainingMonth": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
   "signOut": "تسجيل الخروج",
-  "signOutConfirm": "تسجيل الخروج من حسابك؟"
+  "signOutConfirm": "تسجيل الخروج من حسابك؟",
+  "close": "إغلاق",
+  "navHome": "الرئيسية",
+  "navHistory": "السجل",
+  "openCamera": "افتح الكاميرا",
+  "seeAll": "عرض الكل",
+  "recentReviews": "آخر التقييمات",
+  "favoriteShops": "مقاهيّ المفضلة",
+  "coffeeEspresso": "إسبريسو",
+  "coffeeV60": "V60",
+  "coffeeFrenchPress": "فرنش بريس",
+  "visualLimitedNote": "التحليل البصري لهذا النوع محدود؛ تقييمك الذوقي أهم",
+  "cameraGuide": "ضع الكوب داخل الدائرة، والإضاءة من الأمام",
+  "capturePhoto": "التقاط صورة",
+  "pickFromGallery": "اختيار من المعرض",
+  "analyzing": "الباريستا يتفحص كوبك…",
+  "analyzingLong": "لحظات إضافية…",
+  "cameraDenied": "نحتاج الكاميرا لتصوير كوبك وتقييم مظهره",
+  "galleryDenied": "نحتاج الوصول للصور لاختيار صورة كوبك",
+  "openSettings": "فتح الإعدادات",
+  "attemptNotCounted": "لم تُحتسب هذه المحاولة",
+  "retakePhoto": "التقط مجدداً",
+  "tryLater": "حاول لاحقاً",
+  "resubmit": "إعادة الإرسال",
+  "demoSimulateRejection": "محاكاة صورة مرفوضة",
+  "resultTitle": "النتيجة",
+  "appearanceScore": "تقييم المظهر",
+  "scoreOutOf": "/10",
+  "scoreSemantics": "تقييم المظهر {score} من 10",
+  "@scoreSemantics": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "scoreNeedsCare": "يحتاج عناية",
+  "scoreGood": "جيد",
+  "scoreExcellent": "ممتاز",
+  "scoreExceptional": "استثنائي",
+  "baristaReport": "تقرير الباريستا",
+  "tipLine": "نصيحة للمرة القادمة: {tip}",
+  "@tipLine": {
+    "placeholders": {
+      "tip": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteRatingPrompt": "بعد التذوق، كم تعطيه؟",
+  "ratingSemantics": "تقييمك {rating} من 5",
+  "@ratingSemantics": {
+    "placeholders": {
+      "rating": {
+        "type": "int"
+      }
+    }
+  },
+  "starSemantics": "{count} من 5",
+  "@starSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "userNotesLabel": "ملاحظاتك (اختياري)",
+  "shopPrompt": "أين شربته؟ (اختياري)",
+  "addFavorite": "إضافة للمفضلة",
+  "removeFavorite": "إزالة من المفضلة",
+  "addedToFavorites": "أُضيف للمفضلة",
+  "removedFromFavorites": "أُزيل من المفضلة",
+  "undo": "تراجع",
+  "saveReview": "حفظ التقييم",
+  "savedDone": "تم الحفظ",
+  "viewInHistory": "عرض في السجل",
+  "discardTitle": "تجاهل النتيجة؟",
+  "discardBody": "ستبقى المحاولة محتسبة",
+  "discard": "تجاهل",
+  "stay": "البقاء",
+  "shopNameLabel": "اسم المقهى",
+  "previousShops": "مقاهيك السابقة",
+  "hasSavedLocation": "له موقع محفوظ",
+  "saveMyLocation": "حفظ موقعي الحالي كموقع المقهى",
+  "locating": "جارٍ تحديد الموقع…",
+  "locationSaved": "تم حفظ الموقع",
+  "remove": "إزالة",
+  "usingSavedLocation": "سيُستخدم الموقع المحفوظ",
+  "locationFailed": "لم نتمكن من تحديد موقعك — سيُحفظ الاسم فقط",
+  "enableLocation": "تفعيل الموقع",
+  "done": "تم",
+  "noShop": "بدون مقهى",
+  "historyTitle": "السجل",
+  "tabMyReviews": "تقييماتي",
+  "tabFavorites": "المقاهي المفضلة",
+  "notRated": "لم تُقيّم",
+  "today": "اليوم",
+  "yesterday": "أمس",
+  "daysAgo": "{count, plural, =1{قبل يوم} =2{قبل يومين} few{قبل {count} أيام} many{قبل {count} يوماً} other{قبل {count} يوم}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favoritesEmpty": "لا مقاهٍ مفضلة بعد — أضف مقهى من شاشة النتيجة",
+  "noRatingYet": "—",
+  "shopRating": "★ {rating}",
+  "@shopRating": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "shopScore": "مظهر {score}",
+  "@shopScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewsCount": "{count, plural, =0{لا تقييمات} =1{تقييم واحد} =2{تقييمان} few{{count} تقييمات} many{{count} تقييماً} other{{count} تقييم}}",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "openInGoogleMaps": "فتح في خرائط جوجل",
+  "mapsFailed": "تعذّر فتح الخرائط",
+  "reviewDetailTitle": "تفاصيل التقييم",
+  "saveChanges": "حفظ التعديلات",
+  "moreOptions": "خيارات أخرى",
+  "deleteReview": "حذف التقييم",
+  "deleteReviewConfirm": "حذف هذا التقييم وصورته نهائياً؟",
+  "delete": "حذف",
+  "reviewDeleted": "حُذف التقييم",
+  "paywallRenews": "تتجدد منتصف الليل بتوقيت الرياض"
 }

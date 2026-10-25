@@ -24,6 +24,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>نستخدم الكاميرا لتصوير كوبك وتقييم مظهره. / We use the camera to photograph your cup and rate its look.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نستخدم الصور لتختار صورة كوبك وتقييم مظهره. / We use your photos so you can choose a picture of your cup to rate its look.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>نستخدم موقعك مرة واحدة فقط عند ضغط «حفظ موقعي» لحفظ موقع المقهى. / We use your location once, only when you tap “Save my location”, to save the café's location.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
