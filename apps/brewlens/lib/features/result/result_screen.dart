@@ -9,6 +9,7 @@ import '../../app/router.dart';
 import '../../domain/models/review.dart';
 import '../../domain/models/shop.dart';
 import '../../l10n/app_localizations.dart';
+import '../share/share_review.dart';
 import '../shops/shop_actions.dart';
 import '../shops/shop_picker_sheet.dart';
 import 'review_body.dart';
@@ -132,6 +133,25 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
         appBar: AppBar(
           leading: IconButton(tooltip: l.close, icon: const Icon(Icons.close), onPressed: _close),
           title: Text(l.resultTitle),
+          actions: [
+            Builder(
+              builder: (context) => IconButton(
+                key: const Key('share_card'),
+                tooltip: l.shareCard,
+                icon: const Icon(Icons.ios_share),
+                onPressed: () => shareReviewCard(
+                  context,
+                  ref,
+                  imageBytes: pending.imageBytes,
+                  type: pending.type,
+                  score: result.score!,
+                  notes: result.notes,
+                  rating: _rating,
+                  shopName: _shop?.name,
+                ),
+              ),
+            ),
+          ],
         ),
         body: ReviewBody(
           image: ClipRRect(

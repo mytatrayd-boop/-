@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/models/app_failure.dart';
 import '../../domain/validators.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -124,4 +125,14 @@ class LoadingButton extends StatelessWidget {
             ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
             : Text(label),
       );
+}
+
+/// زر «إعادة المحاولة» عند انقطاع الاتصال فقط (F2، حالات الخطأ).
+Widget? offlineRetryAction(BuildContext context, Object error, VoidCallback onRetry) {
+  if (error is! AppFailure || error.code != FailureCode.offline) return null;
+  return TextButton(
+    key: const Key('auth_retry'),
+    onPressed: onRetry,
+    child: Text(AppLocalizations.of(context).retry),
+  );
 }

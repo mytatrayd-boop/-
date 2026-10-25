@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 88});
 
+  static const asset = 'assets/icon/logo.png';
+
   final double size;
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-        child: Image.asset('assets/icon/logo.png', width: size, height: size),
+        child: Image.asset(asset, width: size, height: size),
       );
 }

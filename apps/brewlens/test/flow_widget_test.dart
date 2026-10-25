@@ -6,6 +6,7 @@ import 'package:brewlens/app/env.dart';
 import 'package:brewlens/app/providers.dart';
 import 'package:brewlens/backend/demo/demo_analysis_repository.dart';
 import 'package:brewlens/backend/demo/demo_auth_repository.dart';
+import 'package:brewlens/backend/demo/demo_purchases_repository.dart';
 import 'package:brewlens/backend/demo/demo_shops_repository.dart';
 import 'package:brewlens/domain/models/review.dart';
 import 'package:brewlens/domain/repositories/reviews_repository.dart';
@@ -145,6 +146,8 @@ Future<void> pumpApp(WidgetTester tester, {String locale = 'ar', int usedToday =
       authRepositoryProvider.overrideWithValue(DemoAuthRepository(prefs, latency: Duration.zero)),
       analysisRepositoryProvider.overrideWithValue(analysis),
       rejectionSimulatorProvider.overrideWithValue(analysis),
+      subscriberSimulatorProvider.overrideWithValue(analysis),
+      purchasesRepositoryProvider.overrideWithValue(DemoPurchasesRepository(analysis)),
       reviewsRepositoryProvider.overrideWithValue(reviews),
       shopsRepositoryProvider.overrideWithValue(DemoShopsRepository(prefs, () => reviews.items)),
       imageCaptureServiceProvider.overrideWithValue(capture),

@@ -124,7 +124,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               onPressed: () => context.go(Routes.login),
                               child: Text(l.signInLink),
                             )
-                          : null,
+                          : offlineRetryAction(context, error, _submit),
                     ),
                     const SizedBox(height: 12),
                   ],

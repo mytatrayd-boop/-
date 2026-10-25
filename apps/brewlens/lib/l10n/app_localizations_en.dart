@@ -498,4 +498,192 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallRenews => 'Renews at midnight Riyadh time';
+
+  @override
+  String get failurePurchaseFailed =>
+      'The purchase didn\'t go through. You weren\'t charged.';
+
+  @override
+  String get failureNoPurchases =>
+      'No previous purchases found for this account';
+
+  @override
+  String get failureDeleteFailed => 'Couldn\'t delete. Please try again.';
+
+  @override
+  String get failureShareFailed =>
+      'Couldn\'t create the card. Please try again.';
+
+  @override
+  String get shareCard => 'Share as card';
+
+  @override
+  String get shareCardBrand => 'Coffee look score';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get termsOfUse => 'Terms of use';
+
+  @override
+  String get privacyBody =>
+      'Short interim version until the full policy is published.\n\n• We collect your email only to create your account, with no display name.\n• Your cup photo is sent to an AI service (Google Gemini) to analyze its appearance, and is stored in your account only.\n• A café location is read once, only when you tap \"Save my location\", and is never attached to your reviews.\n• We use no tracking tools and never sell your data.\n• You can permanently delete your account, data and photos from Settings.';
+
+  @override
+  String get termsBody =>
+      'Short interim version until the full terms are published.\n\n• The \"appearance score\" is an automated estimate of how the cup looks in the photo, not a professional judgment.\n• Two free analyses per day; subscribers get 20 per day under fair use.\n• Subscriptions renew automatically unless cancelled at least 24 hours before the period ends. Cancel in your store settings.\n• Don\'t upload photos you don\'t have the right to use.';
+
+  @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get subscribedTitle => 'You\'re subscribed';
+
+  @override
+  String get startCapturing => 'Start capturing';
+
+  @override
+  String priceSar(String amount) {
+    return 'SAR $amount';
+  }
+
+  @override
+  String get paywallTitleSettings => 'Subscribe to BrewLens';
+
+  @override
+  String get paywallTitleLimit => 'You\'ve used your free attempts for today';
+
+  @override
+  String get paywallBenefitLimit => '20 analyses per day';
+
+  @override
+  String get paywallBenefitReport => 'A barista report for every cup';
+
+  @override
+  String get paywallBenefitHistory => 'Unlimited history and favorites';
+
+  @override
+  String get planAnnual => 'Annual';
+
+  @override
+  String get planMonthly => 'Monthly';
+
+  @override
+  String perYear(String price) {
+    return '$price / year';
+  }
+
+  @override
+  String perMonth(String price) {
+    return '$price / month';
+  }
+
+  @override
+  String perMonthApprox(String price) {
+    return '≈ $price per month';
+  }
+
+  @override
+  String trialDays(int days) {
+    return '$days days free';
+  }
+
+  @override
+  String savePercent(int percent) {
+    return 'Save $percent%';
+  }
+
+  @override
+  String get startFreeTrial => 'Start free trial';
+
+  @override
+  String get subscribeNow => 'Subscribe now';
+
+  @override
+  String get subscriptionTerms =>
+      'Renews automatically unless cancelled at least 24 hours before the period ends. Cancel in your store settings.';
+
+  @override
+  String get termsShort => 'Terms';
+
+  @override
+  String get privacyShort => 'Privacy';
+
+  @override
+  String get purchaseUnavailableDemo =>
+      'Purchases aren\'t available in the demo build';
+
+  @override
+  String get languageSystem => 'Device language';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get navSettings => 'Settings';
+
+  @override
+  String get settingsAccount => 'Account';
+
+  @override
+  String get subscription => 'Subscription';
+
+  @override
+  String get subscriptionActive => 'Subscribed';
+
+  @override
+  String get subscriptionFree => 'Free';
+
+  @override
+  String get settingsApp => 'App';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get settingsDemo => 'Demo build only';
+
+  @override
+  String get simulateSubscriber => 'Simulate subscriber';
+
+  @override
+  String get simulateSubscriberHint =>
+      'Raises the limit to 20 analyses per day in the demo build';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String versionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get accountDeleted => 'Your account was deleted';
+
+  @override
+  String get deleteConfirmWord => 'DELETE';
+
+  @override
+  String get deleteAccountWarning =>
+      'Your account and all your reviews, photos and favorites will be permanently deleted and can\'t be recovered';
+
+  @override
+  String get deleteAccountSubscriptionNote =>
+      'Deleting doesn\'t cancel your subscription — cancel it in your store settings';
+
+  @override
+  String deleteConfirmLabel(String word) {
+    return 'Type \"$word\" to confirm';
+  }
+
+  @override
+  String get deleteAccountButton => 'Permanently delete my account';
+
+  @override
+  String get manageSubscription => 'Manage subscription in the store';
 }

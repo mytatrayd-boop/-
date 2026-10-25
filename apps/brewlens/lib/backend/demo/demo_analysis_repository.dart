@@ -20,7 +20,8 @@ String riyadhDay(DateTime now) {
 
 /// محاكاة محلية للتحليل والعدّاد في وضع العرض فقط (الحد الحقيقي على الخادم).
 /// النتيجة ثابتة ومطابقة لعقد SPEC §3 (تمر عبر AnalysisResult.fromJson).
-class DemoAnalysisRepository implements AnalysisRepository, RejectionSimulator {
+class DemoAnalysisRepository
+    implements AnalysisRepository, RejectionSimulator, SubscriberSimulator {
   DemoAnalysisRepository(
     this._prefs, {
     DateTime Function()? clock,
@@ -28,6 +29,8 @@ class DemoAnalysisRepository implements AnalysisRepository, RejectionSimulator {
   }) : _clock = clock ?? DateTime.now;
 
   static const freeDailyLimit = 2;
+  static const subscriberDailyLimit = 20; // الاستخدام العادل للمشترك (SPEC §4).
+  static const subscriberKey = 'demo_simulate_subscriber';
   static const maxImageBytes = 1536 * 1024; // نفس حد الخادم (1.5 م.ب).
   static const dayKey = 'demo_usage_day';
   static const countKey = 'demo_usage_count';
@@ -39,14 +42,31 @@ class DemoAnalysisRepository implements AnalysisRepository, RejectionSimulator {
   @override
   bool rejectNext = false;
 
+  @override
+  bool get simulateSubscriber => _prefs.getBool(subscriberKey) ?? false;
+
+  @override
+  Future<void> setSimulateSubscriber(bool value) => _prefs.setBool(subscriberKey, value);
+
+  int get _limit => simulateSubscriber ? subscriberDailyLimit : freeDailyLimit;
+
+  /// المشترك عند حده يرى «الاستخدام العادل» لا شاشة الشراء (SPEC F9).
+  AppFailure get _limitFailure => AppFailure(
+        simulateSubscriber ? FailureCode.fairUseReached : FailureCode.limitReached,
+      );
+
   int _usedToday() {
     if (_prefs.getString(dayKey) != riyadhDay(_clock())) return 0;
     return _prefs.getInt(countKey) ?? 0;
   }
 
   Usage _usage() {
-    final remaining = freeDailyLimit - _usedToday();
-    return Usage(remaining: remaining < 0 ? 0 : remaining, limit: freeDailyLimit);
+    final remaining = _limit - _usedToday();
+    return Usage(
+      remaining: remaining < 0 ? 0 : remaining,
+      limit: _limit,
+      isSubscriber: simulateSubscriber,
+    );
   }
 
   @override
@@ -61,9 +81,7 @@ class DemoAnalysisRepository implements AnalysisRepository, RejectionSimulator {
     if (imageBytes.length > maxImageBytes) {
       throw const AppFailure(FailureCode.imageTooLarge);
     }
-    if (_usedToday() >= freeDailyLimit) {
-      throw const AppFailure(FailureCode.limitReached);
-    }
+    if (_usedToday() >= _limit) throw _limitFailure;
     await Future<void>.delayed(latency);
     if (rejectNext) {
       rejectNext = false;
@@ -75,7 +93,7 @@ class DemoAnalysisRepository implements AnalysisRepository, RejectionSimulator {
     }
     // «حجز» المحاولة بعد التأخير كما يفعل الخادم.
     final used = _usedToday();
-    if (used >= freeDailyLimit) throw const AppFailure(FailureCode.limitReached);
+    if (used >= _limit) throw _limitFailure;
     await _prefs.setString(dayKey, riyadhDay(_clock()));
     await _prefs.setInt(countKey, used + 1);
     return AnalysisResult.fromJson({

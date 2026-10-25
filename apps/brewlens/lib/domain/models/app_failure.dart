@@ -14,6 +14,10 @@ enum FailureCode {
   offline,
   saveFailed,
   purchaseUnavailable,
+  purchaseFailed,
+  noPurchasesToRestore,
+  deleteFailed,
+  shareFailed,
 }
 
 /// أسباب رفض الصورة (SPEC §3.1).

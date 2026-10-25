@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +13,7 @@ import '../../l10n/app_localizations.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/review_image.dart';
 import '../result/review_body.dart';
+import '../share/share_review.dart';
 import '../shops/shop_actions.dart';
 import '../shops/shop_picker_sheet.dart';
 
@@ -142,6 +145,31 @@ class _EditorState extends ConsumerState<_Editor> {
     }
   }
 
+  Future<void> _share(BuildContext buttonContext) async {
+    final r = widget.review;
+    final Uint8List bytes;
+    try {
+      bytes = await ref.read(reviewImageProvider(r).future);
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).failureShareFailed)));
+      }
+      return;
+    }
+    if (!buttonContext.mounted) return;
+    await shareReviewCard(
+      buttonContext,
+      ref,
+      imageBytes: bytes,
+      type: r.coffeeType,
+      score: r.aiScore,
+      notes: r.aiNotes,
+      rating: _rating,
+      shopName: _shop?.name,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -150,6 +178,14 @@ class _EditorState extends ConsumerState<_Editor> {
       appBar: AppBar(
         title: Text(l.reviewDetailTitle),
         actions: [
+          Builder(
+            builder: (context) => IconButton(
+              key: const Key('share_card'),
+              tooltip: l.shareCard,
+              icon: const Icon(Icons.ios_share),
+              onPressed: _busy ? null : () => _share(context),
+            ),
+          ),
           PopupMenuButton<void>(
             tooltip: l.moreOptions,
             enabled: !_busy,

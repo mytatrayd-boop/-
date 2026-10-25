@@ -5,3 +5,9 @@ abstract interface class RejectionSimulator {
   bool get rejectNext;
   set rejectNext(bool value);
 }
+
+/// «محاكاة مشترك» في الإعدادات (وضع العرض فقط): يرفع الحد المحلي إلى 20/يوم.
+abstract interface class SubscriberSimulator {
+  bool get simulateSubscriber;
+  Future<void> setSimulateSubscriber(bool value);
+}

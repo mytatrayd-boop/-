@@ -6,8 +6,11 @@ abstract interface class PurchasesRepository {
 
   Future<List<PurchaseOffer>> offers();
 
-  Future<void> purchase(PurchaseOffer offer);
+  /// true عند الشراء، false إن ألغاه المستخدم (إغلاق هادئ). الفشل يُرمى
+  /// كـ AppFailure(purchaseFailed / purchaseUnavailable).
+  Future<bool> purchase(PurchaseOffer offer);
 
+  /// يرمي AppFailure(noPurchasesToRestore) إن لم توجد مشتريات.
   Future<void> restore();
 
   Future<bool> isSubscriber();

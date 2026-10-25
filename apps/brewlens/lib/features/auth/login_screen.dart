@@ -103,7 +103,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     if (_error != null) ...[
-                      ErrorBox(message: failureText(l, _error!)),
+                      ErrorBox(
+                        message: failureText(l, _error!),
+                        action: offlineRetryAction(context, _error!, _submit),
+                      ),
                       const SizedBox(height: 12),
                     ],
                     LoadingButton(label: l.signInButton, loading: _loading, onPressed: _submit),

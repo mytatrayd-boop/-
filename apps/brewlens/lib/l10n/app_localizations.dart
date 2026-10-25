@@ -961,6 +961,330 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تتجدد منتصف الليل بتوقيت الرياض'**
   String get paywallRenews;
+
+  /// No description provided for @failurePurchaseFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تكتمل العملية، لم يُخصم منك شيء'**
+  String get failurePurchaseFailed;
+
+  /// No description provided for @failureNoPurchases.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مشتريات سابقة لهذا الحساب'**
+  String get failureNoPurchases;
+
+  /// No description provided for @failureDeleteFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الحذف، حاول مجدداً'**
+  String get failureDeleteFailed;
+
+  /// No description provided for @failureShareFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إنشاء البطاقة، حاول مجدداً'**
+  String get failureShareFailed;
+
+  /// No description provided for @shareCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة كبطاقة'**
+  String get shareCard;
+
+  /// No description provided for @shareCardBrand.
+  ///
+  /// In ar, this message translates to:
+  /// **'BrewLens'**
+  String get shareCardBrand;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الخصوصية'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsOfUse.
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط الاستخدام'**
+  String get termsOfUse;
+
+  /// No description provided for @privacyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة مؤقتة مختصرة حتى نشر السياسة الكاملة.\n\n• نجمع بريدك الإلكتروني لإنشاء حسابك فقط، بلا اسم عرض.\n• صورة الكوب تُرسل لخدمة ذكاء اصطناعي (Google Gemini) لتحليل مظهرها، وتُحفظ في حسابك فقط.\n• موقع المقهى يُقرأ مرة واحدة عند ضغطك «حفظ موقعي»، ولا يُربط بتقييماتك.\n• لا نستخدم أدوات تتبع ولا نبيع بياناتك.\n• يمكنك حذف حسابك وكل بياناتك وصورك نهائياً من الإعدادات.'**
+  String get privacyBody;
+
+  /// No description provided for @termsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة مؤقتة مختصرة حتى نشر الشروط الكاملة.\n\n• «تقييم المظهر» تقدير آلي لشكل الكوب في الصورة فقط، وليس حكماً مهنياً.\n• تحليلان مجاناً يومياً، و20 يومياً للمشتركين ضمن الاستخدام العادل.\n• الاشتراك يتجدد تلقائياً ما لم تُلغِه قبل 24 ساعة من نهاية الفترة، والإلغاء من إعدادات المتجر.\n• لا ترفع صوراً لا تملك حق استخدامها.'**
+  String get termsBody;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة المشتريات'**
+  String get restorePurchases;
+
+  /// No description provided for @subscribedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أصبحت مشتركاً'**
+  String get subscribedTitle;
+
+  /// No description provided for @startCapturing.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ التصوير'**
+  String get startCapturing;
+
+  /// No description provided for @priceSar.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} ر.س'**
+  String priceSar(String amount);
+
+  /// No description provided for @paywallTitleSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في عدسة البُن'**
+  String get paywallTitleSettings;
+
+  /// No description provided for @paywallTitleLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت محاولاتك المجانية لليوم'**
+  String get paywallTitleLimit;
+
+  /// No description provided for @paywallBenefitLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'20 تحليلاً يومياً'**
+  String get paywallBenefitLimit;
+
+  /// No description provided for @paywallBenefitReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقرير باريستا لكل كوب'**
+  String get paywallBenefitReport;
+
+  /// No description provided for @paywallBenefitHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل ومفضلة بلا حدود'**
+  String get paywallBenefitHistory;
+
+  /// No description provided for @planAnnual.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنوي'**
+  String get planAnnual;
+
+  /// No description provided for @planMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهري'**
+  String get planMonthly;
+
+  /// No description provided for @perYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'{price} / سنة'**
+  String perYear(String price);
+
+  /// No description provided for @perMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'{price} / شهر'**
+  String perMonth(String price);
+
+  /// No description provided for @perMonthApprox.
+  ///
+  /// In ar, this message translates to:
+  /// **'≈ {price} شهرياً'**
+  String perMonthApprox(String price);
+
+  /// No description provided for @trialDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} أيام مجاناً'**
+  String trialDays(int days);
+
+  /// No description provided for @savePercent.
+  ///
+  /// In ar, this message translates to:
+  /// **'وفّر {percent}%'**
+  String savePercent(int percent);
+
+  /// No description provided for @startFreeTrial.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ التجربة المجانية'**
+  String get startFreeTrial;
+
+  /// No description provided for @subscribeNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك الآن'**
+  String get subscribeNow;
+
+  /// No description provided for @subscriptionTerms.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتجدد تلقائياً ما لم تُلغِه قبل 24 ساعة من نهاية الفترة. الإلغاء من إعدادات المتجر.'**
+  String get subscriptionTerms;
+
+  /// No description provided for @termsShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط'**
+  String get termsShort;
+
+  /// No description provided for @privacyShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصوصية'**
+  String get privacyShort;
+
+  /// No description provided for @purchaseUnavailableDemo.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشراء غير متاح في نسخة العرض'**
+  String get purchaseUnavailableDemo;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسب الجهاز'**
+  String get languageSystem;
+
+  /// No description provided for @languageArabic.
+  ///
+  /// In ar, this message translates to:
+  /// **'العربية'**
+  String get languageArabic;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In ar, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @navSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get navSettings;
+
+  /// No description provided for @settingsAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get settingsAccount;
+
+  /// No description provided for @subscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك'**
+  String get subscription;
+
+  /// No description provided for @subscriptionActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشترك'**
+  String get subscriptionActive;
+
+  /// No description provided for @subscriptionFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجاني'**
+  String get subscriptionFree;
+
+  /// No description provided for @settingsApp.
+  ///
+  /// In ar, this message translates to:
+  /// **'التطبيق'**
+  String get settingsApp;
+
+  /// No description provided for @language.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللغة'**
+  String get language;
+
+  /// No description provided for @settingsDemo.
+  ///
+  /// In ar, this message translates to:
+  /// **'وضع العرض فقط'**
+  String get settingsDemo;
+
+  /// No description provided for @simulateSubscriber.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاكاة مشترك'**
+  String get simulateSubscriber;
+
+  /// No description provided for @simulateSubscriberHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرفع الحد إلى 20 تحليلاً يومياً في نسخة العرض'**
+  String get simulateSubscriberHint;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب'**
+  String get deleteAccount;
+
+  /// No description provided for @versionLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار {version}'**
+  String versionLabel(String version);
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف حسابك'**
+  String get accountDeleted;
+
+  /// No description provided for @deleteConfirmWord.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get deleteConfirmWord;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُحذف حسابك وكل تقييماتك وصورك ومفضلتك نهائياً ولا يمكن استرجاعها'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @deleteAccountSubscriptionNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك لا يُلغى بالحذف — ألغِه من إعدادات المتجر'**
+  String get deleteAccountSubscriptionNote;
+
+  /// No description provided for @deleteConfirmLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب «{word}» للتأكيد'**
+  String deleteConfirmLabel(String word);
+
+  /// No description provided for @deleteAccountButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف حسابي نهائياً'**
+  String get deleteAccountButton;
+
+  /// No description provided for @manageSubscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة الاشتراك في المتجر'**
+  String get manageSubscription;
 }
 
 class _AppLocalizationsDelegate

@@ -25,5 +25,9 @@ String failureText(AppLocalizations l, Object error) {
     FailureCode.offline => l.failureOffline,
     FailureCode.saveFailed => l.failureSaveFailed,
     FailureCode.purchaseUnavailable => l.failurePurchaseUnavailable,
+    FailureCode.purchaseFailed => l.failurePurchaseFailed,
+    FailureCode.noPurchasesToRestore => l.failureNoPurchases,
+    FailureCode.deleteFailed => l.failureDeleteFailed,
+    FailureCode.shareFailed => l.failureShareFailed,
   };
 }

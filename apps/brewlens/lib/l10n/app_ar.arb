@@ -247,5 +247,115 @@
   "deleteReviewConfirm": "حذف هذا التقييم وصورته نهائياً؟",
   "delete": "حذف",
   "reviewDeleted": "حُذف التقييم",
-  "paywallRenews": "تتجدد منتصف الليل بتوقيت الرياض"
+  "paywallRenews": "تتجدد منتصف الليل بتوقيت الرياض",
+  "failurePurchaseFailed": "لم تكتمل العملية، لم يُخصم منك شيء",
+  "failureNoPurchases": "لا توجد مشتريات سابقة لهذا الحساب",
+  "failureDeleteFailed": "تعذّر الحذف، حاول مجدداً",
+  "failureShareFailed": "تعذّر إنشاء البطاقة، حاول مجدداً",
+  "shareCard": "مشاركة كبطاقة",
+  "shareCardBrand": "BrewLens",
+  "privacyPolicy": "سياسة الخصوصية",
+  "termsOfUse": "شروط الاستخدام",
+  "privacyBody": "نسخة مؤقتة مختصرة حتى نشر السياسة الكاملة.\n\n• نجمع بريدك الإلكتروني لإنشاء حسابك فقط، بلا اسم عرض.\n• صورة الكوب تُرسل لخدمة ذكاء اصطناعي (Google Gemini) لتحليل مظهرها، وتُحفظ في حسابك فقط.\n• موقع المقهى يُقرأ مرة واحدة عند ضغطك «حفظ موقعي»، ولا يُربط بتقييماتك.\n• لا نستخدم أدوات تتبع ولا نبيع بياناتك.\n• يمكنك حذف حسابك وكل بياناتك وصورك نهائياً من الإعدادات.",
+  "termsBody": "نسخة مؤقتة مختصرة حتى نشر الشروط الكاملة.\n\n• «تقييم المظهر» تقدير آلي لشكل الكوب في الصورة فقط، وليس حكماً مهنياً.\n• تحليلان مجاناً يومياً، و20 يومياً للمشتركين ضمن الاستخدام العادل.\n• الاشتراك يتجدد تلقائياً ما لم تُلغِه قبل 24 ساعة من نهاية الفترة، والإلغاء من إعدادات المتجر.\n• لا ترفع صوراً لا تملك حق استخدامها.",
+  "restorePurchases": "استعادة المشتريات",
+  "subscribedTitle": "أصبحت مشتركاً",
+  "startCapturing": "ابدأ التصوير",
+  "priceSar": "{amount} ر.س",
+  "@priceSar": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallTitleSettings": "اشترك في عدسة البُن",
+  "paywallTitleLimit": "انتهت محاولاتك المجانية لليوم",
+  "paywallBenefitLimit": "20 تحليلاً يومياً",
+  "paywallBenefitReport": "تقرير باريستا لكل كوب",
+  "paywallBenefitHistory": "سجل ومفضلة بلا حدود",
+  "planAnnual": "سنوي",
+  "planMonthly": "شهري",
+  "perYear": "{price} / سنة",
+  "@perYear": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "perMonth": "{price} / شهر",
+  "@perMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "perMonthApprox": "≈ {price} شهرياً",
+  "@perMonthApprox": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialDays": "{days} أيام مجاناً",
+  "@trialDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "savePercent": "وفّر {percent}%",
+  "@savePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "startFreeTrial": "ابدأ التجربة المجانية",
+  "subscribeNow": "اشترك الآن",
+  "subscriptionTerms": "يتجدد تلقائياً ما لم تُلغِه قبل 24 ساعة من نهاية الفترة. الإلغاء من إعدادات المتجر.",
+  "termsShort": "الشروط",
+  "privacyShort": "الخصوصية",
+  "purchaseUnavailableDemo": "الشراء غير متاح في نسخة العرض",
+  "languageSystem": "حسب الجهاز",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "navSettings": "الإعدادات",
+  "settingsAccount": "الحساب",
+  "subscription": "الاشتراك",
+  "subscriptionActive": "مشترك",
+  "subscriptionFree": "مجاني",
+  "settingsApp": "التطبيق",
+  "language": "اللغة",
+  "settingsDemo": "وضع العرض فقط",
+  "simulateSubscriber": "محاكاة مشترك",
+  "simulateSubscriberHint": "يرفع الحد إلى 20 تحليلاً يومياً في نسخة العرض",
+  "deleteAccount": "حذف الحساب",
+  "versionLabel": "الإصدار {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleted": "تم حذف حسابك",
+  "deleteConfirmWord": "حذف",
+  "deleteAccountWarning": "سيُحذف حسابك وكل تقييماتك وصورك ومفضلتك نهائياً ولا يمكن استرجاعها",
+  "deleteAccountSubscriptionNote": "الاشتراك لا يُلغى بالحذف — ألغِه من إعدادات المتجر",
+  "deleteConfirmLabel": "اكتب «{word}» للتأكيد",
+  "@deleteConfirmLabel": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAccountButton": "حذف حسابي نهائياً",
+  "manageSubscription": "إدارة الاشتراك في المتجر"
 }

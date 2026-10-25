@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../backend/demo/demo_account_repository.dart';
 import '../backend/demo/demo_analysis_repository.dart';
 import '../backend/demo/demo_auth_repository.dart';
+import '../backend/demo/demo_purchases_repository.dart';
 import '../backend/demo/demo_reviews_repository.dart';
 import '../backend/demo/demo_shops_repository.dart';
 import '../domain/demo_controls.dart';
@@ -22,6 +24,7 @@ import '../domain/repositories/shops_repository.dart';
 import '../services/image_capture_service.dart';
 import '../services/location_service.dart';
 import '../services/maps_launcher.dart';
+import '../services/share_service.dart';
 import 'env.dart';
 
 Never _notConfigured(String name) =>
@@ -47,11 +50,13 @@ final accountRepositoryProvider =
 
 /// أدوات وضع العرض (null في البناء الحقيقي).
 final rejectionSimulatorProvider = Provider<RejectionSimulator?>((ref) => null);
+final subscriberSimulatorProvider = Provider<SubscriberSimulator?>((ref) => null);
 
 // خدمات بتنفيذ واحد (ARCHITECTURE §3)؛ تُستبدل في الاختبارات فقط.
 final locationServiceProvider =
     Provider<LocationService>((ref) => const GeolocatorLocationService());
 final mapsLauncherProvider = Provider<MapsLauncher>((ref) => const UrlMapsLauncher());
+final shareServiceProvider = Provider<ShareService>((ref) => const SharePlusService());
 final imageCaptureServiceProvider =
     Provider<ImageCaptureService>((ref) => ImagePickerCaptureService());
 
@@ -68,12 +73,16 @@ List<Override> demoOverrides(
 }) {
   final analysis = DemoAnalysisRepository(prefs, latency: analysisLatency);
   final reviews = DemoReviewsRepository(prefs, imagesDirectory);
+  final auth = DemoAuthRepository(prefs, latency: latency);
   return [
     appConfigProvider.overrideWithValue(const AppConfig.demo()),
     sharedPreferencesProvider.overrideWithValue(prefs),
-    authRepositoryProvider.overrideWithValue(DemoAuthRepository(prefs, latency: latency)),
+    authRepositoryProvider.overrideWithValue(auth),
     analysisRepositoryProvider.overrideWithValue(analysis),
     rejectionSimulatorProvider.overrideWithValue(analysis),
+    subscriberSimulatorProvider.overrideWithValue(analysis),
+    purchasesRepositoryProvider.overrideWithValue(DemoPurchasesRepository(analysis)),
+    accountRepositoryProvider.overrideWithValue(DemoAccountRepository(prefs, imagesDirectory, auth)),
     reviewsRepositoryProvider.overrideWithValue(reviews),
     shopsRepositoryProvider.overrideWithValue(DemoShopsRepository(prefs, reviews.all)),
   ];

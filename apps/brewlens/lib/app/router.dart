@@ -8,9 +8,13 @@ import '../features/auth/signup_screen.dart';
 import '../features/capture/capture_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/legal/legal_screen.dart';
 import '../features/paywall/paywall_screen.dart';
 import '../features/result/result_screen.dart';
 import '../features/review_detail/review_detail_screen.dart';
+import '../features/settings/delete_account_screen.dart';
+import '../features/settings/settings_screen.dart';
+import 'legal_links.dart';
 import 'main_shell.dart';
 import 'providers.dart';
 
@@ -24,6 +28,11 @@ abstract final class Routes {
   static const history = '/history';
   static const historyFavorites = '/history?tab=favorites';
   static const paywall = '/paywall';
+  static const paywallFromSettings = '/paywall?from=settings';
+  static const settings = '/settings';
+  static const deleteAccount = '/delete-account';
+
+  static String legalPath(LegalDoc doc) => '/legal/${doc.name}';
 
   static String reviewPath(String id) => '/review/$id';
 
@@ -76,7 +85,23 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ),
           ),
+          GoRoute(
+            path: Routes.settings,
+            pageBuilder: (_, _) => const NoTransitionPage(child: SettingsScreen()),
+          ),
         ],
+      ),
+      GoRoute(
+        path: Routes.deleteAccount,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, _) => const DeleteAccountScreen(),
+      ),
+      GoRoute(
+        path: '/legal/:doc',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, state) => LegalScreen(
+          doc: state.pathParameters['doc'] == LegalDoc.terms.name ? LegalDoc.terms : LegalDoc.privacy,
+        ),
       ),
       GoRoute(
         path: Routes.capture,
@@ -96,7 +121,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.paywall,
         parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (_, _) => const MaterialPage(fullscreenDialog: true, child: PaywallScreen()),
+        pageBuilder: (_, state) => MaterialPage(
+          fullscreenDialog: true,
+          child: PaywallScreen(fromSettings: state.uri.queryParameters['from'] == 'settings'),
+        ),
       ),
     ],
   );

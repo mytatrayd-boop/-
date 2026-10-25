@@ -492,4 +492,188 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paywallRenews => 'تتجدد منتصف الليل بتوقيت الرياض';
+
+  @override
+  String get failurePurchaseFailed => 'لم تكتمل العملية، لم يُخصم منك شيء';
+
+  @override
+  String get failureNoPurchases => 'لا توجد مشتريات سابقة لهذا الحساب';
+
+  @override
+  String get failureDeleteFailed => 'تعذّر الحذف، حاول مجدداً';
+
+  @override
+  String get failureShareFailed => 'تعذّر إنشاء البطاقة، حاول مجدداً';
+
+  @override
+  String get shareCard => 'مشاركة كبطاقة';
+
+  @override
+  String get shareCardBrand => 'BrewLens';
+
+  @override
+  String get privacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get termsOfUse => 'شروط الاستخدام';
+
+  @override
+  String get privacyBody =>
+      'نسخة مؤقتة مختصرة حتى نشر السياسة الكاملة.\n\n• نجمع بريدك الإلكتروني لإنشاء حسابك فقط، بلا اسم عرض.\n• صورة الكوب تُرسل لخدمة ذكاء اصطناعي (Google Gemini) لتحليل مظهرها، وتُحفظ في حسابك فقط.\n• موقع المقهى يُقرأ مرة واحدة عند ضغطك «حفظ موقعي»، ولا يُربط بتقييماتك.\n• لا نستخدم أدوات تتبع ولا نبيع بياناتك.\n• يمكنك حذف حسابك وكل بياناتك وصورك نهائياً من الإعدادات.';
+
+  @override
+  String get termsBody =>
+      'نسخة مؤقتة مختصرة حتى نشر الشروط الكاملة.\n\n• «تقييم المظهر» تقدير آلي لشكل الكوب في الصورة فقط، وليس حكماً مهنياً.\n• تحليلان مجاناً يومياً، و20 يومياً للمشتركين ضمن الاستخدام العادل.\n• الاشتراك يتجدد تلقائياً ما لم تُلغِه قبل 24 ساعة من نهاية الفترة، والإلغاء من إعدادات المتجر.\n• لا ترفع صوراً لا تملك حق استخدامها.';
+
+  @override
+  String get restorePurchases => 'استعادة المشتريات';
+
+  @override
+  String get subscribedTitle => 'أصبحت مشتركاً';
+
+  @override
+  String get startCapturing => 'ابدأ التصوير';
+
+  @override
+  String priceSar(String amount) {
+    return '$amount ر.س';
+  }
+
+  @override
+  String get paywallTitleSettings => 'اشترك في عدسة البُن';
+
+  @override
+  String get paywallTitleLimit => 'انتهت محاولاتك المجانية لليوم';
+
+  @override
+  String get paywallBenefitLimit => '20 تحليلاً يومياً';
+
+  @override
+  String get paywallBenefitReport => 'تقرير باريستا لكل كوب';
+
+  @override
+  String get paywallBenefitHistory => 'سجل ومفضلة بلا حدود';
+
+  @override
+  String get planAnnual => 'سنوي';
+
+  @override
+  String get planMonthly => 'شهري';
+
+  @override
+  String perYear(String price) {
+    return '$price / سنة';
+  }
+
+  @override
+  String perMonth(String price) {
+    return '$price / شهر';
+  }
+
+  @override
+  String perMonthApprox(String price) {
+    return '≈ $price شهرياً';
+  }
+
+  @override
+  String trialDays(int days) {
+    return '$days أيام مجاناً';
+  }
+
+  @override
+  String savePercent(int percent) {
+    return 'وفّر $percent%';
+  }
+
+  @override
+  String get startFreeTrial => 'ابدأ التجربة المجانية';
+
+  @override
+  String get subscribeNow => 'اشترك الآن';
+
+  @override
+  String get subscriptionTerms =>
+      'يتجدد تلقائياً ما لم تُلغِه قبل 24 ساعة من نهاية الفترة. الإلغاء من إعدادات المتجر.';
+
+  @override
+  String get termsShort => 'الشروط';
+
+  @override
+  String get privacyShort => 'الخصوصية';
+
+  @override
+  String get purchaseUnavailableDemo => 'الشراء غير متاح في نسخة العرض';
+
+  @override
+  String get languageSystem => 'حسب الجهاز';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get navSettings => 'الإعدادات';
+
+  @override
+  String get settingsAccount => 'الحساب';
+
+  @override
+  String get subscription => 'الاشتراك';
+
+  @override
+  String get subscriptionActive => 'مشترك';
+
+  @override
+  String get subscriptionFree => 'مجاني';
+
+  @override
+  String get settingsApp => 'التطبيق';
+
+  @override
+  String get language => 'اللغة';
+
+  @override
+  String get settingsDemo => 'وضع العرض فقط';
+
+  @override
+  String get simulateSubscriber => 'محاكاة مشترك';
+
+  @override
+  String get simulateSubscriberHint =>
+      'يرفع الحد إلى 20 تحليلاً يومياً في نسخة العرض';
+
+  @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String versionLabel(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
+  String get accountDeleted => 'تم حذف حسابك';
+
+  @override
+  String get deleteConfirmWord => 'حذف';
+
+  @override
+  String get deleteAccountWarning =>
+      'سيُحذف حسابك وكل تقييماتك وصورك ومفضلتك نهائياً ولا يمكن استرجاعها';
+
+  @override
+  String get deleteAccountSubscriptionNote =>
+      'الاشتراك لا يُلغى بالحذف — ألغِه من إعدادات المتجر';
+
+  @override
+  String deleteConfirmLabel(String word) {
+    return 'اكتب «$word» للتأكيد';
+  }
+
+  @override
+  String get deleteAccountButton => 'حذف حسابي نهائياً';
+
+  @override
+  String get manageSubscription => 'إدارة الاشتراك في المتجر';
 }
