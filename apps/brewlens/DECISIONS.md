@@ -19,3 +19,14 @@
 
 ## 2026-10-25 — تصحيح من المالك: لا Google Places
 - D14: يلغي D4. لا قائمة مقاهٍ قريبة ولا Google Places API. المطلوب فقط خيار حفظ موقع المقهى (إحداثيات GPS من الجهاز + اسم يكتبه المستخدم) وفتحه في خرائط جوجل برابط مجاني. لا تكلفة خرائط.
+
+## 2026-10-25 — قرارات المعماري (التفاصيل في ARCHITECTURE.md)
+- D15: معرّف التطبيق `com.mytatrayd.brewlens`. لا نمط موحّد في المستودع (mawid: sa.mawid.app، lamha: sa.lamha.lamha)، وهذا يطابق namespace موعد. لا يتغير بعد النشر.
+- D16: Riverpod 3 بلا توليد كود + go_router، كما في adeeb وdurur؛ أبسط وبلا build_runner.
+- D17: image_picker بدل camera: كاميرا النظام فيها معاينة مباشرة، ويضغط الصورة لـ 1024 بكسل بنفسه، فلا حزمة ضغط ولا شاشة كاميرا مخصصة.
+- D18: واجهات (repositories) بتنفيذين Demo وSupabase، تُختار بوجود SUPABASE_URL وSUPABASE_ANON_KEY في --dart-define. التجريبية الأولى وضع عرض فقط؛ supabase_flutter وpurchases_flutter يُضافان في الدفعة د.
+- D19: بعد D14 صار المقهى ملك المستخدم: `shops.user_id` وRLS لصاحبه فقط، بلا `place_id`، ويُحذف مع الحساب. يحتاج مواءمة F3/F6 في SPEC (مدير المنتج).
+- D20: لا إحداثيات على `coffee_reviews` ولا `display_name`؛ الموقع على المقهى فقط وعند طلب المستخدم (أقل بيانات).
+- D21: الحد بدالتي SQL `reserve_analysis`/`release_analysis` مع قفل الصف، فطلبان متزامنان لا يتجاوزان الحد؛ اليوم بتوقيت `Asia/Riyadh` على الخادم.
+- D22: خرائط جوجل برابط Google Maps URLs المجاني، بلا مفتاح.
+- D23: خط Tajawal (OFL) منسوخ من lamha لدعم العربية.
