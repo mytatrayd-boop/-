@@ -25,6 +25,7 @@ class ReviewBody extends StatelessWidget {
     required this.shop,
     required this.onPickShop,
     required this.onToggleFavorite,
+    this.editable = true,
   });
 
   final Widget image;
@@ -38,6 +39,9 @@ class ReviewBody extends StatelessWidget {
   final Shop? shop;
   final VoidCallback onPickShop;
   final VoidCallback onToggleFavorite;
+
+  /// false بعد الحفظ في شاشة النتيجة: النجوم والملاحظات والمقهى للقراءة فقط.
+  final bool editable;
 
   @override
   Widget build(BuildContext context) {
@@ -119,11 +123,12 @@ class ReviewBody extends StatelessWidget {
         const SizedBox(height: 24),
         Text(l.tasteRatingPrompt, style: text.titleMedium),
         const SizedBox(height: 8),
-        StarRating(value: rating, onChanged: onRatingChanged),
+        StarRating(value: rating, onChanged: editable ? onRatingChanged : null),
         const SizedBox(height: 12),
         TextField(
           key: const Key('user_notes'),
           controller: notesController,
+          enabled: editable,
           maxLines: 4,
           minLines: 2,
           maxLength: Review.maxUserNotes,
@@ -137,7 +142,7 @@ class ReviewBody extends StatelessWidget {
                 child: InkWell(
                   key: const Key('shop_row'),
                   borderRadius: BorderRadius.circular(16),
-                  onTap: onPickShop,
+                  onTap: editable ? onPickShop : null,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 64),
                     child: Padding(

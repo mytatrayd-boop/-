@@ -119,7 +119,8 @@ class ShareCard extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: _px(20), vertical: _px(6)),
                       decoration: BoxDecoration(color: _track, borderRadius: BorderRadius.circular(_px(24))),
-                      child: Text(data.typeLabel, style: _style(30, FontWeight.w600, _ink)),
+                      child: Text(data.typeLabel,
+                          maxLines: 1, overflow: TextOverflow.clip, style: _style(30, FontWeight.w600, _ink)),
                     ),
                   ],
                 ),
@@ -174,9 +175,15 @@ class ShareCard extends StatelessWidget {
                         if (data.logo != null)
                           SizedBox.square(dimension: _px(64), child: RawImage(image: data.logo)),
                         SizedBox(width: _px(16)),
-                        Text(data.appName, style: _style(32, FontWeight.w700, _brown)),
+                        Flexible(
+                          child: Text(data.appName,
+                              maxLines: 1, overflow: TextOverflow.ellipsis, style: _style(32, FontWeight.w700, _brown)),
+                        ),
                         const Spacer(),
-                        Text(data.brand, style: _style(28, FontWeight.w500, _muted)),
+                        Flexible(
+                          child: Text(data.brand,
+                              maxLines: 1, overflow: TextOverflow.ellipsis, style: _style(28, FontWeight.w500, _muted)),
+                        ),
                       ],
                     ),
                   ],
@@ -203,8 +210,11 @@ class _ScoreBadge extends StatelessWidget {
           rtl: data.textDirection == TextDirection.rtl,
           stroke: 20 / ShareCard.pixelRatio,
         ),
-        child: Center(
-          child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(40 / ShareCard.pixelRatio),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
@@ -213,6 +223,7 @@ class _ScoreBadge extends StatelessWidget {
               Text(data.scoreText, style: style(96, FontWeight.w700, ShareCard._ink)),
               Text(data.scoreOutOf, style: style(36, FontWeight.w400, ShareCard._muted)),
             ],
+            ),
           ),
         ),
       );

@@ -140,9 +140,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           if (simulator != null) ...[
             header(l.settingsDemo),
-            ColoredBox(
-              color: _demoTint,
-              child: SwitchListTile(
+            SwitchListTile(
+                tileColor: _demoTint,
                 key: const Key('simulate_subscriber'),
                 secondary: const Icon(Icons.science_outlined),
                 title: Text(l.simulateSubscriber),
@@ -150,7 +149,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 value: simulator.simulateSubscriber,
                 onChanged: _toggleSubscriber,
               ),
-            ),
           ],
           const SizedBox(height: 24),
           ListTile(

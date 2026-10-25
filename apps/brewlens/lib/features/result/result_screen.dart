@@ -168,6 +168,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           shop: _shop,
           onPickShop: _pickShop,
           onToggleFavorite: _toggleFavorite,
+          editable: !_saved,
         ),
         bottomNavigationBar: SafeArea(
           child: Padding(

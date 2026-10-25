@@ -136,8 +136,8 @@ class _EditorState extends ConsumerState<_Editor> {
     try {
       await ref.read(reviewsRepositoryProvider).delete(widget.review.id);
       if (!mounted) return;
+      refreshCollectionsFromWidget(ref, keepReviewDetails: true);
       context.pop();
-      refreshCollectionsFromWidget(ref);
       messenger.showSnackBar(SnackBar(content: Text(l.reviewDeleted)));
     } on Object catch (e) {
       if (mounted) setState(() => _busy = false);

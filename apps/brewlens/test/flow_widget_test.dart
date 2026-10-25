@@ -9,7 +9,9 @@ import 'package:brewlens/backend/demo/demo_auth_repository.dart';
 import 'package:brewlens/backend/demo/demo_purchases_repository.dart';
 import 'package:brewlens/backend/demo/demo_shops_repository.dart';
 import 'package:brewlens/domain/models/review.dart';
+import 'package:brewlens/domain/repositories/account_repository.dart';
 import 'package:brewlens/domain/repositories/reviews_repository.dart';
+import 'package:brewlens/services/share_service.dart';
 import 'package:brewlens/domain/models/shop.dart';
 import 'package:brewlens/features/capture/capture_screen.dart';
 import 'package:brewlens/features/history/history_screen.dart';
@@ -89,6 +91,15 @@ class FakeCapture implements ImageCaptureService {
     return png;
   }
 
+  Uint8List? lost;
+
+  @override
+  Future<Uint8List?> retrieveLost() async {
+    final l = lost;
+    lost = null;
+    return l;
+  }
+
   @override
   Future<void> openAppSettings() async => settingsOpened++;
 }
@@ -117,6 +128,32 @@ class FakeMaps implements MapsLauncher {
   }
 }
 
+class FakeShare implements ShareService {
+  final shared = <Uint8List>[];
+
+  @override
+  Future<void> shareImage(Uint8List png, {Rect? origin}) async => shared.add(png);
+}
+
+/// حذف الحساب بلا dart:io (FakeAsync): يمسح الذاكرة وprefs ويخرج.
+class MemoryAccount implements AccountRepository {
+  MemoryAccount(this.prefs, this.auth);
+
+  final SharedPreferences prefs;
+  final DemoAuthRepository auth;
+
+  @override
+  Future<void> deleteAccount() async {
+    reviews.items.clear();
+    reviews.images.clear();
+    for (final k in prefs.getKeys().toList()) {
+      if (k != 'locale') await prefs.remove(k);
+    }
+    await auth.signOut();
+  }
+}
+
+late FakeShare share;
 late MemoryReviews reviews;
 late FakeCapture capture;
 late FakeLocation location;
@@ -139,11 +176,15 @@ Future<void> pumpApp(WidgetTester tester, {String locale = 'ar', int usedToday =
   location = FakeLocation();
   maps = FakeMaps();
   final analysis = DemoAnalysisRepository(prefs, latency: Duration.zero);
+  final auth = DemoAuthRepository(prefs, latency: Duration.zero);
+  share = FakeShare();
   await tester.pumpWidget(ProviderScope(
     overrides: [
       appConfigProvider.overrideWithValue(const AppConfig.demo()),
       sharedPreferencesProvider.overrideWithValue(prefs),
-      authRepositoryProvider.overrideWithValue(DemoAuthRepository(prefs, latency: Duration.zero)),
+      authRepositoryProvider.overrideWithValue(auth),
+      accountRepositoryProvider.overrideWithValue(MemoryAccount(prefs, auth)),
+      shareServiceProvider.overrideWithValue(share),
       analysisRepositoryProvider.overrideWithValue(analysis),
       rejectionSimulatorProvider.overrideWithValue(analysis),
       subscriberSimulatorProvider.overrideWithValue(analysis),

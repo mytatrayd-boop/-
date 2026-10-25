@@ -36,9 +36,27 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   var _slow = false;
   var _cameraDenied = false;
   Timer? _slowTimer;
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // بعد منح الصلاحية من الإعدادات: نعيد تفعيل الالتقاط؛ الطلب التالي يتحقق.
+    _lifecycle = AppLifecycleListener(onResume: () {
+      if (mounted && _cameraDenied) setState(() => _cameraDenied = false);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recoverLost());
+  }
+
+  /// صورة التُقطت قبل أن يُنهي أندرويد التطبيق (retrieveLostData).
+  Future<void> _recoverLost() async {
+    final bytes = await ref.read(imageCaptureServiceProvider).retrieveLost();
+    if (bytes != null && mounted && !_busy) await _analyze(bytes);
+  }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _slowTimer?.cancel();
     super.dispose();
   }
@@ -60,6 +78,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     }
     final capture = ref.read(imageCaptureServiceProvider);
     Uint8List? bytes;
+    // يمنع فتح المنتقي مرتين (already_active).
+    setState(() => _busy = true);
     try {
       bytes = await capture.pick(source);
     } on CaptureAccessDenied catch (e) {
@@ -73,6 +93,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     } on Object catch (e) {
       if (mounted) _snack(failureText(AppLocalizations.of(context), e));
       return;
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
     if (bytes == null || !mounted) return;
     setState(() => _cameraDenied = false);
@@ -138,7 +160,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
         // الصورة تبقى على الشاشة مع «إعادة الإرسال» بلا التقاط جديد.
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(l.failureOffline),
-          action: SnackBarAction(label: l.resubmit, onPressed: () => _analyze(bytes)),
+          action: SnackBarAction(
+            label: l.resubmit,
+            onPressed: () {
+              if (mounted && !_busy) _analyze(bytes);
+            },
+          ),
         ));
       case FailureCode.analysisFailed || FailureCode.timeout || FailureCode.servicePaused:
         final resend = await _sheet(

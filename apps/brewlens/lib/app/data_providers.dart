@@ -115,15 +115,18 @@ final historyProvider =
     AsyncNotifierProvider<HistoryNotifier, HistoryState>(HistoryNotifier.new);
 
 /// بعد أي حفظ/تعديل/حذف: إعادة جلب القوائم والعدّاد.
+/// [keepReviewDetails]: بعد حذف تقييم لا يُعاد جلب تفاصيله (كان يظهر خطأ لحظي
+/// أثناء إغلاق الشاشة).
 void refreshCollections(Ref ref) => _invalidateAll(ref.invalidate);
 
-void refreshCollectionsFromWidget(WidgetRef ref) => _invalidateAll(ref.invalidate);
+void refreshCollectionsFromWidget(WidgetRef ref, {bool keepReviewDetails = false}) =>
+    _invalidateAll(ref.invalidate, keepReviewDetails: keepReviewDetails);
 
-void _invalidateAll(void Function(ProviderOrFamily) invalidate) {
+void _invalidateAll(void Function(ProviderOrFamily) invalidate, {bool keepReviewDetails = false}) {
   invalidate(historyProvider);
   invalidate(recentReviewsProvider);
   invalidate(shopsProvider);
   invalidate(favoritesProvider);
-  invalidate(reviewProvider);
+  if (!keepReviewDetails) invalidate(reviewProvider);
   invalidate(usageProvider);
 }

@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart' as picker;
@@ -17,6 +19,9 @@ class CaptureAccessDenied implements Exception {
 abstract interface class ImageCaptureService {
   /// null إذا ألغى المستخدم.
   Future<Uint8List?> pick(CaptureSource source);
+
+  /// أندرويد قد يُنهي التطبيق أثناء الكاميرا؛ يستعيد الصورة عند العودة.
+  Future<Uint8List?> retrieveLost();
 
   Future<void> openAppSettings();
 }
@@ -48,6 +53,19 @@ class ImagePickerCaptureService implements ImageCaptureService {
         throw CaptureAccessDenied(source);
       }
       rethrow;
+    }
+  }
+
+  @override
+  Future<Uint8List?> retrieveLost() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final response = await _picker.retrieveLostData();
+      if (response.isEmpty) return null;
+      final file = response.file ?? response.files?.firstOrNull;
+      return file == null ? null : await file.readAsBytes();
+    } on Object {
+      return null;
     }
   }
 

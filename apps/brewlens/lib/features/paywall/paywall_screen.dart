@@ -122,9 +122,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final saving = fallback && annualValue != null && monthlyValue != null && monthlyValue > 0
         ? ((1 - annualValue / (monthlyValue * 12)) * 100).floor()
         : null;
-    return ListView(
+    return SingleChildScrollView(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
-      children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         const Center(child: AppLogo(size: 72)),
         const SizedBox(height: 16),
         Text(
@@ -201,7 +203,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             TextButton(onPressed: () => openLegal(context, LegalDoc.privacy), child: Text(l.privacyShort)),
           ],
         ),
-      ],
+        ],
+      ),
     );
   }
 }

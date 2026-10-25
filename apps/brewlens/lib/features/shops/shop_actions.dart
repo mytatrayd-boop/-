@@ -26,11 +26,14 @@ Future<bool?> toggleFavorite(
   final messenger = ScaffoldMessenger.of(context);
   final l = AppLocalizations.of(context);
   final repo = ref.read(shopsRepositoryProvider);
+  // الحاوية لا الـ WidgetRef: «تراجع» قد يُضغط بعد إغلاق الشاشة.
+  final container = ProviderScope.containerOf(context, listen: false);
   final next = !shop.isFavorite;
   Future<void> apply(bool value) async {
     await repo.setFavorite(shop.id, favorite: value);
-    ref.invalidate(favoritesProvider);
-    ref.invalidate(shopsProvider);
+    container
+      ..invalidate(favoritesProvider)
+      ..invalidate(shopsProvider);
     onChanged?.call(value);
   }
 
