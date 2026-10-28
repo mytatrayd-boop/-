@@ -444,6 +444,10 @@
                     recText.innerText = "الفحص الآلي يوضح غياب معظم الأدلة والشواهد الرئيسية في المجلد السحابي للمدرسة.";
                 }
 
+                if (data.contentPending > 0) {
+                    recText.innerText += ` (عدد الملفات التي لم يُقرأ محتواها بعد: ${data.contentPending}، أعد الفحص لإكمال قراءتها.)`;
+                }
+
                 let tbody = document.getElementById('indicatorsBody');
                 tbody.innerHTML = '';
                 data.results.forEach(item => {
