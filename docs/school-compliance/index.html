@@ -35,6 +35,7 @@
             padding: 12px;
             direction: rtl;
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
         .container { max-width: 900px; margin: 0 auto; }
@@ -137,12 +138,13 @@
         .speedo { position: relative; width: 230px; max-width: 100%; margin: 4px auto 0; }
         .speedo svg { display: block; width: 100%; height: auto; direction: ltr; }
         .speedo .score-num { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-size: 1.9rem; direction: ltr; font-variant-numeric: tabular-nums; }
-        .speedo-sm { width: 150px; }
+        .speedo-sm { width: 100%; max-width: 150px; }
         .speedo-sm .score-num { font-size: 1.25rem; bottom: 0; }
         .speedo .tick-label { font-size: 9px; fill: #667788; font-family: 'Segoe UI', Tahoma, sans-serif; }
         .speedo-sm .tick-label { display: none; }
-        .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
-        .summary-item { text-align: center; text-decoration: none; color: var(--text); background: #edf3f7; border-radius: 10px; padding: 10px 6px; font-size: 0.82rem; }
+        .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+        .summary-item { min-width: 0; text-align: center; text-decoration: none; color: var(--text); background: #edf3f7; border-radius: 10px; padding: 10px 6px; font-size: 0.82rem; overflow-wrap: anywhere; }
+        .summary-item strong { display: block; line-height: 1.4; }
         .section-title { font-size: 1.05rem; font-weight: bold; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .section-title small { font-weight: normal; color: var(--muted); font-size: 0.75rem; }
         .section-num { background: var(--primary); color: #fff; border-radius: 50%; width: 26px; height: 26px; display: inline-grid; place-items: center; font-size: 0.85rem; }
