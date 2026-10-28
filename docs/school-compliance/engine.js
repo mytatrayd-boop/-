@@ -647,9 +647,10 @@ var ComplianceEngine = (function () {
   var IMAGE_EXT = /\.(jpe?g|png|heic|webp|gif|bmp)$/i;
 
   function generalRecommendations(files, groups, byCodeCount, ctx) {
-    var recs = [];
+    // توصيات تخص السحابة كلها (general)، وتوصيات تخص معايير الالتزام وحدها (commitment)
+    var recs = [], commitmentRecs = [];
     var n = files.length;
-    if (!n) return ['السحابة فارغة أو لم يمكن قراءة محتواها. تأكد من صلاحية الرابط ومن رفع الشواهد.'];
+    if (!n) return { general: ['السحابة فارغة أو لم يمكن قراءة محتواها. تأكد من صلاحية الرابط ومن رفع الشواهد.'], indicators: [], commitment: [] };
     var weak = files.filter(function (f) { return WEAK_NAME.test(f.name.trim()) || /whatsapp|واتساب/i.test(f.name); }).length;
     if (weak / n > 0.15)
       recs.push('عدد الملفات ذات الأسماء غير الدالة (مثل IMG أو Scan أو WhatsApp): ' + weak + '. سمِّ كل ملف باسم الشاهد ورقم المؤشر، مثل: «1-1-1-1 الخطة التشغيلية».');
@@ -663,7 +664,7 @@ var ComplianceEngine = (function () {
 
     var weekly = groups.commitment['ل-2'];
     if (weekly && weekly.fileCount && weekly.missing.some(function (m) { return m.indexOf('مدرستي') !== -1; }))
-      recs.push('ارفع شواهد نشر الخطط الأسبوعية من منصة مدرستي مؤرخة، ولا تقتصر على بعض المواد.');
+      commitmentRecs.push('ارفع شواهد نشر الخطط الأسبوعية من منصة مدرستي مؤرخة، ولا تقتصر على بعض المواد.');
 
     var teach = (groups.indicator['2-1-1-2'] || {}).fileCount || 0;
     var guidance = ['1-2-1-3', '1-2-1-4', '1-5-1-1', '1-5-1-2'].reduce(function (s, c) { return s + ((groups.indicator[c] || {}).fileCount || 0); }, 0);
@@ -673,7 +674,7 @@ var ComplianceEngine = (function () {
 
     if (ctx.contentRead > 0 && !files.some(function (f) { return f.text && /(اعتماد|مدير المدرسه|مدير المدرسة|الختم|التوقيع)/.test(f.text); }))
       recs.push('لم تظهر عبارات اعتماد أو توقيع في الشواهد المقروءة. اعتمد الشواهد بتوقيع مدير المدرسة واسمه كاملاً والختم الرسمي.');
-    return recs;
+    return { general: recs, indicators: [], commitment: commitmentRecs };
   }
 
   /**
@@ -714,6 +715,7 @@ var ComplianceEngine = (function () {
     });
 
     var allInd = [].concat.apply([], domains.map(function (d) { return d.indicators; }));
+    var recsBy = generalRecommendations(files, groups, byCode, { contentRead: opts.contentRead || 0 });
     var indicatorsScore = avg(allInd);
     var commitmentScore = avg(commitment);
     return {
@@ -728,7 +730,8 @@ var ComplianceEngine = (function () {
         unmet: allInd.concat(commitment).filter(function (r) { return r.status === 'unmet'; }).length,
         total: allInd.length + commitment.length
       },
-      generalRecommendations: generalRecommendations(files, groups, byCode, { contentRead: opts.contentRead || 0 }),
+      recommendationsBy: recsBy,
+      generalRecommendations: recsBy.general.concat(recsBy.indicators, recsBy.commitment),
       unmatched: unmatched.slice(0, 30).map(function (f) { return { name: f.name, url: f.url || '' }; }),
       unmatchedCount: unmatched.length,
       scannedFiles: files.length
