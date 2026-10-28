@@ -7,7 +7,11 @@
  * طريقة المطابقة (من الأقوى إلى الأضعف):
  *  1. رقم المؤشر في اسم المجلد أو الملف (مثل "1.2" أو "1-2" أو "م1.2").
  *  2. كلمات المؤشر المفتاحية في مسار الملف واسمه، بعد توحيد الحروف العربية.
- *  3. محتوى مستندات جوجل (Docs) للملفات التي لم تُحسم من اسمها.
+ *  3. محتوى الملف للملفات التي لم تُحسم من اسمها: مستندات وجداول وعروض جوجل،
+ *     وملفات PDF وWord والصور (عبر تحويلها إلى نص بخدمة Drive مع OCR عربي).
+ *     نتيجة قراءة كل ملف تُحفظ مؤقتاً 6 ساعات، فإعادة الفحص تكمل ما لم يُقرأ.
+ *
+ * يتطلب تفعيل الخدمة المتقدمة Drive API في المحرر: Services ثم + ثم Drive API.
  *
  * حالة كل مؤشر:
  *  ok   مكتمل: شاهدان فأكثر غير فارغين، وأحدها على الأقل محدَّث خلال المدة المحددة.
@@ -19,7 +23,10 @@ var CONFIG = {
   MIN_FILES_OK: 2,          // عدد الشواهد المطلوب لاعتبار المؤشر مكتملاً
   RECENT_DAYS: 365,         // الشاهد "حديث" إذا عُدّل خلال هذه المدة
   MAX_FILES: 3000,          // حد أعلى لعدد الملفات المفحوصة (حماية من مهلة الست دقائق)
-  MAX_CONTENT_READS: 40,    // عدد مستندات Docs التي يُقرأ محتواها
+  MAX_CONTENT_READS: 60,    // حد أعلى لعدد الملفات التي يُقرأ محتواها في الفحص الواحد
+  CONTENT_TIME_MS: 270000,  // التوقف عن قراءة المحتوى بعد 4.5 دقائق (جوجل يوقف السكربت عند 6)
+  MAX_OCR_BYTES: 10485760,  // لا يُحوَّل ملف أكبر من 10 ميجابايت
+  CONTENT_CHARS: 6000,      // عدد الأحرف المقروءة من كل ملف
   MIN_KEYWORD_HITS: 2       // عدد الكلمات المفتاحية المطلوب للمطابقة من الاسم وحده
 };
 
@@ -146,14 +153,20 @@ function evaluateFiles(files) {
     if (code) buckets[code].push(f); else unmatched.push(f);
   });
 
-  // قراءة محتوى مستندات جوجل التي لم تُطابَق من الاسم
-  var reads = 0;
+  // قراءة محتوى الملفات التي لم تُطابَق من الاسم
+  var started = Date.now();
+  var cache = CacheService.getScriptCache();
+  var reads = 0, pending = 0;
   unmatched.forEach(function (f) {
-    if (reads >= CONFIG.MAX_CONTENT_READS || f.mime !== MimeType.GOOGLE_DOCS) return;
-    reads++;
-    var text = '';
-    try { text = DocumentApp.openById(f.id).getBody().getText().slice(0, 5000); } catch (err) { return; }
-    var code = matchText(text, true);
+    if (!isReadable(f)) return;
+    var key = 'c_' + f.id + '_' + f.updated;
+    var code = cache.get(key);
+    if (code === null) {
+      if (reads >= CONFIG.MAX_CONTENT_READS || Date.now() - started > CONFIG.CONTENT_TIME_MS) { pending++; return; }
+      reads++;
+      code = matchText(readContent(f), true) || '';
+      cache.put(key, code, 21600);
+    }
     if (code) buckets[code].push(f);
   });
 
@@ -190,9 +203,71 @@ function evaluateFiles(files) {
   return {
     score: Math.round(score),
     scannedFiles: files.length,
+    contentRead: reads,
+    contentPending: pending,
     truncated: files.length >= CONFIG.MAX_FILES,
     results: results
   };
+}
+
+var OCR_MIMES = {
+  'application/pdf': true,
+  'application/msword': true,
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': true,
+  'image/jpeg': true,
+  'image/png': true,
+  'image/gif': true,
+  'image/bmp': true,
+  'image/webp': true
+};
+
+function isReadable(f) {
+  return f.mime === MimeType.GOOGLE_DOCS || f.mime === MimeType.GOOGLE_SHEETS ||
+         f.mime === MimeType.GOOGLE_SLIDES || (OCR_MIMES[f.mime] && f.size <= CONFIG.MAX_OCR_BYTES);
+}
+
+// يعيد نص الملف، أو نصاً فارغاً إن تعذرت قراءته
+function readContent(f) {
+  var max = CONFIG.CONTENT_CHARS;
+  try {
+    if (f.mime === MimeType.GOOGLE_DOCS) return DocumentApp.openById(f.id).getBody().getText().slice(0, max);
+    if (f.mime === MimeType.GOOGLE_SHEETS) {
+      var parts = [];
+      SpreadsheetApp.openById(f.id).getSheets().slice(0, 3).forEach(function (sh) {
+        parts.push(sh.getName());
+        var rows = Math.min(sh.getLastRow(), 40), cols = Math.min(sh.getLastColumn(), 15);
+        if (rows > 0 && cols > 0) parts.push(sh.getRange(1, 1, rows, cols).getDisplayValues().join(' '));
+      });
+      return parts.join(' ').slice(0, max);
+    }
+    if (f.mime === MimeType.GOOGLE_SLIDES) {
+      var texts = [];
+      SlidesApp.openById(f.id).getSlides().slice(0, 15).forEach(function (sl) {
+        sl.getShapes().forEach(function (sh) { try { texts.push(sh.getText().asString()); } catch (e) {} });
+      });
+      return texts.join(' ').slice(0, max);
+    }
+    return ocrText(f.id).slice(0, max);
+  } catch (err) {
+    return '';
+  }
+}
+
+// ينسخ الملف مؤقتاً كمستند جوجل (يحوّل Word ويطبّق OCR على PDF والصور)، يقرأ نصه، ثم يحذف النسخة
+function ocrText(fileId) {
+  var copyId;
+  try {
+    if (Drive.Files.insert) { // Drive API v2
+      copyId = Drive.Files.copy({ title: 'tmp-ocr', mimeType: MimeType.GOOGLE_DOCS }, fileId,
+        { ocr: true, ocrLanguage: 'ar', supportsAllDrives: true }).id;
+    } else { // Drive API v3
+      copyId = Drive.Files.copy({ name: 'tmp-ocr', mimeType: MimeType.GOOGLE_DOCS }, fileId,
+        { ocrLanguage: 'ar', supportsAllDrives: true, fields: 'id' }).id;
+    }
+    return DocumentApp.openById(copyId).getBody().getText();
+  } finally {
+    if (copyId) { try { Drive.Files.remove(copyId); } catch (e) { DriveApp.getFileById(copyId).setTrashed(true); } }
+  }
 }
 
 function isEmptyFile(f) {
@@ -262,5 +337,11 @@ function toLatinDigits(s) {
 // يُشغَّل يدوياً من محرر السكربت لتجربة مجلد قبل النشر
 function testRun() {
   var res = doGet({ parameter: { url: 'ضع_رابط_مجلد_للتجربة_هنا' } });
-  Logger.log(res.getContent());
+  var data = JSON.parse(res.getContent());
+  if (data.error) { Logger.log(data.error); return; }
+  Logger.log('النسبة: ' + data.score + '% | الملفات: ' + data.scannedFiles +
+             ' | قُرئ محتواها: ' + data.contentRead + ' | بقي: ' + data.contentPending);
+  data.results.forEach(function (r) {
+    Logger.log(r.ind + ' ← ' + r.text + ' | ' + r.files.map(function (f) { return f.name; }).join(' ، '));
+  });
 }
