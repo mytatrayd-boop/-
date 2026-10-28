@@ -446,6 +446,13 @@
                 const res = await fetch(SCRIPT_URL + '?' + q.toString());
                 result = await res.json();
                 if (result.error) throw new Error(result.error);
+                // السكربت المحدث يعيد قائمة الملفات، فتُقيَّم هنا بأحدث معايير الصفحة
+                if (Array.isArray(result.files)) {
+                    const fresh = E.evaluate(result.files, Object.assign({ contentRead: result.contentRead || 0 }, opts));
+                    fresh.contentRead = result.contentRead || 0;
+                    fresh.contentPending = result.contentPending || 0;
+                    result = fresh;
+                }
             } else {
                 const zip = document.getElementById('zipFile').files[0];
                 const folder = document.getElementById('folderInput').files;
