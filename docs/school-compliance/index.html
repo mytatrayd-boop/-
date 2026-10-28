@@ -141,6 +141,16 @@
         }
         .gauge-inner { width: 118px; height: 118px; border-radius: 50%; background: #edf3f7; display: grid; place-items: center; }
         .gauge .score-num { color: var(--c); }
+        .gauge-sm { width: 104px; height: 104px; }
+        .gauge-sm .gauge-inner { width: 80px; height: 80px; background: #fff; }
+        .gauge-sm .score-num { font-size: 1.4rem; }
+        .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+        .summary-item { text-align: center; text-decoration: none; color: var(--text); background: #edf3f7; border-radius: 10px; padding: 10px 6px; font-size: 0.82rem; }
+        .section-title { font-size: 1.05rem; font-weight: bold; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .section-title small { font-weight: normal; color: var(--muted); font-size: 0.75rem; }
+        .section-num { background: var(--primary); color: #fff; border-radius: 50%; width: 26px; height: 26px; display: inline-grid; place-items: center; font-size: 0.85rem; }
+        #secCommitment .section-num { background: var(--accent); color: var(--primary-dark); }
+        @media print { .section { break-before: page; } .summary-item { background: none; border: 1px solid var(--border); } }
         .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; margin-top: 4px; }
         .badge-success { background: var(--success-bg); color: var(--success); }
         .badge-warning { background: var(--warning-bg); color: var(--warning); }
@@ -279,28 +289,52 @@
                 </div>
                 <div class="muted" id="resDate"></div>
             </div>
-
-            <div class="score-header">
-                <div style="font-size: 0.85rem; color: #555;">نسبة إنجاز السحابة</div>
-                <div class="gauge" id="gauge"><div class="gauge-inner"><div class="score-num" id="totalScore">0%</div></div></div>
-                <div id="statusBadge" class="badge"></div>
-                <div class="counts" id="counts"></div>
+            <div class="summary">
+                <a class="summary-item" href="#secIndicators">
+                    <div class="gauge gauge-sm" id="gaugeSumInd"><div class="gauge-inner"><div class="score-num" id="sumInd">0%</div></div></div>
+                    <strong>مؤشرات التقويم المدرسي</strong>
+                </a>
+                <a class="summary-item" href="#secCommitment">
+                    <div class="gauge gauge-sm" id="gaugeSumCom"><div class="gauge-inner"><div class="score-num" id="sumCom">0%</div></div></div>
+                    <strong>معايير الالتزام والامتثال</strong>
+                </a>
             </div>
-
-            <div class="bars" id="bars"></div>
-
-            <div class="recs">
-                <h4>💡 التوصيات العامة لاستكمال النواقص</h4>
+            <p class="muted" style="text-align:center;" id="scanInfo"></p>
+            <div class="recs" id="generalBox">
+                <h4>🗂️ توصيات عامة لتنظيم السحابة</h4>
                 <ul id="generalRecs"></ul>
             </div>
+        </div>
 
-            <label class="filter no-print"><input type="checkbox" id="onlyGaps"> عرض المؤشرات غير المكتملة فقط</label>
-            <div id="details"></div>
-
-            <div class="btn-row no-print">
-                <button type="button" class="btn" onclick="window.print()">🖨️ طباعة التقرير / حفظ PDF</button>
-                <button type="button" class="btn btn-whatsapp" id="shareBtn">💬 مشاركة الملخص عبر واتساب</button>
+        <div class="card section" id="secIndicators">
+            <div class="section-title"><span class="section-num">١</span> مؤشرات التقويم المدرسي <small>خارطة التحقق ٢٠٢٦</small></div>
+            <div class="score-header">
+                <div class="gauge" id="gaugeInd"><div class="gauge-inner"><div class="score-num" id="scoreInd">0%</div></div></div>
+                <div id="badgeInd" class="badge"></div>
+                <div class="counts" id="countsInd"></div>
             </div>
+            <div class="bars" id="barsInd"></div>
+            <div class="recs"><h4>💡 توصيات استكمال المؤشرات</h4><ul id="recsInd"></ul></div>
+            <label class="filter no-print"><input type="checkbox" class="only-gaps" data-target="detailsInd"> عرض المؤشرات غير المكتملة فقط</label>
+            <div id="detailsInd"></div>
+        </div>
+
+        <div class="card section" id="secCommitment">
+            <div class="section-title"><span class="section-num">٢</span> معايير الالتزام التعليمي والامتثال <small>متابعة الأداء والالتزام التعليمي</small></div>
+            <div class="score-header">
+                <div class="gauge" id="gaugeCom"><div class="gauge-inner"><div class="score-num" id="scoreCom">0%</div></div></div>
+                <div id="badgeCom" class="badge"></div>
+                <div class="counts" id="countsCom"></div>
+            </div>
+            <div class="bars" id="barsCom"></div>
+            <div class="recs"><h4>💡 توصيات استكمال معايير الالتزام</h4><ul id="recsCom"></ul></div>
+            <label class="filter no-print"><input type="checkbox" class="only-gaps" data-target="detailsCom"> عرض المعايير غير المكتملة فقط</label>
+            <div id="detailsCom"></div>
+        </div>
+
+        <div class="btn-row no-print">
+            <button type="button" class="btn" onclick="window.print()">🖨️ طباعة التقرير / حفظ PDF</button>
+            <button type="button" class="btn btn-whatsapp" id="shareBtn">💬 مشاركة الملخص عبر واتساب</button>
         </div>
     </div>
 
@@ -311,7 +345,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="engine.js?v=a0cc7371"></script>
+<script src="engine.js?v=a79f8a17"></script>
 <script>
     // رابط خدمة الفحص (Google Apps Script)
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTYnkBd8FVjD3Lz6sA41LONzbwHqTJte0USzn0wDveO4QjcTBCfG5OA9_bFNVictKA/exec';
@@ -474,9 +508,9 @@
 
     // ───── التقرير ─────
     function level(score) {
-        if (score >= 85) return ['badge-success', 'سحابة مكتملة / ممتثلة'];
-        if (score >= 70) return ['badge-warning', 'سحابة متقدمة / تحتاج استكمالاً محدوداً'];
-        if (score >= 50) return ['badge-warning', 'سحابة متوسطة / نواقص واضحة'];
+        if (score >= 85) return ['badge-success', 'مكتمل / ممتثل'];
+        if (score >= 70) return ['badge-warning', 'متقدم / يحتاج استكمالاً محدوداً'];
+        if (score >= 50) return ['badge-warning', 'متوسط / نواقص واضحة'];
         return ['badge-danger', 'قصور في الشواهد / يتطلب استكمالاً عاجلاً'];
     }
 
@@ -500,12 +534,50 @@
         }
         requestAnimationFrame(step);
     }
-    function animateGauge(score) {
-        const gauge = document.getElementById('gauge');
-        countUp(document.getElementById('totalScore'), score, v => {
+    function animateGauge(gaugeId, numId, score) {
+        const gauge = document.getElementById(gaugeId);
+        countUp(document.getElementById(numId), score, v => {
             gauge.style.setProperty('--p', v);
             gauge.style.setProperty('--c', scoreColor(v));
         });
+    }
+
+    function renderBars(id, bars) {
+        const box = document.getElementById(id);
+        box.innerHTML = bars.map(([n, s]) =>
+            `<div class="bar-row"><span>${escapeHtml(n)}</span><div class="bar-bg"><div class="bar-fill" data-score="${s}" style="background:${barGradient(s)}"></div></div><b data-count="${s}">0%</b></div>`).join('');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            box.querySelectorAll('.bar-fill').forEach(el => { el.style.width = el.dataset.score + '%'; });
+            box.querySelectorAll('[data-count]').forEach(el => countUp(el, +el.dataset.count));
+        }));
+    }
+
+    function countsHtml(list, noun) {
+        const c = s => list.filter(x => x.status === s).length;
+        return `<span>✅ متحقق: <b>${c('met')}</b></span><span>🟡 جزئي: <b>${c('partial')}</b></span>` +
+               `<span>❌ غير متحقق: <b>${c('unmet')}</b></span><span>📋 ${noun}: <b>${list.length}</b></span>`;
+    }
+
+    function setBadge(id, score) {
+        const [cls, text] = level(score);
+        const el = document.getElementById(id);
+        el.className = 'badge ' + cls;
+        el.textContent = text;
+    }
+
+    function listRecs(id, recs) {
+        document.getElementById(id).innerHTML = recs.map(t => `<li>${escapeHtml(t)}</li>`).join('') || '<li>لا توجد توصيات.</li>';
+    }
+
+    function gapsRec(list, noun) {
+        const gaps = list.filter(x => x.status === 'unmet');
+        return gaps.length
+            ? [`ابدأ ب${noun} غير المتحققة (${gaps.length}): ` + gaps.slice(0, 10).map(x => x.code).join('، ') + (gaps.length > 10 ? '، ...' : '.')]
+            : [];
+    }
+
+    function avgScore(list) {
+        return list.length ? Math.round(list.reduce((s, x) => s + x.score, 0) / list.length) : 0;
     }
 
     function rowHtml(r) {
@@ -525,10 +597,10 @@
         </tr>`;
     }
 
-    function tableHtml(title, rows) {
+    function tableHtml(title, rows, head) {
         return `<div class="domain-title">${escapeHtml(title)}</div>
             <div class="table-wrap"><table class="ind-table">
-                <thead><tr><th>الرمز</th><th>المؤشر</th><th>الحالة</th><th>الشواهد المرصودة</th><th>المطلوب لاستكمال النواقص</th></tr></thead>
+                <thead><tr><th>الرمز</th><th>${head}</th><th>الحالة</th><th>الشواهد المرصودة</th><th>المطلوب لاستكمال النواقص</th></tr></thead>
                 <tbody>${rows.map(rowHtml).join('')}</tbody>
             </table></div>`;
     }
@@ -540,47 +612,54 @@
         document.getElementById('resSupervisor').textContent = info.supervisor;
         document.getElementById('resDate').textContent = 'تاريخ الفحص: ' + new Date().toLocaleDateString('ar-SA');
 
-        animateGauge(r.score);
-        const [cls, text] = level(r.score);
-        const badge = document.getElementById('statusBadge');
-        badge.className = 'badge ' + cls;
-        badge.textContent = text;
-        document.getElementById('counts').innerHTML =
-            `<span>✅ متحقق: <b>${r.counts.met}</b></span><span>🟡 جزئي: <b>${r.counts.partial}</b></span>` +
-            `<span>❌ غير متحقق: <b>${r.counts.unmet}</b></span><span>📁 الملفات المفحوصة: <b>${r.scannedFiles}</b></span>`;
-
-        const bars = r.domains.map(d => [d.name, d.score]).concat([['معايير الالتزام التعليمي', r.commitmentScore]]);
-        document.getElementById('bars').innerHTML = bars.map(([n, s]) =>
-            `<div class="bar-row"><span>${escapeHtml(n)}</span><div class="bar-bg"><div class="bar-fill" data-score="${s}" style="background:${barGradient(s)}"></div></div><b data-count="${s}">0%</b></div>`).join('');
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            document.querySelectorAll('#bars .bar-fill').forEach(el => { el.style.width = el.dataset.score + '%'; });
-            document.querySelectorAll('#bars [data-count]').forEach(el => countUp(el, +el.dataset.count));
-        }));
+        const indicators = r.domains.flatMap(d => d.indicators);
+        const indScore = avgScore(indicators), comScore = avgScore(r.commitment);
+        animateGauge('gaugeSumInd', 'sumInd', indScore);
+        animateGauge('gaugeSumCom', 'sumCom', comScore);
+        document.getElementById('scanInfo').textContent = `📁 الملفات المفحوصة: ${r.scannedFiles}` + (r.contentRead ? ` | قُرئ محتوى ${r.contentRead} منها` : '');
 
         // برامج ١٠٠ يوم لم تعد مطلوبة؛ تُستبعد حتى لو أعادها سكربت قديم
-        const recs = r.generalRecommendations.filter(t => !/(١٠٠|100)\s*يوم/.test(t));
-        if (r.contentPending > 0) recs.push(`عدد الملفات التي لم يُقرأ محتواها بعد: ${r.contentPending}. أعد الفحص لإكمال قراءتها ورفع دقة النتيجة.`);
-        if (r.unmatchedCount > 0) recs.push(`عدد الملفات التي لم يُعرف مؤشرها: ${r.unmatchedCount}. انقلها إلى مجلد المؤشر المناسب أو أعد تسميتها.`);
-        const gaps = r.domains.flatMap(d => d.indicators).concat(r.commitment).filter(x => x.status === 'unmet');
-        if (gaps.length) recs.push(`ابدأ بالمؤشرات غير المتحققة (${gaps.length}): ` + gaps.slice(0, 8).map(x => x.code).join('، ') + (gaps.length > 8 ? '، ...' : '.'));
-        document.getElementById('generalRecs').innerHTML = recs.map(t => `<li>${escapeHtml(t)}</li>`).join('') || '<li>لا توجد توصيات عامة.</li>';
+        const not100 = t => !/(١٠٠|100)\s*يوم/.test(t);
+        const by = r.recommendationsBy || { general: r.generalRecommendations || [], indicators: [], commitment: [] };
+        const general = by.general.filter(not100);
+        if (r.contentPending > 0) general.push(`عدد الملفات التي لم يُقرأ محتواها بعد: ${r.contentPending}. أعد الفحص لإكمال قراءتها ورفع دقة النتيجة.`);
+        if (r.unmatchedCount > 0) general.push(`عدد الملفات التي لم يُعرف مؤشرها أو معيارها: ${r.unmatchedCount}. انقلها إلى المجلد المناسب أو أعد تسميتها.`);
+        listRecs('generalRecs', general);
+        document.getElementById('generalBox').style.display = general.length ? '' : 'none';
 
-        let html = r.domains.map(d => tableHtml(`مجال ${d.name} — ${d.score}%`, d.indicators)).join('');
-        html += tableHtml(`معايير الالتزام التعليمي — ${r.commitmentScore}%`, r.commitment);
-        document.getElementById('details').innerHTML = html;
+        // القسم الأول: مؤشرات التقويم المدرسي
+        animateGauge('gaugeInd', 'scoreInd', indScore);
+        setBadge('badgeInd', indScore);
+        document.getElementById('countsInd').innerHTML = countsHtml(indicators, 'المؤشرات');
+        renderBars('barsInd', r.domains.map(d => ['مجال ' + d.name, d.score]));
+        listRecs('recsInd', by.indicators.filter(not100).concat(gapsRec(indicators, 'المؤشرات')));
+        document.getElementById('detailsInd').innerHTML =
+            r.domains.map(d => tableHtml(`مجال ${d.name} — ${d.score}%`, d.indicators, 'المؤشر')).join('');
+
+        // القسم الثاني: معايير الالتزام التعليمي والامتثال
+        animateGauge('gaugeCom', 'scoreCom', comScore);
+        setBadge('badgeCom', comScore);
+        document.getElementById('countsCom').innerHTML = countsHtml(r.commitment, 'المعايير');
+        const depts = [...new Set(r.commitment.map(c => c.dept))];
+        renderBars('barsCom', depts.map(d => [d, avgScore(r.commitment.filter(c => c.dept === d))]));
+        listRecs('recsCom', by.commitment.filter(not100).concat(gapsRec(r.commitment, 'المعايير')));
+        document.getElementById('detailsCom').innerHTML = tableHtml(`معايير الالتزام التعليمي — ${comScore}%`, r.commitment, 'المعيار');
+
         applyFilter();
-
+        lastResult.indScore = indScore;
+        lastResult.comScore = comScore;
         document.getElementById('reportSection').style.display = 'block';
         document.getElementById('reportSection').scrollIntoView({ behavior: 'smooth' });
     }
 
     function applyFilter() {
-        const only = document.getElementById('onlyGaps').checked;
-        document.querySelectorAll('#details tr[data-status]').forEach(tr => {
-            tr.style.display = only && tr.dataset.status === 'met' ? 'none' : '';
+        document.querySelectorAll('.only-gaps').forEach(box => {
+            document.querySelectorAll('#' + box.dataset.target + ' tr[data-status]').forEach(tr => {
+                tr.style.display = box.checked && tr.dataset.status === 'met' ? 'none' : '';
+            });
         });
     }
-    document.getElementById('onlyGaps').addEventListener('change', applyFilter);
+    document.querySelectorAll('.only-gaps').forEach(box => box.addEventListener('change', applyFilter));
 
     document.getElementById('shareBtn').addEventListener('click', () => {
         if (!lastResult) return;
@@ -590,10 +669,11 @@
             '• المدرسة: ' + info.name,
             '• الرقم الإحصائي: ' + info.code,
             '• مشرف التميز: ' + info.supervisor,
-            '• نسبة إنجاز السحابة: *' + r.score + '%*',
-            ...r.domains.map(d => '• ' + d.name + ': ' + d.score + '%'),
-            '• معايير الالتزام التعليمي: ' + r.commitmentScore + '%',
-            '• متحقق ' + r.counts.met + ' | جزئي ' + r.counts.partial + ' | غير متحقق ' + r.counts.unmet
+            '',
+            '*١) مؤشرات التقويم المدرسي: ' + lastResult.indScore + '%*',
+            ...r.domains.map(d => '   • ' + d.name + ': ' + d.score + '%'),
+            '',
+            '*٢) معايير الالتزام التعليمي والامتثال: ' + lastResult.comScore + '%*'
         ];
         window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     });
