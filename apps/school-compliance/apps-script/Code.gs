@@ -237,7 +237,7 @@ var ComplianceEngine = (function () {
         { t: 'دعم سريعي التعلم والموهوبين', k: ['موهوب', 'سريعي التعلم'] }
       ] },
     { code: '2-1-1-4', domain: 2, standard: 'بناء خبرات التعلم', title: 'تفعّل المدرسة التقنية الرقمية لدعم تعلم المتعلمين وتلبية احتياجاتهم',
-      strong: ['التقنية الرقمية', 'التعلم الالكتروني', 'منصة مدرستي', 'التعليم عن بعد', 'الامن الرقمي', 'المواطنة الرقمية'],
+      strong: ['التقنية الرقمية', 'المهارات الرقمية', 'التعلم الالكتروني', 'منصة مدرستي', 'التعليم عن بعد', 'الامن الرقمي', 'المواطنة الرقمية'],
       items: [
         { t: 'إجراءات لدعم التعلم الإلكتروني ضمن التعليم اليومي', k: ['الكتروني', 'مدرستي', 'منصة'] },
         { t: 'إجراءات للطوارئ (التعلم عن بعد)', k: ['عن بعد', 'طوارئ'] },
@@ -574,13 +574,47 @@ var ComplianceEngine = (function () {
     return false;
   }
 
-  // يلتقط رمز مؤشر رباعي مثل 1-1-1-1 أو 2.1.1.4 أو ١-٢-١-٣ ، ويعيد آخر رمز في النص (الأعمق في المسار)
+  // ترقيم تقرير التقويم الخارجي (بطاقة التقويم المدرسي من الهيئة) يختلف عن ترقيم دليل ٢٠٢٦:
+  // المعيار فيه هو الرقم الثالث (1-1-2-1) لا الثاني (1-2-1-1). هذا الجدول يحوّل رموز التقرير إلى رموز الدليل.
+  var ETEC_CODES = {
+    '1-1-1-1': '1-1-1-1', '1-1-1-2': '1-1-1-2',
+    '1-1-2-1': '1-2-1-1', '1-1-2-2': '1-2-1-2', '1-1-2-3': '1-5-1-2', '1-1-2-4': '1-2-1-3', '1-1-2-5': '1-2-1-4', '1-1-2-6': '1-2-1-5',
+    '1-1-3-1': '1-3-1-1', '1-1-3-2': '1-3-1-2', '1-1-3-3': '1-3-1-3',
+    '1-1-4-1': '1-4-1-4', '1-1-4-2': '1-4-1-5', '1-1-4-3': '1-4-1-6', '1-1-4-4': '1-4-1-7',
+    '2-1-1-1': '2-1-1-1', '2-1-1-2': '2-1-1-2', '2-1-1-3': '2-1-1-3', '2-1-1-4': '2-1-1-4', '2-1-1-5': '2-1-1-5',
+    '2-1-1-6': '2-1-1-6', '2-1-1-7': '2-1-1-7', '2-1-1-8': '2-1-1-8', '2-1-1-9': '2-1-1-4', '2-1-1-10': '2-1-1-9',
+    '2-1-2-1': '2-2-1-1', '2-1-2-2': '2-2-1-3', '2-1-2-3': '2-2-1-4',
+    '3-1-1-1': '3-1-1-7', '3-1-1-2': '3-1-1-7',
+    '3-1-2-1': '3-2-1-1', '3-1-2-2': '3-2-1-2', '3-1-2-3': '3-2-1-3', '3-1-2-4': '3-2-1-4',
+    '3-1-2-5': '3-2-1-5', '3-1-2-6': '3-2-1-6', '3-1-2-7': '3-2-1-7',
+    '4-1-1-1': '4-1-1-2', '4-1-1-2': '4-1-1-3', '4-1-1-3': '4-1-1-4',
+    '4-1-2-1': '4-2-1-1', '4-1-2-2': '4-2-1-2', '4-1-2-3': '4-2-1-3'
+  };
+
+  // يلتقط رمز مؤشر رباعي مثل 1-1-1-1 أو 2.1.1.10 أو ١-٢-١-٣ ، ويعيد آخر رمز في النص (الأعمق في المسار)
   function findCode(text) {
     var t = toLatinDigits(text);
-    var re = /(?:^|[^0-9])([1-4])\s*[-._]\s*([1-5])\s*[-._]\s*(1)\s*[-._]\s*([1-9])(?![0-9])/g;
+    var re = /(?:^|[^0-9])([1-4])\s*[-._]\s*([1-5])\s*[-._]\s*([1-5])\s*[-._]\s*(1[0-2]|[1-9])(?![0-9])/g;
     var m, last = null;
     while ((m = re.exec(t)) !== null) last = m[1] + '-' + m[2] + '-' + m[3] + '-' + m[4];
     return last;
+  }
+
+  // يحدد مؤشر الدليل المقصود بالرمز. إذا كان للرمز معنيان (ترقيم الدليل وترقيم التقرير الخارجي)
+  // يُحسم بعبارات المؤشر في اسم الملف ومجلده، وإلا يُعتمد ترقيم الدليل
+  function resolveCode(code, text, codes) {
+    if (!code) return null;
+    var guide = codes[code] || null;
+    var etec = ETEC_CODES[code] ? codes[ETEC_CODES[code]] || null : null;
+    if (!guide || !etec || guide === etec) return guide || etec;
+    var t = normalize(text);
+    var score = function (ind) {
+      var s = 0;
+      ind.strong.forEach(function (k) { if (hit(t, k)) s += 3; });
+      ind.items.forEach(function (it) { if (anyHit(t, it.k)) s += 1; });
+      return s;
+    };
+    return score(etec) > score(guide) ? etec : guide;
   }
 
   // ───────── التقييم ─────────
@@ -610,11 +644,12 @@ var ComplianceEngine = (function () {
   function classify(file, indicators, commitments, codes) {
     var name = normalize(file.name), path = normalize(file.path), content = file.text ? normalize(file.text) : '';
     var code = findCode(file.path + '/' + file.name);
-    var ind = (code && codes[code]) || bestByText(indicators, name) || bestByText(indicators, path) ||
+    var byCodeInd = resolveCode(code, file.path + ' ' + file.name, codes);
+    var ind = byCodeInd || bestByText(indicators, name) || bestByText(indicators, path) ||
               (content ? bestByText(indicators, content.slice(0, 1500)) : null);
     var com = bestByText(commitments, name) || bestByText(commitments, path) ||
               (content ? bestByText(commitments, content.slice(0, 1500)) : null);
-    return { indicator: ind, commitment: com, byCode: !!code };
+    return { indicator: ind, commitment: com, byCode: !!byCodeInd };
   }
 
   function scoreGroup(def, files, now) {
@@ -754,6 +789,7 @@ var ComplianceEngine = (function () {
 
   return {
     DOMAINS: DOMAINS, INDICATORS: INDICATORS, COMMITMENT: COMMITMENT, CONFIG: CONFIG,
+    ETEC_CODES: ETEC_CODES,
     evaluate: evaluate, normalize: normalize, findCode: findCode, needsContent: needsContent
   };
 })();

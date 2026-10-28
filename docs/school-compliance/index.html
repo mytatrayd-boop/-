@@ -133,17 +133,14 @@
 
         .score-header { text-align: center; background: #edf3f7; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
         .score-num { font-size: 2.2rem; font-weight: bold; color: var(--primary); }
-        .gauge {
-            --p: 0; --c: #a71d2a;
-            width: 150px; height: 150px; margin: 8px auto; border-radius: 50%;
-            background: conic-gradient(var(--c) calc(var(--p) * 1%), #dfe7ee 0);
-            display: grid; place-items: center;
-        }
-        .gauge-inner { width: 118px; height: 118px; border-radius: 50%; background: #edf3f7; display: grid; place-items: center; }
-        .gauge .score-num { color: var(--c); }
-        .gauge-sm { width: 104px; height: 104px; }
-        .gauge-sm .gauge-inner { width: 80px; height: 80px; background: #fff; }
-        .gauge-sm .score-num { font-size: 1.4rem; }
+        /* عداد على شكل عداد السرعة: قوس من 0 إلى 100 ومؤشر يقف على النسبة */
+        .speedo { position: relative; width: 230px; max-width: 100%; margin: 4px auto 0; }
+        .speedo svg { display: block; width: 100%; height: auto; direction: ltr; }
+        .speedo .score-num { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-size: 1.9rem; direction: ltr; font-variant-numeric: tabular-nums; }
+        .speedo-sm { width: 150px; }
+        .speedo-sm .score-num { font-size: 1.25rem; bottom: 0; }
+        .speedo .tick-label { font-size: 9px; fill: #667788; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .speedo-sm .tick-label { display: none; }
         .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
         .summary-item { text-align: center; text-decoration: none; color: var(--text); background: #edf3f7; border-radius: 10px; padding: 10px 6px; font-size: 0.82rem; }
         .section-title { font-size: 1.05rem; font-weight: bold; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -291,11 +288,11 @@
             </div>
             <div class="summary">
                 <a class="summary-item" href="#secIndicators">
-                    <div class="gauge gauge-sm" id="gaugeSumInd"><div class="gauge-inner"><div class="score-num" id="sumInd">0%</div></div></div>
+                    <div class="speedo speedo-sm" id="gaugeSumInd"><div class="score-num" id="sumInd">0%</div></div>
                     <strong>مؤشرات التقويم المدرسي</strong>
                 </a>
                 <a class="summary-item" href="#secCommitment">
-                    <div class="gauge gauge-sm" id="gaugeSumCom"><div class="gauge-inner"><div class="score-num" id="sumCom">0%</div></div></div>
+                    <div class="speedo speedo-sm" id="gaugeSumCom"><div class="score-num" id="sumCom">0%</div></div>
                     <strong>معايير الالتزام والامتثال</strong>
                 </a>
             </div>
@@ -309,7 +306,7 @@
         <div class="card section" id="secIndicators">
             <div class="section-title"><span class="section-num">١</span> مؤشرات التقويم المدرسي <small>خارطة التحقق ٢٠٢٦</small></div>
             <div class="score-header">
-                <div class="gauge" id="gaugeInd"><div class="gauge-inner"><div class="score-num" id="scoreInd">0%</div></div></div>
+                <div class="speedo" id="gaugeInd"><div class="score-num" id="scoreInd">0%</div></div>
                 <div id="badgeInd" class="badge"></div>
                 <div class="counts" id="countsInd"></div>
             </div>
@@ -322,7 +319,7 @@
         <div class="card section" id="secCommitment">
             <div class="section-title"><span class="section-num">٢</span> معايير الالتزام التعليمي والامتثال <small>متابعة الأداء والالتزام التعليمي</small></div>
             <div class="score-header">
-                <div class="gauge" id="gaugeCom"><div class="gauge-inner"><div class="score-num" id="scoreCom">0%</div></div></div>
+                <div class="speedo" id="gaugeCom"><div class="score-num" id="scoreCom">0%</div></div>
                 <div id="badgeCom" class="badge"></div>
                 <div class="counts" id="countsCom"></div>
             </div>
@@ -345,7 +342,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="engine.js?v=a79f8a17"></script>
+<script src="engine.js?v=f5df0b49"></script>
 <script>
     // رابط خدمة الفحص (Google Apps Script)
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTYnkBd8FVjD3Lz6sA41LONzbwHqTJte0USzn0wDveO4QjcTBCfG5OA9_bFNVictKA/exec';
@@ -534,11 +531,47 @@
         }
         requestAnimationFrame(step);
     }
+    // يرسم قوس العداد (240 درجة) مقسماً إلى شرائح ملونة من الأحمر إلى الأخضر، مع تدريج كل 10 ومؤشر
+    const SPEEDO = { cx: 100, cy: 100, r: 78, start: 150, sweep: 240, segments: 48 };
+    function polar(r, deg) {
+        const a = deg * Math.PI / 180;
+        return [SPEEDO.cx + r * Math.cos(a), SPEEDO.cy + r * Math.sin(a)];
+    }
+    function arcPath(r, a1, a2) {
+        const [x1, y1] = polar(r, a1), [x2, y2] = polar(r, a2);
+        return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${a2 - a1 > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+    }
+    function buildSpeedo(el) {
+        const { start, sweep, segments, r } = SPEEDO;
+        let svg = `<svg viewBox="0 0 200 165" aria-hidden="true">`;
+        svg += `<path d="${arcPath(r, start, start + sweep)}" stroke="#e3e9ef" stroke-width="16" fill="none"/>`;
+        for (let i = 0; i < segments; i++) {
+            const a1 = start + sweep * i / segments, a2 = start + sweep * (i + 1) / segments - 0.8;
+            svg += `<path class="seg" data-v="${(i + 1) * 100 / segments}" d="${arcPath(r, a1, a2)}" stroke="${scoreColor(i * 100 / (segments - 1))}" stroke-width="16" fill="none" opacity="0.15"/>`;
+        }
+        for (let v = 0; v <= 100; v += 5) {
+            const deg = start + sweep * v / 100, major = v % 10 === 0;
+            const [x1, y1] = polar(r - 12, deg), [x2, y2] = polar(r - (major ? 22 : 17), deg);
+            svg += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#8796a5" stroke-width="${major ? 1.6 : 0.8}"/>`;
+            if (major) {
+                const [tx, ty] = polar(r - 31, deg);
+                svg += `<text class="tick-label" x="${tx.toFixed(1)}" y="${(ty + 3).toFixed(1)}" text-anchor="middle">${v}</text>`;
+            }
+        }
+        svg += `<g class="needle" style="transform-origin:100px 100px; transform: rotate(${start}deg)">` +
+               `<polygon points="100,96.5 ${100 + r - 6},100 100,103.5" fill="#15293b"/></g>` +
+               `<circle cx="100" cy="100" r="8" fill="#15293b"/><circle cx="100" cy="100" r="3" fill="#d4af37"/>`;
+        svg += '</svg>';
+        el.insertAdjacentHTML('afterbegin', svg);
+    }
     function animateGauge(gaugeId, numId, score) {
-        const gauge = document.getElementById(gaugeId);
-        countUp(document.getElementById(numId), score, v => {
-            gauge.style.setProperty('--p', v);
-            gauge.style.setProperty('--c', scoreColor(v));
+        const el = document.getElementById(gaugeId);
+        if (!el.querySelector('svg')) buildSpeedo(el);
+        const needle = el.querySelector('.needle'), segs = el.querySelectorAll('.seg'), num = document.getElementById(numId);
+        countUp(num, score, v => {
+            needle.style.transform = `rotate(${SPEEDO.start + SPEEDO.sweep * v / 100}deg)`;
+            segs.forEach(seg => seg.setAttribute('opacity', +seg.dataset.v <= v + 0.01 ? '1' : '0.15'));
+            num.style.color = scoreColor(v);
         });
     }
 
