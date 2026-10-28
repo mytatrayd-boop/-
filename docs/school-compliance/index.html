@@ -133,6 +133,14 @@
 
         .score-header { text-align: center; background: #edf3f7; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
         .score-num { font-size: 2.2rem; font-weight: bold; color: var(--primary); }
+        .gauge {
+            --p: 0; --c: #a71d2a;
+            width: 150px; height: 150px; margin: 8px auto; border-radius: 50%;
+            background: conic-gradient(var(--c) calc(var(--p) * 1%), #dfe7ee 0);
+            display: grid; place-items: center;
+        }
+        .gauge-inner { width: 118px; height: 118px; border-radius: 50%; background: #edf3f7; display: grid; place-items: center; }
+        .gauge .score-num { color: var(--c); }
         .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; margin-top: 4px; }
         .badge-success { background: var(--success-bg); color: var(--success); }
         .badge-warning { background: var(--warning-bg); color: var(--warning); }
@@ -142,7 +150,9 @@
         .bars { display: grid; gap: 8px; margin-bottom: 14px; }
         .bar-row { display: grid; grid-template-columns: 130px 1fr 44px; align-items: center; gap: 8px; font-size: 0.8rem; }
         .bar-bg { height: 10px; background: #e6edf2; border-radius: 6px; overflow: hidden; }
-        .bar-fill { height: 100%; background: var(--primary); border-radius: 6px; }
+        .bar-fill { height: 100%; width: 0; border-radius: 6px; transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
+        .bar-row b { font-variant-numeric: tabular-nums; }
+        @media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
 
         .recs { background: #fffbea; border-right: 3px solid var(--accent); border-radius: 8px; padding: 12px; margin-bottom: 14px; }
         .recs h4 { font-size: 0.9rem; color: var(--primary); margin-bottom: 6px; }
@@ -272,7 +282,7 @@
 
             <div class="score-header">
                 <div style="font-size: 0.85rem; color: #555;">نسبة إنجاز السحابة</div>
-                <div class="score-num" id="totalScore">0%</div>
+                <div class="gauge" id="gauge"><div class="gauge-inner"><div class="score-num" id="totalScore">0%</div></div></div>
                 <div id="statusBadge" class="badge"></div>
                 <div class="counts" id="counts"></div>
             </div>
@@ -463,6 +473,34 @@
         return ['badge-danger', 'قصور في الشواهد / يتطلب استكمالاً عاجلاً'];
     }
 
+    // لون النسبة يتدرج من الأحمر (0%) إلى الأصفر (50%) إلى الأخضر (100%)
+    function scoreColor(s, light) {
+        return `hsl(${Math.round(s * 1.2)}, ${light ? 70 : 62}%, ${light ? 58 : 38}%)`;
+    }
+    function barGradient(s) {
+        return `linear-gradient(to left, ${scoreColor(s, true)}, ${scoreColor(s)})`;
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function countUp(el, target, onStep) {
+        const dur = reduceMotion ? 0 : 1200, start = performance.now();
+        function step(now) {
+            const t = dur ? Math.min(1, (now - start) / dur) : 1;
+            const v = Math.round(target * (1 - Math.pow(1 - t, 3)));
+            el.textContent = v + '%';
+            if (onStep) onStep(v);
+            if (t < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+    function animateGauge(score) {
+        const gauge = document.getElementById('gauge');
+        countUp(document.getElementById('totalScore'), score, v => {
+            gauge.style.setProperty('--p', v);
+            gauge.style.setProperty('--c', scoreColor(v));
+        });
+    }
+
     function rowHtml(r) {
         const files = r.files.map(f => {
             const u = safeUrl(f.url);
@@ -495,7 +533,7 @@
         document.getElementById('resSupervisor').textContent = info.supervisor;
         document.getElementById('resDate').textContent = 'تاريخ الفحص: ' + new Date().toLocaleDateString('ar-SA');
 
-        document.getElementById('totalScore').textContent = r.score + '%';
+        animateGauge(r.score);
         const [cls, text] = level(r.score);
         const badge = document.getElementById('statusBadge');
         badge.className = 'badge ' + cls;
@@ -506,7 +544,11 @@
 
         const bars = r.domains.map(d => [d.name, d.score]).concat([['معايير الالتزام التعليمي', r.commitmentScore]]);
         document.getElementById('bars').innerHTML = bars.map(([n, s]) =>
-            `<div class="bar-row"><span>${escapeHtml(n)}</span><div class="bar-bg"><div class="bar-fill" style="width:${s}%"></div></div><b>${s}%</b></div>`).join('');
+            `<div class="bar-row"><span>${escapeHtml(n)}</span><div class="bar-bg"><div class="bar-fill" data-score="${s}" style="background:${barGradient(s)}"></div></div><b data-count="${s}">0%</b></div>`).join('');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            document.querySelectorAll('#bars .bar-fill').forEach(el => { el.style.width = el.dataset.score + '%'; });
+            document.querySelectorAll('#bars [data-count]').forEach(el => countUp(el, +el.dataset.count));
+        }));
 
         const recs = r.generalRecommendations.slice();
         if (r.contentPending > 0) recs.push(`عدد الملفات التي لم يُقرأ محتواها بعد: ${r.contentPending}. أعد الفحص لإكمال قراءتها ورفع دقة النتيجة.`);
