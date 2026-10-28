@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منظومة التقويم الذكي الآلي للشواهد والامتثال المدرسية</title>
+    <title>فحص السحابة المدرسية</title>
     <style>
         :root {
             --primary: #214358;
@@ -12,10 +12,14 @@
             --bg: #f4f6f8;
             --card-bg: #ffffff;
             --text: #2c3e50;
+            --muted: #667788;
             --border: #d0dbe5;
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
+            --success: #1e7e34;
+            --success-bg: #d4edda;
+            --warning: #856404;
+            --warning-bg: #fff3cd;
+            --danger: #a71d2a;
+            --danger-bg: #f8d7da;
         }
 
         * {
@@ -30,12 +34,10 @@
             color: var(--text);
             padding: 12px;
             direction: rtl;
+            line-height: 1.6;
         }
 
-        .container {
-            max-width: 850px;
-            margin: 0 auto;
-        }
+        .container { max-width: 900px; margin: 0 auto; }
 
         header {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
@@ -46,17 +48,8 @@
             margin-bottom: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-
-        header h1 {
-            font-size: 1.3rem;
-            margin-bottom: 6px;
-            color: var(--accent);
-        }
-
-        header p {
-            font-size: 0.85rem;
-            opacity: 0.9;
-        }
+        header h1 { font-size: 1.3rem; margin-bottom: 6px; color: var(--accent); }
+        header p { font-size: 0.85rem; opacity: 0.9; }
 
         .card {
             background: var(--card-bg);
@@ -66,77 +59,28 @@
             border: 1px solid var(--border);
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
-
         .card-title {
             font-size: 1.05rem;
             color: var(--primary);
             margin-bottom: 12px;
             padding-bottom: 6px;
             border-bottom: 2px solid var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .standards-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .standard-box {
-            background: #f8fafd;
-            border-right: 4px solid var(--primary);
-            padding: 10px 12px;
-            border-radius: 6px;
-            border: 1px solid #e1ecf4;
-        }
-
-        .standard-box h4 {
-            font-size: 0.9rem;
-            color: var(--primary-dark);
-            margin-bottom: 4px;
-        }
-
-        .standard-box p {
-            font-size: 0.8rem;
-            color: #666;
-            margin-bottom: 6px;
-        }
-
-        .indicators-list {
-            list-style: none;
-            padding-right: 12px;
-        }
-
-        .indicators-list li {
-            font-size: 0.78rem;
-            margin-bottom: 3px;
-            position: relative;
-        }
-
-        .indicators-list li::before {
-            content: "•";
-            color: var(--accent);
             font-weight: bold;
-            position: absolute;
-            right: -10px;
         }
 
-        .form-group {
-            margin-bottom: 12px;
-        }
+        .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+        .chip { background: #f8fafd; border: 1px solid #e1ecf4; border-right: 4px solid var(--primary); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; }
+        .chip strong { display: block; color: var(--primary-dark); font-size: 0.88rem; }
 
-        label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: var(--primary-dark);
-        }
+        details.guide { margin-top: 10px; font-size: 0.8rem; }
+        details.guide summary { cursor: pointer; color: var(--primary); font-weight: bold; }
+        details.guide h4 { margin: 10px 0 4px; color: var(--primary-dark); font-size: 0.85rem; }
+        details.guide li { margin-right: 18px; margin-bottom: 2px; }
 
-        input {
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 640px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--primary-dark); }
+        input, select {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border);
@@ -144,12 +88,14 @@
             font-size: 0.9rem;
             background: #fafafa;
         }
+        input:focus, select:focus { outline: none; border-color: var(--primary); background: #fff; }
 
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: #fff;
-        }
+        .tabs { display: flex; gap: 6px; margin: 14px 0 10px; flex-wrap: wrap; }
+        .tab { flex: 1; min-width: 140px; padding: 9px; border: 1px solid var(--border); background: #fafafa; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: var(--primary); }
+        .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .source-pane { display: none; }
+        .source-pane.active { display: block; }
+        .hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
 
         .btn {
             width: 100%;
@@ -161,109 +107,71 @@
             font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
-            margin-top: 10px;
-        }
-
-        .btn:hover {
-            background: var(--primary-dark);
-        }
-
-        .progress-box {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            width: 36px;
-            height: 36px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 12px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .report-section {
-            display: none;
-        }
-
-        .score-header {
-            text-align: center;
-            background: #edf3f7;
-            padding: 16px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-        }
-
-        .score-num {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: white;
-            margin-top: 4px;
-        }
-
-        .badge-success { background: var(--success); }
-        .badge-warning { background: var(--warning); color: #333; }
-        .badge-danger { background: var(--danger); }
-
-        .ind-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 0.8rem;
-        }
-
-        .ind-table th, .ind-table td {
-            padding: 8px;
-            border: 1px solid var(--border);
-            text-align: right;
-        }
-
-        .ind-table th {
-            background: #edf3f7;
-            color: var(--primary);
-        }
-
-        .status-pill {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.72rem;
-            font-weight: bold;
-            display: inline-block;
-        }
-
-        .pill-ok { background: #d4edda; color: #155724; }
-        .pill-part { background: #fff3cd; color: #856404; }
-        .pill-miss { background: #f8d7da; color: #721c24; }
-        .found-files { margin-top: 4px; font-size: 0.7rem; }
-        .found-files a { color: var(--primary); display: block; }
-
-        .btn-print {
-            background: var(--primary-dark);
             margin-top: 12px;
         }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-row .btn { flex: 1; min-width: 150px; }
+        .btn-whatsapp { background: #1e8a46; }
+        .btn-whatsapp:hover { background: #16703a; }
+
+        .progress-box { display: none; text-align: center; padding: 20px; }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary);
+            border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .error-box { display: none; background: var(--danger-bg); color: var(--danger); border-radius: 8px; padding: 12px; font-size: 0.85rem; margin-bottom: 16px; }
+
+        .report-section { display: none; }
+        .report-head { border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .report-head h2 { font-size: 1.1rem; color: var(--primary); }
+        .report-head p { font-size: 0.8rem; color: var(--muted); }
+
+        .score-header { text-align: center; background: #edf3f7; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
+        .score-num { font-size: 2.2rem; font-weight: bold; color: var(--primary); }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; margin-top: 4px; }
+        .badge-success { background: var(--success-bg); color: var(--success); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger); }
+        .counts { display: flex; justify-content: center; gap: 14px; margin-top: 8px; font-size: 0.8rem; flex-wrap: wrap; }
+
+        .bars { display: grid; gap: 8px; margin-bottom: 14px; }
+        .bar-row { display: grid; grid-template-columns: 130px 1fr 44px; align-items: center; gap: 8px; font-size: 0.8rem; }
+        .bar-bg { height: 10px; background: #e6edf2; border-radius: 6px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--primary); border-radius: 6px; }
+
+        .recs { background: #fffbea; border-right: 3px solid var(--accent); border-radius: 8px; padding: 12px; margin-bottom: 14px; }
+        .recs h4 { font-size: 0.9rem; color: var(--primary); margin-bottom: 6px; }
+        .recs li { font-size: 0.8rem; margin-right: 18px; margin-bottom: 4px; }
+
+        .filter { font-size: 0.8rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .filter input { width: auto; }
+
+        .domain-title { font-size: 0.95rem; color: var(--primary-dark); font-weight: bold; margin: 14px 0 6px; }
+        .table-wrap { overflow-x: auto; }
+        .ind-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 560px; }
+        .ind-table th, .ind-table td { padding: 7px; border: 1px solid var(--border); text-align: right; vertical-align: top; }
+        .ind-table th { background: #edf3f7; color: var(--primary); }
+        .ind-table .code { white-space: nowrap; font-weight: bold; direction: ltr; text-align: center; }
+        .status-pill { padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; display: inline-block; white-space: nowrap; }
+        .pill-met { background: var(--success-bg); color: var(--success); }
+        .pill-partial { background: var(--warning-bg); color: var(--warning); }
+        .pill-unmet { background: var(--danger-bg); color: var(--danger); }
+        .files a, .files span { display: block; color: var(--primary); font-size: 0.72rem; word-break: break-all; }
+        .todo { margin-right: 14px; font-size: 0.74rem; }
+        .muted { color: var(--muted); font-size: 0.72rem; }
+
+        footer { text-align: center; font-size: 0.68rem; color: #666; opacity: 0.55; margin: 20px 0 8px; line-height: 1.7; }
 
         @media print {
             body { background: white; padding: 0; }
-            .card, header { box-shadow: none; border: none; }
+            .card, header { box-shadow: none; }
             .no-print { display: none !important; }
             .report-section { display: block !important; }
+            tr { break-inside: avoid; }
         }
     </style>
 </head>
@@ -271,204 +179,371 @@
 
 <div class="container">
     <header>
-        <h1>منظومة التقويم الذكي الآلي للشواهد</h1>
-        <p>فحص وقراءة روابط سحابة جوجل واحتساب نِسب الامتثال آلياً</p>
+        <h1>أداة فحص السحابة المدرسية</h1>
+        <p>تقيس نسبة إنجاز الشواهد وفق مؤشرات التقويم المدرسي ٢٠٢٦ ومعايير الالتزام التعليمي، وتقدم التوصيات لاستكمال النواقص</p>
     </header>
 
     <div class="card no-print">
-        <div class="card-title">
-            <span>📋 معايير ومؤشرات الامتثال المعتمدة (12 مؤشراً)</span>
-        </div>
-        <div class="standards-grid">
-            <div class="standard-box">
-                <h4>1. القيادة المدرسية (الوزن: 25%)</h4>
-                <ul class="indicators-list">
-                    <li>الخطة التشغيلية ومؤشرات الأداء</li>
-                    <li>التقويم الذاتي وخطط التحسين</li>
-                    <li>تطوير الكادر وتنمية الأداء</li>
-                </ul>
-            </div>
-            <div class="standard-box">
-                <h4>2. التعليم والتعلم (الوزن: 35%)</h4>
-                <ul class="indicators-list">
-                    <li>استراتيجيات التدريس الحديثة وتفعيلها</li>
-                    <li>أدوات التقييم التكويني المستمر</li>
-                    <li>خطط رعاية الموهوبين ودعم الفئات</li>
-                </ul>
-            </div>
-            <div class="standard-box">
-                <h4>3. البيئة المدرسية (الوزن: 20%)</h4>
-                <ul class="indicators-list">
-                    <li>اشتراطات الأمن والسلامة وإجراءات الإخلاء</li>
-                    <li>برامج التوجيه الطلابي والانضباط</li>
-                    <li>جاهزية المعامل والمرافق التقنية</li>
-                </ul>
-            </div>
-            <div class="standard-box">
-                <h4>4. نواتج التعلم (الوزن: 20%)</h4>
-                <ul class="indicators-list">
-                    <li>تحليل نتائج التحصيل واختبارات نافس</li>
-                    <li>تعزيز القيم الوطنية والسلوك الإيجابي</li>
-                    <li>خطط معالجة الفجوات التعليمية</li>
-                </ul>
-            </div>
-        </div>
+        <div class="card-title">📋 مرجع الفحص</div>
+        <div class="chips" id="frameworkChips"></div>
+        <details class="guide">
+            <summary>عرض المؤشرات ودلالات التحقق كاملة</summary>
+            <div id="frameworkList"></div>
+        </details>
     </div>
 
     <div class="card no-print">
-        <div class="card-title">📥 إدخال بيانات المدرسة ورابط السحابة للفحص الآلي</div>
+        <div class="card-title">📥 بيانات المدرسة ومصدر السحابة</div>
         <form id="evalForm">
-            <div class="form-group">
-                <label>اسم المدرسة:</label>
-                <input type="text" id="schoolName" placeholder="أدخل اسم المدرسة" required>
+            <div class="form-grid">
+                <div>
+                    <label for="schoolName">اسم المدرسة</label>
+                    <input type="text" id="schoolName" placeholder="أدخل اسم المدرسة" required>
+                </div>
+                <div>
+                    <label for="schoolCode">الرقم الإحصائي</label>
+                    <input type="text" id="schoolCode" inputmode="numeric" placeholder="أدخل الرقم الإحصائي" required>
+                </div>
+                <div>
+                    <label for="supervisorName">مشرف دعم خدمات التميز</label>
+                    <input type="text" id="supervisorName" placeholder="اسم المشرف" required>
+                </div>
+                <div class="form-grid" style="gap: 8px;">
+                    <div>
+                        <label for="schoolType">نوع المدرسة</label>
+                        <select id="schoolType">
+                            <option value="gov">حكومية</option>
+                            <option value="private">أهلية / عالمية</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="stage">المرحلة</label>
+                        <select id="stage">
+                            <option value="primary">ابتدائية</option>
+                            <option value="middle">متوسطة</option>
+                            <option value="secondary">ثانوية</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>الرقم الإحصائي:</label>
-                <input type="number" id="schoolCode" placeholder="أدخل الرمز الوزاري" required>
+
+            <div class="tabs" role="tablist">
+                <button type="button" class="tab active" data-pane="paneLink">🔗 رابط السحابة</button>
+                <button type="button" class="tab" data-pane="paneZip">🗜️ ملف ZIP أو مجلد</button>
             </div>
-            <div class="form-group">
-                <label>اسم مشرف دعم خدمات التميز:</label>
-                <input type="text" id="supervisorName" placeholder="اسم المشرف" required>
+
+            <div class="source-pane active" id="paneLink">
+                <label for="driveUrl">رابط مجلد السحابة (Google Drive أو OneDrive)</label>
+                <input type="url" id="driveUrl" placeholder="https://drive.google.com/drive/folders/..." style="direction: ltr; text-align: right;">
+                <p class="hint">يجب أن تكون مشاركة المجلد "أي شخص لديه الرابط". روابط SharePoint وOneDrive المدرسية لا تُقرأ آلياً، فاستخدم معها خيار ملف ZIP.</p>
             </div>
-            <div class="form-group">
-                <label>رابط سحابة جوجل (Google Drive):</label>
-                <input type="url" id="driveUrl" placeholder="https://drive.google.com/drive/folders/..." required>
+
+            <div class="source-pane" id="paneZip">
+                <label for="zipFile">ملف ZIP للسحابة</label>
+                <input type="file" id="zipFile" accept=".zip,application/zip">
+                <p class="hint">من OneDrive أو SharePoint أو Google Drive: افتح المجلد الرئيسي واختر "تنزيل"، ثم اختر الملف هنا. يُفحص الملف على جهازك ولا يُرفع إلى أي خادم.</p>
+                <label for="folderInput" style="margin-top: 10px;">أو اختر مجلداً من جهازك</label>
+                <input type="file" id="folderInput" webkitdirectory directory multiple>
             </div>
-            <button type="submit" class="btn">⚡ بدء الفحص الآلي المباشر للسحابة</button>
+
+            <button type="submit" class="btn">⚡ بدء فحص السحابة</button>
         </form>
     </div>
 
-    <div class="card progress-box" id="progressBox">
+    <div class="error-box no-print" id="errorBox"></div>
+
+    <div class="card progress-box no-print" id="progressBox">
         <div class="spinner"></div>
-        <h3 style="font-size: 1rem; color: var(--primary);">جاري الاتصال بالسحابة وفحص محتوى المجلدات...</h3>
-        <p style="font-size: 0.8rem; color: #666; margin-top: 6px;">يرجى الانتظار لحظات ريثما يتم مطابقة الأدلة واستخراج النسبة الآلية</p>
+        <h3 style="font-size: 1rem; color: var(--primary);" id="progressTitle">جاري قراءة السحابة...</h3>
+        <p style="font-size: 0.8rem; color: var(--muted); margin-top: 6px;" id="progressDetail">قد يستغرق الفحص حتى خمس دقائق في السحابات الكبيرة</p>
     </div>
 
     <div class="report-section" id="reportSection">
         <div class="card">
-            <div style="border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="report-head">
                 <div>
-                    <h2 style="font-size: 1.1rem; color: var(--primary);" id="resSchoolName">تقرير المدرسة</h2>
-                    <p style="font-size: 0.8rem; color: #666;">الرقم الإحصائي: <span id="resSchoolCode"></span> | مشرف التميز: <span id="resSupervisor"></span></p>
+                    <h2 id="resSchoolName">تقرير المدرسة</h2>
+                    <p>الرقم الإحصائي: <span id="resSchoolCode"></span> | مشرف التميز: <span id="resSupervisor"></span></p>
                 </div>
-                <div style="text-align: left; font-size: 0.75rem; color: #888;" id="resDate"></div>
+                <div class="muted" id="resDate"></div>
             </div>
 
             <div class="score-header">
-                <div style="font-size: 0.85rem; color: #555;">نسبة الامتثال المستخرجة آلياً من السحابة</div>
+                <div style="font-size: 0.85rem; color: #555;">نسبة إنجاز السحابة</div>
                 <div class="score-num" id="totalScore">0%</div>
-                <div id="statusBadge" class="badge">جاري الحساب...</div>
+                <div id="statusBadge" class="badge"></div>
+                <div class="counts" id="counts"></div>
             </div>
 
-            <div class="card-title" style="font-size: 0.95rem;">📊 تفصيل نتائج المؤشرات والشواهد الـ 12 المرصودة آلياً</div>
-            <table class="ind-table">
-                <thead>
-                    <tr>
-                        <th>المجال / المؤشر الفرعي</th>
-                        <th>الشاهد المطلوب توفيره</th>
-                        <th>حالة الفحص الآلي</th>
-                    </tr>
-                </thead>
-                <tbody id="indicatorsBody"></tbody>
-            </table>
+            <div class="bars" id="bars"></div>
 
-            <div style="margin-top: 16px; background: #fafafa; padding: 12px; border-radius: 8px; border-right: 3px solid var(--accent);">
-                <h4 style="font-size: 0.9rem; color: var(--primary); margin-bottom: 4px;">💡 التوصيات الإشرافية الآلية:</h4>
-                <p style="font-size: 0.8rem; color: #444;" id="recommendationsText">استكمال الملفات المفقودة ورصدها في المجلدات السحابية.</p>
+            <div class="recs">
+                <h4>💡 التوصيات العامة لاستكمال النواقص</h4>
+                <ul id="generalRecs"></ul>
             </div>
 
-            <button onclick="window.print()" class="btn btn-print no-print">🖨️ طباعة التقرير / حفظ كـ PDF</button>
+            <label class="filter no-print"><input type="checkbox" id="onlyGaps"> عرض المؤشرات غير المكتملة فقط</label>
+            <div id="details"></div>
+
+            <div class="btn-row no-print">
+                <button type="button" class="btn" onclick="window.print()">🖨️ طباعة التقرير / حفظ PDF</button>
+                <button type="button" class="btn btn-whatsapp" id="shareBtn">💬 مشاركة الملخص عبر واتساب</button>
+            </div>
         </div>
     </div>
 
-    <footer style="text-align: center; font-size: 0.68rem; color: #666; opacity: 0.55; margin: 20px 0 8px; line-height: 1.7;">
+    <footer>
         مشرف دعم التميز: جابر عبدالله آل الغبشه<br>
         قطاع محايل عسير
     </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="engine.js"></script>
 <script>
+    // رابط خدمة الفحص (Google Apps Script) بعد نشرها. يبقى فارغاً حتى تُربط الخدمة.
+    const SCRIPT_URL = '';
+
+    const E = ComplianceEngine;
+    let lastResult = null;
+
     function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function safeUrl(u) {
+        return /^https:\/\//i.test(u || '') ? u : '';
     }
 
-    document.getElementById('evalForm').addEventListener('submit', function(e) {
+    // ───── مرجع الفحص ─────
+    (function renderFramework() {
+        const chips = E.DOMAINS.map(d => {
+            const n = E.INDICATORS.filter(i => i.domain === d.id).length;
+            return `<div class="chip"><strong>${escapeHtml(d.name)}</strong>عدد المؤشرات: ${n}</div>`;
+        });
+        chips.push(`<div class="chip"><strong>معايير الالتزام التعليمي</strong>عدد المعايير: ${E.COMMITMENT.length}</div>`);
+        document.getElementById('frameworkChips').innerHTML = chips.join('');
+
+        const scopeNote = { private: ' (للأهلية والعالمية فقط)', secondary: ' (للمرحلة الثانوية فقط)' };
+        let html = '';
+        E.DOMAINS.forEach(d => {
+            html += `<h4>${escapeHtml(d.name)}</h4><ul>`;
+            E.INDICATORS.filter(i => i.domain === d.id).forEach(i => {
+                html += `<li><b dir="ltr">${i.code}</b> ${escapeHtml(i.title)}${scopeNote[i.scope] || ''}</li>`;
+            });
+            html += '</ul>';
+        });
+        html += '<h4>معايير الالتزام التعليمي</h4><ul>';
+        E.COMMITMENT.forEach(c => { html += `<li><b>${c.code}</b> ${escapeHtml(c.title)} — ${escapeHtml(c.dept)}</li>`; });
+        html += '</ul>';
+        document.getElementById('frameworkList').innerHTML = html;
+    })();
+
+    // ───── تبويب المصدر ─────
+    let source = 'paneLink';
+    document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+        document.querySelectorAll('.source-pane').forEach(p => p.classList.toggle('active', p.id === tab.dataset.pane));
+        source = tab.dataset.pane;
+    }));
+
+    function showError(msg) {
+        const box = document.getElementById('errorBox');
+        box.textContent = msg;
+        box.style.display = 'block';
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function setProgress(on, title, detail) {
+        document.getElementById('progressBox').style.display = on ? 'block' : 'none';
+        if (title) document.getElementById('progressTitle').textContent = title;
+        if (detail) document.getElementById('progressDetail').textContent = detail;
+    }
+
+    // ───── قراءة ZIP أو مجلد على الجهاز ─────
+    async function docxText(blobOrBuffer) {
+        try {
+            const inner = await JSZip.loadAsync(blobOrBuffer);
+            const xml = inner.file('word/document.xml');
+            if (!xml) return '';
+            return (await xml.async('string')).replace(/<\/w:p>/g, ' ').replace(/<[^>]+>/g, '').slice(0, 6000);
+        } catch (e) { return ''; }
+    }
+
+    async function filesFromZip(file) {
+        if (typeof JSZip === 'undefined') throw new Error('تعذّر تحميل مكتبة قراءة ZIP. تأكد من اتصالك بالإنترنت وأعد المحاولة.');
+        const zip = await JSZip.loadAsync(file);
+        const out = [];
+        let read = 0;
+        for (const entry of Object.values(zip.files)) {
+            if (entry.dir) continue;
+            const parts = entry.name.split('/');
+            const name = parts.pop();
+            if (!name || name.startsWith('.') || name === 'desktop.ini') continue;
+            const size = entry._data && entry._data.uncompressedSize;
+            const f = { name, path: '/' + parts.join('/'), size: size == null ? 1 : size, updated: entry.date ? entry.date.getTime() : null };
+            if (/\.docx$/i.test(name) && read < 120 && (size == null || size < 8e6)) {
+                f.text = await docxText(await entry.async('arraybuffer'));
+                read++;
+            }
+            out.push(f);
+        }
+        return { files: out, contentRead: read };
+    }
+
+    async function filesFromFolder(list) {
+        const out = [];
+        let read = 0;
+        for (const file of list) {
+            const parts = (file.webkitRelativePath || file.name).split('/');
+            const name = parts.pop();
+            if (name.startsWith('.') || name === 'desktop.ini') continue;
+            const f = { name, path: '/' + parts.join('/'), size: file.size, updated: file.lastModified };
+            if (/\.docx$/i.test(name) && read < 120 && file.size < 8e6) {
+                f.text = await docxText(file);
+                read++;
+            }
+            out.push(f);
+        }
+        return { files: out, contentRead: read };
+    }
+
+    // ───── تنفيذ الفحص ─────
+    document.getElementById('evalForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        const schoolName = document.getElementById('schoolName').value;
-        const schoolCode = document.getElementById('schoolCode').value;
-        const supervisorName = document.getElementById('supervisorName').value;
-        const driveUrl = document.getElementById('driveUrl').value;
-
-        document.getElementById('progressBox').style.display = 'block';
+        document.getElementById('errorBox').style.display = 'none';
         document.getElementById('reportSection').style.display = 'none';
 
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbwbkq7akgIia799pWXMrWOVS8ffZWDH-vigo-ABPcgJbYpNkAaU5OL0ACd4WTbfmB5c/exec?url=' + encodeURIComponent(driveUrl);
+        const opts = { schoolType: document.getElementById('schoolType').value, stage: document.getElementById('stage').value };
+        const info = {
+            name: document.getElementById('schoolName').value.trim(),
+            code: document.getElementById('schoolCode').value.trim(),
+            supervisor: document.getElementById('supervisorName').value.trim()
+        };
 
-        fetch(scriptURL)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('progressBox').style.display = 'none';
-                if(data.error) {
-                    alert(data.error);
-                    return;
-                }
+        try {
+            let result;
+            if (source === 'paneLink') {
+                const url = document.getElementById('driveUrl').value.trim();
+                if (!url) return showError('أدخل رابط مجلد السحابة، أو اختر "ملف ZIP أو مجلد".');
+                if (/sharepoint\.com/i.test(url))
+                    return showError('روابط SharePoint وOneDrive المدرسية تتطلب تسجيل دخول ولا يمكن قراءتها آلياً. نزّل المجلد ملف ZIP واختره من تبويب "ملف ZIP أو مجلد".');
+                if (!SCRIPT_URL)
+                    return showError('خدمة الفحص بالرابط لم تُربط بعد. استخدم مؤقتاً تبويب "ملف ZIP أو مجلد".');
+                setProgress(true, 'جاري قراءة السحابة وفحص الشواهد...', 'قد يستغرق الفحص حتى خمس دقائق في السحابات الكبيرة');
+                const q = new URLSearchParams({ url, type: opts.schoolType, stage: opts.stage });
+                const res = await fetch(SCRIPT_URL + '?' + q.toString());
+                result = await res.json();
+                if (result.error) throw new Error(result.error);
+            } else {
+                const zip = document.getElementById('zipFile').files[0];
+                const folder = document.getElementById('folderInput').files;
+                if (!zip && !folder.length) return showError('اختر ملف ZIP للسحابة أو مجلداً من جهازك.');
+                setProgress(true, 'جاري قراءة الملفات على جهازك...', 'لا تُرفع الملفات إلى أي خادم');
+                const listing = zip ? await filesFromZip(zip) : await filesFromFolder(folder);
+                result = E.evaluate(listing.files, Object.assign({ contentRead: listing.contentRead }, opts));
+                result.contentRead = listing.contentRead;
+            }
+            setProgress(false);
+            renderReport(info, result);
+        } catch (err) {
+            setProgress(false);
+            showError(err.message && !/Failed to fetch|NetworkError|JSON/i.test(err.message)
+                ? err.message
+                : 'تعذّر الاتصال بخدمة الفحص. تأكد من نشر السكربت بصلاحية "Anyone" ثم أعد المحاولة.');
+        }
+    });
 
-                document.getElementById('reportSection').style.display = 'block';
-                document.getElementById('resSchoolName').innerText = schoolName;
-                document.getElementById('resSchoolCode').innerText = schoolCode;
-                document.getElementById('resSupervisor').innerText = supervisorName;
-                document.getElementById('resDate').innerText = new Date().toLocaleDateString('ar-SA');
+    // ───── التقرير ─────
+    function level(score) {
+        if (score >= 85) return ['badge-success', 'سحابة مكتملة / ممتثلة'];
+        if (score >= 70) return ['badge-warning', 'سحابة متقدمة / تحتاج استكمالاً محدوداً'];
+        if (score >= 50) return ['badge-warning', 'سحابة متوسطة / نواقص واضحة'];
+        return ['badge-danger', 'قصور في الشواهد / يتطلب استكمالاً عاجلاً'];
+    }
 
-                let totalItems = data.results.length;
-                let okItems = data.results.filter(item => item.status === 'ok').length;
-                let calculatedScore = typeof data.score === 'number'
-                    ? data.score
-                    : Math.round((okItems / totalItems) * 100);
+    function rowHtml(r) {
+        const files = r.files.map(f => {
+            const u = safeUrl(f.url);
+            return u ? `<a href="${escapeHtml(u)}" target="_blank" rel="noopener">📄 ${escapeHtml(f.name)}</a>` : `<span>📄 ${escapeHtml(f.name)}</span>`;
+        }).join('') + (r.fileCount > r.files.length ? `<span class="muted">و${r.fileCount - r.files.length} ملفات أخرى</span>` : '');
+        const todo = r.recommendations.length
+            ? '<ul>' + r.recommendations.map(t => `<li class="todo">${escapeHtml(t)}</li>`).join('') + '</ul>'
+            : '<span class="muted">مكتمل</span>';
+        return `<tr data-status="${r.status}">
+            <td class="code">${escapeHtml(r.code)}</td>
+            <td><strong>${escapeHtml(r.title)}</strong>${r.dept ? `<div class="muted">${escapeHtml(r.dept)}</div>` : ''}</td>
+            <td><span class="status-pill pill-${r.status}">${r.label}</span><div class="muted">${r.score}%</div></td>
+            <td class="files">${files || '<span class="muted">لا يوجد</span>'}</td>
+            <td>${todo}</td>
+        </tr>`;
+    }
 
-                document.getElementById('totalScore').innerText = calculatedScore + "%";
-                const badge = document.getElementById('statusBadge');
-                const recText = document.getElementById('recommendationsText');
+    function tableHtml(title, rows) {
+        return `<div class="domain-title">${escapeHtml(title)}</div>
+            <div class="table-wrap"><table class="ind-table">
+                <thead><tr><th>الرمز</th><th>المؤشر</th><th>الحالة</th><th>الشواهد المرصودة</th><th>المطلوب لاستكمال النواقص</th></tr></thead>
+                <tbody>${rows.map(rowHtml).join('')}</tbody>
+            </table></div>`;
+    }
 
-                if(calculatedScore >= 85) {
-                    badge.className = "badge badge-success";
-                    badge.innerText = "مستوى التميز الآلي / ممتثل كلياً";
-                    recText.innerText = "أظهر الفحص الآلي للسحابة استيفاء المدرسة لكافة المعايير والمؤشرات الفرعية بدقة عالية.";
-                } else if(calculatedScore >= 70) {
-                    badge.className = "badge badge-warning";
-                    badge.innerText = "مستوى التقدم الآلي / امتثال متوسط";
-                    recText.innerText = "يوجد بعض القصور أو النقص في الشواهد المرصودة آلياً، يوصى بمراجعة الأدلة المفقودة واستكمالها.";
-                } else {
-                    badge.className = "badge badge-danger";
-                    badge.innerText = "قصور في الشواهد / يتطلب تحسين عاجل";
-                    recText.innerText = "الفحص الآلي يوضح غياب معظم الأدلة والشواهد الرئيسية في المجلد السحابي للمدرسة.";
-                }
+    function renderReport(info, r) {
+        lastResult = { info, r };
+        document.getElementById('resSchoolName').textContent = info.name;
+        document.getElementById('resSchoolCode').textContent = info.code;
+        document.getElementById('resSupervisor').textContent = info.supervisor;
+        document.getElementById('resDate').textContent = 'تاريخ الفحص: ' + new Date().toLocaleDateString('ar-SA');
 
-                if (data.contentPending > 0) {
-                    recText.innerText += ` (عدد الملفات التي لم يُقرأ محتواها بعد: ${data.contentPending}، أعد الفحص لإكمال قراءتها.)`;
-                }
+        document.getElementById('totalScore').textContent = r.score + '%';
+        const [cls, text] = level(r.score);
+        const badge = document.getElementById('statusBadge');
+        badge.className = 'badge ' + cls;
+        badge.textContent = text;
+        document.getElementById('counts').innerHTML =
+            `<span>✅ متحقق: <b>${r.counts.met}</b></span><span>🟡 جزئي: <b>${r.counts.partial}</b></span>` +
+            `<span>❌ غير متحقق: <b>${r.counts.unmet}</b></span><span>📁 الملفات المفحوصة: <b>${r.scannedFiles}</b></span>`;
 
-                let tbody = document.getElementById('indicatorsBody');
-                tbody.innerHTML = '';
-                data.results.forEach(item => {
-                    let pillClass = item.status === 'ok' ? 'pill-ok' : item.status === 'part' ? 'pill-part' : 'pill-miss';
-                    let filesHtml = (item.files || []).map(f =>
-                        `<a href="${encodeURI(f.url)}" target="_blank" rel="noopener">📄 ${escapeHtml(f.name)}</a>`).join('');
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>[${item.domain}]</strong><br>${item.ind}</td>
-                            <td>${item.doc || "ملف الشاهد المرتبط بالمؤشر"}</td>
-                            <td><span class="status-pill ${pillClass}">${item.text}</span>${filesHtml ? `<div class="found-files">${filesHtml}</div>` : ''}</td>
-                        </tr>
-                    `;
-                });
+        const bars = r.domains.map(d => [d.name, d.score]).concat([['معايير الالتزام التعليمي', r.commitmentScore]]);
+        document.getElementById('bars').innerHTML = bars.map(([n, s]) =>
+            `<div class="bar-row"><span>${escapeHtml(n)}</span><div class="bar-bg"><div class="bar-fill" style="width:${s}%"></div></div><b>${s}%</b></div>`).join('');
 
-                document.getElementById('reportSection').scrollIntoView({ behavior: 'smooth' });
-            })
-            .catch(error => {
-                document.getElementById('progressBox').style.display = 'none';
-                alert("حدث خطأ أثناء الاتصال بخدمة الفحص الآلي. تأكد من إعطاء صلاحيات التشغيل للسكريبت في جوجل.");
-            });
+        const recs = r.generalRecommendations.slice();
+        if (r.contentPending > 0) recs.push(`عدد الملفات التي لم يُقرأ محتواها بعد: ${r.contentPending}. أعد الفحص لإكمال قراءتها ورفع دقة النتيجة.`);
+        if (r.unmatchedCount > 0) recs.push(`عدد الملفات التي لم يُعرف مؤشرها: ${r.unmatchedCount}. انقلها إلى مجلد المؤشر المناسب أو أعد تسميتها.`);
+        const gaps = r.domains.flatMap(d => d.indicators).concat(r.commitment).filter(x => x.status === 'unmet');
+        if (gaps.length) recs.push(`ابدأ بالمؤشرات غير المتحققة (${gaps.length}): ` + gaps.slice(0, 8).map(x => x.code).join('، ') + (gaps.length > 8 ? '، ...' : '.'));
+        document.getElementById('generalRecs').innerHTML = recs.map(t => `<li>${escapeHtml(t)}</li>`).join('') || '<li>لا توجد توصيات عامة.</li>';
+
+        let html = r.domains.map(d => tableHtml(`مجال ${d.name} — ${d.score}%`, d.indicators)).join('');
+        html += tableHtml(`معايير الالتزام التعليمي — ${r.commitmentScore}%`, r.commitment);
+        document.getElementById('details').innerHTML = html;
+        applyFilter();
+
+        document.getElementById('reportSection').style.display = 'block';
+        document.getElementById('reportSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function applyFilter() {
+        const only = document.getElementById('onlyGaps').checked;
+        document.querySelectorAll('#details tr[data-status]').forEach(tr => {
+            tr.style.display = only && tr.dataset.status === 'met' ? 'none' : '';
+        });
+    }
+    document.getElementById('onlyGaps').addEventListener('change', applyFilter);
+
+    document.getElementById('shareBtn').addEventListener('click', () => {
+        if (!lastResult) return;
+        const { info, r } = lastResult;
+        const lines = [
+            '*تقرير فحص السحابة المدرسية* 🏫',
+            '• المدرسة: ' + info.name,
+            '• الرقم الإحصائي: ' + info.code,
+            '• مشرف التميز: ' + info.supervisor,
+            '• نسبة إنجاز السحابة: *' + r.score + '%*',
+            ...r.domains.map(d => '• ' + d.name + ': ' + d.score + '%'),
+            '• معايير الالتزام التعليمي: ' + r.commitmentScore + '%',
+            '• متحقق ' + r.counts.met + ' | جزئي ' + r.counts.partial + ' | غير متحقق ' + r.counts.unmet
+        ];
+        window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     });
 </script>
 
