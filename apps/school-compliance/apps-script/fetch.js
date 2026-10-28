@@ -37,6 +37,10 @@ function doGet(e) {
     out.contentRead = listing.contentRead || 0;
     out.contentPending = listing.contentPending || 0;
     out.truncated = listing.files.length >= FETCH.MAX_FILES;
+    // قائمة الملفات ونصوصها لتعيد الصفحة التقييم بمحركها، فلا يلزم تحديث السكربت عند تعديل المعايير
+    out.files = listing.files.map(function (f) {
+      return { name: f.name, path: f.path, url: f.url, updated: f.updated, size: f.size, mime: f.mime, text: f.text || '' };
+    });
   } catch (err) {
     out = { error: err.message };
   }
