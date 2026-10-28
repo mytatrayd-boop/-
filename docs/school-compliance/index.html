@@ -182,7 +182,25 @@
         .todo { margin-right: 14px; font-size: 0.74rem; }
         .muted { color: var(--muted); font-size: 0.72rem; }
 
-        footer { text-align: center; font-size: 0.68rem; color: #666; opacity: 0.55; margin: 20px 0 8px; line-height: 1.7; }
+        footer { display: flex; justify-content: space-between; gap: 12px; font-size: 0.68rem; color: #666; opacity: 0.55; margin: 20px 4px 8px; line-height: 1.7; }
+        footer div:last-child { text-align: left; }
+
+        .nat-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+        .nat-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .nat-head h4 { color: var(--primary-dark); font-size: 0.95rem; }
+        .chip-val { display: inline-block; border-radius: 12px; padding: 2px 10px; font-size: 0.78rem; font-weight: bold; background: #edf3f7; color: var(--primary); }
+        .chg-up { color: var(--success); } .chg-down { color: var(--danger); }
+        .subject { border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px; }
+        .subject-head { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; color: var(--primary); margin-bottom: 4px; }
+        .cmp { font-size: 0.76rem; margin: 6px 0; }
+        .cmp-label { display: flex; flex-direction: column; gap: 1px; margin-bottom: 3px; }
+        .cmp-label span:first-child { font-weight: bold; color: var(--primary-dark); }
+        .cmp-track { position: relative; height: 12px; background: #e6edf2; border-radius: 6px; overflow: visible; }
+        .cmp-fill { height: 100%; border-radius: 6px; width: 0; transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
+        .cmp-mark { position: absolute; top: -4px; bottom: -4px; width: 3px; background: var(--primary-dark); border-radius: 2px; }
+        .weak { font-size: 0.75rem; color: var(--danger); margin-top: 4px; }
+        .rank-note { font-size: 0.72rem; color: var(--muted); }
+        @media (prefers-reduced-motion: reduce) { .cmp-fill { transition: none; } }
 
         @media print {
             body { background: white; padding: 0; }
@@ -264,6 +282,11 @@
                 <input type="file" id="folderInput" webkitdirectory directory multiple>
             </div>
 
+            <div style="margin-top: 12px;">
+                <label for="cardFiles">بطاقات الاختبارات الوطنية (اختياري)</label>
+                <input type="file" id="cardFiles" accept=".pdf,application/pdf" multiple>
+                <p class="hint">بطاقة نافس أو بطاقة القدرات والتحصيلي بصيغة PDF كما تُنزَّل من منصة الهيئة. إن كانت في السحابة تُقرأ تلقائياً.</p>
+            </div>
             <div class="notice">⏱️ تنبيه: قد يستغرق الفحص حتى <b>5 دقائق</b> حسب حجم السحابة. لا تغلق الصفحة حتى يظهر التقرير.</div>
             <button type="submit" class="btn">⚡ بدء فحص السحابة</button>
         </form>
@@ -329,6 +352,11 @@
             <div id="detailsCom"></div>
         </div>
 
+        <div class="card section" id="secNational">
+            <div class="section-title"><span class="section-num">٣</span> مستوى المدرسة في الاختبارات الوطنية <small>بطاقات هيئة تقويم التعليم والتدريب</small></div>
+            <div id="nationalBody"></div>
+        </div>
+
         <div class="btn-row no-print">
             <button type="button" class="btn" onclick="window.print()">🖨️ طباعة التقرير / حفظ PDF</button>
             <button type="button" class="btn btn-whatsapp" id="shareBtn">💬 مشاركة الملخص عبر واتساب</button>
@@ -336,12 +364,13 @@
     </div>
 
     <footer>
-        مشرف دعم التميز: جابر عبدالله آل الغبشه<br>
-        قطاع محايل عسير
+        <div>تصميم وإعداد<br>مشرف دعم التميز: جابر عبدالله آل الغبشه<br>قطاع محايل عسير</div>
+        <div>مراجعة وتدقيق<br>الأستاذ: ضيف الله ظوهري</div>
     </footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="cards.js?v=46d69bc6"></script>
 <script src="engine.js?v=f5df0b49"></script>
 <script>
     // رابط خدمة الفحص (Google Apps Script)
@@ -415,7 +444,7 @@
     async function filesFromZip(file) {
         if (typeof JSZip === 'undefined') throw new Error('تعذّر تحميل مكتبة قراءة ZIP. تأكد من اتصالك بالإنترنت وأعد المحاولة.');
         const zip = await JSZip.loadAsync(file);
-        const out = [];
+        const out = [], cards = [];
         let read = 0;
         for (const entry of Object.values(zip.files)) {
             if (entry.dir) continue;
@@ -428,13 +457,15 @@
                 f.text = await docxText(await entry.async('arraybuffer'));
                 read++;
             }
+            if (NationalCards.looksLikeCard(name, f.path) && cards.length < 10 && (size == null || size < 15e6))
+                cards.push({ name, data: await entry.async('uint8array') });
             out.push(f);
         }
-        return { files: out, contentRead: read };
+        return { files: out, contentRead: read, cards };
     }
 
     async function filesFromFolder(list) {
-        const out = [];
+        const out = [], cards = [];
         let read = 0;
         for (const file of list) {
             const parts = (file.webkitRelativePath || file.name).split('/');
@@ -445,9 +476,11 @@
                 f.text = await docxText(file);
                 read++;
             }
+            if (NationalCards.looksLikeCard(name, f.path) && cards.length < 10 && file.size < 15e6)
+                cards.push({ name, data: new Uint8Array(await file.arrayBuffer()) });
             out.push(f);
         }
-        return { files: out, contentRead: read };
+        return { files: out, contentRead: read, cards };
     }
 
     // ───── تنفيذ الفحص ─────
@@ -465,6 +498,7 @@
 
         try {
             let result;
+            let cardSources = [];
             if (source === 'paneLink') {
                 const url = document.getElementById('driveUrl').value.trim();
                 if (!url) return showError('أدخل رابط مجلد السحابة، أو اختر "ملف ZIP أو مجلد".');
@@ -477,6 +511,7 @@
                 const res = await fetch(SCRIPT_URL + '?' + q.toString());
                 result = await res.json();
                 if (result.error) throw new Error(result.error);
+                cardSources = (result.cards || []).map(c => ({ name: c.name, data: Uint8Array.from(atob(c.data), ch => ch.charCodeAt(0)) }));
                 // السكربت المحدث يعيد قائمة الملفات، فتُقيَّم هنا بأحدث معايير الصفحة
                 if (Array.isArray(result.files)) {
                     const fresh = E.evaluate(result.files, Object.assign({ contentRead: result.contentRead || 0 }, opts));
@@ -492,7 +527,12 @@
                 const listing = zip ? await filesFromZip(zip) : await filesFromFolder(folder);
                 result = E.evaluate(listing.files, Object.assign({ contentRead: listing.contentRead }, opts));
                 result.contentRead = listing.contentRead;
+                cardSources = listing.cards;
             }
+            for (const f of document.getElementById('cardFiles').files)
+                cardSources.push({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) });
+            setProgress(true, 'جاري قراءة بطاقات الاختبارات الوطنية...', '');
+            result.national = await readCards(cardSources);
             setProgress(false);
             renderReport(info, result);
         } catch (err) {
@@ -638,6 +678,84 @@
             </table></div>`;
     }
 
+    // ───── الاختبارات الوطنية ─────
+    async function readCards(sources) {
+        const cards = [], failed = [];
+        for (const src of sources) {
+            try {
+                const card = await NationalCards.parse(src.data, src.name);
+                if (card) cards.push(card);
+            } catch (e) { failed.push(src.name); }
+        }
+        return { cards, failed, searched: sources.length };
+    }
+
+    function chg(v, unit) {
+        if (v === null || v === undefined || isNaN(v)) return '';
+        const cls = v > 0 ? 'chg-up' : v < 0 ? 'chg-down' : '';
+        return `<span class="${cls}" dir="ltr">${v > 0 ? '▲ +' : v < 0 ? '▼ ' : ''}${v}${unit || ''}</span>`;
+    }
+
+    // شريط مقارنة: تعبئة بنسبة المدرسة وعلامة عند نسبة المرجع (المملكة أو الإدارة)
+    function cmpBar(label, school, ref, refName) {
+        if (school === null || ref === null || school === undefined || ref === undefined) return '';
+        const diff = Math.round((school - ref) * 10) / 10;
+        return `<div class="cmp"><div class="cmp-label"><span>${escapeHtml(label)}</span>
+            <span>المدرسة <b>${school}%</b> · ${refName} <b>${ref}%</b> · الفرق ${chg(diff, '')}</span></div>
+            <div class="cmp-track"><div class="cmp-fill" data-w="${school}" style="background:${barGradient(Math.min(100, school / Math.max(ref, 1) * 75))}"></div>
+            <div class="cmp-mark" style="left:calc(${100 - ref}% - 1px)" title="${refName}"></div></div></div>`;
+    }
+
+    // شريط الترتيب المئيني: المدرسة أعلى من نسبة كذا من المدارس
+    function rankBar(label, rank) {
+        if (!rank || rank.pct === null) return '';
+        const of = rank.of ? ` — الترتيب ${rank.of.rank} من ${rank.of.total}` : '';
+        return `<div class="cmp"><div class="cmp-label"><span>${escapeHtml(label)}</span><span>أعلى من <b>${rank.pct}%</b> من المدارس</span></div>
+            <div class="cmp-track"><div class="cmp-fill" data-w="${rank.pct}" style="background:${barGradient(rank.pct)}"></div></div>
+            <div class="rank-note">${of}</div></div>`;
+    }
+
+    function nafsHtml(c) {
+        let h = `<div class="nat-card"><div class="nat-head"><h4>📘 نافس — ${escapeHtml(c.grade || '')} ${c.year ? '— ' + c.year + 'هـ' : ''}</h4>
+            <span class="chip-val">الإتقان في المواد معاً: ${c.overall ?? '—'}% ${chg(c.overallChange, '')}</span></div>`;
+        if (c.testers) h += `<div class="rank-note">المختبرون: ${c.testers}${c.students ? ' من ' + c.students : ''}</div>`;
+        c.subjects.forEach(s => {
+            h += `<div class="subject"><div class="subject-head"><span>${escapeHtml(s.name)}</span>
+                <span>نسبة الإتقان ${s.mastery ?? '—'}% ${chg(s.change, '')}</span></div>`;
+            if (s.subAvg) {
+                h += cmpBar('مستوى المدرسة على مستوى المملكة', s.subAvg.school, s.subAvg.kingdom, 'المملكة');
+                h += cmpBar('مستوى المدرسة على مستوى الإدارة', s.subAvg.school, s.subAvg.admin, 'الإدارة');
+            }
+            if (s.weakest && s.weakest.school < s.weakest.kingdom)
+                h += `<div class="weak">أضعف مجال فرعي: ${escapeHtml(s.weakest.name)} — المدرسة ${s.weakest.school}% مقابل ${s.weakest.kingdom}% للمملكة</div>`;
+            h += '</div>';
+        });
+        return h + '<div class="rank-note">المقارنة بمتوسط نسب الإتقان في المجالات الفرعية كما في البطاقة.</div></div>';
+    }
+
+    function quduratHtml(c) {
+        return c.tests.map(t => `<div class="nat-card"><div class="nat-head"><h4>📗 ${escapeHtml(t.name)}</h4>
+            <span class="chip-val">متوسط الدرجات: ${t.mean ?? '—'} ${chg(t.change, '%')}</span></div>
+            ${t.testers ? `<div class="rank-note">المختبرون: ${t.testers}</div>` : ''}
+            ${rankBar('مستوى المدرسة على مستوى المملكة', t.kingdomRank)}
+            ${rankBar('مستوى المدرسة على مستوى الإدارة', t.adminRank)}</div>`).join('');
+    }
+
+    function renderNational(n) {
+        const body = document.getElementById('nationalBody');
+        const cards = (n && n.cards) || [];
+        let h = '';
+        cards.filter(c => c.type === 'nafs').forEach(c => { h += nafsHtml(c); });
+        cards.filter(c => c.type === 'qudurat').forEach(c => { h += quduratHtml(c); });
+        if (cards.some(c => c.type === 'image'))
+            h += '<p class="hint">توجد بطاقة نافس بالإصدار القديم (صورة) ولا تُقرأ أرقامها. نزّل البطاقة بالإصدار الجديد من منصة الهيئة وارفعها.</p>';
+        if (!h) h = '<p class="hint">لم يُعثر على بطاقة نافس أو بطاقة القدرات والتحصيلي. ارفعها في السحابة باسم يحتوي "نافس" أو "القدرات" أو "التحصيلي"، أو اخترها من خانة "بطاقات الاختبارات الوطنية" في النموذج.</p>';
+        body.innerHTML = h;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            body.querySelectorAll('.cmp-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
+        }));
+    }
+
     function renderReport(info, r) {
         lastResult = { info, r };
         document.getElementById('resSchoolName').textContent = info.name;
@@ -678,6 +796,7 @@
         listRecs('recsCom', by.commitment.filter(not100).concat(gapsRec(r.commitment, 'المعايير')));
         document.getElementById('detailsCom').innerHTML = tableHtml(`معايير الالتزام التعليمي — ${comScore}%`, r.commitment, 'المعيار');
 
+        renderNational(r.national);
         applyFilter();
         lastResult.indScore = indScore;
         lastResult.comScore = comScore;

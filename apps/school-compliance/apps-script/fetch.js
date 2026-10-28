@@ -37,6 +37,8 @@ function doGet(e) {
     out.contentRead = listing.contentRead || 0;
     out.contentPending = listing.contentPending || 0;
     out.truncated = listing.files.length >= FETCH.MAX_FILES;
+    // بطاقات نافس والقدرات والتحصيلي (PDF) تُرسل للصفحة لتقرأ أرقامها
+    if (src.kind === 'google') out.cards = nationalCards(listing.files);
     // قائمة الملفات ونصوصها لتعيد الصفحة التقييم بمحركها، فلا يلزم تحديث السكربت عند تعديل المعايير
     out.files = listing.files.map(function (f) {
       return { name: f.name, path: f.path, url: f.url, updated: f.updated, size: f.size, mime: f.mime, text: f.text || '' };
@@ -173,6 +175,20 @@ function ocrText(fileId) {
   } finally {
     if (copyId) { try { Drive.Files.remove(copyId); } catch (e) { DriveApp.getFileById(copyId).setTrashed(true); } }
   }
+}
+
+// يرسل حتى 6 بطاقات اختبارات وطنية بصيغة PDF (بحد أقصى 12 ميجابايت إجمالاً) لتقرأها الصفحة
+function nationalCards(files) {
+  var out = [], total = 0;
+  files.forEach(function (f) {
+    if (out.length >= 6 || f.mime !== 'application/pdf' || f.size > 6000000 || total + f.size > 12000000) return;
+    if (!/نافس|nafs|قدرات|تحصيلي|الاختبارات الوطنية|بطاقة/i.test(f.name + ' ' + f.path)) return;
+    try {
+      out.push({ name: f.name, data: Utilities.base64Encode(DriveApp.getFileById(f.id).getBlob().getBytes()) });
+      total += f.size;
+    } catch (e) {}
+  });
+  return out;
 }
 
 // ───────── OneDrive الشخصي (تجريبي) ─────────
