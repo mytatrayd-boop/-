@@ -96,6 +96,7 @@
         .source-pane { display: none; }
         .source-pane.active { display: block; }
         .hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+        .notice { margin-top: 12px; background: var(--warning-bg); color: var(--warning); border-radius: 8px; padding: 9px 12px; font-size: 0.82rem; }
 
         .btn {
             width: 100%;
@@ -246,6 +247,7 @@
                 <input type="file" id="folderInput" webkitdirectory directory multiple>
             </div>
 
+            <div class="notice">⏱️ تنبيه: قد يستغرق الفحص حتى <b>5 دقائق</b> حسب حجم السحابة. لا تغلق الصفحة حتى يظهر التقرير.</div>
             <button type="submit" class="btn">⚡ بدء فحص السحابة</button>
         </form>
     </div>
@@ -255,7 +257,7 @@
     <div class="card progress-box no-print" id="progressBox">
         <div class="spinner"></div>
         <h3 style="font-size: 1rem; color: var(--primary);" id="progressTitle">جاري قراءة السحابة...</h3>
-        <p style="font-size: 0.8rem; color: var(--muted); margin-top: 6px;" id="progressDetail">قد يستغرق الفحص حتى خمس دقائق في السحابات الكبيرة</p>
+        <p style="font-size: 0.8rem; color: var(--muted); margin-top: 6px;" id="progressDetail">قد يستغرق الفحص حتى 5 دقائق، لا تغلق الصفحة</p>
     </div>
 
     <div class="report-section" id="reportSection">
@@ -429,7 +431,7 @@
                     return showError('روابط SharePoint وOneDrive المدرسية تتطلب تسجيل دخول ولا يمكن قراءتها آلياً. نزّل المجلد ملف ZIP واختره من تبويب "ملف ZIP أو مجلد".');
                 if (!SCRIPT_URL)
                     return showError('خدمة الفحص بالرابط لم تُربط بعد. استخدم مؤقتاً تبويب "ملف ZIP أو مجلد".');
-                setProgress(true, 'جاري قراءة السحابة وفحص الشواهد...', 'قد يستغرق الفحص حتى خمس دقائق في السحابات الكبيرة');
+                setProgress(true, 'جاري قراءة السحابة وفحص الشواهد...', 'قد يستغرق الفحص حتى 5 دقائق، لا تغلق الصفحة');
                 const q = new URLSearchParams({ url, type: opts.schoolType, stage: opts.stage });
                 const res = await fetch(SCRIPT_URL + '?' + q.toString());
                 result = await res.json();
