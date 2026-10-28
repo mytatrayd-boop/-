@@ -311,7 +311,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="engine.js"></script>
+<script src="engine.js?v=a0cc7371"></script>
 <script>
     // رابط خدمة الفحص (Google Apps Script)
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTYnkBd8FVjD3Lz6sA41LONzbwHqTJte0USzn0wDveO4QjcTBCfG5OA9_bFNVictKA/exec';
@@ -557,7 +557,8 @@
             document.querySelectorAll('#bars [data-count]').forEach(el => countUp(el, +el.dataset.count));
         }));
 
-        const recs = r.generalRecommendations.slice();
+        // برامج ١٠٠ يوم لم تعد مطلوبة؛ تُستبعد حتى لو أعادها سكربت قديم
+        const recs = r.generalRecommendations.filter(t => !/(١٠٠|100)\s*يوم/.test(t));
         if (r.contentPending > 0) recs.push(`عدد الملفات التي لم يُقرأ محتواها بعد: ${r.contentPending}. أعد الفحص لإكمال قراءتها ورفع دقة النتيجة.`);
         if (r.unmatchedCount > 0) recs.push(`عدد الملفات التي لم يُعرف مؤشرها: ${r.unmatchedCount}. انقلها إلى مجلد المؤشر المناسب أو أعد تسميتها.`);
         const gaps = r.domains.flatMap(d => d.indicators).concat(r.commitment).filter(x => x.status === 'unmet');
