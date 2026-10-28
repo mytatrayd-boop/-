@@ -249,7 +249,10 @@
         }
 
         .pill-ok { background: #d4edda; color: #155724; }
+        .pill-part { background: #fff3cd; color: #856404; }
         .pill-miss { background: #f8d7da; color: #721c24; }
+        .found-files { margin-top: 4px; font-size: 0.7rem; }
+        .found-files a { color: var(--primary); display: block; }
 
         .btn-print {
             background: var(--primary-dark);
@@ -385,6 +388,10 @@
 </div>
 
 <script>
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
     document.getElementById('evalForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -415,7 +422,9 @@
 
                 let totalItems = data.results.length;
                 let okItems = data.results.filter(item => item.status === 'ok').length;
-                let calculatedScore = Math.round((okItems / totalItems) * 100);
+                let calculatedScore = typeof data.score === 'number'
+                    ? data.score
+                    : Math.round((okItems / totalItems) * 100);
 
                 document.getElementById('totalScore').innerText = calculatedScore + "%";
                 const badge = document.getElementById('statusBadge');
@@ -438,12 +447,14 @@
                 let tbody = document.getElementById('indicatorsBody');
                 tbody.innerHTML = '';
                 data.results.forEach(item => {
-                    let pillClass = item.status === 'ok' ? 'pill-ok' : 'pill-miss';
+                    let pillClass = item.status === 'ok' ? 'pill-ok' : item.status === 'part' ? 'pill-part' : 'pill-miss';
+                    let filesHtml = (item.files || []).map(f =>
+                        `<a href="${encodeURI(f.url)}" target="_blank" rel="noopener">📄 ${escapeHtml(f.name)}</a>`).join('');
                     tbody.innerHTML += `
                         <tr>
                             <td><strong>[${item.domain}]</strong><br>${item.ind}</td>
                             <td>${item.doc || "ملف الشاهد المرتبط بالمؤشر"}</td>
-                            <td><span class="status-pill ${pillClass}">${item.text}</span></td>
+                            <td><span class="status-pill ${pillClass}">${item.text}</span>${filesHtml ? `<div class="found-files">${filesHtml}</div>` : ''}</td>
                         </tr>
                     `;
                 });
