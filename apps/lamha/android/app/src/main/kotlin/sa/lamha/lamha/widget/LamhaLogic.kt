@@ -36,8 +36,8 @@ object LamhaLogic {
         Tile("prayerTimes", span = 3),
         Tile("deposit", span = 3),
         Tile("season", showTitle = false),
-        Tile("tradSeason", showTitle = false),
-        Tile("tradPoints"),
+        Tile("tradSeason", span = 2, showTitle = false),
+        Tile("tradPoints", visible = false),
         Tile("dates", visible = false, span = 2),
         Tile("weather", visible = false, span = 2),
         Tile("prayer", visible = false),
@@ -52,7 +52,7 @@ object LamhaLogic {
             "gregorian" -> "gregorian" in visible
             "dayWeather" -> "weather" in visible
             "prayerTimes" -> "prayer" in visible
-            "tradPoints" -> "tradSeason" in visible
+            "tradPoints" -> false
             "dates", "weather", "prayer" -> false
             else -> t.id in visible
         }

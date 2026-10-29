@@ -1283,7 +1283,7 @@ class L10nAr extends L10n {
   String get prayerNotSet => 'لم يُحدَّد الموقع بعد.';
 
   @override
-  String get prayerLate => 'متأخرة';
+  String get prayerLate => 'متأخرة، بلا نقاط';
 
   @override
   String get prayerNow => 'وقتها الآن';
@@ -1415,4 +1415,157 @@ class L10nAr extends L10n {
 
   @override
   String get spanShortYear => 'السنة';
+
+  @override
+  String get tileViolations => 'المخالفات';
+
+  @override
+  String get violationsIntro =>
+      'اخصم نقاطاً من عضو أو من كل الأعضاء. تصلهم المخالفة رسالة منبثقة، وحذفها من القائمة يعيد النقاط.';
+
+  @override
+  String get violationPoints => 'عدد النقاط المخصومة';
+
+  @override
+  String get violationReasonHint => 'سبب المخالفة (اختياري)';
+
+  @override
+  String get addViolation => 'تسجيل المخالفة';
+
+  @override
+  String get errViolationPoints => 'اكتب عدد نقاط من 1 إلى 1000';
+
+  @override
+  String get violationAdded => 'سُجّلت المخالفة وخُصمت النقاط';
+
+  @override
+  String get violationsList => 'المخالفات المسجلة';
+
+  @override
+  String get noViolations => 'لا توجد مخالفات';
+
+  @override
+  String get deleteViolation => 'حذف المخالفة وإعادة النقاط';
+
+  @override
+  String get deleteViolationQ =>
+      'حذف هذه المخالفة؟ ستعود النقاط المخصومة لأصحابها.';
+
+  @override
+  String get violationDeleted => 'حُذفت المخالفة وأُعيدت النقاط';
+
+  @override
+  String get violationWord => 'مخالفة';
+
+  @override
+  String get tileCycle => 'دورة تقييم جديدة';
+
+  @override
+  String get cycleNever => 'لم تبدأ دورة تقييم بعد';
+
+  @override
+  String cycleSince(String date) {
+    return 'الدورة الحالية بدأت في $date';
+  }
+
+  @override
+  String get cycleIntro =>
+      'بدء دورة تقييم جديدة يمحو نقاط كل الأعضاء ليبدأ الجميع من الصفر. تستمر الدورة سنة ثم تبدأ دورة جديدة تلقائياً.';
+
+  @override
+  String get startCycle => 'بدء دورة تقييم جديدة';
+
+  @override
+  String get cycleWarn1 => 'تنبيه: هذه الخاصية ستمحو كل النقاط الحالية.';
+
+  @override
+  String get cycleWarn2Title => 'تنبيه';
+
+  @override
+  String get cycleWarn2 => 'كل دورة تقييم تستمر سنة ثم تبدأ دورة جديدة.';
+
+  @override
+  String get cycleAsk => 'هل تريد بدء دورة تقييم جديدة؟';
+
+  @override
+  String get cycleStarted => 'بدأت دورة تقييم جديدة';
+
+  @override
+  String get next => 'متابعة';
+
+  @override
+  String get confirmWord => 'تأكيد';
+
+  @override
+  String get ok => 'حسناً';
+
+  @override
+  String get noticesNew => 'تنبيهات جديدة';
+
+  @override
+  String get showAll => 'عرض الكل';
+
+  @override
+  String get useCode => 'استخدم كود للتسجيل';
+
+  @override
+  String get activationTitle => 'كود التفعيل';
+
+  @override
+  String get activationSub =>
+      'اكتب كود التفعيل الذي وصلك. يعمل الكود على جهاز واحد فقط، وبعد تفعيله لا يمكن استخدامه على جهاز آخر.';
+
+  @override
+  String get activationHint => 'ASR-XXXX-XXXX';
+
+  @override
+  String get activate => 'تفعيل';
+
+  @override
+  String get activated => 'تم تفعيل التطبيق على هذا الجهاز مجاناً';
+
+  @override
+  String get activatedNote => '✅ التطبيق مفعّل على هذا الجهاز بكود تفعيل';
+
+  @override
+  String get errActivationInvalid => 'الكود غير صحيح. تأكد من كتابته كما وصلك.';
+
+  @override
+  String get errActivationUsed =>
+      'هذا الكود مستخدم على جهاز آخر، ولا يعمل إلا عليه.';
+
+  @override
+  String get paywallTitle => 'اشترك في أسرتي';
+
+  @override
+  String get paywallSub =>
+      'جرّب التطبيق مجاناً ٧ أيام، ثم اختر الاشتراك المناسب. يمكنك الإلغاء في أي وقت من إعدادات حسابك في App Store.';
+
+  @override
+  String get planMonthly => 'اشتراك شهري';
+
+  @override
+  String get planYearly => 'اشتراك سنوي';
+
+  @override
+  String get planMonthlyPrice => '١٠ ريال شهرياً';
+
+  @override
+  String get planYearlyPrice => '٧٥ ريال سنوياً';
+
+  @override
+  String get startTrial => 'ابدأ ٧ أيام مجاناً';
+
+  @override
+  String get restorePurchases => 'استعادة الاشتراك';
+
+  @override
+  String get storeUnavailable => 'المتجر غير متاح الآن. حاول لاحقاً.';
+
+  @override
+  String get paywallFamily =>
+      'إذا فعّلت «المشاركة العائلية» في Apple، يستفيد أفراد أسرتك من اشتراكك.';
+
+  @override
+  String get orUseCode => 'أو لديك كود تفعيل؟';
 }

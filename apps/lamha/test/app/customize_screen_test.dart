@@ -320,15 +320,15 @@ void main() {
     await openCustomize(tester);
     await select(tester, 'dayWeather');
     await tapKey(tester, 'span-dayWeather-3');
-    // الساعة ثم اليوم والطقس في صف جديد، فالصف الأخير (الفصل والموسم ووصفه) خارج الودجت.
+    // الساعة ثم اليوم والطقس في صف جديد، فالصف الأخير (الفصل والموسم) خارج الودجت.
     await revealChip(tester, find.byKey(const Key('chip-overflow-season')));
     expect(find.byKey(const Key('chip-overflow-season')), findsOneWidget);
     await revealChip(tester, find.byKey(const ValueKey('chip-deposit')));
     expect(find.byKey(const Key('chip-overflow-deposit')), findsNothing);
     expect(tile('season'), findsNothing);
     expect(tile('deposit'), findsOneWidget);
-    await select(tester, 'tradPoints');
-    expect(find.byKey(const Key('overflow-tradPoints')), findsOneWidget);
+    await select(tester, 'tradSeason');
+    expect(find.byKey(const Key('overflow-tradSeason')), findsOneWidget);
   });
 
   testWidgets('كل نصوص الشاشة والمعاينة محاذاة يمين', (tester) async {

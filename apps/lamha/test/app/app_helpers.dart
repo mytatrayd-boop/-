@@ -28,6 +28,11 @@ class FakeBridge implements WidgetBridge {
   Future<void> requestUpdate() async => updates++;
 }
 
+class FakeDeclination implements DeclinationSource {
+  @override
+  Future<double> at(double latitude, double longitude) async => 0;
+}
+
 class FakeLocation implements LocationService {
   FakeLocation(this.result);
 
@@ -196,6 +201,7 @@ Future<FakeBridge> pumpApp(
       notificationPermissionProvider
           .overrideWithValue(permission ?? FakePermission()),
       vibrationProvider.overrideWithValue(vibration ?? FakeVibration()),
+      declinationProvider.overrideWithValue(FakeDeclination()),
     ],
     child: const LamhaApp(),
   ));

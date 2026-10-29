@@ -583,6 +583,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'📍 {city} {icon}'**
   String cityIcon(String city, String icon);
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'البوصلة'**
+  String get qiblaTabCompass;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'الخريطة'**
+  String get qiblaTabMap;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'ضع هاتفك أفقياً للحصول على أفضل نتيجة'**
+  String get qiblaHoldFlat;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'موقعك الحالي'**
+  String get qiblaMyLocation;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحديد موقعك…'**
+  String get qiblaLocating;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحديد موقعك الآن، فالحساب من المدينة المحفوظة: {city}'**
+  String qiblaSavedLocation(String city);
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'الاتجاه من الشمال'**
+  String get qiblaMapDirection;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'تبعد عن الكعبة'**
+  String get qiblaMapDistance;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'تحتاج الخريطة اتصالاً بالإنترنت'**
+  String get qiblaMapOffline;
 }
 
 class _AppLocalizationsDelegate

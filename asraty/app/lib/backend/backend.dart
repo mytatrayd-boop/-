@@ -103,6 +103,14 @@ abstract class Backend {
   Future<void> sendReport({Span span = Span.daily});
   Future<void> markRead();
 
+  // ---- evaluation cycles and violations (owner)
+  /// Wipes every member's points and starts a new year-long cycle.
+  Future<void> newCycle();
+  /// [personId] is a member id or 'all'.
+  Future<void> addViolation({required String personId, required int points, String reason = ''});
+  /// Cancels a violation and gives its points back.
+  Future<void> deleteViolation(String violationId);
+
   // ---- honor board goals
   Future<void> addGoal({required String title, required int target, required String personId, required Honor period});
   Future<void> goalProgress(String goalId, int delta);
@@ -111,6 +119,10 @@ abstract class Backend {
   // ---- account
   Future<void> deleteAccount();
   Future<void> deleteFamily();
+
+  // ---- activation codes (work before sign-in)
+  /// Binds [code] to [deviceId] on first use; later it only works on that device.
+  Future<void> redeemCode(String code, String deviceId);
 
   // ---- feedback (works signed in or not)
   Future<void> sendFeedback({required String type, required String text, String? email, required String platform});

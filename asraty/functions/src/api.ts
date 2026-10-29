@@ -8,7 +8,7 @@ import {
 } from "./logic";
 import { issueCode } from "./authCodes";
 import { credRef } from "./passwords";
-import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId } from "./prayer";
+import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId, prayerPoints } from "./prayer";
 
 interface Ctx {
   fid: string;
@@ -75,22 +75,45 @@ async function cleanNotices(fid: string) {
 }
 
 /** Writes a ledger entry and bumps the per-person day/week summaries in one transaction. */
-type PointKind = "task" | "prayer" | "comp";
+type PointKind = "task" | "prayer" | "comp" | "violation";
 
-function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: string, delta: number, reason: string, source: string, kind: PointKind) {
-  const now = Date.now();
+/**
+ * `at` picks the periods the points land in (a cancelled violation gives its points
+ * back to the periods it was taken from). Violations change points but are not achievements.
+ */
+function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: string, delta: number, reason: string, source: string, kind: PointKind, at = Date.now()) {
   const f = fam(fid);
   tx.set(f.collection("ledger").doc(), {
-    personId, delta, reason, source, createdAt: FieldValue.serverTimestamp(), dayKey: dayKey(now), weekKey: weekKey(now),
+    personId, delta, reason, source, createdAt: FieldValue.serverTimestamp(), dayKey: dayKey(at), weekKey: weekKey(at),
   });
   // Day and week drive rewards; month and year drive the honor board.
-  for (const key of [dayKey(now), weekKey(now), monthKey(now), yearKey(now)]) {
+  for (const key of [dayKey(at), weekKey(at), monthKey(at), yearKey(at)]) {
     tx.set(f.collection("summaries").doc(`${personId}_${key}`), {
-      personId, periodKey: key, points: FieldValue.increment(delta), count: FieldValue.increment(1),
+      personId, periodKey: key, points: FieldValue.increment(delta),
       // Reports split done tasks from prayers and competitions.
-      [kind === "task" ? "tasks" : kind === "prayer" ? "prayers" : "comps"]: FieldValue.increment(1),
+      ...(kind === "violation" ? {} : {
+        count: FieldValue.increment(1),
+        [kind === "task" ? "tasks" : kind === "prayer" ? "prayers" : "comps"]: FieldValue.increment(1),
+      }),
     }, { merge: true });
   }
+}
+
+/** Number of days an evaluation cycle lasts before the next one starts by itself. */
+export const CYCLE_DAYS = 365;
+
+/** Wipes every point (summaries, ledger, violations and their notices) and starts a new cycle now. */
+async function resetCycle(fid: string, sender: { id: string; name: string }) {
+  const f = fam(fid);
+  await f.update({ cycleStartedAt: Timestamp.now() });
+  await Promise.all(["summaries", "ledger", "violations"].map((c) => db.recursiveDelete(f.collection(c))));
+  const notes = await f.collection("notifications").where("kind", "==", "violation").get();
+  if (!notes.empty) {
+    const b = db.batch();
+    notes.docs.forEach((d) => b.delete(d.ref));
+    await b.commit();
+  }
+  await notify(fid, "all", "🔄 بدأت دورة تقييم جديدة", `بدأت دورة تقييم جديدة، وكل النقاط تبدأ من الصفر.\nتستمر الدورة سنة، ثم تبدأ دورة جديدة.`, sender);
 }
 
 const inviteMail = (p: { role: string }, famName: string, inviter: string, reminder = false) => {
@@ -262,9 +285,10 @@ const ops: Record<string, Handler> = {
       if (prayer.personId !== c.me.id) fail("task-not-found", {}, "not-found");
       const s = (await fam(c.fid).get()).data()?.prayer as PrayerSettings | undefined;
       if (!s?.enabled) fail("task-not-found", {}, "not-found");
-      const w = currentPrayer(s.lat, s.lng, Date.now());
+      const now = Date.now();
+      const w = currentPrayer(s.lat, s.lng, now);
       if (w.key !== prayer.key) fail("prayer-over");
-      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: s.points, pk: w.dayKey };
+      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: prayerPoints(w, s.points, now), pk: w.dayKey };
     })() : null;
     const tRef = fam(c.fid).collection("tasks").doc(taskId);
     const created = await db.runTransaction(async (tx) => {
@@ -497,6 +521,60 @@ const ops: Record<string, Handler> = {
     return {};
   },
 
+  // ---------- evaluation cycles: the owner wipes all points and starts over (and every year by itself)
+  async newCycle(c) {
+    need(c, "owner");
+    await resetCycle(c.fid, c.me);
+    return {};
+  },
+
+  // ---------- violations: the owner takes points from one member or everyone; cancelling gives them back
+  async addViolation(c) {
+    need(c, "owner");
+    const points = int(c.data.points, 1, 1000);
+    const reason = str(c.data.reason, 120);
+    const all = await getPeople(c.fid);
+    const members = all.filter((p) => p.role === "member");
+    const who = c.data.personId === "all" ? members : members.filter((m) => m.id === c.data.personId);
+    if (!who.length) fail("person-not-found", {}, "not-found");
+    const f = fam(c.fid);
+    const vRef = f.collection("violations").doc();
+    const at = Date.now();
+    // One pop-up notice per member, with their own name and the points taken.
+    const notes = who.map((m) => ({ ref: f.collection("notifications").doc(), m }));
+    await db.runTransaction(async (tx) => {
+      for (const m of who) addPoints(tx, c.fid, m.id, -points, `مخالفة${reason ? `: ${reason}` : ""}`, vRef.id, "violation", at);
+      tx.set(vRef, {
+        personIds: who.map((m) => m.id), all: c.data.personId === "all", points, reason, at: Timestamp.fromMillis(at),
+        noticeIds: notes.map((n) => n.ref.id), createdBy: c.me.id, createdAt: FieldValue.serverTimestamp(),
+      });
+      for (const n of notes) {
+        tx.set(n.ref, {
+          to: n.m.id, title: "مخالفة", body: reason, from: c.me.name, createdAt: FieldValue.serverTimestamp(), readBy: [],
+          expiresAt: null, kind: "violation", points, violationId: vRef.id,
+        });
+      }
+    });
+    await Promise.all(who.map((m) => push(c.fid, [m], "🔔 مخالفة", `${m.name}: −${points} نقطة${reason ? `\n${reason}` : ""}`)));
+    await cleanNotices(c.fid);
+    return { violationId: vRef.id };
+  },
+
+  async deleteViolation(c) {
+    need(c, "owner");
+    const f = fam(c.fid);
+    const ref = f.collection("violations").doc(String(c.data.violationId ?? ""));
+    await db.runTransaction(async (tx) => {
+      const v = (await tx.get(ref)).data();
+      if (!v) fail("not-found", {}, "not-found");
+      const at = (v.at as Timestamp).toMillis();
+      for (const pid of v.personIds as string[]) addPoints(tx, c.fid, pid, v.points, "إلغاء مخالفة", ref.id, "violation", at);
+      tx.delete(ref);
+      for (const id of (v.noticeIds ?? []) as string[]) tx.delete(f.collection("notifications").doc(id));
+    });
+    return {};
+  },
+
   // ---------- notifications & reports
   async sendAlert(c) {
     need(c, "owner");
@@ -580,6 +658,17 @@ export async function api(data: unknown, ctx: CallContext) {
   // A removed person keeps a valid token until it expires; the people doc is the source of truth.
   if (!meSnap.exists || !famSnap.exists) fail("removed", {}, "permission-denied");
   const me = { id: meSnap.id, ...(meSnap.data() as Omit<Person, "id">) };
+  // A cycle lasts a year; the first call after that starts the next one.
+  const started = (famSnap.data()!.cycleStartedAt as Timestamp | undefined)?.toMillis();
+  if (started && Date.now() - started > CYCLE_DAYS * 86400e3) {
+    const first = await db.runTransaction(async (tx) => {
+      const cur = ((await tx.get(fam(fid))).data()?.cycleStartedAt as Timestamp | undefined)?.toMillis();
+      if (cur !== started) return false;
+      tx.update(fam(fid), { cycleStartedAt: Timestamp.now() });
+      return true;
+    });
+    if (first) await resetCycle(fid, { id: "", name: "أسرتي" }).catch((e) => console.warn("cycle", e));
+  }
   // Prizes are handed over by whichever call comes first after their time (no scheduler on the free plan).
   const [out] = await Promise.all([handler({ fid, me, famName: famSnap.data()!.name, data: d }), sweepPrizes(fid).catch((e) => console.warn("sweep", e))]);
   return out;

@@ -2,6 +2,7 @@ package sa.lamha.lamha
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.GeomagneticField
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -11,7 +12,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import sa.lamha.lamha.widget.LamhaWeatherWorker
 
-/// قناة sa.lamha/android (services.dart): ألوان النظام (Material You) وإذن الإشعارات والاهتزاز.
+/// قناة sa.lamha/android (services.dart): ألوان النظام (Material You) وإذن الإشعارات والاهتزاز
+/// والانحراف المغناطيسي للبوصلة.
 class MainActivity : FlutterActivity() {
     private var pendingPermission: MethodChannel.Result? = null
 
@@ -24,6 +26,11 @@ class MainActivity : FlutterActivity() {
                 "systemColors" -> result.success(systemColors())
                 "requestNotificationPermission" -> requestNotificationPermission(result)
                 "vibrate" -> result.success(vibrate())
+                "declination" -> {
+                    val lat = call.argument<Double>("latitude") ?: 0.0
+                    val lng = call.argument<Double>("longitude") ?: 0.0
+                    result.success(GeomagneticField(lat.toFloat(), lng.toFloat(), 0f, System.currentTimeMillis()).declination.toDouble())
+                }
                 else -> result.notImplemented()
             }
         }

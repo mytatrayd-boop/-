@@ -47,30 +47,33 @@ struct LamhaProvider: TimelineProvider {
 
 // MARK: - العناصر
 
-/// مربع القبلة (lamha_qibla_update.md، qiblaTile في أندرويد): خلفية أيقونة القبلة، وفوقها دائرة بإطار
-/// أزرق فاتح وN أحمر أعلاها، والكعبة في الوسط، ورأس سهم أبيض على المحيط مُدار بزاوية القبلة. الأبعاد
-/// نسبةً للضلع كـ qiblaDial* في widget_preview_tiles.dart.
+/// مربع القبلة (صورة المالك، drawQiblaDial في أندرويد وQiblaTileDialPainter في Dart): بوصلة سوداء
+/// بتدريج أبيض وحروف N وE وS وW، ونجمة داكنة، وسهم أحمر من المركز ثم خط منقّط إلى الكعبة على المحيط
+/// بزاوية القبلة. الأبعاد نسبةً للضلع كما في widget_preview_tiles.dart. [dark] لم يعد يُستخدم.
 struct QiblaIcon: View {
     let degrees: Double
     let dark: Color
     var body: some View {
         GeometryReader { g in
             let side = min(g.size.width, g.size.height)
-            let r = side * 0.36
+            let a = degrees * .pi / 180
             ZStack {
-                Image("qibla_shape").resizable().renderingMode(.template).foregroundStyle(dark)
-                Circle()
-                    .stroke(Color(red: 133.0 / 255, green: 183.0 / 255, blue: 235.0 / 255), lineWidth: side * 0.03)
-                    .frame(width: r * 2, height: r * 2)
-                Image("kaaba").resizable().aspectRatio(1, contentMode: .fit).frame(width: side * 0.34)
-                Text("N")
-                    .font(.system(size: side * 0.12, weight: .bold))
-                    .foregroundStyle(Color(red: 240.0 / 255, green: 149.0 / 255, blue: 149.0 / 255))
-                    .offset(y: -side * 0.265)
-                QiblaArrow(radius: r, side: side)
-                    .fill(Color.white)
+                Circle().fill(Color.black).frame(width: side * 0.98, height: side * 0.98)
+                QiblaTicks(side: side).frame(width: side, height: side)
+                ForEach(Array([(0.0, "N"), (90.0, "E"), (180.0, "S"), (270.0, "W")].enumerated()), id: \.offset) { _, item in
+                    let r = item.0 * .pi / 180
+                    Text(item.1)
+                        .font(.system(size: side * 0.13, weight: .bold))
+                        .foregroundStyle(Color.white)
+                        .offset(x: sin(r) * side * 0.36, y: -cos(r) * side * 0.36)
+                }
+                QiblaStar(side: side).fill(Color(white: 0.23)).frame(width: side, height: side)
+                QiblaArrow(side: side)
+                    .fill(Color(red: 229.0 / 255, green: 57.0 / 255, blue: 53.0 / 255))
                     .frame(width: side, height: side)
                     .rotationEffect(.degrees(degrees))
+                Image("kaaba").resizable().aspectRatio(1, contentMode: .fit).frame(width: side * 0.18)
+                    .offset(x: sin(a) * side * 0.36, y: -cos(a) * side * 0.36)
             }
             .frame(width: side, height: side)
             .position(x: g.size.width / 2, y: g.size.height / 2)
@@ -80,17 +83,59 @@ struct QiblaIcon: View {
     }
 }
 
-/// رأس السهم متجهاً للأعلى على محيط الدائرة: طرفه خارجها وقاعدته داخلها.
-struct QiblaArrow: Shape {
-    let radius: CGFloat
+/// التدريج: كل ١٠° (أطول كل ٣٠°)، بلا خطوط عند الجهات الأربع (مكان الحروف).
+struct QiblaTicks: View {
+    let side: CGFloat
+    var body: some View {
+        Canvas { ctx, size in
+            let c = CGPoint(x: size.width / 2, y: size.height / 2)
+            for d in stride(from: 0, to: 360, by: 10) where d % 90 != 0 {
+                let a = Double(d) * .pi / 180
+                let long = d % 30 == 0
+                let inner = side * (long ? 0.38 : 0.41), outer = side * 0.46
+                var p = Path()
+                p.move(to: CGPoint(x: c.x + sin(a) * inner, y: c.y - cos(a) * inner))
+                p.addLine(to: CGPoint(x: c.x + sin(a) * outer, y: c.y - cos(a) * outer))
+                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: side * (long ? 0.022 : 0.014), lineCap: .round))
+            }
+        }
+    }
+}
+
+/// نجمة ثمانية الرؤوس في الوسط (الطويلة للجهات الأربع).
+struct QiblaStar: Shape {
     let side: CGFloat
     func path(in rect: CGRect) -> Path {
         let c = CGPoint(x: rect.midX, y: rect.midY)
         var p = Path()
-        p.move(to: CGPoint(x: c.x, y: c.y - (radius + side * 0.09)))
-        p.addLine(to: CGPoint(x: c.x + side * 0.065, y: c.y - (radius - side * 0.03)))
-        p.addLine(to: CGPoint(x: c.x - side * 0.065, y: c.y - (radius - side * 0.03)))
+        for i in 0..<8 {
+            let a = Double(i) * .pi / 4
+            let len = side * 0.2 * (i % 2 == 0 ? 1 : 0.6), w = side * 0.035
+            p.move(to: CGPoint(x: c.x + cos(a) * w, y: c.y + sin(a) * w))
+            p.addLine(to: CGPoint(x: c.x + sin(a) * len, y: c.y - cos(a) * len))
+            p.addLine(to: CGPoint(x: c.x - cos(a) * w, y: c.y - sin(a) * w))
+            p.closeSubpath()
+        }
+        return p
+    }
+}
+
+/// السهم الأحمر متجهاً للأعلى من المركز، ثم نقاط حتى الكعبة.
+struct QiblaArrow: Shape {
+    let side: CGFloat
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        var p = Path()
+        p.move(to: CGPoint(x: c.x, y: c.y - side * 0.24))
+        p.addLine(to: CGPoint(x: c.x + side * 0.07, y: c.y + side * 0.03))
+        p.addLine(to: CGPoint(x: c.x, y: c.y - side * 0.02))
+        p.addLine(to: CGPoint(x: c.x - side * 0.07, y: c.y + side * 0.03))
         p.closeSubpath()
+        var t: CGFloat = 0.26
+        while t < 0.36 - 0.18 / 2.6 {
+            p.addEllipse(in: CGRect(x: c.x - side * 0.009, y: c.y - side * (t + 0.012), width: side * 0.018, height: side * 0.018))
+            t += 0.035
+        }
         return p
     }
 }
@@ -177,6 +222,26 @@ struct SeasonBox: View {
     }
 }
 
+/// مربع الموسم بتنسيق المالك: «الوسم (المربعانية بعد ٤٠ يوماً)» ثم الوصف يبدأ باسم الموسم.
+struct TradSeasonBox: View {
+    let name: String
+    let after: String
+    let line: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            (Text(name).font(.system(size: 15, weight: .bold)).foregroundColor(textColor)
+                + Text(" (" + after + ")").font(.system(size: 11)).foregroundColor(dimColor))
+                .lineLimit(1)
+            if !line.isEmpty {
+                Text(line).font(.system(size: 11)).foregroundStyle(dimColor).lineLimit(3)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 12).fill(boxColor))
+    }
+}
+
 // MARK: - الأحجام
 
 struct LamhaWidgetView: View {
@@ -253,7 +318,8 @@ struct LamhaWidgetView: View {
             DepositsGrid(deposits: Array(day.deposits.prefix(6)))
             HStack(spacing: 6) {
                 SeasonBox(title: day.seasonName, sub: day.seasonAfter)
-                SeasonBox(title: day.tradName, sub: day.tradAfter)
+                TradSeasonBox(name: day.tradName, after: day.tradAfter, line: day.tradLine)
+                    .layoutPriority(1)
             }
         }
     }

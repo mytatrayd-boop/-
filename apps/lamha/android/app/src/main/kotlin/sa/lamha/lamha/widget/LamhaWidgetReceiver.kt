@@ -16,6 +16,10 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
+import android.text.style.StyleSpan
+import android.text.style.RelativeSizeSpan
+import android.text.Spanned
+import android.text.SpannableString
 import android.os.Bundle
 import android.os.SystemClock
 import android.text.StaticLayout
@@ -134,16 +138,19 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// دائرة مربع القبلة (lamha_qibla_update.md): الألوان، والأبعاد نسبةً لضلع المربع كـ qiblaDial*
         /// في widget_preview_tiles.dart. أقصى ضلع للصورة بالبكسل (ذاكرة RemoteViews).
-        private const val QIBLA_RING = 0xFF85B7EB.toInt()
-        private const val QIBLA_NORTH = 0xFFF09595.toInt()
-        private const val QIBLA_DIAL_RADIUS = 0.36f
-        private const val QIBLA_DIAL_STROKE = 0.03f
-        private const val QIBLA_ARROW_OUT = 0.09f
-        private const val QIBLA_ARROW_IN = 0.03f
-        private const val QIBLA_ARROW_HALF = 0.065f
-        private const val QIBLA_NORTH_AT = 0.265f
-        private const val QIBLA_NORTH_SIZE = 0.12f
-        private const val QIBLA_KAABA_SIZE = 0.34f
+        private const val QIBLA_STAR = 0xFF3A3A3A.toInt()
+        private const val QIBLA_ARROW = 0xFFE53935.toInt()
+        private const val QIBLA_DIAL_RADIUS = 0.49f
+        private const val QIBLA_TICK_OUTER = 0.46f
+        private const val QIBLA_TICK_INNER = 0.41f
+        private const val QIBLA_TICK_LONG = 0.38f
+        private const val QIBLA_LETTER_AT = 0.36f
+        private const val QIBLA_LETTER_SIZE = 0.13f
+        private const val QIBLA_KAABA_AT = 0.36f
+        private const val QIBLA_KAABA_SIZE = 0.18f
+        private const val QIBLA_ARROW_LENGTH = 0.24f
+        private const val QIBLA_ARROW_HALF = 0.07f
+        private const val QIBLA_STAR_LENGTH = 0.2f
         private const val QIBLA_DIAL_MAX_PX = 360
         private const val QIBLA_ICON_DEFAULT_DP = 56f
         private const val POINT_SP = 10f
@@ -491,12 +498,12 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private fun subCount(day: LamhaDay, element: String): Int = when (element) {
             "prayer" -> if (day.nextPrayer != null) 2 else 0
             "season" -> 1
-            else -> if (day.tradDescription.isEmpty()) 1 else 2
+            else -> if (day.tradDescription.isEmpty()) 0 else 1
         }
 
-        /// كـ [subCount] مع مربع «وصف الموسم»: الموسم بلا وصف إن ظهر.
+        /// كـ [subCount] مع مربع «وصف الموسم»: الموسم بلا وصف إن ظهر (الموسم القادم في سطر الاسم).
         private fun subCount(env: Env, element: String): Int =
-            if (element == "tradSeason" && "tradPoints" in env.placed) 1 else subCount(env.day, element)
+            if (element == "tradSeason" && "tradPoints" in env.placed) 0 else subCount(env.day, element)
 
         /// محتوى مربع [tile] بعرض [span] ومعامل خطه الفعلي [scale]، و[innerHeightDp] ارتفاع خانته.
         private fun tile(env: Env, tile: LamhaLogic.Tile, span: Int, scale: Float, innerHeightDp: Float): RemoteViews {
@@ -613,6 +620,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 },
             )
             var value = ""
+            // نص أصغر بعد القيمة في سطرها (مربع الموسم).
+            var valueNote: String? = null
             var sub1: String? = null
             var sub2: String? = null
             var sub3: String? = null
@@ -642,15 +651,18 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     sub3 = ctx.getString(R.string.next_after, day.seasonNext, day.seasonAfter)
                 }
                 else -> {
+                    // تنسيق المالك: الاسم ثم «(الموسم القادم بعد … يوماً)» أصغر في سطره، وتحته الوصف
+                    // (يبدأ باسم الموسم، descriptionLine في الجدول) إن لم يظهر مربع «وصف الموسم».
                     value = day.tradName
-                    // الوصف سطر ثانوي إن لم يظهر مربع «وصف الموسم».
-                    val after = ctx.getString(R.string.next_after, day.tradNext, day.tradAfter)
-                    if ("tradPoints" in env.placed || day.tradDescription.isEmpty()) {
-                        sub3 = after
+                    // مسافات غير قابلة للكسر: الملاحظة كتلة واحدة (في سطر الاسم أو تحته كاملة).
+                    val note = ("(" + ctx.getString(R.string.next_after, day.tradNext, day.tradAfter) + ")").replace(' ', '\u00A0')
+                    // في سطر الاسم إن اتسع بلا تصغير، وإلا أول سطر تحته (كالمعاينة).
+                    if (availDp > 0f && textWidthDp(ctx, "$value ", valueSp, true) + textWidthDp(ctx, note, subSp, false) > availDp) {
+                        sub1 = note
                     } else {
-                        sub1 = after
-                        sub3 = day.tradDescription
+                        valueNote = note
                     }
+                    if ("tradPoints" !in env.placed && day.tradDescription.isNotEmpty()) sub3 = day.tradDescription
                 }
             }
             // العنوان سطر واحد: يصغر الخط (حتى ٧٠٪) إن لم يتسع، ثم «…». بلا عرض معروف: كما هو.
@@ -665,7 +677,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val lines = listOf(R.id.tile_sub1 to sub1, R.id.tile_countdown to countdown, R.id.tile_sub2 to sub2, R.id.tile_sub3 to sub3)
                 .filter { !it.second.isNullOrEmpty() && spec.showSub }
             val subLine = tightDp(ctx, subSp, false)
-            val (words, space) = wordsDp(ctx, value, valueSp, true)
+            val (valueWords, space) = wordsDp(ctx, value, valueSp, true)
+            val words = if (valueNote == null) valueWords else valueWords + wordsDp(ctx, valueNote, subSp, false).first
             // هامش ١dp: تقريب البكسل في أسطر TextView قد يزيد ١–٢px على القياس فيُقص آخر سطر حين يتسع
             // المحتوى بالضبط (الفصل والموسم في ٤×٤ مع ستة إيداعات).
             val fit = LamhaLogic.fitTile(
@@ -682,7 +695,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             rv.setViewVisibility(R.id.tile_value, View.VISIBLE)
             rv.setTextViewText(R.id.tile_title, title)
             rv.setTextViewTextSize(R.id.tile_title, TypedValue.COMPLEX_UNIT_SP, titleFit)
-            rv.setTextViewText(R.id.tile_value, value)
+            rv.setTextViewText(R.id.tile_value, if (valueNote == null) value else SpannableString("$value $valueNote").apply {
+                // الملاحظة بحجم الثانوي ووزن عادي (تُصغَّر مع القيمة بنفس النسبة).
+                setSpan(RelativeSizeSpan(subSp / valueSp), value.length, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                setSpan(StyleSpan(Typeface.NORMAL), value.length, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            })
             rv.setTextViewTextSize(R.id.tile_value, TypedValue.COMPLEX_UNIT_SP, valueSp * fit.valueScale)
             rv.setInt(R.id.tile_value, "setMaxLines", fit.valueLines)
             // القيمة بلا هامش علوي إن خفي العنوان.
@@ -801,9 +818,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 rv.setViewVisibility(R.id.qibla_title, View.GONE)
                 rv.setViewVisibility(R.id.qibla_sub, View.GONE)
             }
-            // الخلفية بلون المربع الرئيسي إن اختير وإلا بالتمييز، معتّماً (كالأيقونة السابقة).
-            val ring = spec.primaryColor ?: env.accent
-            rv.setInt(R.id.qibla_shape, "setColorFilter", LamhaLogic.qiblaIconBackground(ring))
+            // البوصلة السوداء ترسم خلفيتها بنفسها (صورة المالك)، فلا شكل خلفها.
+            rv.setViewVisibility(R.id.qibla_shape, View.GONE)
             val icon = listOf(inner, if (innerHeightDp > 0f) innerHeightDp - textLines else 0f).filter { it > 0f }.minOrNull() ?: 0f
             val resizable = icon > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             if (resizable) {
@@ -816,40 +832,76 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             return rv
         }
 
-        /// دائرة مربع القبلة بضلع [px]: إطار أزرق فاتح، وN أحمر أعلاها، والكعبة في الوسط، ورأس سهم أبيض
-        /// على المحيط مُدار بـ[degrees] من الشمال (QiblaTileDialPainter في Dart). رسم فقط، لا حساب.
+        /// قرص مربع القبلة بضلع [px] (صورة المالك، QiblaTileDialPainter في Dart): دائرة سوداء، وتدريج أبيض
+        /// كل ١٠° (أطول كل ٣٠°)، وحروف N وE وS وW، ونجمة داكنة، وسهم أحمر من المركز بزاوية [degrees] من
+        /// الشمال ثم خط منقّط إلى الكعبة على المحيط. رسم فقط، لا حساب.
         internal fun drawQiblaDial(context: Context, px: Int, degrees: Float): Bitmap {
             val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)
             val side = px.toFloat()
             val c = side / 2
-            val r = side * QIBLA_DIAL_RADIUS
-            canvas.drawCircle(c, c, r, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = side * QIBLA_DIAL_STROKE
-                color = QIBLA_RING
-            })
-            val k = side * QIBLA_KAABA_SIZE / 2
-            BitmapFactory.decodeResource(context.resources, R.drawable.kaaba)?.let { kaaba ->
-                canvas.drawBitmap(kaaba, null, RectF(c - k, c - k, c + k, c + k), Paint(Paint.FILTER_BITMAP_FLAG))
-                kaaba.recycle()
+            canvas.drawCircle(c, c, side * QIBLA_DIAL_RADIUS, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK })
+            val tick = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; strokeCap = Paint.Cap.ROUND }
+            for (d in 0 until 360 step 10) {
+                if (d % 90 == 0) continue
+                val a = Math.toRadians(d.toDouble())
+                val sx = Math.sin(a).toFloat()
+                val cy = -Math.cos(a).toFloat()
+                val long = d % 30 == 0
+                tick.strokeWidth = side * if (long) 0.022f else 0.014f
+                val inner = side * if (long) QIBLA_TICK_LONG else QIBLA_TICK_INNER
+                canvas.drawLine(c + sx * inner, c + cy * inner, c + sx * side * QIBLA_TICK_OUTER, c + cy * side * QIBLA_TICK_OUTER, tick)
             }
-            val n = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = QIBLA_NORTH
-                textSize = side * QIBLA_NORTH_SIZE
+            val letters = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                textSize = side * QIBLA_LETTER_SIZE
                 typeface = Typeface.DEFAULT_BOLD
                 textAlign = Paint.Align.CENTER
             }
-            canvas.drawText("N", c, c - side * QIBLA_NORTH_AT - (n.ascent() + n.descent()) / 2, n)
+            for ((d, label) in listOf(0 to "N", 90 to "E", 180 to "S", 270 to "W")) {
+                val a = Math.toRadians(d.toDouble())
+                val x = c + Math.sin(a).toFloat() * side * QIBLA_LETTER_AT
+                val y = c - Math.cos(a).toFloat() * side * QIBLA_LETTER_AT
+                canvas.drawText(label, x, y - (letters.ascent() + letters.descent()) / 2, letters)
+            }
+            val star = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = QIBLA_STAR }
+            for (i in 0 until 8) {
+                val a = i * Math.PI / 4
+                val len = side * QIBLA_STAR_LENGTH * if (i % 2 == 0) 1f else 0.6f
+                val w = side * 0.035f
+                val tx = c + Math.sin(a).toFloat() * len
+                val ty = c - Math.cos(a).toFloat() * len
+                val nx = Math.cos(a).toFloat() * w
+                val ny = Math.sin(a).toFloat() * w
+                canvas.drawPath(Path().apply { moveTo(c + nx, c + ny); lineTo(tx, ty); lineTo(c - nx, c - ny); close() }, star)
+            }
             canvas.save()
             canvas.rotate(degrees, c, c)
+            val red = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = QIBLA_ARROW }
             canvas.drawPath(Path().apply {
-                moveTo(c, c - (r + side * QIBLA_ARROW_OUT))
-                lineTo(c + side * QIBLA_ARROW_HALF, c - (r - side * QIBLA_ARROW_IN))
-                lineTo(c - side * QIBLA_ARROW_HALF, c - (r - side * QIBLA_ARROW_IN))
+                moveTo(c, c - side * QIBLA_ARROW_LENGTH)
+                lineTo(c + side * QIBLA_ARROW_HALF, c + side * 0.03f)
+                lineTo(c, c - side * 0.02f)
+                lineTo(c - side * QIBLA_ARROW_HALF, c + side * 0.03f)
                 close()
-            }, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
+            }, red)
+            red.strokeWidth = side * 0.018f
+            red.strokeCap = Paint.Cap.ROUND
+            var t = QIBLA_ARROW_LENGTH + 0.02f
+            while (t < QIBLA_KAABA_AT - QIBLA_KAABA_SIZE / 2.6f) {
+                canvas.drawLine(c, c - side * t, c, c - side * (t + 0.012f), red)
+                t += 0.035f
+            }
             canvas.restore()
+            // الكعبة على المحيط بزاوية القبلة (qiblaKaabaCenter في Dart).
+            val a = Math.toRadians(degrees.toDouble())
+            val kx = c + Math.sin(a).toFloat() * side * QIBLA_KAABA_AT
+            val ky = c - Math.cos(a).toFloat() * side * QIBLA_KAABA_AT
+            val k = side * QIBLA_KAABA_SIZE / 2
+            BitmapFactory.decodeResource(context.resources, R.drawable.kaaba)?.let { kaaba ->
+                canvas.drawBitmap(kaaba, null, RectF(kx - k, ky - k, kx + k, ky + k), Paint(Paint.FILTER_BITMAP_FLAG))
+                kaaba.recycle()
+            }
             return bmp
         }
 

@@ -14,6 +14,7 @@ import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
 import 'theme.dart';
+import 'violations.dart';
 
 final _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
@@ -47,7 +48,11 @@ class AdminHome extends ConsumerWidget {
       // Delegated admins get the family's alerts too (the owner sees them all under "send alert").
       _Tile('inbox', Icons.notifications_none_rounded, t.tabNotices, !owner, unread),
       _Tile('comps', Icons.flag_outlined, t.tileComps, can(me, Perm.comps)),
+      _Tile('violations', Icons.gavel_rounded, t.tileViolations, owner),
+      _Tile('cycle', Icons.restart_alt_rounded, t.tileCycle, owner),
     ].where((x) => x.visible);
+    // Delegated admins see new family alerts (reports, prizes, alerts) right on their dashboard.
+    final fresh = owner ? const <Notice>[] : d.noticesFor(me).where((n) => n.activeAt(now) && !n.readBy.contains(me.id)).take(3).toList();
     final active = d.competitions.where((x) => x.activeAt(now)).length;
     final perms = Perm.values.where((p) => me.perms[p] ?? false).toList();
 
@@ -67,6 +72,14 @@ class AdminHome extends ConsumerWidget {
           if (perms.isEmpty) Tag(t.viewTasksOnly),
           for (final p in perms) Tag(permLabel(t, p)),
         ]),
+      ],
+      if (fresh.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: H3('🔔 ${t.noticesNew}')),
+          TextButton(onPressed: () => context.push('/admin/inbox'), child: Text(t.showAll)),
+        ]),
+        NoticeList(fresh, now: now, nameOf: (id) => d.person(id)?.name),
       ],
       const SizedBox(height: 14),
       LayoutBuilder(builder: (context, box) {
@@ -127,6 +140,8 @@ class AdminPage extends ConsumerWidget {
       'prayer' => PrayerPage(c),
       'honor' => HonorBoard(c),
       'inbox' => InboxPage(c),
+      'violations' => ViolationsPage(c),
+      'cycle' => CyclePage(c),
       _ => const SizedBox(),
     };
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [BackLink(context.t.backToDashboard), body]);

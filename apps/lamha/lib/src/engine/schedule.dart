@@ -79,7 +79,6 @@ Map<String, Object?> buildSchedule(
   final dayList = <Map<String, Object?>>[];
   for (var i = 0; i < days; i++) {
     final d = DateTime(start.year, start.month, start.day + i);
-    final noon = tz.TZDateTime(prayers.location, d.year, d.month, d.day, 12);
     final monthName = gregorianMonthNames[d.month - 1];
     dayList.add({
       'date': isoDate(d),
@@ -93,7 +92,7 @@ Map<String, Object?> buildSchedule(
       },
       'hijri': hijriJson(data.hijri, d),
       'prayers': prayers.forDate(d).toJson(),
-      'season': astroSeasonOn(d, noon.timeZoneOffset).toJson(),
+      'season': climateSeasonOn(data.tradSeasons, d).toJson(),
       'tradSeason': data.tradSeasons.on(d).toJson(),
       'deposits': [
         // حتى ستة إيداعات، الأقرب أولاً (أعمدة الإيداعات، وبعد ثلاثة شبكة عمودين).

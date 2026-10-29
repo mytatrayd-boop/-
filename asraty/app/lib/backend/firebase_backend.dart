@@ -52,6 +52,8 @@ class FirebaseBackend extends Backend {
   List<Notice> _notices = [];
   Map<String, PeriodSum> _daily = {}, _weekly = {}, _monthly = {}, _yearly = {};
   List<Goal> _goals = [];
+  List<Violation> _violations = [];
+  DateTime? _cycleStartedAt;
 
   @override
   bool get isDemo => false;
@@ -111,6 +113,7 @@ class FirebaseBackend extends Backend {
     _subs.clear();
     _famName = null;
     _people = null;
+    _violations = [];
   }
 
   void _listen(Session s) {
@@ -126,6 +129,8 @@ class FirebaseBackend extends Backend {
 
     on(f.snapshots(), (DocumentSnapshot<Map<String, dynamic>> d) {
       _famName = d.data()?['name'] as String?;
+      final cy = d.data()?['cycleStartedAt'];
+      _cycleStartedAt = cy is Timestamp ? cy.toDate() : null;
       final p = d.data()?['prayer'];
       _prayer = p is Map && p['lat'] is num && p['lng'] is num
           ? PrayerSettings(enabled: p['enabled'] != false, lat: (p['lat'] as num).toDouble(), lng: (p['lng'] as num).toDouble(), points: _int(p['points']))
@@ -195,7 +200,7 @@ class FirebaseBackend extends Backend {
         return Notice(
           id: d.id, to: x['to'] ?? 'all', title: x['title'] ?? '', body: x['body'] ?? '', from: x['from'] ?? '',
           createdAt: _ts(x['createdAt']), expiresAt: x['expiresAt'] is Timestamp ? (x['expiresAt'] as Timestamp).toDate() : null,
-          readBy: List<String>.from(x['readBy'] ?? const []), kind: x['kind'] as String? ?? 'notice');
+          readBy: List<String>.from(x['readBy'] ?? const []), kind: x['kind'] as String? ?? 'notice', points: _int(x['points']));
       }).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
@@ -210,6 +215,17 @@ class FirebaseBackend extends Backend {
         byKey[x['periodKey']]?[x['personId'] as String] = PeriodSum(_int(x['points']), _int(x['count']), _int(x['tasks']));
       }
     });
+    // The owner manages violations; members get them as notices.
+    if (s.role == Role.owner) {
+      on(f.collection('violations').orderBy('at', descending: true).limit(50).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+        _violations = q.docs.map((d) {
+          final x = d.data();
+          return Violation(
+              id: d.id, personIds: List<String>.from(x['personIds'] ?? const []), all: x['all'] == true, points: _int(x['points']),
+              reason: x['reason'] as String? ?? '', at: _ts(x['at']));
+        }).toList();
+      });
+    }
     on(f.collection('goals').where('periodKey', whereIn: [mk, yk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _goals = q.docs.map((d) {
         final x = d.data();
@@ -233,7 +249,7 @@ class FirebaseBackend extends Backend {
       data: FamilySnapshot(
         familyName: _famName!, people: _people!, tasks: _tasks, completions: _completions, competitions: _comps,
         notices: _notices, daily: _daily, weekly: _weekly, monthly: _monthly, yearly: _yearly, goals: _goals,
-        prizes: _prizes, prayer: _prayer),
+        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt),
     ));
   }
 
@@ -395,6 +411,17 @@ class FirebaseBackend extends Backend {
   @override
   Future<void> deleteAlert(String noticeId) => _op('deleteAlert', {'noticeId': noticeId});
 
+  // ---------------------------------------------------------------- cycles & violations
+  @override
+  Future<void> newCycle() => _op('newCycle');
+
+  @override
+  Future<void> addViolation({required String personId, required int points, String reason = ''}) =>
+      _op('addViolation', {'personId': personId, 'points': points, 'reason': reason});
+
+  @override
+  Future<void> deleteViolation(String violationId) => _op('deleteViolation', {'violationId': violationId});
+
   // ---------------------------------------------------------------- goals
   @override
   Future<void> addGoal({required String title, required int target, required String personId, required Honor period}) =>
@@ -424,6 +451,9 @@ class FirebaseBackend extends Backend {
     await _op('deleteFamily');
     await _auth.signOut();
   }
+
+  @override
+  Future<void> redeemCode(String code, String deviceId) => _call('redeemCode', {'code': code, 'deviceId': deviceId});
 
   @override
   Future<void> sendFeedback({required String type, required String text, String? email, required String platform}) =>

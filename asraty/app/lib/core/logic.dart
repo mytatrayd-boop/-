@@ -123,7 +123,7 @@ extension SnapshotLogic on FamilySnapshot {
     if (p == null || !p.enabled || person(personId)?.role != Role.member) return own;
     final slot = currentPrayer(p, now);
     return [
-      TaskItem(id: prayerTaskId(slot.key, personId), title: 'صلاة ${prayerNames[slot.key]}', personId: personId, points: p.points, repeat: Period.daily, prayer: slot),
+      TaskItem(id: prayerTaskId(slot.key, personId), title: 'صلاة ${prayerNames[slot.key]}', personId: personId, points: slot.lateAt(now) ? 0 : p.points, repeat: Period.daily, prayer: slot),
       ...own,
     ];
   }

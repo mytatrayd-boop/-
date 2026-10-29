@@ -10,6 +10,7 @@ import '../core/logic.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
 import 'theme.dart';
+import 'violations.dart';
 
 extension L10nX on BuildContext {
   L10n get t => L10n.of(this);
@@ -71,6 +72,8 @@ String errorText(L10n t, Object e) {
     'prayer-over' => t.errPrayerOver,
     'avatar-locked' => t.errAvatarLocked,
     'bad-time' => t.errBadTime,
+    'code-invalid' => t.errActivationInvalid,
+    'code-used' => t.errActivationUsed,
     // Unknown codes show the code (and the server's reason for internal errors) so a screenshot is enough to diagnose.
     _ => t.errGenericCode([e.code, if (e.details['reason'] is String) e.details['reason'] as String].join(' · ')),
   };
@@ -759,16 +762,19 @@ Future<bool> confirm(BuildContext context, String message, {String? ok, bool dan
 /// Alerts addressed to the signed-in person, newest first. Timed alerts that
 /// ended move to a dimmed "ended" list (the server deletes them a day later).
 class NoticeList extends StatelessWidget {
-  const NoticeList(this.notices, {super.key, required this.now});
+  const NoticeList(this.notices, {super.key, required this.now, this.nameOf});
   final List<Notice> notices;
   final DateTime now;
+
+  /// Member name for a violation card ([Notice.to] is that member).
+  final String? Function(String personId)? nameOf;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t, ns = notices;
     if (ns.isEmpty) return EmptyState('🔔', t.noNotices);
     final active = ns.where((n) => n.activeAt(now)).toList(), ended = ns.where((n) => !n.activeAt(now)).take(5).toList();
-    Widget card(Notice n) => n.kind == 'prize' ? PrizeCard(n, now: now) : OutlineCard(
+    Widget card(Notice n) => n.kind == 'prize' ? PrizeCard(n, now: now) : n.kind == 'violation' ? ViolationNote(n, now: now, name: nameOf?.call(n.to)) : OutlineCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(child: Text(n.title, style: const TextStyle(fontWeight: FontWeight.w700))),
@@ -791,6 +797,23 @@ class NoticeList extends StatelessWidget {
       ],
     ]);
   }
+}
+
+/// A violation in the member's notice list: the round card, then the reason.
+class ViolationNote extends StatelessWidget {
+  const ViolationNote(this.n, {super.key, required this.now, this.name});
+  final Notice n;
+  final DateTime now;
+  final String? name;
+  @override
+  Widget build(BuildContext context) => OutlineCard(
+        child: Column(children: [
+          ViolationCard(name: name ?? n.from, points: n.points, size: 170),
+          if (n.body.isNotEmpty) ...[const SizedBox(height: 8), Text(n.body, textAlign: TextAlign.center)],
+          const SizedBox(height: 4),
+          Muted(ago(context.t, n.createdAt, now)),
+        ]),
+      );
 }
 
 /// Congratulation card sent to the whole family when a prize is won.
@@ -830,7 +853,13 @@ String repeatLabel(L10n t, Period p) => switch (p) {
 
 String spanLabel(L10n t, Span s) => switch (s) { Span.daily => t.today, Span.weekly => t.thisWeek, Span.monthly => t.thisMonth, Span.yearly => t.thisYear };
 
-List<(Span, String, int)> spanTabs(L10n t) => [for (final s in Span.values) (s, spanLabel(t, s), 0)];
+/// Short tab labels ("الأسبوع", not "هذا الأسبوع") so all four fit on a phone.
+List<(Span, String, int)> spanTabs(L10n t) => [
+      (Span.daily, t.spanShortDay, 0),
+      (Span.weekly, t.spanShortWeek, 0),
+      (Span.monthly, t.spanShortMonth, 0),
+      (Span.yearly, t.spanShortYear, 0),
+    ];
 
 /// Stat box with a gold outline (dashboard and reports).
 class StatBox extends StatelessWidget {

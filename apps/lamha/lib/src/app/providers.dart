@@ -39,6 +39,9 @@ final placeGeocoderProvider =
 final compassSourceProvider =
     Provider<CompassSource>((ref) => FlutterCompassSource());
 
+final declinationProvider =
+    Provider<DeclinationSource>((ref) => AndroidDeclinationSource());
+
 final widgetLaunchProvider = Provider<WidgetLaunch>((ref) => HomeWidgetLaunch());
 
 final weatherServiceProvider =

@@ -610,29 +610,26 @@ class WidgetPreview extends StatelessWidget {
     );
   }
 
-  /// الوصف سطر ثانوي إن لم يظهر مربع «وصف الموسم» ([withDescription]).
+  /// تنسيق المالك (٢٩/١٠/٢٠٢٦): اسم الموسم وبعده بين قوسين الموسم القادم والأيام الباقية،
+  /// وتحته وصف يبدأ باسم الموسم (descriptionLine في الجدول) إن لم يظهر مربع «وصف الموسم».
   _Tile _tradSeasonTile(
     AppLocalizations l,
     Map day, {
     required bool withDescription,
   }) {
     final s = day['tradSeason'] as Map;
-    final description = withDescription ? s['description'] as String : '';
+    final description = withDescription
+        ? (s['descriptionLine'] ?? s['description']) as String
+        : '';
     return _Tile(
       kind: WidgetElement.tradSeason,
       title: l.tileTradSeason,
       value: s['name'] as String,
+      // مسافات غير قابلة للكسر: الملاحظة كتلة واحدة، في سطر الاسم أو تحته كاملة.
+      valueNote: '(${l.nextAfter((s['next'] as Map)['name'] as String, s['afterText'] as String)})'.replaceAll(' ', '\u00A0'),
       subs: [
-        (
-          text: l.nextAfter(
-            (s['next'] as Map)['name'] as String,
-            s['afterText'] as String,
-          ),
-          lines: description.isEmpty ? 2 : 1,
-          compact: null,
-        ),
         if (description.isNotEmpty)
-          (text: description, lines: 2, compact: null),
+          (text: description, lines: 3, compact: null),
       ],
     );
   }
@@ -689,6 +686,7 @@ class _Tile extends _Cell {
     required this.kind,
     required this.title,
     required this.value,
+    this.valueNote,
     this.subs = const [],
     this.highlight,
     this.hideFirstSub = false,
@@ -710,6 +708,7 @@ class _Tile extends _Cell {
   }) : kind = WidgetElement.clock,
        amPmText = amPm,
        value = weekday,
+       valueNote = null,
        title = null,
        subs = const [],
        lines = const [],
@@ -724,6 +723,7 @@ class _Tile extends _Cell {
   const _Tile.lines({required this.kind, required this.lines})
     : title = null,
       value = '',
+      valueNote = null,
       subs = const [],
       highlight = null,
       hideFirstSub = false,
@@ -746,6 +746,7 @@ class _Tile extends _Cell {
   }) : kind = t.kind,
        title = t.title,
        value = t.value,
+       valueNote = t.valueNote,
        subs = t.subs,
        highlight = t.highlight,
        hideFirstSub = t.hideFirstSub,
@@ -759,6 +760,9 @@ class _Tile extends _Cell {
 
   /// قيمة المربع، أو اليوم في مربع الساعة.
   final String value;
+
+  /// نص أصغر بعد القيمة في سطرها، مثل «(المربعانية بعد ٤٠ يوماً)» في مربع الموسم.
+  final String? valueNote;
 
   /// الثانويات بترتيب عرضها. الأخير ذو الأسطر المتعددة يأخذ ما يتسع منها.
   final List<_Sub> subs;
@@ -1074,45 +1078,79 @@ class _Tile extends _Cell {
               color: _secondary,
               height: tileLineHeight,
             );
-            // العدّاد بلا «باقي» إن لم يتسع.
-            final texts = [
-              for (final s in subs)
-                s.compact != null && _measure(context, s.text, subStyle) > width
-                    ? s.compact!
-                    : s.text,
-            ];
-            final words = _words(context, value, valueStyle);
-            final fit = fitTile(
+            final noteStyle = TextStyle(
+              fontSize: tileSubSize * scale,
+              fontWeight: FontWeight.w500,
+              color: _secondary,
+              height: tileLineHeight,
+            );
+            final valueWords = _words(context, value, valueStyle);
+            final titleHeight =
+                // العنوان الذي لا يتسع حتى بأدنى حجم يُخفى (لا «…»).
+                showTitle &&
+                    _measure(
+                          context,
+                          t,
+                          titleStyle.copyWith(fontSize: titleSize),
+                        ) <=
+                        width + 0.5
+                ? titleSize * tileLineHeight
+                : 0.0;
+            TileFit fitWith(
+              ({List<double> words, double space}) vw,
+              List<_Sub> ss,
+              List<String> tx,
+            ) => fitTile(
               height: c.maxHeight,
               width: width,
-              // العنوان الذي لا يتسع حتى بأدنى حجم يُخفى (لا «…»).
-              titleHeight:
-                  showTitle &&
-                      _measure(
-                            context,
-                            t,
-                            titleStyle.copyWith(fontSize: titleSize),
-                          ) <=
-                          width + 0.5
-                  ? titleSize * tileLineHeight
-                  : 0,
+              titleHeight: titleHeight,
               valueLineHeight: tileValueSize * scale * tileLineHeight,
-              valueWords: words.words,
-              valueSpace: words.space,
+              valueWords: vw.words,
+              valueSpace: vw.space,
               subs: [
                 if (showSub)
-                  for (final (i, s) in subs.indexed)
+                  for (final (i, s) in ss.indexed)
                     (
                       height: tileSubSize * scale * tileLineHeight,
                       maxLines: s.lines,
                       fitWidth: s.compact != null
-                          ? _measure(context, texts[i], subStyle)
+                          ? _measure(context, tx[i], subStyle)
                           : 0,
                     ),
               ],
               hideFromStart: hideFirstSub,
               gap: tileGap,
             );
+            // العدّاد بلا «باقي» إن لم يتسع.
+            List<String> textsOf(List<_Sub> ss) => [
+              for (final s in ss)
+                s.compact != null && _measure(context, s.text, subStyle) > width
+                    ? s.compact!
+                    : s.text,
+            ];
+            var shownSubs = subs;
+            var texts = textsOf(shownSubs);
+            var fit = fitWith(valueWords, shownSubs, texts);
+            // الملاحظة في سطر القيمة إن لم تصغّر القيمة، وإلا سطر ثانوي أول تحتها.
+            var inlineNote = false;
+            if (valueNote != null) {
+              final inline = fitWith(
+                (
+                  words: [...valueWords.words, ..._words(context, valueNote!, noteStyle).words],
+                  space: valueWords.space,
+                ),
+                subs,
+                texts,
+              );
+              if (inline.valueScale >= fit.valueScale - 1e-6) {
+                inlineNote = true;
+                fit = inline;
+              } else {
+                shownSubs = [(text: valueNote!, lines: 1, compact: null), ...subs];
+                texts = textsOf(shownSubs);
+                fit = fitWith(valueWords, shownSubs, texts);
+              }
+            }
             return ClipRect(
               child: OverflowBox(
                 alignment: Alignment.topCenter,
@@ -1133,16 +1171,38 @@ class _Tile extends _Cell {
                       ),
                       const SizedBox(height: tileGap),
                     ],
-                    Text(
-                      value,
-                      key: const Key('tile-value'),
-                      textAlign: TextAlign.right,
-                      maxLines: fit.valueLines,
-                      overflow: TextOverflow.ellipsis,
-                      style: valueStyle.copyWith(
-                        fontSize: tileValueSize * scale * fit.valueScale,
+                    if (!inlineNote)
+                      Text(
+                        value,
+                        key: const Key('tile-value'),
+                        textAlign: TextAlign.right,
+                        maxLines: fit.valueLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: valueStyle.copyWith(
+                          fontSize: tileValueSize * scale * fit.valueScale,
+                        ),
+                      )
+                    else
+                      Text.rich(
+                        TextSpan(
+                          text: value,
+                          children: [
+                            TextSpan(
+                              text: ' ${valueNote!}',
+                              style: noteStyle.copyWith(
+                                fontSize: tileSubSize * scale * fit.valueScale,
+                              ),
+                            ),
+                          ],
+                        ),
+                        key: const Key('tile-value'),
+                        textAlign: TextAlign.right,
+                        maxLines: fit.valueLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: valueStyle.copyWith(
+                          fontSize: tileValueSize * scale * fit.valueScale,
+                        ),
                       ),
-                    ),
                     for (final (j, i) in fit.subs.indexed) ...[
                       const SizedBox(height: tileGap),
                       Text(

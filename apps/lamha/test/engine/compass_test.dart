@@ -56,6 +56,13 @@ void main() {
     expect(smoothHeading(10, 350, factor: 0.5), closeTo(0, 1e-9));
   });
 
+  test('التنعيم التكيّفي: يتابع الدوران الكبير بسرعة ويهدّئ الرجفة', () {
+    // رجفة ٢°: خُمسها فقط.
+    expect(smoothHeading(100, 102), closeTo(100.4, 1e-9));
+    // دوران ٦٠°: ثلاثة أرباعه في قراءة واحدة.
+    expect(smoothHeading(100, 160), closeTo(145, 1e-9));
+  });
+
   test('دقة البوصلة', () {
     expect(compassAccuracy(15), CompassAccuracy.excellent);
     expect(compassAccuracy(30), CompassAccuracy.good);

@@ -15,6 +15,7 @@ import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
 import 'theme.dart';
+import 'violations.dart';
 
 enum MTab { tasks, comps, rewards, notes }
 
@@ -28,6 +29,20 @@ class MemberHome extends ConsumerStatefulWidget {
 class _MemberHomeState extends ConsumerState<MemberHome> {
   var _tab = MTab.tasks;
   final _busy = <String>{};
+  final _shown = <String>{};
+
+  /// A new violation pops up once (pulsing card); closing it marks the notices read.
+  void _popViolations(List<Notice> notes) {
+    final u = widget.c.me;
+    final fresh = notes.where((n) => n.kind == 'violation' && !n.readBy.contains(u.id) && !_shown.contains(n.id)).toList();
+    if (fresh.isEmpty) return;
+    _shown.addAll(fresh.map((n) => n.id));
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await showViolationPopup(context, fresh, u.name);
+      if (mounted) ref.read(backendProvider).markRead().ignore();
+    });
+  }
 
   Future<void> _done(TaskItem x, {bool withPhoto = false}) async {
     final t = context.t;
@@ -63,6 +78,7 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
     final done = ts.where((x) => d.completionOf(x, now)?.status == Status.approved).length;
     final pct = ts.isEmpty ? 0.0 : done / ts.length;
     final notes = d.noticesFor(u);
+    _popViolations(notes);
     final unread = notes.where((n) => n.activeAt(now) && !n.readBy.contains(u.id)).length;
     final openC = d.competitions.where((x) => x.activeAt(now) && !x.entries.containsKey(u.id)).length;
 
@@ -70,7 +86,7 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
       MTab.tasks => _tasks(context, ts, now),
       MTab.comps => _comps(context, now),
       MTab.rewards => _rewards(context),
-      MTab.notes => NoticeList(notes, now: now),
+      MTab.notes => NoticeList(notes, now: now, nameOf: (id) => d.person(id)?.name),
     };
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

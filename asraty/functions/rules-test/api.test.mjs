@@ -260,14 +260,15 @@ test("prayer tasks only for the running prayer", async () => {
   const kid = await login("kid1@test.sa", "member");
   await rejects(call("api", { op: "setPrayer", lat: 24.7, lng: 46.7 }, kid.idToken), "no-permission");
   await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
-  const { currentPrayer } = await import("../build/src/prayer.js");
+  const { currentPrayer, prayerPoints } = await import("../build/src/prayer.js");
   const now = currentPrayer(24.7136, 46.6753, Date.now());
   const other = now.key === "fajr" ? "dhuhr" : "fajr";
   await rejects(call("api", { op: "completeTask", taskId: `prayer-${other}-${kid.personId}` }, kid.idToken), "prayer-over");
   await rejects(call("api", { op: "completeTask", taskId: `prayer-${now.key}-${owner.personId}` }, kid.idToken), "task-not-found");
   await call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken);
   const c = await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).get();
-  assert.equal(c.data().points, 4);
+  // Half an hour after the adhan it is still a task, but worth no points.
+  assert.equal(c.data().points, prayerPoints(now, 4, Date.now()));
   assert.equal(c.data().kind, "prayer");
 });
 
@@ -297,6 +298,40 @@ test("feedback works before sign-in", async () => {
   assert.equal(fb.size, 1);
   const mail = await db.collection("devMail").where("to", "==", "asraty200@gmail.com").get();
   assert.equal(mail.size, 1);
+});
+
+test("violations take points and give them back; a new cycle wipes all points", async () => {
+  await clearRate();
+  const kid = await login("aseel@test.sa", "member");
+  const sum = async () => (await db.collection(`families/${fid}/summaries`).where("personId", "==", kid.personId).get()).docs.map((d) => d.data()).find((x) => /^\d/.test(x.periodKey));
+  const before = await sum();
+  await rejects(call("api", { op: "addViolation", personId: kid.personId, points: 3 }, kid.idToken), "no-permission");
+  const r = await call("api", { op: "addViolation", personId: kid.personId, points: 3, reason: "رفع الصوت" }, owner.idToken);
+  const after = await sum();
+  assert.equal(after.points, before.points - 3);
+  assert.equal(after.count, before.count, "a violation is not an achievement");
+  const notes = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "violation").get()).docs;
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].data().to, kid.personId);
+  assert.equal(notes[0].data().points, 3);
+  await call("api", { op: "deleteViolation", violationId: r.violationId }, owner.idToken);
+  assert.equal((await sum()).points, before.points);
+  assert.equal((await db.collection(`families/${fid}/notifications`).where("kind", "==", "violation").get()).size, 0);
+
+  await rejects(call("api", { op: "newCycle" }, kid.idToken), "no-permission");
+  await call("api", { op: "newCycle" }, owner.idToken);
+  assert.equal((await db.collection(`families/${fid}/summaries`).get()).size, 0);
+  assert.equal((await db.collection(`families/${fid}/ledger`).get()).size, 0);
+  assert.ok((await db.doc(`families/${fid}`).get()).data().cycleStartedAt);
+});
+
+test("an activation code works on one device only", async () => {
+  const { codeRef } = await import("../build/src/activation.js");
+  await codeRef("ASR-TEST-0001").set({ deviceId: null, usedAt: null, disabled: false });
+  await call("redeemCode", { code: "asr-test-0001", deviceId: "device-aaaa-1" });
+  await call("redeemCode", { code: "ASR-TEST-0001", deviceId: "device-aaaa-1" });
+  await rejects(call("redeemCode", { code: "ASR-TEST-0001", deviceId: "device-bbbb-2" }), "code-used");
+  await rejects(call("redeemCode", { code: "ASR-NOPE-0000", deviceId: "device-aaaa-1" }), "code-invalid");
 });
 
 test("owner deletes the whole family", async () => {

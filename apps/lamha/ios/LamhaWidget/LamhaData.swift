@@ -31,6 +31,8 @@ struct LamhaDay {
     let seasonAfter: String
     let tradName: String
     let tradAfter: String
+    /// وصف الموسم يبدأ باسمه (descriptionLine في الجدول).
+    let tradLine: String
 }
 
 struct LamhaSnapshot {
@@ -139,7 +141,8 @@ func loadSnapshot() -> LamhaSnapshot? {
             seasonName: season["name"] as? String ?? "",
             seasonAfter: [nextSeason, season["afterText"] as? String ?? ""].joined(separator: " "),
             tradName: trad["name"] as? String ?? "",
-            tradAfter: [nextTrad, trad["afterText"] as? String ?? ""].joined(separator: " ")
+            tradAfter: [nextTrad, trad["afterText"] as? String ?? ""].joined(separator: " "),
+            tradLine: trad["descriptionLine"] as? String ?? trad["description"] as? String ?? ""
         )
     }
     return LamhaSnapshot(

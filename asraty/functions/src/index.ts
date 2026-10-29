@@ -27,3 +27,4 @@ export const verifyCode = wrap("verifyCode");
 export const api = wrap("api");
 export const sendFeedback = wrap("sendFeedback");
 export const login = wrap("login");
+export const redeemCode = wrap("redeemCode");

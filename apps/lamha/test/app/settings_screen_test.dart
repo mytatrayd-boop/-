@@ -52,9 +52,9 @@ void main() {
     expect(at(WidgetElement.prayerTimes).top, greaterThan(at(WidgetElement.gregorian).bottom));
     expect(at(WidgetElement.deposit).top, greaterThan(at(WidgetElement.prayerTimes).bottom));
     expect(at(WidgetElement.prayerTimes).width, closeTo(at(WidgetElement.deposit).width, 0.5));
-    // الصف ٥: الفصل ثم الموسم ثم وصفه.
+    // الصف ٥: الفصل ثم الموسم بعرض ٢ (ووصفه داخله؛ مربع «وصف الموسم» مخفي بطلب المالك).
     expect(at(WidgetElement.season).left, greaterThan(at(WidgetElement.tradSeason).right));
-    expect(at(WidgetElement.tradSeason).left, greaterThan(at(WidgetElement.tradPoints).right));
+    expect(at(WidgetElement.tradSeason).width / at(WidgetElement.season).width, greaterThan(1.9));
     expect(at(WidgetElement.season).top, greaterThan(at(WidgetElement.deposit).bottom));
   });
 
@@ -377,21 +377,24 @@ void main() {
       expect(seasonTexts[1], '${(season['next'] as Map)['name']} ${season['afterText']}');
     }
 
-    // وصف الموسم: «في الوسم:» ثم نقاط تبدأ بـ«-».
+    // الموسم بتنسيق المالك: «الوسم (المربعانية بعد … يوماً)» في سطر، وتحته وصف يبدأ باسم الموسم.
     final trad = day['tradSeason'] as Map;
-    expect(text('point-0'), '- ${(trad['points'] as List).first}');
-    if (find.byKey(const Key('points-title')).evaluate().isNotEmpty) {
-      expect(text('points-title'), 'في ${trad['name']}:');
-    }
-    // والموسم بلا وصف تحته ما دام مربع الوصف ظاهراً.
-    expect(
-        find.descendant(of: tile(WidgetElement.tradSeason), matching: find.text(trad['description'] as String)),
-        findsNothing);
+    final tradTexts = [
+      for (final t in tester.widgetList<Text>(
+          find.descendant(of: tile(WidgetElement.tradSeason), matching: find.byType(Text))))
+        t.data ?? t.textSpan!.toPlainText(),
+    ];
+    final note = '(${(trad['next'] as Map)['name']} ${trad['afterText']})'.replaceAll(' ', '\u00A0');
+    // في سطر الاسم إن اتسع، وإلا أول سطر تحته.
+    expect(tradTexts.first == '${trad['name']} $note' || (tradTexts.first == trad['name'] && tradTexts[1] == note), isTrue,
+        reason: '$tradTexts');
+    if (tradTexts.length > (tradTexts.first == trad['name'] ? 2 : 1)) expect(tradTexts.last, trad['descriptionLine']);
+    expect((trad['descriptionLine'] as String).startsWith('${trad['name']} '), isTrue);
 
     // لا رموز تعبيرية في الصناديق.
     final emoji = RegExp(r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]', unicode: true);
     for (final e in [WidgetElement.prayerTimes, WidgetElement.deposit, WidgetElement.season,
-        WidgetElement.tradSeason, WidgetElement.tradPoints, WidgetElement.qibla]) {
+        WidgetElement.tradSeason, WidgetElement.qibla]) {
       for (final t in tester.widgetList<Text>(find.descendant(of: tile(e), matching: find.byType(Text)))) {
         final s = t.data ?? t.textSpan!.toPlainText();
         expect(emoji.hasMatch(s), isFalse, reason: '${e.name}: $s');

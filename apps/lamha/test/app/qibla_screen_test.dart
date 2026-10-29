@@ -23,6 +23,7 @@ Future<void> _pumpRoute(WidgetTester tester) async {
 }
 
 void main() {
+  setUpAll(() => QiblaScreen.mapTiles = false);
   // الرياض (أول مدينة في القائمة، الافتراضية).
   final riyadhQibla = double.parse(qiblaDegrees(24.6877, 46.7219).toStringAsFixed(1));
 
@@ -47,10 +48,10 @@ void main() {
     expect(find.text('ممتازة'), findsOneWidget);
     expect(find.byKey(const Key('qibla-kaaba')), findsOneWidget);
 
-    // التنعيم يمر عبر الشمال (٠ → ٣٠٠ يمرّ بـ ٣٤٥ لا بـ ٧٥).
+    // التنعيم يمر عبر الشمال (٠ → ٣٠٠ يمرّ بـ ٣١٥ لا بـ ٧٥؛ دوران كبير فثلاثة أرباعه).
     compass.controller.add((heading: 300, accuracy: 15));
     await tester.pump();
-    expect(painter(tester).heading, closeTo(345, 0.01));
+    expect(painter(tester).heading, closeTo(315, 0.01));
   });
 
   testWidgets('الاتجاه إلى القبلة: الشاشة تخضرّ والجوال يهتز مرة عند الوصول', (tester) async {
@@ -174,5 +175,40 @@ void main() {
   testWidgets('الفتح العادي (لا من الودجت) يبقى على الإعدادات', (tester) async {
     await pumpApp(tester, launch: FakeLaunch(null));
     expect(find.byType(QiblaScreen), findsNothing);
+  });
+
+  testWidgets('الموقع الحالي يُحدَّد تلقائياً، والخريطة تعرض الاتجاه والمسافة', (tester) async {
+    final compass = FakeCompass();
+    // أبها.
+    await pumpApp(tester, compass: compass, location: FakeLocation((latitude: 18.2164, longitude: 42.5053)));
+    await openQibla(tester);
+    await tester.pump();
+    compass.controller.add((heading: 0, accuracy: 15));
+    await tester.pump();
+    final abha = qiblaDegrees(18.2164, 42.5053);
+    expect(painter(tester).qibla, closeTo(abha, 0.01));
+    expect(find.textContaining('موقعك الحالي'), findsOneWidget);
+    expect(find.byKey(const Key('qibla-saved-location')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('qibla-tab-map')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('qibla-map')), findsOneWidget);
+    expect(find.text('الاتجاه من الشمال'), findsOneWidget);
+    expect(find.text('تبعد عن الكعبة'), findsOneWidget);
+    expect(find.text('ضع هاتفك أفقياً للحصول على أفضل نتيجة'), findsOneWidget);
+    final km = distanceToKaabaKm(18.2164, 42.5053).round();
+    expect(km, 453, reason: 'أبها – مكة خط مستقيم');
+    expect(find.text('٤٥٣ كم'), findsWidgets);
+  });
+
+  testWidgets('بلا إذن موقع: الحساب من المدينة المحفوظة مع تنبيه', (tester) async {
+    final compass = FakeCompass();
+    await pumpApp(tester, compass: compass);
+    await openQibla(tester);
+    await tester.pump();
+    compass.controller.add((heading: 0, accuracy: 15));
+    await tester.pump();
+    expect(find.byKey(const Key('qibla-saved-location')), findsOneWidget);
   });
 }

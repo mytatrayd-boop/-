@@ -220,7 +220,7 @@ object LamhaSchedule {
             tradName = trad.getString("name"),
             tradRemaining = trad.getString("remainingText"),
             tradNext = trad.getJSONObject("next").getString("name"),
-            tradDescription = trad.optString("description", ""),
+            tradDescription = trad.optString("descriptionLine", trad.optString("description", "")),
             latitude = city.optDouble("latitude", 0.0),
             longitude = city.optDouble("longitude", 0.0),
             themeId = theme?.optString("id", "gold") ?: "gold",

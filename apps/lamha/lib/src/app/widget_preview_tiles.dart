@@ -57,27 +57,38 @@ const lineGap = 2.0;
 /// حشوة الصناديق الجديدة الرأسية (أقل من المربعات القديمة لتتسع الصفوف الخمسة).
 const boxPadV = 2.0;
 
-/// مربع القبلة (lamha_qibla_update.md): خلفية أيقونة القبلة، وفوقها دائرة بإطار أزرق فاتح وN أحمر
-/// أعلاها، والكعبة في الوسط، ورأس سهم أبيض على المحيط بزاوية القبلة. وبين المربع والزاوية تحته.
-const qiblaShapeAsset = 'assets/branding/qibla_shape.png';
+/// مربع القبلة (صورة المالك، أكتوبر ٢٠٢٦): بوصلة سوداء مستديرة بتدريج أبيض وحروف N وE وS وW، ونجمة
+/// داكنة في الوسط، وسهم أحمر من المركز ثم خط منقّط أحمر إلى الكعبة على المحيط بزاوية القبلة من
+/// الشمال. وبين المربع والزاوية تحته [qiblaIconGap].
 const qiblaIconGap = 2.0;
 
 /// صورة الكعبة الأصلية (من أيقونة القبلة) بخلفية شفافة، للمربع وشاشة البوصلة.
 const kaabaAsset = 'assets/branding/kaaba.png';
-const qiblaDialRing = Color(0xFF85B7EB);
-const qiblaDialNorth = Color(0xFFF09595);
+const qiblaDialFace = Color(0xFF000000);
+const qiblaDialTicks = Color(0xFFFFFFFF);
+const qiblaDialStar = Color(0xFF3A3A3A);
+const qiblaDialArrow = Color(0xFFE53935);
 
-/// أبعاد الدائرة نسبةً لضلع المربع (مطابقة لـ drawQiblaDial في LamhaWidgetReceiver.kt وQiblaIcon في
-/// LamhaWidget.swift): نصف القطر، وسمك الإطار، ورأس السهم (طرفه خارج الدائرة وقاعدته داخلها
-/// ونصف عرضه)، وموضع N وحجمه، وضلع الكعبة.
-const qiblaDialRadius = 0.36;
-const qiblaDialStroke = 0.03;
-const qiblaArrowOut = 0.09;
-const qiblaArrowIn = 0.03;
-const qiblaArrowHalf = 0.065;
-const qiblaNorthAt = 0.265;
-const qiblaNorthSize = 0.12;
-const qiblaKaabaSize = 0.34;
+/// الأبعاد نسبةً لضلع المربع (مطابقة لـ drawQiblaDial في LamhaWidgetReceiver.kt وQiblaIcon في
+/// LamhaWidget.swift): نصف قطر القرص، وطرفا التدريج، وموضع الحروف وحجمها، وبعد الكعبة عن المركز
+/// وضلعها، وطول السهم ونصف عرضه، وطول النجمة.
+const qiblaDialRadius = 0.49;
+const qiblaTickOuter = 0.46;
+const qiblaTickInner = 0.41;
+const qiblaTickLong = 0.38;
+const qiblaLetterAt = 0.36;
+const qiblaLetterSize = 0.13;
+const qiblaKaabaAt = 0.36;
+const qiblaKaabaSize = 0.18;
+const qiblaArrowLength = 0.24;
+const qiblaArrowHalf = 0.07;
+const qiblaStarLength = 0.2;
+
+/// مركز الكعبة في مربع القبلة (نسبةً للضلع، من أعلى اليسار) عند زاوية [degrees] من الشمال.
+Offset qiblaKaabaCenter(double degrees) {
+  final a = degrees * math.pi / 180;
+  return Offset(0.5 + math.sin(a) * qiblaKaabaAt, 0.5 - math.cos(a) * qiblaKaabaAt);
+}
 
 /// مربع في الشبكة: يُرسم بحجمه المطلوب داخل مقاسه، ومقاسه من [base] بالحجم الأساسي.
 abstract class _Cell extends StatelessWidget {
@@ -421,7 +432,6 @@ class _QiblaTile extends _Styled {
       final subStyle = style(qiblaSubSize * s, secondary, FontWeight.w500);
       final angleSize = fit(angle, angleStyle);
       final subSize = fit(sub, subStyle);
-      final ring = look.primary ?? accent;
       // +١ لتقريب ارتفاع السطر.
       final textLines = look.showTitle
           ? (angleSize + subSize) * tileLineHeight + qiblaIconGap + 1
@@ -436,25 +446,21 @@ class _QiblaTile extends _Styled {
                 key: const Key('preview-qibla-icon'),
                 dimension: icon,
                 child: Stack(
-                  fit: StackFit.expand,
                   children: [
-                    Image.asset(
-                      qiblaShapeAsset,
-                      color: Color(qiblaIconBackground(ring.toARGB32())),
-                      colorBlendMode: BlendMode.srcIn,
-                      filterQuality: FilterQuality.medium,
+                    Positioned.fill(
+                      child: CustomPaint(
+                        key: const Key('preview-qibla-dial'),
+                        painter: QiblaTileDialPainter(degrees),
+                      ),
                     ),
-                    CustomPaint(
-                      key: const Key('preview-qibla-dial'),
-                      painter: QiblaTileDialPainter(degrees),
-                    ),
-                    Center(
-                      child: SizedBox.square(
-                        dimension: icon * qiblaKaabaSize,
-                        child: Image.asset(
-                          kaabaAsset,
-                          filterQuality: FilterQuality.medium,
-                        ),
+                    Positioned(
+                      left: (qiblaKaabaCenter(degrees).dx - qiblaKaabaSize / 2) * icon,
+                      top: (qiblaKaabaCenter(degrees).dy - qiblaKaabaSize / 2) * icon,
+                      width: icon * qiblaKaabaSize,
+                      height: icon * qiblaKaabaSize,
+                      child: Image.asset(
+                        kaabaAsset,
+                        filterQuality: FilterQuality.medium,
                       ),
                     ),
                   ],
@@ -485,8 +491,9 @@ class _QiblaTile extends _Styled {
   );
 }
 
-/// دائرة مربع القبلة: إطار أزرق فاتح، وN أحمر أعلاها، ورأس سهم أبيض على المحيط مُدار بـ[degrees]
-/// من الشمال. الكعبة صورة فوقها في الوسط.
+/// قرص مربع القبلة (صورة المالك): دائرة سوداء، وتدريج أبيض كل ١٠° (أطول كل ٣٠°)، وحروف الجهات
+/// بيضاء، ونجمة داكنة، وسهم أحمر من المركز بزاوية [degrees] من الشمال، وخط منقّط أحمر منه إلى
+/// الكعبة (صورة فوق القرص عند [qiblaKaabaCenter]).
 class QiblaTileDialPainter extends CustomPainter {
   QiblaTileDialPainter(this.degrees);
 
@@ -496,42 +503,62 @@ class QiblaTileDialPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final side = size.shortestSide;
     final c = size.center(Offset.zero);
-    final r = side * qiblaDialRadius;
-    canvas.drawCircle(
-      c,
-      r,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = side * qiblaDialStroke
-        ..color = qiblaDialRing,
-    );
-    final n = TextPainter(
-      text: TextSpan(
-        text: 'N',
-        style: TextStyle(
-          color: qiblaDialNorth,
-          fontSize: side * qiblaNorthSize,
-          fontWeight: FontWeight.w700,
-          height: 1,
+    canvas.drawCircle(c, side * qiblaDialRadius, Paint()..color = qiblaDialFace);
+    for (var d = 0; d < 360; d += 10) {
+      if (d % 90 == 0) continue;
+      final a = d * math.pi / 180;
+      final dir = Offset(math.sin(a), -math.cos(a));
+      final long = d % 30 == 0;
+      canvas.drawLine(
+        c + dir * side * (long ? qiblaTickLong : qiblaTickInner),
+        c + dir * side * qiblaTickOuter,
+        Paint()
+          ..color = qiblaDialTicks
+          ..strokeWidth = side * (long ? 0.022 : 0.014)
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+    for (final (d, label) in [(0, 'N'), (90, 'E'), (180, 'S'), (270, 'W')]) {
+      final a = d * math.pi / 180;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(color: qiblaDialTicks, fontSize: side * qiblaLetterSize, fontWeight: FontWeight.w700, height: 1),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    n.paint(
-      canvas,
-      c + Offset(-n.width / 2, -side * qiblaNorthAt - n.height / 2),
-    );
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final p = c + Offset(math.sin(a), -math.cos(a)) * side * qiblaLetterAt;
+      tp.paint(canvas, p - Offset(tp.width / 2, tp.height / 2));
+    }
+    for (var i = 0; i < 8; i++) {
+      final a = i * math.pi / 4;
+      final len = side * qiblaStarLength * (i.isEven ? 1 : 0.6);
+      final w = side * 0.035;
+      final tip = c + Offset(math.sin(a), -math.cos(a)) * len;
+      final n = Offset(math.cos(a), math.sin(a)) * w;
+      canvas.drawPath(Path()..moveTo(c.dx + n.dx, c.dy + n.dy)..lineTo(tip.dx, tip.dy)..lineTo(c.dx - n.dx, c.dy - n.dy)..close(),
+          Paint()..color = qiblaDialStar);
+    }
     canvas.save();
     canvas.translate(c.dx, c.dy);
     canvas.rotate(degrees * math.pi / 180);
+    final red = Paint()..color = qiblaDialArrow;
     canvas.drawPath(
       Path()
-        ..moveTo(0, -(r + side * qiblaArrowOut))
-        ..lineTo(side * qiblaArrowHalf, -(r - side * qiblaArrowIn))
-        ..lineTo(-side * qiblaArrowHalf, -(r - side * qiblaArrowIn))
+        ..moveTo(0, -side * qiblaArrowLength)
+        ..lineTo(side * qiblaArrowHalf, side * 0.03)
+        ..lineTo(0, -side * 0.02)
+        ..lineTo(-side * qiblaArrowHalf, side * 0.03)
         ..close(),
-      Paint()..color = const Color(0xFFFFFFFF),
+      red,
     );
+    final dot = Paint()
+      ..color = qiblaDialArrow
+      ..strokeWidth = side * 0.018
+      ..strokeCap = StrokeCap.round;
+    for (var t = qiblaArrowLength + 0.02; t < qiblaKaabaAt - qiblaKaabaSize / 2.6; t += 0.035) {
+      canvas.drawLine(Offset(0, -side * t), Offset(0, -side * (t + 0.012)), dot);
+    }
     canvas.restore();
   }
 
