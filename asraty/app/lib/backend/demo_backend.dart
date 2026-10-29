@@ -12,10 +12,13 @@ final _rnd = Random();
 String _uid() => List.generate(8, (_) => 'abcdefghijklmnopqrstuvwxyz0123456789'[_rnd.nextInt(36)]).join();
 
 class _Log {
-  _Log(this.personId, this.delta, this.at, [this.task = true]);
+  _Log(this.personId, this.delta, this.at, [this.task = true, this.source]);
   final String personId;
   final int delta;
   final DateTime at;
+
+  /// The violation that took these points (they change the total but are not an achievement).
+  final String? source;
 
   /// A done task (not a prayer or a competition), for the done / not-done report.
   final bool task;
@@ -53,9 +56,13 @@ class DemoBackend extends Backend {
   final _notices = <Notice>[];
   final _goals = <Goal>[];
   final _log = <_Log>[];
+  final _violations = <Violation>[];
+  DateTime? _cycleStartedAt;
   final _codes = <String, _Code>{};
   final _photos = <String, Uint8List>{};
   final _mail = <DemoMail>[];
+  /// Demo activation codes ("ASR-" + 8 letters/digits) and the device each was used on.
+  final _activations = <String, String>{};
   ({String familyName, String name})? _pendingSetup;
   String? _me;
 
@@ -79,9 +86,10 @@ class DemoBackend extends Backend {
       final key = keyOf(now);
       final m = <String, PeriodSum>{};
       for (final l in _log) {
-        if (l.delta <= 0 || keyOf(l.at) != key) continue;
+        if (keyOf(l.at) != key) continue;
         final s = m[l.personId];
-        m[l.personId] = PeriodSum((s?.points ?? 0) + l.delta, (s?.count ?? 0) + 1, (s?.tasks ?? 0) + (l.task ? 1 : 0));
+        final ach = l.source == null;
+        m[l.personId] = PeriodSum((s?.points ?? 0) + l.delta, (s?.count ?? 0) + (ach ? 1 : 0), (s?.tasks ?? 0) + (ach && l.task ? 1 : 0));
       }
       return m;
     }
@@ -102,6 +110,8 @@ class DemoBackend extends Backend {
         weekly: sums(weekKey),
         monthly: sums(monthKey),
         yearly: sums(yearKey),
+        violations: me.role == Role.owner ? List.of(_violations) : const [],
+        cycleStartedAt: _cycleStartedAt,
       ),
     ));
   }
@@ -124,8 +134,8 @@ class DemoBackend extends Backend {
     if (_mail.length > 40) _mail.removeLast();
   }
 
-  void _note(String to, String title, String body, {DateTime? expiresAt}) {
-    _notices.insert(0, Notice(id: _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now, expiresAt: expiresAt));
+  void _note(String to, String title, String body, {DateTime? expiresAt, String kind = 'notice', int points = 0, String? id}) {
+    _notices.insert(0, Notice(id: id ?? _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now, expiresAt: expiresAt, kind: kind, points: points));
   }
 
   /// What the server's removePersonData deletes along with the person.
@@ -546,6 +556,52 @@ class DemoBackend extends Backend {
   }
 
   @override
+  Future<void> newCycle() async {
+    _need(null, true);
+    _cycleStartedAt = _now;
+    _log.clear();
+    _violations.clear();
+    _notices.removeWhere((n) => n.kind == 'violation');
+    _note('all', '🔄 بدأت دورة تقييم جديدة', 'بدأت دورة تقييم جديدة، وكل النقاط تبدأ من الصفر.\nتستمر الدورة سنة، ثم تبدأ دورة جديدة.');
+    _publish();
+  }
+
+  @override
+  Future<void> addViolation({required String personId, required int points, String reason = ''}) async {
+    _need(null, true);
+    if (points < 1 || points > 1000) _fail('bad-number', {'min': 1, 'max': 1000});
+    final members = _people.where((p) => p.role == Role.member).toList();
+    final who = personId == 'all' ? members : members.where((m) => m.id == personId).toList();
+    if (who.isEmpty) _fail('person-not-found');
+    final id = _uid();
+    for (final m in who) {
+      _log.insert(0, _Log(m.id, -points, _now, false, id));
+      _note(m.id, 'مخالفة', reason.trim(), kind: 'violation', points: points, id: 'v-$id-${m.id}');
+    }
+    _violations.insert(0, Violation(id: id, personIds: [for (final m in who) m.id], all: personId == 'all', points: points, reason: reason.trim(), at: _now));
+    _publish();
+  }
+
+  @override
+  Future<void> deleteViolation(String violationId) async {
+    _need(null, true);
+    final v = _violations.where((v) => v.id == violationId).firstOrNull ?? _fail('not-found');
+    _violations.remove(v);
+    _log.removeWhere((l) => l.source == v.id);
+    _notices.removeWhere((n) => n.id.startsWith('v-${v.id}-'));
+    _publish();
+  }
+
+  @override
+  Future<void> redeemCode(String code, String deviceId) async {
+    final c = code.toUpperCase().replaceAll(RegExp(r'[\s-]'), '');
+    if (!RegExp(r'^ASR[A-Z0-9]{8}$').hasMatch(c)) _fail('code-invalid');
+    final used = _activations[c];
+    if (used != null && used != deviceId) _fail('code-used');
+    _activations[c] = deviceId;
+  }
+
+  @override
   Future<void> markRead() async {
     final me = _need();
     for (final n in _notices) {
@@ -568,10 +624,11 @@ class DemoBackend extends Backend {
   Future<void> deleteFamily() async {
     _need(null, true);
     _familyName = null;
-    for (final l in [_people, _tasks, _completions, _comps, _prizes, _notices, _goals, _log]) {
+    for (final l in [_people, _tasks, _completions, _comps, _prizes, _notices, _goals, _log, _violations]) {
       l.clear();
     }
     _prayer = null;
+    _cycleStartedAt = null;
     _passwords.clear();
     _codes.clear();
     _photos.clear();

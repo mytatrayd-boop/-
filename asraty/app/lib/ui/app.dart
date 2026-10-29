@@ -10,6 +10,7 @@ import 'admin.dart';
 import 'common.dart';
 import 'member.dart';
 import 'onboarding.dart';
+import 'paywall.dart';
 import 'prizes.dart';
 import 'providers.dart';
 import 'report_page.dart';
@@ -68,7 +69,10 @@ class _Home extends ConsumerWidget {
         child: Column(children: [const CircularProgressIndicator(), const SizedBox(height: 12), Muted(context.t.loading)]),
       );
     }
+    ref.watch(accessProvider);
     if (!s.signedIn) return const Onboarding();
+    // iPhone builds with the subscription gate: a code or a subscription is needed (never in the demo).
+    if (!ref.read(backendProvider).isDemo && !ref.read(accessProvider.notifier).allowed) return const PaywallPage();
     final c = Ctx(s);
     return c.me.role == Role.member ? MemberHome(c) : AdminHome(c);
   }

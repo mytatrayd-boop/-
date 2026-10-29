@@ -7,7 +7,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../backend/backend.dart';
 import '../core/models.dart';
+import '../backend/access.dart';
 import 'common.dart';
+import 'paywall.dart';
 import 'providers.dart';
 import 'theme.dart';
 
@@ -220,6 +222,8 @@ class _OnboardingState extends ConsumerState<Onboarding> {
     final t = context.t;
     final err = _err == null ? null : ErrBox(_err!);
     final demo = _b.isDemo;
+    ref.watch(accessProvider);
+    final activated = Access.savedCode(ref.read(prefsProvider)) != null;
     switch (_step) {
       case _Step.login:
         return AutofillGroup(
@@ -242,6 +246,8 @@ class _OnboardingState extends ConsumerState<Onboarding> {
             ]),
             _link(t.forgotPassword, () => _go(_Step.reset)),
             Btn(t.noAccountRegister, kind: BtnKind.ghost, onPressed: () => _go(_Step.register)),
+            const SizedBox(height: 6),
+            if (activated) NoteBox(t.activatedNote) else _link('🎟️ ${t.useCode}', () => showActivation(context, ref)),
             const SizedBox(height: 18),
             Center(
               child: Btn(t.tryDemo, kind: BtnKind.sun, onPressed: () {

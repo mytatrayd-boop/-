@@ -223,4 +223,65 @@ void main() {
     expect(row.done, 2, reason: 'the prayer is not counted as a task');
     expect(row.notDone, 0, reason: 'both daily tasks are done (the monthly task is not due in a daily report)');
   });
+
+  test('prayer: half an hour after its adhan it stays as a task but is worth no points', () async {
+    final b = DemoBackend(clock: () => clock);
+    final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
+    final d = b.current.data!;
+    final slot = d.tasksOf(aseel.id, clock).first.prayer!;
+    final early = d.tasksOf(aseel.id, slot.start.add(const Duration(minutes: 10))).first;
+    final late = d.tasksOf(aseel.id, slot.start.add(const Duration(minutes: 31))).first;
+    expect(early.points, 5);
+    expect(late.prayer, isNotNull, reason: 'still listed until the next prayer');
+    expect(late.points, 0);
+  });
+
+  test('violation takes points from one member or everyone; deleting it gives them back', () async {
+    final b = DemoBackend(clock: () => clock);
+    final d0 = b.current.data!;
+    final aseel = d0.members.firstWhere((m) => m.name == 'أصيل');
+    final before = {for (final m in d0.members) m.id: d0.daily[m.id]?.points ?? 0};
+    final countBefore = d0.daily[aseel.id]?.count ?? 0;
+    await b.addViolation(personId: aseel.id, points: 4, reason: 'رفع الصوت');
+    var d = b.current.data!;
+    expect(d.daily[aseel.id]!.points, before[aseel.id]! - 4);
+    expect(d.daily[aseel.id]!.count, countBefore, reason: 'a violation is not an achievement');
+    expect(d.violations.single.points, 4);
+    await b.addViolation(personId: 'all', points: 2);
+    d = b.current.data!;
+    for (final m in d.members) {
+      expect(d.daily[m.id]?.points ?? 0, before[m.id]! - 2 - (m.id == aseel.id ? 4 : 0));
+    }
+    // The member sees a violation notice with the points taken.
+    await login(b, 'aseel@demo.sa', Role.member);
+    final notes = b.current.data!.noticesFor(b.current.me!).where((n) => n.kind == 'violation').toList();
+    expect(notes.map((n) => n.points), containsAll([4, 2]));
+    await expectLater(b.addViolation(personId: 'all', points: 1), throwsA(isA<AppError>()));
+    await login(b, 'abu@demo.sa', Role.admin);
+    await b.deleteViolation(b.current.data!.violations.firstWhere((v) => v.points == 4).id);
+    d = b.current.data!;
+    expect(d.daily[aseel.id]!.points, before[aseel.id]! - 2);
+    expect(d.notices.where((n) => n.kind == 'violation' && n.points == 4), isEmpty);
+  });
+
+  test('a new evaluation cycle wipes every point', () async {
+    final b = DemoBackend(clock: () => clock);
+    expect(b.current.data!.familyEarnedFor(Span.daily), greaterThan(0));
+    await b.newCycle();
+    final d = b.current.data!;
+    expect(d.familyEarnedFor(Span.daily), 0);
+    expect(d.familyEarnedFor(Span.yearly), 0);
+    expect(d.cycleStartedAt, clock);
+    expect(d.notices.first.title, contains('دورة تقييم جديدة'));
+    await login(b, 'aseel@demo.sa', Role.member);
+    await expectLater(b.newCycle(), throwsA(isA<AppError>()));
+  });
+
+  test('an activation code works on one device only', () async {
+    final b = DemoBackend(seeded: false, clock: () => clock);
+    await b.redeemCode('asr-ab12-cd34', 'device-one');
+    await b.redeemCode('ASR-AB12-CD34', 'device-one');
+    await expectLater(b.redeemCode('ASR-AB12-CD34', 'device-two'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'code-used')));
+    await expectLater(b.redeemCode('nope', 'device-one'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'code-invalid')));
+  });
 }

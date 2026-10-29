@@ -29,6 +29,12 @@ export function prayerTimes(lat: number, lng: number, ms: number): Record<Prayer
   return { fajr: t.fajr.getTime(), dhuhr: t.dhuhr.getTime(), asr: t.asr.getTime(), maghrib: t.maghrib.getTime(), isha: t.isha.getTime() };
 }
 
+/** Half an hour after its adhan a prayer is late: still a task, but worth no points. */
+export const PRAYER_GRACE_MS = 30 * 60e3;
+
+/** Points a prayer earns when marked done at `ms` (none once it is late). */
+export const prayerPoints = (w: { start: number }, points: number, ms: number) => (ms - w.start > PRAYER_GRACE_MS ? 0 : points);
+
 export interface PrayerWindow {
   key: PrayerKey;
   start: number;

@@ -120,3 +120,11 @@ test("prayer window runs from its adhan until the next prayer (Riyadh)", async (
   assert.deepEqual(parsePrayerTaskId(prayerTaskId("asr", "abc123")), { key: "asr", personId: "abc123" });
   assert.equal(parsePrayerTaskId("prayer-xx-abc"), null);
 });
+
+test("a prayer half an hour after its adhan is worth no points", async () => {
+  const { prayerPoints, PRAYER_GRACE_MS } = await import("../src/prayer");
+  const w = { start: riyadh("2026-10-20T11:40:00") };
+  assert.equal(prayerPoints(w, 5, w.start + 10 * 60e3), 5);
+  assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS), 5);
+  assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS + 1000), 0);
+});

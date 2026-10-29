@@ -86,7 +86,8 @@ class PrayerSlot {
   final DateTime start, end;
   final String dayKey;
 
-  /// Shown as late once half an hour has passed without it.
+  /// Late once half an hour has passed: it stays as a task until the next
+  /// prayer, but its points are gone (functions/src/prayer.ts PRAYER_GRACE_MS).
   bool lateAt(DateTime now) => now.difference(start) > const Duration(minutes: 30);
 }
 
@@ -180,11 +181,15 @@ class Goal {
 }
 
 class Notice {
-  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice'})
+  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice', this.points = 0})
       : readBy = readBy ?? [];
 
-  /// 'prize' for the congratulation card sent to everyone when a prize is won.
+  /// 'prize' for the congratulation card sent to everyone when a prize is won;
+  /// 'violation' for the pop-up a member gets when points are taken ([to] is that member).
   final String kind;
+
+  /// Points taken by a violation.
+  final int points;
   final String id;
   final String to; // 'all' or personId
   final String title;
@@ -197,6 +202,17 @@ class Notice {
   final List<String> readBy;
 
   bool activeAt(DateTime now) => expiresAt == null || now.isBefore(expiresAt!);
+}
+
+/// Points the owner took from one member or from every member; cancelling it gives them back.
+class Violation {
+  Violation({required this.id, required this.personIds, required this.all, required this.points, required this.reason, required this.at});
+  final String id;
+  final List<String> personIds;
+  final bool all;
+  final int points;
+  final String reason;
+  final DateTime at;
 }
 
 class PeriodSum {
@@ -240,6 +256,8 @@ class FamilySnapshot {
     this.goals = const [],
     this.prizes = const [],
     this.prayer,
+    this.violations = const [],
+    this.cycleStartedAt,
   });
 
   final String familyName;
@@ -255,4 +273,7 @@ class FamilySnapshot {
   final List<Goal> goals;
   final List<Prize> prizes;
   final PrayerSettings? prayer;
+  final List<Violation> violations; // newest first
+  /// When the owner last started an evaluation cycle (null: never).
+  final DateTime? cycleStartedAt;
 }

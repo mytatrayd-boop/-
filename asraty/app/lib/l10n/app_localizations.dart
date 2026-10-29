@@ -2412,7 +2412,7 @@ abstract class L10n {
   /// No description provided for @prayerLate.
   ///
   /// In ar, this message translates to:
-  /// **'متأخرة'**
+  /// **'متأخرة، بلا نقاط'**
   String get prayerLate;
 
   /// No description provided for @prayerNow.
@@ -2642,6 +2642,294 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'السنة'**
   String get spanShortYear;
+
+  /// No description provided for @tileViolations.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخالفات'**
+  String get tileViolations;
+
+  /// No description provided for @violationsIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخصم نقاطاً من عضو أو من كل الأعضاء. تصلهم المخالفة رسالة منبثقة، وحذفها من القائمة يعيد النقاط.'**
+  String get violationsIntro;
+
+  /// No description provided for @violationPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد النقاط المخصومة'**
+  String get violationPoints;
+
+  /// No description provided for @violationReasonHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب المخالفة (اختياري)'**
+  String get violationReasonHint;
+
+  /// No description provided for @addViolation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل المخالفة'**
+  String get addViolation;
+
+  /// No description provided for @errViolationPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب عدد نقاط من 1 إلى 1000'**
+  String get errViolationPoints;
+
+  /// No description provided for @violationAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'سُجّلت المخالفة وخُصمت النقاط'**
+  String get violationAdded;
+
+  /// No description provided for @violationsList.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخالفات المسجلة'**
+  String get violationsList;
+
+  /// No description provided for @noViolations.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مخالفات'**
+  String get noViolations;
+
+  /// No description provided for @deleteViolation.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المخالفة وإعادة النقاط'**
+  String get deleteViolation;
+
+  /// No description provided for @deleteViolationQ.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذه المخالفة؟ ستعود النقاط المخصومة لأصحابها.'**
+  String get deleteViolationQ;
+
+  /// No description provided for @violationDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت المخالفة وأُعيدت النقاط'**
+  String get violationDeleted;
+
+  /// No description provided for @violationWord.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخالفة'**
+  String get violationWord;
+
+  /// No description provided for @tileCycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورة تقييم جديدة'**
+  String get tileCycle;
+
+  /// No description provided for @cycleNever.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تبدأ دورة تقييم بعد'**
+  String get cycleNever;
+
+  /// No description provided for @cycleSince.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدورة الحالية بدأت في {date}'**
+  String cycleSince(String date);
+
+  /// No description provided for @cycleIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء دورة تقييم جديدة يمحو نقاط كل الأعضاء ليبدأ الجميع من الصفر. تستمر الدورة سنة ثم تبدأ دورة جديدة تلقائياً.'**
+  String get cycleIntro;
+
+  /// No description provided for @startCycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء دورة تقييم جديدة'**
+  String get startCycle;
+
+  /// No description provided for @cycleWarn1.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه: هذه الخاصية ستمحو كل النقاط الحالية.'**
+  String get cycleWarn1;
+
+  /// No description provided for @cycleWarn2Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه'**
+  String get cycleWarn2Title;
+
+  /// No description provided for @cycleWarn2.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل دورة تقييم تستمر سنة ثم تبدأ دورة جديدة.'**
+  String get cycleWarn2;
+
+  /// No description provided for @cycleAsk.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد بدء دورة تقييم جديدة؟'**
+  String get cycleAsk;
+
+  /// No description provided for @cycleStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأت دورة تقييم جديدة'**
+  String get cycleStarted;
+
+  /// No description provided for @next.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get next;
+
+  /// No description provided for @confirmWord.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get confirmWord;
+
+  /// No description provided for @ok.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسناً'**
+  String get ok;
+
+  /// No description provided for @noticesNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات جديدة'**
+  String get noticesNew;
+
+  /// No description provided for @showAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الكل'**
+  String get showAll;
+
+  /// No description provided for @useCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدم كود للتسجيل'**
+  String get useCode;
+
+  /// No description provided for @activationTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود التفعيل'**
+  String get activationTitle;
+
+  /// No description provided for @activationSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب كود التفعيل الذي وصلك. يعمل الكود على جهاز واحد فقط، وبعد تفعيله لا يمكن استخدامه على جهاز آخر.'**
+  String get activationSub;
+
+  /// No description provided for @activationHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ASR-XXXX-XXXX'**
+  String get activationHint;
+
+  /// No description provided for @activate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get activate;
+
+  /// No description provided for @activated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفعيل التطبيق على هذا الجهاز مجاناً'**
+  String get activated;
+
+  /// No description provided for @activatedNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ التطبيق مفعّل على هذا الجهاز بكود تفعيل'**
+  String get activatedNote;
+
+  /// No description provided for @errActivationInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود غير صحيح. تأكد من كتابته كما وصلك.'**
+  String get errActivationInvalid;
+
+  /// No description provided for @errActivationUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود مستخدم على جهاز آخر، ولا يعمل إلا عليه.'**
+  String get errActivationUsed;
+
+  /// No description provided for @paywallTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في أسرتي'**
+  String get paywallTitle;
+
+  /// No description provided for @paywallSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب التطبيق مجاناً ٧ أيام، ثم اختر الاشتراك المناسب. يمكنك الإلغاء في أي وقت من إعدادات حسابك في App Store.'**
+  String get paywallSub;
+
+  /// No description provided for @planMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك شهري'**
+  String get planMonthly;
+
+  /// No description provided for @planYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك سنوي'**
+  String get planYearly;
+
+  /// No description provided for @planMonthlyPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'١٠ ريال شهرياً'**
+  String get planMonthlyPrice;
+
+  /// No description provided for @planYearlyPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'٧٥ ريال سنوياً'**
+  String get planYearlyPrice;
+
+  /// No description provided for @startTrial.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ ٧ أيام مجاناً'**
+  String get startTrial;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة الاشتراك'**
+  String get restorePurchases;
+
+  /// No description provided for @storeUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتجر غير متاح الآن. حاول لاحقاً.'**
+  String get storeUnavailable;
+
+  /// No description provided for @paywallFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'إذا فعّلت «المشاركة العائلية» في Apple، يستفيد أفراد أسرتك من اشتراكك.'**
+  String get paywallFamily;
+
+  /// No description provided for @orUseCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو لديك كود تفعيل؟'**
+  String get orUseCode;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

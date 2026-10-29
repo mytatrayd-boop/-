@@ -57,7 +57,7 @@ void main() {
     }
     expect(find.text('منجزة'), findsOneWidget);
     expect(find.text('غير منجزة'), findsOneWidget);
-    await tester.tap(find.text('هذا الشهر'));
+    await tester.tap(find.text('الشهر'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('🥇'), findsWidgets, reason: 'Aseel leads the month in the seed');
   });
@@ -108,13 +108,51 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('→'), findsNothing);
-    await tester.tap(find.text('هذه السنة'));
+    await tester.tap(find.text('السنة'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.textContaining('ترتيب إنجاز السنة'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('إرسال لكل الأعضاء'), 200);
     await tester.tap(find.text('إرسال لكل الأعضاء'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(b.current.data!.notices.first.title, '🏆 ترتيب إنجاز السنة');
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('a violation pops up for the member with their name and the points', (tester) async {
+    final c = await openAs(tester, 'abu@demo.sa', Role.admin);
+    final b = c.read(backendProvider) as DemoBackend;
+    final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
+    await b.addViolation(personId: aseel.id, points: 7, reason: 'تأخر عن المدرسة');
+    await b.signOut();
+    await b.requestCode(email: 'aseel@demo.sa', role: Role.member, resend: true);
+    await b.verifyCode(email: 'aseel@demo.sa', code: RegExp(r'كود التحقق: (\d{6})').firstMatch(b.outbox.first.body)!.group(1)!);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('مخالفة'), findsOneWidget);
+    expect(find.text('7'), findsOneWidget);
+    expect(find.text('تأخر عن المدرسة'), findsOneWidget);
+    await tester.tap(find.text('حسناً'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('حسناً'), findsNothing);
+  });
+
+  testWidgets('owner: violations and new cycle tiles, with two warnings before wiping', (tester) async {
+    final c = await openAs(tester, 'abu@demo.sa', Role.admin);
+    final b = c.read(backendProvider) as DemoBackend;
+    await tester.scrollUntilVisible(find.text('دورة تقييم جديدة'), 200);
+    await tester.tap(find.text('دورة تقييم جديدة'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('بدء دورة تقييم جديدة'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.textContaining('ستمحو كل النقاط الحالية'), findsOneWidget);
+    await tester.tap(find.text('متابعة'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.textContaining('هل تريد بدء دورة تقييم جديدة؟'), findsOneWidget);
+    await tester.tap(find.text('تأكيد'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(b.current.data!.familyEarnedFor(Span.daily), 0);
+    expect(b.current.data!.cycleStartedAt, isNotNull);
     await tester.pump(const Duration(seconds: 4));
   });
 }
