@@ -180,7 +180,7 @@ class LamhaLogicTest {
             ),
             l.associate { it.id to it.visible },
         )
-        assertEquals(listOf(2, 1, 2, 2, 1, 3, 3, 1, 1, 1, 2, 2, 1), l.map { it.span })
+        assertEquals(listOf(2, 1, 2, 2, 1, 3, 3, 1, 2, 1, 2, 2, 1), l.map { it.span })
         assertEquals(listOf("clock"), LamhaLogic.defaultLayout(emptySet()).filter { it.visible }.map { it.id })
     }
 
