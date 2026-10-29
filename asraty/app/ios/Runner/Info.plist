@@ -32,6 +32,10 @@
 		<string>لاختيار صورة إثبات إنجاز المهمة أو صورتك الشخصية في الأسرة.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>لحساب مواقيت الصلاة لمدينتك وتذكير أفراد الأسرة بها.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>لحساب مواقيت الصلاة لمدينتك وتذكير أفراد الأسرة بها.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>لحساب مواقيت الصلاة لمدينتك وتذكير أفراد الأسرة بها.</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UIApplicationSceneManifest</key>
