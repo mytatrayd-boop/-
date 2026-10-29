@@ -73,11 +73,11 @@ class LamhaLogicTest {
     fun packRowsDefaultMatchesOwnerDesign() {
         // الميزة ٦: تصميم المالك ٣ (defaultLayout في Dart).
         val all = LamhaLogic.defaultLayout(setOf("hijri", "gregorian", "weather", "prayer", "qibla", "deposit", "season", "tradSeason"))
-        assertEquals(listOf("dates", "weather", "prayer"), all.filter { !it.visible }.map { it.id })
+        assertEquals(listOf("tradPoints", "dates", "weather", "prayer"), all.filter { !it.visible }.map { it.id })
         assertEquals(
             listOf(
                 listOf("clock2", "dayWeather1"), listOf("hijri+gregorian2", "qibla1"),
-                listOf("prayerTimes3"), listOf("deposit3"), listOf("season1", "tradSeason1", "tradPoints1"),
+                listOf("prayerTimes3"), listOf("deposit3"), listOf("season1", "tradSeason2"),
             ),
             shape(LamhaLogic.stackCells(all.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) })),
         )
@@ -175,7 +175,7 @@ class LamhaLogicTest {
         assertEquals(
             mapOf(
                 "clock" to true, "dayWeather" to false, "hijri" to false, "gregorian" to true, "qibla" to false,
-                "prayerTimes" to true, "deposit" to false, "season" to false, "tradSeason" to true, "tradPoints" to true,
+                "prayerTimes" to true, "deposit" to false, "season" to false, "tradSeason" to true, "tradPoints" to false,
                 "dates" to false, "weather" to false, "prayer" to false,
             ),
             l.associate { it.id to it.visible },
