@@ -80,5 +80,14 @@
   "tradPointsTitle": "In {season}:",
   "pointText": "- {point}",
   "nextAfter": "{next} {after}",
-  "cityIcon": "📍 {city} {icon}"
+  "cityIcon": "📍 {city} {icon}",
+  "qiblaTabCompass": "Compass",
+  "qiblaTabMap": "Map",
+  "qiblaHoldFlat": "Hold your phone flat for the best result",
+  "qiblaMyLocation": "Your current location",
+  "qiblaLocating": "Finding your location…",
+  "qiblaSavedLocation": "Couldn't get your location now; using the saved city: {city}",
+  "qiblaMapDirection": "Direction from north",
+  "qiblaMapDistance": "Distance to the Kaaba",
+  "qiblaMapOffline": "The map needs an internet connection"
 }

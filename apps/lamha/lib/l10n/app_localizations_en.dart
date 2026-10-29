@@ -386,4 +386,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String cityIcon(String city, String icon) {
     return '📍 $city $icon';
   }
+
+  @override
+  String get qiblaTabCompass => 'Compass';
+
+  @override
+  String get qiblaTabMap => 'Map';
+
+  @override
+  String get qiblaHoldFlat => 'Hold your phone flat for the best result';
+
+  @override
+  String get qiblaMyLocation => 'Your current location';
+
+  @override
+  String get qiblaLocating => 'Finding your location…';
+
+  @override
+  String qiblaSavedLocation(String city) {
+    return 'Couldn\'t get your location now; using the saved city: $city';
+  }
+
+  @override
+  String get qiblaMapDirection => 'Direction from north';
+
+  @override
+  String get qiblaMapDistance => 'Distance to the Kaaba';
+
+  @override
+  String get qiblaMapOffline => 'The map needs an internet connection';
 }

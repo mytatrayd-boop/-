@@ -26,7 +26,7 @@
     "hijri": true,
     "gregorian": true,
     "prayerTimes": true,
-    "tradPoints": true
+    "tradPoints": false
   },
   "layout": [
     {
@@ -112,7 +112,7 @@
     {
       "id": "tradSeason",
       "visible": true,
-      "span": 1,
+      "span": 2,
       "fontScale": 1.0,
       "showTitle": false,
       "showSub": true,
@@ -121,7 +121,7 @@
     },
     {
       "id": "tradPoints",
-      "visible": true,
+      "visible": false,
       "span": 1,
       "fontScale": 1.0,
       "showTitle": true,
@@ -268,15 +268,16 @@
           "id": "winter",
           "name": "الشتاء"
         },
-        "nextStart": "2026-12-21",
-        "daysRemaining": 63,
-        "remainingText": "باقي ٦٣ يوماً",
-        "afterText": "بعد ٦٣ يوماً"
+        "nextStart": "2026-12-07",
+        "daysRemaining": 49,
+        "remainingText": "باقي ٤٩ يوماً",
+        "afterText": "بعد ٤٩ يوماً"
       },
       "tradSeason": {
         "id": "wasm",
         "name": "الوسم",
-        "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "description": "يترقب فيه هطول الأمطار واعتدال الأجواء وخروج النباتات الموسمية",
+        "descriptionLine": "الوسم يترقب فيه هطول الأمطار واعتدال الأجواء وخروج النباتات الموسمية",
         "points": [
           "تتدنى درجات الحرارة خلال الليل.",
           "ترتفع فيه فرص هطول الأمطار النافعة."
@@ -411,15 +412,16 @@
           "id": "winter",
           "name": "الشتاء"
         },
-        "nextStart": "2026-12-21",
-        "daysRemaining": 62,
-        "remainingText": "باقي ٦٢ يوماً",
-        "afterText": "بعد ٦٢ يوماً"
+        "nextStart": "2026-12-07",
+        "daysRemaining": 48,
+        "remainingText": "باقي ٤٨ يوماً",
+        "afterText": "بعد ٤٨ يوماً"
       },
       "tradSeason": {
         "id": "wasm",
         "name": "الوسم",
-        "description": "يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية",
+        "description": "يترقب فيه هطول الأمطار واعتدال الأجواء وخروج النباتات الموسمية",
+        "descriptionLine": "الوسم يترقب فيه هطول الأمطار واعتدال الأجواء وخروج النباتات الموسمية",
         "points": [
           "تتدنى درجات الحرارة خلال الليل.",
           "ترتفع فيه فرص هطول الأمطار النافعة."

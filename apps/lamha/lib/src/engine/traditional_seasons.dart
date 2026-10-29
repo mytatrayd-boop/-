@@ -13,6 +13,7 @@ class TradSeason {
     required this.startDay,
     required this.description,
     this.points = const [],
+    this.opens,
   });
 
   final String id;
@@ -23,6 +24,9 @@ class TradSeason {
 
   /// نقاط مربع «وصف الموسم» (الميزة ٦)، كل نقطة جملة.
   final List<String> points;
+
+  /// الفصل الذي يبدأ بهذا الموسم (spring/summer/autumn/winter)، أو null.
+  final String? opens;
 }
 
 class CurrentTradSeason {
@@ -54,6 +58,7 @@ class CurrentTradSeason {
         'id': season.id,
         'name': season.name,
         'description': season.description,
+        'descriptionLine': tradDescriptionLine(season.name, season.description),
         'points': season.points,
         'start': isoDate(start),
         'end': isoDate(end),
@@ -97,6 +102,7 @@ class TradSeasonsTable {
       startDay: int.parse(match[2]!),
       description: m['description'] as String,
       points: [...(m['points'] as List? ?? const []).cast<String>()],
+      opens: m['opens'] as String?,
     );
   }
 
@@ -137,3 +143,7 @@ class TradSeasonsTable {
     );
   }
 }
+
+/// سطر الوصف تحت اسم الموسم: يبدأ باسم الموسم (طلب المالك)، مثل «الوسم يُترقّب فيه المطر…».
+String tradDescriptionLine(String name, String description) =>
+    description.isEmpty || description.startsWith(name) ? description : '$name $description';

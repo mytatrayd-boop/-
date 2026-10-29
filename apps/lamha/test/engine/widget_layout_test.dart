@@ -26,12 +26,12 @@ void main() {
           ['hijri+gregorian2', 'qibla1'],
           ['prayerTimes3'],
           ['deposit3'],
-          ['season1', 'tradSeason1', 'tradPoints1'],
+          ['season1', 'tradSeason2'],
         ],
       );
       expect(
         [for (final t in defaultLayout) if (!t.visible) t.id],
-        [WidgetElement.dates, WidgetElement.weather, WidgetElement.prayer],
+        [WidgetElement.tradPoints, WidgetElement.dates, WidgetElement.weather, WidgetElement.prayer],
       );
       expect(defaultLayout.first,
           const TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false));
@@ -227,6 +227,13 @@ void main() {
       expect(migrateLayout(hidden).first, legacyDefaultLayout.first);
     });
 
+    test('ترحيل افتراضي الميزة ٦ (بمربع وصف الموسم) إلى الجديد: الفصل والموسم فقط', () {
+      expect(migrateLayout(featureSixLayout), defaultLayout);
+      final shown = defaultLayout.where((t) => t.visible).map((t) => t.id).toList();
+      expect(shown, isNot(contains(WidgetElement.tradPoints)));
+      expect(shown.sublist(shown.length - 2), [WidgetElement.season, WidgetElement.tradSeason]);
+    });
+
     test('ترحيل visible القديم إلى الترتيب الافتراضي الجديد يطابقه', () {
       final l = layoutFromVisible(['gregorian', 'prayer', 'tradSeason']);
       expect({for (final t in l) t.id.name: t.visible}, {
@@ -239,7 +246,7 @@ void main() {
         'deposit': false,
         'season': false,
         'tradSeason': true,
-        'tradPoints': true,
+        'tradPoints': false,
         'dates': false,
         'weather': false,
         'prayer': false,

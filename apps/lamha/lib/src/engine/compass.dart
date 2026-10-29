@@ -35,12 +35,14 @@ double arrowDeviation(double arrow) {
 bool isAligned(double arrow, {required bool wasAligned}) =>
     arrowDeviation(arrow) <= (wasAligned ? alignedRelease : alignedWithin);
 
-/// تنعيم اتجاه الحساس (مرشح منخفض التمرير دائري): يقترب من [next] بنسبة [factor] عبر أقصر
-/// طريق، فلا يقفز القرص بين ٣٥٩° و٠°.
-double smoothHeading(double? previous, double next, {double factor = 0.25}) {
+/// تنعيم اتجاه الحساس (مرشح منخفض التمرير دائري، تكيّفي): يقترب من [next] عبر أقصر طريق فلا
+/// يقفز القرص بين ٣٥٩° و٠°. النسبة تكبر مع الفرق: دوران حقيقي يُتابَع بسرعة، والرجفة الصغيرة
+/// تُهدّأ (ملاحظة المالك: الحركة كانت بطيئة وضعيفة الحساسية). [factor] يثبّت النسبة.
+double smoothHeading(double? previous, double next, {double? factor}) {
   if (previous == null) return normalizeDegrees(next);
   final delta = (next - previous + 540) % 360 - 180;
-  return normalizeDegrees(previous + delta * factor);
+  final k = factor ?? (delta.abs() / 40).clamp(0.2, 0.75);
+  return normalizeDegrees(previous + delta * k);
 }
 
 /// دقة البوصلة لبطاقة «دقة البوصلة».

@@ -201,7 +201,9 @@ void main() {
         final requested = 20 * scale;
         final painter = TextPainter(textDirection: TextDirection.rtl);
         var widest = 0.0;
-        for (final w in text.data!.split(' ')) {
+        // مربع الموسم: القيمة هي الاسم، وما بعده ملاحظة أصغر.
+        final value = text.data ?? (text.textSpan! as TextSpan).text!;
+        for (final w in value.split(' ')) {
           painter
             ..text = TextSpan(
               text: w,
@@ -220,7 +222,7 @@ void main() {
           expect(
             text.style!.fontSize,
             greaterThanOrEqualTo(requested * 0.9),
-            reason: text.data,
+            reason: value,
           );
         }
       },

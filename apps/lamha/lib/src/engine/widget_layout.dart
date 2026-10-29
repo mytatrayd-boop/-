@@ -192,9 +192,28 @@ class TileLayout {
 
 /// الترتيب الافتراضي (الميزة ٦، تصميم المالك ٣ `mockups/owner_design_v3.png`)، من اليمين:
 /// الساعة (عرض ٢، بلا يوم تحتها) واليوم والطقس؛ ثم الهجري وتحته الميلادي (مكدسان، [stackCells])
-/// والقبلة؛ ثم مواقيت الصلاة (عرض ٣)؛ ثم الإيداعات (عرض ٣)؛ ثم الفصل والموسم ووصفه (بلا عناوين).
+/// والقبلة؛ ثم مواقيت الصلاة (عرض ٣)؛ ثم الإيداعات (عرض ٣)؛ ثم الفصل والموسم (عرض ٢، ووصفه داخله) بلا
+/// عناوين. «وصف الموسم» مخفي (طلب المالك ٢٩/١٠/٢٠٢٦).
 /// والعناصر القديمة (التاريخان معاً، والمدينة والطقس، والصلاة القادمة) متاحة مخفية.
 const defaultLayout = <TileLayout>[
+  TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false),
+  TileLayout(WidgetElement.dayWeather),
+  TileLayout(WidgetElement.hijri, span: 2),
+  TileLayout(WidgetElement.gregorian, span: 2),
+  TileLayout(WidgetElement.qibla),
+  TileLayout(WidgetElement.prayerTimes, span: 3),
+  TileLayout(WidgetElement.deposit, span: 3),
+  TileLayout(WidgetElement.season, showTitle: false),
+  TileLayout(WidgetElement.tradSeason, span: 2, showTitle: false),
+  TileLayout(WidgetElement.tradPoints, visible: false),
+  TileLayout(WidgetElement.dates, visible: false, span: 2),
+  TileLayout(WidgetElement.weather, visible: false, span: 2),
+  TileLayout(WidgetElement.prayer, visible: false),
+];
+
+/// الترتيب الافتراضي للميزة ٦ قبل ملاحظة المالك (٢٩/١٠/٢٠٢٦: «الاكتفاء بأيقونة الفصول وأيقونة
+/// المواسم»)، للترحيل: من لم يغيّره ينتقل إلى [defaultLayout].
+const featureSixLayout = <TileLayout>[
   TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false),
   TileLayout(WidgetElement.dayWeather),
   TileLayout(WidgetElement.hijri, span: 2),
@@ -239,18 +258,15 @@ List<TileLayout> normalizeLayout(Iterable<TileLayout> layout) {
 /// ترحيل التخطيط المحفوظ (الميزة ٦): الترتيب الافتراضي السابق كما هو تماماً ← [defaultLayout]،
 /// وغيره (مخصص) يبقى وتُضاف العناصر الجديدة في آخره مخفية.
 List<TileLayout> migrateLayout(List<TileLayout> layout) {
-  final legacy =
-      layout.length == legacyDefaultLayout.length &&
-      [
-        for (var i = 0; i < layout.length; i++)
-          layout[i] == legacyDefaultLayout[i],
-      ].every((same) => same);
-  return legacy ? defaultLayout : normalizeLayout(layout);
+  bool same(List<TileLayout> other) =>
+      layout.length == other.length &&
+      [for (var i = 0; i < layout.length; i++) layout[i] == other[i]].every((x) => x);
+  return same(legacyDefaultLayout) || same(featureSixLayout) ? defaultLayout : normalizeLayout(layout);
 }
 
 /// ترحيل إعدادات ما قبل الميزة ٥ (مفاتيح «ما يظهر على الودجت»): لم يُخصَّص فيها ترتيب، فالترتيب
 /// الافتراضي الجديد، والإظهار منها: الساعة ثابتة، وكل تاريخ بمفتاحه، واليوم والطقس بالطقس، ومواقيت
-/// الصلاة بالصلاة، ووصف الموسم بالموسم. العناصر القديمة تبقى مخفية.
+/// الصلاة بالصلاة. «وصف الموسم» والعناصر القديمة تبقى مخفية (الوصف داخل مربع الموسم).
 List<TileLayout> layoutFromVisible(Iterable<String> visible) {
   final v = visible.toSet();
   bool on(TileLayout t) => switch (t.id) {
@@ -259,7 +275,7 @@ List<TileLayout> layoutFromVisible(Iterable<String> visible) {
     WidgetElement.gregorian => v.contains('gregorian'),
     WidgetElement.dayWeather => v.contains('weather'),
     WidgetElement.prayerTimes => v.contains('prayer'),
-    WidgetElement.tradPoints => v.contains('tradSeason'),
+    WidgetElement.tradPoints => false,
     WidgetElement.dates || WidgetElement.weather || WidgetElement.prayer =>
       false,
     _ => v.contains(t.id.name),

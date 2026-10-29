@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lamha/src/astronomy/seasons.dart';
+import 'package:lamha/src/engine/astro_season.dart';
 import 'package:lamha/src/engine/traditional_seasons.dart';
 
 import '../helpers.dart';
@@ -57,7 +59,7 @@ void main() {
     final c = table.on(DateTime(2026, 10, 19));
     expect(c.season.name, 'الوسم');
     expect(c.season.description,
-        'يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية');
+        'يترقب فيه هطول الأمطار واعتدال الأجواء وخروج النباتات الموسمية');
     expect(c.next.name, 'المربعانية');
     expect(c.start, DateTime(2026, 10, 16));
     expect(c.end, DateTime(2026, 12, 6));
@@ -93,5 +95,27 @@ void main() {
     final c = table.on(DateTime(2026, 12, 7));
     expect(c.next.name, 'الشبط');
     expect(c.daysRemaining, 39);
+  });
+
+  test('الفصل المناخي: الشتاء يبدأ مع المربعانية فلا تسبقه أبداً (قرار المالك)', () {
+    final oct28 = climateSeasonOn(table, DateTime(2026, 10, 28));
+    expect(oct28.name, 'الخريف');
+    expect(oct28.nextName, 'الشتاء');
+    expect(oct28.daysRemaining, table.on(DateTime(2026, 10, 28)).daysRemaining, reason: 'الشتاء والمربعانية في يوم واحد');
+    expect(climateSeasonOn(table, DateTime(2026, 12, 7)).season, AstroSeason.winter);
+    expect(climateSeasonOn(table, DateTime(2027, 3, 21)).season, AstroSeason.spring);
+    expect(climateSeasonOn(table, DateTime(2027, 6, 20)).season, AstroSeason.summer);
+    expect(climateSeasonOn(table, DateTime(2027, 8, 24)).season, AstroSeason.autumn);
+    for (var d = DateTime(2026, 1, 1); d.year < 2028; d = DateTime(d.year, d.month, d.day + 1)) {
+      if (table.on(d).season.id == 'murabbaniya') {
+        expect(climateSeasonOn(table, d).season, AstroSeason.winter, reason: '$d');
+      }
+    }
+  });
+
+  test('سطر الوصف يبدأ باسم الموسم', () {
+    expect(tradDescriptionLine('الوسم', 'يترقب فيه هطول الأمطار'), 'الوسم يترقب فيه هطول الأمطار');
+    expect(tradDescriptionLine('الوسم', 'الوسم موسم'), 'الوسم موسم');
+    expect(table.on(DateTime(2026, 10, 28)).toJson()['descriptionLine'], startsWith('الوسم '));
   });
 }

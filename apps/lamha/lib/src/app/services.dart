@@ -210,6 +210,26 @@ class AndroidSystemColorsSource implements SystemColorsSource {
   }
 }
 
+/// الانحراف المغناطيسي بالدرجات عند الموقع (أندرويد: GeomagneticField، نموذج WMM). بوصلة
+/// أندرويد مغناطيسية، فيُضاف إليها ليصير الاتجاه من الشمال الحقيقي كالقبلة. آيفون يعطي الحقيقي
+/// أصلاً، فـ٠.
+abstract class DeclinationSource {
+  Future<double> at(double latitude, double longitude);
+}
+
+class AndroidDeclinationSource implements DeclinationSource {
+  @override
+  Future<double> at(double latitude, double longitude) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return 0;
+    try {
+      return await androidChannel.invokeMethod<double>('declination', {'latitude': latitude, 'longitude': longitude}) ?? 0;
+    } catch (e) {
+      debugPrint('declination: $e');
+      return 0;
+    }
+  }
+}
+
 /// إذن POST_NOTIFICATIONS لإشعار شاشة القفل (أندرويد ١٣+؛ الأقدم مسموح دائماً).
 abstract class NotificationPermission {
   Future<bool> request();
