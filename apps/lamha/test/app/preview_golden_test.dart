@@ -26,7 +26,34 @@ Future<void> _loadFont(String family, List<String> paths) async {
   await loader.load();
 }
 
+/// مقارنة تسمح بفرق ضئيل (٠٫١٪ من البكسلات): تنعيم الخطوط الرفيعة المائلة في قرص القبلة يختلف
+/// بكسلات قليلة بين معالج وآخر (٥١ بكسلاً على GitHub)، والفرق الحقيقي في التصميم أكبر بكثير.
+class _TolerantComparator extends LocalFileComparator {
+  _TolerantComparator(super.testFile);
+
+  static const tolerance = 0.001;
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final result = await GoldenFileComparator.compareLists(imageBytes, await getGoldenBytes(golden));
+    if (result.passed || result.diffPercent <= tolerance) {
+      result.dispose();
+      return true;
+    }
+    final error = await generateFailureOutput(result, golden, basedir);
+    result.dispose();
+    throw FlutterError(error);
+  }
+}
+
 void main() {
+  setUpAll(() {
+    final current = goldenFileComparator;
+    if (current is LocalFileComparator) {
+      goldenFileComparator = _TolerantComparator(Uri.parse('${current.basedir}preview_golden_test.dart'));
+    }
+  });
+
   // الحجم المتوسط (mockups/settings_preview.png)، و«كبير جداً» للتأكد من أن لا قص ولا تداخل.
   for (final (scale, file) in [
     (FontScale.medium, 'settings_preview.png'),
