@@ -243,9 +243,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('city-dropdown')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('أبها').last);
+    await tester.tap(find.text('الخرج').last);
     await tester.pumpAndSettle();
-    expect((bridge.last['city'] as Map)['name'], 'أبها');
+    expect((bridge.last['city'] as Map)['name'], 'الخرج');
   });
 
   testWidgets('زر لقطة الخلفية لا يظهر في أندرويد', (tester) async {
