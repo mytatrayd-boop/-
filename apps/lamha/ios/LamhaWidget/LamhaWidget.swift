@@ -53,12 +53,14 @@ struct LamhaProvider: TimelineProvider {
 struct QiblaIcon: View {
     let degrees: Double
     let dark: Color
+    /// القرص الأسود يتبع شفافية خلفية الودجت، والتدريج والسهم يبقيان.
+    var faceOpacity: Double = 1
     var body: some View {
         GeometryReader { g in
             let side = min(g.size.width, g.size.height)
             let a = degrees * .pi / 180
             ZStack {
-                Circle().fill(Color.black).frame(width: side * 0.98, height: side * 0.98)
+                Circle().fill(Color.black.opacity(faceOpacity)).frame(width: side * 0.98, height: side * 0.98)
                 QiblaTicks(side: side).frame(width: side, height: side)
                 ForEach(Array([(0.0, "N"), (90.0, "E"), (180.0, "S"), (270.0, "W")].enumerated()), id: \.offset) { _, item in
                     let r = item.0 * .pi / 180
@@ -295,7 +297,7 @@ struct LamhaWidgetView: View {
     private func qibla(_ s: LamhaSnapshot) -> some View {
         Link(destination: qiblaURL) {
             VStack(spacing: 1) {
-                QiblaIcon(degrees: s.qiblaDegrees, dark: s.iconBackground)
+                QiblaIcon(degrees: s.qiblaDegrees, dark: s.iconBackground, faceOpacity: s.opacity)
                 Text(s.qiblaAngleText).font(.system(size: 14, weight: .bold)).foregroundStyle(textColor)
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Text("من الشمال · " + s.qiblaDirection).font(.system(size: 9, weight: .medium))
