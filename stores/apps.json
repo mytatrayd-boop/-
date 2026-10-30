@@ -1,5 +1,5 @@
 [
-  {"name": "لمحة", "folder": "apps/lamha", "app_dir": "apps/lamha", "pubspec_name": "lamha", "version": "1.0.1+2",
+  {"name": "لمحة", "folder": "apps/lamha", "app_dir": "apps/lamha", "pubspec_name": "lamha", "version": "1.0.2+3",
    "android": "sa.lamha.lamha", "ios_bundle": "sa.lamha.lamha",
    "play_workflow": "lamha-play.yml", "play_workflow_id": 393655176,
    "ios_workflow": "lamha-ios.yml", "ios_workflow_id": 393643146,
