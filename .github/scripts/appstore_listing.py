@@ -4,7 +4,7 @@ content rights, category) from the repo.
 
 Reads from <store_dir>:
   metadata/appstore/<locale>/{name,subtitle,description,keywords,promotional_text,
-                              support_url,privacy_url[,marketing_url]}.txt   (e.g. locale ar-SA)
+                              support_url,privacy_url[,marketing_url,whats_new]}.txt   (e.g. locale ar-SA)
   metadata/appstore/review_notes.txt     notes for App Review (sign-in not required)
   metadata/appstore/age_rating.json      ageRatingDeclaration attributes
   metadata/appstore/copyright.txt        e.g. «© 2026 …» (optional)
@@ -36,11 +36,11 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from ios_signing import request  # noqa: E402  (App Store Connect API key auth)
 
 LIMITS = {"name": 30, "subtitle": 30, "description": 4000, "keywords": 100, "promotional_text": 170,
-          "support_url": 255, "privacy_url": 255, "marketing_url": 255}
+          "support_url": 255, "privacy_url": 255, "marketing_url": 255, "whats_new": 4000}
 REQUIRED = ["name", "description", "keywords", "support_url", "privacy_url"]
 VERSION_FIELDS = {"description": "description", "keywords": "keywords",
                   "promotional_text": "promotionalText", "support_url": "supportUrl",
-                  "marketing_url": "marketingUrl"}
+                  "marketing_url": "marketingUrl", "whats_new": "whatsNew"}
 INFO_FIELDS = {"name": "name", "subtitle": "subtitle", "privacy_url": "privacyPolicyUrl"}
 EDITABLE = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED",
             "INVALID_BINARY"}
