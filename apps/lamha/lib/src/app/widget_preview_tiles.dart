@@ -389,6 +389,8 @@ class _QiblaTile extends _Styled {
     required this.degrees,
     required this.accent,
     this.faceAlpha = 1,
+    this.span = 1,
+    this.iconScale = 1.0,
     _Look look = _defaultLook,
   }) : super(look);
 
@@ -396,6 +398,10 @@ class _QiblaTile extends _Styled {
   final String sub;
   final double degrees;
   final Color accent;
+
+  /// عرض الخانة بالوحدات، وحجم الأيقونة (شريط التخصيص): مقاسها [qiblaIconSize].
+  final int span;
+  final double iconScale;
 
   /// شفافية قرص البوصلة = شفافية خلفية الودجت (backgroundAlpha).
   final double faceAlpha;
@@ -407,6 +413,8 @@ class _QiblaTile extends _Styled {
     degrees: degrees,
     accent: accent,
     faceAlpha: faceAlpha,
+    span: span,
+    iconScale: iconScale,
     look: look,
   );
 
@@ -415,7 +423,7 @@ class _QiblaTile extends _Styled {
     text: look.showTitle
         ? (qiblaTitleSize + qiblaSubSize) * tileLineHeight * s
         : 0,
-    pad: qiblaIconTarget(width),
+    pad: qiblaIconSize(width, span, iconScale),
   );
 
   @override
@@ -441,7 +449,13 @@ class _QiblaTile extends _Styled {
       final textLines = look.showTitle
           ? (angleSize + subSize) * tileLineHeight + qiblaIconGap + 1
           : 0;
-      final icon = math.max(0.0, math.min(c.maxWidth, c.maxHeight - textLines));
+      final icon = math.max(
+        0.0,
+        math.min(
+          qiblaIconSize(c.maxWidth, span, iconScale),
+          c.maxHeight - textLines,
+        ),
+      );
       return _centered(
         Center(
           child: Column(

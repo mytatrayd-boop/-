@@ -19,10 +19,16 @@ class FakeBridge implements WidgetBridge {
   final saved = <String>[];
   var updates = 0;
 
+  /// آخر شفافية مرّرت مع الجدول (مفتاح App Group المنفصل).
+  int? lastOpacity;
+
   Map<String, dynamic> get last => jsonDecode(saved.last) as Map<String, dynamic>;
 
   @override
-  Future<void> saveSchedule(String json) async => saved.add(json);
+  Future<void> saveSchedule(String json, {int? opacity}) async {
+    saved.add(json);
+    lastOpacity = opacity;
+  }
 
   @override
   Future<void> requestUpdate() async => updates++;

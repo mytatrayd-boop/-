@@ -278,11 +278,53 @@ void main() {
         'showSub': false,
         'primaryColor': 0xFFEE9AB8,
         'secondaryColor': null,
+        'iconScale': 1.0,
       });
       expect(t.copyWith(primaryColor: () => null).primaryColor, isNull);
       expect(TileColor.values.map((c) => c.name), [
         'white', 'gold', 'green', 'blue', 'purple', 'pink', 'lightGray',
       ]);
+    });
+  });
+
+  group('حجم أيقونة القبلة', () {
+    test('مدى ٠٫٥–١٫٦ بخطوة ٠٫٠٥ والقيم الشاذة تُقصّ', () {
+      expect(tileIconScale(null), 1.0);
+      expect(tileIconScale('x'), 1.0);
+      expect(tileIconScale(0.1), 0.5);
+      expect(tileIconScale(9), 1.6);
+      expect(tileIconScale(0.87), closeTo(0.85, 1e-9));
+      expect(tileIconScale(1.33), closeTo(1.35, 1e-9));
+      expect(const TileLayout(WidgetElement.qibla).iconScale, 1.0);
+      expect(
+        TileLayout.fromJson({'id': 'qibla', 'iconScale': 1.25}).iconScale,
+        1.25,
+      );
+    });
+
+    test('عرض الخانة يتبع الحجم: وحدة حتى ١٠٠٪ ووحدتان فوقها، والقديم صغير/وسط/عريض يعود لوحدة', () {
+      expect(qiblaSpanFor(0.5), 1);
+      expect(qiblaSpanFor(1.0), 1);
+      expect(qiblaSpanFor(1.05), 2);
+      expect(qiblaSpanFor(1.6), 2);
+      final l = normalizeLayout([
+        const TileLayout(WidgetElement.qibla, span: 3),
+      ]);
+      expect(l.firstWhere((t) => t.id == WidgetElement.qibla).span, 1);
+      final big = normalizeLayout([
+        const TileLayout(WidgetElement.qibla, iconScale: 1.4),
+      ]);
+      expect(big.firstWhere((t) => t.id == WidgetElement.qibla).span, 2);
+    });
+
+    test('مقاس الأيقونة: معامل من مقاس خانة الوحدة، ولا يتجاوز عرض الخانة', () {
+      // خانة وحدة بعرض ٩٨: ٨٥٪ = ٨٣٫٣
+      expect(qiblaIconSize(98, 1, 1.0), closeTo(83.3, 0.01));
+      expect(qiblaIconSize(98, 1, 0.5), closeTo(41.65, 0.01));
+      // خانة وحدتين بعرض ٢٠٤: الأساس من الوحدة الواحدة (١٠٢) = ٨٦٫٧، ×١٫٦ = ١٣٨٫٧
+      expect(qiblaIconSize(204, 2, 1.6), closeTo(138.72, 0.01));
+      expect(qiblaIconSize(60, 1, 1.6), 60);
+      expect(qiblaIconSize(0, 1, 1.0), 36);
     });
   });
 

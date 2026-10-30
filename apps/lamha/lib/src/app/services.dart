@@ -27,20 +27,43 @@ const scheduleKey = 'schedule';
 
 /// طبقة الربط بالودجت الأصلية (حزمة home_widget).
 abstract class WidgetBridge {
-  Future<void> saveSchedule(String json);
+  /// يحفظ الجدول؛ [opacity] (٠–١٠٠) يُحفظ معه بمفتاح منفصل يقرؤه ودجت آيفون أولاً.
+  Future<void> saveSchedule(String json, {int? opacity});
   Future<void> requestUpdate();
 }
+
+/// مفتاح الشفافية المنفصل في App Group (يقرؤه LamhaData.swift قبل `opacity` في الجدول).
+const opacityKey = 'opacity';
 
 class HomeWidgetBridge implements WidgetBridge {
   bool _groupSet = false;
 
+  /// آيفون: حفظ وإعادة تحميل من الطبقة الأصلية (AppDelegate: saveAndReload) فيصل الحفظ للودجت
+  /// ويُعاد رسمها بيقين. false إن لم تتوفر القناة، فيُستعمل home_widget.
+  Future<bool> _saveNativeIos(String json, int? opacity) async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return false;
+    try {
+      final ok = await appGroupChannel.invokeMethod<bool>('saveAndReload', {
+        'group': appGroupId,
+        'schedule': json,
+        'opacity': ?opacity,
+      });
+      return ok == true;
+    } catch (e) {
+      debugPrint('saveAndReload: $e');
+      return false;
+    }
+  }
+
   @override
-  Future<void> saveSchedule(String json) async {
+  Future<void> saveSchedule(String json, {int? opacity}) async {
+    if (await _saveNativeIos(json, opacity)) return;
     if (!_groupSet) {
       await HomeWidget.setAppGroupId(appGroupId);
       _groupSet = true;
     }
     await HomeWidget.saveWidgetData<String>(scheduleKey, json);
+    if (opacity != null) await HomeWidget.saveWidgetData<int>(opacityKey, opacity);
   }
 
   @override

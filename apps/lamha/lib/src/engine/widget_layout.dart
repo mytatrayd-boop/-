@@ -79,6 +79,25 @@ double tileFontScale(Object? raw) {
       .toDouble();
 }
 
+/// حجم أيقونة القبلة (طلب المالك ٣٠/١٠/٢٠٢٦، بدل «صغير/وسط/عريض»): شريط من [tileIconMin] إلى
+/// [tileIconMax] بخطوة [tileIconStep]. ١٫٠ = المقاس المرغوب لخانة بعرض وحدة واحدة.
+const tileIconMin = 0.5;
+const tileIconMax = 1.6;
+const tileIconStep = 0.05;
+
+/// معامل حجم الأيقونة ضمن المدى وعلى خطوة ٠٫٠٥.
+double tileIconScale(Object? raw) {
+  final v = raw is num ? raw.toDouble() : 1.0;
+  return ((v.clamp(tileIconMin, tileIconMax) / tileIconStep + 1e-9).round() *
+          tileIconStep)
+      .clamp(tileIconMin, tileIconMax)
+      .toDouble();
+}
+
+/// عرض خانة القبلة بالوحدات تبعاً لحجم الأيقونة: وحدة واحدة حتى ١٠٠٪، ووحدتان فوقها (الأيقونة
+/// الأكبر لا تتسع في ثلث العرض). يُطبَّق تلقائياً فلا يحتاج المستخدم لاختيار العرض.
+int qiblaSpanFor(double iconScale) => iconScale > 1.0 ? 2 : 1;
+
 /// إعدادات مربع واحد.
 class TileLayout {
   const TileLayout(
@@ -90,6 +109,7 @@ class TileLayout {
     this.showSub = true,
     this.primaryColor,
     this.secondaryColor,
+    this.iconScale = 1.0,
   });
 
   factory TileLayout.fromJson(Map<String, dynamic> j) => TileLayout(
@@ -101,6 +121,7 @@ class TileLayout {
     showSub: j['showSub'] as bool? ?? true,
     primaryColor: TileColor.byName(j['primaryColor'] as String?),
     secondaryColor: TileColor.byName(j['secondaryColor'] as String?),
+    iconScale: tileIconScale(j['iconScale']),
   );
 
   final WidgetElement id;
@@ -120,6 +141,9 @@ class TileLayout {
   final TileColor? primaryColor;
   final TileColor? secondaryColor;
 
+  /// معامل حجم أيقونة القبلة (٠٫٥–١٫٦)؛ لا أثر له في بقية المربعات.
+  final double iconScale;
+
   TileLayout copyWith({
     bool? visible,
     int? span,
@@ -128,6 +152,7 @@ class TileLayout {
     bool? showSub,
     TileColor? Function()? primaryColor,
     TileColor? Function()? secondaryColor,
+    double? iconScale,
   }) => TileLayout(
     id,
     visible: visible ?? this.visible,
@@ -139,6 +164,7 @@ class TileLayout {
     secondaryColor: secondaryColor != null
         ? secondaryColor()
         : this.secondaryColor,
+    iconScale: iconScale != null ? tileIconScale(iconScale) : this.iconScale,
   );
 
   /// للإعدادات المحفوظة (اللونان بالأسماء).
@@ -151,6 +177,7 @@ class TileLayout {
     'showSub': showSub,
     'primaryColor': primaryColor?.name,
     'secondaryColor': secondaryColor?.name,
+    'iconScale': iconScale,
   };
 
   /// للجدول (قيم جاهزة): اللون ARGB أو null.
@@ -163,6 +190,7 @@ class TileLayout {
     'showSub': showSub,
     'primaryColor': primaryColor?.argb,
     'secondaryColor': secondaryColor?.argb,
+    'iconScale': iconScale,
   };
 
   @override
@@ -175,7 +203,8 @@ class TileLayout {
       other.showTitle == showTitle &&
       other.showSub == showSub &&
       other.primaryColor == primaryColor &&
-      other.secondaryColor == secondaryColor;
+      other.secondaryColor == secondaryColor &&
+      other.iconScale == iconScale;
 
   @override
   int get hashCode => Object.hash(
@@ -187,6 +216,7 @@ class TileLayout {
     showSub,
     primaryColor,
     secondaryColor,
+    iconScale,
   );
 }
 
@@ -241,13 +271,21 @@ const legacyDefaultLayout = <TileLayout>[
   TileLayout(WidgetElement.tradSeason, span: 2),
 ];
 
+/// عرض القبلة يتبع حجم أيقونتها ([qiblaSpanFor]): الإعدادات القديمة بعرض ٢ أو ٣ (صغير/وسط/عريض) تعود
+/// لوحدة واحدة بحجم ١٠٠٪.
+TileLayout fitQiblaSpan(TileLayout t) {
+  if (t.id != WidgetElement.qibla) return t;
+  final span = qiblaSpanFor(t.iconScale);
+  return t.span == span ? t : t.copyWith(span: span);
+}
+
 /// كل عنصر مرة واحدة: يُحذف المكرر، ويُضاف الناقص في آخر القائمة بإعداده الافتراضي مخفياً
 /// (فلا يتغير ما يراه من خصّص ترتيبه).
 List<TileLayout> normalizeLayout(Iterable<TileLayout> layout) {
   final seen = <WidgetElement>{};
   final out = <TileLayout>[
     for (final t in layout)
-      if (seen.add(t.id)) t,
+      if (seen.add(t.id)) fitQiblaSpan(t),
   ];
   for (final d in defaultLayout) {
     if (seen.add(d.id)) out.add(d.copyWith(visible: false));
@@ -615,6 +653,14 @@ ColumnsFit fitColumns({
 /// في LamhaLogic.kt.
 double qiblaIconTarget(double width) =>
     width <= 0 ? 36 : math.min(width * 0.85, 110);
+
+/// مقاس أيقونة القبلة بعد شريط الحجم في خانة عرضها [width] وبعرض [span] وحدة: [iconScale] من المقاس
+/// المرغوب لخانة بوحدة واحدة، ولا يتجاوز عرض الخانة. مطابقة لـ qiblaIconSize في LamhaLogic.kt.
+double qiblaIconSize(double width, int span, double iconScale) {
+  final base = qiblaIconTarget(width <= 0 ? 0 : width / span.clamp(1, gridColumns));
+  final size = base * iconScale;
+  return width <= 0 ? size : math.min(size, width);
+}
 
 /// أقصى عدد إيداعات في مربع الإيداعات: حتى ثلاثة أعمدة (عمود لكل وحدة عرض)، وبعرض ٣ حتى ستة في
 /// شبكة عمودين (طلب المالك). مطابقة لـ maxDeposits في LamhaLogic.kt.

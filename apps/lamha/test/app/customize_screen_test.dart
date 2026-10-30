@@ -195,11 +195,31 @@ void main() {
   ) async {
     final bridge = await openCustomize(tester);
     await select(tester, 'qibla');
+    // أيقونة القبلة بشريط حجم لا بـ«صغير/وسط/عريض».
+    expect(find.byKey(const Key('span-qibla')), findsNothing);
+    final iconSlider = tester.widget<Slider>(find.byKey(const Key('qibla-icon-size')));
+    expect((iconSlider.min, iconSlider.max, iconSlider.divisions, iconSlider.value), (0.5, 1.6, 22, 1.0));
     final before = tester.getRect(tile('qibla')).width;
-    await tapKey(tester, 'span-qibla-3');
-    expect(tileOf(bridge, 'qibla')['span'], 3);
-    expect(tester.getRect(tile('qibla')).width, greaterThan(before * 2));
-    await tapKey(tester, 'span-qibla-1');
+    final sliderBox = find.byKey(const Key('qibla-icon-size'));
+    final c = tester.getCenter(sliderBox);
+    final w = tester.getSize(sliderBox).width;
+    // السحب إلى أقصى الشريط (يسار في RTL) دون إفلات: المعاينة تتغير فوراً ولا حفظ للودجت بعد.
+    final saves = bridge.saved.length;
+    final g = await tester.startGesture(c);
+    await g.moveTo(Offset(c.dx - w / 2 + 2, c.dy));
+    await tester.pump();
+    expect(tester.getRect(tile('qibla')).width, greaterThan(before * 1.5));
+    expect(bridge.saved.length, saves, reason: 'لا حفظ أثناء السحب');
+    await g.up();
+    await tester.pumpAndSettle();
+    expect(tileOf(bridge, 'qibla')['iconScale'], 1.6);
+    expect(tileOf(bridge, 'qibla')['span'], 2, reason: 'عرض الخانة يتبع حجم الأيقونة');
+    await tester.tapAt(Offset(c.dx + w / 2 - 2, c.dy));
+    await tester.pumpAndSettle();
+    expect(tileOf(bridge, 'qibla')['iconScale'], 0.5);
+    expect(tileOf(bridge, 'qibla')['span'], 1);
+    final slider1 = tester.widget<Slider>(find.byKey(const Key('qibla-icon-size')));
+    expect(slider1.value, 0.5);
 
     // شريط ٠٫٨–٢٫٠ بخطوة ٠٫١، والقيمة معروضة.
     await select(tester, 'deposit');

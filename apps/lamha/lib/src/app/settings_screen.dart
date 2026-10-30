@@ -11,6 +11,7 @@ import 'customize_screen.dart';
 import 'places.dart';
 import 'providers.dart';
 import 'qibla_screen.dart';
+import 'tiles_screen.dart';
 import 'widget_preview.dart';
 
 /// شاشة الإعدادات الوحيدة (SPEC ٧، DESIGN «تطبيق الإعدادات»).
@@ -144,7 +145,28 @@ class _Body extends ConsumerWidget {
               ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
+        // العدّاد التنازلي للصلاة القادمة تحت الساعة: اختياري، مطفأ افتراضياً (٣٠/١٠/٢٠٢٦).
+        SwitchListTile(
+          key: const Key('prayer-countdown'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(l.prayerCountdownLabel, style: textTheme.titleMedium),
+          subtitle: Text(l.prayerCountdownHint),
+          value: s.prayerCountdown,
+          onChanged: c.setPrayerCountdown,
+        ),
+        const SizedBox(height: 8),
+        // نوافذ الشريط: تفعيل وإيقاف وترتيب بالسحب.
+        FilledButton.tonalIcon(
+          key: const Key('tiles-button'),
+          icon: const Icon(Icons.view_agenda_outlined),
+          label: Text(l.tilesManageTitle),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            settings: const RouteSettings(name: TilesScreen.routeName),
+            builder: (_) => const TilesScreen(),
+          )),
+        ),
+        const SizedBox(height: 8),
         // الميزة ٥: ترتيب المربعات وأحجامها وألوانها.
         FilledButton.tonalIcon(
           key: const Key('customize-button'),

@@ -413,4 +413,27 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get qiblaMapOffline => 'تحتاج الخريطة اتصالاً بالإنترنت';
+
+  @override
+  String get prayerCountdownLabel => 'العدّاد التنازلي للصلاة القادمة';
+
+  @override
+  String get prayerCountdownHint =>
+      'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.';
+
+  @override
+  String get qiblaIconSizeLabel => 'حجم أيقونة البوصلة';
+
+  @override
+  String get tilesManageTitle => 'نوافذ الودجت';
+
+  @override
+  String get tilesManageHint =>
+      'فعّل النوافذ التي تريدها أو أوقفها، واسحب المقبض لتغيير الترتيب. النوافذ المتبقية تتمدد لتملأ الودجت.';
+
+  @override
+  String get tilesLastOne => 'يجب أن تبقى نافذة واحدة على الأقل';
+
+  @override
+  String get tilesDragHandle => 'اسحب لإعادة الترتيب';
 }

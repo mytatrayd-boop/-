@@ -637,6 +637,48 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تحتاج الخريطة اتصالاً بالإنترنت'**
   String get qiblaMapOffline;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'العدّاد التنازلي للصلاة القادمة'**
+  String get prayerCountdownLabel;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.'**
+  String get prayerCountdownHint;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم أيقونة البوصلة'**
+  String get qiblaIconSizeLabel;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'نوافذ الودجت'**
+  String get tilesManageTitle;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل النوافذ التي تريدها أو أوقفها، واسحب المقبض لتغيير الترتيب. النوافذ المتبقية تتمدد لتملأ الودجت.'**
+  String get tilesManageHint;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن تبقى نافذة واحدة على الأقل'**
+  String get tilesLastOne;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لإعادة الترتيب'**
+  String get tilesDragHandle;
 }
 
 class _AppLocalizationsDelegate

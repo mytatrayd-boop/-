@@ -24,6 +24,8 @@ object LamhaLogic {
         val showSub: Boolean = true,
         val primaryColor: Int? = null,
         val secondaryColor: Int? = null,
+        /// حجم أيقونة القبلة (٠٫٥–١٫٦، tileIconScale في Dart)؛ لا أثر له في غيرها.
+        val iconScale: Float = 1f,
     )
 
     /// الترتيب الافتراضي (defaultLayout في Dart، الميزة ٦: تصميم المالك ٣). القديمة في آخره مخفية.
@@ -281,6 +283,14 @@ object LamhaLogic {
 
     /// مقاس أيقونة القبلة المرغوب (qiblaIconTarget في Dart): ٨٥٪ من عرض الخانة حتى ١١٠، و٣٦ بلا عرض.
     fun qiblaIconTarget(width: Float): Float = if (width <= 0f) 36f else minOf(width * 0.85f, 110f)
+
+    /// مقاس أيقونة القبلة بعد شريط الحجم (qiblaIconSize في Dart): [iconScale] من المقاس المرغوب لخانة
+    /// بوحدة واحدة، ولا يتجاوز عرض الخانة [width] بعرض [span] وحدة.
+    fun qiblaIconSize(width: Float, span: Int, iconScale: Float): Float {
+        val base = qiblaIconTarget(if (width <= 0f) 0f else width / span.coerceIn(1, GRID_COLUMNS))
+        val size = base * iconScale
+        return if (width <= 0f) size else minOf(size, width)
+    }
 
     /// أقصى عدد إيداعات في مربعها (maxDeposits في Dart): عمود لكل وحدة عرض، وبعرض ٣ حتى ستة في شبكة.
     fun maxDeposits(span: Int): Int = if (span >= 3) 6 else span

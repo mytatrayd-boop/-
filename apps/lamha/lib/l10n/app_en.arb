@@ -89,5 +89,12 @@
   "qiblaSavedLocation": "Couldn't get your location now; using the saved city: {city}",
   "qiblaMapDirection": "Direction from north",
   "qiblaMapDistance": "Distance to the Kaaba",
-  "qiblaMapOffline": "The map needs an internet connection"
+  "qiblaMapOffline": "The map needs an internet connection",
+  "prayerCountdownLabel": "Next prayer countdown",
+  "prayerCountdownHint": "Shown under the clock in the widget. Off by default.",
+  "qiblaIconSizeLabel": "Compass icon size",
+  "tilesManageTitle": "Widget tiles",
+  "tilesManageHint": "Turn tiles on or off and drag the handle to reorder them. The remaining tiles expand to fill the widget.",
+  "tilesLastOne": "At least one tile must stay on",
+  "tilesDragHandle": "Drag to reorder"
 }
