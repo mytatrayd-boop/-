@@ -70,12 +70,21 @@ class GeolocatorLocationService implements LocationService {
         perm == LocationPermission.deniedForever) {
       return null;
     }
-    final p = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.low,
-        timeLimit: Duration(seconds: 20),
-      ),
-    );
+    // low في أندرويد = وضع الطاقة المنخفضة، وكثيراً لا يصل منه موقع فينتهي
+    // الوقت. medium يستخدم الشبكة ويكفي لتحديد المدينة (ويعمل بالإذن التقريبي).
+    // عند الفشل: آخر موقع معروف في الجهاز.
+    Position? p;
+    try {
+      p = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+    } catch (e) {
+      p = await Geolocator.getLastKnownPosition();
+      if (p == null) rethrow;
+    }
     return (latitude: p.latitude, longitude: p.longitude);
   }
 }

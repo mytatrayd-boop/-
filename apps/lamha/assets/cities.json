@@ -1,5 +1,5 @@
 {
- "source": "منسوخة من apps/durur/assets/tables/cities.json (المدن السعودية فقط). الإحداثيات من GeoNames (geonames.org) برخصة CC BY 4.0؛ عُدّلت: اختيار المدن السعودية وحذف حقول المناطق.",
+ "source": "المدن السعودية من GeoNames (geonames.org) عبر حزمة geonamescache (cities500)، برخصة CC BY 4.0؛ عُدّلت: أسماء عربية، وإضافة حقل المنطقة، وحذف المكرر والأحياء. أول ٣٤ مدينة كانت منسوخة من تطبيق درور وأبقينا معرّفاتها.",
  "license": "CC BY 4.0 https://creativecommons.org/licenses/by/4.0/",
  "timeZone": "Asia/Riyadh",
  "cities": [
@@ -8,238 +8,1232 @@
    "name": "الرياض",
    "lat": 24.6877,
    "lon": 46.7219,
-   "geonames": "https://www.geonames.org/108410"
+   "geonames": "https://www.geonames.org/108410",
+   "region": "الرياض"
   },
   {
    "id": "al_kharj",
    "name": "الخرج",
    "lat": 24.1554,
    "lon": 47.3346,
-   "geonames": "https://www.geonames.org/109353"
-  },
-  {
-   "id": "diriyah",
-   "name": "الدرعية",
-   "lat": 24.7519,
-   "lon": 46.5387,
-   "geonames": "https://www.geonames.org/110312"
-  },
-  {
-   "id": "al_majmaah",
-   "name": "المجمعة",
-   "lat": 25.911,
-   "lon": 45.3567,
-   "geonames": "https://www.geonames.org/109194"
+   "geonames": "https://www.geonames.org/109353",
+   "region": "الرياض"
   },
   {
    "id": "az_zulfi",
    "name": "الزلفي",
    "lat": 26.2995,
    "lon": 44.8154,
-   "geonames": "https://www.geonames.org/107781"
-  },
-  {
-   "id": "shaqra",
-   "name": "شقراء",
-   "lat": 25.2402,
-   "lon": 45.251,
-   "geonames": "https://www.geonames.org/102170"
+   "geonames": "https://www.geonames.org/107781",
+   "region": "الرياض"
   },
   {
    "id": "ad_dawadmi",
    "name": "الدوادمي",
    "lat": 24.5077,
    "lon": 44.3924,
-   "geonames": "https://www.geonames.org/110325"
+   "geonames": "https://www.geonames.org/110325",
+   "region": "الرياض"
+  },
+  {
+   "id": "diriyah",
+   "name": "الدرعية",
+   "lat": 24.7519,
+   "lon": 46.5387,
+   "geonames": "https://www.geonames.org/110312",
+   "region": "الرياض"
   },
   {
    "id": "afif",
    "name": "عفيف",
    "lat": 23.9065,
    "lon": 42.9172,
-   "geonames": "https://www.geonames.org/110250"
+   "geonames": "https://www.geonames.org/110250",
+   "region": "الرياض"
+  },
+  {
+   "id": "irqah",
+   "name": "عرقة",
+   "lat": 24.6803,
+   "lon": 46.6111,
+   "geonames": "https://www.geonames.org/105586",
+   "region": "الرياض"
+  },
+  {
+   "id": "ad_dilam",
+   "name": "الدلم",
+   "lat": 23.991,
+   "lon": 47.1618,
+   "geonames": "https://www.geonames.org/110314",
+   "region": "الرياض"
+  },
+  {
+   "id": "shaqra",
+   "name": "شقراء",
+   "lat": 25.2402,
+   "lon": 45.251,
+   "geonames": "https://www.geonames.org/102170",
+   "region": "الرياض"
+  },
+  {
+   "id": "hawtah_bani_tamim",
+   "name": "حوطة بني تميم",
+   "lat": 23.496,
+   "lon": 46.878,
+   "geonames": "https://www.geonames.org/13631408",
+   "region": "الرياض"
+  },
+  {
+   "id": "layla",
+   "name": "ليلى",
+   "lat": 22.2921,
+   "lon": 46.7238,
+   "geonames": "https://www.geonames.org/104716",
+   "region": "الرياض"
+  },
+  {
+   "id": "rumah",
+   "name": "رماح",
+   "lat": 25.5639,
+   "lon": 47.1641,
+   "geonames": "https://www.geonames.org/102744",
+   "region": "الرياض"
   },
   {
    "id": "as_sulayyil",
    "name": "السليل",
    "lat": 20.4607,
    "lon": 45.5779,
-   "geonames": "https://www.geonames.org/108048"
+   "geonames": "https://www.geonames.org/108048",
+   "region": "الرياض"
   },
   {
-   "id": "buraydah",
-   "name": "بريدة",
-   "lat": 26.326,
-   "lon": 43.975,
-   "geonames": "https://www.geonames.org/107304"
+   "id": "al_hayathim",
+   "name": "الهياثم",
+   "lat": 24.1655,
+   "lon": 47.2376,
+   "geonames": "https://www.geonames.org/109615",
+   "region": "الرياض"
   },
   {
-   "id": "unaizah",
-   "name": "عنيزة",
-   "lat": 26.1,
-   "lon": 44.0,
-   "geonames": "https://www.geonames.org/101732"
+   "id": "sajir",
+   "name": "ساجر",
+   "lat": 25.1825,
+   "lon": 44.5996,
+   "geonames": "https://www.geonames.org/108121",
+   "region": "الرياض"
   },
   {
-   "id": "ar_rass",
-   "name": "الرس",
-   "lat": 25.8694,
-   "lon": 43.4973,
-   "geonames": "https://www.geonames.org/108435"
+   "id": "al_artawiyah",
+   "name": "الأرطاوية",
+   "lat": 26.5039,
+   "lon": 45.3481,
+   "geonames": "https://www.geonames.org/110031",
+   "region": "الرياض"
   },
   {
-   "id": "hail",
-   "name": "حائل",
-   "lat": 27.5219,
-   "lon": 41.6907,
-   "geonames": "https://www.geonames.org/106281"
+   "id": "marat",
+   "name": "مرات",
+   "lat": 25.0706,
+   "lon": 45.4577,
+   "geonames": "https://www.geonames.org/104376",
+   "region": "الرياض"
   },
   {
-   "id": "dammam",
-   "name": "الدمام",
-   "lat": 26.4344,
-   "lon": 50.1033,
-   "geonames": "https://www.geonames.org/110336"
+   "id": "al_uyaynah",
+   "name": "العيينة",
+   "lat": 24.9074,
+   "lon": 46.3846,
+   "geonames": "https://www.geonames.org/108787",
+   "region": "الرياض"
   },
   {
-   "id": "khobar",
-   "name": "الخبر",
-   "lat": 26.2794,
-   "lon": 50.2083,
-   "geonames": "https://www.geonames.org/109323"
+   "id": "tumayr",
+   "name": "تمير",
+   "lat": 25.7035,
+   "lon": 45.8683,
+   "geonames": "https://www.geonames.org/396550",
+   "region": "الرياض"
   },
   {
-   "id": "dhahran",
-   "name": "الظهران",
-   "lat": 26.2886,
-   "lon": 50.114,
-   "geonames": "https://www.geonames.org/107797"
+   "id": "al_jubaylah",
+   "name": "الجبيلة",
+   "lat": 24.9112,
+   "lon": 46.4465,
+   "geonames": "https://www.geonames.org/109432",
+   "region": "الرياض"
   },
   {
-   "id": "qatif",
-   "name": "القطيف",
-   "lat": 26.5654,
-   "lon": 50.0089,
-   "geonames": "https://www.geonames.org/108927"
+   "id": "al_hulwah",
+   "name": "الحلوة",
+   "lat": 23.439,
+   "lon": 46.7877,
+   "geonames": "https://www.geonames.org/109563",
+   "region": "الرياض"
   },
   {
-   "id": "al_ahsa",
-   "name": "الأحساء",
-   "lat": 25.3647,
-   "lon": 49.5876,
-   "geonames": "https://www.geonames.org/109571"
+   "id": "ar_rayn",
+   "name": "الرين",
+   "lat": 23.5427,
+   "lon": 45.5152,
+   "geonames": "https://www.geonames.org/108419",
+   "region": "الرياض"
   },
   {
-   "id": "jubail",
-   "name": "الجبيل",
-   "lat": 27.0174,
-   "lon": 49.6225,
-   "geonames": "https://www.geonames.org/109435"
+   "id": "ain_albaraha",
+   "name": "عين البراحة",
+   "lat": 24.7581,
+   "lon": 43.7739,
+   "geonames": "https://www.geonames.org/400009",
+   "region": "الرياض"
   },
   {
-   "id": "hafar_al_batin",
-   "name": "حفر الباطن",
-   "lat": 28.4328,
-   "lon": 45.9708,
-   "geonames": "https://www.geonames.org/106297"
+   "id": "shokhaib",
+   "name": "شخيب",
+   "lat": 24.4902,
+   "lon": 46.2687,
+   "geonames": "https://www.geonames.org/6692745",
+   "region": "الرياض"
   },
   {
-   "id": "makkah",
-   "name": "مكة المكرمة",
-   "lat": 21.4266,
-   "lon": 39.8256,
-   "geonames": "https://www.geonames.org/104515"
+   "id": "al_majmaah",
+   "name": "المجمعة",
+   "lat": 25.911,
+   "lon": 45.3567,
+   "geonames": "https://www.geonames.org/109194",
+   "region": "الرياض"
   },
   {
    "id": "jeddah",
    "name": "جدة",
    "lat": 21.4901,
    "lon": 39.1862,
-   "geonames": "https://www.geonames.org/105343"
+   "geonames": "https://www.geonames.org/105343",
+   "region": "مكة المكرمة"
   },
   {
-   "id": "madinah",
-   "name": "المدينة المنورة",
-   "lat": 24.4686,
-   "lon": 39.6142,
-   "geonames": "https://www.geonames.org/109223"
+   "id": "makkah",
+   "name": "مكة المكرمة",
+   "lat": 21.4266,
+   "lon": 39.8256,
+   "geonames": "https://www.geonames.org/104515",
+   "region": "مكة المكرمة"
   },
   {
    "id": "taif",
    "name": "الطائف",
    "lat": 21.2703,
    "lon": 40.4158,
-   "geonames": "https://www.geonames.org/107968"
+   "geonames": "https://www.geonames.org/107968",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "rabigh",
+   "name": "رابغ",
+   "lat": 22.7986,
+   "lon": 39.0349,
+   "geonames": "https://www.geonames.org/103035",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "ash_shafa",
+   "name": "الشفا",
+   "lat": 21.0727,
+   "lon": 40.3184,
+   "geonames": "https://www.geonames.org/410096",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "al_lith",
+   "name": "الليث",
+   "lat": 20.148,
+   "lon": 40.2722,
+   "geonames": "https://www.geonames.org/109253",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "al_khurmah",
+   "name": "الخرمة",
+   "lat": 21.9115,
+   "lon": 42.0309,
+   "geonames": "https://www.geonames.org/109306",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "thuwal",
+   "name": "ثول",
+   "lat": 22.2827,
+   "lon": 39.1125,
+   "geonames": "https://www.geonames.org/409682",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "turabah",
+   "name": "تربة",
+   "lat": 21.2141,
+   "lon": 41.6331,
+   "geonames": "https://www.geonames.org/101322",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "al_jumum",
+   "name": "الجموم",
+   "lat": 21.6195,
+   "lon": 39.6966,
+   "geonames": "https://www.geonames.org/109417",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "khulays",
+   "name": "خليص",
+   "lat": 22.1555,
+   "lon": 39.3201,
+   "geonames": "https://www.geonames.org/104923",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "king_abdullah_city",
+   "name": "مدينة الملك عبدالله الاقتصادية",
+   "lat": 22.4463,
+   "lon": 39.1245,
+   "geonames": "https://www.geonames.org/11524299",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "al_muwayh",
+   "name": "المويه",
+   "lat": 22.4333,
+   "lon": 41.7583,
+   "geonames": "https://www.geonames.org/409993",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "al_hada",
+   "name": "الهدا",
+   "lat": 21.359,
+   "lon": 40.2803,
+   "geonames": "https://www.geonames.org/410084",
+   "region": "مكة المكرمة"
+  },
+  {
+   "id": "madinah",
+   "name": "المدينة المنورة",
+   "lat": 24.4686,
+   "lon": 39.6142,
+   "geonames": "https://www.geonames.org/109223",
+   "region": "المدينة المنورة"
   },
   {
    "id": "yanbu",
    "name": "ينبع",
    "lat": 24.0895,
    "lon": 38.0618,
-   "geonames": "https://www.geonames.org/100425"
+   "geonames": "https://www.geonames.org/100425",
+   "region": "المدينة المنورة"
   },
   {
-   "id": "abha",
-   "name": "أبها",
-   "lat": 18.2164,
-   "lon": 42.5053,
-   "geonames": "https://www.geonames.org/110690"
+   "id": "al_ula",
+   "name": "العلا",
+   "lat": 26.6085,
+   "lon": 37.9232,
+   "geonames": "https://www.geonames.org/108841",
+   "region": "المدينة المنورة"
+  },
+  {
+   "id": "badr_hunayn",
+   "name": "بدر",
+   "lat": 23.7829,
+   "lon": 38.7905,
+   "geonames": "https://www.geonames.org/107744",
+   "region": "المدينة المنورة"
+  },
+  {
+   "id": "mahd_adh_dhahab",
+   "name": "مهد الذهب",
+   "lat": 23.4997,
+   "lon": 40.8841,
+   "geonames": "https://www.geonames.org/104578",
+   "region": "المدينة المنورة"
+  },
+  {
+   "id": "khaybar",
+   "name": "خيبر",
+   "lat": 25.7134,
+   "lon": 39.2803,
+   "geonames": "https://www.geonames.org/104979",
+   "region": "المدينة المنورة"
+  },
+  {
+   "id": "buraydah",
+   "name": "بريدة",
+   "lat": 26.326,
+   "lon": 43.975,
+   "geonames": "https://www.geonames.org/107304",
+   "region": "القصيم"
+  },
+  {
+   "id": "unaizah",
+   "name": "عنيزة",
+   "lat": 26.1,
+   "lon": 44.0,
+   "geonames": "https://www.geonames.org/101732",
+   "region": "القصيم"
+  },
+  {
+   "id": "ar_rass",
+   "name": "الرس",
+   "lat": 25.8694,
+   "lon": 43.4973,
+   "geonames": "https://www.geonames.org/108435",
+   "region": "القصيم"
+  },
+  {
+   "id": "al_badai_al_wusta",
+   "name": "البدائع",
+   "lat": 25.9855,
+   "lon": 43.7366,
+   "geonames": "https://www.geonames.org/397833",
+   "region": "القصيم"
+  },
+  {
+   "id": "al_bukayriyah",
+   "name": "البكيرية",
+   "lat": 26.1392,
+   "lon": 43.6578,
+   "geonames": "https://www.geonames.org/109878",
+   "region": "القصيم"
+  },
+  {
+   "id": "al_mithnab",
+   "name": "المذنب",
+   "lat": 25.8601,
+   "lon": 44.2223,
+   "geonames": "https://www.geonames.org/109131",
+   "region": "القصيم"
+  },
+  {
+   "id": "riyad_al_khabra",
+   "name": "رياض الخبراء",
+   "lat": 26.0667,
+   "lon": 43.5534,
+   "geonames": "https://www.geonames.org/11835536",
+   "region": "القصيم"
+  },
+  {
+   "id": "al_khabra",
+   "name": "الخبراء",
+   "lat": 26.0718,
+   "lon": 43.625,
+   "geonames": "https://www.geonames.org/109391",
+   "region": "القصيم"
+  },
+  {
+   "id": "uyun_al_jiwa",
+   "name": "عيون الجواء",
+   "lat": 26.4983,
+   "lon": 43.6312,
+   "geonames": "https://www.geonames.org/108782",
+   "region": "القصيم"
+  },
+  {
+   "id": "tanumah",
+   "name": "تنومة",
+   "lat": 27.1,
+   "lon": 44.1333,
+   "geonames": "https://www.geonames.org/101581",
+   "region": "القصيم"
+  },
+  {
+   "id": "qibah",
+   "name": "قبة",
+   "lat": 27.4029,
+   "lon": 44.3277,
+   "geonames": "https://www.geonames.org/103220",
+   "region": "القصيم"
+  },
+  {
+   "id": "uqlat_as_suqur",
+   "name": "عقلة الصقور",
+   "lat": 25.8292,
+   "lon": 42.2012,
+   "geonames": "https://www.geonames.org/100732",
+   "region": "القصيم"
+  },
+  {
+   "id": "al_mulayda",
+   "name": "المليداء",
+   "lat": 26.3178,
+   "lon": 43.7853,
+   "geonames": "https://www.geonames.org/11829674",
+   "region": "القصيم"
+  },
+  {
+   "id": "ayn_ibn_fuhayd",
+   "name": "عين ابن فهيد",
+   "lat": 26.7716,
+   "lon": 44.2071,
+   "geonames": "https://www.geonames.org/107840",
+   "region": "القصيم"
+  },
+  {
+   "id": "dukhnah",
+   "name": "دخنة",
+   "lat": 25.3562,
+   "lon": 43.6227,
+   "geonames": "https://www.geonames.org/106872",
+   "region": "القصيم"
+  },
+  {
+   "id": "al_fuwayliq",
+   "name": "الفويلق",
+   "lat": 26.4436,
+   "lon": 43.2516,
+   "geonames": "https://www.geonames.org/397513",
+   "region": "القصيم"
+  },
+  {
+   "id": "adh_dhibiyah",
+   "name": "الذيبية",
+   "lat": 26.027,
+   "lon": 43.157,
+   "geonames": "https://www.geonames.org/110275",
+   "region": "القصيم"
+  },
+  {
+   "id": "wed_alnkil",
+   "name": "وادي النخيل",
+   "lat": 25.4267,
+   "lon": 42.8343,
+   "geonames": "https://www.geonames.org/395628",
+   "region": "القصيم"
+  },
+  {
+   "id": "dammam",
+   "name": "الدمام",
+   "lat": 26.4344,
+   "lon": 50.1033,
+   "geonames": "https://www.geonames.org/110336",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_ahsa",
+   "name": "الأحساء",
+   "lat": 25.3647,
+   "lon": 49.5876,
+   "geonames": "https://www.geonames.org/109571",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_mubarraz",
+   "name": "المبرز",
+   "lat": 25.4077,
+   "lon": 49.5903,
+   "geonames": "https://www.geonames.org/109101",
+   "region": "الشرقية"
+  },
+  {
+   "id": "hafar_al_batin",
+   "name": "حفر الباطن",
+   "lat": 28.4328,
+   "lon": 45.9708,
+   "geonames": "https://www.geonames.org/106297",
+   "region": "الشرقية"
+  },
+  {
+   "id": "thuqbah",
+   "name": "الثقبة",
+   "lat": 26.2602,
+   "lon": 50.2049,
+   "geonames": "https://www.geonames.org/107991",
+   "region": "الشرقية"
+  },
+  {
+   "id": "jubail",
+   "name": "الجبيل",
+   "lat": 27.0174,
+   "lon": 49.6225,
+   "geonames": "https://www.geonames.org/109435",
+   "region": "الشرقية"
+  },
+  {
+   "id": "khobar",
+   "name": "الخبر",
+   "lat": 26.2794,
+   "lon": 50.2083,
+   "geonames": "https://www.geonames.org/109323",
+   "region": "الشرقية"
+  },
+  {
+   "id": "dhahran",
+   "name": "الظهران",
+   "lat": 26.2886,
+   "lon": 50.114,
+   "geonames": "https://www.geonames.org/107797",
+   "region": "الشرقية"
+  },
+  {
+   "id": "qatif",
+   "name": "القطيف",
+   "lat": 26.5654,
+   "lon": 50.0089,
+   "geonames": "https://www.geonames.org/108927",
+   "region": "الشرقية"
+  },
+  {
+   "id": "tarut",
+   "name": "تاروت",
+   "lat": 26.5733,
+   "lon": 50.0403,
+   "geonames": "https://www.geonames.org/101554",
+   "region": "الشرقية"
+  },
+  {
+   "id": "sayhat",
+   "name": "سيهات",
+   "lat": 26.4835,
+   "lon": 50.0485,
+   "geonames": "https://www.geonames.org/102318",
+   "region": "الشرقية"
+  },
+  {
+   "id": "king_faisal_military_city",
+   "name": "مدينة الملك فيصل العسكرية",
+   "lat": 28.45,
+   "lon": 45.9667,
+   "geonames": "https://www.geonames.org/104828",
+   "region": "الشرقية"
+  },
+  {
+   "id": "ras_tanura",
+   "name": "رأس تنورة",
+   "lat": 26.7074,
+   "lon": 50.0673,
+   "geonames": "https://www.geonames.org/102891",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_khafji",
+   "name": "الخفجي",
+   "lat": 28.4391,
+   "lon": 48.4913,
+   "geonames": "https://www.geonames.org/109380",
+   "region": "الشرقية"
+  },
+  {
+   "id": "safwa",
+   "name": "صفوى",
+   "lat": 26.6497,
+   "lon": 49.9552,
+   "geonames": "https://www.geonames.org/102585",
+   "region": "الشرقية"
+  },
+  {
+   "id": "rahimah",
+   "name": "رحيمة",
+   "lat": 26.7079,
+   "lon": 50.0619,
+   "geonames": "https://www.geonames.org/102985",
+   "region": "الشرقية"
+  },
+  {
+   "id": "abqaiq",
+   "name": "بقيق",
+   "lat": 25.934,
+   "lon": 49.6688,
+   "geonames": "https://www.geonames.org/107312",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_awwamiyah",
+   "name": "العوامية",
+   "lat": 26.5914,
+   "lon": 49.9795,
+   "geonames": "https://www.geonames.org/109998",
+   "region": "الشرقية"
+  },
+  {
+   "id": "king_khalid_military_city",
+   "name": "مدينة الملك خالد العسكرية",
+   "lat": 27.9051,
+   "lon": 45.5533,
+   "geonames": "https://www.geonames.org/8449855",
+   "region": "الشرقية"
+  },
+  {
+   "id": "at_taraf",
+   "name": "الطرف",
+   "lat": 25.3623,
+   "lon": 49.7276,
+   "geonames": "https://www.geonames.org/107959",
+   "region": "الشرقية"
+  },
+  {
+   "id": "qaisumah",
+   "name": "القيصومة",
+   "lat": 28.3112,
+   "lon": 46.1273,
+   "geonames": "https://www.geonames.org/108918",
+   "region": "الشرقية"
+  },
+  {
+   "id": "inak",
+   "name": "عنك",
+   "lat": 26.5196,
+   "lon": 50.0271,
+   "geonames": "https://www.geonames.org/108655",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_battaliyah",
+   "name": "البطالية",
+   "lat": 25.4333,
+   "lon": 49.6333,
+   "geonames": "https://www.geonames.org/109915",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_munayzilah",
+   "name": "المنيزلة",
+   "lat": 25.3833,
+   "lon": 49.6667,
+   "geonames": "https://www.geonames.org/109059",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_qurayn",
+   "name": "القرين",
+   "lat": 25.4833,
+   "lon": 49.6,
+   "geonames": "https://www.geonames.org/108890",
+   "region": "الشرقية"
+  },
+  {
+   "id": "umm_as_sahik",
+   "name": "أم الساهك",
+   "lat": 26.6536,
+   "lon": 49.9164,
+   "geonames": "https://www.geonames.org/101035",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_awjam",
+   "name": "الأوجام",
+   "lat": 26.5632,
+   "lon": 49.9433,
+   "geonames": "https://www.geonames.org/110107",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_qarah",
+   "name": "القارة",
+   "lat": 25.4167,
+   "lon": 49.6667,
+   "geonames": "https://www.geonames.org/108957",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_jafr",
+   "name": "الجفر",
+   "lat": 25.3774,
+   "lon": 49.7215,
+   "geonames": "https://www.geonames.org/109502",
+   "region": "الشرقية"
+  },
+  {
+   "id": "at_tubi",
+   "name": "التوبي",
+   "lat": 26.5578,
+   "lon": 49.9917,
+   "geonames": "https://www.geonames.org/101344",
+   "region": "الشرقية"
+  },
+  {
+   "id": "as_saffaniyah",
+   "name": "السفانية",
+   "lat": 27.9708,
+   "lon": 48.73,
+   "geonames": "https://www.geonames.org/108142",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_markaz",
+   "name": "المركز",
+   "lat": 25.4,
+   "lon": 49.7333,
+   "geonames": "https://www.geonames.org/109165",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_mutayrifi",
+   "name": "المطيرفي",
+   "lat": 25.4788,
+   "lon": 49.5582,
+   "geonames": "https://www.geonames.org/109008",
+   "region": "الشرقية"
+  },
+  {
+   "id": "al_juaymah",
+   "name": "الجعيمة",
+   "lat": 26.7501,
+   "lon": 49.9047,
+   "geonames": "https://www.geonames.org/12495738",
+   "region": "الشرقية"
+  },
+  {
+   "id": "julayjilah",
+   "name": "جليجلة",
+   "lat": 25.5,
+   "lon": 49.6,
+   "geonames": "https://www.geonames.org/105252",
+   "region": "الشرقية"
+  },
+  {
+   "id": "mulayjah",
+   "name": "مليجة",
+   "lat": 27.271,
+   "lon": 48.4242,
+   "geonames": "https://www.geonames.org/103922",
+   "region": "الشرقية"
+  },
+  {
+   "id": "udhailiyah",
+   "name": "العضيلية",
+   "lat": 25.1408,
+   "lon": 49.2996,
+   "geonames": "https://www.geonames.org/108852",
+   "region": "الشرقية"
+  },
+  {
+   "id": "shaybah",
+   "name": "شيبة",
+   "lat": 22.5925,
+   "lon": 54.096,
+   "geonames": "https://www.geonames.org/7288343",
+   "region": "الشرقية"
   },
   {
    "id": "khamis_mushait",
    "name": "خميس مشيط",
    "lat": 18.3,
    "lon": 42.7333,
-   "geonames": "https://www.geonames.org/105072"
+   "geonames": "https://www.geonames.org/105072",
+   "region": "عسير"
   },
   {
-   "id": "al_bahah",
-   "name": "الباحة",
-   "lat": 20.0129,
-   "lon": 41.4677,
-   "geonames": "https://www.geonames.org/109953"
+   "id": "abha",
+   "name": "أبها",
+   "lat": 18.2164,
+   "lon": 42.5053,
+   "geonames": "https://www.geonames.org/110690",
+   "region": "عسير"
+  },
+  {
+   "id": "sabt_alalayah",
+   "name": "سبت العلايا",
+   "lat": 19.5773,
+   "lon": 41.9636,
+   "geonames": "https://www.geonames.org/11670045",
+   "region": "عسير"
   },
   {
    "id": "bisha",
    "name": "بيشة",
    "lat": 20.0005,
    "lon": 42.6052,
-   "geonames": "https://www.geonames.org/103369"
+   "geonames": "https://www.geonames.org/103369",
+   "region": "عسير"
   },
   {
-   "id": "najran",
-   "name": "نجران",
-   "lat": 17.4933,
-   "lon": 44.1277,
-   "geonames": "https://www.geonames.org/103630"
+   "id": "bariq",
+   "name": "بارق",
+   "lat": 18.9297,
+   "lon": 41.9295,
+   "geonames": "https://www.geonames.org/12495725",
+   "region": "عسير"
   },
   {
-   "id": "jazan",
-   "name": "جازان",
-   "lat": 16.8892,
-   "lon": 42.5511,
-   "geonames": "https://www.geonames.org/105299"
+   "id": "ranyah",
+   "name": "رنية",
+   "lat": 21.2504,
+   "lon": 42.8475,
+   "geonames": "https://www.geonames.org/12546009",
+   "region": "عسير"
+  },
+  {
+   "id": "an_nimas",
+   "name": "النماص",
+   "lat": 19.1455,
+   "lon": 42.1201,
+   "geonames": "https://www.geonames.org/108617",
+   "region": "عسير"
+  },
+  {
+   "id": "sarat_abidah",
+   "name": "سراة عبيدة",
+   "lat": 18.089,
+   "lon": 43.132,
+   "geonames": "https://www.geonames.org/12500245",
+   "region": "عسير"
+  },
+  {
+   "id": "al_majaridah",
+   "name": "المجاردة",
+   "lat": 19.132,
+   "lon": 41.924,
+   "geonames": "https://www.geonames.org/399518",
+   "region": "عسير"
+  },
+  {
+   "id": "tabalah",
+   "name": "تبالة",
+   "lat": 19.95,
+   "lon": 42.4,
+   "geonames": "https://www.geonames.org/101633",
+   "region": "عسير"
+  },
+  {
+   "id": "tathlith",
+   "name": "تثليث",
+   "lat": 19.5318,
+   "lon": 43.5197,
+   "geonames": "https://www.geonames.org/101547",
+   "region": "عسير"
   },
   {
    "id": "tabuk",
    "name": "تبوك",
    "lat": 28.3998,
    "lon": 36.5715,
-   "geonames": "https://www.geonames.org/101628"
+   "geonames": "https://www.geonames.org/101628",
+   "region": "تبوك"
   },
   {
-   "id": "sakaka",
-   "name": "سكاكا",
-   "lat": 29.9697,
-   "lon": 40.2064,
-   "geonames": "https://www.geonames.org/102527"
+   "id": "tayma",
+   "name": "تيماء",
+   "lat": 27.6223,
+   "lon": 38.5388,
+   "geonames": "https://www.geonames.org/101516",
+   "region": "تبوك"
+  },
+  {
+   "id": "umluj",
+   "name": "أملج",
+   "lat": 25.0213,
+   "lon": 37.2685,
+   "geonames": "https://www.geonames.org/100926",
+   "region": "تبوك"
+  },
+  {
+   "id": "al_wajh",
+   "name": "الوجه",
+   "lat": 26.2309,
+   "lon": 36.4649,
+   "geonames": "https://www.geonames.org/108773",
+   "region": "تبوك"
+  },
+  {
+   "id": "haql",
+   "name": "حقل",
+   "lat": 29.2863,
+   "lon": 34.9469,
+   "geonames": "https://www.geonames.org/106102",
+   "region": "تبوك"
+  },
+  {
+   "id": "duba",
+   "name": "ضبا",
+   "lat": 27.3513,
+   "lon": 35.6901,
+   "geonames": "https://www.geonames.org/106909",
+   "region": "تبوك"
+  },
+  {
+   "id": "hail",
+   "name": "حائل",
+   "lat": 27.5219,
+   "lon": 41.6907,
+   "geonames": "https://www.geonames.org/106281",
+   "region": "حائل"
+  },
+  {
+   "id": "turubah",
+   "name": "تربة (حائل)",
+   "lat": 28.2585,
+   "lon": 42.9246,
+   "geonames": "https://www.geonames.org/393275",
+   "region": "حائل"
+  },
+  {
+   "id": "baqa",
+   "name": "بقعاء",
+   "lat": 27.9065,
+   "lon": 42.389,
+   "geonames": "https://www.geonames.org/107588",
+   "region": "حائل"
+  },
+  {
+   "id": "ash_shamli",
+   "name": "الشملي",
+   "lat": 26.8577,
+   "lon": 40.3295,
+   "geonames": "https://www.geonames.org/13237017",
+   "region": "حائل"
   },
   {
    "id": "arar",
    "name": "عرعر",
    "lat": 30.9753,
    "lon": 41.0381,
-   "geonames": "https://www.geonames.org/108512"
+   "geonames": "https://www.geonames.org/108512",
+   "region": "الحدود الشمالية"
+  },
+  {
+   "id": "turaif",
+   "name": "طريف",
+   "lat": 31.6725,
+   "lon": 38.6637,
+   "geonames": "https://www.geonames.org/101312",
+   "region": "الحدود الشمالية"
+  },
+  {
+   "id": "sabya",
+   "name": "صبيا",
+   "lat": 17.1495,
+   "lon": 42.6254,
+   "geonames": "https://www.geonames.org/102651",
+   "region": "جازان"
+  },
+  {
+   "id": "jazan",
+   "name": "جازان",
+   "lat": 16.8892,
+   "lon": 42.5511,
+   "geonames": "https://www.geonames.org/105299",
+   "region": "جازان"
+  },
+  {
+   "id": "abu_arish",
+   "name": "أبو عريش",
+   "lat": 16.9689,
+   "lon": 42.8325,
+   "geonames": "https://www.geonames.org/110619",
+   "region": "جازان"
+  },
+  {
+   "id": "fayfa",
+   "name": "فيفاء",
+   "lat": 17.2806,
+   "lon": 43.1373,
+   "geonames": "https://www.geonames.org/106667",
+   "region": "جازان"
+  },
+  {
+   "id": "samitah",
+   "name": "صامطة",
+   "lat": 16.596,
+   "lon": 42.9444,
+   "geonames": "https://www.geonames.org/102451",
+   "region": "جازان"
+  },
+  {
+   "id": "damad",
+   "name": "ضمد",
+   "lat": 17.1043,
+   "lon": 42.7816,
+   "geonames": "https://www.geonames.org/107117",
+   "region": "جازان"
+  },
+  {
+   "id": "az_zabyah",
+   "name": "الظبية",
+   "lat": 17.1179,
+   "lon": 42.6669,
+   "geonames": "https://www.geonames.org/100399",
+   "region": "جازان"
+  },
+  {
+   "id": "farasan",
+   "name": "فرسان",
+   "lat": 16.7022,
+   "lon": 42.1183,
+   "geonames": "https://www.geonames.org/106744",
+   "region": "جازان"
+  },
+  {
+   "id": "dhahaban",
+   "name": "ذهبان",
+   "lat": 18.0998,
+   "lon": 41.6161,
+   "geonames": "https://www.geonames.org/13645279",
+   "region": "جازان"
+  },
+  {
+   "id": "al_jaradiyah",
+   "name": "الجرادية",
+   "lat": 16.5795,
+   "lon": 42.9124,
+   "geonames": "https://www.geonames.org/109481",
+   "region": "جازان"
+  },
+  {
+   "id": "misliyah",
+   "name": "مسلية",
+   "lat": 17.4599,
+   "lon": 42.5572,
+   "geonames": "https://www.geonames.org/104269",
+   "region": "جازان"
+  },
+  {
+   "id": "ash_shuqayri",
+   "name": "الشقيري",
+   "lat": 17.1311,
+   "lon": 42.8267,
+   "geonames": "https://www.geonames.org/101973",
+   "region": "جازان"
+  },
+  {
+   "id": "mizhirah",
+   "name": "مزهرة",
+   "lat": 16.8261,
+   "lon": 42.7333,
+   "geonames": "https://www.geonames.org/410874",
+   "region": "جازان"
+  },
+  {
+   "id": "ad_darb",
+   "name": "الدرب",
+   "lat": 17.7229,
+   "lon": 42.2526,
+   "geonames": "https://www.geonames.org/110328",
+   "region": "جازان"
+  },
+  {
+   "id": "ash_shaqiq",
+   "name": "الشقيق",
+   "lat": 17.7219,
+   "lon": 42.0255,
+   "geonames": "https://www.geonames.org/108198",
+   "region": "جازان"
+  },
+  {
+   "id": "najran",
+   "name": "نجران",
+   "lat": 17.4933,
+   "lon": 44.1277,
+   "geonames": "https://www.geonames.org/103630",
+   "region": "نجران"
+  },
+  {
+   "id": "al_mashiliyah",
+   "name": "المشعلية",
+   "lat": 17.7556,
+   "lon": 44.468,
+   "geonames": "https://www.geonames.org/12513572",
+   "region": "نجران"
+  },
+  {
+   "id": "habuna",
+   "name": "حبونا",
+   "lat": 17.8472,
+   "lon": 44.0208,
+   "geonames": "https://www.geonames.org/12513575",
+   "region": "نجران"
+  },
+  {
+   "id": "al_wadiah",
+   "name": "الوديعة",
+   "lat": 17.0584,
+   "lon": 47.089,
+   "geonames": "https://www.geonames.org/108753",
+   "region": "نجران"
+  },
+  {
+   "id": "khubash",
+   "name": "خباش",
+   "lat": 17.5563,
+   "lon": 44.748,
+   "geonames": "https://www.geonames.org/13645278",
+   "region": "نجران"
+  },
+  {
+   "id": "yadamah",
+   "name": "يدمة",
+   "lat": 18.5292,
+   "lon": 44.2031,
+   "geonames": "https://www.geonames.org/399659",
+   "region": "نجران"
+  },
+  {
+   "id": "badr_al_janub",
+   "name": "بدر الجنوب",
+   "lat": 17.8853,
+   "lon": 43.7141,
+   "geonames": "https://www.geonames.org/107746",
+   "region": "نجران"
+  },
+  {
+   "id": "al_bahah",
+   "name": "الباحة",
+   "lat": 20.0129,
+   "lon": 41.4677,
+   "geonames": "https://www.geonames.org/109953",
+   "region": "الباحة"
+  },
+  {
+   "id": "baljurashi",
+   "name": "بلجرشي",
+   "lat": 19.8594,
+   "lon": 41.5572,
+   "geonames": "https://www.geonames.org/107692",
+   "region": "الباحة"
+  },
+  {
+   "id": "al_aqiq",
+   "name": "العقيق",
+   "lat": 20.2736,
+   "lon": 41.6643,
+   "geonames": "https://www.geonames.org/110060",
+   "region": "الباحة"
+  },
+  {
+   "id": "al_mindak",
+   "name": "المندق",
+   "lat": 20.1588,
+   "lon": 41.2834,
+   "geonames": "https://www.geonames.org/109118",
+   "region": "الباحة"
+  },
+  {
+   "id": "sakaka",
+   "name": "سكاكا",
+   "lat": 29.9697,
+   "lon": 40.2064,
+   "geonames": "https://www.geonames.org/102527",
+   "region": "الجوف"
+  },
+  {
+   "id": "qurayyat",
+   "name": "القريات",
+   "lat": 31.3318,
+   "lon": 37.3428,
+   "geonames": "https://www.geonames.org/108648",
+   "region": "الجوف"
+  },
+  {
+   "id": "tubarjal",
+   "name": "طبرجل",
+   "lat": 30.4999,
+   "lon": 38.216,
+   "geonames": "https://www.geonames.org/101631",
+   "region": "الجوف"
+  },
+  {
+   "id": "suwayr",
+   "name": "صوير",
+   "lat": 30.1171,
+   "lon": 40.3892,
+   "geonames": "https://www.geonames.org/392753",
+   "region": "الجوف"
   }
  ]
 }

@@ -46,7 +46,7 @@
 - **`image_picker`**: لاختيار لقطة الخلفية في آيفون (لا بديل في Flutter نفسه للوصول لمعرض الصور). تُحفظ نسخة منها في حاوية App Group (`group.sa.lamha.shared`) عبر قناة `sa.lamha/app_group` في AppDelegate تعيد مسار containerURL، والجدول يحمل اسم الملف فقط (`background`) لتقرأه الودجت من حاويتها. القص في ميزة لاحقة.
 - **`intl`** وملفات ARB (`lib/l10n/app_ar.arb` و`app_en.arb`) لنصوص الواجهة.
 - **الخط Tajawal** (SIL OFL 1.1، `assets/fonts/OFL-Tajawal.txt`) منسوخ من `asraty/app/assets/fonts`.
-- **المدن:** `assets/cities.json` = المدن السعودية (٣٤) من `apps/durur/assets/tables/cities.json`، والإحداثيات من GeoNames (CC BY 4.0)، مع إشارة الرخصة في أسفل شاشة الإعدادات.
+- **المدن:** `assets/cities.json` = ١٥٤ مدينة سعودية مرتبة بالمناطق الثلاث عشرة، من GeoNames (CC BY 4.0) عبر حزمة geonamescache (cities500)، بأسماء عربية وحقل `region`. أول ٣٤ مدينة (من درور سابقاً) بقيت بمعرّفاتها حتى لا تضيع اختيارات المستخدمين. إشارة الرخصة في أسفل شاشة الإعدادات.
 - **الشفافية:** ألفا الخلفية = قيمة الشريط ÷ ١٠٠ (ARCHITECTURE)، فـ١٠٠ معتمة و٠ شفافة كلياً. والظل عند «شفافية أكثر من ٦٠٪» = قيمة أقل من ٤٠. (تعارض في التسمية، انظر STATUS.)
 
 ## ٩. مراجع المالك (SOURCES.md) في الميزة ٢
