@@ -2,6 +2,7 @@
 // found by the sha256 of its owner's email (so the address never appears in logs),
 // and prints FCM's answer per device. Prints roles and short ids only.
 //   OWNER_EMAIL_SHA256=<hex> GOOGLE_APPLICATION_CREDENTIALS=sa.json node scripts/push-test.mjs
+// Run from asraty-push-check.yml with its owner_email_sha256 input.
 import { createHash } from "node:crypto";
 import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
