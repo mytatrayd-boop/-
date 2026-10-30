@@ -141,7 +141,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dataLicense =>
-      'إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0. الخط Tajawal برخصة SIL OFL 1.1.';
+      'إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0، وبعضها من OpenStreetMap (© مساهمو OpenStreetMap، ODbL). الخط Tajawal برخصة SIL OFL 1.1.';
 
   @override
   String nearCity(String city) {

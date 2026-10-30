@@ -27,7 +27,7 @@
   "cityWeather": "📍 {city} · {weather}",
   "remainingToNext": "{remaining} {next}",
   "degrees": "{value}°",
-  "dataLicense": "City coordinates from GeoNames (geonames.org), CC BY 4.0. Tajawal font, SIL OFL 1.1.",
+  "dataLicense": "City coordinates from GeoNames (geonames.org), CC BY 4.0, and some from OpenStreetMap (© OpenStreetMap contributors, ODbL). Tajawal font, SIL OFL 1.1.",
   "nearCity": "Near {city}",
   "locationNearest": "Could not get the place name, so the nearest city is shown. Times use your actual location.",
   "searchHint": "Search for a city or governorate",

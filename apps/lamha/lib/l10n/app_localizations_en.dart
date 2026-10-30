@@ -141,7 +141,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataLicense =>
-      'City coordinates from GeoNames (geonames.org), CC BY 4.0. Tajawal font, SIL OFL 1.1.';
+      'City coordinates from GeoNames (geonames.org), CC BY 4.0, and some from OpenStreetMap (© OpenStreetMap contributors, ODbL). Tajawal font, SIL OFL 1.1.';
 
   @override
   String nearCity(String city) {

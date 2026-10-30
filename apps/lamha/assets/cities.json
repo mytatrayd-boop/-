@@ -1,5 +1,5 @@
 {
- "source": "الأسماء والتقسيم من «الدليل الموحد لترميز المناطق والمحافظات والمراكز الإدارية» — المركز الوطني للعناوين https://ncar.gov.sa/regions-coding (نسخة المالك في reference/saudi_admin_divisions.json). الإحداثيات من GeoNames (geonames.org، تفريغ SA بتاريخ 2026-10-30) برخصة CC BY 4.0؛ approx=true تعني إحداثيات المحافظة لا البلدة. المعرّفات القديمة باقية لما كان في القائمة.",
+ "source": "الأسماء والتقسيم من «الدليل الموحد لترميز المناطق والمحافظات والمراكز الإدارية» — المركز الوطني للعناوين https://ncar.gov.sa/regions-coding (نسخة المالك في reference/saudi_admin_divisions.json). الإحداثيات من GeoNames (geonames.org، تفريغ SA بتاريخ 2026-10-30) برخصة CC BY 4.0، و١٤ مركزاً من OpenStreetMap (Nominatim، ODbL)؛ approx=true تعني إحداثيات المحافظة لا البلدة. المعرّفات القديمة باقية لما كان في القائمة.",
  "license": "CC BY 4.0 https://creativecommons.org/licenses/by/4.0/",
  "timeZone": "Asia/Riyadh",
  "cities": [
@@ -400,6 +400,15 @@
    "type": "محافظة"
   },
   {
+   "id": "adam",
+   "name": "أضم",
+   "lat": 20.4497,
+   "lon": 40.8791,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "مكة المكرمة",
+   "type": "محافظة"
+  },
+  {
    "id": "thaniyah",
    "name": "العرضيات",
    "lat": 20.0247,
@@ -468,6 +477,15 @@
    "lat": 22.0068,
    "lon": 39.3651,
    "geonames": "https://www.geonames.org/12089821",
+   "region": "مكة المكرمة",
+   "type": "مركز"
+  },
+  {
+   "id": "hali",
+   "name": "حلي",
+   "lat": 18.7,
+   "lon": 41.3333,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
    "region": "مكة المكرمة",
    "type": "مركز"
   },
@@ -560,6 +578,16 @@
    "geonames": "https://www.geonames.org/400320",
    "region": "المدينة المنورة",
    "type": "محافظة"
+  },
+  {
+   "id": "wadi_al_fura",
+   "name": "وادي الفرع",
+   "lat": 23.3476,
+   "lon": 39.6637,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "المدينة المنورة",
+   "type": "محافظة",
+   "approx": true
   },
   {
    "id": "madinat_yanbu_as_sina_iyah",
@@ -949,6 +977,15 @@
    "type": "مركز"
   },
   {
+   "id": "al_batha",
+   "name": "البطحاء",
+   "lat": 24.133,
+   "lon": 51.5676,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "الشرقية",
+   "type": "مركز"
+  },
+  {
    "id": "abha",
    "name": "أبها",
    "lat": 18.2164,
@@ -1078,6 +1115,16 @@
    "type": "محافظة"
   },
   {
+   "id": "tarib",
+   "name": "طريب",
+   "lat": 18.565,
+   "lon": 43.2038,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "عسير",
+   "type": "محافظة",
+   "approx": true
+  },
+  {
    "id": "tanumah",
    "name": "تنومة",
    "lat": 18.9472,
@@ -1103,6 +1150,16 @@
    "geonames": "https://www.geonames.org/108282",
    "region": "عسير",
    "type": "مركز"
+  },
+  {
+   "id": "tabab",
+   "name": "طبب",
+   "lat": 18.3675,
+   "lon": 42.3619,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "عسير",
+   "type": "مركز",
+   "approx": true
   },
   {
    "id": "marabah",
@@ -1146,6 +1203,15 @@
    "lat": 19.95,
    "lon": 42.4,
    "geonames": "https://www.geonames.org/101633",
+   "region": "عسير",
+   "type": "مركز"
+  },
+  {
+   "id": "qana",
+   "name": "قنا",
+   "lat": 18.3372,
+   "lon": 41.9814,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
    "region": "عسير",
    "type": "مركز"
   },
@@ -1240,6 +1306,15 @@
    "type": "مركز"
   },
   {
+   "id": "bir_ibn_hirmas",
+   "name": "بئر بن هرماس",
+   "lat": 28.87,
+   "lon": 36.2577,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "تبوك",
+   "type": "مركز"
+  },
+  {
    "id": "ash_sharmah",
    "name": "شرما",
    "lat": 28.0286,
@@ -1267,11 +1342,29 @@
    "type": "مركز"
   },
   {
+   "id": "ash_shabhah",
+   "name": "الشبحة",
+   "lat": 24.8043,
+   "lon": 37.7314,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "تبوك",
+   "type": "مركز"
+  },
+  {
    "id": "alaqan",
    "name": "علقان",
    "lat": 29.1503,
    "lon": 35.4022,
    "geonames": "https://www.geonames.org/110066",
+   "region": "تبوك",
+   "type": "مركز"
+  },
+  {
+   "id": "al_jahra",
+   "name": "الجهراء",
+   "lat": 26.8669,
+   "lon": 38.8837,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
    "region": "تبوك",
    "type": "مركز"
   },
@@ -1720,6 +1813,15 @@
    "type": "مركز"
   },
   {
+   "id": "bir_askar",
+   "name": "بئر عسكر",
+   "lat": 17.5933,
+   "lon": 44.0821,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "نجران",
+   "type": "مركز"
+  },
+  {
    "id": "alhusayniyah",
    "name": "الحصينية",
    "lat": 17.8094,
@@ -1789,6 +1891,24 @@
    "lat": 20.2736,
    "lon": 41.6643,
    "geonames": "https://www.geonames.org/110060",
+   "region": "الباحة",
+   "type": "محافظة"
+  },
+  {
+   "id": "bani_hasan",
+   "name": "بني حسن",
+   "lat": 20.0535,
+   "lon": 41.3737,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "الباحة",
+   "type": "محافظة"
+  },
+  {
+   "id": "ghamid_az_zinad",
+   "name": "غامد الزناد",
+   "lat": 19.5944,
+   "lon": 41.5201,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
    "region": "الباحة",
    "type": "محافظة"
   },
@@ -1879,6 +1999,15 @@
    "lat": 30.1692,
    "lon": 40.2962,
    "geonames": "https://www.geonames.org/392783",
+   "region": "الجوف",
+   "type": "مركز"
+  },
+  {
+   "id": "abu_ajram",
+   "name": "أبو عجرم",
+   "lat": 29.8899,
+   "lon": 39.3058,
+   "geonames": "https://www.openstreetmap.org (Nominatim)",
    "region": "الجوف",
    "type": "مركز"
   },
