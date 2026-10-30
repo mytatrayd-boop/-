@@ -1,5 +1,5 @@
 {
- "source": "المدن السعودية من GeoNames (geonames.org) عبر حزمة geonamescache (cities500)، برخصة CC BY 4.0؛ عُدّلت: أسماء عربية، وإضافة حقل المنطقة، وحذف المكرر والأحياء. أول ٣٤ مدينة كانت منسوخة من تطبيق درور وأبقينا معرّفاتها.",
+ "source": "المدن السعودية من GeoNames (geonames.org) عبر حزمة geonamescache (cities500)، برخصة CC BY 4.0؛ عُدّلت: أسماء عربية، وإضافة حقل المنطقة، وحذف المكرر والأحياء. أول ٣٤ مدينة كانت منسوخة من تطبيق درور وأبقينا معرّفاتها. محايل عسير من NGA GEOnet، وتنومة (عسير) من ويكيبيديا، لأنهما ليستا في الحزمة.",
  "license": "CC BY 4.0 https://creativecommons.org/licenses/by/4.0/",
  "timeZone": "Asia/Riyadh",
  "cities": [
@@ -436,14 +436,6 @@
    "region": "القصيم"
   },
   {
-   "id": "tanumah",
-   "name": "تنومة",
-   "lat": 27.1,
-   "lon": 44.1333,
-   "geonames": "https://www.geonames.org/101581",
-   "region": "القصيم"
-  },
-  {
    "id": "qibah",
    "name": "قبة",
    "lat": 27.4029,
@@ -841,6 +833,22 @@
    "lat": 20.0005,
    "lon": 42.6052,
    "geonames": "https://www.geonames.org/103369",
+   "region": "عسير"
+  },
+  {
+   "id": "muhayil",
+   "name": "محايل عسير",
+   "lat": 18.5464,
+   "lon": 42.0489,
+   "geonames": "https://geonames.nga.mil (NGA GEOnet: Muhayil)",
+   "region": "عسير"
+  },
+  {
+   "id": "tanumah",
+   "name": "تنومة",
+   "lat": 18.9472,
+   "lon": 42.1764,
+   "geonames": "https://en.wikipedia.org/wiki/Tanomah",
    "region": "عسير"
   },
   {
