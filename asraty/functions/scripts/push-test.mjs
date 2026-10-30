@@ -8,8 +8,11 @@ import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
+// Pick the family by its owner's email hash, or by the first 6 characters of its id
+// (as push-check.mjs prints it).
 const want = (process.env.OWNER_EMAIL_SHA256 ?? "").trim().toLowerCase();
-if (!/^[0-9a-f]{64}$/.test(want)) throw new Error("OWNER_EMAIL_SHA256 must be a sha256 hex");
+const prefix = (process.env.FAMILY_PREFIX ?? "").trim();
+if (!/^[0-9a-f]{64}$/.test(want) && !/^[A-Za-z0-9]{6}$/.test(prefix)) throw new Error("set OWNER_EMAIL_SHA256 or FAMILY_PREFIX");
 const sha = (s) => createHash("sha256").update(String(s ?? "").trim().toLowerCase()).digest("hex");
 
 initializeApp({ credential: applicationDefault() });
@@ -19,7 +22,8 @@ const fcm = getMessaging();
 let found = 0;
 for (const f of (await db.collection("families").get()).docs) {
   const people = (await f.ref.collection("people").get()).docs.map((d) => ({ id: d.id, ...d.data() }));
-  if (!people.some((p) => p.role === "owner" && sha(p.email) === want)) continue;
+  const match = prefix ? f.id.startsWith(prefix) : people.some((p) => p.role === "owner" && sha(p.email) === want);
+  if (!match) continue;
   found++;
   console.log(`family ${f.id.slice(0, 6)}`);
   for (const p of people) {
@@ -38,4 +42,4 @@ for (const f of (await db.collection("families").get()).docs) {
     }
   }
 }
-if (!found) console.log("no family with that owner email");
+if (!found) console.log("no matching family");

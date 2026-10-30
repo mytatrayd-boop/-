@@ -12,6 +12,10 @@ on:
         description: "Optional: sha256 of a family owner's email to send that family one real test notification"
         required: false
         default: ""
+      family_prefix:
+        description: "Optional: or the family's 6-character id as this check prints it"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -31,8 +35,8 @@ jobs:
           printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
       - run: node scripts/push-check.mjs
-      - if: inputs.owner_email_sha256 != ''
+      - if: inputs.owner_email_sha256 != '' || inputs.family_prefix != ''
         run: node scripts/push-test.mjs
-        env: { OWNER_EMAIL_SHA256: "${{ inputs.owner_email_sha256 }}" }
+        env: { OWNER_EMAIL_SHA256: "${{ inputs.owner_email_sha256 }}", FAMILY_PREFIX: "${{ inputs.family_prefix }}" }
       - if: always()
         run: rm -f "$RUNNER_TEMP/sa.json"
