@@ -770,6 +770,16 @@
    "type": "محافظة"
   },
   {
+   "id": "al_khubub",
+   "name": "الخبوب",
+   "lat": 26.326,
+   "lon": 43.975,
+   "geonames": "إحداثيات بريدة (أقرب مدينة، بتوجيه المالك)",
+   "region": "القصيم",
+   "type": "مركز",
+   "approx": true
+  },
+  {
    "id": "al_hilaliyah",
    "name": "الهلالية",
    "lat": 26.1278,
@@ -1212,6 +1222,15 @@
    "lat": 18.3372,
    "lon": 41.9814,
    "geonames": "https://www.openstreetmap.org (Nominatim)",
+   "region": "عسير",
+   "type": "مركز"
+  },
+  {
+   "id": "bahr_abu_sukaynah",
+   "name": "بحر أبو سكينة",
+   "lat": 18.3365,
+   "lon": 41.9132,
+   "geonames": "خرائط Google (من المالك)",
    "region": "عسير",
    "type": "مركز"
   },
@@ -1927,6 +1946,15 @@
    "lat": 20.0328,
    "lon": 41.4457,
    "geonames": "https://www.geonames.org/103006",
+   "region": "الباحة",
+   "type": "مركز"
+  },
+  {
+   "id": "bani_dhabyan",
+   "name": "بني ظبيان",
+   "lat": 19.9701,
+   "lon": 41.5028,
+   "geonames": "خرائط Google (من المالك)",
    "region": "الباحة",
    "type": "مركز"
   },
