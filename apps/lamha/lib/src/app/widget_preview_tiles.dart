@@ -388,6 +388,7 @@ class _QiblaTile extends _Styled {
     required this.sub,
     required this.degrees,
     required this.accent,
+    this.faceAlpha = 1,
     _Look look = _defaultLook,
   }) : super(look);
 
@@ -396,12 +397,16 @@ class _QiblaTile extends _Styled {
   final double degrees;
   final Color accent;
 
+  /// شفافية قرص البوصلة = شفافية خلفية الودجت (backgroundAlpha).
+  final double faceAlpha;
+
   @override
   _QiblaTile withLook(_Look look) => _QiblaTile(
     angle: angle,
     sub: sub,
     degrees: degrees,
     accent: accent,
+    faceAlpha: faceAlpha,
     look: look,
   );
 
@@ -450,7 +455,7 @@ class _QiblaTile extends _Styled {
                     Positioned.fill(
                       child: CustomPaint(
                         key: const Key('preview-qibla-dial'),
-                        painter: QiblaTileDialPainter(degrees),
+                        painter: QiblaTileDialPainter(degrees, faceAlpha: faceAlpha),
                       ),
                     ),
                     Positioned(
@@ -495,15 +500,18 @@ class _QiblaTile extends _Styled {
 /// بيضاء، ونجمة داكنة، وسهم أحمر من المركز بزاوية [degrees] من الشمال، وخط منقّط أحمر منه إلى
 /// الكعبة (صورة فوق القرص عند [qiblaKaabaCenter]).
 class QiblaTileDialPainter extends CustomPainter {
-  QiblaTileDialPainter(this.degrees);
+  QiblaTileDialPainter(this.degrees, {this.faceAlpha = 1});
 
   final double degrees;
+
+  /// ٠–١: القرص الأسود يتبع شفافية خلفية الودجت، والتدريج والسهم يبقيان.
+  final double faceAlpha;
 
   @override
   void paint(Canvas canvas, Size size) {
     final side = size.shortestSide;
     final c = size.center(Offset.zero);
-    canvas.drawCircle(c, side * qiblaDialRadius, Paint()..color = qiblaDialFace);
+    canvas.drawCircle(c, side * qiblaDialRadius, Paint()..color = qiblaDialFace.withValues(alpha: faceAlpha));
     for (var d = 0; d < 360; d += 10) {
       if (d % 90 == 0) continue;
       final a = d * math.pi / 180;

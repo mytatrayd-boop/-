@@ -71,10 +71,10 @@ void main() {
       await pumpApp(tester, weather: weather);
       await tester.tap(find.byKey(const Key('city-dropdown')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('أبها').last);
+      await tester.tap(find.text('الخرج').last);
       await tester.pumpAndSettle();
       expect(weather.calls, hasLength(2));
-      expect(weather.calls.last.latitude, closeTo(18.2, 0.1));
+      expect(weather.calls.last.latitude, closeTo(24.2, 0.1));
     });
   });
 

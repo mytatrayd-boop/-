@@ -263,7 +263,7 @@ abstract class AppLocalizations {
   /// إشارة رخص البيانات والخط
   ///
   /// In ar, this message translates to:
-  /// **'إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0. الخط Tajawal برخصة SIL OFL 1.1.'**
+  /// **'إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0، وبعضها من OpenStreetMap (© مساهمو OpenStreetMap، ODbL). الخط Tajawal برخصة SIL OFL 1.1.'**
   String get dataLicense;
 
   /// اسم المكان من «موقعي» إذا تعذّر geocoding

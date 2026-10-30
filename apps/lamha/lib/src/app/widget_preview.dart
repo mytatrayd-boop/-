@@ -298,6 +298,7 @@ class WidgetPreview extends StatelessWidget {
           sub: l.qiblaTileSub(qibla['direction'] as String? ?? ''),
           degrees: qiblaDeg,
           accent: accent,
+          faceAlpha: alpha,
         ),
         WidgetElement.deposit => _depositsTile(day, span),
         WidgetElement.season => _seasonTile(l, day),

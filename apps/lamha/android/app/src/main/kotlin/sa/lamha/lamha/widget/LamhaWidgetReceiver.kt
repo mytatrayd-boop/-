@@ -828,19 +828,20 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             }
             val px = ((if (resizable) icon else QIBLA_ICON_DEFAULT_DP) * ctx.resources.displayMetrics.density)
                 .toInt().coerceIn(48, QIBLA_DIAL_MAX_PX)
-            rv.setImageViewBitmap(R.id.qibla_dial, drawQiblaDial(ctx, px, env.day.qiblaAngle))
+            rv.setImageViewBitmap(R.id.qibla_dial, drawQiblaDial(ctx, px, env.day.qiblaAngle, LamhaLogic.backgroundAlpha255(env.day.opacity)))
             return rv
         }
 
         /// قرص مربع القبلة بضلع [px] (صورة المالك، QiblaTileDialPainter في Dart): دائرة سوداء، وتدريج أبيض
         /// كل ١٠° (أطول كل ٣٠°)، وحروف N وE وS وW، ونجمة داكنة، وسهم أحمر من المركز بزاوية [degrees] من
         /// الشمال ثم خط منقّط إلى الكعبة على المحيط. رسم فقط، لا حساب.
-        internal fun drawQiblaDial(context: Context, px: Int, degrees: Float): Bitmap {
+        /// [faceAlpha] ٠–٢٥٥: القرص الأسود يتبع شفافية خلفية الودجت، والتدريج والسهم يبقيان.
+        internal fun drawQiblaDial(context: Context, px: Int, degrees: Float, faceAlpha: Int = 255): Bitmap {
             val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)
             val side = px.toFloat()
             val c = side / 2
-            canvas.drawCircle(c, c, side * QIBLA_DIAL_RADIUS, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK })
+            canvas.drawCircle(c, c, side * QIBLA_DIAL_RADIUS, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; alpha = faceAlpha })
             val tick = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; strokeCap = Paint.Cap.ROUND }
             for (d in 0 until 360 step 10) {
                 if (d % 90 == 0) continue

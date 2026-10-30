@@ -154,7 +154,7 @@
       }
     }
   },
-  "dataLicense": "إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0. الخط Tajawal برخصة SIL OFL 1.1.",
+  "dataLicense": "إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0، وبعضها من OpenStreetMap (© مساهمو OpenStreetMap، ODbL). الخط Tajawal برخصة SIL OFL 1.1.",
   "@dataLicense": {
     "description": "إشارة رخص البيانات والخط"
   },
