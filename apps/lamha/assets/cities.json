@@ -316,6 +316,14 @@
    "region": "مكة المكرمة"
   },
   {
+   "id": "ranyah",
+   "name": "رنية",
+   "lat": 21.2504,
+   "lon": 42.8475,
+   "geonames": "https://www.geonames.org/12546009",
+   "region": "مكة المكرمة"
+  },
+  {
    "id": "madinah",
    "name": "المدينة المنورة",
    "lat": 24.4686,
@@ -857,14 +865,6 @@
    "lat": 18.9297,
    "lon": 41.9295,
    "geonames": "https://www.geonames.org/12495725",
-   "region": "عسير"
-  },
-  {
-   "id": "ranyah",
-   "name": "رنية",
-   "lat": 21.2504,
-   "lon": 42.8475,
-   "geonames": "https://www.geonames.org/12546009",
    "region": "عسير"
   },
   {
