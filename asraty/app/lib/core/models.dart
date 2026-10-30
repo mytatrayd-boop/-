@@ -86,9 +86,17 @@ class PrayerSlot {
   final DateTime start, end;
   final String dayKey;
 
-  /// Late once half an hour has passed: it stays as a task until the next
-  /// prayer, but its points are gone (functions/src/prayer.ts PRAYER_GRACE_MS).
-  bool lateAt(DateTime now) => now.difference(start) > const Duration(minutes: 30);
+  /// Late once half an hour has passed (Isha: at 11 pm Riyadh time): it stays as a
+  /// task until the next prayer, but its points are gone (functions/src/prayer.ts lateAfter).
+  bool lateAt(DateTime now) => now.isAfter(lateFrom);
+
+  DateTime get lateFrom {
+    final grace = start.add(const Duration(minutes: 30));
+    if (key != 'isha') return grace;
+    final r = start.toUtc().add(const Duration(hours: 3));
+    final until = DateTime.utc(r.year, r.month, r.day, 23).subtract(const Duration(hours: 3));
+    return until.isAfter(grace) ? until : grace;
+  }
 }
 
 /// Prayer reminders, set by the owner from their phone's location.

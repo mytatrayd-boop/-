@@ -128,3 +128,13 @@ test("a prayer half an hour after its adhan is worth no points", async () => {
   assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS), 5);
   assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS + 1000), 0);
 });
+
+test("Isha keeps its points until 11 pm Riyadh time", async () => {
+  const { prayerPoints } = await import("../src/prayer");
+  const w = { key: "isha" as const, start: riyadh("2026-10-20T18:45:00") };
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T20:30:00")), 5);
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T23:00:00")), 5);
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T23:00:01")), 0);
+  // Other prayers keep the half hour.
+  assert.equal(prayerPoints({ key: "maghrib", start: riyadh("2026-10-20T17:20:00") }, 5, riyadh("2026-10-20T18:00:00")), 0);
+});
