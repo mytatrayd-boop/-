@@ -1,0 +1,36 @@
+name: Tilawa — Android APK (personal use)
+
+# يبني APK لتطبيق «تلاوة» للاستخدام الشخصي (موقّع بمفتاح debug). لا رفع لأي متجر.
+on:
+  push:
+    paths: ['apps/tilawa/app/**', '.github/workflows/tilawa-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/tilawa/app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pillow
+      - name: Fetch assets (Mushaf text, fonts, backgrounds, Quran ASR model)
+        run: python tool/fetch_assets.py
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - name: Build APK (arm64)
+        run: flutter build apk --release --target-platform android-arm64 --build-number=${{ github.run_number }}
+      - run: cp build/app/outputs/flutter-apk/app-release.apk tilawa.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tilawa-apk
+          path: apps/tilawa/app/tilawa.apk

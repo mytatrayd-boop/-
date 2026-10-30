@@ -1,0 +1,6 @@
+streamlit>=1.40
+pillow>=10        # يحتاج دعم raqm لرسم العربية (متوفر في عجلات pip الحديثة)
+pandas
+numpy
+torch             # المزامنة الآلية (التعرف الصوتي)
+transformers>=4.40

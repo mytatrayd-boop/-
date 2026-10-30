@@ -1,0 +1,6 @@
+[server]
+fileWatcherType = "none"   # مراقبة الملفات تفحص مكتبات التعرف الصوتي وتملأ السجل بتحذيرات
+maxUploadSize = 500
+
+[browser]
+gatherUsageStats = false
