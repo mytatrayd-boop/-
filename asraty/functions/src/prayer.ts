@@ -32,8 +32,20 @@ export function prayerTimes(lat: number, lng: number, ms: number): Record<Prayer
 /** Half an hour after its adhan a prayer is late: still a task, but worth no points. */
 export const PRAYER_GRACE_MS = 30 * 60e3;
 
+/** Isha keeps its points until this Riyadh hour (owner's decision, Oct 2026). */
+export const ISHA_UNTIL_HOUR = 23;
+
+/** When a prayer that started at `start` becomes late (mirrored in app/lib/core/models.dart lateAt). */
+export function lateAfter(w: { key?: PrayerKey; start: number }): number {
+  const grace = w.start + PRAYER_GRACE_MS;
+  if (w.key !== "isha") return grace;
+  const d = new Date(w.start + RIYADH_OFFSET_MS);
+  const until = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), ISHA_UNTIL_HOUR) - RIYADH_OFFSET_MS;
+  return Math.max(grace, until);
+}
+
 /** Points a prayer earns when marked done at `ms` (none once it is late). */
-export const prayerPoints = (w: { start: number }, points: number, ms: number) => (ms - w.start > PRAYER_GRACE_MS ? 0 : points);
+export const prayerPoints = (w: { key?: PrayerKey; start: number }, points: number, ms: number) => (ms > lateAfter(w) ? 0 : points);
 
 export interface PrayerWindow {
   key: PrayerKey;

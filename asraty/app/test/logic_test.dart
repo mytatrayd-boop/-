@@ -52,6 +52,10 @@ void main() {
     final night = currentPrayer(s, riyadh('2026-10-21T01:00:00'));
     expect(night.key, 'isha');
     expect(night.dayKey, '2026-10-20');
+    // Isha keeps its points until 11 pm Riyadh time (functions/src/prayer.ts lateAfter).
+    expect(night.lateAt(riyadh('2026-10-20T22:59:00')), isFalse);
+    expect(night.lateAt(riyadh('2026-10-20T23:00:00')), isFalse);
+    expect(night.lateAt(riyadh('2026-10-20T23:01:00')), isTrue);
   });
 
   test('permissions', () {
