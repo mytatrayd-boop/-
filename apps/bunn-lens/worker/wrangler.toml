@@ -1,0 +1,23 @@
+name = "bunn-lens-worker"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# أسرار (لا تُكتب هنا): wrangler secret put GEMINI_API_KEY
+[vars]
+FIREBASE_PROJECT_ID = ""      # يُملأ من مشروع Firebase Spark
+FIREBASE_PROJECT_NUMBER = ""  # رقم المشروع (App Check)
+GEMINI_MODEL = "gemini-3.5-flash"
+DAILY_CAP = "300"
+REQUIRE_APP_CHECK = "true"
+
+[[durable_objects.bindings]]
+name = "USER_QUOTA"
+class_name = "UserQuota"
+
+[[durable_objects.bindings]]
+name = "LIMITER"
+class_name = "Limiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["UserQuota", "Limiter"]
