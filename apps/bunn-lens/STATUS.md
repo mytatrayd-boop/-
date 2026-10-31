@@ -60,3 +60,6 @@
 - **الفحص الفعلي:** `flutter analyze` بلا مشاكل، `flutter test` 96/96.
 - **لم يُنفَّذ/لم يُجرَّب:** بناء Android/iOS (لا SDK هنا)، دخول مجهول حقيقي، أول فحص كامل. المتبقي: `FIREBASE_API_KEY_ANDROID` (من المالك)، سر `GEMINI_API_KEY` في Cloudflare، تسجيل توكن App Check التجريبي أو ضبط `REQUIRE_APP_CHECK=false` للتجربة، شاشات تسجيل الدخول بـGoogle/ربط الضيف/حذف الحساب.
 - معرّفات عامة: Android App ID `1:740863755565:android:32798fff3fe9ae6dcd7fa4`، الحزمة `com.bunnlens.bunn_lens`، المرسل `740863755565`.
+
+- **سر Gemini:** `GEMINI_API_KEY` مضاف في الوسيط (`secret_text`). Anonymous مفعّل في Firebase. فُحص فعلياً: دخول مجهول حقيقي، وتحقق الوسيط من توكنه الحقيقي (محلياً)، ومرور الحصة. لم يُجرَّب بعد: استدعاء Gemini من الوسيط المنشور (App Check مطلوب `REQUIRE_APP_CHECK=true`).
+- **إصلاح:** `worker/src/index.ts` صار يصدّر المعالج الافتراضي وأصناف DO فقط (المنطق في `handler.ts`) لأن workerd المحلي رفض التصديرات الإضافية؛ 20/20 اختباراً.

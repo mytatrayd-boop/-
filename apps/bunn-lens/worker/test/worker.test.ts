@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { clearJwksCache, verifyAppCheck, verifyIdToken, ID_JWKS, APPCHECK_JWKS } from '../src/auth';
 import { buildBody, parseCompletion, roundScore, analyze, GeminiBusy } from '../src/gemini';
 import { checkUser, commitUser, emptyUser, periodOf, UserQuota, Limiter } from '../src/quota';
-import { handle, MAX_BYTES, type Env, type Deps } from '../src/index';
+import { handle, MAX_BYTES, type Env, type Deps } from '../src/handler';
 
 // ---------- أدوات ----------
 const enc = (o: unknown) => btoa(JSON.stringify(o)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
