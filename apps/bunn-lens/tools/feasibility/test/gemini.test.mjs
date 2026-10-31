@@ -10,7 +10,7 @@ const good = (extra = {}) => ({
 const resp = (status, json, headers = {}) => ({ ok: status < 400, status, json: async () => json, text: async () => JSON.stringify(json), headers: { get: (k) => headers[k.toLowerCase()] ?? null } });
 
 test('buildBody: chat.completions وصورة data URL ومخطط وحرارة 0', () => {
-  assert.equal(PROMPT_VERSION, 'v0-feasibility-2');
+  assert.equal(PROMPT_VERSION, 'v0-feasibility-3');
   const b = buildBody('bean', 'image/png', 'QUJD');
   const [t, im] = b.messages[0].content;
   assert.deepEqual(t, { type: 'text', text: PROMPTS.bean });
