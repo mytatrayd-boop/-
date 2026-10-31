@@ -20,6 +20,7 @@ const num = (k, d) => { const v = Number(process.env[k]); return process.env[k] 
 const { values: a } = parseArgs({ options: {
   images: { type: 'string' }, csv: { type: 'string' }, out: { type: 'string', default: 'results.json' },
   model: { type: 'string', default: process.env.GEMINI_MODEL || DEFAULT_MODEL },
+  resume: { type: 'boolean', default: false },
 } });
 if (!a.images || !a.csv) { console.error('مطلوب --images و --csv'); process.exit(2); }
 const apiKey = process.env.GEMINI_API_KEY;
@@ -37,15 +38,27 @@ async function analyze(type, file) {
 const imagePath = (r) => (existsSync(join(a.images, r.type, r.image)) ? join(a.images, r.type, r.image) : join(a.images, r.image));
 const rows = toExpertRows(parseCsv(readFileSync(a.csv, 'utf8')));
 let tIn = 0, tOut = 0;
+const save = () => writeFileSync(a.out, JSON.stringify({ promptVersion: PROMPT_VERSION, model: a.model, tokens: { in: tIn, out: tOut }, rows, metrics: byType(rows.filter((r) => r.runs?.length === 2)) }, null, 2));
+// --resume: يعيد استخدام الصور المكتملة (تشغيلان سليمان) من ملف الخرج السابق
+const done = new Map();
+if (a.resume && existsSync(a.out)) for (const r of JSON.parse(readFileSync(a.out, 'utf8')).rows) if (r.runs?.length === 2 && r.runs.every((x) => x.status === 'ok' || x.status === 'unclear' || x.status === 'not_coffee')) done.set(r.image, r.runs);
+let quotaOut = false;
 for (const r of rows) {
+  if (done.has(r.image)) { r.runs = done.get(r.image); continue; }
   r.runs = [];
   for (let i = 0; i < 2; i++) {
     try { const x = await analyze(r.type, imagePath(r)); tIn += x.tokensIn; tOut += x.tokensOut; r.runs.push(x); }
-    catch (e) { console.error(`${r.image} (تشغيل ${i + 1}): ${e.message}`); r.runs.push({ score: NaN, ms: NaN, cost: NaN, error: e.message }); }
+    catch (e) {
+      console.error(`${r.image} (تشغيل ${i + 1}): ${e.message.slice(0, 160)}`);
+      r.runs.push({ score: NaN, ms: NaN, cost: NaN, error: e.message });
+      if (/exceeded your current quota/i.test(e.message)) quotaOut = true;
+    }
   }
+  if (quotaOut) { r.runs = []; save(); console.error('نفدت حصة النموذج المجانية؛ حُفظ ما اكتمل. أعد التشغيل لاحقاً بـ --resume.'); process.exit(3); }
+  save();
   console.error(`${r.image}: خبير ${r.expert ?? '-'} | ${r.runs.map((x) => `${x.score} (${Math.round(x.ms)}ms, ${x.tokensIn ?? '-'}/${x.tokensOut ?? '-'} tok)`).join(' / ')}`);
 }
 const metrics = byType(rows);
-writeFileSync(a.out, JSON.stringify({ promptVersion: PROMPT_VERSION, model: a.model, tokens: { in: tIn, out: tOut }, rows, metrics }, null, 2));
+save();
 console.log(formatReport(metrics, { model: a.model, promptVersion: PROMPT_VERSION }));
 console.log(`التوكنز: دخل ${tIn} / خرج ${tOut} | التكلفة: 0 (الطبقة المجانية)`);
