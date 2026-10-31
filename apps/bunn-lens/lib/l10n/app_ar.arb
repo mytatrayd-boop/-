@@ -175,5 +175,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "scanTypePick": "ماذا تفحص؟",
+  "scanGuide": "ضوء طبيعي، وقرّب حتى تملأ الحبوب الإطار",
+  "scanGuideCoffee": "صوّر الكوب من الأعلى في ضوء واضح",
+  "scanTakePhoto": "التقاط صورة",
+  "scanFromGallery": "من المعرض",
+  "scanPreviewTitle": "معاينة الصورة",
+  "scanUsePhoto": "استخدم الصورة",
+  "scanRetake": "إعادة",
+  "scanPickFailed": "تعذّر الوصول للكاميرا أو الصور. تحقق من الأذونات في إعدادات الجهاز",
+  "scanDisclosureTitle": "قبل أول فحص",
+  "scanDisclosureBody": "تُرسل الصورة إلى خدمة Gemini من قوقل لتحليلها، ولا تُحفظ في خوادمنا. في الطبقة المجانية قد تستخدم قوقل المحتوى المُرسل لتحسين منتجاتها. لا تُرسل وجوه ولا موقع، فصوّر البن أو القهوة فقط.",
+  "scanDisclosureAccept": "أوافق وأتابع",
+  "scanAnalyzing1": "نفحص لون التحميص…",
+  "scanAnalyzing2": "نقيّم التجانس والعيوب…",
+  "scanAnalyzing3": "نكتب الملاحظات…",
+  "scanAnalyzingSlow": "يستغرق أطول من المعتاد",
+  "scanCancel": "إلغاء الفحص",
+  "scanErrUnclear": "لم نتعرف على بن أو قهوة في الصورة. جرّب إضاءة أوضح وقرّب أكثر",
+  "scanErrOffline": "لا يوجد اتصال بالإنترنت",
+  "scanErrBusy": "الخدمة مشغولة الآن. حاول بعد قليل",
+  "scanErrQuota": "انتهت فحوصاتك المتاحة",
+  "scanErrUnauthorized": "تعذّر التحقق من حسابك. حاول لاحقاً",
+  "scanErrUnknown": "حدث خطأ غير متوقع. حاول مرة أخرى",
+  "scanNotCounted": "لم يُحتسب هذا الفحص",
+  "scanRetakePhoto": "أعد التصوير",
+  "scanResultTitle": "النتيجة"
 }

@@ -347,4 +347,85 @@ class AppLocalizationsAr extends AppLocalizations {
   String shareSubjectType(String type) {
     return '$type';
   }
+
+  @override
+  String get scanTypePick => 'ماذا تفحص؟';
+
+  @override
+  String get scanGuide => 'ضوء طبيعي، وقرّب حتى تملأ الحبوب الإطار';
+
+  @override
+  String get scanGuideCoffee => 'صوّر الكوب من الأعلى في ضوء واضح';
+
+  @override
+  String get scanTakePhoto => 'التقاط صورة';
+
+  @override
+  String get scanFromGallery => 'من المعرض';
+
+  @override
+  String get scanPreviewTitle => 'معاينة الصورة';
+
+  @override
+  String get scanUsePhoto => 'استخدم الصورة';
+
+  @override
+  String get scanRetake => 'إعادة';
+
+  @override
+  String get scanPickFailed =>
+      'تعذّر الوصول للكاميرا أو الصور. تحقق من الأذونات في إعدادات الجهاز';
+
+  @override
+  String get scanDisclosureTitle => 'قبل أول فحص';
+
+  @override
+  String get scanDisclosureBody =>
+      'تُرسل الصورة إلى خدمة Gemini من قوقل لتحليلها، ولا تُحفظ في خوادمنا. في الطبقة المجانية قد تستخدم قوقل المحتوى المُرسل لتحسين منتجاتها. لا تُرسل وجوه ولا موقع، فصوّر البن أو القهوة فقط.';
+
+  @override
+  String get scanDisclosureAccept => 'أوافق وأتابع';
+
+  @override
+  String get scanAnalyzing1 => 'نفحص لون التحميص…';
+
+  @override
+  String get scanAnalyzing2 => 'نقيّم التجانس والعيوب…';
+
+  @override
+  String get scanAnalyzing3 => 'نكتب الملاحظات…';
+
+  @override
+  String get scanAnalyzingSlow => 'يستغرق أطول من المعتاد';
+
+  @override
+  String get scanCancel => 'إلغاء الفحص';
+
+  @override
+  String get scanErrUnclear =>
+      'لم نتعرف على بن أو قهوة في الصورة. جرّب إضاءة أوضح وقرّب أكثر';
+
+  @override
+  String get scanErrOffline => 'لا يوجد اتصال بالإنترنت';
+
+  @override
+  String get scanErrBusy => 'الخدمة مشغولة الآن. حاول بعد قليل';
+
+  @override
+  String get scanErrQuota => 'انتهت فحوصاتك المتاحة';
+
+  @override
+  String get scanErrUnauthorized => 'تعذّر التحقق من حسابك. حاول لاحقاً';
+
+  @override
+  String get scanErrUnknown => 'حدث خطأ غير متوقع. حاول مرة أخرى';
+
+  @override
+  String get scanNotCounted => 'لم يُحتسب هذا الفحص';
+
+  @override
+  String get scanRetakePhoto => 'أعد التصوير';
+
+  @override
+  String get scanResultTitle => 'النتيجة';
 }

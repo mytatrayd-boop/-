@@ -721,6 +721,162 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{type}'**
   String shareSubjectType(String type);
+
+  /// No description provided for @scanTypePick.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماذا تفحص؟'**
+  String get scanTypePick;
+
+  /// No description provided for @scanGuide.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضوء طبيعي، وقرّب حتى تملأ الحبوب الإطار'**
+  String get scanGuide;
+
+  /// No description provided for @scanGuideCoffee.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الكوب من الأعلى في ضوء واضح'**
+  String get scanGuideCoffee;
+
+  /// No description provided for @scanTakePhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقاط صورة'**
+  String get scanTakePhoto;
+
+  /// No description provided for @scanFromGallery.
+  ///
+  /// In ar, this message translates to:
+  /// **'من المعرض'**
+  String get scanFromGallery;
+
+  /// No description provided for @scanPreviewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'معاينة الصورة'**
+  String get scanPreviewTitle;
+
+  /// No description provided for @scanUsePhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدم الصورة'**
+  String get scanUsePhoto;
+
+  /// No description provided for @scanRetake.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة'**
+  String get scanRetake;
+
+  /// No description provided for @scanPickFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الوصول للكاميرا أو الصور. تحقق من الأذونات في إعدادات الجهاز'**
+  String get scanPickFailed;
+
+  /// No description provided for @scanDisclosureTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل أول فحص'**
+  String get scanDisclosureTitle;
+
+  /// No description provided for @scanDisclosureBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُرسل الصورة إلى خدمة Gemini من قوقل لتحليلها، ولا تُحفظ في خوادمنا. في الطبقة المجانية قد تستخدم قوقل المحتوى المُرسل لتحسين منتجاتها. لا تُرسل وجوه ولا موقع، فصوّر البن أو القهوة فقط.'**
+  String get scanDisclosureBody;
+
+  /// No description provided for @scanDisclosureAccept.
+  ///
+  /// In ar, this message translates to:
+  /// **'أوافق وأتابع'**
+  String get scanDisclosureAccept;
+
+  /// No description provided for @scanAnalyzing1.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفحص لون التحميص…'**
+  String get scanAnalyzing1;
+
+  /// No description provided for @scanAnalyzing2.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقيّم التجانس والعيوب…'**
+  String get scanAnalyzing2;
+
+  /// No description provided for @scanAnalyzing3.
+  ///
+  /// In ar, this message translates to:
+  /// **'نكتب الملاحظات…'**
+  String get scanAnalyzing3;
+
+  /// No description provided for @scanAnalyzingSlow.
+  ///
+  /// In ar, this message translates to:
+  /// **'يستغرق أطول من المعتاد'**
+  String get scanAnalyzingSlow;
+
+  /// No description provided for @scanCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الفحص'**
+  String get scanCancel;
+
+  /// No description provided for @scanErrUnclear.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نتعرف على بن أو قهوة في الصورة. جرّب إضاءة أوضح وقرّب أكثر'**
+  String get scanErrUnclear;
+
+  /// No description provided for @scanErrOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اتصال بالإنترنت'**
+  String get scanErrOffline;
+
+  /// No description provided for @scanErrBusy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمة مشغولة الآن. حاول بعد قليل'**
+  String get scanErrBusy;
+
+  /// No description provided for @scanErrQuota.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت فحوصاتك المتاحة'**
+  String get scanErrQuota;
+
+  /// No description provided for @scanErrUnauthorized.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من حسابك. حاول لاحقاً'**
+  String get scanErrUnauthorized;
+
+  /// No description provided for @scanErrUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ غير متوقع. حاول مرة أخرى'**
+  String get scanErrUnknown;
+
+  /// No description provided for @scanNotCounted.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُحتسب هذا الفحص'**
+  String get scanNotCounted;
+
+  /// No description provided for @scanRetakePhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد التصوير'**
+  String get scanRetakePhoto;
+
+  /// No description provided for @scanResultTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة'**
+  String get scanResultTitle;
 }
 
 class _AppLocalizationsDelegate

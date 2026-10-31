@@ -175,5 +175,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "scanTypePick": "What are you scanning?",
+  "scanGuide": "Natural light, and move close so the beans fill the frame",
+  "scanGuideCoffee": "Shoot the cup from above in clear light",
+  "scanTakePhoto": "Take photo",
+  "scanFromGallery": "From gallery",
+  "scanPreviewTitle": "Photo preview",
+  "scanUsePhoto": "Use photo",
+  "scanRetake": "Retake",
+  "scanPickFailed": "Couldn't access the camera or photos. Check permissions in device settings",
+  "scanDisclosureTitle": "Before your first scan",
+  "scanDisclosureBody": "Your photo is sent to Google's Gemini service for analysis and isn't stored on our servers. On the free tier Google may use submitted content to improve its products. No faces or location are sent, so only photograph beans or coffee.",
+  "scanDisclosureAccept": "I agree, continue",
+  "scanAnalyzing1": "Checking the roast color…",
+  "scanAnalyzing2": "Assessing uniformity and defects…",
+  "scanAnalyzing3": "Writing the notes…",
+  "scanAnalyzingSlow": "Taking longer than usual",
+  "scanCancel": "Cancel scan",
+  "scanErrUnclear": "We couldn't recognize beans or coffee in the photo. Try clearer light and move closer",
+  "scanErrOffline": "No internet connection",
+  "scanErrBusy": "The service is busy. Try again shortly",
+  "scanErrQuota": "You've used all your available scans",
+  "scanErrUnauthorized": "We couldn't verify your account. Try again later",
+  "scanErrUnknown": "Something went wrong. Please try again",
+  "scanNotCounted": "This scan wasn't counted",
+  "scanRetakePhoto": "Retake photo",
+  "scanResultTitle": "Result"
 }

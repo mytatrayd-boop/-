@@ -348,4 +348,87 @@ class AppLocalizationsEn extends AppLocalizations {
   String shareSubjectType(String type) {
     return 'a $type scan';
   }
+
+  @override
+  String get scanTypePick => 'What are you scanning?';
+
+  @override
+  String get scanGuide =>
+      'Natural light, and move close so the beans fill the frame';
+
+  @override
+  String get scanGuideCoffee => 'Shoot the cup from above in clear light';
+
+  @override
+  String get scanTakePhoto => 'Take photo';
+
+  @override
+  String get scanFromGallery => 'From gallery';
+
+  @override
+  String get scanPreviewTitle => 'Photo preview';
+
+  @override
+  String get scanUsePhoto => 'Use photo';
+
+  @override
+  String get scanRetake => 'Retake';
+
+  @override
+  String get scanPickFailed =>
+      'Couldn\'t access the camera or photos. Check permissions in device settings';
+
+  @override
+  String get scanDisclosureTitle => 'Before your first scan';
+
+  @override
+  String get scanDisclosureBody =>
+      'Your photo is sent to Google\'s Gemini service for analysis and isn\'t stored on our servers. On the free tier Google may use submitted content to improve its products. No faces or location are sent, so only photograph beans or coffee.';
+
+  @override
+  String get scanDisclosureAccept => 'I agree, continue';
+
+  @override
+  String get scanAnalyzing1 => 'Checking the roast color…';
+
+  @override
+  String get scanAnalyzing2 => 'Assessing uniformity and defects…';
+
+  @override
+  String get scanAnalyzing3 => 'Writing the notes…';
+
+  @override
+  String get scanAnalyzingSlow => 'Taking longer than usual';
+
+  @override
+  String get scanCancel => 'Cancel scan';
+
+  @override
+  String get scanErrUnclear =>
+      'We couldn\'t recognize beans or coffee in the photo. Try clearer light and move closer';
+
+  @override
+  String get scanErrOffline => 'No internet connection';
+
+  @override
+  String get scanErrBusy => 'The service is busy. Try again shortly';
+
+  @override
+  String get scanErrQuota => 'You\'ve used all your available scans';
+
+  @override
+  String get scanErrUnauthorized =>
+      'We couldn\'t verify your account. Try again later';
+
+  @override
+  String get scanErrUnknown => 'Something went wrong. Please try again';
+
+  @override
+  String get scanNotCounted => 'This scan wasn\'t counted';
+
+  @override
+  String get scanRetakePhoto => 'Retake photo';
+
+  @override
+  String get scanResultTitle => 'Result';
 }
