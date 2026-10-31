@@ -28,6 +28,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import struct
 import sys
 import urllib.request
@@ -164,7 +165,23 @@ def main():
     versions = s.get(f"/apps/{app}/appStoreVersions?filter[platform]=IOS&limit=20")["data"]
     editable = [v for v in versions if v["attributes"].get("appStoreState") in EDITABLE]
     if not editable:
-        sys.exit("::error::No editable App Store version. Create the next version in App Store Connect first.")
+        # Create the next version from pubspec. MANUAL release: approval never publishes by itself.
+        pubspec = store_dir.parent / "pubspec.yaml"
+        m = pubspec.exists() and re.search(r"^version:\s*([0-9.]+)", pubspec.read_text(), re.M)
+        if not m:
+            sys.exit("::error::No editable App Store version and no pubspec.yaml version to create one from.")
+        wanted = m.group(1)
+        if any(v["attributes"].get("versionString") == wanted for v in versions):
+            sys.exit(f"::error::Version {wanted} already exists in a non-editable state; nothing to edit.")
+        res = s.write("POST", "/appStoreVersions",
+                      {"data": {"type": "appStoreVersions",
+                                "attributes": {"platform": "IOS", "versionString": wanted, "releaseType": "MANUAL"},
+                                "relationships": {"app": {"data": {"type": "apps", "id": app}}}}},
+                      what=f"create App Store version {wanted} (manual release)")
+        if res is None:
+            print("Dry run: stopping here; the rest needs the new version.")
+            return
+        editable = [res["data"]]
     version = editable[0]
     vid = version["id"]
     print(f"Version {version['attributes']['versionString']} ({version['attributes']['appStoreState']})")
