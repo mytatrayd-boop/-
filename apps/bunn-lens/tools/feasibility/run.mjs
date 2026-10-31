@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // الاستخدام: node run.mjs --images <dir> --csv <expert.csv> [--out results.json] [--model <name>]
 // Gemini API المجاني (generativelanguage.googleapis.com). البيئة (لا مفاتيح في أي ملف):
-//   GEMINI_API_KEY   مطلوب
+//   GEMINI_API_KEY   اختياري: إن غاب يحقن الوكيل ترويسة Authorization (سر شبكة)
+//   GEMINI_JSON_MODE schema (افتراضي) | object
 //   GEMINI_MODEL     افتراضي gemini-2.5-flash
 //   GEMINI_RPM       حد الطلبات بالدقيقة (افتراضي 5، 0 = بلا حد)
 //   GEMINI_TIMEOUT_MS (افتراضي 60000)  GEMINI_MAX_RETRIES (افتراضي 4)  GEMINI_BACKOFF_MS (افتراضي 2000)
@@ -22,12 +23,12 @@ const { values: a } = parseArgs({ options: {
 } });
 if (!a.images || !a.csv) { console.error('مطلوب --images و --csv'); process.exit(2); }
 const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) { console.error('متغير البيئة GEMINI_API_KEY مطلوب'); process.exit(2); }
+const jsonMode = process.env.GEMINI_JSON_MODE || 'schema';
 const limiter = makeLimiter(num('GEMINI_RPM', 5));
 const opts = { timeoutMs: num('GEMINI_TIMEOUT_MS', 60000), maxRetries: num('GEMINI_MAX_RETRIES', 4), baseDelayMs: num('GEMINI_BACKOFF_MS', 2000) };
 
 async function analyze(type, file) {
-  const body = buildBody(type, MIME[extname(file).toLowerCase()] || 'image/jpeg', readFileSync(file).toString('base64'));
+  const body = buildBody(type, MIME[extname(file).toLowerCase()] || 'image/jpeg', readFileSync(file).toString('base64'), { jsonMode });
   const { json, ms, attempts } = await callGemini({ apiKey, model: a.model, body, limiter, log: (m) => console.error(`  ${m}`), ...opts });
   return { ...parseResponse(json), ms, attempts };
 }

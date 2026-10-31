@@ -19,11 +19,13 @@ node run.mjs --images data/images --csv datasets/manifest.csv --model gemini-2.5
 ## التجهيز (وضع الخبير)
 1. ضع الصور في مجلد (خارج git)، JPEG بحد أقصى 1024px (كما سيرسلها التطبيق).
 2. انسخ `expert-template.csv` واملأه: `type` = bean|coffee، `expert_score` 0-100، `expert_class` = poor|mid|excellent، `notes_correct` = عدد الملاحظات الصحيحة من 3 (اختياري).
-3. المفتاح من البيئة فقط (لا تكتبه في ملف): Gemini API المجاني من Google AI Studio.
+3. المفتاح: يستخدم العميل نقطة التوافق مع OpenAI (`POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`).
+   - **كسر شبكة (الموصى به)**: أضف المفتاح كـ Network secret من نوع Bearer للموقع `generativelanguage.googleapis.com` والمسار `/v1beta/openai/`؛ الوكيل يحقن `Authorization` فلا تضبط `GEMINI_API_KEY` ولا يرسل العميل أي ترويسة توثيق. إن أعاد 400 «Missing or invalid Authorization header» فالجلسة لم تلتقط السر بعد (أعد تشغيل الجلسة).
+   - **بديل**: `export GEMINI_API_KEY=...` من البيئة فقط (لا تكتبه في ملف)؛ يُرسل Bearer.
 ```
-export GEMINI_API_KEY=...
 export GEMINI_MODEL=gemini-2.5-flash   # اختياري (الافتراضي نفسه)
-export GEMINI_RPM=5                    # حد الطلبات/دقيقة؛ ارفعه حسب حدود مشروعك في AI Studio (0 = بلا حد)
+export GEMINI_RPM=5                    # حد الطلبات/دقيقة؛ ارفعه حسب حدود مشروعك (0 = بلا حد)
+export GEMINI_JSON_MODE=schema         # أو object (json_object) والتحقق الصارم يبقى في validateResult
 # اختياري: GEMINI_TIMEOUT_MS=60000  GEMINI_MAX_RETRIES=4  GEMINI_BACKOFF_MS=2000
 ```
 عند 429/5xx يعيد المحاولة بتراجع أسّي (أو حسب `Retry-After`). يُسجَّل لكل تشغيل الزمن وتوكنز الدخل/الخرج، والتكلفة 0 (الطبقة المجانية). تشغيلان لكل صورة، فعدد الطلبات = 2 × عدد الصور؛ الطبقة المجانية قد تحدّ الطلبات اليومية أيضاً.
