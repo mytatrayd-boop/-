@@ -1,0 +1,14 @@
+{
+  "@@locale": "ar",
+  "appName": "عدسة البن",
+  "tabScan": "فحص",
+  "tabHistory": "السجل",
+  "tabFavorites": "المفضلة",
+  "tabSettings": "الإعدادات",
+  "scanTitle": "فحص",
+  "historyTitle": "السجل",
+  "favoritesTitle": "المفضلة",
+  "settingsTitle": "الإعدادات",
+  "logoLabel": "شعار عدسة البن",
+  "placeholderSoon": "قريباً"
+}

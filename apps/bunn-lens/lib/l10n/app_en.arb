@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "appName": "Bunn Lens",
+  "tabScan": "Scan",
+  "tabHistory": "History",
+  "tabFavorites": "Favorites",
+  "tabSettings": "Settings",
+  "scanTitle": "Scan",
+  "historyTitle": "History",
+  "favoritesTitle": "Favorites",
+  "settingsTitle": "Settings",
+  "logoLabel": "Bunn Lens logo",
+  "placeholderSoon": "Coming soon"
+}
