@@ -601,6 +601,138 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أماكن المقاهي التي حفظتها'**
   String get settingsCafesSubtitle;
+
+  /// No description provided for @shareAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة'**
+  String get shareAction;
+
+  /// No description provided for @shareGenerating.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تجهيز الصورة…'**
+  String get shareGenerating;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تجهيز الصورة، حاول مجدداً'**
+  String get shareFailed;
+
+  /// No description provided for @shareImageMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'صورة الفحص مفقودة، لا يمكن مشاركته'**
+  String get shareImageMissing;
+
+  /// No description provided for @shareNameDialogTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمك للتوقيع'**
+  String get shareNameDialogTitle;
+
+  /// No description provided for @shareNameDialogBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يظهر اسمك بخط اليد تحت اللوقو في صورة المشاركة.'**
+  String get shareNameDialogBody;
+
+  /// No description provided for @shareNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get shareNameLabel;
+
+  /// No description provided for @shareNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمك أولاً'**
+  String get shareNameRequired;
+
+  /// No description provided for @shareNameSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get shareNameSave;
+
+  /// No description provided for @settingsUserNameTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم التوقيع'**
+  String get settingsUserNameTitle;
+
+  /// No description provided for @settingsUserNameEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمك ليوقّع صور المشاركة'**
+  String get settingsUserNameEmpty;
+
+  /// No description provided for @shareScoreOutOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'من 100'**
+  String get shareScoreOutOf;
+
+  /// No description provided for @scoreLabelExcellent.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممتاز'**
+  String get scoreLabelExcellent;
+
+  /// No description provided for @scoreLabelGood.
+  ///
+  /// In ar, this message translates to:
+  /// **'جيد'**
+  String get scoreLabelGood;
+
+  /// No description provided for @scoreLabelAverage.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط'**
+  String get scoreLabelAverage;
+
+  /// No description provided for @scoreLabelWeak.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضعيف'**
+  String get scoreLabelWeak;
+
+  /// No description provided for @shareCardTypeLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{type} · محمصة {roaster}'**
+  String shareCardTypeLine(String type, String roaster);
+
+  /// No description provided for @shareTextRated.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيّمت {subject} بعدسة البن: {score}/100 (تقديري)'**
+  String shareTextRated(String subject, int score);
+
+  /// No description provided for @shareTextCafe.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقهى: {cafe}'**
+  String shareTextCafe(String cafe);
+
+  /// No description provided for @shareSubjectRoaster.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحمصة {name}'**
+  String shareSubjectRoaster(String name);
+
+  /// No description provided for @shareSubjectCafe.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقهى {name}'**
+  String shareSubjectCafe(String name);
+
+  /// No description provided for @shareSubjectType.
+  ///
+  /// In ar, this message translates to:
+  /// **'{type}'**
+  String shareSubjectType(String type);
 }
 
 class _AppLocalizationsDelegate

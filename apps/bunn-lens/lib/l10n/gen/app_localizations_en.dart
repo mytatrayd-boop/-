@@ -276,4 +276,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCafesSubtitle => 'Cafe places you saved';
+
+  @override
+  String get shareAction => 'Share';
+
+  @override
+  String get shareGenerating => 'Preparing the image…';
+
+  @override
+  String get shareFailed => 'Couldn\'t prepare the image, try again';
+
+  @override
+  String get shareImageMissing =>
+      'The scan image is missing, so it can\'t be shared';
+
+  @override
+  String get shareNameDialogTitle => 'Write your name to sign';
+
+  @override
+  String get shareNameDialogBody =>
+      'Your name appears in handwriting under the logo on the shared image.';
+
+  @override
+  String get shareNameLabel => 'Name';
+
+  @override
+  String get shareNameRequired => 'Write your name first';
+
+  @override
+  String get shareNameSave => 'Save';
+
+  @override
+  String get settingsUserNameTitle => 'Signature name';
+
+  @override
+  String get settingsUserNameEmpty => 'Write your name to sign shared images';
+
+  @override
+  String get shareScoreOutOf => 'out of 100';
+
+  @override
+  String get scoreLabelExcellent => 'Excellent';
+
+  @override
+  String get scoreLabelGood => 'Good';
+
+  @override
+  String get scoreLabelAverage => 'Average';
+
+  @override
+  String get scoreLabelWeak => 'Weak';
+
+  @override
+  String shareCardTypeLine(String type, String roaster) {
+    return '$type · $roaster roastery';
+  }
+
+  @override
+  String shareTextRated(String subject, int score) {
+    return 'I rated $subject with Bunn Lens: $score/100 (estimate)';
+  }
+
+  @override
+  String shareTextCafe(String cafe) {
+    return 'Cafe: $cafe';
+  }
+
+  @override
+  String shareSubjectRoaster(String name) {
+    return 'the roaster $name';
+  }
+
+  @override
+  String shareSubjectCafe(String name) {
+    return 'the cafe $name';
+  }
+
+  @override
+  String shareSubjectType(String type) {
+    return 'a $type scan';
+  }
 }

@@ -12,6 +12,7 @@ import 'package:bunn_lens/data/repositories/cafe_repository.dart';
 import 'package:bunn_lens/data/repositories/scan_repository.dart';
 import 'package:bunn_lens/features/cafes/cafes_providers.dart';
 import 'package:bunn_lens/features/cafes/data/location_service.dart';
+import 'package:bunn_lens/features/share/share_flow.dart';
 
 /// مستودع على قاعدة بالذاكرة ومجلد صور مؤقت.
 class TestRepo {
@@ -40,6 +41,7 @@ Widget buildTestApp(
   CafeRepository? cafeRepository,
   LocationService? locationService,
   UrlOpener? urlOpener,
+  ShareLauncher? shareLauncher,
 }) =>
     ProviderScope(
       overrides: [
@@ -48,6 +50,7 @@ Widget buildTestApp(
         if (cafeRepository != null) cafeRepositoryProvider.overrideWithValue(cafeRepository),
         if (locationService != null) locationServiceProvider.overrideWithValue(locationService),
         if (urlOpener != null) urlOpenerProvider.overrideWithValue(urlOpener),
+        if (shareLauncher != null) shareLauncherProvider.overrideWithValue(shareLauncher),
       ],
       child: const BunnLensApp(),
     );
@@ -59,6 +62,7 @@ Future<void> pumpApp(
   CafeRepository? cafeRepository,
   LocationService? locationService,
   UrlOpener? urlOpener,
+  ShareLauncher? shareLauncher,
 }) async {
   final own = repository == null ? TestRepo.create() : null;
   if (own != null) addTearDown(own.dispose);
@@ -66,7 +70,8 @@ Future<void> pumpApp(
       locale: locale,
       cafeRepository: cafeRepository ?? own?.cafes,
       locationService: locationService,
-      urlOpener: urlOpener));
+      urlOpener: urlOpener,
+      shareLauncher: shareLauncher));
   await tester.pumpAndSettle();
 }
 

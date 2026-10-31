@@ -8,6 +8,7 @@ import '../../../l10n/gen/app_localizations.dart';
 import '../history_providers.dart';
 import '../../cafes/presentation/cafe_actions.dart';
 import '../../cafes/presentation/save_cafe_button.dart';
+import '../../share/presentation/share_scan_button.dart';
 import 'delete_scan.dart';
 import 'scan_formatting.dart';
 import 'scan_image.dart';
@@ -32,6 +33,7 @@ class ScanDetailScreen extends ConsumerWidget {
           onPressed: () => context.canPop() ? context.pop() : context.go(fallbackRoute),
         ),
         actions: [
+          if (scan.value != null) ShareScanButton(scan: scan.value!),
           if (scan.value != null)
             SaveCafeButton(scanId: id, hasCafe: scan.value!.cafe != null),
           if (scan.value != null)

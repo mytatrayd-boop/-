@@ -114,5 +114,75 @@
   "cafeDeleteFailed": "تعذّر حذف المقهى",
   "cafeRenameFailed": "تعذّر تعديل الاسم",
   "scanCafe": "المقهى",
-  "settingsCafesSubtitle": "أماكن المقاهي التي حفظتها"
+  "settingsCafesSubtitle": "أماكن المقاهي التي حفظتها",
+  "shareAction": "مشاركة",
+  "shareGenerating": "جارٍ تجهيز الصورة…",
+  "shareFailed": "تعذّر تجهيز الصورة، حاول مجدداً",
+  "shareImageMissing": "صورة الفحص مفقودة، لا يمكن مشاركته",
+  "shareNameDialogTitle": "اكتب اسمك للتوقيع",
+  "shareNameDialogBody": "يظهر اسمك بخط اليد تحت اللوقو في صورة المشاركة.",
+  "shareNameLabel": "الاسم",
+  "shareNameRequired": "اكتب اسمك أولاً",
+  "shareNameSave": "حفظ",
+  "settingsUserNameTitle": "اسم التوقيع",
+  "settingsUserNameEmpty": "اكتب اسمك ليوقّع صور المشاركة",
+  "shareScoreOutOf": "من 100",
+  "scoreLabelExcellent": "ممتاز",
+  "scoreLabelGood": "جيد",
+  "scoreLabelAverage": "متوسط",
+  "scoreLabelWeak": "ضعيف",
+  "shareCardTypeLine": "{type} · محمصة {roaster}",
+  "@shareCardTypeLine": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "roaster": {
+        "type": "String"
+      }
+    }
+  },
+  "shareTextRated": "قيّمت {subject} بعدسة البن: {score}/100 (تقديري)",
+  "@shareTextRated": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "shareTextCafe": "المقهى: {cafe}",
+  "@shareTextCafe": {
+    "placeholders": {
+      "cafe": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSubjectRoaster": "المحمصة {name}",
+  "@shareSubjectRoaster": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSubjectCafe": "المقهى {name}",
+  "@shareSubjectCafe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSubjectType": "{type}",
+  "@shareSubjectType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  }
 }

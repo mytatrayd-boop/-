@@ -276,4 +276,83 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsCafesSubtitle => 'أماكن المقاهي التي حفظتها';
+
+  @override
+  String get shareAction => 'مشاركة';
+
+  @override
+  String get shareGenerating => 'جارٍ تجهيز الصورة…';
+
+  @override
+  String get shareFailed => 'تعذّر تجهيز الصورة، حاول مجدداً';
+
+  @override
+  String get shareImageMissing => 'صورة الفحص مفقودة، لا يمكن مشاركته';
+
+  @override
+  String get shareNameDialogTitle => 'اكتب اسمك للتوقيع';
+
+  @override
+  String get shareNameDialogBody =>
+      'يظهر اسمك بخط اليد تحت اللوقو في صورة المشاركة.';
+
+  @override
+  String get shareNameLabel => 'الاسم';
+
+  @override
+  String get shareNameRequired => 'اكتب اسمك أولاً';
+
+  @override
+  String get shareNameSave => 'حفظ';
+
+  @override
+  String get settingsUserNameTitle => 'اسم التوقيع';
+
+  @override
+  String get settingsUserNameEmpty => 'اكتب اسمك ليوقّع صور المشاركة';
+
+  @override
+  String get shareScoreOutOf => 'من 100';
+
+  @override
+  String get scoreLabelExcellent => 'ممتاز';
+
+  @override
+  String get scoreLabelGood => 'جيد';
+
+  @override
+  String get scoreLabelAverage => 'متوسط';
+
+  @override
+  String get scoreLabelWeak => 'ضعيف';
+
+  @override
+  String shareCardTypeLine(String type, String roaster) {
+    return '$type · محمصة $roaster';
+  }
+
+  @override
+  String shareTextRated(String subject, int score) {
+    return 'قيّمت $subject بعدسة البن: $score/100 (تقديري)';
+  }
+
+  @override
+  String shareTextCafe(String cafe) {
+    return 'المقهى: $cafe';
+  }
+
+  @override
+  String shareSubjectRoaster(String name) {
+    return 'المحمصة $name';
+  }
+
+  @override
+  String shareSubjectCafe(String name) {
+    return 'المقهى $name';
+  }
+
+  @override
+  String shareSubjectType(String type) {
+    return '$type';
+  }
 }

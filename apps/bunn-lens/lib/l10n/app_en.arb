@@ -114,5 +114,75 @@
   "cafeDeleteFailed": "Couldn't delete the cafe",
   "cafeRenameFailed": "Couldn't rename the cafe",
   "scanCafe": "Cafe",
-  "settingsCafesSubtitle": "Cafe places you saved"
+  "settingsCafesSubtitle": "Cafe places you saved",
+  "shareAction": "Share",
+  "shareGenerating": "Preparing the image…",
+  "shareFailed": "Couldn't prepare the image, try again",
+  "shareImageMissing": "The scan image is missing, so it can't be shared",
+  "shareNameDialogTitle": "Write your name to sign",
+  "shareNameDialogBody": "Your name appears in handwriting under the logo on the shared image.",
+  "shareNameLabel": "Name",
+  "shareNameRequired": "Write your name first",
+  "shareNameSave": "Save",
+  "settingsUserNameTitle": "Signature name",
+  "settingsUserNameEmpty": "Write your name to sign shared images",
+  "shareScoreOutOf": "out of 100",
+  "scoreLabelExcellent": "Excellent",
+  "scoreLabelGood": "Good",
+  "scoreLabelAverage": "Average",
+  "scoreLabelWeak": "Weak",
+  "shareCardTypeLine": "{type} · {roaster} roastery",
+  "@shareCardTypeLine": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "roaster": {
+        "type": "String"
+      }
+    }
+  },
+  "shareTextRated": "I rated {subject} with Bunn Lens: {score}/100 (estimate)",
+  "@shareTextRated": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "shareTextCafe": "Cafe: {cafe}",
+  "@shareTextCafe": {
+    "placeholders": {
+      "cafe": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSubjectRoaster": "the roaster {name}",
+  "@shareSubjectRoaster": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSubjectCafe": "the cafe {name}",
+  "@shareSubjectCafe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSubjectType": "a {type} scan",
+  "@shareSubjectType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  }
 }
