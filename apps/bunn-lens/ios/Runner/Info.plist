@@ -4,6 +4,10 @@
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>نستخدم موقعك الحالي مرة واحدة عند ضغط «احفظ مكان المقهى» لنحفظ مكان المقهى على جوالك فقط، ولا نتتبّع موقعك.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>نستخدم الكاميرا لتصوير البن أو القهوة وفحصها فقط.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نستخدم الصور التي تختارها من معرضك لفحص البن أو القهوة فقط.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
