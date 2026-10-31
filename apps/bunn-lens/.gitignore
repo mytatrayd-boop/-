@@ -72,3 +72,6 @@ build/
 /ios/Flutter/flutter_export_environment.sh
 node_modules/
 tools/feasibility/out/
+
+# الجذر يتجاهل data/ في كل مكان؛ نستثني مجلد كود التطبيق
+!/lib/data/

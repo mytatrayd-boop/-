@@ -34,5 +34,6 @@ void main() {
       // عنوان الشاشة في الـ AppBar
       expect(find.descendant(of: find.byType(AppBar), matching: find.text(label)), findsOneWidget);
     }
+    await unmountApp(tester);
   });
 }

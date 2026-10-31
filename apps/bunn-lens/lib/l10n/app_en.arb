@@ -10,5 +10,50 @@
   "favoritesTitle": "Favorites",
   "settingsTitle": "Settings",
   "logoLabel": "Bunn Lens logo",
-  "placeholderSoon": "Coming soon"
+  "placeholderSoon": "Coming soon",
+  "historyFilterAll": "All",
+  "historyFilterBean": "Beans",
+  "historyFilterCoffee": "Coffee",
+  "scanTypeBean": "Beans",
+  "scanTypeCoffee": "Coffee",
+  "historyEmptyTitle": "No scans yet",
+  "historyEmptyAction": "Scan now",
+  "historyErrorTitle": "Couldn't load history",
+  "retry": "Try again",
+  "historyLoading": "Loading history",
+  "scoreOutOf": "{score}/100",
+  "@scoreOutOf": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "scanCardLabel": "{type} scan, score {score} out of 100",
+  "@scanCardLabel": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "scanMenu": "Scan options",
+  "scanDelete": "Delete",
+  "deleteScanTitle": "Delete this scan?",
+  "deleteScanBody": "This can't be undone.",
+  "cancel": "Cancel",
+  "scanDeleted": "Scan deleted",
+  "scanDeleteFailed": "Couldn't delete the scan",
+  "scanDetailTitle": "Scan details",
+  "scanNotFound": "This scan doesn't exist",
+  "scanNotesTitle": "Notes",
+  "scanDisclaimer": "A rough visual estimate, not a final verdict",
+  "scanRoaster": "Roaster",
+  "scanPrice": "Price",
+  "scanDate": "Date",
+  "scanImageUnavailable": "Image unavailable",
+  "scanTypeField": "Type"
 }

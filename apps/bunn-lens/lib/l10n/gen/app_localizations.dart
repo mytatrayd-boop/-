@@ -163,6 +163,174 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'قريباً'**
   String get placeholderSoon;
+
+  /// No description provided for @historyFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get historyFilterAll;
+
+  /// No description provided for @historyFilterBean.
+  ///
+  /// In ar, this message translates to:
+  /// **'بن'**
+  String get historyFilterBean;
+
+  /// No description provided for @historyFilterCoffee.
+  ///
+  /// In ar, this message translates to:
+  /// **'قهوة'**
+  String get historyFilterCoffee;
+
+  /// No description provided for @scanTypeBean.
+  ///
+  /// In ar, this message translates to:
+  /// **'بن'**
+  String get scanTypeBean;
+
+  /// No description provided for @scanTypeCoffee.
+  ///
+  /// In ar, this message translates to:
+  /// **'قهوة'**
+  String get scanTypeCoffee;
+
+  /// No description provided for @historyEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا فحوصات بعد'**
+  String get historyEmptyTitle;
+
+  /// No description provided for @historyEmptyAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'افحص الآن'**
+  String get historyEmptyAction;
+
+  /// No description provided for @historyErrorTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل السجل'**
+  String get historyErrorTitle;
+
+  /// No description provided for @retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد المحاولة'**
+  String get retry;
+
+  /// No description provided for @historyLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحميل السجل'**
+  String get historyLoading;
+
+  /// No description provided for @scoreOutOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'{score}/100'**
+  String scoreOutOf(int score);
+
+  /// No description provided for @scanCardLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'فحص {type}، الدرجة {score} من 100'**
+  String scanCardLabel(String type, int score);
+
+  /// No description provided for @scanMenu.
+  ///
+  /// In ar, this message translates to:
+  /// **'خيارات الفحص'**
+  String get scanMenu;
+
+  /// No description provided for @scanDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get scanDelete;
+
+  /// No description provided for @deleteScanTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذا الفحص؟'**
+  String get deleteScanTitle;
+
+  /// No description provided for @deleteScanBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن التراجع.'**
+  String get deleteScanBody;
+
+  /// No description provided for @cancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cancel;
+
+  /// No description provided for @scanDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف الفحص'**
+  String get scanDeleted;
+
+  /// No description provided for @scanDeleteFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حذف الفحص'**
+  String get scanDeleteFailed;
+
+  /// No description provided for @scanDetailTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الفحص'**
+  String get scanDetailTitle;
+
+  /// No description provided for @scanNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الفحص غير موجود'**
+  String get scanNotFound;
+
+  /// No description provided for @scanNotesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملاحظات'**
+  String get scanNotesTitle;
+
+  /// No description provided for @scanDisclaimer.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقدير بصري تقريبي وليس حكماً نهائياً'**
+  String get scanDisclaimer;
+
+  /// No description provided for @scanRoaster.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحمصة'**
+  String get scanRoaster;
+
+  /// No description provided for @scanPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get scanPrice;
+
+  /// No description provided for @scanDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get scanDate;
+
+  /// No description provided for @scanImageUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة غير متاحة'**
+  String get scanImageUnavailable;
+
+  /// No description provided for @scanTypeField.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get scanTypeField;
 }
 
 class _AppLocalizationsDelegate

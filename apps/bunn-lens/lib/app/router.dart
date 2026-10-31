@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/favorites/presentation/favorites_screen.dart';
 import '../features/history/presentation/history_screen.dart';
+import '../features/history/presentation/scan_detail_screen.dart';
 import '../features/scan/presentation/scan_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import 'shell.dart';
@@ -24,7 +25,17 @@ GoRouter buildRouter({String initialLocation = AppRoutes.scan}) => GoRouter(
               GoRoute(path: AppRoutes.scan, builder: (_, _) => const ScanScreen()),
             ]),
             StatefulShellBranch(routes: [
-              GoRoute(path: AppRoutes.history, builder: (_, _) => const HistoryScreen()),
+              GoRoute(
+                path: AppRoutes.history,
+                builder: (_, _) => const HistoryScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) =>
+                        ScanDetailScreen(id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1),
+                  ),
+                ],
+              ),
             ]),
             StatefulShellBranch(routes: [
               GoRoute(path: AppRoutes.favorites, builder: (_, _) => const FavoritesScreen()),

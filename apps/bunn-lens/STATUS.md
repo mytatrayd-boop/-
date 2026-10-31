@@ -12,3 +12,9 @@
 
 ## البيئة
 - Flutter 3.47.9 stable في `/opt/flutter` (خارج المستودع)، من storage.googleapis.com. التنفيذ: `export PATH=/opt/flutter/bin:$PATH`. Node 22 وPython 3 موجودان.
+
+## الميزة 4: السجل المحلي (بند 4 في ترتيب البناء)
+- **منجز:** جدول drift `scans` (بدون حقول المكان وتُضاف مع ميزتها بترحيل)، `ScanRepository` (`save/watchAll(type)/getById/watchById/delete`) تحفظ الصورة كملف في `scan_images` داخل مستندات التطبيق وتحذفه مع الصف. شاشة السجل: فراغ/تحميل (4 هياكل)/خطأ+إعادة/قائمة من الأحدث، مرشح الكل/بن/قهوة، حذف عبر «⋯» مع نافذة تأكيد، وتفاصيل الفحص (`/history/:id`) مع التنبيه الثابت. نصوص ar/en في ARB.
+- **الفحص الفعلي:** `flutter analyze`: بلا مشاكل. `flutter test`: 27/27 ناجحة (7 مستودع على SQLite بالذاكرة، 7 ودجت للسجل، والقديمة).
+- **لم يُنفَّذ/لم يُشغَّل:** تشغيل على جهاز/محاكي (فتح قاعدة الجهاز `openDeviceConnection` وبناء Android/iOS غير مجرّبين)، مسار الفحص الذي يستدعي `save`، نجمة المفضلة في البطاقة، اسم المقهى، شريط الضيف، السحب للحذف (المتاح «⋯» فقط).
+- **ملاحظة:** الجذر `/.gitignore` يتجاهل `data/` في أي مستوى، فأضفت `!/lib/data/` في `.gitignore` التطبيق؛ ملف drift المولّد `app_database.g.dart` غير مستثنى (يُلتزم). لإعادة التوليد: `dart run build_runner build --delete-conflicting-outputs`.

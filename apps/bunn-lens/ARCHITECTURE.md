@@ -35,7 +35,7 @@
 - الاشتراك لاحقاً: حقل `plan` موجود ويُقرأ في نفس المعاملة.
 
 ## 4. نموذج البيانات
-**محلي (drift)** جدول `scans`: `id, type(bean|coffee), score, notes(json 3), imagePath, roasterName?, price?, createdAt, isFavorite, placeId?, placeName?, placeLat?, placeLng?, placeUrl?, promptVersion`. المفضلة = `isFavorite` (لا جدول مستقل). اسم التوقيع في `shared_preferences` (`signatureName`).
+**محلي (drift)** جدول `scans`: `id, type(bean|coffee), score, notes(json 3), imagePath (اسم الملف فقط، المسار الكامل يُحسب من مجلد الصور), roasterName?, price?, createdAt, isFavorite, placeId?, placeName?, placeLat?, placeLng?, placeUrl?, promptVersion`. المفضلة = `isFavorite` (لا جدول مستقل). اسم التوقيع في `shared_preferences` (`signatureName`).
 
 **سحابي (Firestore)**:
 - `users/{uid}` كما أعلاه.
@@ -54,7 +54,7 @@ feedback/{id}: create: مسجل (حتى المجهول) وطول النص ≤ 20
 - سياسة الخصوصية مطلوبة للمتاجر: الصورة تُرسل للتحليل ولا تُخزن، الموقع يدوي فقط، حذف الحساب من داخل التطبيق (متطلب Apple).
 
 ## 6. المكتبات (مستقرة ومشهورة فقط)
-`firebase_core, firebase_auth, cloud_firestore, cloud_functions, firebase_app_check, firebase_crashlytics, google_sign_in, sign_in_with_apple, flutter_riverpod, go_router, drift + sqlite3_flutter_libs + path_provider, image_picker, flutter_image_compress, share_plus, url_launcher, shared_preferences, intl + flutter_localizations`. اختبار: `flutter_test, mocktail`، ودوال: `jest` أو `vitest` مع Firebase Emulator.
+`firebase_core, firebase_auth, cloud_firestore, cloud_functions, firebase_app_check, firebase_crashlytics, google_sign_in, sign_in_with_apple, flutter_riverpod, go_router, drift + sqlite3 (مباشرة، بدل sqlite3_flutter_libs المنتهية الدعم؛ غير مُتحقَّق على جهاز بعد، انظر DECISIONS.md) + path_provider, image_picker, flutter_image_compress, share_plus, url_launcher, shared_preferences, intl + flutter_localizations`. اختبار: `flutter_test, mocktail`، ودوال: `jest` أو `vitest` مع Firebase Emulator.
 - لا خرائط SDK في MVP (البحث نصي عبر Places + فتح الرابط في تطبيق الخرائط). نضيف `google_maps_flutter` فقط إن طلبت معاينة خريطة.
 - الخطوط (عربي) تُضمَّن في assets (مثل IBM Plex Sans Arabic/Noto Kufi + خط يدوي للتوقيع) لا تحميل وقت التشغيل، ليعمل توليد الصورة دائماً.
 

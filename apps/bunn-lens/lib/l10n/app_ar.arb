@@ -10,5 +10,50 @@
   "favoritesTitle": "المفضلة",
   "settingsTitle": "الإعدادات",
   "logoLabel": "شعار عدسة البن",
-  "placeholderSoon": "قريباً"
+  "placeholderSoon": "قريباً",
+  "historyFilterAll": "الكل",
+  "historyFilterBean": "بن",
+  "historyFilterCoffee": "قهوة",
+  "scanTypeBean": "بن",
+  "scanTypeCoffee": "قهوة",
+  "historyEmptyTitle": "لا فحوصات بعد",
+  "historyEmptyAction": "افحص الآن",
+  "historyErrorTitle": "تعذّر تحميل السجل",
+  "retry": "أعد المحاولة",
+  "historyLoading": "جارٍ تحميل السجل",
+  "scoreOutOf": "{score}/100",
+  "@scoreOutOf": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "scanCardLabel": "فحص {type}، الدرجة {score} من 100",
+  "@scanCardLabel": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "scanMenu": "خيارات الفحص",
+  "scanDelete": "حذف",
+  "deleteScanTitle": "حذف هذا الفحص؟",
+  "deleteScanBody": "لا يمكن التراجع.",
+  "cancel": "إلغاء",
+  "scanDeleted": "تم حذف الفحص",
+  "scanDeleteFailed": "تعذّر حذف الفحص",
+  "scanDetailTitle": "تفاصيل الفحص",
+  "scanNotFound": "هذا الفحص غير موجود",
+  "scanNotesTitle": "الملاحظات",
+  "scanDisclaimer": "التقدير بصري تقريبي وليس حكماً نهائياً",
+  "scanRoaster": "المحمصة",
+  "scanPrice": "السعر",
+  "scanDate": "التاريخ",
+  "scanImageUnavailable": "الصورة غير متاحة",
+  "scanTypeField": "النوع"
 }
