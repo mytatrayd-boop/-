@@ -52,3 +52,5 @@
 - **لم يُجرَّب:** فحص كامل ناجح (يحتاج: سر `GEMINI_API_KEY` في الوسيط، وإعدادات Firebase `FIREBASE_PROJECT_ID/NUMBER` في `wrangler.toml` ثم إعادة النشر، وتوكنات حقيقية من التطبيق).
 - **المتبقي عند المالك:** (1) سر Gemini من لوحة Cloudflare: Worker ← Settings ← Variables and Secrets ← Add باسم `GEMINI_API_KEY` ونوع Secret. (2) مشروع Firebase (Spark).
 - النشر: `cd worker && CLOUDFLARE_API_TOKEN=dummy NODE_USE_ENV_PROXY=1 npx wrangler deploy` (الرمز الحقيقي يحقنه وكيل الجلسة).
+
+- **Firebase:** المشروع `bunn-lens` (Spark)، رقمه 740863755565، مضبوطان في `worker/wrangler.toml` والوسيط أُعيد نشره. لم تُسجَّل تطبيقات Android/iOS بعد ولم يُربط Firebase في Flutter.

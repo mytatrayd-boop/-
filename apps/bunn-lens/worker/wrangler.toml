@@ -4,8 +4,8 @@ compatibility_date = "2025-01-01"
 
 # أسرار (لا تُكتب هنا): wrangler secret put GEMINI_API_KEY
 [vars]
-FIREBASE_PROJECT_ID = ""      # يُملأ من مشروع Firebase Spark
-FIREBASE_PROJECT_NUMBER = ""  # رقم المشروع (App Check)
+FIREBASE_PROJECT_ID = "bunn-lens"
+FIREBASE_PROJECT_NUMBER = "740863755565"
 GEMINI_MODEL = "gemini-3.1-flash-lite"
 DAILY_CAP = "300"
 REQUIRE_APP_CHECK = "true"
