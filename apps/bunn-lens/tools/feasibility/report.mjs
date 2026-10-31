@@ -6,6 +6,8 @@ export function formatReport(m, meta = {}) {
     const c = v.criteria;
     lines.push(`\n## ${k} (n=${v.n}، مستبعد=${v.skipped})`,
       `- فرق ≤10 عن الخبير: ${pct(c.expertDiff.value)} (الهدف 70%) ${ok(c.expertDiff.pass)}`,
+      `- مطابقة مستوى التحميص (وسوم مفتوحة): ${pct(c.roast.value)} (n=${c.roast.n}، هدف مبدئي 70%) ${ok(c.roast.pass)}`,
+      `- كشف العيوب (وسوم مفتوحة): دقة ${pct(c.defect.value)} (n=${c.defect.n}) استدعاء ${pct(c.defect.recall)} نوعية ${pct(c.defect.specificity)} ${ok(c.defect.pass)}`,
       `- ثبات ≤5: ${pct(c.stability.value)} (الهدف 90%) ${ok(c.stability.pass)}`,
       `- التفريق ضعيفة<ممتازة: ${ok(c.separation.pass)}`,
       `- الملاحظات صحيحة: ${pct(c.notes.value)} (الهدف 70%) ${ok(c.notes.pass)}`,

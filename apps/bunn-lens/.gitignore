@@ -72,6 +72,8 @@ build/
 /ios/Flutter/flutter_export_environment.sh
 node_modules/
 tools/feasibility/out/
+# صور الجدوى المفتوحة (تُنزَّل بـ tools/feasibility/datasets/fetch.mjs؛ لا تُرفع)
+tools/feasibility/data/
 
 # الجذر يتجاهل data/ في كل مكان؛ نستثني مجلد كود التطبيق
 !/lib/data/

@@ -1,0 +1,79 @@
+image,type,expert_score,expert_class,notes_correct,roast_label,defect_label,clear_class,source,license,origin
+bean-001.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (1).png
+bean-002.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (13).png
+bean-003.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (26).png
+bean-004.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (38).png
+bean-005.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (51).png
+bean-006.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (63).png
+bean-007.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (76).png
+bean-008.png,bean,,,,light,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Light/light (88).png
+bean-009.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (1).png
+bean-010.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (13).png
+bean-011.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (26).png
+bean-012.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (38).png
+bean-013.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (51).png
+bean-014.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (63).png
+bean-015.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (76).png
+bean-016.png,bean,,,,medium,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Medium/medium (88).png
+bean-017.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (1).png
+bean-018.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (13).png
+bean-019.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (26).png
+bean-020.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (38).png
+bean-021.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (51).png
+bean-022.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (63).png
+bean-023.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (76).png
+bean-024.png,bean,,,,dark,,,gpiosenka/coffee-bean-dataset-resized-224-x-224,CC BY-SA 4.0,test/Dark/dark (88).png
+bean-025.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/0.jpg
+bean-026.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/37.jpg
+bean-027.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/75.jpg
+bean-028.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/112.jpg
+bean-029.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/230.jpg
+bean-030.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/267.jpg
+bean-031.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/305.jpg
+bean-032.jpg,bean,,,,,defect,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/defect/342.jpg
+bean-033.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/0.jpg
+bean-034.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/37.jpg
+bean-035.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/75.jpg
+bean-036.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/192.jpg
+bean-037.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/230.jpg
+bean-038.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/267.jpg
+bean-039.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/305.jpg
+bean-040.jpg,bean,,,,,ok,,ardiyanto24/coffee-bean-classification-dataset,Apache-2.0,train/premium/342.jpg
+coffee-001.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211017_132324.jpg
+coffee-002.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211024_144130.jpg
+coffee-003.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211025_210846.jpg
+coffee-004.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211102_224621.jpg
+coffee-005.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211105_122120.jpg
+coffee-006.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211111_203216.jpg
+coffee-007.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211124_125711.jpg
+coffee-008.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211202_212416.jpg
+coffee-009.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20211212_210949.jpg
+coffee-010.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20220606_143903.jpg
+coffee-011.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20220623_124657.jpg
+coffee-012.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/espresso/20220702_145339.jpg
+coffee-013.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20211008_090559.jpg
+coffee-014.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20211016_104731.jpg
+coffee-015.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20211024_115305.jpg
+coffee-016.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20211107_100125.jpg
+coffee-017.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20211118_102840.jpg
+coffee-018.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20211130_083320.jpg
+coffee-019.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20211210_143455.jpg
+coffee-020.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20220125_090850.jpg
+coffee-021.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20220618_090946.jpg
+coffee-022.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20220623_092111.jpg
+coffee-023.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20220628_093053.jpg
+coffee-024.jpg,coffee,,,,,,,thekangaroofactory/coffee-images,"Other (free use with attribution, see LICENSES.md)",256x/longblack/20220703_103132.jpg
+coffee-025.jpeg,coffee,,,,,,,parangatsingh/espresso-image,Apache-2.0,2.jpeg
+coffee-026.jpg,coffee,,,,,,,commons.wikimedia.org (Kgbo),CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:A_cup_of_cappuccino_at_Indooroopilly_Shopping_Centre.JPG
+coffee-027.jpg,coffee,,,,,,,commons.wikimedia.org (W),CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Cappuccinno_latte_art_20260708_-_01.jpg
+coffee-028.jpg,coffee,,,,,,,"commons.wikimedia.org (<a href=""//commons.wikimedia.org/wiki/User:Serg_Dorohoff"" title=""User:Serg Doroh)",CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Cappuccino-01-1920x1069.jpg
+coffee-029.jpg,coffee,,,,,,,"commons.wikimedia.org (<a href=""//commons.wikimedia.org/w/index.php?title=User:Visitor7&amp;action=edit)",CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Cappuccino-1.jpg
+coffee-030.jpg,coffee,,,,,,,"commons.wikimedia.org (<a href=""//commons.wikimedia.org/w/index.php?title=User:Visitor7&amp;action=edit)",CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Cappuccino-2.jpg
+coffee-031.jpg,coffee,,,,,,,"commons.wikimedia.org (<a href=""//commons.wikimedia.org/w/index.php?title=User:Na_bdiaz&amp;action=edit)",CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Cappuccino_for_one.JPG
+coffee-032.jpg,coffee,,,,,,,commons.wikimedia.org (W),CC BY-SA 4.0,https://commons.wikimedia.org/wiki/File:Cappuccino_latte_art_20260712_-_02.jpg
+coffee-033.jpg,coffee,,,,,,,commons.wikimedia.org (Frettie),CC BY 3.0,"https://commons.wikimedia.org/wiki/File:Cappuccino_with_latte_art_on_Coffee_Right_in_Brno,_Brno-City_District.jpg"
+coffee-034.jpg,coffee,,,,,,,"commons.wikimedia.org (<a href=""//commons.wikimedia.org/wiki/User:Aqilla_Rahmi"" title=""User:Aqilla Rahm)",CC0,https://commons.wikimedia.org/wiki/File:Latte_Art_Coffee.jpg
+coffee-035.jpg,coffee,,,,,,,commons.wikimedia.org (Takea),CC BY-SA 3.0,https://commons.wikimedia.org/wiki/File:Latte_art_cappuccino.jpg
+coffee-036.jpg,coffee,,,,,,,"commons.wikimedia.org (Drew Coffman <a rel=""nofollow"" class=""external text"" href=""https://unsplash.com/)",CC0,https://commons.wikimedia.org/wiki/File:Latte_art_on_cappuccino_(Unsplash).jpg
+coffee-037.jpg,coffee,,,,,,,commons.wikimedia.org (mason bryant),CC BY-SA 2.0,"https://commons.wikimedia.org/wiki/File:Soy_cappuccino,_Stumptown,_Seattle.jpg"
+coffee-038.jpg,coffee,,,,,,,"commons.wikimedia.org (<a rel=""nofollow"" class=""external text"" href=""https://www.flickr.com/people/5939)",CC BY-SA 2.0,"https://commons.wikimedia.org/wiki/File:Coffee_brewing_at_Juan_Valdez,_Cartagena,_Colombia_(24192661969).jpg"

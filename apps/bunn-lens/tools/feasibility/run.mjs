@@ -4,7 +4,7 @@
 //   GOOGLE_CLOUD_PROJECT, VERTEX_LOCATION (افتراضي us-central1)
 //   VERTEX_ACCESS_TOKEN  مثال: export VERTEX_ACCESS_TOKEN=$(gcloud auth print-access-token)
 //   PRICE_IN_PER_M, PRICE_OUT_PER_M  سعر المليون توكن بالدولار (لحساب التكلفة؛ بدونها تُترك فارغة)
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { parseArgs } from 'node:util';
 import { parseCsv, toExpertRows } from './csv.mjs';
@@ -40,17 +40,19 @@ async function analyze(type, file) {
   const u = j.usageMetadata || {};
   const cost = Number.isFinite(pIn) && Number.isFinite(pOut)
     ? ((u.promptTokenCount || 0) * pIn + (u.candidatesTokenCount || 0) * pOut) / 1e6 : NaN;
-  return { score: out.status === 'ok' ? out.score : NaN, status: out.status, notes: out.notes, ms, cost };
+  return { score: out.status === 'ok' ? out.score : NaN, status: out.status, notes: out.notes, roast: out.roast_level, hasDefects: out.has_defects, ms, cost };
 }
 
+// الصورة في <images>/<type>/<image> (مجلدات data/images) وإلا <images>/<image>
+const imagePath = (r) => (existsSync(join(a.images, r.type, r.image)) ? join(a.images, r.type, r.image) : join(a.images, r.image));
 const rows = toExpertRows(parseCsv(readFileSync(a.csv, 'utf8')));
 for (const r of rows) {
   r.runs = [];
   for (let i = 0; i < 2; i++) {
-    try { r.runs.push(await analyze(r.type, join(a.images, r.image))); }
+    try { r.runs.push(await analyze(r.type, imagePath(r))); }
     catch (e) { console.error(`${r.image} (تشغيل ${i + 1}): ${e.message}`); r.runs.push({ score: NaN, ms: NaN, cost: NaN, error: e.message }); }
   }
-  console.error(`${r.image}: خبير ${r.expert} | ${r.runs.map((x) => x.score).join(' / ')}`);
+  console.error(`${r.image}: خبير ${r.expert ?? '-'} | ${r.runs.map((x) => x.score).join(' / ')}`);
 }
 const metrics = byType(rows);
 writeFileSync(a.out, JSON.stringify({ promptVersion: PROMPT_VERSION, model: a.model, rows, metrics }, null, 2));

@@ -70,3 +70,64 @@ test('CSV وصيغة المخرجات', () => {
   assert.throws(() => validateResult({ status: 'ok', score: 50, notes: ['a', 'b'] }));
   assert.ok(validateResult({ status: 'ok', score: 50, notes: ['a', 'b', 'c'] }));
 });
+
+const bean = (extra, r1, r2) => ({ image: 'b', type: 'bean', expert: undefined, runs: [{ score: 70, ms: 1000, cost: 0, ...r1 }, { score: 70, ms: 1000, cost: 0, ...(r2 ?? r1) }], ...extra });
+
+test('مطابقة التحميص وكشف العيوب مقابل الوسوم (بلا خبير)', () => {
+  const rows = [
+    bean({ roastLabel: 'dark' }, { roast: 'dark' }),
+    bean({ roastLabel: 'light' }, { roast: 'light' }, { roast: 'medium' }),
+    bean({ roastLabel: 'medium' }, { roast: 'dark' }),
+    bean({ defectLabel: 'defect' }, { hasDefects: true }),
+    bean({ defectLabel: 'defect' }, { hasDefects: false }),
+    bean({ defectLabel: 'ok' }, { hasDefects: false }),
+    bean({ defectLabel: 'ok' }, { hasDefects: false }),
+  ];
+  const c = computeMetrics(rows).criteria;
+  assert.equal(c.roast.n, 6);
+  assert.equal(c.roast.value, 3 / 6);
+  assert.equal(c.roast.pass, false);
+  assert.equal(c.roast.confusion.light.medium, 1);
+  assert.equal(c.defect.n, 8);
+  assert.equal(c.defect.value, 6 / 8);
+  assert.equal(c.defect.recall, 2 / 4);
+  assert.equal(c.defect.specificity, 1);
+  assert.equal(c.defect.pass, true);
+  assert.equal(c.expertDiff.value, null); // لا خبير: غير مقاس وليس نجاحاً
+  assert.equal(computeMetrics(rows).overallPass, false);
+});
+
+test('بلا وسوم: المعياران غير مقاسين ولا يمنعان الحكم', () => {
+  const c = computeMetrics([row(50, 50, 50)]).criteria;
+  assert.equal(c.roast.pass, null);
+  assert.equal(c.defect.pass, null);
+});
+
+test('التفريق بفئة واضحة مفتوحة clearClass، والخبير يتقدم', () => {
+  const rows = [row(undefined, 30, 32, { clearClass: 'poor' }), row(undefined, 90, 91, { clearClass: 'excellent' })];
+  assert.equal(computeMetrics(rows).criteria.separation.pass, true);
+  const mixed = [row(undefined, 30, 32, { clearClass: 'excellent', expertClass: 'poor' }), row(undefined, 90, 91, { clearClass: 'poor', expertClass: 'excellent' })];
+  assert.equal(computeMetrics(mixed).criteria.separation.pass, true);
+});
+
+test('ثبات المشروب بلا خبير', () => {
+  const m = computeMetrics([row(undefined, 70, 73), row(undefined, 60, 75)]);
+  assert.equal(m.criteria.stability.value, 0.5);
+  assert.equal(m.criteria.expertDiff.pass, null);
+});
+
+test('CSV مفتوح: expert_score فارغ والوسوم', () => {
+  const rows = toExpertRows(parseCsv('image,type,expert_score,roast_label,defect_label,clear_class\na.png,bean,,dark,,\nb.png,bean,,,defect,\nc.jpg,coffee,,,,poor\n'));
+  assert.equal(rows[0].expert, undefined);
+  assert.equal(rows[0].roastLabel, 'dark');
+  assert.equal(rows[1].defectLabel, 'defect');
+  assert.equal(rows[2].clearClass, 'poor');
+  assert.throws(() => toExpertRows(parseCsv('image,type,expert_score,roast_label\na.png,bean,,green\n')));
+  assert.throws(() => toExpertRows(parseCsv('image,type,expert_score\na.png,bean,150\n')));
+});
+
+test('مخرجات roast_level/has_defects اختيارية لكن تُتحقق', () => {
+  assert.ok(validateResult({ status: 'ok', score: 50, notes: ['a', 'b', 'c'], roast_level: 'dark', has_defects: false }));
+  assert.throws(() => validateResult({ status: 'ok', score: 50, notes: ['a', 'b', 'c'], roast_level: 'burnt' }));
+  assert.throws(() => validateResult({ status: 'ok', score: 50, notes: ['a', 'b', 'c'], has_defects: 'no' }));
+});
