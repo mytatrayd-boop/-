@@ -19,9 +19,10 @@ class _ShareScanButtonState extends ConsumerState<ShareScanButton> {
   bool _busy = false;
 
   Future<void> _share() async {
+    final origin = originFromContext(context); // قبل استبدال الزر بالمؤشر
     setState(() => _busy = true);
     try {
-      await shareScan(context, ref, widget.scan);
+      await shareScan(context, ref, widget.scan, origin: origin);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

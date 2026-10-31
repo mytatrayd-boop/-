@@ -6,6 +6,8 @@ import 'package:bunn_lens/domain/scan.dart';
 import 'package:bunn_lens/features/share/fit_text.dart';
 import 'package:bunn_lens/features/share/share_card_data.dart';
 import 'package:bunn_lens/features/share/share_card_renderer.dart';
+import 'package:bunn_lens/features/share/share_flow.dart';
+import 'package:bunn_lens/features/share/signed_logo.dart';
 import 'package:bunn_lens/l10n/gen/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -149,6 +151,53 @@ void main() {
             locale: const Locale('en'),
             saveAs: 'en'),
         expected);
+  });
+
+  testWidgets('معاينة التوقيع: أسماء قصيرة وطويلة ولاتينية', (tester) async {
+    expect(await _render(tester, scan: _scan(cafe: _cafe('مقهى الورد')), userName: 'أحمد', saveAs: 'sig_ahmad'), expected);
+    expect(
+        await _render(tester,
+            scan: _scan(cafe: _cafe('مقهى الورد')), userName: 'عبدالرحمن بن محمد العتيبي', saveAs: 'sig_long'),
+        expected);
+    expect(
+        await _render(tester,
+            scan: _scan(cafe: _cafe('Rose Cafe'), roaster: 'Acme'),
+            userName: 'Sara',
+            locale: const Locale('en'),
+            saveAs: 'sig_sara'),
+        expected);
+  });
+
+  test('ذيل التوقيع: يقصر للأسماء الطويلة ويختفي إن لم يبقَ مكان خارج الحروف', () {
+    expect(SignedLogo.tailLength(100), SignedLogo.tailMaxLength);
+    final mid = SignedLogo.tailLength(230);
+    expect(mid, greaterThan(0));
+    expect(mid, lessThan(SignedLogo.tailMaxLength));
+    expect(SignedLogo.tailLength(SignedLogo.width), 0);
+    expect(SignedLogo.tailLength(1000), 0);
+  });
+
+  test('sharePositionOrigin يصل إلى ShareParams (iPad)', () {
+    const origin = Rect.fromLTWH(300, 40, 48, 48);
+    expect(buildShareParams('t', '/a.png', origin).sharePositionOrigin, origin);
+    expect(buildShareParams('t', '/a.png', null).sharePositionOrigin, isNull);
+  });
+
+  testWidgets('originFromContext: مستطيل الزر على الشاشة', (tester) async {
+    late BuildContext ctx;
+    await tester.pumpWidget(MaterialApp(
+      home: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 30, top: 50),
+          child: SizedBox(width: 48, height: 48, child: Builder(builder: (c) {
+            ctx = c;
+            return const SizedBox();
+          })),
+        ),
+      ),
+    ));
+    expect(originFromContext(ctx), const Rect.fromLTWH(30, 50, 48, 48));
   });
 
   test('fitFontSize: يصغر حتى الحد الأدنى ولا ينزل عنه', () {

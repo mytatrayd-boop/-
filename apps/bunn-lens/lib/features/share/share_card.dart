@@ -149,17 +149,17 @@ class ShareCard extends StatelessWidget {
                 // 7. التذييل: اسم التطبيق جهة البداية، واللوقو الموقَّع جهة النهاية
                 PositionedDirectional(
                   start: margin,
-                  top: 1112,
+                  top: 1104,
                   height: SignedLogo.height,
-                  width: 560,
+                  width: 560 - 40,
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: Text(data.appName, style: _t(28, FontWeight.w600, c.inkSecondary)),
+                    child: Text(data.appName, style: _t(36, FontWeight.w600, c.inkSecondary)),
                   ),
                 ),
                 PositionedDirectional(
                   end: margin,
-                  top: 1112,
+                  top: 1104,
                   width: SignedLogo.width,
                   height: SignedLogo.height,
                   child: SignedLogo(logo: data.logo, name: data.userName),
