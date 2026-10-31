@@ -46,3 +46,9 @@
 - **الفحص الفعلي:** `flutter analyze` بلا مشاكل. `flutter test`: 93/93 ناجحة (9 اختبارات مسار الفحص، 8 للخدمة). الوسيط: `npm test` 20/20.
 - **لم يُنفَّذ/لم يُجرَّب:** أي فحص حقيقي من التطبيق إلى الوسيط (يحتاج نشر الوسيط على Cloudflare، ومشروع Firebase لتوكنات الهوية وApp Check — البند 9)، التشغيل على جهاز/محاكي (الكاميرا الحقيقية وأذوناتها في Android/iOS: نصا إذن الكاميرا والصور أُضيفا في Info.plist بالعربية دون اختبار على جهاز)، شارة «متبقٍ لك N فحص»، حقلا المحمصة والسعر في النتيجة، إطار كاميرا إرشادي مخصص (استُخدم منتقي النظام).
 - **بوابة الجدوى:** غير مجتازة بمعيارها الأصلي (انظر DECISIONS). المضي بقرار المالك بعرض الفئات.
+
+## نشر الوسيط (2026-10-31)
+- **منشور:** `https://bunn-lens-worker.asraty200.workers.dev` على Cloudflare (الخطة المجانية، Durable Objects SQLite بلا بطاقة). فُحص فعلياً: مسار مجهول 404، `/analyze` بلا توكن 401، نوع خاطئ 400.
+- **لم يُجرَّب:** فحص كامل ناجح (يحتاج: سر `GEMINI_API_KEY` في الوسيط، وإعدادات Firebase `FIREBASE_PROJECT_ID/NUMBER` في `wrangler.toml` ثم إعادة النشر، وتوكنات حقيقية من التطبيق).
+- **المتبقي عند المالك:** (1) سر Gemini من لوحة Cloudflare: Worker ← Settings ← Variables and Secrets ← Add باسم `GEMINI_API_KEY` ونوع Secret. (2) مشروع Firebase (Spark).
+- النشر: `cd worker && CLOUDFLARE_API_TOKEN=dummy NODE_USE_ENV_PROXY=1 npx wrangler deploy` (الرمز الحقيقي يحقنه وكيل الجلسة).
