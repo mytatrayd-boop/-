@@ -6,7 +6,7 @@ import '../../app/theme/app_colors.dart';
 import '../../domain/cafe.dart';
 import '../../domain/scan.dart';
 import '../../l10n/gen/app_localizations.dart';
-import 'share_text.dart';
+import '../../app/score_label.dart';
 
 /// كل ما تحتاجه البطاقة جاهزاً (نصوص مترجمة وصور مفكوكة) فلا تعتمد على Localizations أو ملفات.
 class ShareCardData {
@@ -16,7 +16,6 @@ class ShareCardData {
     required this.score,
     required this.scoreLabel,
     required this.scoreColor,
-    required this.outOfLabel,
     required this.typeLine,
     required this.notes,
     required this.disclaimer,
@@ -32,7 +31,6 @@ class ShareCardData {
   final int score;
   final String scoreLabel;
   final Color scoreColor;
-  final String outOfLabel;
   final String typeLine;
   final List<String> notes;
   final String disclaimer;
@@ -65,7 +63,6 @@ class ShareCardData {
       score: s,
       scoreLabel: scoreLabelFor(l10n, s),
       scoreColor: s >= 70 ? colors.success : (s >= 50 ? colors.warning : colors.error),
-      outOfLabel: l10n.shareScoreOutOf,
       typeLine: roaster == null || roaster.isEmpty ? type : l10n.shareCardTypeLine(type, roaster),
       notes: scan.notes,
       disclaimer: l10n.scanDisclaimer,

@@ -6,7 +6,7 @@ compatibility_date = "2025-01-01"
 [vars]
 FIREBASE_PROJECT_ID = ""      # يُملأ من مشروع Firebase Spark
 FIREBASE_PROJECT_NUMBER = ""  # رقم المشروع (App Check)
-GEMINI_MODEL = "gemini-3.5-flash"
+GEMINI_MODEL = "gemini-3.1-flash-lite"
 DAILY_CAP = "300"
 REQUIRE_APP_CHECK = "true"
 

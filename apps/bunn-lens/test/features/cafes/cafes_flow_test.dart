@@ -192,7 +192,7 @@ void main() {
 
     expect(find.text('مقهى أ'), findsOneWidget);
     expect(find.textContaining('الفحوصات: 1'), findsOneWidget);
-    expect(find.textContaining('آخر درجة: 82/100'), findsOneWidget);
+    expect(find.textContaining('آخر تقدير: جيد'), findsOneWidget);
     expect(find.textContaining('بلا موقع'), findsWidgets);
 
     await tester.tap(find.text('مقهى أ'));

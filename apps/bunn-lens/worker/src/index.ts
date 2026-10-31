@@ -2,6 +2,7 @@ import { verifyAppCheck, verifyIdToken, type Verified } from './auth';
 import { analyze, GeminiBusy } from './gemini';
 import { PROMPT_VERSION, type ScanType } from './prompts';
 import { IP_PER_HOUR } from './quota';
+import { tierOf } from './prompts';
 import { dayOf } from './quota';
 
 export { UserQuota, Limiter } from './quota';
@@ -100,7 +101,7 @@ export async function handle(req: Request, env: Env, deps: Deps): Promise<Respon
     remaining = c.remaining;
     await call(env.LIMITER, 'global', { op: 'hit', limit: Number(env.DAILY_CAP) || 300, windowKey: day, now });
   }
-  return json({ status: result.status, score: result.score, notes: result.notes, promptVersion: PROMPT_VERSION, quota: { remaining } });
+  return json({ status: result.status, score: result.score, tier: result.status === 'ok' ? tierOf(result.score) : null, notes: result.notes, promptVersion: PROMPT_VERSION, quota: { remaining } });
 }
 
 export default {

@@ -224,17 +224,11 @@ abstract class AppLocalizations {
   /// **'جارٍ تحميل السجل'**
   String get historyLoading;
 
-  /// No description provided for @scoreOutOf.
-  ///
-  /// In ar, this message translates to:
-  /// **'{score}/100'**
-  String scoreOutOf(int score);
-
   /// No description provided for @scanCardLabel.
   ///
   /// In ar, this message translates to:
-  /// **'فحص {type}، الدرجة {score} من 100'**
-  String scanCardLabel(String type, int score);
+  /// **'فحص {type}، التقدير {tier}'**
+  String scanCardLabel(String type, String tier);
 
   /// No description provided for @scanMenu.
   ///
@@ -527,8 +521,8 @@ abstract class AppLocalizations {
   /// No description provided for @cafeLastScore.
   ///
   /// In ar, this message translates to:
-  /// **'آخر درجة: {score}/100'**
-  String cafeLastScore(int score);
+  /// **'آخر تقدير: {tier}'**
+  String cafeLastScore(String tier);
 
   /// No description provided for @cafeNoLocation.
   ///
@@ -668,12 +662,6 @@ abstract class AppLocalizations {
   /// **'اكتب اسمك ليوقّع صور المشاركة'**
   String get settingsUserNameEmpty;
 
-  /// No description provided for @shareScoreOutOf.
-  ///
-  /// In ar, this message translates to:
-  /// **'من 100'**
-  String get shareScoreOutOf;
-
   /// No description provided for @scoreLabelExcellent.
   ///
   /// In ar, this message translates to:
@@ -707,8 +695,8 @@ abstract class AppLocalizations {
   /// No description provided for @shareTextRated.
   ///
   /// In ar, this message translates to:
-  /// **'قيّمت {subject} بعدسة البن: {score}/100 (تقديري)'**
-  String shareTextRated(String subject, int score);
+  /// **'قيّمت {subject} بعدسة البن: {tier} (تقديري)'**
+  String shareTextRated(String subject, String tier);
 
   /// No description provided for @shareTextCafe.
   ///

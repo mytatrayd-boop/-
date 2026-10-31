@@ -113,7 +113,7 @@ void main() {
 
     expect(calls, hasLength(1));
     final (png, text) = calls.single;
-    expect(text, contains('82/100 (تقديري)'));
+    expect(text, contains('جيد (تقديري)'));
     expect(text, contains('مقهى الورد'));
     expect(text, contains('https://www.google.com/maps/search/?api=1&query=24.7,46.6'));
     final size = await tester.runAsync(() async {

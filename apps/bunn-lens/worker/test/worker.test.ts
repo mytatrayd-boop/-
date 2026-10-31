@@ -131,7 +131,7 @@ describe('handler', () => {
     const { post } = setup();
     const r = await post('u1');
     expect(r.status).toBe(200);
-    expect(await r.json()).toMatchObject({ status: 'ok', score: 80, promptVersion: 'v1', quota: { remaining: 4 } });
+    expect(await r.json()).toMatchObject({ status: 'ok', score: 80, promptVersion: 'v2', tier: 'good', quota: { remaining: 4 } });
   });
   it('بلا توكن أو App Check أو توكن سيئ → 401', async () => {
     const { post } = setup();

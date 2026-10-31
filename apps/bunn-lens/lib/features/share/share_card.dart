@@ -30,7 +30,6 @@ class ShareCard extends StatelessWidget {
     final imageH = hasCafe ? 560.0 : 584.0;
     final imageBottom = margin + imageH;
     final circleTop = imageBottom - 100;
-    final labelTop = circleTop + 208;
     const notesTop = 820.0;
     final typeTop = hasCafe ? 650.0 : imageBottom + (notesTop - imageBottom - 56) / 2;
     const textStart = 300.0; // كتلة النص: x 64–780 في RTL (طولها 716) وتنعكس في LTR
@@ -74,21 +73,16 @@ class ShareCard extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('${data.score}',
-                            style: _t(96, FontWeight.w700, Colors.white).copyWith(height: 1.0)),
-                        Text(data.outOfLabel, style: _t(28, FontWeight.w400, Colors.white)),
+                        Padding(
+                          padding: const EdgeInsetsDirectional.symmetric(horizontal: 12),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(data.scoreLabel,
+                                maxLines: 1, style: _t(64, FontWeight.w700, Colors.white).copyWith(height: 1.1)),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ),
-                PositionedDirectional(
-                  start: margin,
-                  top: labelTop,
-                  width: 200,
-                  height: 40,
-                  child: Center(
-                    child: Text(data.scoreLabel,
-                        maxLines: 1, style: _t(32, FontWeight.w600, data.scoreColor)),
                   ),
                 ),
                 // 3. المحمصة/النوع

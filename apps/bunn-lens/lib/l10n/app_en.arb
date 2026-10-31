@@ -21,22 +21,14 @@
   "historyErrorTitle": "Couldn't load history",
   "retry": "Try again",
   "historyLoading": "Loading history",
-  "scoreOutOf": "{score}/100",
-  "@scoreOutOf": {
-    "placeholders": {
-      "score": {
-        "type": "int"
-      }
-    }
-  },
-  "scanCardLabel": "{type} scan, score {score} out of 100",
+  "scanCardLabel": "{type} scan, rating {tier}",
   "@scanCardLabel": {
     "placeholders": {
       "type": {
         "type": "String"
       },
-      "score": {
-        "type": "int"
+      "tier": {
+        "type": "String"
       }
     }
   },
@@ -95,11 +87,11 @@
       }
     }
   },
-  "cafeLastScore": "Last score: {score}/100",
+  "cafeLastScore": "Last rating: {tier}",
   "@cafeLastScore": {
     "placeholders": {
-      "score": {
-        "type": "int"
+      "tier": {
+        "type": "String"
       }
     }
   },
@@ -126,7 +118,6 @@
   "shareNameSave": "Save",
   "settingsUserNameTitle": "Signature name",
   "settingsUserNameEmpty": "Write your name to sign shared images",
-  "shareScoreOutOf": "out of 100",
   "scoreLabelExcellent": "Excellent",
   "scoreLabelGood": "Good",
   "scoreLabelAverage": "Average",
@@ -142,14 +133,14 @@
       }
     }
   },
-  "shareTextRated": "I rated {subject} with Bunn Lens: {score}/100 (estimate)",
+  "shareTextRated": "I rated {subject} with Bunn Lens: {tier} (estimate)",
   "@shareTextRated": {
     "placeholders": {
       "subject": {
         "type": "String"
       },
-      "score": {
-        "type": "int"
+      "tier": {
+        "type": "String"
       }
     }
   },

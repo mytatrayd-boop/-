@@ -73,13 +73,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get historyLoading => 'Loading history';
 
   @override
-  String scoreOutOf(int score) {
-    return '$score/100';
-  }
-
-  @override
-  String scanCardLabel(String type, int score) {
-    return '$type scan, score $score out of 100';
+  String scanCardLabel(String type, String tier) {
+    return '$type scan, rating $tier';
   }
 
   @override
@@ -236,8 +231,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String cafeLastScore(int score) {
-    return 'Last score: $score/100';
+  String cafeLastScore(String tier) {
+    return 'Last rating: $tier';
   }
 
   @override
@@ -313,9 +308,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsUserNameEmpty => 'Write your name to sign shared images';
 
   @override
-  String get shareScoreOutOf => 'out of 100';
-
-  @override
   String get scoreLabelExcellent => 'Excellent';
 
   @override
@@ -333,8 +325,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String shareTextRated(String subject, int score) {
-    return 'I rated $subject with Bunn Lens: $score/100 (estimate)';
+  String shareTextRated(String subject, String tier) {
+    return 'I rated $subject with Bunn Lens: $tier (estimate)';
   }
 
   @override

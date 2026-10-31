@@ -82,7 +82,7 @@ void main() {
     await settleReal(tester);
     expect(loc(tester), startsWith('${AppRoutes.favorites}/'));
     expect(find.text('تفاصيل الفحص'), findsOneWidget);
-    expect(find.text('91/100'), findsOneWidget);
+    expect(find.text('ممتاز'), findsOneWidget);
     await unmountApp(tester);
   });
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../app/score_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -89,7 +90,7 @@ class _Body extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         Center(
-          child: Text(l10n.scoreOutOf(scan.score),
+          child: Text(scoreLabelFor(l10n, scan.score),
               style: theme.textTheme.displayLarge?.copyWith(color: theme.colorScheme.primary)),
         ),
         const SizedBox(height: 16),

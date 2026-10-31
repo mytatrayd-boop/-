@@ -52,15 +52,15 @@ void main() {
     await pumpApp(tester, repository: t.repo);
     await openHistory(tester);
 
-    expect(find.text('91/100'), findsOneWidget);
-    expect(find.text('70/100'), findsOneWidget);
+    expect(find.text('ممتاز'), findsOneWidget);
+    expect(find.text('جيد'), findsOneWidget);
     expect(tester.getTopLeft(find.text('الثانية')).dy,
         lessThan(tester.getTopLeft(find.text('الأولى')).dy));
 
     await tester.tap(find.widgetWithText(ChoiceChip, 'بن'));
     await tester.pumpAndSettle();
-    expect(find.text('70/100'), findsOneWidget);
-    expect(find.text('91/100'), findsNothing);
+    expect(find.text('جيد'), findsOneWidget);
+    expect(find.text('ممتاز'), findsNothing);
     await unmountApp(tester);
   });
 
@@ -80,7 +80,7 @@ void main() {
     await tester.tap(find.text('محمصة س'));
     await tester.pumpAndSettle();
     expect(find.text('تفاصيل الفحص'), findsOneWidget);
-    expect(find.text('82/100'), findsOneWidget);
+    expect(find.text('جيد'), findsOneWidget);
     for (final n in ['ملاحظة أولى', 'ملاحظة ثانية', 'ملاحظة ثالثة']) {
       expect(find.text(n), findsOneWidget);
     }
@@ -106,7 +106,7 @@ void main() {
     expect(find.text('حذف هذا الفحص؟'), findsOneWidget);
     await tester.tap(find.text('إلغاء'));
     await tester.pumpAndSettle();
-    expect(find.text('60/100'), findsOneWidget);
+    expect(find.text('متوسط'), findsOneWidget);
 
     await tester.tap(find.byType(PopupMenuButton<String>));
     await tester.pumpAndSettle();
@@ -120,7 +120,7 @@ void main() {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     }
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('60/100'), findsNothing);
+    expect(find.text('متوسط'), findsNothing);
     expect(find.text('تم حذف الفحص'), findsOneWidget);
     expect(find.text('لا فحوصات بعد'), findsOneWidget);
     expect(await tester.runAsync(() => t.repo.watchAll().first), isEmpty);

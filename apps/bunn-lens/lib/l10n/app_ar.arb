@@ -21,22 +21,14 @@
   "historyErrorTitle": "تعذّر تحميل السجل",
   "retry": "أعد المحاولة",
   "historyLoading": "جارٍ تحميل السجل",
-  "scoreOutOf": "{score}/100",
-  "@scoreOutOf": {
-    "placeholders": {
-      "score": {
-        "type": "int"
-      }
-    }
-  },
-  "scanCardLabel": "فحص {type}، الدرجة {score} من 100",
+  "scanCardLabel": "فحص {type}، التقدير {tier}",
   "@scanCardLabel": {
     "placeholders": {
       "type": {
         "type": "String"
       },
-      "score": {
-        "type": "int"
+      "tier": {
+        "type": "String"
       }
     }
   },
@@ -95,11 +87,11 @@
       }
     }
   },
-  "cafeLastScore": "آخر درجة: {score}/100",
+  "cafeLastScore": "آخر تقدير: {tier}",
   "@cafeLastScore": {
     "placeholders": {
-      "score": {
-        "type": "int"
+      "tier": {
+        "type": "String"
       }
     }
   },
@@ -126,7 +118,6 @@
   "shareNameSave": "حفظ",
   "settingsUserNameTitle": "اسم التوقيع",
   "settingsUserNameEmpty": "اكتب اسمك ليوقّع صور المشاركة",
-  "shareScoreOutOf": "من 100",
   "scoreLabelExcellent": "ممتاز",
   "scoreLabelGood": "جيد",
   "scoreLabelAverage": "متوسط",
@@ -142,14 +133,14 @@
       }
     }
   },
-  "shareTextRated": "قيّمت {subject} بعدسة البن: {score}/100 (تقديري)",
+  "shareTextRated": "قيّمت {subject} بعدسة البن: {tier} (تقديري)",
   "@shareTextRated": {
     "placeholders": {
       "subject": {
         "type": "String"
       },
-      "score": {
-        "type": "int"
+      "tier": {
+        "type": "String"
       }
     }
   },

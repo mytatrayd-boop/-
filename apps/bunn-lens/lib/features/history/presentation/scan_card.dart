@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../app/score_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_theme.dart';
@@ -32,7 +33,7 @@ class ScanCard extends ConsumerWidget {
       child: InkWell(
         onTap: onTap,
         child: Semantics(
-          label: l10n.scanCardLabel(type, scan.score),
+          label: l10n.scanCardLabel(type, scoreLabelFor(l10n, scan.score)),
           child: Padding(
             padding: const EdgeInsetsDirectional.all(12),
             child: Row(
@@ -76,7 +77,7 @@ class ScanCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(l10n.scoreOutOf(scan.score),
+                Text(scoreLabelFor(l10n, scan.score),
                     style: theme.textTheme.titleMedium
                         ?.copyWith(color: theme.colorScheme.primary)),
                 IconButton(

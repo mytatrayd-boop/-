@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../app/score_label.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_theme.dart';
@@ -68,7 +69,7 @@ class _CafeTile extends ConsumerWidget {
     final cafe = summary.cafe;
     final sub = [
       l10n.cafeScanCount(summary.scanCount),
-      if (summary.lastScore != null) l10n.cafeLastScore(summary.lastScore!),
+      if (summary.lastScore != null) l10n.cafeLastScore(scoreLabelFor(l10n, summary.lastScore!)),
       if (!cafe.hasLocation) l10n.cafeNoLocation,
     ].join(' • ');
     return Card(

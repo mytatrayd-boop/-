@@ -73,13 +73,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get historyLoading => 'جارٍ تحميل السجل';
 
   @override
-  String scoreOutOf(int score) {
-    return '$score/100';
-  }
-
-  @override
-  String scanCardLabel(String type, int score) {
-    return 'فحص $type، الدرجة $score من 100';
+  String scanCardLabel(String type, String tier) {
+    return 'فحص $type، التقدير $tier';
   }
 
   @override
@@ -236,8 +231,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String cafeLastScore(int score) {
-    return 'آخر درجة: $score/100';
+  String cafeLastScore(String tier) {
+    return 'آخر تقدير: $tier';
   }
 
   @override
@@ -312,9 +307,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsUserNameEmpty => 'اكتب اسمك ليوقّع صور المشاركة';
 
   @override
-  String get shareScoreOutOf => 'من 100';
-
-  @override
   String get scoreLabelExcellent => 'ممتاز';
 
   @override
@@ -332,8 +324,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String shareTextRated(String subject, int score) {
-    return 'قيّمت $subject بعدسة البن: $score/100 (تقديري)';
+  String shareTextRated(String subject, String tier) {
+    return 'قيّمت $subject بعدسة البن: $tier (تقديري)';
   }
 
   @override
