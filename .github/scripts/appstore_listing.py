@@ -20,7 +20,9 @@ come only from the optional env ASC_REVIEW_FIRST_NAME, ASC_REVIEW_LAST_NAME,
 ASC_REVIEW_EMAIL, ASC_REVIEW_PHONE (GitHub Secrets), never from the repo.
 --dry-run reads App Store Connect and prints what would change; --check sends nothing.
 
-  appstore_listing.py <bundle_id> <store_dir> [--dry-run | --check] [--build N] [--submit]
+  appstore_listing.py <bundle_id> <store_dir> [--dry-run | --check | --status] [--build N] [--submit]
+
+--status only reads: prints each iOS version's state and the latest App Review submissions.
 
 Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID (as ios_signing.py).
 """
@@ -145,7 +147,7 @@ def main():
         del argv[i:i + 2]
     args = [a for a in argv if not a.startswith("--")]
     flags = {a for a in argv if a.startswith("--")}
-    if len(args) != 2 or flags - {"--dry-run", "--check", "--submit"}:
+    if len(args) != 2 or flags - {"--dry-run", "--check", "--submit", "--status"}:
         sys.exit(__doc__)
     bundle_id, store_dir = args[0], pathlib.Path(args[1])
     locales, notes, age, shots, extra = read_store(store_dir)
@@ -163,6 +165,15 @@ def main():
         sys.exit(f"::error::No app with bundle id {bundle_id} in App Store Connect")
     app = apps[0]["id"]
     versions = s.get(f"/apps/{app}/appStoreVersions?filter[platform]=IOS&limit=20")["data"]
+    if "--status" in flags:
+        for v in versions:
+            a = v["attributes"]
+            print(f"Version {a.get('versionString')}: {a.get('appStoreState')} (release {a.get('releaseType')}, created {a.get('createdDate')})")
+        subs = s.get(f"/apps/{app}/reviewSubmissions?filter[platform]=IOS&limit=10")["data"]
+        for r in subs:
+            a = r["attributes"]
+            print(f"Review submission {r['id']}: {a.get('state')} (submitted {a.get('submittedDate')})")
+        return
     editable = [v for v in versions if v["attributes"].get("appStoreState") in EDITABLE]
     if not editable:
         # Create the next version from pubspec. MANUAL release: approval never publishes by itself.

@@ -18,10 +18,10 @@ on:
         default: both
         options: [both, google, apple]
       mode:
-        description: "dry-run يتحقق فقط، apply يحدّث الصفحة"
+        description: "dry-run يتحقق فقط، apply يحدّث الصفحة، status يقرأ حالة مراجعة آيفون فقط"
         type: choice
         default: dry-run
-        options: [dry-run, apply]
+        options: [dry-run, apply, status]
       build:
         description: "آيفون: رقم build يُربط بالنسخة القابلة للتعديل (اختياري)"
         required: false
@@ -58,7 +58,7 @@ jobs:
 
   google:
     needs: resolve
-    if: inputs.store != 'apple'
+    if: inputs.store != 'apple' && inputs.mode != 'status'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,6 +97,6 @@ jobs:
           SUBMIT: ${{ inputs.submit_review && inputs.mode == 'apply' && '--submit' || '' }}
         run: |
           python3 .github/scripts/appstore_listing.py ${{ needs.resolve.outputs.ios }} ${{ needs.resolve.outputs.store_dir }} \
-            ${{ inputs.mode == 'dry-run' && '--dry-run' || '' }} ${BUILD:+--build "$BUILD"} $SUBMIT
+            ${{ inputs.mode == 'dry-run' && '--dry-run' || '' }} ${{ inputs.mode == 'status' && '--status' || '' }} ${BUILD:+--build "$BUILD"} $SUBMIT
       - if: always()
         run: rm -f "$RUNNER_TEMP/AuthKey.p8"
