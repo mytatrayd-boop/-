@@ -77,3 +77,6 @@ tools/feasibility/data/
 
 # الجذر يتجاهل data/ في كل مكان؛ نستثني مجلد كود التطبيق
 !/lib/data/
+
+# كود الميزات (مثل lib/features/cafes/data) يُلتزم
+!/lib/features/**/data/
