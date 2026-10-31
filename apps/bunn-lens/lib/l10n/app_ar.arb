@@ -55,5 +55,14 @@
   "scanPrice": "السعر",
   "scanDate": "التاريخ",
   "scanImageUnavailable": "الصورة غير متاحة",
-  "scanTypeField": "النوع"
+  "scanTypeField": "النوع",
+  "favoriteAdd": "إضافة إلى المفضلة",
+  "favoriteRemove": "إزالة من المفضلة",
+  "favoriteAdded": "أُضيف للمفضلة",
+  "favoriteRemoved": "أُزيل من المفضلة",
+  "undo": "تراجع",
+  "favoriteFailed": "تعذّر تحديث المفضلة",
+  "favoritesEmptyTitle": "لم تحفظ شيئاً بعد. اضغط النجمة في أي نتيجة",
+  "favoritesErrorTitle": "تعذّر تحميل المفضلة",
+  "favoritesLoading": "جارٍ تحميل المفضلة"
 }

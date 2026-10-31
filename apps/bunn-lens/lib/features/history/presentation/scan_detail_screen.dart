@@ -9,11 +9,15 @@ import '../history_providers.dart';
 import 'delete_scan.dart';
 import 'scan_formatting.dart';
 import 'scan_image.dart';
+import 'toggle_favorite.dart';
 
 class ScanDetailScreen extends ConsumerWidget {
-  const ScanDetailScreen({super.key, required this.id});
+  const ScanDetailScreen({super.key, required this.id, this.fallbackRoute = AppRoutes.history});
 
   final int id;
+
+  /// وجهة الرجوع إن لم يوجد ما يُسحب من المكدس.
+  final String fallbackRoute;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,16 +27,22 @@ class ScanDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.scanDetailTitle),
         leading: BackButton(
-          onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.history),
+          onPressed: () => context.canPop() ? context.pop() : context.go(fallbackRoute),
         ),
         actions: [
+          if (scan.value != null)
+            IconButton(
+              tooltip: scan.value!.isFavorite ? l10n.favoriteRemove : l10n.favoriteAdd,
+              icon: Icon(scan.value!.isFavorite ? Icons.star : Icons.star_border),
+              onPressed: () => toggleFavorite(context, ref, id, scan.value!.isFavorite),
+            ),
           if (scan.value != null)
             IconButton(
               tooltip: l10n.scanDelete,
               icon: const Icon(Icons.delete_outline),
               onPressed: () async {
                 final deleted = await confirmAndDeleteScan(context, ref, id);
-                if (deleted && context.mounted) context.go(AppRoutes.history);
+                if (deleted && context.mounted) context.go(fallbackRoute);
               },
             ),
         ],

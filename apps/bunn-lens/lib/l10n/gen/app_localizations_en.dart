@@ -129,4 +129,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanTypeField => 'Type';
+
+  @override
+  String get favoriteAdd => 'Add to favorites';
+
+  @override
+  String get favoriteRemove => 'Remove from favorites';
+
+  @override
+  String get favoriteAdded => 'Added to favorites';
+
+  @override
+  String get favoriteRemoved => 'Removed from favorites';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get favoriteFailed => 'Couldn\'t update favorites';
+
+  @override
+  String get favoritesEmptyTitle =>
+      'You haven\'t saved anything yet. Tap the star on any result';
+
+  @override
+  String get favoritesErrorTitle => 'Couldn\'t load favorites';
+
+  @override
+  String get favoritesLoading => 'Loading favorites';
 }

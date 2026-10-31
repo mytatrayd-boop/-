@@ -55,5 +55,14 @@
   "scanPrice": "Price",
   "scanDate": "Date",
   "scanImageUnavailable": "Image unavailable",
-  "scanTypeField": "Type"
+  "scanTypeField": "Type",
+  "favoriteAdd": "Add to favorites",
+  "favoriteRemove": "Remove from favorites",
+  "favoriteAdded": "Added to favorites",
+  "favoriteRemoved": "Removed from favorites",
+  "undo": "Undo",
+  "favoriteFailed": "Couldn't update favorites",
+  "favoritesEmptyTitle": "You haven't saved anything yet. Tap the star on any result",
+  "favoritesErrorTitle": "Couldn't load favorites",
+  "favoritesLoading": "Loading favorites"
 }

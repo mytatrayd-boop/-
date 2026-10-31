@@ -331,6 +331,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'النوع'**
   String get scanTypeField;
+
+  /// No description provided for @favoriteAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة إلى المفضلة'**
+  String get favoriteAdd;
+
+  /// No description provided for @favoriteRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة من المفضلة'**
+  String get favoriteRemove;
+
+  /// No description provided for @favoriteAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف للمفضلة'**
+  String get favoriteAdded;
+
+  /// No description provided for @favoriteRemoved.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُزيل من المفضلة'**
+  String get favoriteRemoved;
+
+  /// No description provided for @undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get undo;
+
+  /// No description provided for @favoriteFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحديث المفضلة'**
+  String get favoriteFailed;
+
+  /// No description provided for @favoritesEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحفظ شيئاً بعد. اضغط النجمة في أي نتيجة'**
+  String get favoritesEmptyTitle;
+
+  /// No description provided for @favoritesErrorTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل المفضلة'**
+  String get favoritesErrorTitle;
+
+  /// No description provided for @favoritesLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحميل المفضلة'**
+  String get favoritesLoading;
 }
 
 class _AppLocalizationsDelegate

@@ -206,7 +206,7 @@ class _ControlledRepo implements ScanRepository {
   }
 
   @override
-  Stream<List<Scan>> watchAll({ScanType? type}) {
+  Stream<List<Scan>> watchAll({ScanType? type, bool favoritesOnly = false}) {
     if (nextEmpty) return Stream.value(const []);
     return controller.stream;
   }
@@ -219,4 +219,6 @@ class _ControlledRepo implements ScanRepository {
   Stream<Scan?> watchById(int id) => Stream.value(null);
   @override
   Future<bool> delete(int id) async => false;
+  @override
+  Future<bool> setFavorite(int id, bool value) async => false;
 }

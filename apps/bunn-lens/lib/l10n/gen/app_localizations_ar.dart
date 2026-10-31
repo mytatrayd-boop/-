@@ -129,4 +129,32 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get scanTypeField => 'النوع';
+
+  @override
+  String get favoriteAdd => 'إضافة إلى المفضلة';
+
+  @override
+  String get favoriteRemove => 'إزالة من المفضلة';
+
+  @override
+  String get favoriteAdded => 'أُضيف للمفضلة';
+
+  @override
+  String get favoriteRemoved => 'أُزيل من المفضلة';
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String get favoriteFailed => 'تعذّر تحديث المفضلة';
+
+  @override
+  String get favoritesEmptyTitle =>
+      'لم تحفظ شيئاً بعد. اضغط النجمة في أي نتيجة';
+
+  @override
+  String get favoritesErrorTitle => 'تعذّر تحميل المفضلة';
+
+  @override
+  String get favoritesLoading => 'جارٍ تحميل المفضلة';
 }

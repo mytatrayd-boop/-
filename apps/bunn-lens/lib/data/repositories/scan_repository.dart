@@ -13,7 +13,10 @@ abstract class ScanRepository {
   Future<Scan> save(NewScan scan);
 
   /// الفحوصات من الأحدث؛ [type] لتصفية بن/قهوة. تُصدر عند كل تغيير.
-  Stream<List<Scan>> watchAll({ScanType? type});
+  Stream<List<Scan>> watchAll({ScanType? type, bool favoritesOnly = false});
+
+  /// يضبط حالة المفضلة. يعيد false إن لم يوجد الفحص.
+  Future<bool> setFavorite(int id, bool value);
 
   Future<Scan?> getById(int id);
 
@@ -64,14 +67,22 @@ class DriftScanRepository implements ScanRepository {
   }
 
   @override
-  Stream<List<Scan>> watchAll({ScanType? type}) {
+  Stream<List<Scan>> watchAll({ScanType? type, bool favoritesOnly = false}) {
     final q = _db.select(_db.scans)
       ..orderBy([
         (t) => OrderingTerm.desc(t.createdAt),
         (t) => OrderingTerm.desc(t.id),
       ]);
     if (type != null) q.where((t) => t.type.equals(type.name));
+    if (favoritesOnly) q.where((t) => t.isFavorite.equals(true));
     return q.watch().map((rows) => rows.map(_toScan).toList());
+  }
+
+  @override
+  Future<bool> setFavorite(int id, bool value) async {
+    final n = await (_db.update(_db.scans)..where((t) => t.id.equals(id)))
+        .write(ScansCompanion(isFavorite: Value(value)));
+    return n > 0;
   }
 
   @override

@@ -38,7 +38,19 @@ GoRouter buildRouter({String initialLocation = AppRoutes.scan}) => GoRouter(
               ),
             ]),
             StatefulShellBranch(routes: [
-              GoRoute(path: AppRoutes.favorites, builder: (_, _) => const FavoritesScreen()),
+              GoRoute(
+                path: AppRoutes.favorites,
+                builder: (_, _) => const FavoritesScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => ScanDetailScreen(
+                      id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                      fallbackRoute: AppRoutes.favorites,
+                    ),
+                  ),
+                ],
+              ),
             ]),
             StatefulShellBranch(routes: [
               GoRoute(path: AppRoutes.settings, builder: (_, _) => const SettingsScreen()),

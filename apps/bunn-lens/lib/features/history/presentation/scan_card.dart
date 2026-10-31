@@ -7,6 +7,7 @@ import '../../../l10n/gen/app_localizations.dart';
 import 'delete_scan.dart';
 import 'scan_formatting.dart';
 import 'scan_image.dart';
+import 'toggle_favorite.dart';
 
 class ScanCard extends ConsumerWidget {
   const ScanCard({super.key, required this.scan, required this.onTap});
@@ -60,6 +61,12 @@ class ScanCard extends ConsumerWidget {
                 Text(l10n.scoreOutOf(scan.score),
                     style: theme.textTheme.titleMedium
                         ?.copyWith(color: theme.colorScheme.primary)),
+                IconButton(
+                  tooltip: scan.isFavorite ? l10n.favoriteRemove : l10n.favoriteAdd,
+                  icon: Icon(scan.isFavorite ? Icons.star : Icons.star_border,
+                      color: scan.isFavorite ? theme.colorScheme.primary : null),
+                  onPressed: () => toggleFavorite(context, ref, scan.id, scan.isFavorite),
+                ),
                 PopupMenuButton<String>(
                   tooltip: l10n.scanMenu,
                   onSelected: (_) => confirmAndDeleteScan(context, ref, scan.id),
