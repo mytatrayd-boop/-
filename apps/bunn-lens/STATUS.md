@@ -54,3 +54,9 @@
 - النشر: `cd worker && CLOUDFLARE_API_TOKEN=dummy NODE_USE_ENV_PROXY=1 npx wrangler deploy` (الرمز الحقيقي يحقنه وكيل الجلسة).
 
 - **Firebase:** المشروع `bunn-lens` (Spark)، رقمه 740863755565، مضبوطان في `worker/wrangler.toml` والوسيط أُعيد نشره. لم تُسجَّل تطبيقات Android/iOS بعد ولم يُربط Firebase في Flutter.
+
+## الميزة 9 (جزء): الهوية الضيفة وربط التطبيق بالوسيط
+- **منجز:** `firebase_core/auth/app_check`، خيارات Firebase من `--dart-define` (`lib/core/firebase_config.dart`) بلا `google-services.json`، `FirebaseAuthTokens` (دخول مجهول تلقائي + ID token + App Check اختياري)، تهيئة في `main.dart` (بدون القيم يعمل التطبيق بلا هوية ويفشل الفحص بـ«تعذّر التحقق»). App Check: Debug في التطوير، Play Integrity/App Attest في الإصدار.
+- **الفحص الفعلي:** `flutter analyze` بلا مشاكل، `flutter test` 96/96.
+- **لم يُنفَّذ/لم يُجرَّب:** بناء Android/iOS (لا SDK هنا)، دخول مجهول حقيقي، أول فحص كامل. المتبقي: `FIREBASE_API_KEY_ANDROID` (من المالك)، سر `GEMINI_API_KEY` في Cloudflare، تسجيل توكن App Check التجريبي أو ضبط `REQUIRE_APP_CHECK=false` للتجربة، شاشات تسجيل الدخول بـGoogle/ربط الضيف/حذف الحساب.
+- معرّفات عامة: Android App ID `1:740863755565:android:32798fff3fe9ae6dcd7fa4`، الحزمة `com.bunnlens.bunn_lens`، المرسل `740863755565`.

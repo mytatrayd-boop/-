@@ -9,9 +9,11 @@ import '../../domain/scan.dart';
 
 /// توكنات كل طلب: Firebase ID token وApp Check token. تُنفَّذ مع المصادقة (ترتيب البناء 9).
 class AuthHeaders {
-  const AuthHeaders({required this.idToken, required this.appCheck});
+  const AuthHeaders({required this.idToken, this.appCheck});
   final String idToken;
-  final String appCheck;
+
+  /// قد يغيب في بناءات التطوير؛ الوسيط يقرر (REQUIRE_APP_CHECK) هل يقبل بدونه.
+  final String? appCheck;
 }
 
 abstract class AuthTokens {
@@ -54,7 +56,7 @@ class HttpAnalysisService implements AnalysisService {
             Uri.parse('$baseUrl/analyze?type=${type.name}'),
             headers: {
               'authorization': 'Bearer ${auth.idToken}',
-              'x-firebase-appcheck': auth.appCheck,
+              if (auth.appCheck != null) 'x-firebase-appcheck': auth.appCheck!,
               'content-type': 'image/jpeg',
             },
             body: jpeg,
