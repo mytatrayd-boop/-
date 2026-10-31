@@ -23,6 +23,7 @@ class LamhaSettings {
     this.lockNotification = false,
     this.fontScale = FontScale.fallback,
     this.digits = DigitStyle.fallback,
+    this.prayerCountdown = false,
   });
 
   factory LamhaSettings.defaults(City city, Set<String> depositIds) =>
@@ -64,6 +65,8 @@ class LamhaSettings {
         fontScale: FontScale.byName(j['fontScale'] as String?),
         // الميزة ٦؛ الإعدادات القديمة بلاه = عربية.
         digits: DigitStyle.byName(j['digits'] as String?),
+        // ٣٠/١٠/٢٠٢٦؛ الإعدادات القديمة بلاه = مطفأ.
+        prayerCountdown: j['prayerCountdown'] as bool? ?? false,
       );
 
   static const prefsKey = 'settings';
@@ -93,6 +96,9 @@ class LamhaSettings {
   /// شكل الأرقام في الودجت والمعاينة وشاشة القبلة والإشعار.
   final DigitStyle digits;
 
+  /// العدّاد التنازلي للصلاة القادمة (مطفأ افتراضياً).
+  final bool prayerCountdown;
+
   /// [withBackground] = false في أندرويد، فيكون `background` في الجدول null.
   Settings toEngine({bool withBackground = true}) => Settings(
         latitude: latitude,
@@ -108,6 +114,7 @@ class LamhaSettings {
         lockNotification: lockNotification,
         fontScale: fontScale,
         digits: digits,
+        prayerCountdown: prayerCountdown,
       );
 
   LamhaSettings copyWith({
@@ -125,6 +132,7 @@ class LamhaSettings {
     bool? lockNotification,
     FontScale? fontScale,
     DigitStyle? digits,
+    bool? prayerCountdown,
   }) =>
       LamhaSettings(
         cityId: cityId ?? this.cityId,
@@ -141,6 +149,7 @@ class LamhaSettings {
         lockNotification: lockNotification ?? this.lockNotification,
         fontScale: fontScale ?? this.fontScale,
         digits: digits ?? this.digits,
+        prayerCountdown: prayerCountdown ?? this.prayerCountdown,
       );
 
   Map<String, Object?> toJson() => {
@@ -158,6 +167,7 @@ class LamhaSettings {
         'lockNotification': lockNotification,
         'fontScale': fontScale.name,
         'digits': digits.name,
+        'prayerCountdown': prayerCountdown,
       };
 
   String encode() => jsonEncode(toJson());

@@ -132,6 +132,8 @@ Map<String, Object?> buildSchedule(
     'fontScale': s.fontScale.factor,
     // شكل الأرقام (الميزة ٦): نصوص الجدول الجاهزة به، والودجت تبني به ما تحسبه (الحرارة).
     'digits': s.digits.name,
+    // العدّاد التنازلي للصلاة القادمة: اختياري ومطفأ افتراضياً (الودجت تخفيه إن لم يكن true).
+    'prayerCountdown': s.prayerCountdown,
     // آخر قراءة للمدينة نفسها فقط؛ عمرها يُفحص عند العرض (weatherMaxAge).
     'weather': weatherScheduleJson(
         weather != null && weather.isFor(s.latitude, s.longitude) ? weather : null),

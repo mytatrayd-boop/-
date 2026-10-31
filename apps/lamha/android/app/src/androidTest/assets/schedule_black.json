@@ -37,7 +37,8 @@
       "showTitle": true,
       "showSub": false,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "dayWeather",
@@ -47,7 +48,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "hijri",
@@ -57,7 +59,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "gregorian",
@@ -67,7 +70,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "qibla",
@@ -77,7 +81,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "prayerTimes",
@@ -87,7 +92,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "deposit",
@@ -97,7 +103,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "season",
@@ -107,7 +114,8 @@
       "showTitle": false,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "tradSeason",
@@ -117,7 +125,8 @@
       "showTitle": false,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "tradPoints",
@@ -127,7 +136,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "dates",
@@ -137,7 +147,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "weather",
@@ -147,7 +158,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     },
     {
       "id": "prayer",
@@ -157,7 +169,8 @@
       "showTitle": true,
       "showSub": true,
       "primaryColor": null,
-      "secondaryColor": null
+      "secondaryColor": null,
+      "iconScale": 1.0
     }
   ],
   "opacity": 80,
@@ -170,6 +183,7 @@
   "lockNotification": false,
   "fontScale": 1.0,
   "digits": "arabic",
+  "prayerCountdown": false,
   "weather": {
     "temp": 26.2,
     "code": 0,

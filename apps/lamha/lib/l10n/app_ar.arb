@@ -423,5 +423,19 @@
   "qiblaMapDistance": "تبعد عن الكعبة",
   "@qiblaMapDistance": {"description": "شاشة القبلة"},
   "qiblaMapOffline": "تحتاج الخريطة اتصالاً بالإنترنت",
-  "@qiblaMapOffline": {"description": "شاشة القبلة"}
+  "@qiblaMapOffline": {"description": "شاشة القبلة"},
+  "prayerCountdownLabel": "العدّاد التنازلي للصلاة القادمة",
+  "@prayerCountdownLabel": {"description": "إعدادات لمحة"},
+  "prayerCountdownHint": "يظهر تحت الساعة في الودجت. مطفأ افتراضياً.",
+  "@prayerCountdownHint": {"description": "إعدادات لمحة"},
+  "qiblaIconSizeLabel": "حجم أيقونة البوصلة",
+  "@qiblaIconSizeLabel": {"description": "إعدادات لمحة"},
+  "tilesManageTitle": "نوافذ الودجت",
+  "@tilesManageTitle": {"description": "إعدادات لمحة"},
+  "tilesManageHint": "فعّل النوافذ التي تريدها أو أوقفها، واسحب المقبض لتغيير الترتيب. النوافذ المتبقية تتمدد لتملأ الودجت.",
+  "@tilesManageHint": {"description": "إعدادات لمحة"},
+  "tilesLastOne": "يجب أن تبقى نافذة واحدة على الأقل",
+  "@tilesLastOne": {"description": "إعدادات لمحة"},
+  "tilesDragHandle": "اسحب لإعادة الترتيب",
+  "@tilesDragHandle": {"description": "إعدادات لمحة"}
 }

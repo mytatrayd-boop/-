@@ -116,6 +116,25 @@ void main() {
     expect(find.text('٥٠٪'), findsOneWidget);
   });
 
+  testWidgets('الشفافية: المعاينة فورية أثناء السحب، والحفظ للودجت (الجدول ومفتاحها المنفصل) عند الإفلات', (tester) async {
+    final bridge = await pumpApp(tester);
+    final slider = find.byKey(const Key('opacity-slider'));
+    final r = tester.getRect(slider);
+    final saves = bridge.saved.length;
+    final g = await tester.startGesture(r.center);
+    await g.moveTo(Offset(r.left + 2, r.center.dy));
+    await tester.pump();
+    // أثناء السحب: المعاينة تتبع الإصبع ولا حفظ بعد.
+    expect(bgAlpha(tester), closeTo(0, 0.02));
+    expect(bridge.saved.length, saves, reason: 'لا حفظ أثناء السحب');
+    await g.up();
+    await tester.pumpAndSettle();
+    expect(bridge.saved.length, saves + 1, reason: 'حفظ واحد عند الإفلات');
+    expect(bridge.last['opacity'], lessThan(5));
+    expect(bridge.lastOpacity, bridge.last['opacity'], reason: 'المفتاح المنفصل يطابق الجدول');
+    expect(bridge.updates, greaterThan(0));
+  });
+
   testWidgets('الحفظ يستدعي طبقة home_widget بعد كل تغيير', (tester) async {
     final bridge = await pumpApp(tester);
     // عند الفتح: حفظ وتحديث.
@@ -409,7 +428,9 @@ void main() {
       for (final t in legacyDefaultLayout)
         t.id == WidgetElement.season ? t.copyWith(primaryColor: () => TileColor.white) : t,
     ];
-    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'}).copyWith(layout: custom);
+    // العدّاد اختياري ومطفأ افتراضياً (٣٠/١٠/٢٠٢٦)، فيُفعَّل هنا ليظهر سطره.
+    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'})
+        .copyWith(layout: custom, prayerCountdown: true);
     final bridge = await pumpApp(tester, prefs: {LamhaSettings.prefsKey: s.encode()});
     expect(tile(WidgetElement.prayer), findsOneWidget);
     expect(tile(WidgetElement.prayerTimes), findsNothing);
@@ -423,6 +444,34 @@ void main() {
     ];
     if (subs.length == 2) expect(subs.first, asr['text']);
     expect(subs.last, matches(RegExp(r'^(باقي )?[٠-٩]+:[٠-٩]{2}:[٠-٩]{2}$')));
+  });
+
+  testWidgets('العدّاد التنازلي للصلاة القادمة مطفأ افتراضياً، ومفتاح الإعدادات يشغّله ويحفظه', (tester) async {
+    final city = parseCities(readAsset('assets/cities.json')).first;
+    final custom = [
+      for (final t in legacyDefaultLayout)
+        t.id == WidgetElement.season ? t.copyWith(primaryColor: () => TileColor.white) : t,
+    ];
+    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'}).copyWith(layout: custom);
+    final bridge = await pumpApp(tester, prefs: {LamhaSettings.prefsKey: s.encode()});
+    expect(bridge.last['prayerCountdown'], false);
+    Finder inTile(String key) => find.descendant(of: tile(WidgetElement.prayer), matching: find.byKey(Key(key)));
+    final timer = RegExp(r'[٠-٩]+:[٠-٩]{2}');
+    bool hasTimer() => [
+          for (var i = 0; i < 3; i++)
+            if (inTile('tile-sub-$i').evaluate().isNotEmpty) tester.widget<Text>(inTile('tile-sub-$i')).data!,
+        ].any((t) => t.startsWith('باقي') || (timer.hasMatch(t) && t.split(':').length == 3));
+    expect(hasTimer(), isFalse);
+
+    final sw = find.byKey(const Key('prayer-countdown'));
+    await tester.ensureVisible(sw);
+    expect(tester.widget<SwitchListTile>(sw).value, isFalse);
+    await tester.tap(sw);
+    await tester.pumpAndSettle();
+    expect(bridge.last['prayerCountdown'], true);
+    expect(hasTimer(), isTrue);
+    final prefs = await SharedPreferences.getInstance();
+    expect((jsonDecode(prefs.getString(LamhaSettings.prefsKey)!) as Map)['prayerCountdown'], true);
   });
 
   test('لام الجر', () {

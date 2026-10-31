@@ -306,24 +306,59 @@ class TileSettings extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        title(l.tileSpanLabel),
-        SegmentedButton<int>(
-          key: Key('span-${id.name}'),
-          showSelectedIcon: false,
-          segments: [
-            for (final e in spanNames.entries)
-              ButtonSegment(
-                value: e.key,
-                label: Text(
-                  l.tileSpanName(e.value),
-                  key: Key('span-${id.name}-${e.key}'),
+        if (id == WidgetElement.qibla) ...[
+          // أيقونة القبلة: شريط بدرجات دقيقة بدل صغير/وسط/عريض، والمعاينة فورية أثناء السحب،
+          // والحفظ للودجت عند الإفلات. عرض الخانة يتبع الحجم تلقائياً (qiblaSpanFor).
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l.qiblaIconSizeLabel,
+                    textAlign: TextAlign.right,
+                    style: label,
+                  ),
                 ),
-              ),
-          ],
-          selected: {tile.span},
-          onSelectionChanged: (v) =>
-              c.updateTile(id, (t) => t.copyWith(span: v.first)),
-        ),
+                Text(
+                  l.percent(formatDigits((tile.iconScale * 100).round())),
+                  key: const Key('qibla-icon-value'),
+                  textAlign: TextAlign.right,
+                  style: label,
+                ),
+              ],
+            ),
+          ),
+          Slider(
+            key: const Key('qibla-icon-size'),
+            min: tileIconMin,
+            max: tileIconMax,
+            divisions: ((tileIconMax - tileIconMin) / tileIconStep).round(),
+            value: tile.iconScale,
+            label: l.percent(formatDigits((tile.iconScale * 100).round())),
+            onChanged: (v) => c.setQiblaIconScale(v, commit: false),
+            onChangeEnd: (v) => c.setQiblaIconScale(v),
+          ),
+        ] else ...[
+          title(l.tileSpanLabel),
+          SegmentedButton<int>(
+            key: Key('span-${id.name}'),
+            showSelectedIcon: false,
+            segments: [
+              for (final e in spanNames.entries)
+                ButtonSegment(
+                  value: e.key,
+                  label: Text(
+                    l.tileSpanName(e.value),
+                    key: Key('span-${id.name}-${e.key}'),
+                  ),
+                ),
+            ],
+            selected: {tile.span},
+            onSelectionChanged: (v) =>
+                c.updateTile(id, (t) => t.copyWith(span: v.first)),
+          ),
+        ],
         Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Row(

@@ -163,12 +163,24 @@ class SettingsController extends AsyncNotifier<AppState> {
     );
   }
 
+  /// آخر حفظ للودجت؛ الحفظات تتسلسل فلا يتداخل حفظان ويبقى الأخير هو الأحدث.
+  Future<void> _queued = Future<void>.value();
+
+  /// يحفظ أحدث حالة للودجت بعد الحفظات السابقة.
+  Future<void> _publishLatest() => _queued = _queued.then((_) {
+        if (!ref.mounted || !state.hasValue) return null;
+        return _publish(state.requireValue);
+      });
+
+  /// حفظ الحالة الحالية الآن (عند إفلات شريط التمرير).
+  Future<void> commitNow() => _publishLatest();
+
   /// يحفظ الإعدادات، ثم الجدول للودجت، ثم يطلب تحديثها.
   Future<void> _publish(AppState s) async {
     await _prefs.setString(LamhaSettings.prefsKey, s.settings.encode());
     final bridge = ref.read(widgetBridgeProvider);
     try {
-      await bridge.saveSchedule(jsonEncode(s.schedule));
+      await bridge.saveSchedule(jsonEncode(s.schedule), opacity: s.settings.opacity);
       await bridge.requestUpdate();
     } catch (e) {
       // فشل الحفظ للودجت لا يوقف التطبيق.
@@ -180,14 +192,41 @@ class SettingsController extends AsyncNotifier<AppState> {
     final cur = state.requireValue;
     final next = _state(s, cur.cities, cur.data);
     state = AsyncData(next);
-    if (commit) await _publish(next);
+    if (commit) await _publishLatest();
+  }
+
+  /// تغيير لا يمسّ الأيام (الشفافية والتخطيط والعدّاد): يعدّل مفاتيحه في الجدول الجاهز فقط، فلا يُعاد
+  /// حساب ٣٠ يوماً (٢٣ مللي ثانية لكل نقلة شريط) وتبقى المعاينة فورية. النتيجة تطابق بناءً كاملاً
+  /// (يتحقق منه اختبار).
+  Future<void> _updateLight(LamhaSettings s, {bool commit = true}) async {
+    final cur = state.requireValue;
+    final layout = normalizeLayout(s.layout);
+    final fixed = s.copyWith(layout: layout);
+    state = AsyncData(AppState(
+      settings: fixed,
+      schedule: {
+        ...cur.schedule,
+        'opacity': fixed.opacity,
+        'prayerCountdown': fixed.prayerCountdown,
+        'layout': [for (final t in layout) t.toScheduleJson()],
+        'visible': {
+          for (final e in WidgetElement.values)
+            e.name: layout.any((t) => t.id == e && t.visible),
+        },
+      },
+      cities: cur.cities,
+      data: cur.data,
+      backgroundPath: cur.backgroundPath,
+      systemColors: cur.systemColors,
+    ));
+    if (commit) await _publishLatest();
   }
 
   LamhaSettings get _s => state.requireValue.settings;
 
   /// أثناء السحب [commit] = false (المعاينة فقط)، وعند الإفلات يُحفظ.
   Future<void> setOpacity(int value, {bool commit = true}) =>
-      _update(_s.copyWith(opacity: value.clamp(0, 100)), commit: commit);
+      _updateLight(_s.copyWith(opacity: value.clamp(0, 100)), commit: commit);
 
   Future<void> setCity(City c) async {
     await _update(_s.copyWith(
@@ -225,6 +264,9 @@ class SettingsController extends AsyncNotifier<AppState> {
   Future<void> setFontScale(FontScale f) => _update(_s.copyWith(fontScale: f));
 
   Future<void> setDigits(DigitStyle d) => _update(_s.copyWith(digits: d));
+
+  Future<void> setPrayerCountdown(bool on) =>
+      _updateLight(_s.copyWith(prayerCountdown: on));
 
   /// عند التشغيل يُطلب إذن الإشعارات (أندرويد ١٣+)؛ يعيد false إذا رُفض.
   Future<bool> setLockNotification(bool on) async {
@@ -288,25 +330,34 @@ class SettingsController extends AsyncNotifier<AppState> {
   Future<void> setPrayerMethod(String id) =>
       _update(_s.copyWith(prayerMethod: id));
 
-  /// تخطيط الودجت (الميزة ٥): إعدادات مربع واحد.
+  /// تخطيط الودجت (الميزة ٥): إعدادات مربع واحد. [commit] = false أثناء سحب شريط (معاينة فقط).
   Future<void> updateTile(
-          WidgetElement id, TileLayout Function(TileLayout t) change) =>
-      _update(_s.copyWith(layout: [
-        for (final t in _s.layout) t.id == id ? change(t) : t,
-      ]));
+          WidgetElement id, TileLayout Function(TileLayout t) change,
+          {bool commit = true}) =>
+      _updateLight(
+          _s.copyWith(layout: [
+            for (final t in _s.layout) t.id == id ? change(t) : t,
+          ]),
+          commit: commit);
 
   Future<void> setVisible(WidgetElement e, bool on) =>
       updateTile(e, (t) => t.copyWith(visible: on));
+
+  /// حجم أيقونة القبلة (٠٫٥–١٫٦)؛ عرض الخانة يتبعه تلقائياً (qiblaSpanFor).
+  Future<void> setQiblaIconScale(double v, {bool commit = true}) =>
+      updateTile(WidgetElement.qibla, (t) => t.copyWith(iconScale: v),
+          commit: commit);
 
   /// نقل مربع من [from] إلى [to] (موضعه بعد حذفه من [from]، كـ onReorderItem).
   Future<void> moveTile(int from, int to) {
     final l = [..._s.layout];
     final t = l.removeAt(from);
     l.insert(to.clamp(0, l.length), t);
-    return _update(_s.copyWith(layout: l));
+    return _updateLight(_s.copyWith(layout: l));
   }
 
-  Future<void> resetLayout() => _update(_s.copyWith(layout: defaultLayout));
+  Future<void> resetLayout() =>
+      _updateLight(_s.copyWith(layout: defaultLayout));
 
   /// يعيد false إذا كان هذا آخر إيداع مفعّل (لا يُلغى).
   Future<bool> setDeposit(String id, bool on) async {

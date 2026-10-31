@@ -80,6 +80,7 @@ typedef ScheduleTile = ({
   bool showSub,
   int? primary,
   int? secondary,
+  double iconScale,
 });
 
 /// تخطيط الجدول بترتيبه. جدول أقدم بلا `layout`: الترتيب الافتراضي والإظهار من `visible`.
@@ -99,6 +100,7 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
             showSub: t['showSub'] as bool? ?? true,
             primary: t['primaryColor'] as int?,
             secondary: t['secondaryColor'] as int?,
+            iconScale: tileIconScale(t['iconScale']),
           ),
     ];
   }
@@ -118,6 +120,7 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
         showSub: true,
         primary: null,
         secondary: null,
+        iconScale: 1.0,
       ),
   ];
 }
@@ -292,13 +295,22 @@ class WidgetPreview extends StatelessWidget {
             ),
           ],
         ),
-        WidgetElement.prayer => _prayerTile(l, accent, day, nextDay, digits),
+        WidgetElement.prayer => _prayerTile(
+          l,
+          accent,
+          day,
+          nextDay,
+          digits,
+          countdown: schedule['prayerCountdown'] == true,
+        ),
         WidgetElement.qibla => _QiblaTile(
           angle: '${formatDigits(qiblaDeg.round(), digits)}°',
           sub: l.qiblaTileSub(qibla['direction'] as String? ?? ''),
           degrees: qiblaDeg,
           accent: accent,
           faceAlpha: alpha,
+          span: span,
+          iconScale: t.iconScale,
         ),
         WidgetElement.deposit => _depositsTile(day, span),
         WidgetElement.season => _seasonTile(l, day),
@@ -540,8 +552,9 @@ class WidgetPreview extends StatelessWidget {
     Color accent,
     Map day,
     Map? nextDay,
-    DigitStyle digits,
-  ) {
+    DigitStyle digits, {
+    required bool countdown,
+  }) {
     Map? next;
     DateTime? at;
     final today = (day['prayers'] as Map).cast<String, Map>();
@@ -568,8 +581,9 @@ class WidgetPreview extends StatelessWidget {
       subs: [
         if (next != null)
           (text: next['text'] as String, lines: 1, compact: null),
-        // العدّاد لا يُختصر: بلا «باقي» إن لم يتسع، ثم يصغر قليلاً، وإلا يُخفى.
-        if (at != null)
+        // العدّاد اختياري (prayerCountdown، مطفأ افتراضياً)؛ لا يُختصر: بلا «باقي» إن لم يتسع،
+        // ثم يصغر قليلاً، وإلا يُخفى.
+        if (countdown && at != null)
           (
             text: l.countdownText(
               formatDigits(countdownClock(at.difference(now)), digits),

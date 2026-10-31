@@ -415,4 +415,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qiblaMapOffline => 'The map needs an internet connection';
+
+  @override
+  String get prayerCountdownLabel => 'Next prayer countdown';
+
+  @override
+  String get prayerCountdownHint =>
+      'Shown under the clock in the widget. Off by default.';
+
+  @override
+  String get qiblaIconSizeLabel => 'Compass icon size';
+
+  @override
+  String get tilesManageTitle => 'Widget tiles';
+
+  @override
+  String get tilesManageHint =>
+      'Turn tiles on or off and drag the handle to reorder them. The remaining tiles expand to fill the widget.';
+
+  @override
+  String get tilesLastOne => 'At least one tile must stay on';
+
+  @override
+  String get tilesDragHandle => 'Drag to reorder';
 }

@@ -411,7 +411,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 "hijri", "gregorian" -> tightDp(env.ctx, CAPSULE_SP * scale, true) to 8f + 6f
                 // الأيقونة بأكبر ما تسمح به الخانة (طلب المالك).
                 "qibla" -> (if (showTitle) lineDp(env.ctx, QIBLA_TITLE_SP * scale, true) + lineDp(env.ctx, QIBLA_SUB_SP * scale, false) else 0f) to
-                    8f + LamhaLogic.qiblaIconTarget(LamhaLogic.slotInnerDp(env.widthDp, cell.span))
+                    8f + LamhaLogic.qiblaIconSize(LamhaLogic.slotInnerDp(env.widthDp, cell.span), cell.span, spec.iconScale)
                 // كل إيداع في مستطيل: الصفوف وحشواتها، بلا صندوق خارجي.
                 "deposit" -> {
                     val rows = LamhaLogic.gridRows(depositCount(env, cell.span))
@@ -496,7 +496,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// عدد الأسطر الثانوية الأساسية (كل منها سطر واحد) لمربع [element]، كـ coreSizes في المعاينة.
         private fun subCount(day: LamhaDay, element: String): Int = when (element) {
-            "prayer" -> if (day.nextPrayer != null) 2 else 0
+            "prayer" -> if (day.nextPrayer != null) (if (day.prayerCountdown) 2 else 1) else 0
             "season" -> 1
             else -> if (day.tradDescription.isEmpty()) 0 else 1
         }
@@ -635,7 +635,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     val next = day.nextPrayer
                     value = next?.name ?: ""
                     sub1 = next?.text
-                    if (next != null) {
+                    // العدّاد اختياري (prayerCountdown) ومطفأ افتراضياً؛ بدونه لا سطر عدّاد ولا Chronometer.
+                    if (next != null && day.prayerCountdown) {
                         // عدّاد النظام التنازلي حتى الصلاة («باقي ٦:٠٤:١٩»)، فلا يحتاج تحديثاً كل ثانية.
                         val base = SystemClock.elapsedRealtime() + (next.atMillis - env.now)
                         // في المربع الضيق: بلا «باقي»، ثم يصغر قليلاً (fitTile)، وإلا يُخفى.
@@ -820,7 +821,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             }
             // البوصلة السوداء ترسم خلفيتها بنفسها (صورة المالك)، فلا شكل خلفها.
             rv.setViewVisibility(R.id.qibla_shape, View.GONE)
-            val icon = listOf(inner, if (innerHeightDp > 0f) innerHeightDp - textLines else 0f).filter { it > 0f }.minOrNull() ?: 0f
+            // الأيقونة بحجم الشريط (iconScale) لا بأكبر ما تسمح به الخانة، ولا أكبر من الخانة والارتفاع.
+            val target = LamhaLogic.qiblaIconSize(inner, spec.span, spec.iconScale)
+            val icon = listOf(target, if (innerHeightDp > 0f) innerHeightDp - textLines else 0f).filter { it > 0f }.minOrNull() ?: 0f
             val resizable = icon > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             if (resizable) {
                 rv.setViewLayoutWidth(R.id.qibla_icon, icon, TypedValue.COMPLEX_UNIT_DIP)

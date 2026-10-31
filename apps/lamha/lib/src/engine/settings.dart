@@ -21,6 +21,7 @@ class Settings {
     this.lockNotification = false,
     this.fontScale = FontScale.fallback,
     this.digits = DigitStyle.fallback,
+    this.prayerCountdown = false,
   })  : deposits = Set.unmodifiable(deposits),
         layout = normalizeLayout(layout ?? defaultLayout) {
     if (deposits.isEmpty) {
@@ -77,4 +78,8 @@ class Settings {
 
   /// شكل الأرقام في نصوص الجدول (عربية افتراضياً).
   final DigitStyle digits;
+
+  /// العدّاد التنازلي للصلاة القادمة تحت الساعة (آيفون) وفي مربع «الصلاة القادمة»: مطفأ افتراضياً
+  /// (طلب المالك ٣٠/١٠/٢٠٢٦).
+  final bool prayerCountdown;
 }

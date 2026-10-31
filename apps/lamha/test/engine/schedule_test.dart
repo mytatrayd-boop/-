@@ -59,9 +59,11 @@ void main() {
     expect(layout.first, {
       'id': 'clock', 'visible': false, 'span': 2, 'fontScale': 2.0,
       'showTitle': true, 'showSub': false,
-      'primaryColor': null, 'secondaryColor': null,
+      'primaryColor': null, 'secondaryColor': null, 'iconScale': 1.0,
     });
     expect(schedule['digits'], 'arabic');
+    // العدّاد التنازلي للصلاة اختياري ومطفأ افتراضياً.
+    expect(schedule['prayerCountdown'], false);
   });
 
   test('مفاتيح كل يوم وقيم اليوم الأول', () {

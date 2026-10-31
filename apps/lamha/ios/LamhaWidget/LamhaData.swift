@@ -35,6 +35,14 @@ struct LamhaDay {
     let tradLine: String
 }
 
+/// نافذة من `layout` في الجدول (TileLayout.toScheduleJson في Dart): ما يظهر وترتيبه وحجم أيقونة القبلة.
+struct LamhaTile {
+    let id: String
+    let visible: Bool
+    let span: Int
+    let iconScale: Double
+}
+
 struct LamhaSnapshot {
     let city: String
     let timeZone: TimeZone
@@ -50,6 +58,26 @@ struct LamhaSnapshot {
     let opacity: Double
     let weather: String?
     let days: [LamhaDay]
+    /// العدّاد التنازلي للصلاة القادمة تحت الساعة: اختياري ومطفأ افتراضياً (prayerCountdown في الجدول).
+    let prayerCountdown: Bool
+    /// النوافذ بترتيبها في تخطيط التطبيق؛ فارغة لجدول أقدم بلا layout.
+    let tiles: [LamhaTile]
+
+    /// هل نافذة [id] ظاهرة؟ جدول أقدم بلا layout: كلها ظاهرة.
+    func isVisible(_ id: String) -> Bool {
+        if tiles.isEmpty { return true }
+        return tiles.first { $0.id == id }?.visible ?? false
+    }
+
+    /// موضع أقدم عنصر من [ids] في الترتيب، وتُرتَّب الكتل به (غير الموجود آخراً).
+    func position(_ ids: [String]) -> Int {
+        ids.compactMap { id in tiles.firstIndex { $0.id == id } }.min() ?? Int.max
+    }
+
+    /// حجم أيقونة القبلة (٠٫٥–١٫٦، ١ افتراضياً).
+    var qiblaIconScale: Double {
+        min(max(tiles.first { $0.id == "qibla" }?.iconScale ?? 1, 0.5), 1.6)
+    }
 
     /// يوم [date] بتوقيت المدينة، وإلا أول يوم.
     func day(at date: Date) -> LamhaDay? {
@@ -110,6 +138,18 @@ func loadSnapshot() -> LamhaSnapshot? {
     let theme = root["theme"] as? [String: Any] ?? [:]
     let qibla = root["qibla"] as? [String: Any] ?? [:]
     let weather = root["weather"] as? [String: Any]
+    let tiles: [LamhaTile] = (root["layout"] as? [[String: Any]] ?? []).compactMap { t in
+        guard let id = t["id"] as? String else { return nil }
+        return LamhaTile(
+            id: id,
+            visible: t["visible"] as? Bool ?? true,
+            span: (t["span"] as? NSNumber)?.intValue ?? 1,
+            iconScale: (t["iconScale"] as? NSNumber)?.doubleValue ?? 1
+        )
+    }
+    // الشفافية من مفتاحها المنفصل في App Group أولاً (يكتبه التطبيق مع كل حفظ)، ثم من الجدول.
+    let storedOpacity = (UserDefaults(suiteName: appGroupId)?.object(forKey: "opacity") as? NSNumber)?.intValue
+    let opacityPercent = min(max(storedOpacity ?? (root["opacity"] as? NSNumber)?.intValue ?? 100, 0), 100)
     var weatherText: String?
     if let w = weather, let temp = w["tempText"] as? String {
         weatherText = [w["emoji"] as? String, temp].compactMap { $0 }.joined(separator: " ")
@@ -155,8 +195,10 @@ func loadSnapshot() -> LamhaSnapshot? {
         accent: color(theme["accent"], 0xFFD6AA5C),
         iconBackground: color(NSNumber(value: darkened(argb(theme["accent"], 0xFFD6AA5C))), 0xFF3C301A),
         background: color(theme["background"], 0xFF000000),
-        opacity: Double((root["opacity"] as? NSNumber)?.intValue ?? 100) / 100,
+        opacity: Double(opacityPercent) / 100,
         weather: weatherText,
-        days: days
+        days: days,
+        prayerCountdown: root["prayerCountdown"] as? Bool ?? false,
+        tiles: tiles
     )
 }

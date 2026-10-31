@@ -185,6 +185,16 @@ class LamhaLogicTest {
     }
 
     @Test
+    fun qiblaIconSizeFollowsScale() {
+        // الحالات نفسها في widget_layout_test.dart (مقاس أيقونة القبلة).
+        assertEquals(83.3f, LamhaLogic.qiblaIconSize(98f, 1, 1f), 0.05f)
+        assertEquals(41.65f, LamhaLogic.qiblaIconSize(98f, 1, 0.5f), 0.05f)
+        assertEquals(138.72f, LamhaLogic.qiblaIconSize(204f, 2, 1.6f), 0.05f)
+        assertEquals(60f, LamhaLogic.qiblaIconSize(60f, 1, 1.6f), 1e-4f)
+        assertEquals(36f, LamhaLogic.qiblaIconSize(0f, 1, 1f), 1e-4f)
+    }
+
+    @Test
     fun slotInnerWidth() {
         // ٣٣٨dp: (٣١٨ × ١ ÷ ٣) - ٨ = ٩٨، وبعرض ٣ = ٣١٠.
         assertEquals(98f, LamhaLogic.slotInnerDp(338, 1), 0.01f)
