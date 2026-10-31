@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../domain/scan.dart';
 import '../../../l10n/gen/app_localizations.dart';
+import '../../cafes/presentation/cafe_actions.dart';
 import 'delete_scan.dart';
 import 'scan_formatting.dart';
 import 'scan_image.dart';
@@ -50,6 +51,23 @@ class ScanCard extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium),
                       if (roaster != null) Text(type, style: theme.textTheme.bodySmall),
+                      if (scan.cafe != null)
+                        InkWell(
+                          onTap: scan.cafe!.hasLocation
+                              ? () => openCafeInMaps(context, ref, scan.cafe!)
+                              : null,
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.place_outlined,
+                                size: 14, color: theme.colorScheme.primary),
+                            const SizedBox(width: 2),
+                            Flexible(
+                              child: Text(scan.cafe!.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall),
+                            ),
+                          ]),
+                        ),
                       Text(
                         formatScanDate(Localizations.localeOf(context).toString(), scan.createdAt),
                         style: theme.textTheme.bodySmall,

@@ -1,3 +1,5 @@
+import 'cafe.dart';
+
 enum ScanType { bean, coffee }
 
 /// نتيجة فحص محفوظة محلياً. الملاحظات 3 بالضبط.
@@ -13,6 +15,7 @@ class Scan {
     this.price,
     this.isFavorite = false,
     this.promptVersion,
+    this.cafe,
   }) : notes = List.unmodifiable(notes) {
     if (notes.length != 3) {
       throw ArgumentError.value(notes.length, 'notes', 'must be exactly 3');
@@ -32,6 +35,9 @@ class Scan {
   final double? price;
   final bool isFavorite;
   final String? promptVersion;
+
+  /// المقهى المرتبط إن وُجد.
+  final Cafe? cafe;
 }
 
 /// بيانات فحص جديد قبل الحفظ (بدون id، والصورة بايتات).

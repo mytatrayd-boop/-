@@ -3,6 +3,343 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $CafesTable extends Cafes with TableInfo<$CafesTable, CafeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CafesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _latMeta = const VerificationMeta('lat');
+  @override
+  late final GeneratedColumn<double> lat = GeneratedColumn<double>(
+    'lat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lngMeta = const VerificationMeta('lng');
+  @override
+  late final GeneratedColumn<double> lng = GeneratedColumn<double>(
+    'lng',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _savedAtMeta = const VerificationMeta(
+    'savedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> savedAt = GeneratedColumn<DateTime>(
+    'saved_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, lat, lng, savedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cafes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CafeRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('lat')) {
+      context.handle(
+        _latMeta,
+        lat.isAcceptableOrUnknown(data['lat']!, _latMeta),
+      );
+    }
+    if (data.containsKey('lng')) {
+      context.handle(
+        _lngMeta,
+        lng.isAcceptableOrUnknown(data['lng']!, _lngMeta),
+      );
+    }
+    if (data.containsKey('saved_at')) {
+      context.handle(
+        _savedAtMeta,
+        savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_savedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CafeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CafeRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      lat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lat'],
+      ),
+      lng: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lng'],
+      ),
+      savedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}saved_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CafesTable createAlias(String alias) {
+    return $CafesTable(attachedDatabase, alias);
+  }
+}
+
+class CafeRow extends DataClass implements Insertable<CafeRow> {
+  final int id;
+  final String name;
+  final double? lat;
+  final double? lng;
+  final DateTime savedAt;
+  const CafeRow({
+    required this.id,
+    required this.name,
+    this.lat,
+    this.lng,
+    required this.savedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || lat != null) {
+      map['lat'] = Variable<double>(lat);
+    }
+    if (!nullToAbsent || lng != null) {
+      map['lng'] = Variable<double>(lng);
+    }
+    map['saved_at'] = Variable<DateTime>(savedAt);
+    return map;
+  }
+
+  CafesCompanion toCompanion(bool nullToAbsent) {
+    return CafesCompanion(
+      id: Value(id),
+      name: Value(name),
+      lat: lat == null && nullToAbsent ? const Value.absent() : Value(lat),
+      lng: lng == null && nullToAbsent ? const Value.absent() : Value(lng),
+      savedAt: Value(savedAt),
+    );
+  }
+
+  factory CafeRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CafeRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      lat: serializer.fromJson<double?>(json['lat']),
+      lng: serializer.fromJson<double?>(json['lng']),
+      savedAt: serializer.fromJson<DateTime>(json['savedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'lat': serializer.toJson<double?>(lat),
+      'lng': serializer.toJson<double?>(lng),
+      'savedAt': serializer.toJson<DateTime>(savedAt),
+    };
+  }
+
+  CafeRow copyWith({
+    int? id,
+    String? name,
+    Value<double?> lat = const Value.absent(),
+    Value<double?> lng = const Value.absent(),
+    DateTime? savedAt,
+  }) => CafeRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    lat: lat.present ? lat.value : this.lat,
+    lng: lng.present ? lng.value : this.lng,
+    savedAt: savedAt ?? this.savedAt,
+  );
+  CafeRow copyWithCompanion(CafesCompanion data) {
+    return CafeRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      lat: data.lat.present ? data.lat.value : this.lat,
+      lng: data.lng.present ? data.lng.value : this.lng,
+      savedAt: data.savedAt.present ? data.savedAt.value : this.savedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CafeRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('lat: $lat, ')
+          ..write('lng: $lng, ')
+          ..write('savedAt: $savedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, lat, lng, savedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CafeRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.lat == this.lat &&
+          other.lng == this.lng &&
+          other.savedAt == this.savedAt);
+}
+
+class CafesCompanion extends UpdateCompanion<CafeRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<double?> lat;
+  final Value<double?> lng;
+  final Value<DateTime> savedAt;
+  const CafesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lng = const Value.absent(),
+    this.savedAt = const Value.absent(),
+  });
+  CafesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.lat = const Value.absent(),
+    this.lng = const Value.absent(),
+    required DateTime savedAt,
+  }) : name = Value(name),
+       savedAt = Value(savedAt);
+  static Insertable<CafeRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<double>? lat,
+    Expression<double>? lng,
+    Expression<DateTime>? savedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+      if (savedAt != null) 'saved_at': savedAt,
+    });
+  }
+
+  CafesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<double?>? lat,
+    Value<double?>? lng,
+    Value<DateTime>? savedAt,
+  }) {
+    return CafesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      savedAt: savedAt ?? this.savedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (lat.present) {
+      map['lat'] = Variable<double>(lat.value);
+    }
+    if (lng.present) {
+      map['lng'] = Variable<double>(lng.value);
+    }
+    if (savedAt.present) {
+      map['saved_at'] = Variable<DateTime>(savedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CafesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('lat: $lat, ')
+          ..write('lng: $lng, ')
+          ..write('savedAt: $savedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ScansTable extends Scans with TableInfo<$ScansTable, ScanRow> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -116,6 +453,18 @@ class $ScansTable extends Scans with TableInfo<$ScansTable, ScanRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _cafeIdMeta = const VerificationMeta('cafeId');
+  @override
+  late final GeneratedColumn<int> cafeId = GeneratedColumn<int>(
+    'cafe_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES cafes (id)',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -128,6 +477,7 @@ class $ScansTable extends Scans with TableInfo<$ScansTable, ScanRow> {
     createdAt,
     isFavorite,
     promptVersion,
+    cafeId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -214,6 +564,12 @@ class $ScansTable extends Scans with TableInfo<$ScansTable, ScanRow> {
         ),
       );
     }
+    if (data.containsKey('cafe_id')) {
+      context.handle(
+        _cafeIdMeta,
+        cafeId.isAcceptableOrUnknown(data['cafe_id']!, _cafeIdMeta),
+      );
+    }
     return context;
   }
 
@@ -263,6 +619,10 @@ class $ScansTable extends Scans with TableInfo<$ScansTable, ScanRow> {
         DriftSqlType.string,
         data['${effectivePrefix}prompt_version'],
       ),
+      cafeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cafe_id'],
+      ),
     );
   }
 
@@ -283,6 +643,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
   final DateTime createdAt;
   final bool isFavorite;
   final String? promptVersion;
+  final int? cafeId;
   const ScanRow({
     required this.id,
     required this.type,
@@ -294,6 +655,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
     required this.createdAt,
     required this.isFavorite,
     this.promptVersion,
+    this.cafeId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -313,6 +675,9 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
     map['is_favorite'] = Variable<bool>(isFavorite);
     if (!nullToAbsent || promptVersion != null) {
       map['prompt_version'] = Variable<String>(promptVersion);
+    }
+    if (!nullToAbsent || cafeId != null) {
+      map['cafe_id'] = Variable<int>(cafeId);
     }
     return map;
   }
@@ -335,6 +700,9 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
       promptVersion: promptVersion == null && nullToAbsent
           ? const Value.absent()
           : Value(promptVersion),
+      cafeId: cafeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cafeId),
     );
   }
 
@@ -354,6 +722,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       promptVersion: serializer.fromJson<String?>(json['promptVersion']),
+      cafeId: serializer.fromJson<int?>(json['cafeId']),
     );
   }
   @override
@@ -370,6 +739,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'promptVersion': serializer.toJson<String?>(promptVersion),
+      'cafeId': serializer.toJson<int?>(cafeId),
     };
   }
 
@@ -384,6 +754,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
     DateTime? createdAt,
     bool? isFavorite,
     Value<String?> promptVersion = const Value.absent(),
+    Value<int?> cafeId = const Value.absent(),
   }) => ScanRow(
     id: id ?? this.id,
     type: type ?? this.type,
@@ -397,6 +768,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
     promptVersion: promptVersion.present
         ? promptVersion.value
         : this.promptVersion,
+    cafeId: cafeId.present ? cafeId.value : this.cafeId,
   );
   ScanRow copyWithCompanion(ScansCompanion data) {
     return ScanRow(
@@ -416,6 +788,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
       promptVersion: data.promptVersion.present
           ? data.promptVersion.value
           : this.promptVersion,
+      cafeId: data.cafeId.present ? data.cafeId.value : this.cafeId,
     );
   }
 
@@ -431,7 +804,8 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
           ..write('price: $price, ')
           ..write('createdAt: $createdAt, ')
           ..write('isFavorite: $isFavorite, ')
-          ..write('promptVersion: $promptVersion')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('cafeId: $cafeId')
           ..write(')'))
         .toString();
   }
@@ -448,6 +822,7 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
     createdAt,
     isFavorite,
     promptVersion,
+    cafeId,
   );
   @override
   bool operator ==(Object other) =>
@@ -462,7 +837,8 @@ class ScanRow extends DataClass implements Insertable<ScanRow> {
           other.price == this.price &&
           other.createdAt == this.createdAt &&
           other.isFavorite == this.isFavorite &&
-          other.promptVersion == this.promptVersion);
+          other.promptVersion == this.promptVersion &&
+          other.cafeId == this.cafeId);
 }
 
 class ScansCompanion extends UpdateCompanion<ScanRow> {
@@ -476,6 +852,7 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
   final Value<DateTime> createdAt;
   final Value<bool> isFavorite;
   final Value<String?> promptVersion;
+  final Value<int?> cafeId;
   const ScansCompanion({
     this.id = const Value.absent(),
     this.type = const Value.absent(),
@@ -487,6 +864,7 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
     this.createdAt = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.promptVersion = const Value.absent(),
+    this.cafeId = const Value.absent(),
   });
   ScansCompanion.insert({
     this.id = const Value.absent(),
@@ -499,6 +877,7 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
     required DateTime createdAt,
     this.isFavorite = const Value.absent(),
     this.promptVersion = const Value.absent(),
+    this.cafeId = const Value.absent(),
   }) : type = Value(type),
        score = Value(score),
        notes = Value(notes),
@@ -515,6 +894,7 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
     Expression<DateTime>? createdAt,
     Expression<bool>? isFavorite,
     Expression<String>? promptVersion,
+    Expression<int>? cafeId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -527,6 +907,7 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (promptVersion != null) 'prompt_version': promptVersion,
+      if (cafeId != null) 'cafe_id': cafeId,
     });
   }
 
@@ -541,6 +922,7 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
     Value<DateTime>? createdAt,
     Value<bool>? isFavorite,
     Value<String?>? promptVersion,
+    Value<int?>? cafeId,
   }) {
     return ScansCompanion(
       id: id ?? this.id,
@@ -553,6 +935,7 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
       createdAt: createdAt ?? this.createdAt,
       isFavorite: isFavorite ?? this.isFavorite,
       promptVersion: promptVersion ?? this.promptVersion,
+      cafeId: cafeId ?? this.cafeId,
     );
   }
 
@@ -589,6 +972,9 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
     if (promptVersion.present) {
       map['prompt_version'] = Variable<String>(promptVersion.value);
     }
+    if (cafeId.present) {
+      map['cafe_id'] = Variable<int>(cafeId.value);
+    }
     return map;
   }
 
@@ -604,7 +990,8 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
           ..write('price: $price, ')
           ..write('createdAt: $createdAt, ')
           ..write('isFavorite: $isFavorite, ')
-          ..write('promptVersion: $promptVersion')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('cafeId: $cafeId')
           ..write(')'))
         .toString();
   }
@@ -613,14 +1000,306 @@ class ScansCompanion extends UpdateCompanion<ScanRow> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $CafesTable cafes = $CafesTable(this);
   late final $ScansTable scans = $ScansTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [scans];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [cafes, scans];
 }
 
+typedef $$CafesTableCreateCompanionBuilder = CafesCompanion Function({
+  Value<int> id,
+  required String name,
+  Value<double?> lat,
+  Value<double?> lng,
+  required DateTime savedAt,
+});
+typedef $$CafesTableUpdateCompanionBuilder = CafesCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<double?> lat,
+  Value<double?> lng,
+  Value<DateTime> savedAt,
+});
+
+final class $$CafesTableReferences
+    extends BaseReferences<_$AppDatabase, $CafesTable, CafeRow> {
+  $$CafesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$ScansTable, List<ScanRow>> _scansRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.scans,
+    aliasName: 'cafes__id__scans__cafe_id',
+  );
+
+  $$ScansTableProcessedTableManager get scansRefs {
+    final manager = $$ScansTableTableManager(
+      $_db,
+      $_db.scans,
+    ).filter((f) => f.cafeId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_scansRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$CafesTableFilterComposer extends Composer<_$AppDatabase, $CafesTable> {
+  $$CafesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lng => $composableBuilder(
+    column: $table.lng,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> scansRefs(
+    Expression<bool> Function($$ScansTableFilterComposer f) f,
+  ) {
+    final $$ScansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scans,
+      getReferencedColumn: (t) => t.cafeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScansTableFilterComposer(
+            $db: $db,
+            $table: $db.scans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CafesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CafesTable> {
+  $$CafesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lng => $composableBuilder(
+    column: $table.lng,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CafesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CafesTable> {
+  $$CafesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
+
+  GeneratedColumn<double> get lng =>
+      $composableBuilder(column: $table.lng, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get savedAt =>
+      $composableBuilder(column: $table.savedAt, builder: (column) => column);
+
+  Expression<T> scansRefs<T extends Object>(
+    Expression<T> Function($$ScansTableAnnotationComposer a) f,
+  ) {
+    final $$ScansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scans,
+      getReferencedColumn: (t) => t.cafeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.scans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CafesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CafesTable,
+          CafeRow,
+          $$CafesTableFilterComposer,
+          $$CafesTableOrderingComposer,
+          $$CafesTableAnnotationComposer,
+          $$CafesTableCreateCompanionBuilder,
+          $$CafesTableUpdateCompanionBuilder,
+          (CafeRow, $$CafesTableReferences),
+          CafeRow,
+          PrefetchHooks Function({bool scansRefs})
+        > {
+  $$CafesTableTableManager(_$AppDatabase db, $CafesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CafesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CafesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CafesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lng = const Value.absent(),
+                Value<DateTime> savedAt = const Value.absent(),
+              }) => CafesCompanion(
+                id: id,
+                name: name,
+                lat: lat,
+                lng: lng,
+                savedAt: savedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lng = const Value.absent(),
+                required DateTime savedAt,
+              }) => CafesCompanion.insert(
+                id: id,
+                name: name,
+                lat: lat,
+                lng: lng,
+                savedAt: savedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CafesTable, CafeRow>(table),
+                  $$CafesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({scansRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (scansRefs) db.scans],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (scansRefs)
+                    await $_getPrefetchedDataByColumns<
+                      CafeRow,
+                      $CafesTable,
+                      ScanRow,
+                      $ScansTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$CafesTableReferences._scansRefsTable(
+                        db,
+                      ),
+                      managerFromTypedResult: (p0) =>
+                          $$CafesTableReferences(db, table, p0).scansRefs,
+                      currentColumn: 'id',
+                      referencedColumn: 'cafe_id',
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CafesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CafesTable,
+      CafeRow,
+      $$CafesTableFilterComposer,
+      $$CafesTableOrderingComposer,
+      $$CafesTableAnnotationComposer,
+      $$CafesTableCreateCompanionBuilder,
+      $$CafesTableUpdateCompanionBuilder,
+      (CafeRow, $$CafesTableReferences),
+      CafeRow,
+      PrefetchHooks Function({bool scansRefs})
+    >;
 typedef $$ScansTableCreateCompanionBuilder = ScansCompanion Function({
   Value<int> id,
   required String type,
@@ -632,6 +1311,7 @@ typedef $$ScansTableCreateCompanionBuilder = ScansCompanion Function({
   required DateTime createdAt,
   Value<bool> isFavorite,
   Value<String?> promptVersion,
+  Value<int?> cafeId,
 });
 typedef $$ScansTableUpdateCompanionBuilder = ScansCompanion Function({
   Value<int> id,
@@ -644,7 +1324,30 @@ typedef $$ScansTableUpdateCompanionBuilder = ScansCompanion Function({
   Value<DateTime> createdAt,
   Value<bool> isFavorite,
   Value<String?> promptVersion,
+  Value<int?> cafeId,
 });
+
+final class $$ScansTableReferences
+    extends BaseReferences<_$AppDatabase, $ScansTable, ScanRow> {
+  $$ScansTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CafesTable _cafeIdTable(_$AppDatabase db) =>
+      db.cafes.createAlias('scans__cafe_id__cafes__id');
+
+  $$CafesTableProcessedTableManager? get cafeId {
+    final $_column = $_itemColumn<int>('cafe_id');
+    if ($_column == null) return null;
+    final manager = $$CafesTableTableManager(
+      $_db,
+      $_db.cafes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_cafeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
 
 class $$ScansTableFilterComposer extends Composer<_$AppDatabase, $ScansTable> {
   $$ScansTableFilterComposer({
@@ -703,6 +1406,29 @@ class $$ScansTableFilterComposer extends Composer<_$AppDatabase, $ScansTable> {
     column: $table.promptVersion,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$CafesTableFilterComposer get cafeId {
+    final $$CafesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.cafeId,
+      referencedTable: $db.cafes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CafesTableFilterComposer(
+            $db: $db,
+            $table: $db.cafes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ScansTableOrderingComposer
@@ -763,6 +1489,29 @@ class $$ScansTableOrderingComposer
     column: $table.promptVersion,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$CafesTableOrderingComposer get cafeId {
+    final $$CafesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.cafeId,
+      referencedTable: $db.cafes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CafesTableOrderingComposer(
+            $db: $db,
+            $table: $db.cafes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ScansTableAnnotationComposer
@@ -809,6 +1558,29 @@ class $$ScansTableAnnotationComposer
     column: $table.promptVersion,
     builder: (column) => column,
   );
+
+  $$CafesTableAnnotationComposer get cafeId {
+    final $$CafesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.cafeId,
+      referencedTable: $db.cafes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CafesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.cafes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ScansTableTableManager
@@ -822,9 +1594,9 @@ class $$ScansTableTableManager
           $$ScansTableAnnotationComposer,
           $$ScansTableCreateCompanionBuilder,
           $$ScansTableUpdateCompanionBuilder,
-          (ScanRow, BaseReferences<_$AppDatabase, $ScansTable, ScanRow>),
+          (ScanRow, $$ScansTableReferences),
           ScanRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool cafeId})
         > {
   $$ScansTableTableManager(_$AppDatabase db, $ScansTable table)
     : super(
@@ -849,6 +1621,7 @@ class $$ScansTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<String?> promptVersion = const Value.absent(),
+                Value<int?> cafeId = const Value.absent(),
               }) => ScansCompanion(
                 id: id,
                 type: type,
@@ -860,6 +1633,7 @@ class $$ScansTableTableManager
                 createdAt: createdAt,
                 isFavorite: isFavorite,
                 promptVersion: promptVersion,
+                cafeId: cafeId,
               ),
           createCompanionCallback:
               ({
@@ -873,6 +1647,7 @@ class $$ScansTableTableManager
                 required DateTime createdAt,
                 Value<bool> isFavorite = const Value.absent(),
                 Value<String?> promptVersion = const Value.absent(),
+                Value<int?> cafeId = const Value.absent(),
               }) => ScansCompanion.insert(
                 id: id,
                 type: type,
@@ -884,20 +1659,56 @@ class $$ScansTableTableManager
                 createdAt: createdAt,
                 isFavorite: isFavorite,
                 promptVersion: promptVersion,
+                cafeId: cafeId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable<$ScansTable, ScanRow>(table),
-                  BaseReferences<_$AppDatabase, $ScansTable, ScanRow>(
-                    db,
-                    table,
-                    e,
-                  ),
+                  $$ScansTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({cafeId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (cafeId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.cafeId,
+                        referencedTable: $$ScansTableReferences._cafeIdTable(
+                          db,
+                        ),
+                        referencedColumn: $$ScansTableReferences
+                            ._cafeIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -912,14 +1723,16 @@ typedef $$ScansTableProcessedTableManager =
       $$ScansTableAnnotationComposer,
       $$ScansTableCreateCompanionBuilder,
       $$ScansTableUpdateCompanionBuilder,
-      (ScanRow, BaseReferences<_$AppDatabase, $ScansTable, ScanRow>),
+      (ScanRow, $$ScansTableReferences),
       ScanRow,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool cafeId})
     >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$CafesTableTableManager get cafes =>
+      $$CafesTableTableManager(_db, _db.cafes);
   $$ScansTableTableManager get scans =>
       $$ScansTableTableManager(_db, _db.scans);
 }

@@ -6,6 +6,8 @@ import '../../../app/router.dart';
 import '../../../domain/scan.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../history_providers.dart';
+import '../../cafes/presentation/cafe_actions.dart';
+import '../../cafes/presentation/save_cafe_button.dart';
 import 'delete_scan.dart';
 import 'scan_formatting.dart';
 import 'scan_image.dart';
@@ -30,6 +32,8 @@ class ScanDetailScreen extends ConsumerWidget {
           onPressed: () => context.canPop() ? context.pop() : context.go(fallbackRoute),
         ),
         actions: [
+          if (scan.value != null)
+            SaveCafeButton(scanId: id, hasCafe: scan.value!.cafe != null),
           if (scan.value != null)
             IconButton(
               tooltip: scan.value!.isFavorite ? l10n.favoriteRemove : l10n.favoriteAdd,
@@ -58,12 +62,12 @@ class ScanDetailScreen extends ConsumerWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+class _Body extends ConsumerWidget {
   const _Body({required this.scan});
   final Scan scan;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toString();
@@ -111,6 +115,20 @@ class _Body extends StatelessWidget {
         const SizedBox(height: 8),
         row(l10n.scanDate, formatScanDate(locale, scan.createdAt)),
         row(l10n.scanTypeField, scanTypeLabel(l10n, scan.type)),
+        if (scan.cafe != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(top: 8),
+            child: Row(children: [
+              Text('${l10n.scanCafe}: ', style: theme.textTheme.bodySmall),
+              Expanded(child: Text(scan.cafe!.name)),
+              if (scan.cafe!.hasLocation)
+                TextButton.icon(
+                  onPressed: () => openCafeInMaps(context, ref, scan.cafe!),
+                  icon: const Icon(Icons.map_outlined),
+                  label: Text(l10n.cafeOpenInMaps),
+                ),
+            ]),
+          ),
         if (scan.roasterName != null) row(l10n.scanRoaster, scan.roasterName!),
         if (scan.price != null) row(l10n.scanPrice, scan.price!.toString()),
       ],

@@ -64,5 +64,55 @@
   "favoriteFailed": "Couldn't update favorites",
   "favoritesEmptyTitle": "You haven't saved anything yet. Tap the star on any result",
   "favoritesErrorTitle": "Couldn't load favorites",
-  "favoritesLoading": "Loading favorites"
+  "favoritesLoading": "Loading favorites",
+  "cafeSave": "Save cafe location",
+  "cafeLocating": "Finding your location…",
+  "cafeLocationFailedTitle": "Couldn't get your location",
+  "cafeLocDenied": "Location permission wasn't granted. You can save the cafe name only, without a maps link.",
+  "cafeLocDeniedForever": "Location permission is denied. Enable it in phone settings, or save the name only without a maps link.",
+  "cafeLocServiceOff": "Location services are off. Turn them on, or save the name only without a maps link.",
+  "cafeLocTimeout": "Finding your location took too long. Try later, or save the name only without a maps link.",
+  "cafeLocError": "Couldn't get your location. You can save the name only without a maps link.",
+  "cafeSaveNameOnly": "Save name only",
+  "cafeNameTitle": "Cafe name",
+  "cafeNameLabel": "Cafe name",
+  "cafeNameRequired": "Enter the cafe name",
+  "cafeSaveAction": "Save",
+  "cafeSaved": "Cafe saved",
+  "cafeSaveFailed": "Couldn't save the cafe",
+  "cafeOpenInMaps": "Open in Google Maps",
+  "cafeOpenFailed": "Couldn't open maps",
+  "cafesTitle": "My saved cafes",
+  "cafesEmptyTitle": "No cafe saved yet",
+  "cafesEmptyBody": "Open any scan's details and tap \"Save cafe location\" while you're at the cafe.",
+  "cafesErrorTitle": "Couldn't load cafes",
+  "cafesLoading": "Loading cafes",
+  "cafeScanCount": "Scans: {count}",
+  "@cafeScanCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cafeLastScore": "Last score: {score}/100",
+  "@cafeLastScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "cafeNoLocation": "No location",
+  "cafeMenu": "Cafe options",
+  "cafeEdit": "Edit name",
+  "cafeEditTitle": "Edit cafe name",
+  "cafeDelete": "Delete cafe",
+  "cafeDeleteTitle": "Delete this cafe?",
+  "cafeDeleteBody": "Your scans stay, but the cafe name is removed from them. This can't be undone.",
+  "cafeDeleted": "Cafe deleted",
+  "cafeDeleteFailed": "Couldn't delete the cafe",
+  "cafeRenameFailed": "Couldn't rename the cafe",
+  "scanCafe": "Cafe",
+  "settingsCafesSubtitle": "Cafe places you saved"
 }

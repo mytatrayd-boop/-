@@ -8,7 +8,10 @@ import 'package:bunn_lens/app/app.dart';
 import 'package:bunn_lens/app/locale_provider.dart';
 import 'package:bunn_lens/data/db/app_database.dart';
 import 'package:bunn_lens/data/providers.dart';
+import 'package:bunn_lens/data/repositories/cafe_repository.dart';
 import 'package:bunn_lens/data/repositories/scan_repository.dart';
+import 'package:bunn_lens/features/cafes/cafes_providers.dart';
+import 'package:bunn_lens/features/cafes/data/location_service.dart';
 
 /// مستودع على قاعدة بالذاكرة ومجلد صور مؤقت.
 class TestRepo {
@@ -17,6 +20,7 @@ class TestRepo {
   final AppDatabase db;
   final Directory dir;
   final DriftScanRepository repo;
+  late final DriftCafeRepository cafes = DriftCafeRepository(db);
 
   static TestRepo create({DateTime Function()? clock}) {
     final db = AppDatabase(NativeDatabase.memory());
@@ -30,11 +34,20 @@ class TestRepo {
   }
 }
 
-Widget buildTestApp(ScanRepository repository, {Locale locale = const Locale('ar')}) =>
+Widget buildTestApp(
+  ScanRepository repository, {
+  Locale locale = const Locale('ar'),
+  CafeRepository? cafeRepository,
+  LocationService? locationService,
+  UrlOpener? urlOpener,
+}) =>
     ProviderScope(
       overrides: [
         localeProvider.overrideWith(() => _FixedLocale(locale)),
         scanRepositoryProvider.overrideWithValue(repository),
+        if (cafeRepository != null) cafeRepositoryProvider.overrideWithValue(cafeRepository),
+        if (locationService != null) locationServiceProvider.overrideWithValue(locationService),
+        if (urlOpener != null) urlOpenerProvider.overrideWithValue(urlOpener),
       ],
       child: const BunnLensApp(),
     );
@@ -43,10 +56,17 @@ Future<void> pumpApp(
   WidgetTester tester, {
   Locale locale = const Locale('ar'),
   ScanRepository? repository,
+  CafeRepository? cafeRepository,
+  LocationService? locationService,
+  UrlOpener? urlOpener,
 }) async {
   final own = repository == null ? TestRepo.create() : null;
   if (own != null) addTearDown(own.dispose);
-  await tester.pumpWidget(buildTestApp(repository ?? own!.repo, locale: locale));
+  await tester.pumpWidget(buildTestApp(repository ?? own!.repo,
+      locale: locale,
+      cafeRepository: cafeRepository ?? own?.cafes,
+      locationService: locationService,
+      urlOpener: urlOpener));
   await tester.pumpAndSettle();
 }
 
@@ -61,4 +81,17 @@ class _FixedLocale extends LocaleNotifier {
   final Locale _locale;
   @override
   Locale build() => _locale;
+}
+
+/// موقع وهمي للاختبارات.
+class FakeLocationService implements LocationService {
+  FakeLocationService(this.result);
+  LocationResult result;
+  int calls = 0;
+
+  @override
+  Future<LocationResult> getCurrentLocation({Duration timeout = const Duration(seconds: 10)}) async {
+    calls++;
+    return result;
+  }
 }

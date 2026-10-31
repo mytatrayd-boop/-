@@ -64,5 +64,55 @@
   "favoriteFailed": "تعذّر تحديث المفضلة",
   "favoritesEmptyTitle": "لم تحفظ شيئاً بعد. اضغط النجمة في أي نتيجة",
   "favoritesErrorTitle": "تعذّر تحميل المفضلة",
-  "favoritesLoading": "جارٍ تحميل المفضلة"
+  "favoritesLoading": "جارٍ تحميل المفضلة",
+  "cafeSave": "احفظ مكان المقهى",
+  "cafeLocating": "نحدد موقعك…",
+  "cafeLocationFailedTitle": "تعذّر تحديد الموقع",
+  "cafeLocDenied": "لم نحصل على إذن الموقع. يمكنك حفظ اسم المقهى فقط بلا رابط خرائط.",
+  "cafeLocDeniedForever": "إذن الموقع مرفوض. فعّله من إعدادات الجوال، أو احفظ الاسم فقط بلا رابط خرائط.",
+  "cafeLocServiceOff": "خدمة الموقع مغلقة في الجوال. شغّلها، أو احفظ الاسم فقط بلا رابط خرائط.",
+  "cafeLocTimeout": "استغرق تحديد الموقع وقتاً طويلاً. حاول لاحقاً، أو احفظ الاسم فقط بلا رابط خرائط.",
+  "cafeLocError": "تعذّر تحديد الموقع. يمكنك حفظ الاسم فقط بلا رابط خرائط.",
+  "cafeSaveNameOnly": "احفظ الاسم فقط",
+  "cafeNameTitle": "اسم المقهى",
+  "cafeNameLabel": "اسم المقهى",
+  "cafeNameRequired": "أدخل اسم المقهى",
+  "cafeSaveAction": "حفظ",
+  "cafeSaved": "حُفظ المقهى",
+  "cafeSaveFailed": "تعذّر حفظ المقهى",
+  "cafeOpenInMaps": "افتح في خرائط قوقل",
+  "cafeOpenFailed": "تعذّر فتح الخرائط",
+  "cafesTitle": "مقاهيّ المحفوظة",
+  "cafesEmptyTitle": "لم تحدد مقهى بعد",
+  "cafesEmptyBody": "افتح تفاصيل أي فحص واضغط «احفظ مكان المقهى» وأنت في المقهى.",
+  "cafesErrorTitle": "تعذّر تحميل المقاهي",
+  "cafesLoading": "جارٍ تحميل المقاهي",
+  "cafeScanCount": "الفحوصات: {count}",
+  "@cafeScanCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cafeLastScore": "آخر درجة: {score}/100",
+  "@cafeLastScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "cafeNoLocation": "بلا موقع",
+  "cafeMenu": "خيارات المقهى",
+  "cafeEdit": "تعديل الاسم",
+  "cafeEditTitle": "تعديل اسم المقهى",
+  "cafeDelete": "حذف المقهى",
+  "cafeDeleteTitle": "حذف هذا المقهى؟",
+  "cafeDeleteBody": "تبقى فحوصاتك ويُزال اسم المقهى منها. لا يمكن التراجع.",
+  "cafeDeleted": "تم حذف المقهى",
+  "cafeDeleteFailed": "تعذّر حذف المقهى",
+  "cafeRenameFailed": "تعذّر تعديل الاسم",
+  "scanCafe": "المقهى",
+  "settingsCafesSubtitle": "أماكن المقاهي التي حفظتها"
 }

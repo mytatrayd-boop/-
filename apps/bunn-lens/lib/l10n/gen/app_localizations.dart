@@ -385,6 +385,222 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'جارٍ تحميل المفضلة'**
   String get favoritesLoading;
+
+  /// No description provided for @cafeSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ مكان المقهى'**
+  String get cafeSave;
+
+  /// No description provided for @cafeLocating.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحدد موقعك…'**
+  String get cafeLocating;
+
+  /// No description provided for @cafeLocationFailedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحديد الموقع'**
+  String get cafeLocationFailedTitle;
+
+  /// No description provided for @cafeLocDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نحصل على إذن الموقع. يمكنك حفظ اسم المقهى فقط بلا رابط خرائط.'**
+  String get cafeLocDenied;
+
+  /// No description provided for @cafeLocDeniedForever.
+  ///
+  /// In ar, this message translates to:
+  /// **'إذن الموقع مرفوض. فعّله من إعدادات الجوال، أو احفظ الاسم فقط بلا رابط خرائط.'**
+  String get cafeLocDeniedForever;
+
+  /// No description provided for @cafeLocServiceOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة الموقع مغلقة في الجوال. شغّلها، أو احفظ الاسم فقط بلا رابط خرائط.'**
+  String get cafeLocServiceOff;
+
+  /// No description provided for @cafeLocTimeout.
+  ///
+  /// In ar, this message translates to:
+  /// **'استغرق تحديد الموقع وقتاً طويلاً. حاول لاحقاً، أو احفظ الاسم فقط بلا رابط خرائط.'**
+  String get cafeLocTimeout;
+
+  /// No description provided for @cafeLocError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحديد الموقع. يمكنك حفظ الاسم فقط بلا رابط خرائط.'**
+  String get cafeLocError;
+
+  /// No description provided for @cafeSaveNameOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ الاسم فقط'**
+  String get cafeSaveNameOnly;
+
+  /// No description provided for @cafeNameTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المقهى'**
+  String get cafeNameTitle;
+
+  /// No description provided for @cafeNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المقهى'**
+  String get cafeNameLabel;
+
+  /// No description provided for @cafeNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسم المقهى'**
+  String get cafeNameRequired;
+
+  /// No description provided for @cafeSaveAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get cafeSaveAction;
+
+  /// No description provided for @cafeSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظ المقهى'**
+  String get cafeSaved;
+
+  /// No description provided for @cafeSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ المقهى'**
+  String get cafeSaveFailed;
+
+  /// No description provided for @cafeOpenInMaps.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح في خرائط قوقل'**
+  String get cafeOpenInMaps;
+
+  /// No description provided for @cafeOpenFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح الخرائط'**
+  String get cafeOpenFailed;
+
+  /// No description provided for @cafesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقاهيّ المحفوظة'**
+  String get cafesTitle;
+
+  /// No description provided for @cafesEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحدد مقهى بعد'**
+  String get cafesEmptyTitle;
+
+  /// No description provided for @cafesEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح تفاصيل أي فحص واضغط «احفظ مكان المقهى» وأنت في المقهى.'**
+  String get cafesEmptyBody;
+
+  /// No description provided for @cafesErrorTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل المقاهي'**
+  String get cafesErrorTitle;
+
+  /// No description provided for @cafesLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحميل المقاهي'**
+  String get cafesLoading;
+
+  /// No description provided for @cafeScanCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفحوصات: {count}'**
+  String cafeScanCount(int count);
+
+  /// No description provided for @cafeLastScore.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر درجة: {score}/100'**
+  String cafeLastScore(int score);
+
+  /// No description provided for @cafeNoLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلا موقع'**
+  String get cafeNoLocation;
+
+  /// No description provided for @cafeMenu.
+  ///
+  /// In ar, this message translates to:
+  /// **'خيارات المقهى'**
+  String get cafeMenu;
+
+  /// No description provided for @cafeEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الاسم'**
+  String get cafeEdit;
+
+  /// No description provided for @cafeEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل اسم المقهى'**
+  String get cafeEditTitle;
+
+  /// No description provided for @cafeDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المقهى'**
+  String get cafeDelete;
+
+  /// No description provided for @cafeDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذا المقهى؟'**
+  String get cafeDeleteTitle;
+
+  /// No description provided for @cafeDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبقى فحوصاتك ويُزال اسم المقهى منها. لا يمكن التراجع.'**
+  String get cafeDeleteBody;
+
+  /// No description provided for @cafeDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف المقهى'**
+  String get cafeDeleted;
+
+  /// No description provided for @cafeDeleteFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حذف المقهى'**
+  String get cafeDeleteFailed;
+
+  /// No description provided for @cafeRenameFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تعديل الاسم'**
+  String get cafeRenameFailed;
+
+  /// No description provided for @scanCafe.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقهى'**
+  String get scanCafe;
+
+  /// No description provided for @settingsCafesSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أماكن المقاهي التي حفظتها'**
+  String get settingsCafesSubtitle;
 }
 
 class _AppLocalizationsDelegate

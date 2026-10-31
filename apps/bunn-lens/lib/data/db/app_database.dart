@@ -15,12 +15,34 @@ class Scans extends Table {
   DateTimeColumn get createdAt => dateTime()();
   BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
   TextColumn get promptVersion => text().nullable()();
+  IntColumn get cafeId => integer().nullable().references(Cafes, #id)();
 }
 
-@DriftDatabase(tables: [Scans])
+/// جدول `cafes` (ARCHITECTURE §4): الاسم إلزامي والإحداثيات اختيارية.
+@DataClassName('CafeRow')
+class Cafes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  RealColumn get lat => real().nullable()();
+  RealColumn get lng => real().nullable()();
+  DateTimeColumn get savedAt => dateTime()();
+}
+
+@DriftDatabase(tables: [Scans, Cafes])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(cafes);
+            await m.addColumn(scans, scans.cafeId);
+          }
+        },
+      );
 }

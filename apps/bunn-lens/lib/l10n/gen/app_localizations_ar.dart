@@ -157,4 +157,123 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get favoritesLoading => 'جارٍ تحميل المفضلة';
+
+  @override
+  String get cafeSave => 'احفظ مكان المقهى';
+
+  @override
+  String get cafeLocating => 'نحدد موقعك…';
+
+  @override
+  String get cafeLocationFailedTitle => 'تعذّر تحديد الموقع';
+
+  @override
+  String get cafeLocDenied =>
+      'لم نحصل على إذن الموقع. يمكنك حفظ اسم المقهى فقط بلا رابط خرائط.';
+
+  @override
+  String get cafeLocDeniedForever =>
+      'إذن الموقع مرفوض. فعّله من إعدادات الجوال، أو احفظ الاسم فقط بلا رابط خرائط.';
+
+  @override
+  String get cafeLocServiceOff =>
+      'خدمة الموقع مغلقة في الجوال. شغّلها، أو احفظ الاسم فقط بلا رابط خرائط.';
+
+  @override
+  String get cafeLocTimeout =>
+      'استغرق تحديد الموقع وقتاً طويلاً. حاول لاحقاً، أو احفظ الاسم فقط بلا رابط خرائط.';
+
+  @override
+  String get cafeLocError =>
+      'تعذّر تحديد الموقع. يمكنك حفظ الاسم فقط بلا رابط خرائط.';
+
+  @override
+  String get cafeSaveNameOnly => 'احفظ الاسم فقط';
+
+  @override
+  String get cafeNameTitle => 'اسم المقهى';
+
+  @override
+  String get cafeNameLabel => 'اسم المقهى';
+
+  @override
+  String get cafeNameRequired => 'أدخل اسم المقهى';
+
+  @override
+  String get cafeSaveAction => 'حفظ';
+
+  @override
+  String get cafeSaved => 'حُفظ المقهى';
+
+  @override
+  String get cafeSaveFailed => 'تعذّر حفظ المقهى';
+
+  @override
+  String get cafeOpenInMaps => 'افتح في خرائط قوقل';
+
+  @override
+  String get cafeOpenFailed => 'تعذّر فتح الخرائط';
+
+  @override
+  String get cafesTitle => 'مقاهيّ المحفوظة';
+
+  @override
+  String get cafesEmptyTitle => 'لم تحدد مقهى بعد';
+
+  @override
+  String get cafesEmptyBody =>
+      'افتح تفاصيل أي فحص واضغط «احفظ مكان المقهى» وأنت في المقهى.';
+
+  @override
+  String get cafesErrorTitle => 'تعذّر تحميل المقاهي';
+
+  @override
+  String get cafesLoading => 'جارٍ تحميل المقاهي';
+
+  @override
+  String cafeScanCount(int count) {
+    return 'الفحوصات: $count';
+  }
+
+  @override
+  String cafeLastScore(int score) {
+    return 'آخر درجة: $score/100';
+  }
+
+  @override
+  String get cafeNoLocation => 'بلا موقع';
+
+  @override
+  String get cafeMenu => 'خيارات المقهى';
+
+  @override
+  String get cafeEdit => 'تعديل الاسم';
+
+  @override
+  String get cafeEditTitle => 'تعديل اسم المقهى';
+
+  @override
+  String get cafeDelete => 'حذف المقهى';
+
+  @override
+  String get cafeDeleteTitle => 'حذف هذا المقهى؟';
+
+  @override
+  String get cafeDeleteBody =>
+      'تبقى فحوصاتك ويُزال اسم المقهى منها. لا يمكن التراجع.';
+
+  @override
+  String get cafeDeleted => 'تم حذف المقهى';
+
+  @override
+  String get cafeDeleteFailed => 'تعذّر حذف المقهى';
+
+  @override
+  String get cafeRenameFailed => 'تعذّر تعديل الاسم';
+
+  @override
+  String get scanCafe => 'المقهى';
+
+  @override
+  String get settingsCafesSubtitle => 'أماكن المقاهي التي حفظتها';
 }

@@ -157,4 +157,123 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get favoritesLoading => 'Loading favorites';
+
+  @override
+  String get cafeSave => 'Save cafe location';
+
+  @override
+  String get cafeLocating => 'Finding your location…';
+
+  @override
+  String get cafeLocationFailedTitle => 'Couldn\'t get your location';
+
+  @override
+  String get cafeLocDenied =>
+      'Location permission wasn\'t granted. You can save the cafe name only, without a maps link.';
+
+  @override
+  String get cafeLocDeniedForever =>
+      'Location permission is denied. Enable it in phone settings, or save the name only without a maps link.';
+
+  @override
+  String get cafeLocServiceOff =>
+      'Location services are off. Turn them on, or save the name only without a maps link.';
+
+  @override
+  String get cafeLocTimeout =>
+      'Finding your location took too long. Try later, or save the name only without a maps link.';
+
+  @override
+  String get cafeLocError =>
+      'Couldn\'t get your location. You can save the name only without a maps link.';
+
+  @override
+  String get cafeSaveNameOnly => 'Save name only';
+
+  @override
+  String get cafeNameTitle => 'Cafe name';
+
+  @override
+  String get cafeNameLabel => 'Cafe name';
+
+  @override
+  String get cafeNameRequired => 'Enter the cafe name';
+
+  @override
+  String get cafeSaveAction => 'Save';
+
+  @override
+  String get cafeSaved => 'Cafe saved';
+
+  @override
+  String get cafeSaveFailed => 'Couldn\'t save the cafe';
+
+  @override
+  String get cafeOpenInMaps => 'Open in Google Maps';
+
+  @override
+  String get cafeOpenFailed => 'Couldn\'t open maps';
+
+  @override
+  String get cafesTitle => 'My saved cafes';
+
+  @override
+  String get cafesEmptyTitle => 'No cafe saved yet';
+
+  @override
+  String get cafesEmptyBody =>
+      'Open any scan\'s details and tap \"Save cafe location\" while you\'re at the cafe.';
+
+  @override
+  String get cafesErrorTitle => 'Couldn\'t load cafes';
+
+  @override
+  String get cafesLoading => 'Loading cafes';
+
+  @override
+  String cafeScanCount(int count) {
+    return 'Scans: $count';
+  }
+
+  @override
+  String cafeLastScore(int score) {
+    return 'Last score: $score/100';
+  }
+
+  @override
+  String get cafeNoLocation => 'No location';
+
+  @override
+  String get cafeMenu => 'Cafe options';
+
+  @override
+  String get cafeEdit => 'Edit name';
+
+  @override
+  String get cafeEditTitle => 'Edit cafe name';
+
+  @override
+  String get cafeDelete => 'Delete cafe';
+
+  @override
+  String get cafeDeleteTitle => 'Delete this cafe?';
+
+  @override
+  String get cafeDeleteBody =>
+      'Your scans stay, but the cafe name is removed from them. This can\'t be undone.';
+
+  @override
+  String get cafeDeleted => 'Cafe deleted';
+
+  @override
+  String get cafeDeleteFailed => 'Couldn\'t delete the cafe';
+
+  @override
+  String get cafeRenameFailed => 'Couldn\'t rename the cafe';
+
+  @override
+  String get scanCafe => 'Cafe';
+
+  @override
+  String get settingsCafesSubtitle => 'Cafe places you saved';
 }

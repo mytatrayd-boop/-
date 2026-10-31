@@ -221,4 +221,6 @@ class _ControlledRepo implements ScanRepository {
   Future<bool> delete(int id) async => false;
   @override
   Future<bool> setFavorite(int id, bool value) async => false;
+  @override
+  Future<bool> setCafe(int scanId, int? cafeId) async => false;
 }

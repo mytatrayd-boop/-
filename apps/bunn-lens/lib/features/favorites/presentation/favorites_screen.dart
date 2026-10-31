@@ -17,7 +17,16 @@ class FavoritesScreen extends ConsumerWidget {
     final scans = ref.watch(favoriteScansProvider);
     final filter = ref.watch(favoritesFilterProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.favoritesTitle)),
+      appBar: AppBar(
+        title: Text(l10n.favoritesTitle),
+        actions: [
+          IconButton(
+            tooltip: l10n.cafesTitle,
+            icon: const Icon(Icons.place_outlined),
+            onPressed: () => context.push(AppRoutes.cafes),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(

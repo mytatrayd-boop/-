@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 
+import '../../domain/cafe.dart';
 import '../../domain/scan.dart';
 import '../db/app_database.dart';
 
@@ -17,6 +18,9 @@ abstract class ScanRepository {
 
   /// يضبط حالة المفضلة. يعيد false إن لم يوجد الفحص.
   Future<bool> setFavorite(int id, bool value);
+
+  /// يربط الفحص بمقهى ([cafeId]) أو يفك الربط بـnull. يعيد false إن لم يوجد الفحص.
+  Future<bool> setCafe(int scanId, int? cafeId);
 
   Future<Scan?> getById(int id);
 
@@ -66,16 +70,21 @@ class DriftScanRepository implements ScanRepository {
     }
   }
 
+  JoinedSelectStatement<HasResultSet, dynamic> _joined() =>
+      _db.select(_db.scans).join([leftOuterJoin(_db.cafes, _db.cafes.id.equalsExp(_db.scans.cafeId))]);
+
+  Scan _fromJoin(TypedResult r) => _toScan(r.readTable(_db.scans), r.readTableOrNull(_db.cafes));
+
   @override
   Stream<List<Scan>> watchAll({ScanType? type, bool favoritesOnly = false}) {
-    final q = _db.select(_db.scans)
+    final q = _joined()
       ..orderBy([
-        (t) => OrderingTerm.desc(t.createdAt),
-        (t) => OrderingTerm.desc(t.id),
+        OrderingTerm.desc(_db.scans.createdAt),
+        OrderingTerm.desc(_db.scans.id),
       ]);
-    if (type != null) q.where((t) => t.type.equals(type.name));
-    if (favoritesOnly) q.where((t) => t.isFavorite.equals(true));
-    return q.watch().map((rows) => rows.map(_toScan).toList());
+    if (type != null) q.where(_db.scans.type.equals(type.name));
+    if (favoritesOnly) q.where(_db.scans.isFavorite.equals(true));
+    return q.watch().map((rows) => rows.map(_fromJoin).toList());
   }
 
   @override
@@ -86,15 +95,22 @@ class DriftScanRepository implements ScanRepository {
   }
 
   @override
-  Future<Scan?> getById(int id) async {
-    final row = await (_db.select(_db.scans)..where((t) => t.id.equals(id))).getSingleOrNull();
-    return row == null ? null : _toScan(row);
+  Future<bool> setCafe(int scanId, int? cafeId) async {
+    final n = await (_db.update(_db.scans)..where((t) => t.id.equals(scanId)))
+        .write(ScansCompanion(cafeId: Value(cafeId)));
+    return n > 0;
   }
 
   @override
-  Stream<Scan?> watchById(int id) => (_db.select(_db.scans)..where((t) => t.id.equals(id)))
+  Future<Scan?> getById(int id) async {
+    final row = await (_joined()..where(_db.scans.id.equals(id))).getSingleOrNull();
+    return row == null ? null : _fromJoin(row);
+  }
+
+  @override
+  Stream<Scan?> watchById(int id) => (_joined()..where(_db.scans.id.equals(id)))
       .watchSingleOrNull()
-      .map((r) => r == null ? null : _toScan(r));
+      .map((r) => r == null ? null : _fromJoin(r));
 
   @override
   Future<bool> delete(int id) async {
@@ -115,7 +131,7 @@ class DriftScanRepository implements ScanRepository {
     return (t == null || t.isEmpty) ? null : t;
   }
 
-  Scan _toScan(ScanRow r) => Scan(
+  Scan _toScan(ScanRow r, CafeRow? c) => Scan(
         id: r.id,
         type: ScanType.values.byName(r.type),
         score: r.score,
@@ -126,5 +142,8 @@ class DriftScanRepository implements ScanRepository {
         price: r.price,
         isFavorite: r.isFavorite,
         promptVersion: r.promptVersion,
+        cafe: c == null
+            ? null
+            : Cafe(id: c.id, name: c.name, lat: c.lat, lng: c.lng, savedAt: c.savedAt),
       );
 }

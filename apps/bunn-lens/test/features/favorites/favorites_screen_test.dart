@@ -197,6 +197,8 @@ class _Repo implements ScanRepository {
   @override
   Future<bool> setFavorite(int id, bool value) async => false;
   @override
+  Future<bool> setCafe(int scanId, int? cafeId) async => false;
+  @override
   Future<Scan> save(NewScan scan) => throw UnimplementedError();
   @override
   Future<Scan?> getById(int id) async => null;
