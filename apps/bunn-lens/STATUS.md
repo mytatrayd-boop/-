@@ -68,3 +68,8 @@
 - **منجز وفُحص:** الوسيط المنشور يحلل صورة حقيقية بتوكن ضيف حقيقي (انظر DECISIONS). `npm test` 23/23، `flutter analyze` بلا مشاكل.
 - **لم يُجرَّب:** التطبيق نفسه على جهاز (يلزم `flutter run --dart-define-from-file=.env` بمفتاح Android وبناء APK)، Google/ربط الضيف/حذف الحساب، App Check الحقيقي.
 - **تذكير أمني:** `REQUIRE_APP_CHECK=false` حالياً في الإنتاج. أعده `true` قبل المختبرين.
+
+## بناء APK تجريبي
+- **جُهّز:** `.github/workflows/bunn-lens-android.yml` (فحص + اختبارات + `flutter build apk --release` موقّع بمفتاح debug، artifact، وprerelease اختياري بالتشغيل اليدوي). أُضيف إذن `INTERNET` لنسخة الإصدار (كان في debug/profile فقط) واسم التطبيق «عدسة البن» في أندرويد.
+- **المطلوب من المالك:** سر GitHub باسم `BUNN_LENS_FIREBASE_API_KEY_ANDROID` (Settings ← Secrets and variables ← Actions).
+- **لم يُجرَّب بعد:** تشغيل السير (لم يُدفع إلى GitHub Actions إلا الآن)، وتثبيت APK على جهاز.

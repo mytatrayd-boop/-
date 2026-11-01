@@ -1,0 +1,86 @@
+name: Bunn Lens — Android test APK
+
+# يبني APK تجريبياً لـ «عدسة البن» موقّعاً بمفتاح debug (كما في android/app/build.gradle.kts).
+# ليس للمتجر ولا للنشر العام. لا keystore ولا أسرار في التطبيق: المعرّفات عامة (Firebase/الوسيط).
+# - كل push على apps/bunn-lens/** (عدا worker/ وtools/): فحص + اختبارات + بناء + رفع artifact.
+# - نشر prerelease (رابط تنزيل علني) يحدث فقط بالتشغيل اليدوي مع publish_prerelease.
+# الإعداد الوحيد من السر: BUNN_LENS_FIREBASE_API_KEY_ANDROID (يضيفه المالك من Settings ← Secrets).
+# بدونه يُبنى التطبيق لكن الفحص يفشل بـ«تعذّر التحقق من حسابك».
+on:
+  push:
+    paths:
+      - 'apps/bunn-lens/**'
+      - '!apps/bunn-lens/worker/**'
+      - '!apps/bunn-lens/tools/**'
+      - '.github/workflows/bunn-lens-android.yml'
+  workflow_dispatch:
+    inputs:
+      publish_prerelease:
+        description: "انشر الملف كـ GitHub prerelease تجريبي (رابط عام)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults: { run: { working-directory: apps/bunn-lens } }
+    env:
+      # معرّفات عامة (ليست أسراراً)
+      FIREBASE_PROJECT_ID: bunn-lens
+      FIREBASE_APP_ID_ANDROID: "1:740863755565:android:32798fff3fe9ae6dcd7fa4"
+      FIREBASE_MESSAGING_SENDER_ID: "740863755565"
+      WORKER_URL: https://bunn-lens-worker.asraty200.workers.dev
+      FIREBASE_API_KEY_ANDROID: ${{ secrets.BUNN_LENS_FIREBASE_API_KEY_ANDROID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: 3.47.9, channel: stable, cache: true }
+
+      - name: Write build config
+        run: |
+          if [ -z "$FIREBASE_API_KEY_ANDROID" ]; then
+            echo "::warning title=Firebase API key missing::أضف السر BUNN_LENS_FIREBASE_API_KEY_ANDROID وإلا يفشل الفحص داخل التطبيق"
+          fi
+          {
+            echo "FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID"
+            echo "FIREBASE_APP_ID_ANDROID=$FIREBASE_APP_ID_ANDROID"
+            echo "FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID"
+            echo "WORKER_URL=$WORKER_URL"
+            echo "FIREBASE_API_KEY_ANDROID=$FIREBASE_API_KEY_ANDROID"
+          } > "$RUNNER_TEMP/bunn-lens.env"
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Build APK (debug-signed)
+        run: flutter build apk --release --dart-define-from-file="$RUNNER_TEMP/bunn-lens.env" --build-number=${{ github.run_number }}
+      - run: cp build/app/outputs/flutter-apk/app-release.apk bunn-lens-test.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "bunn-lens-test-apk-${{ github.run_number }}"
+          path: apps/bunn-lens/bunn-lens-test.apk
+
+  prerelease:
+    needs: apk
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_prerelease
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: "bunn-lens-test-apk-${{ github.run_number }}" }
+      - name: Publish test prerelease
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release create "bunn-lens-test-v${{ github.run_number }}" bunn-lens-test.apk \
+            --repo "${{ github.repository }}" --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title "عدسة البن — نسخة تجريبية ${{ github.run_number }}" \
+            --notes "نسخة تجريبية للاختبار فقط، موقّعة بمفتاح debug. ليست للمتجر ولا للاستخدام العام."

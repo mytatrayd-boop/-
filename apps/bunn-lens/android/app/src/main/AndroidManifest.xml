@@ -1,9 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- الإنترنت لازم في نسخة الإصدار (الملفان debug/profile يضيفانه للتطوير فقط). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- الموقع: عند الاستخدام فقط وبضغط زر «احفظ مكان المقهى»، بلا تتبع. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
-        android:label="bunn_lens"
+        android:label="عدسة البن"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
