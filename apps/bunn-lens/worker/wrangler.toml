@@ -7,8 +7,9 @@ compatibility_date = "2025-01-01"
 FIREBASE_PROJECT_ID = "bunn-lens"
 FIREBASE_PROJECT_NUMBER = "740863755565"
 GEMINI_MODEL = "gemini-3.1-flash-lite"
+GEMINI_FALLBACK_MODEL = "gemini-3.5-flash-lite"
 DAILY_CAP = "300"
-REQUIRE_APP_CHECK = "true"
+# REQUIRE_APP_CHECK: غير معرّف هنا فيُعدّ مطلوباً (آمن افتراضياً)؛ تُضبط قيمته من لوحة Cloudflare عند الحاجة وتبقى بـ --keep-vars
 
 [[durable_objects.bindings]]
 name = "USER_QUOTA"

@@ -36,7 +36,7 @@ class HttpAnalysisService implements AnalysisService {
     required this.baseUrl,
     required this.tokens,
     http.Client? client,
-    this.timeout = const Duration(seconds: 25),
+    this.timeout = const Duration(seconds: 35),
   }) : _client = client ?? http.Client();
 
   final String baseUrl;

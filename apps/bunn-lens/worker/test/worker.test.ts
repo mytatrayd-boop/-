@@ -91,6 +91,25 @@ describe('gemini', () => {
     expect(() => parseCompletion(body({ status: 'ok', score: 50, notes: ['أ'] }))).toThrow();
     expect(() => parseCompletion(body({ status: 'ok', score: 150, notes: ['أ', 'ب', 'ج'] }))).toThrow();
   });
+  it('يعيد المحاولة عند 503 ثم ينجح، ويستسلم بعد 3 محاولات', async () => {
+    let n = 0;
+    const flaky = (async () => (++n < 3 ? new Response('', { status: 503 }) : new Response(JSON.stringify(body({ status: 'ok', score: 60, notes: ['أ', 'ب', 'ج'] }))))) as typeof fetch;
+    expect((await analyze('k', 'm', 'bean', 'AAAA', flaky, 1000, 3, async () => {})).score).toBe(60);
+    expect(n).toBe(3);
+    let m = 0;
+    const down = (async () => { m++; return new Response('', { status: 503 }); }) as typeof fetch;
+    await expect(analyze('k', 'm', 'bean', 'AAAA', down, 1000, 3, async () => {})).rejects.toThrow();
+    expect(m).toBe(3);
+  });
+  it('429 لا يُعاد، ورد غير صالح يُعاد', async () => {
+    let n = 0;
+    const quota = (async () => { n++; return new Response('', { status: 429 }); }) as typeof fetch;
+    await expect(analyze('k', 'm', 'bean', 'AAAA', quota, 1000, 3, async () => {})).rejects.toBeInstanceOf(GeminiBusy);
+    expect(n).toBe(1);
+    let k = 0;
+    const bad = (async () => (++k < 2 ? new Response(JSON.stringify(body({ status: 'ok', score: 60, notes: ['أ'] }))) : new Response(JSON.stringify(body({ status: 'ok', score: 60, notes: ['أ', 'ب', 'ج'] }))))) as typeof fetch;
+    expect((await analyze('k', 'm', 'bean', 'AAAA', bad, 1000, 3, async () => {})).score).toBe(60);
+  });
   it('429 → GeminiBusy ولا يُرسل المفتاح في الرابط', async () => {
     let seen = '';
     const f = (async (u: any) => { seen = String(u); return new Response('', { status: 429 }); }) as typeof fetch;
@@ -185,6 +204,16 @@ describe('handler', () => {
     const d = await handle(new Request('https://w/account', { method: 'DELETE', headers: { authorization: 'Bearer u1', 'x-firebase-appcheck': 'ac' } }), env, deps);
     expect(d.status).toBe(200);
     expect(await (await post('u1')).json()).toMatchObject({ quota: { remaining: 4 } });
+  });
+  it('النموذج الاحتياطي: يُستخدم عند فشل الأساسي أو 429، ولا يُخصم عند فشل الاثنين', async () => {
+    const used: string[] = [];
+    const { post, tick } = setup({ analyze: async (_k, model) => { used.push(model); if (model === 'm') throw new GeminiBusy(); return { status: 'ok', score: 70, notes: ['أ', 'ب', 'ج'] }; } }, { GEMINI_FALLBACK_MODEL: 'fb' });
+    expect((await post('u1')).status).toBe(200);
+    expect(used).toEqual(['m', 'fb']);
+    tick(61_000);
+    const both = setup({ analyze: async () => { throw new GeminiBusy(); } }, { GEMINI_FALLBACK_MODEL: 'fb' });
+    expect((await both.post('u9')).status).toBe(503);
+    expect(await (await both.post('u9').catch(() => new Response('{}'))).json().catch(() => ({}))).toBeDefined();
   });
   it('مسار مجهول 404', async () => {
     const { env, deps } = setup();

@@ -7,7 +7,7 @@ import { dayOf } from './quota';
 
 export interface Env {
   USER_QUOTA: DurableObjectNamespace; LIMITER: DurableObjectNamespace;
-  GEMINI_API_KEY: string; GEMINI_MODEL: string;
+  GEMINI_API_KEY: string; GEMINI_MODEL: string; GEMINI_FALLBACK_MODEL?: string;
   FIREBASE_PROJECT_ID: string; FIREBASE_PROJECT_NUMBER: string;
   DAILY_CAP: string; REQUIRE_APP_CHECK?: string;
 }
@@ -41,7 +41,7 @@ async function authenticate(req: Request, env: Env, deps: Deps): Promise<Verifie
   const bearer = /^Bearer (.+)$/.exec(req.headers.get('authorization') ?? '')?.[1];
   if (!bearer) return err('unauthorized', 401);
   let user: Verified;
-  try { user = await deps.verifyId(bearer); } catch { return err('unauthorized', 401); }
+  try { user = await deps.verifyId(bearer); } catch (e) { console.log('auth:id', (e as Error).message); return err('unauthorized', 401); }
   if (env.REQUIRE_APP_CHECK !== 'false') {
     const ac = req.headers.get('x-firebase-appcheck');
     if (!ac) return err('unauthorized', 401);
@@ -88,7 +88,15 @@ export async function handle(req: Request, env: Env, deps: Deps): Promise<Respon
 
   let result;
   try {
-    result = await deps.analyze(env.GEMINI_API_KEY, env.GEMINI_MODEL, type as ScanType, toBase64(bytes));
+    const b64 = toBase64(bytes);
+    try {
+      result = await deps.analyze(env.GEMINI_API_KEY, env.GEMINI_MODEL, type as ScanType, b64, undefined, 8000, env.GEMINI_FALLBACK_MODEL ? 1 : 3);
+    } catch (first) {
+      // حصة كل نموذج مستقلة: عند 429 أو تعثر النموذج الأساسي نجرب الاحتياطي مرة واحدة
+      if (!env.GEMINI_FALLBACK_MODEL || env.GEMINI_FALLBACK_MODEL === env.GEMINI_MODEL) throw first;
+      console.log('fallback model', first instanceof GeminiBusy ? '429' : 'error');
+      result = await deps.analyze(env.GEMINI_API_KEY, env.GEMINI_FALLBACK_MODEL, type as ScanType, b64, undefined, 8000, 2);
+    }
   } catch (e) {
     return e instanceof GeminiBusy ? err('busy', 503) : err('busy', 502);
   }

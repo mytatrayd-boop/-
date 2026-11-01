@@ -27,17 +27,33 @@ export function parseCompletion(j: any): Assessment {
 /** يقرّب الدرجة لأقرب 5 لثبات أعلى بين الفحوص. */
 export const roundScore = (n: number) => Math.min(100, Math.max(0, Math.round(n / 5) * 5));
 
-export async function analyze(apiKey: string, model: string, type: ScanType, base64: string, f: typeof fetch = fetch, timeoutMs = 20000): Promise<Assessment> {
-  let res: Response;
-  try {
-    res = await f(ENDPOINT, {
-      method: 'POST', signal: AbortSignal.timeout(timeoutMs),
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify(buildBody(type, model, base64)),
-    });
-  } catch { throw new GeminiFailed('network'); }
-  if (res.status === 429) throw new GeminiBusy('429');
-  if (!res.ok) throw new GeminiFailed(`http ${res.status}`);
-  const a = parseCompletion(await res.json());
-  return a.status === 'ok' ? { ...a, score: roundScore(a.score) } : a;
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/**
+ * يستدعي Gemini مع إعادة محاولة (حتى 3 مرات) عند 5xx أو الشبكة أو رد غير صالح.
+ * 429 (الحصة) لا يُعاد: يخرج فوراً كـ GeminiBusy. السجل بلا صور ولا توكنات.
+ */
+export async function analyze(apiKey: string, model: string, type: ScanType, base64: string, f: typeof fetch = fetch,
+  timeoutMs = 10000, attempts = 3, wait: (ms: number) => Promise<void> = sleep): Promise<Assessment> {
+  let last = 'unknown';
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) await wait(600 * i);
+    let res: Response;
+    try {
+      res = await f(ENDPOINT, {
+        method: 'POST', signal: AbortSignal.timeout(timeoutMs),
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify(buildBody(type, model, base64)),
+      });
+    } catch { last = 'network'; continue; }
+    if (res.status === 429) throw new GeminiBusy('429');
+    if (res.status >= 500) { last = `http ${res.status}`; continue; }
+    if (!res.ok) { console.log('gemini', res.status); throw new GeminiFailed(`http ${res.status}`); }
+    try {
+      const a = parseCompletion(await res.json());
+      return a.status === 'ok' ? { ...a, score: roundScore(a.score) } : a;
+    } catch (e) { last = (e as Error).message; }
+  }
+  console.log('gemini failed', last);
+  throw new GeminiFailed(last);
 }
