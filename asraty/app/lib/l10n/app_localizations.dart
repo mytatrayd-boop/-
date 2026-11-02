@@ -3338,6 +3338,18 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'تعذّر إرسال مكانك، سنعيد المحاولة'**
   String get tripSendFailed;
+
+  /// No description provided for @waitingServer.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الاتصال بالخادم… قد يستغرق بضع ثوانٍ'**
+  String get waitingServer;
+
+  /// No description provided for @loadingFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحميل بيانات أسرتك…'**
+  String get loadingFamily;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

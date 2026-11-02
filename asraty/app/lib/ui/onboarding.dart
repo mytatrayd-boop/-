@@ -209,6 +209,24 @@ class _OnboardingState extends ConsumerState<Onboarding> {
         ),
       );
 
+  /// While the server answers (it can take a few seconds when it wakes up): a cloud, a spinner and
+  /// a line saying what is happening, so the screen never looks frozen.
+  Widget _waiting() => AnimatedSize(
+        duration: const Duration(milliseconds: 150),
+        child: !_busy
+            ? const SizedBox(width: double.infinity)
+            : Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.cloud_sync_rounded, color: context.pal.brandInk),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(context.t.waitingServer, style: TextStyle(color: context.pal.brandInk, fontWeight: FontWeight.w700))),
+                  const SizedBox(width: 10),
+                  const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2.4)),
+                ]),
+              ),
+      );
+
   Widget _link(String text, VoidCallback onTap) => Center(
         child: TextButton(
           onPressed: onTap,
@@ -242,7 +260,8 @@ class _OnboardingState extends ConsumerState<Onboarding> {
                 ]),
               ),
               ?err,
-              Btn(t.loginBtn, onPressed: _busy || !_canLogin ? null : _login),
+              _waiting(),
+              Btn(t.loginBtn, key: const ValueKey('btn-login'), busy: _busy, onPressed: _busy || !_canLogin ? null : _login),
             ]),
             _link(t.forgotPassword, () => _go(_Step.reset)),
             Btn(t.noAccountRegister, kind: BtnKind.ghost, onPressed: () => _go(_Step.register)),
@@ -296,7 +315,7 @@ class _OnboardingState extends ConsumerState<Onboarding> {
               _emailField(),
               _passField(newPassword: true, onSubmit: _requestCode),
               ?err,
-              Btn(register ? t.registerBtn : t.sendCode, onPressed: _busy ? null : _requestCode),
+              Btn(register ? t.registerBtn : t.sendCode, key: const ValueKey('btn-request'), busy: _busy, onPressed: _busy ? null : _requestCode),
             ]),
             if (register) _link(t.haveAccountLogin, () => _go(_Step.login)),
             if (demo) NoteBox(t.demoCodeNote),
@@ -331,7 +350,8 @@ class _OnboardingState extends ConsumerState<Onboarding> {
               decoration: InputDecoration(hintText: '••••••', counterText: '', semanticCounterText: t.codeFromEmail),
             ),
             ?err,
-            Btn(t.verify, onPressed: _busy ? null : _verify),
+            _waiting(),
+            Btn(t.verify, key: const ValueKey('btn-verify'), busy: _busy, onPressed: _busy ? null : _verify),
             Btn('📋 ${t.pasteCode}', kind: BtnKind.ghost, onPressed: _busy ? null : _paste),
             Btn(t.resendCode, kind: BtnKind.ghost, onPressed: _busy ? null : () => _requestCode(resend: true)),
           ]),

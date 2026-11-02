@@ -68,7 +68,13 @@ class _Home extends ConsumerWidget {
     if (s.session != null && !s.signedIn) {
       return Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(children: [const CircularProgressIndicator(), const SizedBox(height: 12), Muted(context.t.loading)]),
+        child: Column(children: [
+          Icon(Icons.cloud_sync_rounded, size: 40, color: context.pal.brandInk),
+          const SizedBox(height: 10),
+          const CircularProgressIndicator(),
+          const SizedBox(height: 12),
+          Muted(context.t.loadingFamily),
+        ]),
       );
     }
     ref.watch(accessProvider);
