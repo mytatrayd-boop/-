@@ -145,6 +145,7 @@ class TripSharer extends Notifier<bool> {
     _sub?.cancel();
     _sub = Geolocator.getPositionStream(locationSettings: _locationSettings(background: true)).listen(
       (p) {
+        ref.read(tripMyPositionProvider.notifier).set(p);
         final b = _best;
         // Keep the most accurate fix; a newer one wins when it is not clearly worse.
         if (b == null || p.accuracy <= b.accuracy * 1.5 || p.timestamp.difference(b.timestamp).inSeconds > 10) _best = p;
@@ -164,6 +165,7 @@ class TripSharer extends Notifier<bool> {
         final p = await currentPosition(ask: false);
         if (p != null && first) {
           first = false;
+          ref.read(tripMyPositionProvider.notifier).set(p);
           await _send(p, force: true);
         }
       }
@@ -178,6 +180,7 @@ class TripSharer extends Notifier<bool> {
     _timer = null;
     _best = null;
     _last = null;
+    ref.read(tripMyPositionProvider.notifier).set(null);
     state = false;
   }
 
@@ -210,6 +213,16 @@ class TripSharer extends Notifier<bool> {
 }
 
 final tripSharerProvider = NotifierProvider<TripSharer, bool>(TripSharer.new);
+
+/// This phone's latest reading while sharing. The screen shows it at once, without waiting for the
+/// round trip to the server, so the pin appears the moment sharing starts.
+class TripMyPosition extends Notifier<Position?> {
+  @override
+  Position? build() => null;
+  void set(Position? p) => state = p;
+}
+
+final tripMyPositionProvider = NotifierProvider<TripMyPosition, Position?>(TripMyPosition.new);
 
 /// Why the last send of this phone's place failed (null = fine). Shown under the share button
 /// so a failure in the field is visible instead of silent.
@@ -308,6 +321,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     final now = ref.watch(clockProvider).value ?? DateTime.now();
     final sharing = ref.watch(tripSharerProvider);
     final shareError = ref.watch(tripShareErrorProvider);
+    final myPos = ref.watch(tripMyPositionProvider);
     final trip = d.trip;
     final manager = can(me, Perm.trip);
 
@@ -335,7 +349,12 @@ class _TripPageState extends ConsumerState<TripPage> {
 
     final paused = trip.paused.contains(me.id);
     if (sharing && paused) Future.microtask(() => ref.read(tripSharerProvider.notifier).stop());
-    final mine = d.locations[me.id];
+    // The pin of this phone comes from its own reading at once (no wait for the server).
+    final locs = Map<String, MemberLoc>.of(d.locations);
+    if (sharing && !paused && myPos != null) {
+      locs[me.id] = MemberLoc(personId: me.id, lat: myPos.latitude, lng: myPos.longitude, acc: myPos.accuracy.round(), at: now);
+    }
+    final mine = locs[me.id];
     final meet = trip.meet;
     final meetDist = meet != null && mine != null ? distanceMeters(mine.lat, mine.lng, meet.lat, meet.lng) : null;
 
@@ -374,9 +393,9 @@ class _TripPageState extends ConsumerState<TripPage> {
           ],
         ),
       ],
-      TripMap(c: widget.c, trip: trip, now: now),
+      TripMap(c: widget.c, trip: trip, now: now, locations: locs),
       H3(t.tripFamily),
-      for (final p in d.people) _personRow(context, p, trip, d.locations[p.id], mine, now, b),
+      for (final p in d.people) _personRow(context, p, trip, locs[p.id], mine, now, b),
       NoteBox(t.tripPrivacy),
       ..._places(context, manager, b),
       if (manager) ...[
@@ -461,10 +480,11 @@ class TripBanner extends ConsumerWidget {
 /// The family on one map (OpenStreetMap, free, no key): a pin per person who shares
 /// (green = fresh, yellow = a few minutes old, red = old) and the meeting point.
 class TripMap extends StatefulWidget {
-  const TripMap({super.key, required this.c, required this.trip, required this.now});
+  const TripMap({super.key, required this.c, required this.trip, required this.now, required this.locations});
   final Ctx c;
   final TripState trip;
   final DateTime now;
+  final Map<String, MemberLoc> locations;
   @override
   State<TripMap> createState() => _TripMapState();
 }
@@ -485,7 +505,7 @@ class _TripMapState extends State<TripMap> {
 
   List<_Pin> _pins() {
     final d = widget.c.data, out = <_Pin>[];
-    for (final loc in d.locations.values) {
+    for (final loc in widget.locations.values) {
       final p = d.person(loc.personId);
       if (p == null || widget.trip.paused.contains(p.id)) continue;
       final min = widget.now.difference(loc.at).inMinutes;
