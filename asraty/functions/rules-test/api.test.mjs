@@ -255,25 +255,21 @@ test("avatar photo, parent lock, monthly tasks", async () => {
   assert.equal(day.tasks, 1, "reports count done tasks apart from prayers and competitions");
 });
 
-test("prayer tasks only for the running prayer, and only for half an hour after its adhan", async () => {
+test("prayer tasks only for the running prayer; late ones are worth no points", async () => {
   await clearRate();
   const kid = await login("kid1@test.sa", "member");
   await rejects(call("api", { op: "setPrayer", lat: 24.7, lng: 46.7 }, kid.idToken), "no-permission");
   await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
-  const { currentPrayer, prayerOpen } = await import("../build/src/prayer.js");
+  const { currentPrayer, prayerPoints } = await import("../build/src/prayer.js");
   const now = currentPrayer(24.7136, 46.6753, Date.now());
   const other = now.key === "fajr" ? "dhuhr" : "fajr";
   await rejects(call("api", { op: "completeTask", taskId: `prayer-${other}-${kid.personId}` }, kid.idToken), "prayer-over");
   await rejects(call("api", { op: "completeTask", taskId: `prayer-${now.key}-${owner.personId}` }, kid.idToken), "task-not-found");
-  // Depends on the real clock: inside the window it is done for the full points; outside it no longer exists.
-  if (prayerOpen(now, Date.now())) {
-    await call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken);
-    const c = await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).get();
-    assert.equal(c.data().points, 4);
-    assert.equal(c.data().kind, "prayer");
-  } else {
-    await rejects(call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken), "prayer-over");
-  }
+  await call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken);
+  const c = await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).get();
+  // Half an hour after the adhan it is still a task, but worth no points.
+  assert.equal(c.data().points, prayerPoints(now, 4, Date.now()));
+  assert.equal(c.data().kind, "prayer");
 
   // An old hand-made prayer task is hidden and refused while the automatic prayers are on, but other tasks work.
   await call("api", { op: "addTask", title: "صلاة الفجر", personId: kid.personId, points: 10, repeat: "daily" }, owner.idToken);

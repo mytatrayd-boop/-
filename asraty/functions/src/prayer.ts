@@ -29,13 +29,13 @@ export function prayerTimes(lat: number, lng: number, ms: number): Record<Prayer
   return { fajr: t.fajr.getTime(), dhuhr: t.dhuhr.getTime(), asr: t.asr.getTime(), maghrib: t.maghrib.getTime(), isha: t.isha.getTime() };
 }
 
-/** Half an hour after its adhan a prayer task closes: it disappears (Isha: see ISHA_UNTIL_HOUR). */
+/** Half an hour after its adhan a prayer is late: still a task, but worth no points. */
 export const PRAYER_GRACE_MS = 30 * 60e3;
 
-/** Isha stays open until this Riyadh hour (owner's decision, Oct 2026). */
+/** Isha keeps its points until this Riyadh hour (owner's decision, Oct 2026). */
 export const ISHA_UNTIL_HOUR = 23;
 
-/** When the prayer that started at `start` closes (mirrored in app/lib/core/models.dart lateFrom). */
+/** When a prayer that started at `start` becomes late (mirrored in app/lib/core/models.dart lateAt). */
 export function lateAfter(w: { key?: PrayerKey; start: number }): number {
   const grace = w.start + PRAYER_GRACE_MS;
   if (w.key !== "isha") return grace;
@@ -44,8 +44,8 @@ export function lateAfter(w: { key?: PrayerKey; start: number }): number {
   return Math.max(grace, until);
 }
 
-/** A prayer task exists only while it is open: from its adhan until half an hour later (Isha: until 11 pm). */
-export const prayerOpen = (w: { key?: PrayerKey; start: number }, ms: number) => ms >= w.start && ms <= lateAfter(w);
+/** Points a prayer earns when marked done at `ms` (none once it is late). */
+export const prayerPoints = (w: { key?: PrayerKey; start: number }, points: number, ms: number) => (ms > lateAfter(w) ? 0 : points);
 
 export interface PrayerWindow {
   key: PrayerKey;

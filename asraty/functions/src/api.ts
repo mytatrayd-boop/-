@@ -8,7 +8,7 @@ import {
 } from "./logic";
 import { issueCode } from "./authCodes";
 import { credRef } from "./passwords";
-import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId, prayerOpen } from "./prayer";
+import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId, prayerPoints } from "./prayer";
 
 interface Ctx {
   fid: string;
@@ -318,9 +318,8 @@ const ops: Record<string, Handler> = {
       if (!s?.enabled) fail("task-not-found", {}, "not-found");
       const now = Date.now();
       const w = currentPrayer(s.lat, s.lng, now);
-      // The prayer task exists only for half an hour after its adhan (Isha: until 11 pm).
-      if (w.key !== prayer.key || !prayerOpen(w, now)) fail("prayer-over");
-      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: s.points, pk: w.dayKey };
+      if (w.key !== prayer.key) fail("prayer-over");
+      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: prayerPoints(w, s.points, now), pk: w.dayKey };
     })() : null;
     const familyPrayerOn = ((await fam(c.fid).get()).data()?.prayer as PrayerSettings | undefined)?.enabled === true;
     const tRef = fam(c.fid).collection("tasks").doc(taskId);

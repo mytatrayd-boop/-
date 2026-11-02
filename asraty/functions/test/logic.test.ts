@@ -121,22 +121,22 @@ test("prayer window runs from its adhan until the next prayer (Riyadh)", async (
   assert.equal(parsePrayerTaskId("prayer-xx-abc"), null);
 });
 
-test("a prayer task exists only for half an hour after its adhan", async () => {
-  const { prayerOpen, PRAYER_GRACE_MS } = await import("../src/prayer");
+test("a prayer half an hour after its adhan is worth no points", async () => {
+  const { prayerPoints, PRAYER_GRACE_MS } = await import("../src/prayer");
   const w = { start: riyadh("2026-10-20T11:40:00") };
-  assert.equal(prayerOpen(w, w.start - 1000), false, "not before the adhan");
-  assert.equal(prayerOpen(w, w.start + 10 * 60e3), true);
-  assert.equal(prayerOpen(w, w.start + PRAYER_GRACE_MS), true);
-  assert.equal(prayerOpen(w, w.start + PRAYER_GRACE_MS + 1000), false, "it disappears after half an hour");
+  assert.equal(prayerPoints(w, 5, w.start + 10 * 60e3), 5);
+  assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS), 5);
+  assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS + 1000), 0);
 });
 
-test("Isha stays open until 11 pm Riyadh time; other prayers keep the half hour", async () => {
-  const { prayerOpen } = await import("../src/prayer");
+test("Isha keeps its points until 11 pm Riyadh time", async () => {
+  const { prayerPoints } = await import("../src/prayer");
   const w = { key: "isha" as const, start: riyadh("2026-10-20T18:45:00") };
-  assert.equal(prayerOpen(w, riyadh("2026-10-20T20:30:00")), true);
-  assert.equal(prayerOpen(w, riyadh("2026-10-20T23:00:00")), true);
-  assert.equal(prayerOpen(w, riyadh("2026-10-20T23:00:01")), false);
-  assert.equal(prayerOpen({ key: "maghrib", start: riyadh("2026-10-20T17:20:00") }, riyadh("2026-10-20T18:00:00")), false);
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T20:30:00")), 5);
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T23:00:00")), 5);
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T23:00:01")), 0);
+  // Other prayers keep the half hour.
+  assert.equal(prayerPoints({ key: "maghrib", start: riyadh("2026-10-20T17:20:00") }, 5, riyadh("2026-10-20T18:00:00")), 0);
 });
 
 test("old hand-made prayer tasks are recognised by their title", async () => {

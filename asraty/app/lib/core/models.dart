@@ -83,18 +83,16 @@ class TaskItem {
   final bool legacyPrayer;
 }
 
-/// The running prayer for a member: the task exists from its adhan until half an hour later (Isha: until 11 pm).
+/// The running prayer for a member: open from its adhan until the next one.
 class PrayerSlot {
   const PrayerSlot({required this.key, required this.start, required this.end, required this.dayKey});
   final String key; // fajr | dhuhr | asr | maghrib | isha
   final DateTime start, end;
   final String dayKey;
 
-  /// Past this moment the prayer task is gone (functions/src/prayer.ts lateAfter / prayerOpen).
+  /// Late once half an hour has passed (Isha: at 11 pm Riyadh time): it stays as a
+  /// task until the next prayer, but its points are gone (functions/src/prayer.ts lateAfter).
   bool lateAt(DateTime now) => now.isAfter(lateFrom);
-
-  /// The prayer task is shown only while this is true.
-  bool openAt(DateTime now) => !now.isBefore(start) && !now.isAfter(lateFrom);
 
   DateTime get lateFrom {
     final grace = start.add(const Duration(minutes: 30));

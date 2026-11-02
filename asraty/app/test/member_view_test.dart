@@ -32,12 +32,10 @@ Future<ProviderContainer> openAs(WidgetTester tester, String email, Role role) a
 
 void main() {
   testWidgets('member: sign-out in the header, ranks and report, prizes and honor board', (tester) async {
-    final c = await openAs(tester, 'aseel@demo.sa', Role.member);
+    await openAs(tester, 'aseel@demo.sa', Role.member);
     expect(find.text('خروج'), findsOneWidget);
-    // The prayer task shows only while its time is open (half an hour after the adhan); it depends on the real clock.
-    final d = c.read(backendProvider).current.data!;
-    final open = d.tasksOf(c.read(backendProvider).current.me!.id, DateTime.now()).any((x) => x.prayer != null);
-    expect(find.textContaining('صلاة '), open ? findsWidgets : findsNothing);
+    // The prayer whose time is running is among the tasks.
+    expect(find.textContaining('صلاة '), findsWidgets);
     expect(find.text('تقريري'), findsOneWidget);
 
     await tester.tap(find.descendant(of: find.byType(SegTabs<MTab>), matching: find.text('الجوائز')));

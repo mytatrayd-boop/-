@@ -225,22 +225,30 @@ void main() {
     expect(row.notDone, 0, reason: 'both daily tasks are done (the monthly task is not due in a daily report)');
   });
 
-  test('prayer: the task exists only half an hour after its adhan (Isha until 11 pm), always for the full points', () async {
+  test('prayer: half an hour after its adhan it stays as a task but is worth no points', () async {
     final b = DemoBackend(clock: () => clock);
     final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
     final d = b.current.data!;
-    final times = prayerTimesOn(d.prayer!, clock);
-    DateTime at(String k, int min) => times[k]!.add(Duration(minutes: min));
-    bool has(DateTime t) => d.tasksOf(aseel.id, t).any((x) => x.prayer != null);
-    final dhuhr = d.tasksOf(aseel.id, at('dhuhr', 10)).firstWhere((x) => x.prayer != null);
-    expect(dhuhr.points, 5, reason: 'the full points inside the window');
-    expect(has(at('dhuhr', -1)), isFalse, reason: 'not before the adhan');
-    expect(has(at('dhuhr', 30)), isTrue);
-    expect(has(at('dhuhr', 31)), isFalse, reason: 'it disappears after half an hour');
-    // Isha stays until 11 pm Riyadh time.
+    final slot = d.tasksOf(aseel.id, clock).first.prayer!;
+    final early = d.tasksOf(aseel.id, slot.start.add(const Duration(minutes: 10))).first;
+    final late = d.tasksOf(aseel.id, slot.start.add(const Duration(minutes: 31))).first;
+    expect(early.points, 5);
+    expect(late.prayer, isNotNull, reason: 'still listed until the next prayer');
+    expect(late.points, 0);
+  });
+
+  test('prayer: Isha keeps its points until 11 pm Riyadh time, then it is a task worth nothing', () async {
+    final b = DemoBackend(clock: () => clock);
+    final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
+    final d = b.current.data!;
+    final isha = prayerTimesOn(d.prayer!, clock)['isha']!;
     final eleven = DateTime.utc(clock.toUtc().add(const Duration(hours: 3)).year, 9, 29, 23).subtract(const Duration(hours: 3));
-    expect(has(eleven.subtract(const Duration(minutes: 1))), isTrue);
-    expect(has(eleven.add(const Duration(minutes: 1))), isFalse);
+    final before = d.tasksOf(aseel.id, eleven.subtract(const Duration(minutes: 1))).first;
+    final after = d.tasksOf(aseel.id, eleven.add(const Duration(minutes: 1))).first;
+    expect(before.prayer!.key, 'isha');
+    expect(isha.isBefore(eleven), isTrue);
+    expect(before.points, 5, reason: 'Isha keeps its points until 11 pm');
+    expect(after.points, 0, reason: 'after 11 pm it is still listed but worth nothing');
   });
 
   test('old hand-made prayer tasks are hidden from the member (and refused) but the admin sees them to delete', () async {
