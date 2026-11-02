@@ -12,11 +12,15 @@ import 'push.dart';
 /// each prize an hour before its hand-over and at the hand-over.
 class Reminders {
   static const _prayerBase = 7000, _prizeBase = 8000, _max = 60;
-  static String _last = '';
+  /// What was scheduled by this run. Null until the first sync: the first one always reconciles with
+  /// whatever the phone still has scheduled from earlier runs (otherwise reminders from a previous
+  /// session, role or setting would keep firing after a restart).
+  static String? _last;
 
-  static Future<void> sync(FamilySnapshot? d, Person? me) async {
-    if (kIsWeb || !(defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) return;
-    final now = DateTime.now();
+  /// What should be scheduled right now: prayer reminders only for a member of a family with the
+  /// reminders on, and the prize reminders for any signed-in person. Empty when signed out.
+  @visibleForTesting
+  static List<(int, String, String, DateTime)> plan(FamilySnapshot? d, Person? me, DateTime now) {
     final items = <(int, String, String, DateTime)>[];
     final p = d?.prayer;
     if (d != null && me != null && p != null && p.enabled && me.role == Role.member) {
@@ -32,6 +36,13 @@ class Reminders {
         items.add((_prizeBase + i++, '${z.emoji} حان موعد الجائزة', 'افتح التطبيق لترى الفائز بـ${z.name}.', z.awardAt));
       }
     }
+    return items;
+  }
+
+  static Future<void> sync(FamilySnapshot? d, Person? me) async {
+    if (kIsWeb || !(defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) return;
+    final now = DateTime.now();
+    final items = plan(d, me, now);
     // Only reschedule when something changed (the app state updates often).
     final key = items.map((x) => '${x.$1}|${x.$2}|${x.$4.millisecondsSinceEpoch ~/ 60000}').join(',');
     if (key == _last) return;
