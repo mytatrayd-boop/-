@@ -1766,4 +1766,13 @@ class L10nAr extends L10n {
 
   @override
   String get tripAccuracy => 'الدقة ±';
+
+  @override
+  String get tripApprox => 'الجوال يعطي هذا التطبيق موقعًا تقريبيًا فقط (قد يبعد كيلومترًا عن مكانك الحقيقي). فعّل «الموقع الدقيق» لأسرتي من إعدادات الجوال حتى تعمل الميزة بدقة، خصوصًا في الزحام.';
+
+  @override
+  String get tripOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get placeEdit => 'تعديل';
 }

@@ -43,6 +43,26 @@ Future<Position?> currentPosition({bool ask = true}) async {
   }
 }
 
+/// Android 12+ and iPhone let the user give the app only an *approximate* location (off by about a
+/// kilometre). That makes a family map and meeting points useless, so ask for the precise one.
+/// Returns false when the user chose not to continue with an approximate location.
+Future<bool> ensurePreciseLocation(BuildContext context) async {
+  final t = context.t;
+  try {
+    var acc = await Geolocator.getLocationAccuracy();
+    if (acc != LocationAccuracyStatus.reduced) return true;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      acc = await Geolocator.requestTemporaryFullAccuracy(purposeKey: 'FamilyTrip');
+      if (acc != LocationAccuracyStatus.reduced) return true;
+    }
+    if (!context.mounted) return false;
+    if (await confirm(context, t.tripApprox, ok: t.tripOpenSettings)) await Geolocator.openAppSettings();
+    return false;
+  } catch (_) {
+    return true;
+  }
+}
+
 /// Highest accuracy (GPS + all sensors the phone allows). With [background] the phone keeps
 /// reporting while the screen is off or the app is hidden: a foreground notification on Android,
 /// the blue location indicator on iPhone. Needed in a crowd, where the phone sits in a pocket.
@@ -181,6 +201,7 @@ class _TripPageState extends ConsumerState<TripPage> {
 
   Future<void> _share() async {
     final t = context.t;
+    if (!await ensurePreciseLocation(context) || !mounted) return;
     final ok = await ref.read(tripSharerProvider.notifier).start();
     if (!ok && mounted) toast(context, t.tripDenied);
   }
@@ -194,11 +215,11 @@ class _TripPageState extends ConsumerState<TripPage> {
   }
 
   /// Opens the map to pick a place by touch; saves it (and sends it to the family if asked).
-  Future<void> _pick() async {
+  Future<void> _pick({MeetPoint? edit}) async {
     final t = context.t, b = ref.read(backendProvider), d = widget.c.data;
     final mine = d.locations[widget.c.me.id], meet = d.trip?.meet;
-    final start = mine != null ? LatLng(mine.lat, mine.lng) : (meet != null ? LatLng(meet.lat, meet.lng) : (d.places.isNotEmpty ? LatLng(d.places.first.lat, d.places.first.lng) : null));
-    final r = await Navigator.of(context).push<PickedPlace>(MaterialPageRoute(builder: (_) => PlacePickerPage(start: start)));
+    final start = edit != null ? LatLng(edit.lat, edit.lng) : (mine != null ? LatLng(mine.lat, mine.lng) : (meet != null ? LatLng(meet.lat, meet.lng) : (d.places.isNotEmpty ? LatLng(d.places.first.lat, d.places.first.lng) : null)));
+    final r = await Navigator.of(context).push<PickedPlace>(MaterialPageRoute(builder: (_) => PlacePickerPage(start: start, picked: edit == null ? null : start, label: edit?.label ?? '')));
     if (r == null || !mounted) return;
     await run(context, () => b.placeSave(lat: r.point.latitude, lng: r.point.longitude, label: r.label, share: r.share), ok: r.share ? t.placeShared : t.placeSaved);
   }
@@ -296,6 +317,7 @@ class _TripPageState extends ConsumerState<TripPage> {
           head: [Expanded(child: TitleSub(meet.label, [if (meetDist != null) '${t.tripAway} ${_distText(t, meetDist)}', meet.by].join(' · ')))],
           actions: [
             Btn(t.tripMeetGo, small: true, icon: Icons.directions_rounded, onPressed: () => _openMap(meet.lat, meet.lng, directions: true)),
+            if (manager) Btn(t.placeEdit, small: true, kind: BtnKind.ghost, icon: Icons.edit_location_alt_outlined, onPressed: () => _pick(edit: meet)),
             if (manager) Btn(t.tripMeetClear, small: true, kind: BtnKind.ghost, onPressed: () => run(context, b.tripMeetClear)),
           ],
         ),
@@ -501,16 +523,20 @@ class PickedPlace {
 
 /// Full-screen map: touch to choose the place, name it, then save (and optionally send it to the family).
 class PlacePickerPage extends StatefulWidget {
-  const PlacePickerPage({super.key, this.start});
+  const PlacePickerPage({super.key, this.start, this.picked, this.label = ''});
   final LatLng? start;
+
+  /// When editing: the point and name already chosen (the pin starts there and can be moved by touch).
+  final LatLng? picked;
+  final String label;
   @override
   State<PlacePickerPage> createState() => _PlacePickerPageState();
 }
 
 class _PlacePickerPageState extends State<PlacePickerPage> {
   final _ctl = MapController();
-  final _name = TextEditingController();
-  LatLng? _picked;
+  late final _name = TextEditingController(text: widget.label);
+  late LatLng? _picked = widget.picked;
   var _warn = false; // saving before touching the map
   late final LatLng _center = widget.start ?? const LatLng(24.7136, 46.6753);
 
@@ -522,6 +548,7 @@ class _PlacePickerPageState extends State<PlacePickerPage> {
   }
 
   Future<void> _mine() async {
+    if (!await ensurePreciseLocation(context) || !mounted) return;
     final pos = await currentPosition();
     if (!mounted) return;
     if (pos == null) return toast(context, context.t.tripDenied);
