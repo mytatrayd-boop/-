@@ -15,6 +15,7 @@ import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
 import 'theme.dart';
+import 'trip_page.dart';
 import 'violations.dart';
 
 enum MTab { tasks, comps, rewards, notes }
@@ -115,6 +116,7 @@ class _MemberHomeState extends ConsumerState<MemberHome> {
           ]),
         ),
       ]),
+      TripBanner(widget.c, onTap: () => context.go('/trip')),
       const SizedBox(height: 12),
       // Their place today, this week, month and year, and their own report.
       Row(children: [

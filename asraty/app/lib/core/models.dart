@@ -1,6 +1,6 @@
 enum Role { owner, admin, member }
 
-enum Perm { addMembers, approve, tasks, report, comps, viewReports }
+enum Perm { addMembers, approve, tasks, report, comps, viewReports, trip }
 
 /// How often a task repeats: every day, week, month or year, or [once] only.
 enum Period { daily, weekly, monthly, yearly, once }
@@ -249,6 +249,37 @@ class SentFeedback {
 }
 
 /// Everything the UI needs about the signed-in family, for the current periods.
+/// A meeting point set by a trip admin.
+class MeetPoint {
+  const MeetPoint({required this.lat, required this.lng, required this.label, required this.by});
+  final double lat, lng;
+  final String label, by;
+}
+
+/// The family trip ("أنا هنا"): while it is live, members share their places.
+class TripState {
+  const TripState({required this.active, required this.startedBy, required this.endsAt, this.farMeters = 300, this.meet, this.paused = const {}});
+  final bool active;
+  final String startedBy;
+  final DateTime endsAt;
+  final int farMeters;
+  final MeetPoint? meet;
+
+  /// People whose sharing a trip admin (or they themselves, if adults) switched off.
+  final Set<String> paused;
+
+  bool liveAt(DateTime now) => active && endsAt.isAfter(now);
+}
+
+/// Last place a member shared during the trip.
+class MemberLoc {
+  const MemberLoc({required this.personId, required this.lat, required this.lng, required this.acc, required this.at});
+  final String personId;
+  final double lat, lng;
+  final int acc; // metres
+  final DateTime at;
+}
+
 class FamilySnapshot {
   FamilySnapshot({
     required this.familyName,
@@ -266,6 +297,8 @@ class FamilySnapshot {
     this.prayer,
     this.violations = const [],
     this.cycleStartedAt,
+    this.trip,
+    this.locations = const {},
   });
 
   final String familyName;
@@ -284,4 +317,10 @@ class FamilySnapshot {
   final List<Violation> violations; // newest first
   /// When the owner last started an evaluation cycle (null: never).
   final DateTime? cycleStartedAt;
+
+  /// The family trip, if one was ever started (check [TripState.liveAt]).
+  final TripState? trip;
+
+  /// personId -> last shared place (only while a trip is live).
+  final Map<String, MemberLoc> locations;
 }

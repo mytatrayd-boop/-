@@ -17,6 +17,7 @@ import 'report_page.dart';
 import 'settings.dart';
 import 'shell.dart';
 import 'theme.dart';
+import 'trip_page.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
@@ -51,6 +52,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/:page',
         builder: (context, state) => Shell(child: signedIn((c) => AdminPage(state.pathParameters['page']!, c))),
       ),
+      GoRoute(path: '/trip', builder: (context, state) => Shell(child: signedIn(TripPage.new))),
       GoRoute(path: '/settings', builder: (context, state) => Shell(child: signedIn(SettingsPage.new))),
       GoRoute(path: '/report', builder: (context, state) => Shell(child: signedIn(ReportRoute.new))),
       GoRoute(path: '/prizes', builder: (context, state) => Shell(child: signedIn(PrizesPage.new))),

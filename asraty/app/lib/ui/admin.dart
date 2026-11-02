@@ -14,6 +14,7 @@ import 'providers.dart';
 import 'sheets.dart';
 import 'shell.dart';
 import 'theme.dart';
+import 'trip_page.dart';
 import 'violations.dart';
 
 final _emailRe = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
@@ -43,6 +44,7 @@ class AdminHome extends ConsumerWidget {
       _Tile('addMember', Icons.person_add_alt_1_outlined, t.tileAddMember, can(me, Perm.addMembers)),
       _Tile('addAdmin', Icons.admin_panel_settings_outlined, t.tileAddAdmin, owner),
       _Tile('prayer', Icons.mosque_outlined, t.prayerTitle, owner),
+      _Tile('trip', Icons.location_on_outlined, t.tileTrip, can(me, Perm.trip)),
       _Tile('honor', Icons.emoji_events_outlined, t.tileHonor, true),
       _Tile('alerts', Icons.campaign_outlined, t.tileAlerts, owner),
       // Delegated admins get the family's alerts too (the owner sees them all under "send alert").
@@ -138,6 +140,7 @@ class AdminPage extends ConsumerWidget {
       'comps' => CompsPage(c),
       'prizes' => PrizesPage(c),
       'prayer' => PrayerPage(c),
+      'trip' => TripPage(c),
       'honor' => HonorBoard(c),
       'inbox' => InboxPage(c),
       'violations' => ViolationsPage(c),

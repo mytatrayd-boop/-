@@ -58,6 +58,8 @@ class DemoBackend extends Backend {
   final _log = <_Log>[];
   final _violations = <Violation>[];
   DateTime? _cycleStartedAt;
+  TripState? _trip;
+  final Map<String, MemberLoc> _locs = {};
   final _codes = <String, _Code>{};
   final _photos = <String, Uint8List>{};
   final _mail = <DemoMail>[];
@@ -112,6 +114,8 @@ class DemoBackend extends Backend {
         yearly: sums(yearKey),
         violations: me.role == Role.owner ? List.of(_violations) : const [],
         cycleStartedAt: _cycleStartedAt,
+        trip: _trip,
+        locations: Map.of(_locs),
       ),
     ));
   }
@@ -144,6 +148,7 @@ class DemoBackend extends Backend {
     _tasks.removeWhere((t) => t.personId == p.id);
     _notices.removeWhere((n) => n.to == p.id);
     _goals.removeWhere((g) => g.personId == p.id);
+    _locs.remove(p.id);
   }
 
   void _addLog(String personId, int delta, {bool task = true}) => _log.insert(0, _Log(personId, delta, _now, task));
@@ -611,6 +616,89 @@ class DemoBackend extends Backend {
   }
 
   // ---------------------------------------------------------------- account
+  // ---------------------------------------------------------------- family trip (mirrors functions/src/api.ts)
+  TripState _live() {
+    final tr = _trip;
+    if (tr == null || !tr.liveAt(_now)) _fail('no-trip');
+    return tr;
+  }
+
+  TripState _with(TripState t, {MeetPoint? meet, bool clearMeet = false, Set<String>? paused}) => TripState(
+        active: t.active, startedBy: t.startedBy, endsAt: t.endsAt, farMeters: t.farMeters, meet: clearMeet ? null : (meet ?? t.meet), paused: paused ?? t.paused);
+
+  @override
+  Future<void> tripStart({int hours = 12, int farMeters = 300}) async {
+    final me = _need(Perm.trip);
+    _trip = TripState(active: true, startedBy: me.id, endsAt: _now.add(Duration(hours: hours.clamp(1, 72))), farMeters: farMeters.clamp(50, 5000));
+    _locs.clear();
+    _note('all', '📍 بدأت رحلة «أنا هنا»', '${me.name} فعّل مشاركة الأماكن لمدة $hours ساعة. افتح التطبيق واضغط «أنا هنا».', kind: 'trip');
+    _publish();
+  }
+
+  @override
+  Future<void> tripEnd() async {
+    _need(Perm.trip);
+    final tr = _trip;
+    if (tr != null) _trip = TripState(active: false, startedBy: tr.startedBy, endsAt: tr.endsAt, farMeters: tr.farMeters);
+    _locs.clear();
+    _note('all', '🏁 انتهت الرحلة', 'أُوقفت مشاركة الأماكن وحُذفت المواقع.', kind: 'trip');
+    _publish();
+  }
+
+  @override
+  Future<void> tripPing({required double lat, required double lng, required double acc}) async {
+    final me = _need();
+    final tr = _live();
+    if (tr.paused.contains(me.id)) return;
+    if (lat.abs() > 90 || lng.abs() > 180) _fail('bad-location');
+    _locs[me.id] = MemberLoc(personId: me.id, lat: lat, lng: lng, acc: acc.round().clamp(0, 100000), at: _now);
+    _publish();
+  }
+
+  @override
+  Future<void> tripShare(String personId, bool on) async {
+    final me = _need();
+    final tr = _live();
+    final p = _person(personId);
+    if (!canToggleShare(me, p)) _fail('no-permission');
+    final paused = {...tr.paused};
+    if (on) {
+      paused.remove(p.id);
+    } else {
+      paused.add(p.id);
+      _locs.remove(p.id);
+    }
+    _trip = _with(tr, paused: paused);
+    _publish();
+  }
+
+  @override
+  Future<void> tripMeet({required double lat, required double lng, required String label}) async {
+    final me = _need(Perm.trip);
+    final tr = _live();
+    if (lat.abs() > 90 || lng.abs() > 180) _fail('bad-location');
+    final l = label.trim().isEmpty ? 'نقطة التجمع' : label.trim();
+    _trip = _with(tr, meet: MeetPoint(lat: lat, lng: lng, label: l, by: me.name));
+    _note('all', '📌 نقطة تجمع', '${me.name} حدّد «$l». افتح «أنا هنا» واضغط «توجّه».', kind: 'trip');
+    _publish();
+  }
+
+  @override
+  Future<void> tripMeetClear() async {
+    _need(Perm.trip);
+    _trip = _with(_live(), clearMeet: true);
+    _publish();
+  }
+
+  @override
+  Future<void> tripSos({double? lat, double? lng}) async {
+    final me = _need();
+    _live();
+    final where = lat != null && lng != null ? '\nمكانه: https://maps.google.com/?q=${lat.toStringAsFixed(6)},${lng.toStringAsFixed(6)}' : '';
+    _note('all', '🆘 ${me.name} يحتاج مساعدة', '${me.name} ضغط زر الاستغاثة.$where', kind: 'sos');
+    _publish();
+  }
+
   @override
   Future<void> deleteAccount() async {
     final me = _need();
