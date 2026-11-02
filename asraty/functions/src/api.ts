@@ -4,7 +4,7 @@ import {
 } from "./db";
 import {
   AVATAR_KEYS, EMAIL_RE, PHOTO_AVATAR, PermKey, Period, REWARD_EMOJI, SPANS, Scope, Span, TaskRepeat,
-  REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, cleanCoord, canToggleShare, distanceMeters, tripLive, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
+  REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, isManualPrayerTitle, cleanCoord, canToggleShare, distanceMeters, tripLive, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
 import { credRef } from "./passwords";
@@ -321,10 +321,13 @@ const ops: Record<string, Handler> = {
       if (w.key !== prayer.key) fail("prayer-over");
       return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: prayerPoints(w, s.points, now), pk: w.dayKey };
     })() : null;
+    const familyPrayerOn = ((await fam(c.fid).get()).data()?.prayer as PrayerSettings | undefined)?.enabled === true;
     const tRef = fam(c.fid).collection("tasks").doc(taskId);
     const created = await db.runTransaction(async (tx) => {
       const stored = prayerTask ? null : (await tx.get(tRef)).data();
       if (!prayerTask && (!stored || stored.personId !== c.me.id)) fail("task-not-found", {}, "not-found");
+      // Old hand-made prayer tasks are gone for members while the automatic prayers are on.
+      if (!prayerTask && isManualPrayerTitle(stored!.title) && familyPrayerOn) fail("task-not-found", {}, "not-found");
       const t = (prayerTask ?? stored) as { title: string; points: number };
       const pk = prayerTask ? prayerTask.pk : periodKey(stored!.repeat, Date.now());
       // One completion per task per period; a rejected one may be retried.

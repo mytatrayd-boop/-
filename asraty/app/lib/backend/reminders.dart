@@ -26,7 +26,7 @@ class Reminders {
     if (d != null && me != null && p != null && p.enabled && me.role == Role.member) {
       var i = 0;
       for (final (k, at) in upcomingPrayers(p, now).take(_max ~/ 2)) {
-        items.add((_prayerBase + i++, '🕌 صلاة ${prayerNames[k]}', 'حان الآن وقت صلاة ${prayerNames[k]}. أنجزها قبل دخول الصلاة التالية لتحصل على نقاطها.', at));
+        items.add((_prayerBase + i++, '🕌 صلاة ${prayerNames[k]}', k == 'isha' ? 'حان الآن وقت صلاة العشاء. أنجزها قبل الساعة ١١ مساءً لتحصل على نقاطها.' : 'حان الآن وقت صلاة ${prayerNames[k]}. أنجزها خلال نصف ساعة لتحصل على نقاطها.', at));
       }
     }
     if (d != null && me != null) {

@@ -139,6 +139,12 @@ test("Isha keeps its points until 11 pm Riyadh time", async () => {
   assert.equal(prayerPoints({ key: "maghrib", start: riyadh("2026-10-20T17:20:00") }, 5, riyadh("2026-10-20T18:00:00")), 0);
 });
 
+test("old hand-made prayer tasks are recognised by their title", async () => {
+  const { isManualPrayerTitle } = await import("../src/logic");
+  for (const t of ["صلاة الفجر", "صلاه العصر", "الصلاة في المسجد", " صلاة "]) assert.equal(isManualPrayerTitle(t), true, t);
+  for (const t of ["ترتيب الغرفة", "صلة الرحم", "حفظ سورة العصر", ""]) assert.equal(isManualPrayerTitle(t), false, t);
+});
+
 test("trip: distance, coordinates, live window and sharing permission", () => {
   // Makkah Haram to Madinah Haram is roughly 340 km
   const d = distanceMeters({ lat: 21.4225, lng: 39.8262 }, { lat: 24.4672, lng: 39.6112 });

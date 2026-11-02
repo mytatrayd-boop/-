@@ -568,7 +568,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
     if (_view == null || !members.any((m) => m.id == _view)) _view = members.firstOrNull?.id;
     final repItems = [for (final p in Period.values) (p, repeatLabel(t, p))];
     final view = _view == null ? null : d.person(_view!);
-    final ts = view == null ? <TaskItem>[] : d.tasksOf(view.id, now);
+    final ts = view == null ? <TaskItem>[] : d.tasksOf(view.id, now, admin: true);
     final done = <TaskItem>[], waiting = <TaskItem>[], open = <TaskItem>[];
     for (final x in ts) {
       final c = d.completionOf(x, now);
@@ -601,7 +601,7 @@ class _TasksPageState extends ConsumerState<TasksPage> {
               : StateTag(t.doneCheck, Tone.ok);
       return RowCard(children: [
         if (x.prayer != null) const Icon(Icons.mosque_outlined, color: Palette.sunDeep),
-        Expanded(child: TitleSub(x.title, t.taskMeta(repeatLabel(t, x.repeat), '${x.points}'), done: comp?.status == Status.approved)),
+        Expanded(child: TitleSub(x.title, x.legacyPrayer ? t.prayerLegacy : t.taskMeta(repeatLabel(t, x.repeat), '${x.points}'), done: comp?.status == Status.approved)),
         st,
         if (edit && x.prayer == null)
           Row(mainAxisSize: MainAxisSize.min, children: [

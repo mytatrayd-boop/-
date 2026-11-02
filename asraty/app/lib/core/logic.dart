@@ -61,6 +61,9 @@ int dueCount(Period p, Span s, DateTime now) {
   };
 }
 
+/// An old hand-made prayer task ("صلاة الفجر"...). Mirrors functions/src/logic.ts isManualPrayerTitle.
+bool isManualPrayerTitle(String title) => RegExp('صلا[ةه]').hasMatch(title);
+
 bool can(Person? p, Perm perm) {
   if (p == null) return false;
   if (p.role == Role.owner) return true;
@@ -118,15 +121,20 @@ extension SnapshotLogic on FamilySnapshot {
     return 1 + members.where((x) => (m[x.id]?.points ?? 0) > mine).length;
   }
 
-  /// A member's tasks, plus the prayer whose time is running when reminders are on.
-  List<TaskItem> tasksOf(String personId, DateTime now) {
+  /// A member's tasks, plus the prayer whose time is running when reminders are on: worth its points for
+  /// half an hour after the adhan (Isha until 11 pm), then still listed but worth nothing, until the next
+  /// prayer. With the automatic prayers on, old hand-made prayer tasks are hidden from the member; the
+  /// admin's list ([admin]) still shows them, marked, so they can be deleted.
+  List<TaskItem> tasksOf(String personId, DateTime now, {bool admin = false}) {
     final own = tasks.where((x) => x.personId == personId).toList();
     final p = prayer;
     if (p == null || !p.enabled || person(personId)?.role != Role.member) return own;
     final slot = currentPrayer(p, now);
+    final legacy = own.where((x) => isManualPrayerTitle(x.title)).toList();
     return [
       TaskItem(id: prayerTaskId(slot.key, personId), title: 'صلاة ${prayerNames[slot.key]}', personId: personId, points: slot.lateAt(now) ? 0 : p.points, repeat: Period.daily, prayer: slot),
-      ...own,
+      ...own.where((x) => !isManualPrayerTitle(x.title)),
+      if (admin) ...[for (final x in legacy) TaskItem(id: x.id, title: x.title, personId: x.personId, points: x.points, repeat: x.repeat, legacyPrayer: true)],
     ];
   }
 

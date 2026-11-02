@@ -255,7 +255,7 @@ test("avatar photo, parent lock, monthly tasks", async () => {
   assert.equal(day.tasks, 1, "reports count done tasks apart from prayers and competitions");
 });
 
-test("prayer tasks only for the running prayer", async () => {
+test("prayer tasks only for the running prayer; late ones are worth no points", async () => {
   await clearRate();
   const kid = await login("kid1@test.sa", "member");
   await rejects(call("api", { op: "setPrayer", lat: 24.7, lng: 46.7 }, kid.idToken), "no-permission");
@@ -270,6 +270,14 @@ test("prayer tasks only for the running prayer", async () => {
   // Half an hour after the adhan it is still a task, but worth no points.
   assert.equal(c.data().points, prayerPoints(now, 4, Date.now()));
   assert.equal(c.data().kind, "prayer");
+
+  // An old hand-made prayer task is hidden and refused while the automatic prayers are on, but other tasks work.
+  await call("api", { op: "addTask", title: "صلاة الفجر", personId: kid.personId, points: 10, repeat: "daily" }, owner.idToken);
+  const old = (await db.collection(`families/${fid}/tasks`).where("title", "==", "صلاة الفجر").get()).docs[0];
+  await rejects(call("api", { op: "completeTask", taskId: old.id }, kid.idToken), "task-not-found");
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4, enabled: false }, owner.idToken);
+  await call("api", { op: "completeTask", taskId: old.id }, kid.idToken); // reminders off: it is an ordinary task again
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4, enabled: true }, owner.idToken);
 });
 
 test("prizes: reminder an hour before, then the top member wins with a card for all", async () => {
