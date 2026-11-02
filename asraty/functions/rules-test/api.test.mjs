@@ -345,6 +345,8 @@ test("family trip and saved places: only trip admins pick places; sharing only n
   assert.equal(place.label, "بوابة ٣");
   const note = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "place").get()).docs[0].data();
   assert.equal(note.to, "all");
+  assert.equal(note.lat, 24.7136, "the notice carries the place so the app can open it");
+  assert.equal(note.lng, 46.6753);
   assert.match(note.body, /maps\.google\.com\/\?q=24\.713600,46\.675300/);
   await rejects(call("api", { op: "placeDelete", placeId: saved.placeId }, kid.idToken), "no-permission");
 

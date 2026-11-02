@@ -189,8 +189,13 @@ class Goal {
 }
 
 class Notice {
-  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice', this.points = 0})
+  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice', this.points = 0, this.lat, this.lng})
       : readBy = readBy ?? [];
+
+  /// A shared place or an SOS carries the spot, so the app can open it on the map.
+  final double? lat, lng;
+
+  bool get hasPlace => lat != null && lng != null;
 
   /// 'prize' for the congratulation card sent to everyone when a prize is won;
   /// 'violation' for the pop-up a member gets when points are taken ([to] is that member).

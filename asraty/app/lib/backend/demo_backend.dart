@@ -140,8 +140,8 @@ class DemoBackend extends Backend {
     if (_mail.length > 40) _mail.removeLast();
   }
 
-  void _note(String to, String title, String body, {DateTime? expiresAt, String kind = 'notice', int points = 0, String? id}) {
-    _notices.insert(0, Notice(id: id ?? _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now, expiresAt: expiresAt, kind: kind, points: points));
+  void _note(String to, String title, String body, {DateTime? expiresAt, String kind = 'notice', int points = 0, String? id, double? lat, double? lng}) {
+    _notices.insert(0, Notice(id: id ?? _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now, expiresAt: expiresAt, kind: kind, points: points, lat: lat, lng: lng));
   }
 
   /// What the server's removePersonData deletes along with the person.
@@ -695,7 +695,7 @@ class DemoBackend extends Backend {
   void _sharePlace(Person me, SavedPlace p) {
     final tr = _trip;
     if (tr != null && tr.liveAt(_now)) _trip = _with(tr, meet: MeetPoint(lat: p.lat, lng: p.lng, label: p.label, by: me.name));
-    _note('all', '📌 ${p.label}', '${me.name} شارك مكاناً: «${p.label}»\nhttps://maps.google.com/?q=${p.lat.toStringAsFixed(6)},${p.lng.toStringAsFixed(6)}', kind: 'place');
+    _note('all', '📌 ${p.label}', '${me.name} شارك مكاناً: «${p.label}»\nhttps://maps.google.com/?q=${p.lat.toStringAsFixed(6)},${p.lng.toStringAsFixed(6)}', kind: 'place', lat: p.lat, lng: p.lng);
   }
 
   @override
@@ -729,7 +729,7 @@ class DemoBackend extends Backend {
     final me = _need();
     _live();
     final where = lat != null && lng != null ? '\nمكانه: https://maps.google.com/?q=${lat.toStringAsFixed(6)},${lng.toStringAsFixed(6)}' : '';
-    _note('all', '🆘 ${me.name} يحتاج مساعدة', '${me.name} ضغط زر الاستغاثة.$where', kind: 'sos');
+    _note('all', '🆘 ${me.name} يحتاج مساعدة', '${me.name} ضغط زر الاستغاثة.$where', kind: 'sos', lat: lat, lng: lng);
     _publish();
   }
 

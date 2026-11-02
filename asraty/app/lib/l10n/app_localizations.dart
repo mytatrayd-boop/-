@@ -2958,7 +2958,7 @@ abstract class L10n {
   /// No description provided for @tripPrivacy.
   ///
   /// In ar, this message translates to:
-  /// **'مكانك يظهر لأفراد أسرتك فقط، وأثناء الرحلة فقط. أبقِ التطبيق مفتوحاً ليبقى مكانك محدّثاً.'**
+  /// **'مكانك يظهر لأفراد أسرتك فقط، وأثناء الرحلة فقط. تستمر المشاركة والجوال مقفل (تظهر إشارة على الجوال أثناءها). في الزحام وداخل المباني قد تقلّ الدقة، وتظهر دائرة حول المكان توضّحها.'**
   String get tripPrivacy;
 
   /// No description provided for @tripNone.
@@ -3308,6 +3308,12 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'وصلت للحد الأقصى من الأماكن المحفوظة (٣٠). احذف مكانًا ثم أعد المحاولة.'**
   String get placeTooMany;
+
+  /// No description provided for @tripAccuracy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدقة ±'**
+  String get tripAccuracy;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

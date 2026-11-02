@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../backend/backend.dart';
 import '../core/logic.dart';
@@ -20,59 +20,124 @@ import 'theme.dart';
 /// Admins with [Perm.trip] start/end the trip, set a meeting point and pause
 /// anyone's sharing; members get one big button and a list of where everyone is.
 
-/// This phone's position, or null when location is off or refused.
+/// This phone's position at the best accuracy the phone can give, or null when location is off or refused.
+/// Waits up to 25 s for a good fix (accuracy better than 30 m), then settles for the best one it got.
 Future<Position?> currentPosition({bool ask = true}) async {
   try {
     if (!await Geolocator.isLocationServiceEnabled()) return null;
     var perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied && ask) perm = await Geolocator.requestPermission();
     if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return null;
-    return await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 15)));
+    Position? best;
+    try {
+      await for (final p in Geolocator.getPositionStream(locationSettings: _locationSettings(background: false)).timeout(const Duration(seconds: 25))) {
+        if (best == null || p.accuracy < best.accuracy) best = p;
+        if (p.accuracy <= 30) break;
+      }
+    } on TimeoutException {
+      // Use the best fix so far.
+    }
+    return best ?? await Geolocator.getCurrentPosition(locationSettings: _locationSettings(background: false));
   } catch (_) {
     return null;
   }
 }
 
-/// Sends this phone's place every 30 s while the app is open and sharing is on.
-/// It skips a send when the phone barely moved (keeps Firestore usage low on the free plan).
+/// Highest accuracy (GPS + all sensors the phone allows). With [background] the phone keeps
+/// reporting while the screen is off or the app is hidden: a foreground notification on Android,
+/// the blue location indicator on iPhone. Needed in a crowd, where the phone sits in a pocket.
+LocationSettings _locationSettings({required bool background}) {
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.android:
+      return AndroidSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 0,
+        intervalDuration: const Duration(seconds: 5),
+        foregroundNotificationConfig: background
+            ? const ForegroundNotificationConfig(
+                notificationTitle: 'أسرتي — أنا هنا',
+                notificationText: 'تشارك مكانك مع أسرتك أثناء الرحلة',
+                enableWakeLock: true,
+                setOngoing: true,
+              )
+            : null,
+      );
+    case TargetPlatform.iOS:
+    case TargetPlatform.macOS:
+      return AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        activityType: ActivityType.otherNavigation,
+        distanceFilter: 0,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: background,
+        allowBackgroundLocationUpdates: background,
+      );
+    default:
+      return const LocationSettings(accuracy: LocationAccuracy.best);
+  }
+}
+
+/// Shares this phone's place with the family while sharing is on, even with the screen off.
+/// It listens to the GPS continuously and, every 15 s, sends the most accurate fix of that window
+/// (so one bad reading in a crowd does not move the pin). It skips a send when the phone barely
+/// moved, which also keeps Firestore usage low on the free plan.
 class TripSharer extends Notifier<bool> {
+  StreamSubscription<Position>? _sub;
   Timer? _timer;
-  Position? _last;
+  Position? _best; // most accurate fix since the last send
+  Position? _last; // last sent
   DateTime _lastAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   bool build() {
-    ref.onDispose(() => _timer?.cancel());
+    ref.onDispose(() {
+      _sub?.cancel();
+      _timer?.cancel();
+    });
     return false;
   }
 
   /// Returns false when location permission was refused.
   Future<bool> start() async {
-    final pos = await currentPosition();
-    if (pos == null) return false;
+    final first = await currentPosition();
+    if (first == null) return false;
     state = true;
+    _best = first;
+    _sub?.cancel();
+    _sub = Geolocator.getPositionStream(locationSettings: _locationSettings(background: true)).listen(
+      (p) {
+        final b = _best;
+        // Keep the most accurate fix; a newer one wins when it is not clearly worse.
+        if (b == null || p.accuracy <= b.accuracy * 1.5 || p.timestamp.difference(b.timestamp).inSeconds > 10) _best = p;
+      },
+      onError: (_) {},
+    );
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) => _tick());
-    await _send(pos, force: true);
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => _flush());
+    await _send(first, force: true);
     return true;
   }
 
   void stop() {
+    _sub?.cancel();
     _timer?.cancel();
+    _sub = null;
     _timer = null;
+    _best = null;
     _last = null;
     state = false;
   }
 
-  Future<void> _tick() async {
-    final pos = await currentPosition(ask: false);
-    if (pos != null) await _send(pos);
+  Future<void> _flush() async {
+    final p = _best;
+    _best = null;
+    if (p != null) await _send(p);
   }
 
   Future<void> _send(Position pos, {bool force = false}) async {
     final now = DateTime.now(), last = _last;
-    final still = last != null && distanceMeters(last.latitude, last.longitude, pos.latitude, pos.longitude) < 20;
-    if (!force && still && now.difference(_lastAt) < const Duration(minutes: 2)) return;
+    final still = last != null && distanceMeters(last.latitude, last.longitude, pos.latitude, pos.longitude) < 8;
+    if (!force && still && now.difference(_lastAt) < const Duration(seconds: 90)) return;
     try {
       await ref.read(backendProvider).tripPing(lat: pos.latitude, lng: pos.longitude, acc: pos.accuracy);
       _last = pos;
@@ -80,7 +145,7 @@ class TripSharer extends Notifier<bool> {
     } on AppError catch (e) {
       if (e.code == 'no-trip') stop();
     } catch (_) {
-      // Offline: the next tick tries again.
+      // Offline: the next flush tries again.
     }
   }
 }
@@ -165,11 +230,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     ];
   }
 
-  Future<void> _openMap(double lat, double lng, {bool directions = false}) async {
-    final u = Uri.parse(directions ? 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng' : 'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
-    final ok = await launchUrl(u, mode: LaunchMode.externalApplication).catchError((_) => false);
-    if (!ok && mounted) toast(context, context.t.errLocation);
-  }
+  Future<void> _openMap(double lat, double lng, {bool directions = false}) => openOnMap(context, lat, lng, directions: directions);
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +331,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       faded: off || loc == null,
       head: [
         AvatarView.of(p, size: 40),
-        Expanded(child: TitleSub(p.name, [if (dist != null) '${t.tripAway} ${_distText(t, dist)}', if (age != null && age.inMinutes > 10) t.tripStaleHint].join(' · '))),
+        Expanded(child: TitleSub(p.name, [if (dist != null) '${t.tripAway} ${_distText(t, dist)}', if (loc != null && loc.acc > 0 && !off) '${t.tripAccuracy} ${loc.acc} ${t.tripMeters}', if (age != null && age.inMinutes > 10) t.tripStaleHint].join(' · '))),
       ],
       actions: [
         StateTag(tag, off ? Tone.off : tone),
@@ -335,7 +396,8 @@ class TripMap extends StatefulWidget {
 }
 
 class _Pin {
-  const _Pin(this.point, this.label, this.color, this.icon);
+  const _Pin(this.point, this.label, this.color, this.icon, [this.acc = 0]);
+  final double acc; // metres, 0 = unknown
   final LatLng point;
   final String label;
   final Color color;
@@ -352,7 +414,7 @@ class _TripMapState extends State<TripMap> {
       final p = d.person(loc.personId);
       if (p == null || widget.trip.paused.contains(p.id)) continue;
       final min = widget.now.difference(loc.at).inMinutes;
-      out.add(_Pin(LatLng(loc.lat, loc.lng), p.name, min <= 2 ? Palette.mint : (min <= 10 ? Palette.sunDeep : Palette.red), Icons.location_on));
+      out.add(_Pin(LatLng(loc.lat, loc.lng), p.name, min <= 2 ? Palette.mint : (min <= 10 ? Palette.sunDeep : Palette.red), Icons.location_on, loc.acc.toDouble()));
     }
     final m = widget.trip.meet;
     if (m != null) out.add(_Pin(LatLng(m.lat, m.lng), m.label, const Color(0xFF1E6FD9), Icons.flag_rounded));
@@ -395,9 +457,14 @@ class _TripMapState extends State<TripMap> {
           height: 300,
           child: FlutterMap(
             mapController: _ctl,
-            options: MapOptions(initialCenter: pins.first.point, initialZoom: 15, interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate)),
+            options: MapOptions(initialCenter: pins.first.point, initialZoom: 15, maxZoom: 19, interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate)),
             children: [
-              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sa.asraty.app'),
+              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sa.asraty.app', maxNativeZoom: 19),
+              // The circle is how sure the phone is of the spot: small outdoors, wide in a crowd or indoors.
+              CircleLayer(circles: [
+                for (final p in pins)
+                  if (p.acc >= 5) CircleMarker(point: p.point, radius: p.acc, useRadiusInMeter: true, color: p.color.withValues(alpha: .14), borderColor: p.color.withValues(alpha: .5), borderStrokeWidth: 1),
+              ]),
               MarkerLayer(markers: [
                 for (final p in pins)
                   Marker(
@@ -484,7 +551,8 @@ class _PlacePickerPageState extends State<PlacePickerPage> {
               mapController: _ctl,
               options: MapOptions(
                 initialCenter: _center,
-                initialZoom: widget.start == null ? 12 : 16,
+                initialZoom: widget.start == null ? 12 : 17,
+                maxZoom: 19,
                 interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                 onTap: (_, p) => setState(() {
                   _picked = p;
@@ -492,7 +560,7 @@ class _PlacePickerPageState extends State<PlacePickerPage> {
                 }),
               ),
               children: [
-                TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sa.asraty.app'),
+                TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sa.asraty.app', maxNativeZoom: 19),
                 if (_picked != null)
                   MarkerLayer(markers: [
                     Marker(point: _picked!, width: 48, height: 48, alignment: Alignment.topCenter, child: const Icon(Icons.location_on, color: Palette.red, size: 44)),

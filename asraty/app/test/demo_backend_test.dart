@@ -338,6 +338,8 @@ void main() {
     final n = b.current.data!.notices.first;
     expect(n.kind, 'place');
     expect(n.body, contains('maps.google.com/?q=24.713600,46.675300'));
+    expect(n.hasPlace, isTrue, reason: 'the notice carries the spot so the app can open it');
+    expect(n.lat, 24.7136);
     expect(b.current.data!.trip?.meet, isNull);
     // During a trip, the shared place becomes the meeting point.
     await b.tripStart();

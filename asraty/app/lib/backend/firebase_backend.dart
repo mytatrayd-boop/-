@@ -206,7 +206,8 @@ class FirebaseBackend extends Backend {
         return Notice(
           id: d.id, to: x['to'] ?? 'all', title: x['title'] ?? '', body: x['body'] ?? '', from: x['from'] ?? '',
           createdAt: _ts(x['createdAt']), expiresAt: x['expiresAt'] is Timestamp ? (x['expiresAt'] as Timestamp).toDate() : null,
-          readBy: List<String>.from(x['readBy'] ?? const []), kind: x['kind'] as String? ?? 'notice', points: _int(x['points']));
+          readBy: List<String>.from(x['readBy'] ?? const []), kind: x['kind'] as String? ?? 'notice', points: _int(x['points']),
+          lat: x['lat'] is num ? (x['lat'] as num).toDouble() : null, lng: x['lng'] is num ? (x['lng'] as num).toDouble() : null);
       }).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../backend/backend.dart';
 import '../core/avatars.dart';
@@ -92,6 +94,17 @@ Future<bool> run(BuildContext context, Future<void> Function() action, {String? 
     if (context.mounted) toast(context, errorText(context.t, e));
     return false;
   }
+}
+
+/// Opens a spot in the phone's maps app: walking directions to it ([directions]) or just the pin.
+/// iPhone uses Apple Maps (always there); others use Google Maps / the browser.
+Future<void> openOnMap(BuildContext context, double lat, double lng, {bool directions = true}) async {
+  final ios = defaultTargetPlatform == TargetPlatform.iOS;
+  final u = ios
+      ? Uri.parse(directions ? 'https://maps.apple.com/?daddr=$lat,$lng&dirflg=w' : 'https://maps.apple.com/?ll=$lat,$lng&q=$lat,$lng')
+      : Uri.parse(directions ? 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=walking' : 'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+  final ok = await launchUrl(u, mode: LaunchMode.externalApplication).catchError((_) => false);
+  if (!ok && context.mounted) toast(context, context.t.errLocation);
 }
 
 /// Local clock time, e.g. "٤:٣٠ م".
@@ -786,6 +799,10 @@ class NoticeList extends StatelessWidget {
             ]),
             const SizedBox(height: 6),
             Text(n.body),
+            if (n.hasPlace) ...[
+              const SizedBox(height: 8),
+              Btn(t.tripMeetGo, small: true, icon: Icons.directions_walk_rounded, onPressed: () => openOnMap(context, n.lat!, n.lng!)),
+            ],
             if (n.expiresAt != null) ...[
               const SizedBox(height: 6),
               n.activeAt(now) ? StateTag(t.endsAt(clockTime(context, n.expiresAt!)), Tone.wait) : StateTag(t.alertEnded, Tone.off),
