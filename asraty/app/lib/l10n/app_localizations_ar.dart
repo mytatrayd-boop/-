@@ -1775,4 +1775,7 @@ class L10nAr extends L10n {
 
   @override
   String get placeEdit => 'تعديل';
+
+  @override
+  String get tripSendFailed => 'تعذّر إرسال مكانك، سنعيد المحاولة';
 }

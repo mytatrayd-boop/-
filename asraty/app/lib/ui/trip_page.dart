@@ -20,24 +20,40 @@ import 'theme.dart';
 /// Admins with [Perm.trip] start/end the trip, set a meeting point and pause
 /// anyone's sharing; members get one big button and a list of where everyone is.
 
-/// This phone's position at the best accuracy the phone can give, or null when location is off or refused.
-/// Waits up to 25 s for a good fix (accuracy better than 30 m), then settles for the best one it got.
-Future<Position?> currentPosition({bool ask = true}) async {
+/// Location permission and service are available (asks once when [ask]).
+Future<bool> locationReady({bool ask = true}) async {
   try {
-    if (!await Geolocator.isLocationServiceEnabled()) return null;
+    if (!await Geolocator.isLocationServiceEnabled()) return false;
     var perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied && ask) perm = await Geolocator.requestPermission();
-    if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return null;
+    return perm != LocationPermission.denied && perm != LocationPermission.deniedForever;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// This phone's position at the best accuracy it can give, or null when location is off or refused.
+/// Returns as soon as a reading is good (better than 30 m), and after at most 15 s with the best one
+/// it got, so it never hangs indoors where readings stay rough.
+Future<Position?> currentPosition({bool ask = true}) async {
+  try {
+    if (!await locationReady(ask: ask)) return null;
     Position? best;
-    try {
-      await for (final p in Geolocator.getPositionStream(locationSettings: _locationSettings(background: false)).timeout(const Duration(seconds: 25))) {
-        if (best == null || p.accuracy < best.accuracy) best = p;
-        if (p.accuracy <= 30) break;
-      }
-    } on TimeoutException {
-      // Use the best fix so far.
-    }
-    return best ?? await Geolocator.getCurrentPosition(locationSettings: _locationSettings(background: false));
+    final done = Completer<void>();
+    final sub = Geolocator.getPositionStream(locationSettings: _locationSettings(background: false)).listen(
+      (p) {
+        if (best == null || p.accuracy < best!.accuracy) best = p;
+        if (p.accuracy <= 30 && !done.isCompleted) done.complete();
+      },
+      onError: (_) {},
+    );
+    final timer = Timer(const Duration(seconds: 15), () {
+      if (!done.isCompleted) done.complete();
+    });
+    await done.future;
+    timer.cancel();
+    await sub.cancel();
+    return best ?? await Geolocator.getCurrentPosition(locationSettings: _locationSettings(background: false)).timeout(const Duration(seconds: 10));
   } catch (_) {
     return null;
   }
@@ -117,24 +133,41 @@ class TripSharer extends Notifier<bool> {
     return false;
   }
 
-  /// Returns false when location permission was refused.
+  /// Starts sharing right away: the first reading (even a rough one) is sent at once so the family
+  /// sees the pin, then more accurate ones follow. Returns false when location is off or refused.
   Future<bool> start() async {
-    final first = await currentPosition();
-    if (first == null) return false;
+    if (!await locationReady()) return false;
     state = true;
-    _best = first;
+    ref.read(tripShareErrorProvider.notifier).set(null);
+    _best = null;
+    _last = null;
+    var first = true;
     _sub?.cancel();
     _sub = Geolocator.getPositionStream(locationSettings: _locationSettings(background: true)).listen(
       (p) {
         final b = _best;
         // Keep the most accurate fix; a newer one wins when it is not clearly worse.
         if (b == null || p.accuracy <= b.accuracy * 1.5 || p.timestamp.difference(b.timestamp).inSeconds > 10) _best = p;
+        if (first) {
+          first = false;
+          _best = null;
+          unawaited(_send(p, force: true));
+        }
       },
-      onError: (_) {},
+      onError: (Object e) => ref.read(tripShareErrorProvider.notifier).set('$e'),
     );
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 15), (_) => _flush());
-    await _send(first, force: true);
+    // If the stream gives nothing quickly (rare), fall back to a one-off reading.
+    unawaited(Future.delayed(const Duration(seconds: 8), () async {
+      if (state && first) {
+        final p = await currentPosition(ask: false);
+        if (p != null && first) {
+          first = false;
+          await _send(p, force: true);
+        }
+      }
+    }));
     return true;
   }
 
@@ -162,15 +195,31 @@ class TripSharer extends Notifier<bool> {
       await ref.read(backendProvider).tripPing(lat: pos.latitude, lng: pos.longitude, acc: pos.accuracy);
       _last = pos;
       _lastAt = now;
+      ref.read(tripShareErrorProvider.notifier).set(null);
     } on AppError catch (e) {
-      if (e.code == 'no-trip') stop();
-    } catch (_) {
-      // Offline: the next flush tries again.
+      if (e.code == 'no-trip') {
+        stop();
+      } else {
+        ref.read(tripShareErrorProvider.notifier).set(e.code);
+      }
+    } catch (e) {
+      // Offline: the next flush tries again, and the screen says so.
+      ref.read(tripShareErrorProvider.notifier).set('$e');
     }
   }
 }
 
 final tripSharerProvider = NotifierProvider<TripSharer, bool>(TripSharer.new);
+
+/// Why the last send of this phone's place failed (null = fine). Shown under the share button
+/// so a failure in the field is visible instead of silent.
+class TripShareError extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void set(String? v) => state = v;
+}
+
+final tripShareErrorProvider = NotifierProvider<TripShareError, String?>(TripShareError.new);
 
 String _agoText(L10n t, DateTime at, DateTime now) {
   final m = now.difference(at).inMinutes;
@@ -258,6 +307,7 @@ class _TripPageState extends ConsumerState<TripPage> {
     final t = context.t, d = widget.c.data, me = widget.c.me, b = ref.read(backendProvider);
     final now = ref.watch(clockProvider).value ?? DateTime.now();
     final sharing = ref.watch(tripSharerProvider);
+    final shareError = ref.watch(tripShareErrorProvider);
     final trip = d.trip;
     final manager = can(me, Perm.trip);
 
@@ -303,6 +353,7 @@ class _TripPageState extends ConsumerState<TripPage> {
           else ...[
             Text(sharing ? t.tripSharingOn : t.tripSharingOff, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             const SizedBox(height: 10),
+            if (sharing && shareError != null) Text('${t.tripSendFailed} ($shareError)', textAlign: TextAlign.center, style: const TextStyle(color: Palette.red, fontWeight: FontWeight.w700, fontSize: 13)),
             if (!sharing) Btn(t.tripImHere, icon: Icons.location_on_rounded, kind: BtnKind.ok, expand: true, onPressed: _share),
             // Children (members) keep sharing until a parent pauses them.
             if (sharing && me.role != Role.member)
@@ -429,7 +480,8 @@ class _Pin {
 
 class _TripMapState extends State<TripMap> {
   final _ctl = MapController();
-  int _fitted = -1;
+  String _fitted = '';
+  DateTime _touched = DateTime.fromMillisecondsSinceEpoch(0); // last time the user moved the map by hand
 
   List<_Pin> _pins() {
     final d = widget.c.data, out = <_Pin>[];
@@ -444,10 +496,13 @@ class _TripMapState extends State<TripMap> {
     return out;
   }
 
-  /// Zooms to fit everyone whenever the number of pins changes.
+  /// Zooms to fit everyone whenever a pin appears or moves (about 10 m), unless the user is
+  /// looking around by hand (then it waits 20 s after their last touch).
   void _fit(List<_Pin> pins) {
-    if (pins.isEmpty || _fitted == pins.length) return;
-    _fitted = pins.length;
+    if (pins.isEmpty) return;
+    final sig = pins.map((p) => '${p.point.latitude.toStringAsFixed(4)},${p.point.longitude.toStringAsFixed(4)}').join('|');
+    if (sig == _fitted || DateTime.now().difference(_touched) < const Duration(seconds: 20)) return;
+    _fitted = sig;
     try {
       if (pins.length == 1) {
         _ctl.move(pins.first.point, 16);
@@ -456,7 +511,7 @@ class _TripMapState extends State<TripMap> {
       }
     } catch (_) {
       // The map is not laid out yet; the next rebuild fits it.
-      _fitted = -1;
+      _fitted = '';
     }
   }
 
@@ -480,7 +535,9 @@ class _TripMapState extends State<TripMap> {
           height: 300,
           child: FlutterMap(
             mapController: _ctl,
-            options: MapOptions(initialCenter: pins.first.point, initialZoom: 15, maxZoom: 19, interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate)),
+            options: MapOptions(initialCenter: pins.first.point, initialZoom: 15, maxZoom: 19, onPositionChanged: (_, byHand) {
+              if (byHand) _touched = DateTime.now();
+            }, interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate)),
             children: [
               TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sa.asraty.app', maxNativeZoom: 19),
               // The circle is how sure the phone is of the spot: small outdoors, wide in a crowd or indoors.

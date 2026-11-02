@@ -3332,6 +3332,12 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'تعديل'**
   String get placeEdit;
+
+  /// No description provided for @tripSendFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إرسال مكانك، سنعيد المحاولة'**
+  String get tripSendFailed;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {
