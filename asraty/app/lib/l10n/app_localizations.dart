@@ -3314,6 +3314,24 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'الدقة ±'**
   String get tripAccuracy;
+
+  /// No description provided for @tripApprox.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجوال يعطي هذا التطبيق موقعًا تقريبيًا فقط (قد يبعد كيلومترًا عن مكانك الحقيقي). فعّل «الموقع الدقيق» لأسرتي من إعدادات الجوال حتى تعمل الميزة بدقة، خصوصًا في الزحام.'**
+  String get tripApprox;
+
+  /// No description provided for @tripOpenSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الإعدادات'**
+  String get tripOpenSettings;
+
+  /// No description provided for @placeEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get placeEdit;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

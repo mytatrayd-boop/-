@@ -107,4 +107,34 @@ void main() {
     expect(b.current.data!.places.single.label, 'بوابة ٣');
     expect(find.text('بوابة ٣'), findsWidgets);
   });
+
+  testWidgets('meeting point: the owner can reopen it on the map, move it by touch and save the new spot', (tester) async {
+    final c = await openAs(tester, 'abu@demo.sa', Role.owner);
+    final b = c.read(backendProvider) as DemoBackend;
+    await b.tripStart();
+    await b.placeSave(lat: 24.7136, lng: 46.6753, label: 'بوابة ٣', share: true);
+    await tester.scrollUntilVisible(find.text('أنا هنا'), 200);
+    await tester.tap(find.text('أنا هنا'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    await tester.scrollUntilVisible(find.text('تعديل').first, 100, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('تعديل').first);
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    // The picker opens on the saved point, with its name, and a touch moves the pin.
+    expect(find.byType(FlutterMap), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'بوابة ٣'), findsOneWidget);
+    await tester.tapAt(tester.getCenter(find.byType(FlutterMap)) + const Offset(40, 40));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tap(find.text('حفظ وإرسال للأسرة'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    final meet = b.current.data!.trip!.meet!;
+    expect(meet.label, 'بوابة ٣');
+    expect(meet.lat != 24.7136 || meet.lng != 46.6753, isTrue, reason: 'the new spot replaced the old one');
+    expect(b.current.data!.places.length, 2);
+  });
 }
