@@ -1,13 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart' show AndroidFlutterLocalNotificationsPlugin;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../backend/backend.dart';
+import '../backend/push.dart';
 import '../core/logic.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
@@ -59,6 +61,27 @@ Future<Position?> currentPosition({bool ask = true}) async {
   }
 }
 
+/// Android 13+ hides every notification until the user allows them, and sharing the place with the
+/// screen off needs its always-visible notification. Asks for the permission; when it stays refused,
+/// explains and opens the phone's settings. Returns false when sharing should not start.
+Future<bool> ensureNotificationsAllowed(BuildContext context) async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
+  final t = context.t;
+  try {
+    await Push.initLocal();
+    final android = Push.local.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return true;
+    if (await android.areNotificationsEnabled() ?? true) return true;
+    await android.requestNotificationsPermission();
+    if (await android.areNotificationsEnabled() ?? true) return true;
+    if (!context.mounted) return false;
+    if (await confirm(context, t.tripNotifOff, ok: t.tripOpenSettings)) await Geolocator.openAppSettings();
+    return false;
+  } catch (_) {
+    return true;
+  }
+}
+
 /// Android 12+ and iPhone let the user give the app only an *approximate* location (off by about a
 /// kilometre). That makes a family map and meeting points useless, so ask for the precise one.
 /// Returns false when the user chose not to continue with an approximate location.
@@ -93,6 +116,9 @@ LocationSettings _locationSettings({required bool background}) {
             ? const ForegroundNotificationConfig(
                 notificationTitle: 'أسرتي — أنا هنا',
                 notificationText: 'تشارك مكانك مع أسرتك أثناء الرحلة',
+                notificationChannelName: 'مشاركة المكان (أنا هنا)',
+                notificationIcon: AndroidResource(name: 'ic_notification', defType: 'drawable'),
+                color: Color(0xFF2F6158),
                 enableWakeLock: true,
                 setOngoing: true,
               )
@@ -264,6 +290,7 @@ class _TripPageState extends ConsumerState<TripPage> {
   Future<void> _share() async {
     final t = context.t;
     if (!await ensurePreciseLocation(context) || !mounted) return;
+    if (!await ensureNotificationsAllowed(context) || !mounted) return;
     final ok = await ref.read(tripSharerProvider.notifier).start();
     if (!ok && mounted) toast(context, t.tripDenied);
   }
