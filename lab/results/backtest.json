@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-02T18:59:08.204Z",
+  "generatedAt": "2026-11-02T20:13:31.833Z",
   "source": "yahoo",
   "dataFrom": "2026-07-10",
-  "dataTo": "2026-10-30",
+  "dataTo": "2026-11-02",
   "params": {
     "pivotK": 3,
     "lookbackBars": 156,
@@ -240,17 +240,25 @@
       "pnl": -141.59,
       "equityEnd": 9533.1,
       "returnPct": -1.464
+    },
+    {
+      "weekKey": "2026-11-02",
+      "trades": 11,
+      "wins": 0,
+      "pnl": -100.05,
+      "equityEnd": 9433.05,
+      "returnPct": -1.049
     }
   ],
   "account": {
     "start": 10000,
-    "end": 9533.1,
-    "returnPct": -4.669,
-    "maxDrawdownPct": 5.299,
-    "trades": 153,
-    "winRate": 0.2941,
-    "avgR": -0.1255,
-    "profitFactor": 0.757
+    "end": 9433.05,
+    "returnPct": -5.669,
+    "maxDrawdownPct": 5.669,
+    "trades": 164,
+    "winRate": 0.2744,
+    "avgR": -0.1842,
+    "profitFactor": 0.72
   },
   "trades": [
     {
@@ -2547,11 +2555,176 @@
       "pct": -0.00232,
       "shares": 12,
       "pnl": -4.96
+    },
+    {
+      "sym": "COF",
+      "weekKey": "2026-11-02",
+      "entryT": 1793640300000,
+      "entry": 212.11000061035156,
+      "stop": 210.98305871671528,
+      "target": 214.36388439762413,
+      "exitT": 1793642400000,
+      "exit": 210.98305871671528,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00531,
+      "shares": 8,
+      "pnl": -9.69
+    },
+    {
+      "sym": "NKE",
+      "weekKey": "2026-11-02",
+      "entryT": 1793641200000,
+      "entry": 39.5099983215332,
+      "stop": 39.331448623674206,
+      "target": 39.8670977172512,
+      "exitT": 1793648100000,
+      "exit": 39.331448623674206,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00452,
+      "shares": 48,
+      "pnl": -9.33
+    },
+    {
+      "sym": "PLTR",
+      "weekKey": "2026-11-02",
+      "entryT": 1793641800000,
+      "entry": 184.27000427246094,
+      "stop": 183.778295005747,
+      "target": 185.25342280588882,
+      "exitT": 1793644800000,
+      "exit": 183.778295005747,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00267,
+      "shares": 10,
+      "pnl": -5.65
+    },
+    {
+      "sym": "ADBE",
+      "weekKey": "2026-11-02",
+      "entryT": 1793642100000,
+      "entry": 255.1300048828125,
+      "stop": 253.03735799322817,
+      "target": 259.31529866198116,
+      "exitT": 1793647500000,
+      "exit": 253.03735799322817,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.0082,
+      "shares": 7,
+      "pnl": -15.36
+    },
+    {
+      "sym": "ABBV",
+      "weekKey": "2026-11-02",
+      "entryT": 1793643300000,
+      "entry": 288.80499267578125,
+      "stop": 287.6624365577061,
+      "target": 291.0901049119316,
+      "exitT": 1793644800000,
+      "exit": 287.6624365577061,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00396,
+      "shares": 6,
+      "pnl": -7.55
+    },
+    {
+      "sym": "BAC",
+      "weekKey": "2026-11-02",
+      "entryT": 1793643300000,
+      "entry": 50.23500061035156,
+      "stop": 49.99651285707882,
+      "target": 50.71197611689705,
+      "exitT": 1793646300000,
+      "exit": 49.99651285707882,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00475,
+      "shares": 37,
+      "pnl": -9.57
+    },
+    {
+      "sym": "AXP",
+      "weekKey": "2026-11-02",
+      "entryT": 1793646000000,
+      "entry": 328.802490234375,
+      "stop": 328.1223060715658,
+      "target": 330.1628585599934,
+      "exitT": 1793647200000,
+      "exit": 328.1223060715658,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00207,
+      "shares": 5,
+      "pnl": -4.06
+    },
+    {
+      "sym": "RIVN",
+      "weekKey": "2026-11-02",
+      "entryT": 1793646000000,
+      "entry": 13.425000190734863,
+      "stop": 13.303408478506793,
+      "target": 13.668183615191005,
+      "exitT": 1793647200000,
+      "exit": 13.303408478506793,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00906,
+      "shares": 141,
+      "pnl": -17.9
+    },
+    {
+      "sym": "ANET",
+      "weekKey": "2026-11-02",
+      "entryT": 1793648100000,
+      "entry": 164.2899932861328,
+      "stop": 164.03039620102837,
+      "target": 164.8091874563417,
+      "exitT": 1793648100000,
+      "exit": 164.03039620102837,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00158,
+      "shares": 11,
+      "pnl": -3.58
+    },
+    {
+      "sym": "AMD",
+      "weekKey": "2026-11-02",
+      "entryT": 1793649300000,
+      "entry": 472.94000244140625,
+      "stop": 471.79625583399826,
+      "target": 475.22749565622223,
+      "exitT": 1793649300000,
+      "exit": 471.79625583399826,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00242,
+      "shares": 3,
+      "pnl": -4
+    },
+    {
+      "sym": "DKNG",
+      "weekKey": "2026-11-02",
+      "entryT": 1793649300000,
+      "entry": 21.924999237060547,
+      "stop": 21.778275468974673,
+      "target": 22.218446773232294,
+      "exitT": 1793649600000,
+      "exit": 21.778275468974673,
+      "how": "stop",
+      "r": -1,
+      "pct": -0.00669,
+      "shares": 86,
+      "pnl": -13.37
     }
   ],
   "perSymbol": {
     "AAPL": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 2,
@@ -2563,7 +2736,7 @@
       "worstR": -3.1918
     },
     "MSFT": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 3,
@@ -2575,7 +2748,7 @@
       "worstR": -1
     },
     "NVDA": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 6,
       "trades": 6,
       "wins": 1,
@@ -2587,7 +2760,7 @@
       "worstR": -1
     },
     "AMZN": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 0,
@@ -2599,7 +2772,7 @@
       "worstR": -3.4915
     },
     "GOOGL": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 5,
       "trades": 5,
       "wins": 0,
@@ -2611,7 +2784,7 @@
       "worstR": -2.678
     },
     "META": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 6,
       "trades": 6,
       "wins": 3,
@@ -2623,7 +2796,7 @@
       "worstR": -1
     },
     "TSLA": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 4,
@@ -2635,7 +2808,7 @@
       "worstR": -1
     },
     "AVGO": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 10,
       "trades": 10,
       "wins": 4,
@@ -2647,19 +2820,19 @@
       "worstR": -2.7767
     },
     "AMD": {
-      "weeks": 17,
-      "signals": 10,
-      "trades": 10,
+      "weeks": 18,
+      "signals": 11,
+      "trades": 11,
       "wins": 3,
-      "winRate": 0.3,
-      "avgR": 0.0708,
-      "totalR": 0.7082,
-      "avgPct": 0.00004,
+      "winRate": 0.2727,
+      "avgR": -0.0265,
+      "totalR": -0.2918,
+      "avgPct": -0.00019,
       "bestR": 4.8029,
       "worstR": -3.5074
     },
     "NFLX": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 5,
       "trades": 5,
       "wins": 2,
@@ -2671,7 +2844,7 @@
       "worstR": -1.3781
     },
     "ORCL": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 12,
       "trades": 12,
       "wins": 2,
@@ -2683,7 +2856,7 @@
       "worstR": -1
     },
     "CRM": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 4,
@@ -2695,31 +2868,31 @@
       "worstR": -4.6494
     },
     "ADBE": {
-      "weeks": 17,
-      "signals": 6,
-      "trades": 6,
+      "weeks": 18,
+      "signals": 7,
+      "trades": 7,
       "wins": 3,
-      "winRate": 0.5,
-      "avgR": 0.9039,
-      "totalR": 5.4232,
-      "avgPct": 0.0017,
+      "winRate": 0.4286,
+      "avgR": 0.6319,
+      "totalR": 4.4232,
+      "avgPct": 0.00029,
       "bestR": 6.3865,
       "worstR": -4.5027
     },
     "INTC": {
-      "weeks": 17,
-      "signals": 8,
-      "trades": 8,
+      "weeks": 18,
+      "signals": 9,
+      "trades": 9,
       "wins": 2,
-      "winRate": 0.25,
-      "avgR": -0.5978,
-      "totalR": -4.7826,
-      "avgPct": -0.01095,
+      "winRate": 0.2222,
+      "avgR": -0.6425,
+      "totalR": -5.7826,
+      "avgPct": -0.01047,
       "bestR": 2,
       "worstR": -3.7826
     },
     "QCOM": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 14,
       "trades": 14,
       "wins": 5,
@@ -2731,7 +2904,7 @@
       "worstR": -1.9126
     },
     "TXN": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 10,
       "trades": 10,
       "wins": 5,
@@ -2743,7 +2916,7 @@
       "worstR": -5.6252
     },
     "MU": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 6,
       "trades": 6,
       "wins": 2,
@@ -2755,7 +2928,7 @@
       "worstR": -2.9722
     },
     "AMAT": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 2,
@@ -2767,7 +2940,7 @@
       "worstR": -2.826
     },
     "LRCX": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 3,
@@ -2779,7 +2952,7 @@
       "worstR": -3.1095
     },
     "KLAC": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 5,
@@ -2791,7 +2964,7 @@
       "worstR": -3.1817
     },
     "SMCI": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 11,
       "trades": 11,
       "wins": 2,
@@ -2803,7 +2976,7 @@
       "worstR": -1.619
     },
     "MRVL": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 3,
@@ -2815,19 +2988,19 @@
       "worstR": -1
     },
     "PLTR": {
-      "weeks": 17,
-      "signals": 8,
-      "trades": 8,
+      "weeks": 18,
+      "signals": 9,
+      "trades": 9,
       "wins": 2,
-      "winRate": 0.25,
-      "avgR": -0.5454,
-      "totalR": -4.3634,
-      "avgPct": -0.00485,
+      "winRate": 0.2222,
+      "avgR": -0.5959,
+      "totalR": -5.3634,
+      "avgPct": -0.0046,
       "bestR": 2.1912,
       "worstR": -3.5546
     },
     "SNOW": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 11,
       "trades": 11,
       "wins": 1,
@@ -2839,7 +3012,7 @@
       "worstR": -1.8447
     },
     "CRWD": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 6,
       "trades": 6,
       "wins": 2,
@@ -2851,7 +3024,7 @@
       "worstR": -1
     },
     "PANW": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 6,
       "trades": 6,
       "wins": 1,
@@ -2863,7 +3036,7 @@
       "worstR": -1.0641
     },
     "NOW": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 5,
@@ -2875,19 +3048,19 @@
       "worstR": -2.8424
     },
     "ANET": {
-      "weeks": 17,
-      "signals": 8,
-      "trades": 8,
+      "weeks": 18,
+      "signals": 9,
+      "trades": 9,
       "wins": 1,
-      "winRate": 0.125,
-      "avgR": -1.3252,
-      "totalR": -10.6013,
-      "avgPct": -0.00494,
+      "winRate": 0.1111,
+      "avgR": -1.289,
+      "totalR": -11.6013,
+      "avgPct": -0.00457,
       "bestR": 2.773,
       "worstR": -4.3056
     },
     "UBER": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 1,
@@ -2899,7 +3072,7 @@
       "worstR": -1
     },
     "ABNB": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 2,
@@ -2911,8 +3084,8 @@
       "worstR": -1
     },
     "JPM": {
-      "weeks": 17,
-      "signals": 5,
+      "weeks": 18,
+      "signals": 6,
       "trades": 5,
       "wins": 1,
       "winRate": 0.2,
@@ -2923,20 +3096,20 @@
       "worstR": -1
     },
     "BAC": {
-      "weeks": 17,
-      "signals": 6,
-      "trades": 6,
+      "weeks": 18,
+      "signals": 7,
+      "trades": 7,
       "wins": 2,
-      "winRate": 0.3333,
-      "avgR": -0.3736,
-      "totalR": -2.2419,
-      "avgPct": -0.00078,
+      "winRate": 0.2857,
+      "avgR": -0.4631,
+      "totalR": -3.2419,
+      "avgPct": -0.00135,
       "bestR": 2,
       "worstR": -3.2419
     },
     "WFC": {
-      "weeks": 17,
-      "signals": 8,
+      "weeks": 18,
+      "signals": 9,
       "trades": 8,
       "wins": 1,
       "winRate": 0.125,
@@ -2947,7 +3120,7 @@
       "worstR": -1
     },
     "C": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 3,
@@ -2959,7 +3132,7 @@
       "worstR": -1
     },
     "GS": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 6,
       "trades": 6,
       "wins": 2,
@@ -2971,8 +3144,8 @@
       "worstR": -1
     },
     "MS": {
-      "weeks": 17,
-      "signals": 11,
+      "weeks": 18,
+      "signals": 12,
       "trades": 11,
       "wins": 5,
       "winRate": 0.4545,
@@ -2983,7 +3156,7 @@
       "worstR": -4.9942
     },
     "SCHW": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 4,
@@ -2995,31 +3168,31 @@
       "worstR": -3.2093
     },
     "COF": {
-      "weeks": 17,
-      "signals": 10,
-      "trades": 10,
+      "weeks": 18,
+      "signals": 11,
+      "trades": 11,
       "wins": 4,
-      "winRate": 0.4,
-      "avgR": 0.399,
-      "totalR": 3.9902,
-      "avgPct": 0.00103,
+      "winRate": 0.3636,
+      "avgR": 0.2718,
+      "totalR": 2.9902,
+      "avgPct": 0.00045,
       "bestR": 3.9902,
       "worstR": -1
     },
     "AXP": {
-      "weeks": 17,
-      "signals": 10,
-      "trades": 10,
+      "weeks": 18,
+      "signals": 11,
+      "trades": 11,
       "wins": 3,
-      "winRate": 0.3,
-      "avgR": -0.1,
-      "totalR": -1,
-      "avgPct": -0.00062,
+      "winRate": 0.2727,
+      "avgR": -0.1818,
+      "totalR": -2,
+      "avgPct": -0.00076,
       "bestR": 2,
       "worstR": -1
     },
     "V": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 2,
@@ -3031,7 +3204,7 @@
       "worstR": -1
     },
     "MA": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 2,
@@ -3043,7 +3216,7 @@
       "worstR": -1.7088
     },
     "PYPL": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 12,
       "trades": 12,
       "wins": 4,
@@ -3055,7 +3228,7 @@
       "worstR": -1.7346
     },
     "COIN": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 12,
       "trades": 12,
       "wins": 3,
@@ -3067,8 +3240,8 @@
       "worstR": -2.0192
     },
     "HOOD": {
-      "weeks": 17,
-      "signals": 10,
+      "weeks": 18,
+      "signals": 11,
       "trades": 10,
       "wins": 4,
       "winRate": 0.4,
@@ -3079,7 +3252,7 @@
       "worstR": -3.0911
     },
     "SOFI": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 1,
@@ -3091,8 +3264,8 @@
       "worstR": -1.1266
     },
     "XOM": {
-      "weeks": 17,
-      "signals": 10,
+      "weeks": 18,
+      "signals": 11,
       "trades": 10,
       "wins": 3,
       "winRate": 0.3,
@@ -3103,7 +3276,7 @@
       "worstR": -2.9031
     },
     "CVX": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 5,
       "trades": 5,
       "wins": 1,
@@ -3115,7 +3288,7 @@
       "worstR": -1
     },
     "COP": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 3,
@@ -3127,7 +3300,7 @@
       "worstR": -1
     },
     "OXY": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 5,
@@ -3139,7 +3312,7 @@
       "worstR": -1
     },
     "SLB": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 4,
       "trades": 4,
       "wins": 3,
@@ -3151,19 +3324,19 @@
       "worstR": -1
     },
     "EOG": {
-      "weeks": 17,
-      "signals": 5,
-      "trades": 5,
+      "weeks": 18,
+      "signals": 6,
+      "trades": 6,
       "wins": 0,
       "winRate": 0,
       "avgR": -1,
-      "totalR": -5,
-      "avgPct": -0.00216,
+      "totalR": -6,
+      "avgPct": -0.00293,
       "bestR": -1,
       "worstR": -1
     },
     "DVN": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 6,
       "trades": 6,
       "wins": 1,
@@ -3175,7 +3348,7 @@
       "worstR": -3.4316
     },
     "UNH": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 15,
       "trades": 15,
       "wins": 4,
@@ -3187,7 +3360,7 @@
       "worstR": -1
     },
     "LLY": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 8,
       "trades": 8,
       "wins": 1,
@@ -3199,7 +3372,7 @@
       "worstR": -1.851
     },
     "JNJ": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 10,
       "trades": 10,
       "wins": 3,
@@ -3211,7 +3384,7 @@
       "worstR": -1
     },
     "PFE": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 12,
       "trades": 12,
       "wins": 5,
@@ -3223,8 +3396,8 @@
       "worstR": -1
     },
     "MRK": {
-      "weeks": 17,
-      "signals": 12,
+      "weeks": 18,
+      "signals": 13,
       "trades": 12,
       "wins": 1,
       "winRate": 0.0833,
@@ -3235,19 +3408,19 @@
       "worstR": -1.4493
     },
     "ABBV": {
-      "weeks": 17,
-      "signals": 6,
-      "trades": 6,
+      "weeks": 18,
+      "signals": 7,
+      "trades": 7,
       "wins": 1,
-      "winRate": 0.1667,
-      "avgR": -0.5711,
-      "totalR": -3.4268,
-      "avgPct": -0.00262,
+      "winRate": 0.1429,
+      "avgR": -0.6324,
+      "totalR": -4.4268,
+      "avgPct": -0.00281,
       "bestR": 2,
       "worstR": -1.4268
     },
     "AMGN": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 11,
       "trades": 11,
       "wins": 3,
@@ -3259,7 +3432,7 @@
       "worstR": -2.5372
     },
     "MRNA": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 2,
@@ -3271,7 +3444,7 @@
       "worstR": -1
     },
     "ISRG": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 8,
       "trades": 8,
       "wins": 1,
@@ -3283,7 +3456,7 @@
       "worstR": -1
     },
     "CAT": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 8,
       "trades": 8,
       "wins": 4,
@@ -3295,19 +3468,19 @@
       "worstR": -1
     },
     "DE": {
-      "weeks": 17,
-      "signals": 9,
-      "trades": 9,
+      "weeks": 18,
+      "signals": 10,
+      "trades": 10,
       "wins": 5,
-      "winRate": 0.5556,
-      "avgR": 0.785,
-      "totalR": 7.0652,
-      "avgPct": 0.00412,
+      "winRate": 0.5,
+      "avgR": 0.6065,
+      "totalR": 6.0652,
+      "avgPct": 0.00344,
       "bestR": 3.0652,
       "worstR": -1
     },
     "BA": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 8,
       "trades": 8,
       "wins": 1,
@@ -3319,8 +3492,8 @@
       "worstR": -1.5271
     },
     "GE": {
-      "weeks": 17,
-      "signals": 8,
+      "weeks": 18,
+      "signals": 9,
       "trades": 8,
       "wins": 2,
       "winRate": 0.25,
@@ -3331,7 +3504,7 @@
       "worstR": -1
     },
     "HON": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 10,
       "trades": 10,
       "wins": 4,
@@ -3343,8 +3516,8 @@
       "worstR": -1.3812
     },
     "LMT": {
-      "weeks": 17,
-      "signals": 9,
+      "weeks": 18,
+      "signals": 10,
       "trades": 9,
       "wins": 1,
       "winRate": 0.1111,
@@ -3355,7 +3528,7 @@
       "worstR": -1
     },
     "UPS": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 10,
       "trades": 10,
       "wins": 2,
@@ -3367,8 +3540,8 @@
       "worstR": -1
     },
     "RTX": {
-      "weeks": 17,
-      "signals": 7,
+      "weeks": 18,
+      "signals": 8,
       "trades": 7,
       "wins": 1,
       "winRate": 0.1429,
@@ -3379,7 +3552,7 @@
       "worstR": -1
     },
     "WMT": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 12,
       "trades": 12,
       "wins": 4,
@@ -3391,7 +3564,7 @@
       "worstR": -6.9762
     },
     "COST": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 2,
@@ -3403,7 +3576,7 @@
       "worstR": -1.9083
     },
     "HD": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 13,
       "trades": 13,
       "wins": 4,
@@ -3415,19 +3588,19 @@
       "worstR": -1.036
     },
     "NKE": {
-      "weeks": 17,
-      "signals": 8,
-      "trades": 8,
+      "weeks": 18,
+      "signals": 9,
+      "trades": 9,
       "wins": 6,
-      "winRate": 0.75,
-      "avgR": 1.6152,
-      "totalR": 12.9215,
-      "avgPct": 0.00806,
+      "winRate": 0.6667,
+      "avgR": 1.3246,
+      "totalR": 11.9215,
+      "avgPct": 0.00666,
       "bestR": 3.286,
       "worstR": -1
     },
     "SBUX": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 7,
       "trades": 7,
       "wins": 1,
@@ -3439,8 +3612,8 @@
       "worstR": -1.0065
     },
     "MCD": {
-      "weeks": 17,
-      "signals": 10,
+      "weeks": 18,
+      "signals": 11,
       "trades": 10,
       "wins": 3,
       "winRate": 0.3,
@@ -3451,7 +3624,7 @@
       "worstR": -1
     },
     "DIS": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 8,
       "trades": 8,
       "wins": 5,
@@ -3463,7 +3636,7 @@
       "worstR": -1
     },
     "TGT": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 8,
       "trades": 8,
       "wins": 2,
@@ -3475,31 +3648,31 @@
       "worstR": -1.6717
     },
     "DKNG": {
-      "weeks": 17,
-      "signals": 9,
-      "trades": 9,
+      "weeks": 18,
+      "signals": 10,
+      "trades": 10,
       "wins": 5,
-      "winRate": 0.5556,
-      "avgR": 0.6667,
-      "totalR": 6,
-      "avgPct": 0.00496,
+      "winRate": 0.5,
+      "avgR": 0.5,
+      "totalR": 5,
+      "avgPct": 0.0038,
       "bestR": 2,
       "worstR": -1
     },
     "RIVN": {
-      "weeks": 17,
-      "signals": 12,
-      "trades": 12,
+      "weeks": 18,
+      "signals": 13,
+      "trades": 13,
       "wins": 3,
-      "winRate": 0.25,
-      "avgR": -0.25,
-      "totalR": -3,
-      "avgPct": -0.00322,
+      "winRate": 0.2308,
+      "avgR": -0.3077,
+      "totalR": -4,
+      "avgPct": -0.00367,
       "bestR": 2,
       "worstR": -1
     },
     "MARA": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 13,
       "trades": 13,
       "wins": 2,
@@ -3511,7 +3684,7 @@
       "worstR": -2.8394
     },
     "ROKU": {
-      "weeks": 17,
+      "weeks": 18,
       "signals": 9,
       "trades": 9,
       "wins": 2,
