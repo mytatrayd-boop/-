@@ -3,6 +3,7 @@ import 'package:asraty/core/models.dart';
 import 'package:asraty/ui/app.dart';
 import 'package:asraty/ui/providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,6 +45,13 @@ void main() {
     expect(find.text('إنهاء الرحلة'), findsOneWidget);
     expect(find.text('ساعدوني'), findsOneWidget);
     expect(find.text('أين أسرتي'), findsOneWidget);
+    // Nobody shared a place yet, so there is no map; after the first place it appears.
+    expect(find.byType(FlutterMap), findsNothing);
+    await b.tripPing(lat: 24.7136, lng: 46.6753, acc: 8);
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(find.byType(FlutterMap), findsOneWidget);
   });
 
   testWidgets('trip: a member has no start button, sees the banner only while a trip is live', (tester) async {
