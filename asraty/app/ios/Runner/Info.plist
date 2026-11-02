@@ -30,6 +30,8 @@
 		<string>لتصوير إثبات إنجاز المهمة أو صورتك الشخصية في الأسرة.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>لاختيار صورة إثبات إنجاز المهمة أو صورتك الشخصية في الأسرة.</string>
+		<key>GMSApiKey</key>
+		<string>$(MAPS_API_KEY)</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>لحساب مواقيت الصلاة لمدينتك، ولمشاركة مكانك مع أسرتك أثناء السفر عند تفعيل ميزة «أنا هنا».</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

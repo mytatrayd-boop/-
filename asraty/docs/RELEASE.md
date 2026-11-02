@@ -160,3 +160,10 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
 ## مؤجَّل للإصدار 1.0.5 (قرار المالك 30 أكتوبر 2026: يُجمع مع تعديلات الأسبوع القادم)
 - العشاء بنقاطها من الأذان حتى ١١ مساءً بتوقيت الرياض: مدموج في الكود (PR #101)، **لم يُرفع الخادم ولم تُبنَ نسخة بعد**.
 - قبل الرفع: ذكّر المالك، ثم ارفع الخادم (`asraty-backend-deploy.yml`) والنسخة 1.0.5 معاً، لأن الخادم وحده يعطي النقاط والتطبيق القديم يعرض «متأخرة».
+
+## مفتاح خرائط Google («أنا هنا»)
+- الخريطة داخل التطبيق تعمل فقط في النسخ التي فيها المفتاح. بدونه تبقى القائمة وتُفتح الأماكن في تطبيق الخرائط.
+- من Google Cloud Console: فعّل **Maps SDK for Android** و**Maps SDK for iOS**، وأنشئ مفتاحًا، وقيّده: أندرويد بـ `sa.asraty.app` وبصمة SHA-1 لمفتاح الرفع (وبصمة Play App Signing)، وآيفون بـ Bundle ID `sa.asraty.app`.
+- أضفه سرًّا في GitHub باسم `ASRATY_MAPS_KEY` (Settings ← Secrets and variables ← Actions). لا يُكتب في أي ملف.
+- عند وجوده: الـ workflows تحقنه في أندرويد (`MAPS_API_KEY`) وآيفون (`ios/Flutter/Maps.xcconfig` المستثنى من git) وتفعّل `MAPS_ENABLED`.
+- للتجربة محليًا: `MAPS_API_KEY=... flutter run --dart-define=MAPS_ENABLED=true` (وعلى iOS ضع `MAPS_API_KEY=...` في `ios/Flutter/Maps.xcconfig`).

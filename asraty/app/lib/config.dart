@@ -30,6 +30,10 @@ class AppConfig {
 
   static const privacyUrl = String.fromEnvironment('PRIVACY_URL');
 
+  /// True in builds that carry a Google Maps key (set by the store workflows when the MAPS key secret exists);
+  /// without it the trip screen shows the list only and opens places in the maps app.
+  static const mapsEnabled = bool.fromEnvironment('MAPS_ENABLED');
+
   static String? get _appId {
     if (kIsWeb) return _webAppId;
     return switch (defaultTargetPlatform) {

@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../backend/backend.dart';
+import '../config.dart';
 import '../core/logic.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
@@ -217,6 +219,10 @@ class _TripPageState extends ConsumerState<TripPage> {
           Btn(t.tripMeetSet, icon: Icons.add_location_alt_outlined, onPressed: _setMeet),
         ]),
       ],
+      if (AppConfig.mapsEnabled) ...[
+        const SizedBox(height: 12),
+        TripMap(c: widget.c, trip: trip, now: now),
+      ],
       H3(t.tripFamily),
       for (final p in d.people) _personRow(context, p, trip, d.locations[p.id], mine, now, b),
       NoteBox(t.tripPrivacy),
@@ -295,6 +301,90 @@ class TripBanner extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Btn(t.tripImHere, icon: Icons.location_on_rounded, kind: BtnKind.ok, expand: true, onPressed: onTap),
+    );
+  }
+}
+
+/// The family on one Google map: a marker per person who shares (green = fresh, yellow = a few
+/// minutes old, red = old) and the meeting point. Only built when the build carries a Maps key.
+class TripMap extends StatefulWidget {
+  const TripMap({super.key, required this.c, required this.trip, required this.now});
+  final Ctx c;
+  final TripState trip;
+  final DateTime now;
+  @override
+  State<TripMap> createState() => _TripMapState();
+}
+
+class _TripMapState extends State<TripMap> {
+  GoogleMapController? _map;
+  int _fitted = -1;
+
+  Set<Marker> _markers(L10n t) {
+    final d = widget.c.data, out = <Marker>{};
+    for (final loc in d.locations.values) {
+      final p = d.person(loc.personId);
+      if (p == null || widget.trip.paused.contains(p.id)) continue;
+      final min = widget.now.difference(loc.at).inMinutes;
+      final hue = min <= 2 ? BitmapDescriptor.hueGreen : (min <= 10 ? BitmapDescriptor.hueYellow : BitmapDescriptor.hueRed);
+      out.add(Marker(
+        markerId: MarkerId(p.id),
+        position: LatLng(loc.lat, loc.lng),
+        icon: BitmapDescriptor.defaultMarkerWithHue(hue),
+        infoWindow: InfoWindow(title: p.name, snippet: _agoText(t, loc.at, widget.now)),
+      ));
+    }
+    final m = widget.trip.meet;
+    if (m != null) {
+      out.add(Marker(
+        markerId: const MarkerId('meet'),
+        position: LatLng(m.lat, m.lng),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: InfoWindow(title: '📌 ${m.label}'),
+      ));
+    }
+    return out;
+  }
+
+  /// Zooms to fit everyone whenever the number of markers changes.
+  void _fit(Set<Marker> markers) {
+    final c = _map;
+    if (c == null || markers.isEmpty || _fitted == markers.length) return;
+    _fitted = markers.length;
+    final pts = markers.map((m) => m.position).toList();
+    if (pts.length == 1) {
+      c.animateCamera(CameraUpdate.newLatLngZoom(pts.first, 16));
+      return;
+    }
+    var s = pts.first.latitude, n = s, w = pts.first.longitude, e = w;
+    for (final p in pts) {
+      s = p.latitude < s ? p.latitude : s;
+      n = p.latitude > n ? p.latitude : n;
+      w = p.longitude < w ? p.longitude : w;
+      e = p.longitude > e ? p.longitude : e;
+    }
+    c.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(s, w), northeast: LatLng(n, e)), 56));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final markers = _markers(context.t);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fit(markers));
+    final first = markers.isEmpty ? const LatLng(24.7136, 46.6753) : markers.first.position;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        height: 300,
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(target: first, zoom: markers.isEmpty ? 5 : 15),
+          markers: markers,
+          myLocationEnabled: true,
+          myLocationButtonEnabled: true,
+          zoomControlsEnabled: false,
+          mapToolbarEnabled: false,
+          onMapCreated: (c) => _map = c,
+        ),
+      ),
     );
   }
 }
