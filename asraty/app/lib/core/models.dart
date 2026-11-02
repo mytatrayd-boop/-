@@ -249,6 +249,14 @@ class SentFeedback {
 }
 
 /// Everything the UI needs about the signed-in family, for the current periods.
+/// A place the family picked on the map and saved (shared as a notification, not as a live location).
+class SavedPlace {
+  const SavedPlace({required this.id, required this.label, required this.lat, required this.lng, required this.by, required this.at});
+  final String id, label, by;
+  final double lat, lng;
+  final DateTime at;
+}
+
 /// A meeting point set by a trip admin.
 class MeetPoint {
   const MeetPoint({required this.lat, required this.lng, required this.label, required this.by});
@@ -299,6 +307,7 @@ class FamilySnapshot {
     this.cycleStartedAt,
     this.trip,
     this.locations = const {},
+    this.places = const [],
   });
 
   final String familyName;
@@ -323,4 +332,7 @@ class FamilySnapshot {
 
   /// personId -> last shared place (only while a trip is live).
   final Map<String, MemberLoc> locations;
+
+  /// Saved places, newest first.
+  final List<SavedPlace> places;
 }

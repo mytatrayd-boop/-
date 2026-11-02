@@ -78,4 +78,33 @@ void main() {
     expect(find.text('ساعدوني'), findsOneWidget);
     expect(find.text('أين أسرتي'), findsOneWidget);
   });
+
+  testWidgets('places: the owner touches the map, names the place, saves it, and it shows in the saved list', (tester) async {
+    final c = await openAs(tester, 'abu@demo.sa', Role.owner);
+    await tester.scrollUntilVisible(find.text('أنا هنا'), 200);
+    await tester.tap(find.text('أنا هنا'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.scrollUntilVisible(find.text('اختر مكانًا على الخريطة').first, 100, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('اختر مكانًا على الخريطة').first);
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(find.byType(FlutterMap), findsOneWidget);
+    // Saving before touching the map asks to touch it first.
+    await tester.tap(find.text('حفظ فقط'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('المس الخريطة أولاً لتحديد المكان.'), findsOneWidget);
+    expect(find.text('المس الخريطة لتحديد المكان'), findsNothing);
+    await tester.tapAt(tester.getCenter(find.byType(FlutterMap)));
+    // The map waits a moment to tell a tap from a double tap.
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.enterText(find.byType(TextField), 'بوابة ٣');
+    await tester.tap(find.text('حفظ فقط'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    final b = c.read(backendProvider) as DemoBackend;
+    expect(b.current.data!.places.single.label, 'بوابة ٣');
+    expect(find.text('بوابة ٣'), findsWidgets);
+  });
 }

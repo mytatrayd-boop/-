@@ -55,6 +55,7 @@ class FirebaseBackend extends Backend {
   List<Violation> _violations = [];
   DateTime? _cycleStartedAt;
   TripState? _trip;
+  List<SavedPlace> _places = [];
   Map<String, MemberLoc> _locations = {};
 
   @override
@@ -118,6 +119,7 @@ class FirebaseBackend extends Backend {
     _violations = [];
     _trip = null;
     _locations = {};
+    _places = [];
   }
 
   void _listen(Session s) {
@@ -245,6 +247,15 @@ class FirebaseBackend extends Backend {
             : null,
         paused: {for (final e in ((x['paused'] as Map?) ?? const {}).entries) if (e.value == true) e.key as String});
     });
+    on(f.collection('places').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+      _places = [
+        for (final d in q.docs)
+          if (d.data()['lat'] is num && d.data()['lng'] is num)
+            SavedPlace(
+                id: d.id, label: d.data()['label'] as String? ?? '', lat: (d.data()['lat'] as num).toDouble(), lng: (d.data()['lng'] as num).toDouble(),
+                by: d.data()['by'] as String? ?? '', at: DateTime.fromMillisecondsSinceEpoch(_int(d.data()['at']))),
+      ]..sort((a, b) => b.at.compareTo(a.at));
+    });
     on(f.collection('locations').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _locations = {
         for (final d in q.docs)
@@ -277,7 +288,7 @@ class FirebaseBackend extends Backend {
       data: FamilySnapshot(
         familyName: _famName!, people: _people!, tasks: _tasks, completions: _completions, competitions: _comps,
         notices: _notices, daily: _daily, weekly: _weekly, monthly: _monthly, yearly: _yearly, goals: _goals,
-        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt, trip: _trip, locations: _locations),
+        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt, trip: _trip, locations: _locations, places: _places),
     ));
   }
 
@@ -457,6 +468,16 @@ class FirebaseBackend extends Backend {
 
   @override
   Future<void> tripMeetClear() => _op('tripMeet', {'clear': true});
+
+  @override
+  Future<void> placeSave({required double lat, required double lng, required String label, bool share = false}) =>
+      _op('placeSave', {'lat': lat, 'lng': lng, 'label': label, 'share': share});
+
+  @override
+  Future<void> placeShare(String placeId) => _op('placeShare', {'placeId': placeId});
+
+  @override
+  Future<void> placeDelete(String placeId) => _op('placeDelete', {'placeId': placeId});
 
   @override
   Future<void> tripSos({double? lat, double? lng}) => _op('tripSos', {'lat': ?lat, 'lng': ?lng});

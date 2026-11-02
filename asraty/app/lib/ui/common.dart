@@ -52,6 +52,7 @@ String errorText(L10n t, Object e) {
     'email-taken' => t.errEmailTaken,
     'no-permission' => t.errNoPermission,
     'no-trip' => t.tripNoTrip,
+    'too-many-places' => t.placeTooMany,
     'bad-location' => t.errLocation,
     'already-done' => t.errAlreadyDone,
     'already-decided' => t.errAlreadyDecided,

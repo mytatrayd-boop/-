@@ -1713,4 +1713,54 @@ class L10nAr extends L10n {
 
   @override
   String get tripStaleHint => 'آخر تحديث قديم، قد يكون المكان تغيّر';
+
+  @override
+  String get tripPickPlace => 'اختر مكانًا على الخريطة';
+
+  @override
+  String get placePickTitle => 'حدّد المكان';
+
+  @override
+  String get placeTapHint => 'المس الخريطة لتحديد المكان';
+
+  @override
+  String get placeMyLocation => 'موقعي';
+
+  @override
+  String get placeSaveShare => 'حفظ وإرسال للأسرة';
+
+  @override
+  String get placeSaveOnly => 'حفظ فقط';
+
+  @override
+  String get placeSaved => 'حُفظ المكان ✓';
+
+  @override
+  String get placeShared => 'أُرسل المكان للأسرة ✓';
+
+  @override
+  String get placesTitle => 'الأماكن المحفوظة';
+
+  @override
+  String get placesEmpty => 'لم تحفظ أماكن بعد.';
+
+  @override
+  String get placesHint =>
+      'اختر مكانًا على الخريطة واحفظه، وأرسله لأسرتك كتنبيه فيه رابط الخريطة.';
+
+  @override
+  String get placeSend => 'أرسل للأسرة';
+
+  @override
+  String get placeDelete => 'حذف';
+
+  @override
+  String get placeDeleteConfirm => 'حذف هذا المكان المحفوظ؟';
+
+  @override
+  String get placeNeedPick => 'المس الخريطة أولاً لتحديد المكان.';
+
+  @override
+  String get placeTooMany =>
+      'وصلت للحد الأقصى من الأماكن المحفوظة (٣٠). احذف مكانًا ثم أعد المحاولة.';
 }

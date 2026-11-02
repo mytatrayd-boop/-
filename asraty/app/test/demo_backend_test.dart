@@ -326,4 +326,30 @@ void main() {
     expect(d, inInclusiveRange(335000, 345000));
     expect(distanceMeters(24.7, 46.7, 24.7, 46.7), 0);
   });
+
+  test('saved places: trip admins pick, save and share; sharing only notifies (and sets the meeting point during a trip)', () async {
+    final b = DemoBackend(clock: () => clock);
+    await b.placeSave(lat: 24.7136, lng: 46.6753, label: 'بوابة ٣');
+    expect(b.current.data!.places.single.label, 'بوابة ٣');
+    expect(b.current.data!.notices.any((n) => n.kind == 'place'), isFalse, reason: 'saving alone sends nothing');
+    final id = b.current.data!.places.single.id;
+    // Without a trip: sharing only notifies, with a map link.
+    await b.placeShare(id);
+    final n = b.current.data!.notices.first;
+    expect(n.kind, 'place');
+    expect(n.body, contains('maps.google.com/?q=24.713600,46.675300'));
+    expect(b.current.data!.trip?.meet, isNull);
+    // During a trip, the shared place becomes the meeting point.
+    await b.tripStart();
+    await b.placeShare(id);
+    expect(b.current.data!.trip!.meet!.label, 'بوابة ٣');
+    await expectLater(b.placeSave(lat: 99, lng: 0, label: 'x'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'bad-location')));
+    // Children cannot pick, share or delete.
+    await login(b, 'aseel@demo.sa', Role.member);
+    await expectLater(b.placeSave(lat: 24.7, lng: 46.7, label: 'x'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+    await expectLater(b.placeDelete(id), throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+    await login(b, 'abu@demo.sa', Role.owner);
+    await b.placeDelete(id);
+    expect(b.current.data!.places, isEmpty);
+  });
 }

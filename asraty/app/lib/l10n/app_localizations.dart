@@ -3212,6 +3212,102 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'آخر تحديث قديم، قد يكون المكان تغيّر'**
   String get tripStaleHint;
+
+  /// No description provided for @tripPickPlace.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مكانًا على الخريطة'**
+  String get tripPickPlace;
+
+  /// No description provided for @placePickTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد المكان'**
+  String get placePickTitle;
+
+  /// No description provided for @placeTapHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'المس الخريطة لتحديد المكان'**
+  String get placeTapHint;
+
+  /// No description provided for @placeMyLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقعي'**
+  String get placeMyLocation;
+
+  /// No description provided for @placeSaveShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ وإرسال للأسرة'**
+  String get placeSaveShare;
+
+  /// No description provided for @placeSaveOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ فقط'**
+  String get placeSaveOnly;
+
+  /// No description provided for @placeSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظ المكان ✓'**
+  String get placeSaved;
+
+  /// No description provided for @placeShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُرسل المكان للأسرة ✓'**
+  String get placeShared;
+
+  /// No description provided for @placesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأماكن المحفوظة'**
+  String get placesTitle;
+
+  /// No description provided for @placesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحفظ أماكن بعد.'**
+  String get placesEmpty;
+
+  /// No description provided for @placesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مكانًا على الخريطة واحفظه، وأرسله لأسرتك كتنبيه فيه رابط الخريطة.'**
+  String get placesHint;
+
+  /// No description provided for @placeSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسل للأسرة'**
+  String get placeSend;
+
+  /// No description provided for @placeDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get placeDelete;
+
+  /// No description provided for @placeDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذا المكان المحفوظ؟'**
+  String get placeDeleteConfirm;
+
+  /// No description provided for @placeNeedPick.
+  ///
+  /// In ar, this message translates to:
+  /// **'المس الخريطة أولاً لتحديد المكان.'**
+  String get placeNeedPick;
+
+  /// No description provided for @placeTooMany.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد الأقصى من الأماكن المحفوظة (٣٠). احذف مكانًا ثم أعد المحاولة.'**
+  String get placeTooMany;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

@@ -106,13 +106,11 @@ class TripPage extends ConsumerStatefulWidget {
 class _TripPageState extends ConsumerState<TripPage> {
   final _hours = TextEditingController(text: '12');
   final _far = TextEditingController(text: '300');
-  final _meetLabel = TextEditingController();
 
   @override
   void dispose() {
     _hours.dispose();
     _far.dispose();
-    _meetLabel.dispose();
     super.dispose();
   }
 
@@ -130,13 +128,41 @@ class _TripPageState extends ConsumerState<TripPage> {
     await run(context, () => b.tripSos(lat: pos?.latitude, lng: pos?.longitude), ok: t.tripSosSent);
   }
 
-  Future<void> _setMeet() async {
-    final t = context.t, b = ref.read(backendProvider);
-    final pos = await currentPosition();
-    if (!mounted) return;
-    if (pos == null) return toast(context, t.tripDenied);
-    final ok = await run(context, () => b.tripMeet(lat: pos.latitude, lng: pos.longitude, label: _meetLabel.text), ok: t.tripMeetSaved);
-    if (ok) _meetLabel.clear();
+  /// Opens the map to pick a place by touch; saves it (and sends it to the family if asked).
+  Future<void> _pick() async {
+    final t = context.t, b = ref.read(backendProvider), d = widget.c.data;
+    final mine = d.locations[widget.c.me.id], meet = d.trip?.meet;
+    final start = mine != null ? LatLng(mine.lat, mine.lng) : (meet != null ? LatLng(meet.lat, meet.lng) : (d.places.isNotEmpty ? LatLng(d.places.first.lat, d.places.first.lng) : null));
+    final r = await Navigator.of(context).push<PickedPlace>(MaterialPageRoute(builder: (_) => PlacePickerPage(start: start)));
+    if (r == null || !mounted) return;
+    await run(context, () => b.placeSave(lat: r.point.latitude, lng: r.point.longitude, label: r.label, share: r.share), ok: r.share ? t.placeShared : t.placeSaved);
+  }
+
+  /// Saved places: managers pick, save, send and delete; everyone can open them.
+  List<Widget> _places(BuildContext context, bool manager, Backend b) {
+    final t = context.t, places = widget.c.data.places;
+    return [
+      H3('📌 ${t.placesTitle}'),
+      if (manager) ...[
+        Muted(t.placesHint),
+        const SizedBox(height: 8),
+        Btn(t.tripPickPlace, icon: Icons.add_location_alt_outlined, expand: true, onPressed: _pick),
+        const SizedBox(height: 8),
+      ],
+      if (places.isEmpty) Muted(t.placesEmpty),
+      for (final p in places)
+        _Card(
+          head: [Expanded(child: TitleSub(p.label, p.by))],
+          actions: [
+            Btn(t.tripOpenMap, small: true, kind: BtnKind.ghost, icon: Icons.map_outlined, onPressed: () => _openMap(p.lat, p.lng)),
+            if (manager) Btn(t.placeSend, small: true, icon: Icons.send_rounded, onPressed: () => run(context, () => b.placeShare(p.id), ok: t.placeShared)),
+            if (manager)
+              Btn(t.placeDelete, small: true, kind: BtnKind.ghost, onPressed: () async {
+                if (await confirm(context, t.placeDeleteConfirm, ok: t.placeDelete, danger: true) && context.mounted) await run(context, () => b.placeDelete(p.id));
+              }),
+          ],
+        ),
+    ];
   }
 
   Future<void> _openMap(double lat, double lng, {bool directions = false}) async {
@@ -170,6 +196,7 @@ class _TripPageState extends ConsumerState<TripPage> {
                 icon: Icons.flight_takeoff_rounded,
                 onPressed: () => run(context, () => b.tripStart(hours: parseDigits(_hours.text) ?? 12, farMeters: parseDigits(_far.text) ?? 300), ok: t.tripStarted)),
           ]),
+        ..._places(context, manager, b),
       ]);
     }
 
@@ -212,17 +239,11 @@ class _TripPageState extends ConsumerState<TripPage> {
           ],
         ),
       ],
-      if (manager && meet == null) ...[
-        H3('📌 ${t.tripMeet}'),
-        FormBox(children: [
-          TextField(controller: _meetLabel, decoration: InputDecoration(hintText: t.tripMeetLabel)),
-          Btn(t.tripMeetSet, icon: Icons.add_location_alt_outlined, onPressed: _setMeet),
-        ]),
-      ],
       TripMap(c: widget.c, trip: trip, now: now),
       H3(t.tripFamily),
       for (final p in d.people) _personRow(context, p, trip, d.locations[p.id], mine, now, b),
       NoteBox(t.tripPrivacy),
+      ..._places(context, manager, b),
       if (manager) ...[
         const SizedBox(height: 14),
         Btn(t.tripEnd,
@@ -399,6 +420,119 @@ class _TripMapState extends State<TripMap> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// What the picker returns: the touched point, its name and whether to send it to the family now.
+class PickedPlace {
+  const PickedPlace(this.point, this.label, this.share);
+  final LatLng point;
+  final String label;
+  final bool share;
+}
+
+/// Full-screen map: touch to choose the place, name it, then save (and optionally send it to the family).
+class PlacePickerPage extends StatefulWidget {
+  const PlacePickerPage({super.key, this.start});
+  final LatLng? start;
+  @override
+  State<PlacePickerPage> createState() => _PlacePickerPageState();
+}
+
+class _PlacePickerPageState extends State<PlacePickerPage> {
+  final _ctl = MapController();
+  final _name = TextEditingController();
+  LatLng? _picked;
+  var _warn = false; // saving before touching the map
+  late final LatLng _center = widget.start ?? const LatLng(24.7136, 46.6753);
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _mine() async {
+    final pos = await currentPosition();
+    if (!mounted) return;
+    if (pos == null) return toast(context, context.t.tripDenied);
+    final p = LatLng(pos.latitude, pos.longitude);
+    _ctl.move(p, 17);
+    setState(() {
+      _picked = p;
+      _warn = false;
+    });
+  }
+
+  void _done(bool share) {
+    final p = _picked;
+    if (p == null) return setState(() => _warn = true);
+    Navigator.of(context).pop(PickedPlace(p, _name.text.trim(), share));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Scaffold(
+      appBar: AppBar(title: Text(t.placePickTitle)),
+      body: Column(children: [
+        Expanded(
+          child: Stack(children: [
+            FlutterMap(
+              mapController: _ctl,
+              options: MapOptions(
+                initialCenter: _center,
+                initialZoom: widget.start == null ? 12 : 16,
+                interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                onTap: (_, p) => setState(() {
+                  _picked = p;
+                  _warn = false;
+                }),
+              ),
+              children: [
+                TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'sa.asraty.app'),
+                if (_picked != null)
+                  MarkerLayer(markers: [
+                    Marker(point: _picked!, width: 48, height: 48, alignment: Alignment.topCenter, child: const Icon(Icons.location_on, color: Palette.red, size: 44)),
+                  ]),
+                const RichAttributionWidget(attributions: [TextSourceAttribution('© OpenStreetMap contributors')]),
+              ],
+            ),
+            PositionedDirectional(
+              top: 10,
+              start: 10,
+              end: 10,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: _warn ? Palette.red : Colors.white.withValues(alpha: .92), borderRadius: BorderRadius.circular(12)),
+                  child: Text(_warn ? t.placeNeedPick : t.placeTapHint, style: TextStyle(fontWeight: FontWeight.w700, color: _warn ? Colors.white : Colors.black87)),
+                ),
+              ),
+            ),
+            PositionedDirectional(
+              bottom: 12,
+              end: 12,
+              child: FloatingActionButton.small(heroTag: 'mine', tooltip: t.placeMyLocation, onPressed: _mine, child: const Icon(Icons.my_location_rounded)),
+            ),
+          ]),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              TextField(controller: _name, decoration: InputDecoration(hintText: t.tripMeetLabel)),
+              const SizedBox(height: 10),
+              Btn(t.placeSaveShare, icon: Icons.send_rounded, expand: true, onPressed: () => _done(true)),
+              const SizedBox(height: 8),
+              Btn(t.placeSaveOnly, kind: BtnKind.ghost, expand: true, onPressed: () => _done(false)),
+            ]),
+          ),
+        ),
+      ]),
     );
   }
 }

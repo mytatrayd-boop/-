@@ -909,5 +909,21 @@
   "tripStarted": "بدأت الرحلة ✓",
   "tripEnded": "انتهت الرحلة ✓",
   "tripMeetSaved": "حُدّدت نقطة التجمع ✓",
-  "tripStaleHint": "آخر تحديث قديم، قد يكون المكان تغيّر"
+  "tripStaleHint": "آخر تحديث قديم، قد يكون المكان تغيّر",
+  "tripPickPlace": "اختر مكانًا على الخريطة",
+  "placePickTitle": "حدّد المكان",
+  "placeTapHint": "المس الخريطة لتحديد المكان",
+  "placeMyLocation": "موقعي",
+  "placeSaveShare": "حفظ وإرسال للأسرة",
+  "placeSaveOnly": "حفظ فقط",
+  "placeSaved": "حُفظ المكان ✓",
+  "placeShared": "أُرسل المكان للأسرة ✓",
+  "placesTitle": "الأماكن المحفوظة",
+  "placesEmpty": "لم تحفظ أماكن بعد.",
+  "placesHint": "اختر مكانًا على الخريطة واحفظه، وأرسله لأسرتك كتنبيه فيه رابط الخريطة.",
+  "placeSend": "أرسل للأسرة",
+  "placeDelete": "حذف",
+  "placeDeleteConfirm": "حذف هذا المكان المحفوظ؟",
+  "placeNeedPick": "المس الخريطة أولاً لتحديد المكان.",
+  "placeTooMany": "وصلت للحد الأقصى من الأماكن المحفوظة (٣٠). احذف مكانًا ثم أعد المحاولة."
 }

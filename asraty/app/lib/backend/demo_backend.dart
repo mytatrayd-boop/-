@@ -59,6 +59,7 @@ class DemoBackend extends Backend {
   final _violations = <Violation>[];
   DateTime? _cycleStartedAt;
   TripState? _trip;
+  final List<SavedPlace> _places = [];
   final Map<String, MemberLoc> _locs = {};
   final _codes = <String, _Code>{};
   final _photos = <String, Uint8List>{};
@@ -116,6 +117,7 @@ class DemoBackend extends Backend {
         cycleStartedAt: _cycleStartedAt,
         trip: _trip,
         locations: Map.of(_locs),
+        places: List.of(_places),
       ),
     ));
   }
@@ -687,6 +689,38 @@ class DemoBackend extends Backend {
   Future<void> tripMeetClear() async {
     _need(Perm.trip);
     _trip = _with(_live(), clearMeet: true);
+    _publish();
+  }
+
+  void _sharePlace(Person me, SavedPlace p) {
+    final tr = _trip;
+    if (tr != null && tr.liveAt(_now)) _trip = _with(tr, meet: MeetPoint(lat: p.lat, lng: p.lng, label: p.label, by: me.name));
+    _note('all', '📌 ${p.label}', '${me.name} شارك مكاناً: «${p.label}»\nhttps://maps.google.com/?q=${p.lat.toStringAsFixed(6)},${p.lng.toStringAsFixed(6)}', kind: 'place');
+  }
+
+  @override
+  Future<void> placeSave({required double lat, required double lng, required String label, bool share = false}) async {
+    final me = _need(Perm.trip);
+    if (lat.abs() > 90 || lng.abs() > 180) _fail('bad-location');
+    if (_places.length >= 30) _fail('too-many-places', {'max': 30});
+    final p = SavedPlace(id: _uid(), label: label.trim().isEmpty ? 'مكان' : label.trim(), lat: lat, lng: lng, by: me.name, at: _now);
+    _places.insert(0, p);
+    if (share) _sharePlace(me, p);
+    _publish();
+  }
+
+  @override
+  Future<void> placeShare(String placeId) async {
+    final me = _need(Perm.trip);
+    final p = _places.where((x) => x.id == placeId).firstOrNull ?? _fail('not-found');
+    _sharePlace(me, p);
+    _publish();
+  }
+
+  @override
+  Future<void> placeDelete(String placeId) async {
+    _need(Perm.trip);
+    _places.removeWhere((x) => x.id == placeId);
     _publish();
   }
 
