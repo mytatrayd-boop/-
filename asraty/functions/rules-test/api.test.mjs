@@ -350,6 +350,12 @@ test("family trip and saved places: only trip admins pick places; sharing only n
   assert.match(note.body, /maps\.google\.com\/\?q=24\.713600,46\.675300/);
   await rejects(call("api", { op: "placeDelete", placeId: saved.placeId }, kid.idToken), "no-permission");
 
+  // The SOS works even without a trip, and carries the spot.
+  await call("api", { op: "tripSos", lat: 24.7, lng: 46.7 }, kid.idToken);
+  const sos = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "sos").get()).docs[0].data();
+  assert.equal(sos.to, "all");
+  assert.equal(sos.lat, 24.7);
+
   // The trip: pings need a live trip; the child's place is stored, then wiped when it ends.
   await rejects(call("api", { op: "tripPing", lat: 24.7, lng: 46.7 }, kid.idToken), "no-trip");
   await rejects(call("api", { op: "tripStart", hours: 2 }, kid.idToken), "no-permission");

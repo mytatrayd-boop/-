@@ -266,6 +266,7 @@ class _TripPageState extends ConsumerState<TripPage> {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         H2(t.tripTitle),
         Muted(t.tripSub),
+        Btn(t.tripSos, icon: Icons.warning_amber_rounded, kind: BtnKind.no, expand: true, onPressed: _sos),
         if (!manager)
           NoteBox(t.tripNoneMember)
         else
