@@ -3350,6 +3350,12 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'جارٍ تحميل بيانات أسرتك…'**
   String get loadingFamily;
+
+  /// No description provided for @tripNotifOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعارات التطبيق مغلقة. يحتاج «أنا هنا» إلى إشعار دائم ليستمر والشاشة مقفلة، فعّل الإشعارات لأسرتي من إعدادات الجوال ثم أعد المحاولة.'**
+  String get tripNotifOff;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

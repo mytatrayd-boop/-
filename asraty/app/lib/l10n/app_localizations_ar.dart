@@ -1784,4 +1784,7 @@ class L10nAr extends L10n {
 
   @override
   String get loadingFamily => 'جارٍ تحميل بيانات أسرتك…';
+
+  @override
+  String get tripNotifOff => 'إشعارات التطبيق مغلقة. يحتاج «أنا هنا» إلى إشعار دائم ليستمر والشاشة مقفلة، فعّل الإشعارات لأسرتي من إعدادات الجوال ثم أعد المحاولة.';
 }
