@@ -727,7 +727,6 @@ class DemoBackend extends Backend {
   @override
   Future<void> tripSos({double? lat, double? lng}) async {
     final me = _need();
-    _live();
     final where = lat != null && lng != null ? '\nمكانه: https://maps.google.com/?q=${lat.toStringAsFixed(6)},${lng.toStringAsFixed(6)}' : '';
     _note('all', '🆘 ${me.name} يحتاج مساعدة', '${me.name} ضغط زر الاستغاثة.$where', kind: 'sos', lat: lat, lng: lng);
     _publish();

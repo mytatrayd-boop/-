@@ -761,8 +761,8 @@ const ops: Record<string, Handler> = {
     return {};
   },
 
+  // The SOS works any time (no trip needed): safety comes first.
   async tripSos(c) {
-    await liveTrip(c.fid);
     const pos = cleanCoord(c.data.lat, c.data.lng);
     const where = pos ? `\nمكانه: https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}` : "";
     await notify(c.fid, "all", `🆘 ${c.me.name} يحتاج مساعدة`, `${c.me.name} ضغط زر الاستغاثة.${where}`, c.me, null, "sos", pos ? { lat: pos.lat, lng: pos.lng } : {});

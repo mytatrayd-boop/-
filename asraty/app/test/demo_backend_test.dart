@@ -354,4 +354,15 @@ void main() {
     await b.placeDelete(id);
     expect(b.current.data!.places, isEmpty);
   });
+
+  test('SOS works any time, without a trip, and reaches the whole family with the spot', () async {
+    final b = DemoBackend(clock: () => clock);
+    await login(b, 'lama@demo.sa', Role.member);
+    expect(b.current.data!.trip, isNull);
+    await b.tripSos(lat: 24.7, lng: 46.7);
+    final n = b.current.data!.notices.first;
+    expect(n.kind, 'sos');
+    expect(n.to, 'all');
+    expect(n.lat, 24.7);
+  });
 }
