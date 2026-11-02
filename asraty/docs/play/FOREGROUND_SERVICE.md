@@ -6,7 +6,7 @@
 ## الإعلان
 - النوع: **Location**.
 - الوصف (English):
-  > Family trip feature "أنا هنا": a parent starts a trip, and each family member taps "I'm here" to share their live location with their own family circle only, so parents can find children in crowded places such as the Haram. The foreground service of type location keeps running with the screen off; a persistent notification is shown while sharing, and it stops when the trip ends. Locations are deleted at the end of the trip.
+  > Family trip feature "أنا هنا": a parent starts a trip, and each family member taps "I'm here" to share their live location with their own family circle only, so parents can find children and elderly relatives in crowded places such as the Haram (Makkah and Madinah), shopping malls, and crowded open areas such as parks, markets and events. The foreground service of type location keeps running with the screen off; a persistent notification is shown while sharing, and it stops when the trip ends. Locations are deleted at the end of the trip.
 - الفيديو (رابط YouTube غير مدرج، 30–60 ثانية) يُظهر بالترتيب:
   1. المسؤول يبدأ رحلة.
   2. فرد يضغط «أنا هنا» ويوافق على إذن الموقع (الدقيق).
