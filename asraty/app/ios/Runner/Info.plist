@@ -7,7 +7,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>ar</string>
 		<key>CFBundleDisplayName</key>
-		<string>Asraty</string>
+		<string>أسرتي</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
