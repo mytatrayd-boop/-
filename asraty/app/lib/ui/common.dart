@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -93,6 +94,52 @@ Future<bool> run(BuildContext context, Future<void> Function() action, {String? 
   } catch (e) {
     if (context.mounted) toast(context, errorText(context.t, e));
     return false;
+  }
+}
+
+/// The waiting mark of the app: a dot that pulses (it swells and a ring fades out of it), in the
+/// brand colour. Used wherever the app waits for the server, so the screen never looks frozen.
+class PulseDot extends StatefulWidget {
+  const PulseDot({super.key, this.size = 22, this.color});
+  final double size;
+  final Color? color;
+  @override
+  State<PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<PulseDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.color ?? Palette.brand, d = widget.size;
+    return Semantics(
+      label: Localizations.of<L10n>(context, L10n)?.loading,
+      child: SizedBox.square(
+        dimension: d,
+        child: AnimatedBuilder(
+          animation: _c,
+          builder: (context, _) {
+            final t = _c.value;
+            final beat = .55 + .15 * math.sin(t * 2 * math.pi); // the dot swells and shrinks
+            return Stack(alignment: Alignment.center, children: [
+              // The ring: grows from the dot to the full size while it fades out.
+              Opacity(
+                opacity: (1 - t) * .55,
+                child: Container(width: d * (.5 + .5 * t), height: d * (.5 + .5 * t), decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: color, width: 2))),
+              ),
+              Container(width: d * beat, height: d * beat, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            ]);
+          },
+        ),
+      ),
+    );
   }
 }
 
@@ -489,7 +536,7 @@ class _BtnState extends State<Btn> {
         textStyle: TextStyle(fontFamily: bodyFont, fontWeight: FontWeight.w700, fontSize: w.small ? 13 : 16),
       ),
       child: _busy || w.busy
-          ? SizedBox.square(dimension: w.small ? 16 : 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: fg))
+          ? PulseDot(size: w.small ? 16 : 22, color: fg)
           : w.icon == null
               ? text
               : Row(mainAxisSize: MainAxisSize.min, children: [Icon(w.icon, size: w.small ? 16 : 20), const SizedBox(width: 6), Flexible(child: text)]),
