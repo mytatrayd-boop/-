@@ -125,6 +125,13 @@ abstract class Backend {
   Future<void> tripShare(String personId, bool on);
   Future<void> tripMeet({required double lat, required double lng, required String label});
   Future<void> tripMeetClear();
+
+  // ---- saved places (picked on the map; sharing one only notifies the family)
+  /// Saves a place; with [share] the whole family gets a notification with a map link
+  /// (and, while a trip is live, it becomes the meeting point).
+  Future<void> placeSave({required double lat, required double lng, required String label, bool share = false});
+  Future<void> placeShare(String placeId);
+  Future<void> placeDelete(String placeId);
   /// Alerts the whole family, with the sender's place when known.
   Future<void> tripSos({double? lat, double? lng});
 

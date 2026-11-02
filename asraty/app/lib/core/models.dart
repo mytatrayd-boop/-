@@ -189,8 +189,13 @@ class Goal {
 }
 
 class Notice {
-  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice', this.points = 0})
+  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice', this.points = 0, this.lat, this.lng})
       : readBy = readBy ?? [];
+
+  /// A shared place or an SOS carries the spot, so the app can open it on the map.
+  final double? lat, lng;
+
+  bool get hasPlace => lat != null && lng != null;
 
   /// 'prize' for the congratulation card sent to everyone when a prize is won;
   /// 'violation' for the pop-up a member gets when points are taken ([to] is that member).
@@ -249,6 +254,14 @@ class SentFeedback {
 }
 
 /// Everything the UI needs about the signed-in family, for the current periods.
+/// A place the family picked on the map and saved (shared as a notification, not as a live location).
+class SavedPlace {
+  const SavedPlace({required this.id, required this.label, required this.lat, required this.lng, required this.by, required this.at});
+  final String id, label, by;
+  final double lat, lng;
+  final DateTime at;
+}
+
 /// A meeting point set by a trip admin.
 class MeetPoint {
   const MeetPoint({required this.lat, required this.lng, required this.label, required this.by});
@@ -299,6 +312,7 @@ class FamilySnapshot {
     this.cycleStartedAt,
     this.trip,
     this.locations = const {},
+    this.places = const [],
   });
 
   final String familyName;
@@ -323,4 +337,7 @@ class FamilySnapshot {
 
   /// personId -> last shared place (only while a trip is live).
   final Map<String, MemberLoc> locations;
+
+  /// Saved places, newest first.
+  final List<SavedPlace> places;
 }

@@ -50,10 +50,10 @@ async function person(fid: string, id: unknown): Promise<Person> {
   return { id: snap.id, ...(snap.data() as Omit<Person, "id">) };
 }
 
-async function notify(fid: string, to: string, title: string, body: string, sender: { id: string; name: string }, expiresAt: Timestamp | null = null, kind = "notice") {
+async function notify(fid: string, to: string, title: string, body: string, sender: { id: string; name: string }, expiresAt: Timestamp | null = null, kind = "notice", extra: Record<string, unknown> = {}) {
   const coll = fam(fid).collection("notifications");
   await coll.add({
-    to, title, body, from: sender.name, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt, kind,
+    to, title, body, from: sender.name, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt, kind, ...extra,
   });
   await Promise.all([cleanNotices(fid), getPeople(fid).then((all) => push(fid, noticeTargets(all, to, sender.id), title, body))]);
 }
@@ -145,6 +145,18 @@ async function removePersonData(fid: string, p: Person) {
   await Promise.all(comps.docs.filter((d) => d.data().hasPhoto).map((d) => proofRef(fid, d.id).delete()));
   await auth.revokeRefreshTokens(p.id).catch(() => undefined);
   await auth.deleteUser(p.id).catch(() => undefined);
+}
+
+const MAX_PLACES = 30;
+
+/** Tells the whole family about a place (with a map link); during a live trip it becomes the meeting point. */
+async function sharePlace(c: Ctx, place: { lat: number; lng: number; label: string }) {
+  const trip = (await tripRef(c.fid).get()).data();
+  if (tripLive(trip as { active?: boolean; endsAt?: number } | undefined, Date.now())) {
+    await tripRef(c.fid).update({ meet: { ...place, by: c.me.name, at: Date.now() } });
+  }
+  const link = `https://maps.google.com/?q=${place.lat.toFixed(6)},${place.lng.toFixed(6)}`;
+  await notify(c.fid, "all", `📌 ${place.label}`, `${c.me.name} شارك مكاناً: «${place.label}»\n${link}`, c.me, null, "place", { lat: place.lat, lng: place.lng });
 }
 
 const tripRef = (fid: string) => fam(fid).collection("trip").doc("state");
@@ -716,7 +728,36 @@ const ops: Record<string, Handler> = {
     if (!pos) fail("bad-location", {}, "invalid-argument");
     const label = str(c.data.label, 60) || "نقطة التجمع";
     await tripRef(c.fid).update({ meet: { ...pos, label, by: c.me.name, at: Date.now() } });
-    await notify(c.fid, "all", "📌 نقطة تجمع", `${c.me.name} حدّد «${label}». افتح «أنا هنا» واضغط «توجّه».`, c.me, null, "trip");
+    await notify(c.fid, "all", "📌 نقطة تجمع", `${c.me.name} حدّد «${label}». افتح «أنا هنا» واضغط «توجّه».`, c.me, null, "trip", { lat: pos.lat, lng: pos.lng });
+    return {};
+  },
+
+  // Saved places: a place the family picked on the map. Sharing one only sends a notification with a
+  // map link (and, while a trip is live, makes it the trip's meeting point). No trip is needed to save or share.
+  async placeSave(c) {
+    need(c, "trip");
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    if (!pos) fail("bad-location", {}, "invalid-argument");
+    const label = str(c.data.label, 60) || "مكان";
+    const coll = fam(c.fid).collection("places");
+    if ((await coll.limit(MAX_PLACES).get()).size >= MAX_PLACES) fail("too-many-places", { max: MAX_PLACES });
+    const ref = await coll.add({ ...pos, label, by: c.me.name, at: Date.now() });
+    if (c.data.share === true) await sharePlace(c, { ...pos, label });
+    return { placeId: ref.id };
+  },
+
+  async placeShare(c) {
+    need(c, "trip");
+    const snap = await fam(c.fid).collection("places").doc(String(c.data.placeId ?? "")).get();
+    const x = snap.data();
+    if (!x) fail("not-found", {}, "not-found");
+    await sharePlace(c, { lat: x.lat as number, lng: x.lng as number, label: x.label as string });
+    return {};
+  },
+
+  async placeDelete(c) {
+    need(c, "trip");
+    await fam(c.fid).collection("places").doc(String(c.data.placeId ?? "")).delete();
     return {};
   },
 
@@ -724,7 +765,7 @@ const ops: Record<string, Handler> = {
     await liveTrip(c.fid);
     const pos = cleanCoord(c.data.lat, c.data.lng);
     const where = pos ? `\nمكانه: https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}` : "";
-    await notify(c.fid, "all", `🆘 ${c.me.name} يحتاج مساعدة`, `${c.me.name} ضغط زر الاستغاثة.${where}`, c.me, null, "sos");
+    await notify(c.fid, "all", `🆘 ${c.me.name} يحتاج مساعدة`, `${c.me.name} ضغط زر الاستغاثة.${where}`, c.me, null, "sos", pos ? { lat: pos.lat, lng: pos.lng } : {});
     return {};
   },
 

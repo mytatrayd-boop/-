@@ -334,6 +334,42 @@ test("an activation code works on one device only", async () => {
   await rejects(call("redeemCode", { code: "ASR-NOPE-0000", deviceId: "device-aaaa-1" }), "code-invalid");
 });
 
+test("family trip and saved places: only trip admins pick places; sharing only notifies; locations vanish at the end", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  // Saving or sharing a place needs no trip, but needs the trip permission.
+  await rejects(call("api", { op: "placeSave", lat: 24.7, lng: 46.7, label: "بوابة ٣" }, kid.idToken), "no-permission");
+  await rejects(call("api", { op: "placeSave", lat: 99, lng: 46.7 }, owner.idToken), "bad-location");
+  const saved = await call("api", { op: "placeSave", lat: 24.7136, lng: 46.6753, label: "بوابة ٣", share: true }, owner.idToken);
+  const place = (await db.doc(`families/${fid}/places/${saved.placeId}`).get()).data();
+  assert.equal(place.label, "بوابة ٣");
+  const note = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "place").get()).docs[0].data();
+  assert.equal(note.to, "all");
+  assert.equal(note.lat, 24.7136, "the notice carries the place so the app can open it");
+  assert.equal(note.lng, 46.6753);
+  assert.match(note.body, /maps\.google\.com\/\?q=24\.713600,46\.675300/);
+  await rejects(call("api", { op: "placeDelete", placeId: saved.placeId }, kid.idToken), "no-permission");
+
+  // The trip: pings need a live trip; the child's place is stored, then wiped when it ends.
+  await rejects(call("api", { op: "tripPing", lat: 24.7, lng: 46.7 }, kid.idToken), "no-trip");
+  await rejects(call("api", { op: "tripStart", hours: 2 }, kid.idToken), "no-permission");
+  await call("api", { op: "tripStart", hours: 2, farMeters: 200 }, owner.idToken);
+  await call("api", { op: "placeShare", placeId: saved.placeId }, owner.idToken);
+  assert.equal((await db.doc(`families/${fid}/trip/state`).get()).data().meet.label, "بوابة ٣", "sharing during a trip sets the meeting point");
+  await call("api", { op: "tripPing", lat: 24.7136, lng: 46.6753, acc: 5 }, owner.idToken);
+  await call("api", { op: "tripPing", lat: 24.72, lng: 46.68, acc: 9 }, kid.idToken);
+  assert.equal((await db.collection(`families/${fid}/locations`).get()).size, 2);
+  await rejects(call("api", { op: "tripShare", personId: kid.personId, on: false }, kid.idToken), "no-permission");
+  await call("api", { op: "tripShare", personId: kid.personId, on: false }, owner.idToken);
+  assert.equal((await db.doc(`families/${fid}/locations/${kid.personId}`).get()).exists, false, "pausing wipes the place");
+  assert.deepEqual(await call("api", { op: "tripPing", lat: 24.72, lng: 46.68 }, kid.idToken), { paused: true });
+  await call("api", { op: "tripEnd" }, owner.idToken);
+  assert.equal((await db.collection(`families/${fid}/locations`).get()).size, 0);
+  await rejects(call("api", { op: "tripPing", lat: 24.7, lng: 46.7 }, owner.idToken), "no-trip");
+  await call("api", { op: "placeDelete", placeId: saved.placeId }, owner.idToken);
+  assert.equal((await db.doc(`families/${fid}/places/${saved.placeId}`).get()).exists, false);
+});
+
 test("owner deletes the whole family", async () => {
   await call("api", { op: "deleteFamily" }, owner.idToken);
   assert.equal((await db.doc(`families/${fid}`).get()).exists, false);
