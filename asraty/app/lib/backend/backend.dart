@@ -116,6 +116,18 @@ abstract class Backend {
   Future<void> goalProgress(String goalId, int delta);
   Future<void> deleteGoal(String goalId);
 
+  // ---- family trip ("أنا هنا")
+  Future<void> tripStart({int hours = 12, int farMeters = 300});
+  Future<void> tripEnd();
+  /// Shares the signed-in person's place (while the trip is live).
+  Future<void> tripPing({required double lat, required double lng, required double acc});
+  /// Switches sharing on/off for [personId] (a trip admin for anyone, an adult for themselves).
+  Future<void> tripShare(String personId, bool on);
+  Future<void> tripMeet({required double lat, required double lng, required String label});
+  Future<void> tripMeetClear();
+  /// Alerts the whole family, with the sender's place when known.
+  Future<void> tripSos({double? lat, double? lng});
+
   // ---- account
   Future<void> deleteAccount();
   Future<void> deleteFamily();

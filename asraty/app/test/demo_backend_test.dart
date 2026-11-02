@@ -284,4 +284,46 @@ void main() {
     await expectLater(b.redeemCode('ASR-AB12-CD34', 'device-two'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'code-used')));
     await expectLater(b.redeemCode('nope', 'device-one'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'code-invalid')));
   });
+
+  test('family trip: admins run it, children share and are managed by a parent', () async {
+    final b = DemoBackend(clock: () => clock);
+    // Owner starts the trip and sets a meeting point.
+    await expectLater(b.tripPing(lat: 24.7, lng: 46.7, acc: 5), throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-trip')));
+    await b.tripStart(hours: 6, farMeters: 200);
+    expect(b.current.data!.trip!.liveAt(clock), isTrue);
+    await b.tripMeet(lat: 24.7, lng: 46.7, label: 'بوابة ٣');
+    expect(b.current.data!.trip!.meet!.label, 'بوابة ٣');
+    await expectLater(b.tripMeet(lat: 99, lng: 0, label: 'x'), throwsA(isA<AppError>().having((e) => e.code, 'code', 'bad-location')));
+
+    // A child cannot run the trip nor pause sharing, but can share and send an SOS.
+    await login(b, 'aseel@demo.sa', Role.member);
+    final kid = b.current.me!;
+    await expectLater(b.tripStart(), throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+    await expectLater(b.tripShare(kid.id, false), throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+    await b.tripPing(lat: 24.71, lng: 46.71, acc: 12);
+    expect(b.current.data!.locations[kid.id]!.lat, 24.71);
+    await b.tripSos(lat: 24.71, lng: 46.71);
+    expect(b.current.data!.notices.first.kind, 'sos');
+    expect(b.current.data!.notices.first.body, contains('maps.google.com'));
+
+    // The parent pauses the child: the place is wiped and further pings are ignored.
+    await login(b, 'um@demo.sa', Role.admin);
+    await expectLater(b.tripShare(kid.id, false), throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+    await login(b, 'abu@demo.sa', Role.owner);
+    await b.tripShare(kid.id, false);
+    expect(b.current.data!.locations.containsKey(kid.id), isFalse);
+    expect(b.current.data!.trip!.paused, contains(kid.id));
+
+    // Ending the trip wipes every place.
+    await b.tripEnd();
+    expect(b.current.data!.locations, isEmpty);
+    expect(b.current.data!.trip!.liveAt(clock), isFalse);
+  });
+
+  test('trip distance matches the server formula', () {
+    // Makkah Haram to Madinah Haram is roughly 340 km.
+    final d = distanceMeters(21.4225, 39.8262, 24.4672, 39.6112);
+    expect(d, inInclusiveRange(335000, 345000));
+    expect(distanceMeters(24.7, 46.7, 24.7, 46.7), 0);
+  });
 }

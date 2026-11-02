@@ -1,6 +1,8 @@
 // Domain logic ported from design/prototype.html (pk/dk/wk, tierOf, ranking,
 // reportText). Display-only on the client: the server is the source of truth
 // for points and permissions.
+import 'dart:math' as math;
+
 import 'models.dart';
 import 'prayer.dart';
 
@@ -152,3 +154,16 @@ extension SnapshotLogic on FamilySnapshot {
 
   List<Notice> noticesFor(Person u) => notices.where((n) => n.to == 'all' || n.to == u.id).toList();
 }
+
+// ---------------------------------------------------------------- family trip ("أنا هنا")
+
+/// Great-circle distance in metres (same formula as functions/src/logic.ts distanceMeters).
+double distanceMeters(double lat1, double lng1, double lat2, double lng2) {
+  double rad(double d) => d * math.pi / 180;
+  final dLat = rad(lat2 - lat1), dLng = rad(lng2 - lng1);
+  final h = math.pow(math.sin(dLat / 2), 2) + math.cos(rad(lat1)) * math.cos(rad(lat2)) * math.pow(math.sin(dLng / 2), 2);
+  return 2 * 6371000 * math.asin(math.min(1.0, math.sqrt(h)));
+}
+
+/// May [actor] switch sharing on/off for [target]? Children are managed by a trip admin.
+bool canToggleShare(Person actor, Person target) => can(actor, Perm.trip) || (actor.id == target.id && actor.role != Role.member);

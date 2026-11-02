@@ -1568,4 +1568,149 @@ class L10nAr extends L10n {
 
   @override
   String get orUseCode => 'أو لديك كود تفعيل؟';
+
+  @override
+  String get permTrip => 'إدارة رحلة «أنا هنا»';
+
+  @override
+  String get tileTrip => 'أنا هنا';
+
+  @override
+  String get tripTitle => 'أنا هنا';
+
+  @override
+  String get tripSub =>
+      'شاركوا أماكنكم أثناء السفر لتعرفوا أين بعضكم. تعمل أثناء الرحلة فقط، وتُحذف المواقع عند انتهائها.';
+
+  @override
+  String get tripPrivacy =>
+      'مكانك يظهر لأفراد أسرتك فقط، وأثناء الرحلة فقط. أبقِ التطبيق مفتوحاً ليبقى مكانك محدّثاً.';
+
+  @override
+  String get tripNone => 'لا توجد رحلة الآن.';
+
+  @override
+  String get tripNoneMember =>
+      'لا توجد رحلة الآن. يبدأها مسؤول الأسرة عند السفر.';
+
+  @override
+  String get tripStart => 'بدء رحلة';
+
+  @override
+  String get tripEnd => 'إنهاء الرحلة';
+
+  @override
+  String get tripEndConfirm => 'ستتوقف المشاركة وتُحذف كل المواقع. متأكد؟';
+
+  @override
+  String get tripHours => 'مدة الرحلة (بالساعات)';
+
+  @override
+  String get tripFar => 'تنبيه الابتعاد (بالأمتار)';
+
+  @override
+  String get tripFarHint => 'ننبّهك إذا ابتعد طفل عنك أكثر من هذه المسافة.';
+
+  @override
+  String get tripEndsAt => 'تنتهي الرحلة';
+
+  @override
+  String get tripImHere => 'أنا هنا';
+
+  @override
+  String get tripSharingOn => 'أنت تشارك مكانك مع أسرتك';
+
+  @override
+  String get tripSharingOff => 'اضغط ليعرف أهلك مكانك';
+
+  @override
+  String get tripStop => 'إيقاف المشاركة';
+
+  @override
+  String get tripPausedByAdmin => 'أوقف المسؤول مشاركتك';
+
+  @override
+  String get tripSos => 'ساعدوني';
+
+  @override
+  String get tripSosConfirm => 'إرسال استغاثة لكل أفراد الأسرة مع مكانك؟';
+
+  @override
+  String get tripSosSend => 'إرسال';
+
+  @override
+  String get tripSosSent => 'أُرسلت الاستغاثة لأسرتك ✓';
+
+  @override
+  String get tripFamily => 'أين أسرتي';
+
+  @override
+  String get tripMeet => 'نقطة التجمع';
+
+  @override
+  String get tripMeetSet => 'تحديد نقطة تجمع هنا';
+
+  @override
+  String get tripMeetClear => 'إلغاء النقطة';
+
+  @override
+  String get tripMeetGo => 'توجّه';
+
+  @override
+  String get tripMeetLabel => 'اسم النقطة (مثال: بوابة ٣)';
+
+  @override
+  String get tripOpenMap => 'افتح الخريطة';
+
+  @override
+  String get tripNotSharing => 'لم يشارك مكانه بعد';
+
+  @override
+  String get tripPaused => 'المشاركة متوقفة';
+
+  @override
+  String get tripPause => 'إيقاف مشاركته';
+
+  @override
+  String get tripResume => 'تشغيل مشاركته';
+
+  @override
+  String get tripNow => 'الآن';
+
+  @override
+  String get tripAgo => 'قبل';
+
+  @override
+  String get tripMinute => 'دقيقة';
+
+  @override
+  String get tripHour => 'ساعة';
+
+  @override
+  String get tripAway => 'يبعد';
+
+  @override
+  String get tripMeters => 'م';
+
+  @override
+  String get tripKm => 'كم';
+
+  @override
+  String get tripDenied =>
+      'نحتاج إذن الموقع لتعمل الميزة. فعّله من إعدادات الجوال.';
+
+  @override
+  String get tripNoTrip => 'لا توجد رحلة جارية الآن.';
+
+  @override
+  String get tripStarted => 'بدأت الرحلة ✓';
+
+  @override
+  String get tripEnded => 'انتهت الرحلة ✓';
+
+  @override
+  String get tripMeetSaved => 'حُدّدت نقطة التجمع ✓';
+
+  @override
+  String get tripStaleHint => 'آخر تحديث قديم، قد يكون المكان تغيّر';
 }

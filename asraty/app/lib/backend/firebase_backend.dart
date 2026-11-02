@@ -54,6 +54,8 @@ class FirebaseBackend extends Backend {
   List<Goal> _goals = [];
   List<Violation> _violations = [];
   DateTime? _cycleStartedAt;
+  TripState? _trip;
+  Map<String, MemberLoc> _locations = {};
 
   @override
   bool get isDemo => false;
@@ -114,6 +116,8 @@ class FirebaseBackend extends Backend {
     _famName = null;
     _people = null;
     _violations = [];
+    _trip = null;
+    _locations = {};
   }
 
   void _listen(Session s) {
@@ -226,6 +230,30 @@ class FirebaseBackend extends Backend {
         }).toList();
       });
     }
+    on(f.collection('trip').doc('state').snapshots(), (DocumentSnapshot<Map<String, dynamic>> d) {
+      final x = d.data();
+      if (x == null || x['startedBy'] == null) {
+        _trip = null;
+        return;
+      }
+      final m = x['meet'];
+      _trip = TripState(
+        active: x['active'] == true, startedBy: x['startedBy'] as String, endsAt: DateTime.fromMillisecondsSinceEpoch(_int(x['endsAt'])),
+        farMeters: _int(x['farMeters']) == 0 ? 300 : _int(x['farMeters']),
+        meet: m is Map && m['lat'] is num && m['lng'] is num
+            ? MeetPoint(lat: (m['lat'] as num).toDouble(), lng: (m['lng'] as num).toDouble(), label: m['label'] as String? ?? '', by: m['by'] as String? ?? '')
+            : null,
+        paused: {for (final e in ((x['paused'] as Map?) ?? const {}).entries) if (e.value == true) e.key as String});
+    });
+    on(f.collection('locations').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+      _locations = {
+        for (final d in q.docs)
+          if (d.data()['lat'] is num && d.data()['lng'] is num)
+            d.id: MemberLoc(
+                personId: d.id, lat: (d.data()['lat'] as num).toDouble(), lng: (d.data()['lng'] as num).toDouble(),
+                acc: _int(d.data()['acc']), at: DateTime.fromMillisecondsSinceEpoch(_int(d.data()['at']))),
+      };
+    });
     on(f.collection('goals').where('periodKey', whereIn: [mk, yk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _goals = q.docs.map((d) {
         final x = d.data();
@@ -249,7 +277,7 @@ class FirebaseBackend extends Backend {
       data: FamilySnapshot(
         familyName: _famName!, people: _people!, tasks: _tasks, completions: _completions, competitions: _comps,
         notices: _notices, daily: _daily, weekly: _weekly, monthly: _monthly, yearly: _yearly, goals: _goals,
-        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt),
+        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt, trip: _trip, locations: _locations),
     ));
   }
 
@@ -410,6 +438,28 @@ class FirebaseBackend extends Backend {
 
   @override
   Future<void> deleteAlert(String noticeId) => _op('deleteAlert', {'noticeId': noticeId});
+
+  // ---------------------------------------------------------------- family trip
+  @override
+  Future<void> tripStart({int hours = 12, int farMeters = 300}) => _op('tripStart', {'hours': hours, 'farMeters': farMeters});
+
+  @override
+  Future<void> tripEnd() => _op('tripEnd');
+
+  @override
+  Future<void> tripPing({required double lat, required double lng, required double acc}) => _op('tripPing', {'lat': lat, 'lng': lng, 'acc': acc});
+
+  @override
+  Future<void> tripShare(String personId, bool on) => _op('tripShare', {'personId': personId, 'on': on});
+
+  @override
+  Future<void> tripMeet({required double lat, required double lng, required String label}) => _op('tripMeet', {'lat': lat, 'lng': lng, 'label': label});
+
+  @override
+  Future<void> tripMeetClear() => _op('tripMeet', {'clear': true});
+
+  @override
+  Future<void> tripSos({double? lat, double? lng}) => _op('tripSos', {'lat': ?lat, 'lng': ?lng});
 
   // ---------------------------------------------------------------- cycles & violations
   @override

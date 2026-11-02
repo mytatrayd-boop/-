@@ -51,6 +51,8 @@ String errorText(L10n t, Object e) {
     'already-registered' => t.errAlreadyRegistered,
     'email-taken' => t.errEmailTaken,
     'no-permission' => t.errNoPermission,
+    'no-trip' => t.tripNoTrip,
+    'bad-location' => t.errLocation,
     'already-done' => t.errAlreadyDone,
     'already-decided' => t.errAlreadyDecided,
     'comp-over' => t.errCompOver,
@@ -119,6 +121,7 @@ String permLabel(L10n t, Perm p) => switch (p) {
       Perm.report => t.permReport,
       Perm.comps => t.permComps,
       Perm.viewReports => t.permViewReports,
+      Perm.trip => t.permTrip,
     };
 
 // ------------------------------------------------------------------ avatars

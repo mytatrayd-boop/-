@@ -2930,6 +2930,288 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'أو لديك كود تفعيل؟'**
   String get orUseCode;
+
+  /// No description provided for @permTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة رحلة «أنا هنا»'**
+  String get permTrip;
+
+  /// No description provided for @tileTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا هنا'**
+  String get tileTrip;
+
+  /// No description provided for @tripTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا هنا'**
+  String get tripTitle;
+
+  /// No description provided for @tripSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'شاركوا أماكنكم أثناء السفر لتعرفوا أين بعضكم. تعمل أثناء الرحلة فقط، وتُحذف المواقع عند انتهائها.'**
+  String get tripSub;
+
+  /// No description provided for @tripPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكانك يظهر لأفراد أسرتك فقط، وأثناء الرحلة فقط. أبقِ التطبيق مفتوحاً ليبقى مكانك محدّثاً.'**
+  String get tripPrivacy;
+
+  /// No description provided for @tripNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلة الآن.'**
+  String get tripNone;
+
+  /// No description provided for @tripNoneMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلة الآن. يبدأها مسؤول الأسرة عند السفر.'**
+  String get tripNoneMember;
+
+  /// No description provided for @tripStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء رحلة'**
+  String get tripStart;
+
+  /// No description provided for @tripEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء الرحلة'**
+  String get tripEnd;
+
+  /// No description provided for @tripEndConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستتوقف المشاركة وتُحذف كل المواقع. متأكد؟'**
+  String get tripEndConfirm;
+
+  /// No description provided for @tripHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدة الرحلة (بالساعات)'**
+  String get tripHours;
+
+  /// No description provided for @tripFar.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه الابتعاد (بالأمتار)'**
+  String get tripFar;
+
+  /// No description provided for @tripFarHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ننبّهك إذا ابتعد طفل عنك أكثر من هذه المسافة.'**
+  String get tripFarHint;
+
+  /// No description provided for @tripEndsAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي الرحلة'**
+  String get tripEndsAt;
+
+  /// No description provided for @tripImHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا هنا'**
+  String get tripImHere;
+
+  /// No description provided for @tripSharingOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت تشارك مكانك مع أسرتك'**
+  String get tripSharingOn;
+
+  /// No description provided for @tripSharingOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط ليعرف أهلك مكانك'**
+  String get tripSharingOff;
+
+  /// No description provided for @tripStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف المشاركة'**
+  String get tripStop;
+
+  /// No description provided for @tripPausedByAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'أوقف المسؤول مشاركتك'**
+  String get tripPausedByAdmin;
+
+  /// No description provided for @tripSos.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعدوني'**
+  String get tripSos;
+
+  /// No description provided for @tripSosConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال استغاثة لكل أفراد الأسرة مع مكانك؟'**
+  String get tripSosConfirm;
+
+  /// No description provided for @tripSosSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get tripSosSend;
+
+  /// No description provided for @tripSosSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُرسلت الاستغاثة لأسرتك ✓'**
+  String get tripSosSent;
+
+  /// No description provided for @tripFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'أين أسرتي'**
+  String get tripFamily;
+
+  /// No description provided for @tripMeet.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقطة التجمع'**
+  String get tripMeet;
+
+  /// No description provided for @tripMeetSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد نقطة تجمع هنا'**
+  String get tripMeetSet;
+
+  /// No description provided for @tripMeetClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء النقطة'**
+  String get tripMeetClear;
+
+  /// No description provided for @tripMeetGo.
+  ///
+  /// In ar, this message translates to:
+  /// **'توجّه'**
+  String get tripMeetGo;
+
+  /// No description provided for @tripMeetLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم النقطة (مثال: بوابة ٣)'**
+  String get tripMeetLabel;
+
+  /// No description provided for @tripOpenMap.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الخريطة'**
+  String get tripOpenMap;
+
+  /// No description provided for @tripNotSharing.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يشارك مكانه بعد'**
+  String get tripNotSharing;
+
+  /// No description provided for @tripPaused.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشاركة متوقفة'**
+  String get tripPaused;
+
+  /// No description provided for @tripPause.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف مشاركته'**
+  String get tripPause;
+
+  /// No description provided for @tripResume.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيل مشاركته'**
+  String get tripResume;
+
+  /// No description provided for @tripNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'الآن'**
+  String get tripNow;
+
+  /// No description provided for @tripAgo.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل'**
+  String get tripAgo;
+
+  /// No description provided for @tripMinute.
+  ///
+  /// In ar, this message translates to:
+  /// **'دقيقة'**
+  String get tripMinute;
+
+  /// No description provided for @tripHour.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعة'**
+  String get tripHour;
+
+  /// No description provided for @tripAway.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبعد'**
+  String get tripAway;
+
+  /// No description provided for @tripMeters.
+  ///
+  /// In ar, this message translates to:
+  /// **'م'**
+  String get tripMeters;
+
+  /// No description provided for @tripKm.
+  ///
+  /// In ar, this message translates to:
+  /// **'كم'**
+  String get tripKm;
+
+  /// No description provided for @tripDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج إذن الموقع لتعمل الميزة. فعّله من إعدادات الجوال.'**
+  String get tripDenied;
+
+  /// No description provided for @tripNoTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلة جارية الآن.'**
+  String get tripNoTrip;
+
+  /// No description provided for @tripStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأت الرحلة ✓'**
+  String get tripStarted;
+
+  /// No description provided for @tripEnded.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت الرحلة ✓'**
+  String get tripEnded;
+
+  /// No description provided for @tripMeetSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُدّدت نقطة التجمع ✓'**
+  String get tripMeetSaved;
+
+  /// No description provided for @tripStaleHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تحديث قديم، قد يكون المكان تغيّر'**
+  String get tripStaleHint;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

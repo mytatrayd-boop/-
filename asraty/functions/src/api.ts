@@ -4,7 +4,7 @@ import {
 } from "./db";
 import {
   AVATAR_KEYS, EMAIL_RE, PHOTO_AVATAR, PermKey, Period, REWARD_EMOJI, SPANS, Scope, Span, TaskRepeat,
-  REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
+  REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, cleanCoord, canToggleShare, distanceMeters, tripLive, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
 import { credRef } from "./passwords";
@@ -138,12 +138,31 @@ async function removePersonData(fid: string, p: Person) {
     f.collection("tiers").where("personId", "==", p.id).get(),
     f.collection("goals").where("personId", "==", p.id).get(),
   ]);
+  batch.delete(f.collection("locations").doc(p.id));
   owned.forEach((q) => q.docs.forEach((d) => batch.delete(d.ref)));
   await batch.commit();
   const comps = await f.collection("completions").where("personId", "==", p.id).get();
   await Promise.all(comps.docs.filter((d) => d.data().hasPhoto).map((d) => proofRef(fid, d.id).delete()));
   await auth.revokeRefreshTokens(p.id).catch(() => undefined);
   await auth.deleteUser(p.id).catch(() => undefined);
+}
+
+const tripRef = (fid: string) => fam(fid).collection("trip").doc("state");
+
+/** The running trip, or an error: an expired trip is closed (and its locations wiped) on first touch. */
+async function liveTrip(fid: string): Promise<Record<string, unknown>> {
+  const trip = (await tripRef(fid).get()).data();
+  if (tripLive(trip as { active?: boolean; endsAt?: number } | undefined, Date.now())) return trip!;
+  if (trip?.active) await endTrip(fid);
+  return fail("no-trip", {}, "failed-precondition");
+}
+
+async function endTrip(fid: string) {
+  const locs = await fam(fid).collection("locations").get();
+  const b = db.batch();
+  locs.docs.forEach((d) => b.delete(d.ref));
+  b.set(tripRef(fid), { active: false, endedAt: Date.now(), meet: null, paused: {} }, { merge: true });
+  await b.commit();
 }
 
 const ops: Record<string, Handler> = {
@@ -624,6 +643,89 @@ const ops: Record<string, Handler> = {
     }
     if (n) await batch.commit();
     return { n };
+  },
+
+  // ---------- "أنا هنا": family trip location sharing
+  // trip/state: {active, startedBy, startedAt, endsAt, farMeters, meet?, paused{personId:true}}
+  // locations/{personId}: {lat, lng, acc, at}. Locations exist only while a trip is live and are
+  // wiped when it ends, so nothing is kept after the trip.
+  async tripStart(c) {
+    need(c, "trip");
+    const hours = int(c.data.hours ?? 12, 1, 72);
+    const farMeters = int(c.data.farMeters ?? 300, 50, 5000);
+    const now = Date.now();
+    await tripRef(c.fid).set({
+      active: true, startedBy: c.me.id, startedAt: now, endsAt: now + hours * 3600e3, farMeters, meet: null, paused: {},
+    });
+    await notify(c.fid, "all", "📍 بدأت رحلة «أنا هنا»", `${c.me.name} فعّل مشاركة الأماكن لمدة ${hours} ساعة. افتح التطبيق واضغط «أنا هنا».`, c.me, null, "trip");
+    return {};
+  },
+
+  async tripEnd(c) {
+    need(c, "trip");
+    await endTrip(c.fid);
+    await notify(c.fid, "all", "🏁 انتهت الرحلة", "أُوقفت مشاركة الأماكن وحُذفت المواقع.", c.me, null, "trip");
+    return {};
+  },
+
+  async tripPing(c) {
+    const trip = await liveTrip(c.fid);
+    const paused = (trip.paused ?? {}) as Record<string, boolean>;
+    if (paused[c.me.id]) return { paused: true };
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    if (!pos) fail("bad-location", {}, "invalid-argument");
+    const acc = Math.min(100000, Math.max(0, Math.round(Number(c.data.acc) || 0)));
+    const now = Date.now();
+    const ref = fam(c.fid).collection("locations").doc(c.me.id);
+    const prev = (await ref.get()).data() as { farAt?: number } | undefined;
+    let farAt = prev?.farAt ?? 0;
+    // A child who drifts away from whoever started the trip alerts the trip admins (at most every 10 minutes).
+    if (c.me.role === "member" && trip.startedBy !== c.me.id && now - farAt > 600e3) {
+      const lead = (await fam(c.fid).collection("locations").doc(String(trip.startedBy)).get()).data() as { lat: number; lng: number; at: number } | undefined;
+      if (lead && now - lead.at < 600e3) {
+        const dist = distanceMeters(pos, lead);
+        if (dist > Number(trip.farMeters ?? 300)) {
+          farAt = now;
+          const all = await getPeople(c.fid);
+          await push(c.fid, all.filter((p) => can(p, "trip") && p.id !== c.me.id), "⚠️ ابتعد عن المجموعة", `${c.me.name} صار بعيداً عنكم نحو ${Math.round(dist)} متراً.`);
+        }
+      }
+    }
+    await ref.set({ lat: pos.lat, lng: pos.lng, acc, at: now, farAt });
+    return {};
+  },
+
+  async tripShare(c) {
+    await liveTrip(c.fid);
+    const p = await person(c.fid, c.data.personId);
+    if (!canToggleShare(c.me, p)) fail("no-permission", { perm: "trip" }, "permission-denied");
+    const on = c.data.on !== false;
+    await tripRef(c.fid).update({ [`paused.${p.id}`]: on ? FieldValue.delete() : true });
+    if (!on) await fam(c.fid).collection("locations").doc(p.id).delete();
+    return {};
+  },
+
+  async tripMeet(c) {
+    need(c, "trip");
+    await liveTrip(c.fid);
+    if (c.data.clear === true) {
+      await tripRef(c.fid).update({ meet: null });
+      return {};
+    }
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    if (!pos) fail("bad-location", {}, "invalid-argument");
+    const label = str(c.data.label, 60) || "نقطة التجمع";
+    await tripRef(c.fid).update({ meet: { ...pos, label, by: c.me.name, at: Date.now() } });
+    await notify(c.fid, "all", "📌 نقطة تجمع", `${c.me.name} حدّد «${label}». افتح «أنا هنا» واضغط «توجّه».`, c.me, null, "trip");
+    return {};
+  },
+
+  async tripSos(c) {
+    await liveTrip(c.fid);
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    const where = pos ? `\nمكانه: https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}` : "";
+    await notify(c.fid, "all", `🆘 ${c.me.name} يحتاج مساعدة`, `${c.me.name} ضغط زر الاستغاثة.${where}`, c.me, null, "sos");
+    return {};
   },
 
   // ---------- account & family deletion (App Store requirement)
