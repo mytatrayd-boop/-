@@ -11,7 +11,7 @@ export type TaskRepeat = Span | "once";
 export type Scope = "each" | "family";
 export type Role = "owner" | "admin" | "member";
 
-export const PERM_KEYS = ["addMembers", "approve", "tasks", "report", "comps", "viewReports"] as const;
+export const PERM_KEYS = ["addMembers", "approve", "tasks", "report", "comps", "viewReports", "trip"] as const;
 export type PermKey = (typeof PERM_KEYS)[number];
 export type Perms = Partial<Record<PermKey, boolean>>;
 
@@ -183,4 +183,33 @@ export function pushPayload(title: string, body: string, familyId: string) {
       payload: { aps: { sound: "default", "interruption-level": "active" as const } },
     },
   };
+}
+
+// ---------- "أنا هنا" (family trip location sharing)
+
+/** Great-circle distance in metres between two coordinates. */
+export function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** A valid latitude/longitude pair, or null. */
+export function cleanCoord(lat: unknown, lng: unknown): { lat: number; lng: number } | null {
+  const la = Number(lat), lo = Number(lng);
+  if (lat === null || lat === "" || lng === null || lng === "") return null;
+  if (!Number.isFinite(la) || !Number.isFinite(lo) || Math.abs(la) > 90 || Math.abs(lo) > 180) return null;
+  return { lat: la, lng: lo };
+}
+
+/** A trip is live while it is active and its end time has not passed. */
+export function tripLive(trip: { active?: boolean; endsAt?: number } | undefined, now: number): boolean {
+  return !!trip?.active && typeof trip.endsAt === "number" && trip.endsAt > now;
+}
+
+/** May [actor] switch location sharing on/off for [target]? Kids (members) are managed by a trip admin. */
+export function canToggleShare(actor: { id: string; role: Role; perms?: Perms }, target: { id: string }): boolean {
+  if (can(actor, "trip")) return true;
+  return actor.id === target.id && actor.role !== "member";
 }

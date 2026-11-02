@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { can, competitionPoints, noticeTargets, reportKey, dayKey, monthKey, yearKey, periodKey, reportText, tierOf, weekKey, cleanPerms, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
+import { can, competitionPoints, noticeTargets, reportKey, dayKey, monthKey, yearKey, periodKey, reportText, tierOf, weekKey, cleanPerms, distanceMeters, cleanCoord, tripLive, canToggleShare, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
 
 const riyadh = (iso: string) => Date.parse(iso + "+03:00");
 
@@ -74,7 +74,7 @@ test("permissions", () => {
   assert.ok(!can({ role: "admin", perms: { tasks: true } }, "approve"));
   assert.ok(!can({ role: "member", perms: { approve: true } }, "approve"));
   assert.deepEqual(cleanPerms({ approve: true, evil: true, tasks: "yes" }), {
-    addMembers: false, approve: true, tasks: false, report: false, comps: false, viewReports: false,
+    addMembers: false, approve: true, tasks: false, report: false, comps: false, viewReports: false, trip: false,
   });
 });
 
@@ -137,4 +137,29 @@ test("Isha keeps its points until 11 pm Riyadh time", async () => {
   assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T23:00:01")), 0);
   // Other prayers keep the half hour.
   assert.equal(prayerPoints({ key: "maghrib", start: riyadh("2026-10-20T17:20:00") }, 5, riyadh("2026-10-20T18:00:00")), 0);
+});
+
+test("trip: distance, coordinates, live window and sharing permission", () => {
+  // Makkah Haram to Madinah Haram is roughly 340 km
+  const d = distanceMeters({ lat: 21.4225, lng: 39.8262 }, { lat: 24.4672, lng: 39.6112 });
+  assert.ok(d > 335_000 && d < 345_000);
+  assert.equal(distanceMeters({ lat: 24.7, lng: 46.7 }, { lat: 24.7, lng: 46.7 }), 0);
+  assert.deepEqual(cleanCoord("24.7", 46.7), { lat: 24.7, lng: 46.7 });
+  assert.equal(cleanCoord(91, 0), null);
+  assert.equal(cleanCoord("x", 0), null);
+  assert.equal(cleanCoord(null, 0), null);
+  assert.equal(tripLive({ active: true, endsAt: 2000 }, 1000), true);
+  assert.equal(tripLive({ active: true, endsAt: 500 }, 1000), false);
+  assert.equal(tripLive({ active: false, endsAt: 2000 }, 1000), false);
+  assert.equal(tripLive(undefined, 1000), false);
+  const owner = { id: "o", role: "owner" as const };
+  const adminNo = { id: "a", role: "admin" as const, perms: {} };
+  const adminYes = { id: "b", role: "admin" as const, perms: { trip: true } };
+  const kid = { id: "k", role: "member" as const };
+  assert.equal(canToggleShare(owner, kid), true);
+  assert.equal(canToggleShare(adminYes, kid), true);
+  assert.equal(canToggleShare(adminNo, adminNo), true);
+  assert.equal(canToggleShare(adminNo, kid), false);
+  assert.equal(canToggleShare(kid, kid), false);
+  assert.equal(cleanPerms({ trip: true }).trip, true);
 });
