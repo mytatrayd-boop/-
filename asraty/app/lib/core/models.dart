@@ -68,7 +68,7 @@ class Person {
 }
 
 class TaskItem {
-  TaskItem({required this.id, required this.title, required this.personId, required this.points, required this.repeat, this.prayer});
+  TaskItem({required this.id, required this.title, required this.personId, required this.points, required this.repeat, this.prayer, this.legacyPrayer = false});
   final String id;
   String title;
   String personId;
@@ -77,18 +77,24 @@ class TaskItem {
 
   /// Set on the generated task of the prayer whose time is running.
   final PrayerSlot? prayer;
+
+  /// An old hand-made prayer task. Members never see it while the automatic prayers are on; the
+  /// admin's task list shows it (marked) so it can be deleted.
+  final bool legacyPrayer;
 }
 
-/// The running prayer for a member: open from its adhan until the next one.
+/// The running prayer for a member: the task exists from its adhan until half an hour later (Isha: until 11 pm).
 class PrayerSlot {
   const PrayerSlot({required this.key, required this.start, required this.end, required this.dayKey});
   final String key; // fajr | dhuhr | asr | maghrib | isha
   final DateTime start, end;
   final String dayKey;
 
-  /// Late once half an hour has passed (Isha: at 11 pm Riyadh time): it stays as a
-  /// task until the next prayer, but its points are gone (functions/src/prayer.ts lateAfter).
+  /// Past this moment the prayer task is gone (functions/src/prayer.ts lateAfter / prayerOpen).
   bool lateAt(DateTime now) => now.isAfter(lateFrom);
+
+  /// The prayer task is shown only while this is true.
+  bool openAt(DateTime now) => !now.isBefore(start) && !now.isAfter(lateFrom);
 
   DateTime get lateFrom {
     final grace = start.add(const Duration(minutes: 30));

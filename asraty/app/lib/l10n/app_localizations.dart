@@ -3356,6 +3356,12 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'إشعارات التطبيق مغلقة. يحتاج «أنا هنا» إلى إشعار دائم ليستمر والشاشة مقفلة، فعّل الإشعارات لأسرتي من إعدادات الجوال ثم أعد المحاولة.'**
   String get tripNotifOff;
+
+  /// No description provided for @prayerLegacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهمة صلاة يدوية قديمة، مخفية عن الفرد (الصلاة آلية). احذفها'**
+  String get prayerLegacy;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

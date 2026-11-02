@@ -4,6 +4,7 @@ import 'package:asraty/backend/backend.dart';
 import 'package:asraty/backend/demo_backend.dart';
 import 'package:asraty/core/logic.dart';
 import 'package:asraty/core/models.dart';
+import 'package:asraty/core/prayer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Signs into the demo as [email]; codes are read from the demo mailbox.
@@ -224,16 +225,41 @@ void main() {
     expect(row.notDone, 0, reason: 'both daily tasks are done (the monthly task is not due in a daily report)');
   });
 
-  test('prayer: half an hour after its adhan it stays as a task but is worth no points', () async {
+  test('prayer: the task exists only half an hour after its adhan (Isha until 11 pm), always for the full points', () async {
     final b = DemoBackend(clock: () => clock);
     final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
     final d = b.current.data!;
-    final slot = d.tasksOf(aseel.id, clock).first.prayer!;
-    final early = d.tasksOf(aseel.id, slot.start.add(const Duration(minutes: 10))).first;
-    final late = d.tasksOf(aseel.id, slot.start.add(const Duration(minutes: 31))).first;
-    expect(early.points, 5);
-    expect(late.prayer, isNotNull, reason: 'still listed until the next prayer');
-    expect(late.points, 0);
+    final times = prayerTimesOn(d.prayer!, clock);
+    DateTime at(String k, int min) => times[k]!.add(Duration(minutes: min));
+    bool has(DateTime t) => d.tasksOf(aseel.id, t).any((x) => x.prayer != null);
+    final dhuhr = d.tasksOf(aseel.id, at('dhuhr', 10)).firstWhere((x) => x.prayer != null);
+    expect(dhuhr.points, 5, reason: 'the full points inside the window');
+    expect(has(at('dhuhr', -1)), isFalse, reason: 'not before the adhan');
+    expect(has(at('dhuhr', 30)), isTrue);
+    expect(has(at('dhuhr', 31)), isFalse, reason: 'it disappears after half an hour');
+    // Isha stays until 11 pm Riyadh time.
+    final eleven = DateTime.utc(clock.toUtc().add(const Duration(hours: 3)).year, 9, 29, 23).subtract(const Duration(hours: 3));
+    expect(has(eleven.subtract(const Duration(minutes: 1))), isTrue);
+    expect(has(eleven.add(const Duration(minutes: 1))), isFalse);
+  });
+
+  test('old hand-made prayer tasks are hidden from the member (and refused) but the admin sees them to delete', () async {
+    final b = DemoBackend(clock: () => clock);
+    final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
+    await b.addTask(title: 'صلاة الفجر', personId: aseel.id, points: 10, repeat: Period.daily);
+    final d = b.current.data!;
+    final old = d.tasks.firstWhere((x) => x.title == 'صلاة الفجر');
+    expect(d.tasksOf(aseel.id, clock).any((x) => x.id == old.id), isFalse, reason: 'hidden from the member');
+    final adminView = d.tasksOf(aseel.id, clock, admin: true).where((x) => x.id == old.id).single;
+    expect(adminView.legacyPrayer, isTrue);
+    expect(isManualPrayerTitle('الصلاة في المسجد'), isTrue);
+    expect(isManualPrayerTitle('ترتيب الغرفة'), isFalse);
+    await login(b, 'aseel@demo.sa', Role.member);
+    await expectLater(b.completeTask(old.id), throwsA(isA<AppError>().having((e) => e.code, 'code', 'task-not-found')));
+    // The owner deletes it.
+    await login(b, 'abu@demo.sa', Role.owner);
+    await b.deleteTask(old.id);
+    expect(b.current.data!.tasks.any((x) => x.id == old.id), isFalse);
   });
 
   test('violation takes points from one member or everyone; deleting it gives them back', () async {

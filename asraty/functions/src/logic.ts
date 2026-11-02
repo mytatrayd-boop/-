@@ -185,6 +185,13 @@ export function pushPayload(title: string, body: string, familyId: string) {
   };
 }
 
+/**
+ * An old hand-made prayer task ("صلاة الفجر"...). Prayers are automatic now (one task at each prayer time),
+ * so when the family's prayer reminders are on these are hidden from members and cannot be completed.
+ * Mirrored in app/lib/core/logic.dart isManualPrayerTitle.
+ */
+export const isManualPrayerTitle = (title: unknown): boolean => /صلا[ةه]/.test(String(title ?? ""));
+
 // ---------- "أنا هنا" (family trip location sharing)
 
 /** Great-circle distance in metres between two coordinates. */
