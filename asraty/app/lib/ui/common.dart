@@ -433,8 +433,12 @@ enum BtnKind { main, sun, ok, no, ghost }
 /// Button that answers the tap at once: an async action shows a spinner and
 /// blocks repeat taps until the server replies.
 class Btn extends StatefulWidget {
-  const Btn(this.label, {super.key, required this.onPressed, this.kind = BtnKind.main, this.small = false, this.expand = false, this.semantic, this.icon});
+  const Btn(this.label, {super.key, required this.onPressed, this.kind = BtnKind.main, this.small = false, this.expand = false, this.semantic, this.icon, this.busy = false});
   final String label;
+
+  /// The screen is waiting on something this button started elsewhere (e.g. Enter on the keyboard):
+  /// show the spinner too, not only after a tap on this button.
+  final bool busy;
   final FutureOr<void> Function()? onPressed;
   final BtnKind kind;
   final bool small;
@@ -472,11 +476,11 @@ class _BtnState extends State<Btn> {
     };
     final text = Text(w.label, semanticsLabel: w.semantic, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false);
     final b = FilledButton(
-      onPressed: w.onPressed == null || _busy ? null : _tap,
+      onPressed: w.onPressed == null || _busy || w.busy ? null : _tap,
       style: FilledButton.styleFrom(
         backgroundColor: bg,
         foregroundColor: fg,
-        disabledBackgroundColor: bg.withValues(alpha: _busy ? .8 : .45),
+        disabledBackgroundColor: bg.withValues(alpha: _busy || w.busy ? .8 : .45),
         disabledForegroundColor: fg.withValues(alpha: .7),
         padding: w.small ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6) : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         minimumSize: w.small ? const Size(0, 34) : const Size(0, 46),
@@ -484,7 +488,7 @@ class _BtnState extends State<Btn> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(w.small ? 10 : 12)),
         textStyle: TextStyle(fontFamily: bodyFont, fontWeight: FontWeight.w700, fontSize: w.small ? 13 : 16),
       ),
-      child: _busy
+      child: _busy || w.busy
           ? SizedBox.square(dimension: w.small ? 16 : 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: fg))
           : w.icon == null
               ? text

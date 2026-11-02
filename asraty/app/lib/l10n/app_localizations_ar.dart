@@ -1778,4 +1778,10 @@ class L10nAr extends L10n {
 
   @override
   String get tripSendFailed => 'تعذّر إرسال مكانك، سنعيد المحاولة';
+
+  @override
+  String get waitingServer => 'جارٍ الاتصال بالخادم… قد يستغرق بضع ثوانٍ';
+
+  @override
+  String get loadingFamily => 'جارٍ تحميل بيانات أسرتك…';
 }
