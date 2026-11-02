@@ -69,10 +69,8 @@ class _Home extends ConsumerWidget {
       return Padding(
         padding: const EdgeInsets.all(32),
         child: Column(children: [
-          Icon(Icons.cloud_sync_rounded, size: 40, color: context.pal.brandInk),
-          const SizedBox(height: 10),
-          const CircularProgressIndicator(),
-          const SizedBox(height: 12),
+          const PulseDot(size: 44),
+          const SizedBox(height: 14),
           Muted(context.t.loadingFamily),
         ]),
       );

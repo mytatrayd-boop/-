@@ -209,8 +209,8 @@ class _OnboardingState extends ConsumerState<Onboarding> {
         ),
       );
 
-  /// While the server answers (it can take a few seconds when it wakes up): a cloud, a spinner and
-  /// a line saying what is happening, so the screen never looks frozen.
+  /// While the server answers (it can take a few seconds when it wakes up): a pulsing dot and a line
+  /// saying what is happening, so the screen never looks frozen.
   Widget _waiting() => AnimatedSize(
         duration: const Duration(milliseconds: 150),
         child: !_busy
@@ -218,11 +218,9 @@ class _OnboardingState extends ConsumerState<Onboarding> {
             : Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.cloud_sync_rounded, color: context.pal.brandInk),
-                  const SizedBox(width: 8),
-                  Flexible(child: Text(context.t.waitingServer, style: TextStyle(color: context.pal.brandInk, fontWeight: FontWeight.w700))),
+                  const PulseDot(size: 22),
                   const SizedBox(width: 10),
-                  const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2.4)),
+                  Flexible(child: Text(context.t.waitingServer, style: TextStyle(color: context.pal.brandInk, fontWeight: FontWeight.w700))),
                 ]),
               ),
       );
