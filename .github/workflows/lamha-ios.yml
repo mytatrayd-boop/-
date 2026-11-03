@@ -36,7 +36,8 @@ jobs:
       - run: flutter pub get
 
       - name: Flutter build (no codesign, app + widget)
-        run: flutter build ios --release --no-codesign --build-number=${{ github.run_number }}
+        # The iPhone app is paid: a monthly/yearly subscription (checked by the «أسرتي» server).
+        run: flutter build ios --release --no-codesign --dart-define=PAYWALL=true --build-number=${{ github.run_number }}
 
       - name: Widget extension is embedded
         run: |

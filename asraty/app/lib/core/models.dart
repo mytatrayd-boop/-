@@ -258,6 +258,19 @@ class SentFeedback {
 }
 
 /// Everything the UI needs about the signed-in family, for the current periods.
+/// Members (children) every family may have, subscribed or using a free code. Mirrors functions/src/plan.ts.
+const freeMembers = 5;
+
+/// The family's plan, written by the server: a subscription tier (5 / 10 / 20 members) or "legacy"
+/// (a family made before the paywall, which keeps using the app).
+class FamilyPlan {
+  const FamilyPlan({required this.source, required this.tier, this.until});
+  final String source; // apple | legacy
+  final int tier;
+  final DateTime? until; // null = no end (legacy)
+  bool activeAt(DateTime now) => until == null || until!.isAfter(now);
+}
+
 /// A place the family picked on the map and saved (shared as a notification, not as a live location).
 class SavedPlace {
   const SavedPlace({required this.id, required this.label, required this.lat, required this.lng, required this.by, required this.at});
@@ -317,6 +330,7 @@ class FamilySnapshot {
     this.trip,
     this.locations = const {},
     this.places = const [],
+    this.plan,
   });
 
   final String familyName;
@@ -344,4 +358,7 @@ class FamilySnapshot {
 
   /// Saved places, newest first.
   final List<SavedPlace> places;
+
+  /// The subscription / legacy plan (null until the server writes one).
+  final FamilyPlan? plan;
 }

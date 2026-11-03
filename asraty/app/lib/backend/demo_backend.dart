@@ -322,6 +322,8 @@ class DemoBackend extends Backend {
   Future<void> addPerson({required Role role, required String name, required String email, required String avatar, Map<Perm, bool>? perms}) async {
     final me = role == Role.admin ? _need(null, true) : _need(Perm.addMembers);
     if (_people.any((p) => p.email == email)) _fail('email-taken');
+    // Mirrors the server: children are limited by the plan (adults are not counted).
+    if (role == Role.member && _people.where((p) => p.role == Role.member).length >= freeMembers) _fail('member-limit', {'limit': freeMembers});
     _people.add(Person(id: _uid(), name: name, email: email, role: role, avatar: avatar, active: false, perms: role == Role.admin ? perms : {}));
     final m = _invite(role, me.name);
     _sendCode(email, m.subject, m.intro);
@@ -723,6 +725,12 @@ class DemoBackend extends Backend {
     _places.removeWhere((x) => x.id == placeId);
     _publish();
   }
+
+  @override
+  Future<void> syncPlan() async {}
+
+  @override
+  Future<void> activatePlan(String receipt) async {}
 
   @override
   Future<void> tripSos({double? lat, double? lng}) async {

@@ -2,16 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../backend/access.dart';
+import '../backend/backend.dart';
+import '../core/models.dart';
 import 'common.dart';
 import 'providers.dart';
+import 'shell.dart';
 import 'theme.dart';
 
-/// Whether this device may use the app (activation code or subscription), with the store.
+/// Who may use the app (the family admin: a free code on this device, or a plan the server recorded),
+/// and the store.
 class AccessNotifier extends Notifier<int> {
   Store? _store;
-  Store get store => _store ??= (Store(ref.read(prefsProvider), () => state++)..startSoon());
+  var _synced = false, _syncing = false;
 
-  bool get allowed => Access.allowed(ref.read(prefsProvider));
+  Store get store => _store ??= (Store(() => state++, _sink)..startSoon());
+
+  /// A bought or restored subscription: the server checks Apple's receipt and records the tier.
+  Future<void> _sink(String productId, String receipt) async {
+    try {
+      await ref.read(backendProvider).activatePlan(receipt);
+    } on AppError catch (e) {
+      throw StoreSinkError(e.code);
+    }
+  }
+
+  bool get hasCode => Access.savedCode(ref.read(prefsProvider)) != null;
+
+  /// The owner may use the app now (always true when the gate is off, e.g. Android or the demo).
+  bool ownerAllowed(FamilyPlan? plan, DateTime now) => Access.ownerAllowed(ref.read(prefsProvider), plan, now);
+
+  /// Whether the server was already asked to mark an old family as "legacy" in this run.
+  bool get synced => _synced;
+
+  Future<void> syncOnce() async {
+    if (_synced || _syncing) return;
+    _syncing = true;
+    try {
+      await ref.read(backendProvider).syncPlan();
+    } catch (_) {
+      // Offline: the paywall shows; the next start asks again.
+    }
+    _synced = true;
+    _syncing = false;
+    state++;
+  }
 
   @override
   int build() {
@@ -84,53 +118,62 @@ class _ActivationDialogState extends ConsumerState<_ActivationDialog> {
   }
 }
 
-/// Shown on iPhone builds with the subscription gate on, when this device has
-/// neither an activation code nor a subscription.
+/// The subscription screen: three levels by the number of members (5 / 10 / 20), each monthly or yearly
+/// with a 7-day trial. Shown to a family admin without an active plan or code; also opened as "ترقية"
+/// ([upgrade]) from the add-member page when the family reaches its limit.
 class PaywallPage extends ConsumerWidget {
-  const PaywallPage({super.key});
+  const PaywallPage({super.key, this.upgrade = false});
+  final bool upgrade;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(accessProvider);
     final t = context.t, store = ref.read(accessProvider.notifier).store;
-    String priceOf(String id, String fallback) => store.products.where((p) => p.id == id).firstOrNull?.price ?? fallback;
-    Widget plan(String id, String title, String fallback, {bool best = false}) {
-      final p = store.products.where((p) => p.id == id).firstOrNull;
-      return OutlineCard(
-        child: Row(children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
-              Muted(priceOf(id, fallback)),
-            ]),
-          ),
-          Btn(t.startTrial, kind: best ? BtnKind.sun : BtnKind.main, small: true, onPressed: p == null ? null : () => store.buy(p)),
-        ]),
-      );
+    Widget option(String id, String title, {bool best = false}) {
+      final p = store.product(id);
+      return Row(children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Muted(p?.price ?? '—'),
+          ]),
+        ),
+        Btn(upgrade ? t.upgradePlan : t.startTrial, kind: best ? BtnKind.sun : BtnKind.main, small: true, onPressed: p == null ? null : () => store.buy(p)),
+      ]);
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const SizedBox(height: 8),
-      const Center(child: Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 54))),
+      if (upgrade) BackLink(t.settings) else const SizedBox(height: 8),
+      if (!upgrade) const Center(child: Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 54))),
       H2(t.paywallTitle),
       Muted(t.paywallSub),
       const SizedBox(height: 12),
-      if (store.loading) const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator())),
-      plan(Access.monthlyId, t.planMonthly, t.planMonthlyPrice),
-      plan(Access.yearlyId, t.planYearly, t.planYearlyPrice, best: true),
-      if (store.error == 'store-unavailable') ErrBox(t.storeUnavailable),
+      if (store.loading) const Center(child: Padding(padding: EdgeInsets.all(16), child: PulseDot(size: 32))),
+      for (final tier in Access.tiers)
+        OutlineCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('${t.planTierUpTo} ${tier.members} ${t.planTierMembers}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+            const SizedBox(height: 8),
+            option(tier.monthly, t.planMonthly),
+            const Divider(height: 18),
+            option(tier.yearly, t.planYearly, best: true),
+          ]),
+        ),
+      if (store.error != null) ErrBox(store.error == 'store-unavailable' ? t.storeUnavailable : errorText(t, AppError(store.error!))),
       const SizedBox(height: 6),
       Muted(t.paywallFamily),
       const SizedBox(height: 6),
       Btn(t.restorePurchases, kind: BtnKind.ghost, onPressed: store.restore),
-      const SizedBox(height: 14),
-      Center(
-        child: TextButton(
-          onPressed: () => showActivation(context, ref),
-          style: TextButton.styleFrom(foregroundColor: context.pal.brandInk),
-          child: Text(t.orUseCode, style: const TextStyle(fontWeight: FontWeight.w700)),
+      if (!upgrade) ...[
+        const SizedBox(height: 14),
+        Center(
+          child: TextButton(
+            onPressed: () => showActivation(context, ref),
+            style: TextButton.styleFrom(foregroundColor: context.pal.brandInk),
+            child: Text(t.orUseCode, style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
         ),
-      ),
+      ],
     ]);
   }
 }

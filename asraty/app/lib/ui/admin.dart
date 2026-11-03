@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../backend/access.dart';
 import '../core/logic.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
@@ -381,6 +382,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t, d = widget.c.data, me = widget.c.me, b = ref.read(backendProvider);
+    final limit = d.memberLimitAt(DateTime.now()), atLimit = d.members.length >= limit;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       H2(t.tileAddMember),
       Muted(t.addMemberSub),
@@ -389,7 +391,11 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
         Muted(t.avatarLabel),
         AvatarGrid(selected: _avatar, onPick: (k) => setState(() => _avatar = k)),
         TextField(controller: _email, keyboardType: TextInputType.emailAddress, textDirection: TextDirection.ltr, decoration: InputDecoration(hintText: t.emailHint2)),
-        Btn(t.addAndSend, onPressed: _add),
+        if (atLimit) ...[
+          NoteBox('${t.memberLimitReached} (${d.members.length}/$limit)'),
+          if (Access.gated) Btn(t.upgradePlan, kind: BtnKind.sun, icon: Icons.workspace_premium_outlined, onPressed: () => context.push('/plan')),
+        ] else
+          Btn(t.addAndSend, onPressed: _add),
       ]),
       H3(t.familyMembersTitle),
       if (d.members.isEmpty) EmptyState('👨‍👩‍👧', t.noMembers),

@@ -8,10 +8,11 @@ import { api } from "./api";
 import { sendFeedback } from "./feedback";
 import { login } from "./passwords";
 import { redeemCode } from "./activation";
+import { lamhaPlan } from "./lamha";
 
 export type Handler = (data: unknown, ctx: CallContext) => Promise<unknown>;
 
-export const handlers: Record<string, Handler> = { requestCode, verifyCode, login, api, sendFeedback, redeemCode };
+export const handlers: Record<string, Handler> = { requestCode, verifyCode, login, api, sendFeedback, redeemCode, lamhaPlan };
 
 const STATUS: Record<string, [string, number]> = {
   "invalid-argument": ["INVALID_ARGUMENT", 400],

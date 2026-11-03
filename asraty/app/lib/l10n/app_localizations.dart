@@ -3362,6 +3362,60 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'مهمة صلاة يدوية قديمة، مخفية عن الفرد (الصلاة آلية). احذفها'**
   String get prayerLegacy;
+
+  /// No description provided for @planTierUpTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'حتى'**
+  String get planTierUpTo;
+
+  /// No description provided for @planTierMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفراد'**
+  String get planTierMembers;
+
+  /// No description provided for @memberLimitReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى الحد الأقصى لأفراد أسرتك'**
+  String get memberLimitReached;
+
+  /// No description provided for @upgradePlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترقية الاشتراك'**
+  String get upgradePlan;
+
+  /// No description provided for @planChecking.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحقق من اشتراكك…'**
+  String get planChecking;
+
+  /// No description provided for @errMemberLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى الحد الأقصى لأفراد الأسرة. رقِّ اشتراكك لإضافة المزيد.'**
+  String get errMemberLimit;
+
+  /// No description provided for @errPlanUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من الاشتراك الآن. حاول لاحقاً، فلن يضيع اشتراكك.'**
+  String get errPlanUnavailable;
+
+  /// No description provided for @errPlanUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الاشتراك مرتبط بأسرة أخرى.'**
+  String get errPlanUsed;
+
+  /// No description provided for @errReceiptInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من إيصال الاشتراك.'**
+  String get errReceiptInvalid;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

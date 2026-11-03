@@ -138,6 +138,9 @@ extension SnapshotLogic on FamilySnapshot {
     ];
   }
 
+  /// How many members the family may have now (an ended subscription falls back to the free five).
+  int memberLimitAt(DateTime now) => (plan?.activeAt(now) ?? false) && plan!.tier > freeMembers ? plan!.tier : freeMembers;
+
   int familyEarnedFor(Span s) => sumsFor(s).entries.where((e) => members.any((m) => m.id == e.key)).fold(0, (a, e) => a + e.value.points);
 
   /// Honor board ranking for this month or year.

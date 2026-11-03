@@ -437,5 +437,16 @@
   "tilesLastOne": "يجب أن تبقى نافذة واحدة على الأقل",
   "@tilesLastOne": {"description": "إعدادات لمحة"},
   "tilesDragHandle": "اسحب لإعادة الترتيب",
-  "@tilesDragHandle": {"description": "إعدادات لمحة"}
+  "@tilesDragHandle": {"description": "إعدادات لمحة"},
+  "paywallTitle": "اشترك في لمحة",
+  "paywallSub": "ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من إعدادات حسابك على آبل.",
+  "paywallMonthly": "شهري",
+  "paywallYearly": "سنوي",
+  "paywallStartTrial": "ابدأ التجربة المجانية",
+  "paywallRestore": "استعادة المشتريات",
+  "paywallPrivacy": "سياسة الخصوصية",
+  "paywallChecking": "جارٍ التحقق من اشتراكك…",
+  "paywallUnavailable": "المتجر غير متاح الآن. حاول لاحقًا.",
+  "paywallVerifyFailed": "تعذّر التحقق من الاشتراك الآن. حاول لاحقًا، فلن يضيع اشتراكك.",
+  "paywallNotActive": "لا يوجد اشتراك فعّال على حساب آبل هذا."
 }

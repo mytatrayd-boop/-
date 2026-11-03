@@ -436,4 +436,39 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tilesDragHandle => 'اسحب لإعادة الترتيب';
+
+  @override
+  String get paywallTitle => 'اشترك في لمحة';
+
+  @override
+  String get paywallSub =>
+      'ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من إعدادات حسابك على آبل.';
+
+  @override
+  String get paywallMonthly => 'شهري';
+
+  @override
+  String get paywallYearly => 'سنوي';
+
+  @override
+  String get paywallStartTrial => 'ابدأ التجربة المجانية';
+
+  @override
+  String get paywallRestore => 'استعادة المشتريات';
+
+  @override
+  String get paywallPrivacy => 'سياسة الخصوصية';
+
+  @override
+  String get paywallChecking => 'جارٍ التحقق من اشتراكك…';
+
+  @override
+  String get paywallUnavailable => 'المتجر غير متاح الآن. حاول لاحقًا.';
+
+  @override
+  String get paywallVerifyFailed =>
+      'تعذّر التحقق من الاشتراك الآن. حاول لاحقًا، فلن يضيع اشتراكك.';
+
+  @override
+  String get paywallNotActive => 'لا يوجد اشتراك فعّال على حساب آبل هذا.';
 }

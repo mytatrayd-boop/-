@@ -384,6 +384,31 @@ test("family trip and saved places: only trip admins pick places; sharing only n
   assert.equal((await db.doc(`families/${fid}/places/${saved.placeId}`).get()).exists, false);
 });
 
+test("plan: five members are free, more need a bigger subscription tier; adults are not counted", async () => {
+  await clearRate();
+  const members = (await db.collection(`families/${fid}/people`).where("role", "==", "member").get()).size;
+  // Fill up to the free five with members.
+  for (let i = members; i < 5; i++) await call("api", { op: "addPerson", role: "member", name: `طفل${i}`, email: `kid-plan${i}@test.sa`, avatar: "boy_shemagh" }, owner.idToken);
+  await rejects(call("api", { op: "addPerson", role: "member", name: "السادس", email: "kid-plan6@test.sa", avatar: "boy_shemagh" }, owner.idToken), "member-limit");
+  // An adult admin is not a "member": still allowed.
+  await call("api", { op: "addPerson", role: "admin", name: "مسؤول إضافي", email: "adm-plan@test.sa", avatar: "mom_black", perms: {} }, owner.idToken);
+  // A subscription tier of 10 raises the limit (the receipt check itself is unit-tested; here the family plan is set directly).
+  await db.doc(`families/${fid}`).update({ plan: { source: "apple", tier: 10, until: Date.now() + 86400e3, productId: "asraty.m10" } });
+  await call("api", { op: "addPerson", role: "member", name: "السادس", email: "kid-plan6@test.sa", avatar: "boy_shemagh" }, owner.idToken);
+  // When it ends, new members are refused again (the existing ones stay).
+  await db.doc(`families/${fid}`).update({ plan: { source: "apple", tier: 10, until: Date.now() - 1000, productId: "asraty.m10" } });
+  await rejects(call("api", { op: "addPerson", role: "member", name: "السابع", email: "kid-plan7@test.sa", avatar: "boy_shemagh" }, owner.idToken), "member-limit");
+  // The server never trusts the phone: without Apple's shared secret nothing is activated; only the owner may ask.
+  await rejects(call("api", { op: "activatePlan", receipt: "x".repeat(40) }, owner.idToken), "plan-unavailable");
+  const kid = await login("kid1@test.sa", "member");
+  await rejects(call("api", { op: "activatePlan", receipt: "x".repeat(40) }, kid.idToken), "no-permission");
+  await rejects(call("api", { op: "syncPlan" }, kid.idToken), "no-permission");
+  // A family made before the paywall is marked legacy.
+  await db.doc(`families/${fid}`).update({ plan: null });
+  const synced = await call("api", { op: "syncPlan" }, owner.idToken);
+  assert.equal(synced.plan?.source ?? "none", (await db.doc(`families/${fid}`).get()).data().createdAt.toMillis() < Date.UTC(2026, 10, 4) ? "legacy" : "none");
+});
+
 test("owner deletes the whole family", async () => {
   await call("api", { op: "deleteFamily" }, owner.idToken);
   assert.equal((await db.doc(`families/${fid}`).get()).exists, false);

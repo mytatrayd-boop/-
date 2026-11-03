@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../backend/access.dart';
 import '../backend/backend.dart';
 import '../backend/reminders.dart';
 import '../core/models.dart';
@@ -53,6 +54,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => Shell(child: signedIn((c) => AdminPage(state.pathParameters['page']!, c))),
       ),
       GoRoute(path: '/trip', builder: (context, state) => Shell(child: signedIn(TripPage.new))),
+      GoRoute(path: '/plan', builder: (context, state) => Shell(child: signedIn((c) => const PaywallPage(upgrade: true)))),
       GoRoute(path: '/settings', builder: (context, state) => Shell(child: signedIn(SettingsPage.new))),
       GoRoute(path: '/report', builder: (context, state) => Shell(child: signedIn(ReportRoute.new))),
       GoRoute(path: '/prizes', builder: (context, state) => Shell(child: signedIn(PrizesPage.new))),
@@ -78,8 +80,17 @@ class _Home extends ConsumerWidget {
     ref.watch(accessProvider);
     if (!s.signedIn) return const Onboarding();
     // iPhone builds with the subscription gate: a code or a subscription is needed (never in the demo).
-    if (!ref.read(backendProvider).isDemo && !ref.read(accessProvider.notifier).allowed) return const PaywallPage();
     final c = Ctx(s);
+    // Only the family admin pays (or uses a code); members and delegated admins join a paid family.
+    if (!ref.read(backendProvider).isDemo && c.me.role == Role.owner && Access.gated) {
+      final access = ref.read(accessProvider.notifier);
+      // An old family is marked "legacy" by the server first, so it never flashes the paywall.
+      if (c.data.plan == null && !access.synced && !access.hasCode) {
+        Future.microtask(access.syncOnce);
+        return Padding(padding: const EdgeInsets.all(32), child: Center(child: Column(children: [const PulseDot(size: 44), const SizedBox(height: 14), Muted(context.t.planChecking)])));
+      }
+      if (!access.ownerAllowed(c.data.plan, DateTime.now())) return const PaywallPage();
+    }
     return c.me.role == Role.member ? MemberHome(c) : AdminHome(c);
   }
 }
