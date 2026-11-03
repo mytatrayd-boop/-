@@ -943,5 +943,10 @@
   "errMemberLimit": "وصلت إلى الحد الأقصى لأفراد الأسرة. رقِّ اشتراكك لإضافة المزيد.",
   "errPlanUnavailable": "تعذّر التحقق من الاشتراك الآن. حاول لاحقاً، فلن يضيع اشتراكك.",
   "errPlanUsed": "هذا الاشتراك مرتبط بأسرة أخرى.",
-  "errReceiptInvalid": "تعذّر التحقق من إيصال الاشتراك."
+  "errReceiptInvalid": "تعذّر التحقق من إيصال الاشتراك.",
+  "deleteAllAlerts": "حذف جميع التنبيهات",
+  "deleteAllAlertsConfirm": "سيُحذف كل تنبيه أُرسل للأسرة ويختفي من عند الجميع. هل أنت متأكد؟",
+  "allAlertsDeleted": "حُذفت جميع التنبيهات ✓",
+  "alertsCount": "عدد التنبيهات المحفوظة: {n}",
+  "@alertsCount": {"placeholders": {"n": {"type": "int"}}}
 }

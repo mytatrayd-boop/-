@@ -1768,7 +1768,8 @@ class L10nAr extends L10n {
   String get tripAccuracy => 'الدقة ±';
 
   @override
-  String get tripApprox => 'الجوال يعطي هذا التطبيق موقعًا تقريبيًا فقط (قد يبعد كيلومترًا عن مكانك الحقيقي). فعّل «الموقع الدقيق» لأسرتي من إعدادات الجوال حتى تعمل الميزة بدقة، خصوصًا في الزحام.';
+  String get tripApprox =>
+      'الجوال يعطي هذا التطبيق موقعًا تقريبيًا فقط (قد يبعد كيلومترًا عن مكانك الحقيقي). فعّل «الموقع الدقيق» لأسرتي من إعدادات الجوال حتى تعمل الميزة بدقة، خصوصًا في الزحام.';
 
   @override
   String get tripOpenSettings => 'فتح الإعدادات';
@@ -1786,10 +1787,12 @@ class L10nAr extends L10n {
   String get loadingFamily => 'جارٍ تحميل بيانات أسرتك…';
 
   @override
-  String get tripNotifOff => 'إشعارات التطبيق مغلقة. يحتاج «أنا هنا» إلى إشعار دائم ليستمر والشاشة مقفلة، فعّل الإشعارات لأسرتي من إعدادات الجوال ثم أعد المحاولة.';
+  String get tripNotifOff =>
+      'إشعارات التطبيق مغلقة. يحتاج «أنا هنا» إلى إشعار دائم ليستمر والشاشة مقفلة، فعّل الإشعارات لأسرتي من إعدادات الجوال ثم أعد المحاولة.';
 
   @override
-  String get prayerLegacy => 'مهمة صلاة يدوية قديمة، مخفية عن الفرد (الصلاة آلية). احذفها';
+  String get prayerLegacy =>
+      'مهمة صلاة يدوية قديمة، مخفية عن الفرد (الصلاة آلية). احذفها';
 
   @override
   String get planTierUpTo => 'حتى';
@@ -1807,14 +1810,31 @@ class L10nAr extends L10n {
   String get planChecking => 'جارٍ التحقق من اشتراكك…';
 
   @override
-  String get errMemberLimit => 'وصلت إلى الحد الأقصى لأفراد الأسرة. رقِّ اشتراكك لإضافة المزيد.';
+  String get errMemberLimit =>
+      'وصلت إلى الحد الأقصى لأفراد الأسرة. رقِّ اشتراكك لإضافة المزيد.';
 
   @override
-  String get errPlanUnavailable => 'تعذّر التحقق من الاشتراك الآن. حاول لاحقاً، فلن يضيع اشتراكك.';
+  String get errPlanUnavailable =>
+      'تعذّر التحقق من الاشتراك الآن. حاول لاحقاً، فلن يضيع اشتراكك.';
 
   @override
   String get errPlanUsed => 'هذا الاشتراك مرتبط بأسرة أخرى.';
 
   @override
   String get errReceiptInvalid => 'تعذّر التحقق من إيصال الاشتراك.';
+
+  @override
+  String get deleteAllAlerts => 'حذف جميع التنبيهات';
+
+  @override
+  String get deleteAllAlertsConfirm =>
+      'سيُحذف كل تنبيه أُرسل للأسرة ويختفي من عند الجميع. هل أنت متأكد؟';
+
+  @override
+  String get allAlertsDeleted => 'حُذفت جميع التنبيهات ✓';
+
+  @override
+  String alertsCount(int n) {
+    return 'عدد التنبيهات المحفوظة: $n';
+  }
 }

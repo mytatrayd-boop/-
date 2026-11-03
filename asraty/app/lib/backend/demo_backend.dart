@@ -523,6 +523,13 @@ class DemoBackend extends Backend {
     _publish();
   }
 
+  @override
+  Future<void> deleteAllAlerts() async {
+    _need(null, true);
+    _notices.clear();
+    _publish();
+  }
+
   // ---------------------------------------------------------------- goals
   @override
   Future<void> addGoal({required String title, required int target, required String personId, required Honor period}) async {
