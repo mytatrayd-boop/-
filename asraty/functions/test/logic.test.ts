@@ -211,3 +211,14 @@ test("plan: Apple is asked in production first, then in the sandbox for a TestFl
   assert.match(urls[1], /sandbox/);
   await assert.rejects(verifyReceipt("x".repeat(30), "secret", async () => ({ status: 21003 })), (e: { code?: string }) => e.code === "receipt-invalid");
 });
+
+test("«لمحة»: the receipt's latest subscription end is reported, other apps' products are ignored", async () => {
+  const { lamhaUntil } = await import("../src/plan");
+  assert.equal(lamhaUntil([]), null);
+  assert.equal(lamhaUntil([{ product_id: "asraty.monthly", expires_date_ms: "999" }]), null);
+  assert.equal(lamhaUntil([
+    { product_id: "lamha.monthly", expires_date_ms: "100" },
+    { product_id: "lamha.yearly", expires_date_ms: "300" },
+    { product_id: "asraty.m10", expires_date_ms: "9999" },
+  ]), 300);
+});

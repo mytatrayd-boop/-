@@ -679,6 +679,72 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'اسحب لإعادة الترتيب'**
   String get tilesDragHandle;
+
+  /// No description provided for @paywallTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في لمحة'**
+  String get paywallTitle;
+
+  /// No description provided for @paywallSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من إعدادات حسابك على آبل.'**
+  String get paywallSub;
+
+  /// No description provided for @paywallMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهري'**
+  String get paywallMonthly;
+
+  /// No description provided for @paywallYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنوي'**
+  String get paywallYearly;
+
+  /// No description provided for @paywallStartTrial.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ التجربة المجانية'**
+  String get paywallStartTrial;
+
+  /// No description provided for @paywallRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة المشتريات'**
+  String get paywallRestore;
+
+  /// No description provided for @paywallPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الخصوصية'**
+  String get paywallPrivacy;
+
+  /// No description provided for @paywallChecking.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحقق من اشتراكك…'**
+  String get paywallChecking;
+
+  /// No description provided for @paywallUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتجر غير متاح الآن. حاول لاحقًا.'**
+  String get paywallUnavailable;
+
+  /// No description provided for @paywallVerifyFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من الاشتراك الآن. حاول لاحقًا، فلن يضيع اشتراكك.'**
+  String get paywallVerifyFailed;
+
+  /// No description provided for @paywallNotActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اشتراك فعّال على حساب آبل هذا.'**
+  String get paywallNotActive;
 }
 
 class _AppLocalizationsDelegate

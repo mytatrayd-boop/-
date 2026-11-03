@@ -96,5 +96,16 @@
   "tilesManageTitle": "Widget tiles",
   "tilesManageHint": "Turn tiles on or off and drag the handle to reorder them. The remaining tiles expand to fill the widget.",
   "tilesLastOne": "At least one tile must stay on",
-  "tilesDragHandle": "Drag to reorder"
+  "tilesDragHandle": "Drag to reorder",
+  "paywallTitle": "Subscribe to Lamha",
+  "paywallSub": "An Arabic home- and lock-screen widget: deposits, prayers, Hijri date and Qibla. Try it free for 7 days; then it renews automatically and you can cancel any time in your Apple account settings.",
+  "paywallMonthly": "Monthly",
+  "paywallYearly": "Yearly",
+  "paywallStartTrial": "Start free trial",
+  "paywallRestore": "Restore purchases",
+  "paywallPrivacy": "Privacy policy",
+  "paywallChecking": "Checking your subscription…",
+  "paywallUnavailable": "The store is not available now. Try again later.",
+  "paywallVerifyFailed": "The subscription could not be verified now. Try again later; your subscription is not lost.",
+  "paywallNotActive": "There is no active subscription on this Apple account."
 }

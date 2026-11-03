@@ -438,4 +438,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tilesDragHandle => 'Drag to reorder';
+
+  @override
+  String get paywallTitle => 'Subscribe to Lamha';
+
+  @override
+  String get paywallSub =>
+      'An Arabic home- and lock-screen widget: deposits, prayers, Hijri date and Qibla. Try it free for 7 days; then it renews automatically and you can cancel any time in your Apple account settings.';
+
+  @override
+  String get paywallMonthly => 'Monthly';
+
+  @override
+  String get paywallYearly => 'Yearly';
+
+  @override
+  String get paywallStartTrial => 'Start free trial';
+
+  @override
+  String get paywallRestore => 'Restore purchases';
+
+  @override
+  String get paywallPrivacy => 'Privacy policy';
+
+  @override
+  String get paywallChecking => 'Checking your subscription…';
+
+  @override
+  String get paywallUnavailable =>
+      'The store is not available now. Try again later.';
+
+  @override
+  String get paywallVerifyFailed =>
+      'The subscription could not be verified now. Try again later; your subscription is not lost.';
+
+  @override
+  String get paywallNotActive =>
+      'There is no active subscription on this Apple account.';
 }

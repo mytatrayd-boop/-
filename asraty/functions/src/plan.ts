@@ -33,6 +33,9 @@ export const planActive = (p: FamilyPlan | undefined | null, now: number): boole
 /** How many members the family may have now (an ended subscription falls back to the free five). */
 export const memberLimit = (p: FamilyPlan | undefined | null, now: number): number => Math.max(FREE_MEMBERS, planActive(p, now) ? p!.tier : 0);
 
+/** «لمحة» (a separate app, no accounts): its subscription products. The server only tells it whether the receipt is active. */
+export const LAMHA_PRODUCTS: ReadonlySet<string> = new Set(["lamha.monthly", "lamha.yearly"]);
+
 export interface ReceiptLine {
   product_id?: string;
   expires_date_ms?: string | number;
@@ -67,4 +70,10 @@ export async function verifyReceipt(receipt: string, secret: string, send: Post 
   if (r.status === 21007) r = await send("https://sandbox.itunes.apple.com/verifyReceipt", body);
   if (r.status !== 0) fail("receipt-invalid", { status: r.status ?? -1 }, "invalid-argument");
   return r.latest_receipt_info ?? [];
+}
+
+/** When a «لمحة» subscription in the receipt ends (the latest one), or null when the receipt has none. */
+export function lamhaUntil(lines: ReceiptLine[]): number | null {
+  const ends = lines.filter((l) => l.product_id && LAMHA_PRODUCTS.has(l.product_id)).map((l) => Number(l.expires_date_ms) || 0);
+  return ends.length ? Math.max(...ends) : null;
 }

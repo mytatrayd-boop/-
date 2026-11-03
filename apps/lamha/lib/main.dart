@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'l10n/app_localizations.dart';
+import 'src/app/paywall.dart';
 import 'src/app/providers.dart';
 import 'src/app/qibla_screen.dart';
 import 'src/app/services.dart';
@@ -71,7 +72,7 @@ class _LamhaAppState extends ConsumerState<LamhaApp> {
         fontFamily: 'Tajawal',
         colorSchemeSeed: const Color(0xFFD6AA5C),
       ),
-      home: const SettingsScreen(),
+      home: const AccessGate(child: SettingsScreen()),
     );
   }
 }
