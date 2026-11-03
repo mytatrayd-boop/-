@@ -7,6 +7,7 @@ import {
   REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, isManualPrayerTitle, cleanCoord, canToggleShare, distanceMeters, tripLive, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
+import { FamilyPlan, FREE_MEMBERS, LEGACY_BEFORE, bestFromReceipt, memberLimit, verifyReceipt } from "./plan";
 import { credRef } from "./passwords";
 import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId, prayerPoints } from "./prayer";
 
@@ -185,6 +186,12 @@ const ops: Record<string, Handler> = {
     const name = str(c.data.name, 40);
     const email = normalizeEmail(c.data.email);
     if (!name || !EMAIL_RE.test(email)) fail("bad-name-email", {}, "invalid-argument");
+    // The plan limits the children (members); more need a bigger subscription tier.
+    if (role === "member") {
+      const [f, all] = await Promise.all([fam(c.fid).get(), getPeople(c.fid)]);
+      const limit = memberLimit(f.data()?.plan as FamilyPlan | undefined, Date.now());
+      if (all.filter((p) => p.role === "member").length >= limit) fail("member-limit", { limit });
+    }
     const ref = people(c.fid).doc();
     const idxRef = db.collection("emailIndex").doc(email);
     await db.runTransaction(async (tx) => {
@@ -198,6 +205,41 @@ const ops: Record<string, Handler> = {
     });
     await issueCode(email, inviteMail({ role }, c.famName, c.me.name));
     return { personId: ref.id };
+  },
+
+  // ---------- the family's plan (subscription / legacy)
+  /** The owner's app asks for the plan at start: families made before the paywall are marked "legacy" (they keep using the app). */
+  async syncPlan(c) {
+    need(c, "owner");
+    const snap = await fam(c.fid).get();
+    let plan = snap.data()?.plan as FamilyPlan | undefined;
+    const created = (snap.data()?.createdAt as Timestamp | undefined)?.toMillis?.();
+    if (!plan && created !== undefined && created < LEGACY_BEFORE) {
+      plan = { source: "legacy", tier: FREE_MEMBERS, until: null };
+      await fam(c.fid).update({ plan });
+    }
+    return { plan: plan ?? null };
+  },
+
+  /** The owner bought or restored a subscription: Apple's receipt is checked here, never trusted from the phone. */
+  async activatePlan(c) {
+    need(c, "owner");
+    const secret = process.env.APPLE_SHARED_SECRET;
+    if (!secret) fail("plan-unavailable");
+    const receipt = String(c.data.receipt ?? "");
+    if (receipt.length < 20 || receipt.length > 3_000_000) fail("receipt-invalid", {}, "invalid-argument");
+    const found = bestFromReceipt(await verifyReceipt(receipt, secret), Date.now());
+    if (!found) fail("receipt-invalid", {}, "invalid-argument");
+    const { otid, ...plan } = found;
+    const ownerRef = db.collection("planOwners").doc(otid);
+    await db.runTransaction(async (tx) => {
+      const o = (await tx.get(ownerRef)).data();
+      // A subscription belongs to one family while it lasts.
+      if (o && o.fid !== c.fid && Number(o.until) > Date.now()) fail("plan-used");
+      tx.set(ownerRef, { fid: c.fid, until: plan.until });
+      tx.update(fam(c.fid), { plan });
+    });
+    return { plan };
   },
 
   async resendInvite(c) {

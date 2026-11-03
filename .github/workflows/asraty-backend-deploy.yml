@@ -63,7 +63,10 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          APPLE_SHARED_SECRET: ${{ secrets.APPLE_SHARED_SECRET }}
         run: |
+          # Apple's app-specific shared secret checks subscription receipts (optional until the paywall goes live).
+          extra=(); [ -n "$APPLE_SHARED_SECRET" ] && extra=(-e APPLE_SHARED_SECRET="$APPLE_SHARED_SECRET")
           VC="npx -y vercel@latest"
           $VC link --yes --project "$SITE_NAME" --token "$VERCEL_TOKEN"
           $VC deploy --prod --yes --token "$VERCEL_TOKEN" \
@@ -72,6 +75,7 @@ jobs:
             -e FIREBASE_PRIVATE_KEY="$PRIVATE_KEY" \
             -e GMAIL_USER="$GMAIL_USER" \
             -e GMAIL_APP_PASSWORD="$GMAIL_APP_PASSWORD" \
+            "${extra[@]}" \
             -e SUPPORT_EMAIL="asraty200@gmail.com" > "$RUNNER_TEMP/url.txt"
           echo "Deployment: $(cat "$RUNNER_TEMP/url.txt")"
           # Stable production domain of the project (e.g. https://asraty-owner.vercel.app).
@@ -97,8 +101,10 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          APPLE_SHARED_SECRET: ${{ secrets.APPLE_SHARED_SECRET }}
         run: |
           NL="npx -y netlify-cli@latest"
+          [ -n "$APPLE_SHARED_SECRET" ] && $NL env:set APPLE_SHARED_SECRET "$APPLE_SHARED_SECRET" --force >/dev/null
           $NL env:set FIREBASE_PROJECT_ID "$PROJECT_ID" --force >/dev/null
           $NL env:set FIREBASE_CLIENT_EMAIL "$CLIENT_EMAIL" --force >/dev/null
           $NL env:set FIREBASE_PRIVATE_KEY "$PRIVATE_KEY" --force >/dev/null

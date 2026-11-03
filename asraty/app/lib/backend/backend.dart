@@ -135,6 +135,12 @@ abstract class Backend {
   /// Alerts the whole family, with the sender's place when known.
   Future<void> tripSos({double? lat, double? lng});
 
+  // ---- plan (subscription)
+  /// Marks a family made before the paywall as legacy (the owner's app asks once at start).
+  Future<void> syncPlan();
+  /// The owner bought or restored a subscription: the server checks Apple's receipt and records the tier.
+  Future<void> activatePlan(String receipt);
+
   // ---- account
   Future<void> deleteAccount();
   Future<void> deleteFamily();

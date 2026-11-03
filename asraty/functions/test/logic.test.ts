@@ -169,3 +169,45 @@ test("trip: distance, coordinates, live window and sharing permission", () => {
   assert.equal(canToggleShare(kid, kid), false);
   assert.equal(cleanPerms({ trip: true }).trip, true);
 });
+
+test("plan: members limit by tier; an ended subscription falls back to the free five", async () => {
+  const { memberLimit, planActive, FREE_MEMBERS } = await import("../src/plan");
+  const now = Date.UTC(2026, 11, 1);
+  assert.equal(memberLimit(undefined, now), FREE_MEMBERS);
+  assert.equal(memberLimit({ source: "apple", tier: 10, until: now + 1000 }, now), 10);
+  assert.equal(memberLimit({ source: "apple", tier: 20, until: now + 1000 }, now), 20);
+  assert.equal(memberLimit({ source: "apple", tier: 20, until: now - 1000 }, now), FREE_MEMBERS, "ended");
+  assert.equal(memberLimit({ source: "legacy", tier: 5, until: null }, now), 5);
+  assert.equal(planActive({ source: "legacy", tier: 5, until: null }, now), true);
+  assert.equal(planActive(undefined, now), false);
+});
+
+test("plan: the receipt's best subscription counts (biggest active tier, else the last one that ended)", async () => {
+  const { bestFromReceipt } = await import("../src/plan");
+  const now = 1_000_000;
+  const lines = [
+    { product_id: "asraty.monthly", expires_date_ms: String(now + 5000), original_transaction_id: "A" },
+    { product_id: "asraty.m10", expires_date_ms: String(now + 100), original_transaction_id: "A" },
+    { product_id: "other.app", expires_date_ms: String(now + 9999), original_transaction_id: "A" },
+  ];
+  const best = bestFromReceipt(lines, now)!;
+  assert.equal(best.tier, 10, "the bigger active tier wins");
+  assert.equal(best.otid, "A");
+  const ended = bestFromReceipt([{ product_id: "asraty.y20", expires_date_ms: String(now - 10), original_transaction_id: "B" }], now)!;
+  assert.equal(ended.until, now - 10);
+  assert.equal(bestFromReceipt([{ product_id: "unknown", expires_date_ms: "1", original_transaction_id: "C" }], now), null);
+});
+
+test("plan: Apple is asked in production first, then in the sandbox for a TestFlight receipt", async () => {
+  const { verifyReceipt } = await import("../src/plan");
+  const urls: string[] = [];
+  const lines = [{ product_id: "asraty.monthly", expires_date_ms: "5", original_transaction_id: "A" }];
+  const out = await verifyReceipt("x".repeat(30), "secret", async (url) => {
+    urls.push(url);
+    return url.includes("sandbox") ? { status: 0, latest_receipt_info: lines } : { status: 21007 };
+  });
+  assert.deepEqual(out, lines);
+  assert.equal(urls.length, 2);
+  assert.match(urls[1], /sandbox/);
+  await assert.rejects(verifyReceipt("x".repeat(30), "secret", async () => ({ status: 21003 })), (e: { code?: string }) => e.code === "receipt-invalid");
+});

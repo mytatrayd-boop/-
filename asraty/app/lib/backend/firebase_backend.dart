@@ -55,6 +55,7 @@ class FirebaseBackend extends Backend {
   List<Violation> _violations = [];
   DateTime? _cycleStartedAt;
   TripState? _trip;
+  FamilyPlan? _plan;
   List<SavedPlace> _places = [];
   Map<String, MemberLoc> _locations = {};
 
@@ -120,6 +121,7 @@ class FirebaseBackend extends Backend {
     _trip = null;
     _locations = {};
     _places = [];
+    _plan = null;
   }
 
   void _listen(Session s) {
@@ -140,6 +142,10 @@ class FirebaseBackend extends Backend {
       final p = d.data()?['prayer'];
       _prayer = p is Map && p['lat'] is num && p['lng'] is num
           ? PrayerSettings(enabled: p['enabled'] != false, lat: (p['lat'] as num).toDouble(), lng: (p['lng'] as num).toDouble(), points: _int(p['points']))
+          : null;
+      final pl = d.data()?['plan'];
+      _plan = pl is Map && pl['tier'] is num
+          ? FamilyPlan(source: pl['source'] as String? ?? 'apple', tier: (pl['tier'] as num).toInt(), until: pl['until'] is num ? DateTime.fromMillisecondsSinceEpoch((pl['until'] as num).toInt()) : null)
           : null;
       if (!d.exists) _auth.signOut();
     });
@@ -289,7 +295,7 @@ class FirebaseBackend extends Backend {
       data: FamilySnapshot(
         familyName: _famName!, people: _people!, tasks: _tasks, completions: _completions, competitions: _comps,
         notices: _notices, daily: _daily, weekly: _weekly, monthly: _monthly, yearly: _yearly, goals: _goals,
-        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt, trip: _trip, locations: _locations, places: _places),
+        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt, trip: _trip, locations: _locations, places: _places, plan: _plan),
     ));
   }
 
@@ -482,6 +488,13 @@ class FirebaseBackend extends Backend {
 
   @override
   Future<void> tripSos({double? lat, double? lng}) => _op('tripSos', {'lat': ?lat, 'lng': ?lng});
+
+  // ---------------------------------------------------------------- plan
+  @override
+  Future<void> syncPlan() => _op('syncPlan');
+
+  @override
+  Future<void> activatePlan(String receipt) => _op('activatePlan', {'receipt': receipt});
 
   // ---------------------------------------------------------------- cycles & violations
   @override

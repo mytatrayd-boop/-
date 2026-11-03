@@ -1790,4 +1790,31 @@ class L10nAr extends L10n {
 
   @override
   String get prayerLegacy => 'مهمة صلاة يدوية قديمة، مخفية عن الفرد (الصلاة آلية). احذفها';
+
+  @override
+  String get planTierUpTo => 'حتى';
+
+  @override
+  String get planTierMembers => 'أفراد';
+
+  @override
+  String get memberLimitReached => 'وصلت إلى الحد الأقصى لأفراد أسرتك';
+
+  @override
+  String get upgradePlan => 'ترقية الاشتراك';
+
+  @override
+  String get planChecking => 'جارٍ التحقق من اشتراكك…';
+
+  @override
+  String get errMemberLimit => 'وصلت إلى الحد الأقصى لأفراد الأسرة. رقِّ اشتراكك لإضافة المزيد.';
+
+  @override
+  String get errPlanUnavailable => 'تعذّر التحقق من الاشتراك الآن. حاول لاحقاً، فلن يضيع اشتراكك.';
+
+  @override
+  String get errPlanUsed => 'هذا الاشتراك مرتبط بأسرة أخرى.';
+
+  @override
+  String get errReceiptInvalid => 'تعذّر التحقق من إيصال الاشتراك.';
 }
