@@ -670,6 +670,22 @@ const ops: Record<string, Handler> = {
     return {};
   },
 
+  /** Clears every alert of the family (the owner's list and the members' inboxes), in batches. */
+  async deleteAllAlerts(c) {
+    need(c, "owner");
+    const coll = fam(c.fid).collection("notifications");
+    let n = 0;
+    for (;;) {
+      const snap = await coll.limit(400).get();
+      if (snap.empty) break;
+      const b = db.batch();
+      snap.docs.forEach((d) => b.delete(d.ref));
+      await b.commit();
+      n += snap.size;
+    }
+    return { deleted: n };
+  },
+
   async sendReport(c) {
     need(c, "report");
     const all = await getPeople(c.fid);

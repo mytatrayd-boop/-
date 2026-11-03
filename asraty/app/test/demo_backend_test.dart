@@ -132,6 +132,17 @@ void main() {
     expect(d.notices.where((n) => n.to == lama.id), isEmpty);
   });
 
+  test('the owner clears every alert at once; a member cannot', () async {
+    final b = DemoBackend(clock: () => clock);
+    await b.sendAlert('all', 'أ');
+    await b.sendAlert('all', 'ب');
+    expect(b.current.data!.notices.length, greaterThanOrEqualTo(2));
+    await b.deleteAllAlerts();
+    expect(b.current.data!.notices, isEmpty);
+    await login(b, 'aseel@demo.sa', Role.member);
+    await expectLater(b.deleteAllAlerts(), throwsA(isA<AppError>()));
+  });
+
   test('one-time tasks, for one member or everyone, stay done once approved', () async {
     var now = clock;
     final b = DemoBackend(clock: () => now);

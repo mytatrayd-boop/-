@@ -752,6 +752,17 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
       ]),
       H3(t.lastSent),
       if (d.notices.isEmpty) EmptyState('🔔', t.noAlerts),
+      // They pile up (the server keeps 60 days): the owner clears them all at once, after a confirmation.
+      if (d.notices.isNotEmpty) ...[
+        Muted(t.alertsCount(d.notices.length)),
+        const SizedBox(height: 6),
+        Btn(t.deleteAllAlerts, kind: BtnKind.no, icon: Icons.delete_sweep_outlined, expand: true, onPressed: () async {
+          if (await confirm(context, t.deleteAllAlertsConfirm, ok: t.deleteAllAlerts, danger: true) && context.mounted) {
+            await run(context, ref.read(backendProvider).deleteAllAlerts, ok: t.allAlertsDeleted);
+          }
+        }),
+        const SizedBox(height: 8),
+      ],
       for (final n in d.notices.take(8))
         OutlineCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

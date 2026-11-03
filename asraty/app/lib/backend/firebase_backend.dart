@@ -457,6 +457,9 @@ class FirebaseBackend extends Backend {
   @override
   Future<void> deleteAlert(String noticeId) => _op('deleteAlert', {'noticeId': noticeId});
 
+  @override
+  Future<void> deleteAllAlerts() => _op('deleteAllAlerts');
+
   // ---------------------------------------------------------------- family trip
   @override
   Future<void> tripStart({int hours = 12, int farMeters = 300}) => _op('tripStart', {'hours': hours, 'farMeters': farMeters});

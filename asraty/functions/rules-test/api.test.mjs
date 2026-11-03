@@ -409,6 +409,18 @@ test("plan: five members are free, more need a bigger subscription tier; adults 
   assert.equal(synced.plan?.source ?? "none", (await db.doc(`families/${fid}`).get()).data().createdAt.toMillis() < Date.UTC(2026, 10, 4) ? "legacy" : "none");
 });
 
+test("the owner can clear every alert at once; nobody else", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  await call("api", { op: "sendAlert", to: "all", body: "تنبيه ١" }, owner.idToken);
+  await call("api", { op: "sendAlert", to: "all", body: "تنبيه ٢" }, owner.idToken);
+  assert.ok((await db.collection(`families/${fid}/notifications`).get()).size >= 2);
+  await rejects(call("api", { op: "deleteAllAlerts" }, kid.idToken), "no-permission");
+  const r = await call("api", { op: "deleteAllAlerts" }, owner.idToken);
+  assert.ok(r.deleted >= 2);
+  assert.equal((await db.collection(`families/${fid}/notifications`).get()).size, 0);
+});
+
 test("owner deletes the whole family", async () => {
   await call("api", { op: "deleteFamily" }, owner.idToken);
   assert.equal((await db.doc(`families/${fid}`).get()).exists, false);

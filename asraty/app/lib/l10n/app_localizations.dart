@@ -3416,6 +3416,30 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'تعذّر التحقق من إيصال الاشتراك.'**
   String get errReceiptInvalid;
+
+  /// No description provided for @deleteAllAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف جميع التنبيهات'**
+  String get deleteAllAlerts;
+
+  /// No description provided for @deleteAllAlertsConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُحذف كل تنبيه أُرسل للأسرة ويختفي من عند الجميع. هل أنت متأكد؟'**
+  String get deleteAllAlertsConfirm;
+
+  /// No description provided for @allAlertsDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت جميع التنبيهات ✓'**
+  String get allAlertsDeleted;
+
+  /// No description provided for @alertsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد التنبيهات المحفوظة: {n}'**
+  String alertsCount(int n);
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {
