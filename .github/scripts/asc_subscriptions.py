@@ -96,8 +96,14 @@ def ensure(sub: dict, spec: dict, mode: str):
     print(f"[{pid}] prices set: {len(existing)}; SAR {want} available: {want in points}")
     if not existing:
         if want not in points:
-            print(f"::error::[{pid}] SAR {want} is not a price point. Nearest: {nearest(points, float(want))}")
-            return False
+            # The owner's rule: when the exact price does not exist, take the nearest price above it.
+            above = sorted((p for p in points if float(p) > float(want)), key=float)
+            print(f"[{pid}] SAR {want} is not a price point. Nearest: {nearest(points, float(want))}")
+            if not above:
+                print(f"::error::[{pid}] no price point above SAR {want}")
+                return False
+            want = above[0]
+            print(f"[{pid}] using the nearest price above: SAR {want}")
         if mode == "apply":
             base = points[want]
             eq = pages(f"/subscriptionPricePoints/{base['id']}/equalizations?limit=200&include=territory")
