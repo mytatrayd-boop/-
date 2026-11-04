@@ -55,12 +55,24 @@ def find_app(bundle_id: str) -> dict:
     return apps[0]
 
 
-def find_group(app_id: str, name: str) -> dict:
+def find_group(app_id: str, name: str, display: str, mode: str) -> dict:
     groups = api("GET", f"/apps/{app_id}/subscriptionGroups?limit=200")["data"]
     for g in groups:
         if g["attributes"]["referenceName"] == name:
             return g
-    sys.exit(f"::error::Subscription group '{name}' not found; have: {[g['attributes']['referenceName'] for g in groups]}")
+    have = [g["attributes"]["referenceName"] for g in groups]
+    if mode != "apply" or not display:
+        sys.exit(f"::error::Subscription group '{name}' not found; have: {have}")
+    g = post("/subscriptionGroups", {"data": {
+        "type": "subscriptionGroups", "attributes": {"referenceName": name},
+        "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}}, f"create group {name}")
+    post("/subscriptionGroupLocalizations", {"data": {
+        "type": "subscriptionGroupLocalizations",
+        "attributes": {"locale": "ar-SA", "name": display},
+        "relationships": {"subscriptionGroup": {"data": {"type": "subscriptionGroups", "id": g["id"]}}}}},
+        f"group text {name}")
+    print(f"group '{name}' created with Arabic name '{display}' (was: {have})")
+    return g
 
 
 def sau_points(sub_id: str) -> dict:
@@ -156,7 +168,7 @@ def ensure(sub: dict, spec: dict, mode: str):
 def main(mode: str):
     spec = json.loads(pathlib.Path(os.environ["SPEC_FILE"]).read_text())
     app = find_app(spec["bundleId"])
-    group = find_group(app["id"], spec["group"])
+    group = find_group(app["id"], spec["group"], spec.get("groupDisplayName", ""), mode)
     print(f"app {app['id']} ({app['attributes'].get('name')}), group {group['id']}")
     subs = {s["attributes"]["productId"]: s
             for s in pages(f"/subscriptionGroups/{group['id']}/subscriptions?limit=200")}
