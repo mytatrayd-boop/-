@@ -122,13 +122,22 @@ def ensure(sub: dict, spec: dict, mode: str):
     # 7-day free trial
     offers = pages(f"/subscriptions/{sid}/introductoryOffers?limit=200")
     print(f"[{pid}] intro offers: {len(offers)}")
-    if not offers and mode == "apply":
-        post("/subscriptionIntroductoryOffers", {"data": {
-            "type": "subscriptionIntroductoryOffers",
-            "attributes": {"duration": "ONE_WEEK", "offerMode": "FREE_TRIAL", "numberOfPeriods": 1},
-            "relationships": {"subscription": {"data": {"type": "subscriptions", "id": sid}}}}},
-            f"intro offer {pid}")
-        print(f"[{pid}] free trial created")
+    if mode == "apply" and len(offers) < 170:
+        # Apple wants one offer per territory (a product that already has ~all of them is left alone).
+        done ={((o.get("relationships") or {}).get("territory") or {}).get("data", {}).get("id") for o in offers}
+        made = 0
+        for t in pages("/territories?limit=200"):
+            if t["id"] in done:
+                continue
+            post("/subscriptionIntroductoryOffers", {"data": {
+                "type": "subscriptionIntroductoryOffers",
+                "attributes": {"duration": "ONE_WEEK", "offerMode": "FREE_TRIAL", "numberOfPeriods": 1},
+                "relationships": {
+                    "subscription": {"data": {"type": "subscriptions", "id": sid}},
+                    "territory": {"data": {"type": "territories", "id": t["id"]}}}}},
+                f"intro offer {pid}/{t['id']}")
+            made += 1
+        print(f"[{pid}] free trial created in {made} territories")
 
     # Arabic text
     locs = pages(f"/subscriptions/{sid}/subscriptionLocalizations?limit=200")
