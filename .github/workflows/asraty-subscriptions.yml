@@ -5,6 +5,11 @@ name: Asraty — App Store subscriptions
 on:
   workflow_dispatch:
     inputs:
+      app:
+        description: "which app's products"
+        type: choice
+        options: [asraty, lamha]
+        default: asraty
       mode:
         description: "inspect = read only, apply = create what is missing"
         type: choice
@@ -21,7 +26,7 @@ jobs:
           KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
-          SPEC_FILE: .github/scripts/asraty_subscriptions.json
+          SPEC_FILE: .github/scripts/${{ inputs.app }}_subscriptions.json
         run: |
           for v in KEY ASC_KEY_ID ASC_ISSUER_ID; do [ -n "${!v}" ] || { echo "::error::Missing secret for $v"; exit 1; }; done
           umask 077
