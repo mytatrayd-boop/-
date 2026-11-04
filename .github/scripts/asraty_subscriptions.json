@@ -1,0 +1,18 @@
+{
+  "bundleId": "sa.asraty.app",
+  "group": "Asraty",
+  "products": [
+    {"productId": "asraty.monthly", "referenceName": "Asraty Monthly 5", "period": "ONE_MONTH", "level": 3, "price": "12.99",
+     "name": "أسرتي — حتى ٥ أفراد (شهري)", "description": "اشتراك شهري لإدارة مهام أسرتك ومكافآتها لحد ٥ أبناء."},
+    {"productId": "asraty.yearly", "referenceName": "Asraty Yearly 5", "period": "ONE_YEAR", "level": 3, "price": "79.99",
+     "name": "أسرتي — حتى ٥ أفراد (سنوي)", "description": "اشتراك سنوي لإدارة مهام أسرتك ومكافآتها لحد ٥ أبناء."},
+    {"productId": "asraty.m10", "referenceName": "Asraty Monthly 10", "period": "ONE_MONTH", "level": 2, "price": "19.99",
+     "name": "أسرتي — حتى ١٠ أفراد (شهري)", "description": "اشتراك شهري لإدارة مهام أسرتك ومكافآتها لحد ١٠ أبناء."},
+    {"productId": "asraty.y10", "referenceName": "Asraty Yearly 10", "period": "ONE_YEAR", "level": 2, "price": "129.99",
+     "name": "أسرتي — حتى ١٠ أفراد (سنوي)", "description": "اشتراك سنوي لإدارة مهام أسرتك ومكافآتها لحد ١٠ أبناء."},
+    {"productId": "asraty.m20", "referenceName": "Asraty Monthly 20", "period": "ONE_MONTH", "level": 1, "price": "29.99",
+     "name": "أسرتي — حتى ٢٠ فردًا (شهري)", "description": "اشتراك شهري لإدارة مهام أسرتك ومكافآتها لحد ٢٠ ابنًا."},
+    {"productId": "asraty.y20", "referenceName": "Asraty Yearly 20", "period": "ONE_YEAR", "level": 1, "price": "179.99",
+     "name": "أسرتي — حتى ٢٠ فردًا (سنوي)", "description": "اشتراك سنوي لإدارة مهام أسرتك ومكافآتها لحد ٢٠ ابنًا."}
+  ]
+}
