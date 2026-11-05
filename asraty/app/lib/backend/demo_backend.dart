@@ -737,7 +737,7 @@ class DemoBackend extends Backend {
   Future<void> syncPlan() async {}
 
   @override
-  Future<void> activatePlan(String receipt) async {}
+  Future<void> activatePlan(String receipt, {String platform = 'ios'}) async {}
 
   @override
   Future<void> tripSos({double? lat, double? lng}) async {

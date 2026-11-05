@@ -32,7 +32,9 @@
 5. اختبر في TestFlight بحساب Sandbox (Users and Access ← Sandbox).
 
 ## البناء
-بناء آيفون (`asraty-ios.yml`) يفعّل `PAYWALL=true`. أندرويد بلا بوابة حاليًا (يلزم Google Play Billing لاحقًا). المسؤول القديم يُعلَّم «legacy» تلقائيًا عند أول فتح بعد التحديث فلا تظهر له الشاشة.
+بناء آيفون (`asraty-ios.yml`) يفعّل `PAYWALL=true`.
+
+**أندرويد (Google Play Billing):** الكود جاهز، والبوابة **مغلقة افتراضيًا**. تُفتح بتشغيل «Asraty — Android» مع `paywall=true`، ولا تُفتح قبل أن تُنشأ المنتجات الستة (بالمعرّفات نفسها) في Play Console ← Monetize ← Subscriptions، ويُفعَّل لها عرض تجربة مجانية ٧ أيام. التطبيق يرسل **رمز الشراء** (`platform=android`) إلى `activatePlan`، والخادم يسأل Google (`purchases.subscriptionsv2`) بحساب الخدمة `PLAY_SERVICE_ACCOUNT_JSON` (يمرّره workflow النشر للخادم باسم `GOOGLE_PLAY_SA_B64`). يلزم أن يملك حساب الخدمة في Play Console صلاحية «عرض البيانات المالية والطلبات»، وأن يكون Google Play Android Developer API مفعّلًا في مشروع Google Cloud المرتبط، وإلا يردّ الخادم `plan-unavailable`. المسؤول القديم يُعلَّم «legacy» تلقائيًا عند أول فتح بعد التحديث فلا تظهر له الشاشة.
 
 ## لمحة (تطبيق مستقل، بلا حسابات)
 - منتجان: `lamha.monthly` و`lamha.yearly` (تجربة ٧ أيام). مجموعة اشتراك منفصلة داخل تطبيق «لمحة» في App Store Connect.

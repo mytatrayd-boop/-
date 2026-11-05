@@ -7,7 +7,7 @@ import {
   REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, isManualPrayerTitle, cleanCoord, canToggleShare, distanceMeters, tripLive, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
-import { FamilyPlan, FREE_MEMBERS, LEGACY_BEFORE, bestFromReceipt, memberLimit, verifyReceipt } from "./plan";
+import { FamilyPlan, FoundPlan, FREE_MEMBERS, LEGACY_BEFORE, bestFromReceipt, memberLimit, planFromPlay, verifyPlayPurchase, verifyReceipt } from "./plan";
 import { credRef } from "./passwords";
 import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId, prayerPoints } from "./prayer";
 
@@ -221,14 +221,21 @@ const ops: Record<string, Handler> = {
     return { plan: plan ?? null };
   },
 
-  /** The owner bought or restored a subscription: Apple's receipt is checked here, never trusted from the phone. */
+  /** The owner bought or restored a subscription: the store's receipt / purchase token is checked here, never trusted from the phone. */
   async activatePlan(c) {
     need(c, "owner");
-    const secret = process.env.APPLE_SHARED_SECRET;
-    if (!secret) fail("plan-unavailable");
     const receipt = String(c.data.receipt ?? "");
     if (receipt.length < 20 || receipt.length > 3_000_000) fail("receipt-invalid", {}, "invalid-argument");
-    const found = bestFromReceipt(await verifyReceipt(receipt, secret), Date.now());
+    let found: FoundPlan | null;
+    if (c.data.platform === "android") {
+      const sa = process.env.GOOGLE_PLAY_SA_B64;
+      if (!sa) fail("plan-unavailable");
+      found = planFromPlay(receipt, await verifyPlayPurchase(receipt, Buffer.from(sa, "base64").toString("utf8")), Date.now());
+    } else {
+      const secret = process.env.APPLE_SHARED_SECRET;
+      if (!secret) fail("plan-unavailable");
+      found = bestFromReceipt(await verifyReceipt(receipt, secret), Date.now());
+    }
     if (!found) fail("receipt-invalid", {}, "invalid-argument");
     const { otid, ...plan } = found;
     const ownerRef = db.collection("planOwners").doc(otid);

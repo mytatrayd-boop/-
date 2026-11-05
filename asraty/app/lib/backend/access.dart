@@ -16,7 +16,7 @@ import '../core/models.dart';
 /// The subscription is one group with three levels by the number of members: up to 5, 10 or 20.
 /// The server checks Apple's receipt and records the tier on the family (functions/src/plan.ts).
 ///
-/// The gate is off unless the build sets `--dart-define=PAYWALL=true` (iPhone only).
+/// The gate is off unless the build sets `--dart-define=PAYWALL=true` (iPhone and Android).
 class Access {
   static const paywallEnabled = bool.fromEnvironment('PAYWALL');
 
@@ -33,8 +33,9 @@ class Access {
   static const _store = FlutterSecureStorage();
   static const _channel = MethodChannel('asraty/device');
 
-  /// The subscription gate applies on iPhone builds that turned it on.
-  static bool get gated => debugGated ?? (paywallEnabled && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS);
+  /// The subscription gate applies on iPhone and Android builds that turned it on.
+  static bool get gated =>
+      debugGated ?? (paywallEnabled && !kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android));
 
   /// Tests turn the gate on or off.
   @visibleForTesting
@@ -132,7 +133,7 @@ class Store {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
           try {
-            // The server checks the receipt with Apple. If it cannot now, the purchase stays open and
+            // The server checks the receipt (App Store) or purchase token (Google Play). If it cannot now, the purchase stays open and
             // arrives again at the next launch (so a paid subscription is never lost).
             await sink(p.productID, p.verificationData.serverVerificationData);
             error = null;
