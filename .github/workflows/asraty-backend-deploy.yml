@@ -64,9 +64,11 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           APPLE_SHARED_SECRET: ${{ secrets.APPLE_SHARED_SECRET }}
+          PLAY_SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
-          # Apple's app-specific shared secret checks subscription receipts (optional until the paywall goes live).
+          # Apple's shared secret checks iPhone receipts; the Play service account checks Android purchases (both optional until the paywall goes live).
           extra=(); [ -n "$APPLE_SHARED_SECRET" ] && extra=(-e APPLE_SHARED_SECRET="$APPLE_SHARED_SECRET")
+          [ -n "$PLAY_SA" ] && extra+=(-e GOOGLE_PLAY_SA_B64="$(printf '%s' "$PLAY_SA" | base64 -w0)")
           VC="npx -y vercel@latest"
           $VC link --yes --project "$SITE_NAME" --token "$VERCEL_TOKEN"
           $VC deploy --prod --yes --token "$VERCEL_TOKEN" \
@@ -102,9 +104,11 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           APPLE_SHARED_SECRET: ${{ secrets.APPLE_SHARED_SECRET }}
+          PLAY_SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           NL="npx -y netlify-cli@latest"
           [ -n "$APPLE_SHARED_SECRET" ] && $NL env:set APPLE_SHARED_SECRET "$APPLE_SHARED_SECRET" --force >/dev/null
+          [ -n "$PLAY_SA" ] && $NL env:set GOOGLE_PLAY_SA_B64 "$(printf '%s' "$PLAY_SA" | base64 -w0)" --force >/dev/null
           $NL env:set FIREBASE_PROJECT_ID "$PROJECT_ID" --force >/dev/null
           $NL env:set FIREBASE_CLIENT_EMAIL "$CLIENT_EMAIL" --force >/dev/null
           $NL env:set FIREBASE_PRIVATE_KEY "$PRIVATE_KEY" --force >/dev/null

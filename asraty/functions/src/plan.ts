@@ -1,7 +1,9 @@
 // The family's plan: the app is free to download; the family admin (owner) subscribes, or uses a free
 // activation code. The plan sets how many members the family may have (children; adults are not counted).
-// Apple is the only source of truth for a subscription: the owner's app sends the App Store receipt,
-// the server checks it with Apple (needs APPLE_SHARED_SECRET) and records the tier on the family.
+// The store is the only source of truth for a subscription: the owner's app sends the App Store receipt
+// (iPhone) or the Google Play purchase token (Android), the server checks it with Apple (needs
+// APPLE_SHARED_SECRET) or Google (needs GOOGLE_PLAY_SA_B64) and records the tier on the family.
+import { createHash, createSign } from "node:crypto";
 import { fail } from "./db";
 
 /** Members every family may have, subscribed or using a free code. */
@@ -21,7 +23,7 @@ export const PLAN_PRODUCTS: Readonly<Record<string, number>> = {
 export const LEGACY_BEFORE = Date.UTC(2026, 10, 4);
 
 export interface FamilyPlan {
-  source: "apple" | "legacy";
+  source: "apple" | "google" | "legacy";
   tier: number;
   /** Epoch ms the subscription ends; null for legacy families. */
   until: number | null;
@@ -43,9 +45,9 @@ export interface ReceiptLine {
 }
 
 export interface FoundPlan extends FamilyPlan {
-  source: "apple";
+  source: "apple" | "google";
   productId: string;
-  /** Apple's original transaction id: one subscription belongs to one family at a time. */
+  /** The store's id of the subscription (Apple's original transaction id, or a hash of Google's token): one subscription belongs to one family at a time. */
   otid: string;
 }
 
@@ -76,4 +78,62 @@ export async function verifyReceipt(receipt: string, secret: string, send: Post 
 export function lamhaUntil(lines: ReceiptLine[]): number | null {
   const ends = lines.filter((l) => l.product_id && LAMHA_PRODUCTS.has(l.product_id)).map((l) => Number(l.expires_date_ms) || 0);
   return ends.length ? Math.max(...ends) : null;
+}
+
+// ---------------------------------------------------------------- Google Play (Android)
+
+/** The Android application id (Play package name). */
+export const ANDROID_PACKAGE = "sa.asraty.app";
+
+export interface PlaySubscription {
+  subscriptionState?: string;
+  lineItems?: { productId?: string; expiryTime?: string }[];
+}
+
+/**
+ * The plan a Google Play subscription gives. ACTIVE, IN_GRACE_PERIOD and CANCELED (paid until it ends)
+ * count until the expiry; ON_HOLD, PAUSED and EXPIRED do not count any more.
+ */
+export function planFromPlay(token: string, sub: PlaySubscription, now: number): FoundPlan | null {
+  const counts = ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"].includes(sub.subscriptionState ?? "");
+  const known = (sub.lineItems ?? [])
+    .filter((l) => l.productId && PLAN_PRODUCTS[l.productId] && l.expiryTime)
+    .map((l) => {
+      const end = Date.parse(l.expiryTime!) || 0;
+      return { productId: l.productId!, tier: PLAN_PRODUCTS[l.productId!], until: counts ? end : Math.min(end, now) };
+    });
+  const best = known.filter((x) => x.until > now).sort((a, b) => b.tier - a.tier || b.until - a.until)[0] ?? known.sort((a, b) => b.until - a.until)[0];
+  return best ? { source: "google", ...best, otid: "g:" + createHash("sha256").update(token).digest("hex").slice(0, 32) } : null;
+}
+
+export type Fetch = (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }) => Promise<{ status: number; json(): Promise<unknown> }>;
+
+const b64u = (b: Buffer | string) => Buffer.from(b).toString("base64url");
+
+/** An OAuth access token for the Play Developer API, from the service account JSON (signed JWT, no extra packages). */
+export async function googleAccessToken(serviceAccountJson: string, send: Fetch = fetch as unknown as Fetch, nowMs = Date.now()): Promise<string> {
+  const sa = JSON.parse(serviceAccountJson) as { client_email: string; private_key: string; token_uri?: string };
+  const aud = sa.token_uri ?? "https://oauth2.googleapis.com/token";
+  const iat = Math.floor(nowMs / 1000);
+  const input = `${b64u(JSON.stringify({ alg: "RS256", typ: "JWT" }))}.${b64u(JSON.stringify({ iss: sa.client_email, scope: "https://www.googleapis.com/auth/androidpublisher", aud, iat, exp: iat + 3000 }))}`;
+  const sig = createSign("RSA-SHA256").update(input).sign(sa.private_key);
+  const r = await send(aud, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=${encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer")}&assertion=${input}.${b64u(sig)}`,
+  });
+  const j = (await r.json()) as { access_token?: string };
+  if (!j.access_token) fail("plan-unavailable", { status: r.status });
+  return j.access_token;
+}
+
+/** Asks Google about a purchase token (subscriptionsv2). A token Google does not know is "receipt-invalid"; a refused call (no permission) is "plan-unavailable". */
+export async function verifyPlayPurchase(token: string, serviceAccountJson: string, send: Fetch = fetch as unknown as Fetch): Promise<PlaySubscription> {
+  const access = await googleAccessToken(serviceAccountJson, send);
+  const r = await send(`https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${ANDROID_PACKAGE}/purchases/subscriptionsv2/tokens/${encodeURIComponent(token)}`, {
+    headers: { Authorization: `Bearer ${access}` },
+  });
+  if (r.status === 401 || r.status === 403) fail("plan-unavailable", { status: r.status });
+  if (r.status !== 200) fail("receipt-invalid", { status: r.status }, "invalid-argument");
+  return (await r.json()) as PlaySubscription;
 }

@@ -141,7 +141,7 @@ abstract class Backend {
   /// Marks a family made before the paywall as legacy (the owner's app asks once at start).
   Future<void> syncPlan();
   /// The owner bought or restored a subscription: the server checks Apple's receipt and records the tier.
-  Future<void> activatePlan(String receipt);
+  Future<void> activatePlan(String receipt, {String platform = 'ios'});
 
   // ---- account
   Future<void> deleteAccount();

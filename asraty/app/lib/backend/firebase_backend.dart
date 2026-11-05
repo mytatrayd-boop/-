@@ -497,7 +497,7 @@ class FirebaseBackend extends Backend {
   Future<void> syncPlan() => _op('syncPlan');
 
   @override
-  Future<void> activatePlan(String receipt) => _op('activatePlan', {'receipt': receipt});
+  Future<void> activatePlan(String receipt, {String platform = 'ios'}) => _op('activatePlan', {'receipt': receipt, 'platform': platform});
 
   // ---------------------------------------------------------------- cycles & violations
   @override

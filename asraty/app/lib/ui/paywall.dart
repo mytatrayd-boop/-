@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,7 +21,7 @@ class AccessNotifier extends Notifier<int> {
   /// A bought or restored subscription: the server checks Apple's receipt and records the tier.
   Future<void> _sink(String productId, String receipt) async {
     try {
-      await ref.read(backendProvider).activatePlan(receipt);
+      await ref.read(backendProvider).activatePlan(receipt, platform: defaultTargetPlatform == TargetPlatform.android ? 'android' : 'ios');
     } on AppError catch (e) {
       throw StoreSinkError(e.code);
     }

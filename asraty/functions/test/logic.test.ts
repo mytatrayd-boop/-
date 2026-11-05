@@ -222,3 +222,43 @@ test("«لمحة»: the receipt's latest subscription end is reported, other app
     { product_id: "asraty.m10", expires_date_ms: "9999" },
   ]), 300);
 });
+
+test("plan: a Google Play subscription gives its tier until it ends (active, grace, canceled count; expired, on hold do not)", async () => {
+  const { planFromPlay } = await import("../src/plan");
+  const now = Date.UTC(2026, 11, 1);
+  const iso = (ms: number) => new Date(ms).toISOString();
+  const sub = (state: string, product = "asraty.m10", end = now + 86_400_000) => ({ subscriptionState: state, lineItems: [{ productId: product, expiryTime: iso(end) }] });
+  for (const st of ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"]) {
+    const p = planFromPlay("tok", sub(st), now)!;
+    assert.equal(p.tier, 10, st);
+    assert.equal(p.source, "google");
+    assert.equal(p.until, now + 86_400_000);
+  }
+  for (const st of ["SUBSCRIPTION_STATE_EXPIRED", "SUBSCRIPTION_STATE_ON_HOLD", "SUBSCRIPTION_STATE_PAUSED"]) {
+    assert.ok(planFromPlay("tok", sub(st), now)!.until! <= now, st + " is not active");
+  }
+  assert.equal(planFromPlay("tok", sub("SUBSCRIPTION_STATE_ACTIVE", "other.app"), now), null);
+  assert.equal(planFromPlay("a", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid, planFromPlay("a", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid, "stable id");
+  assert.notEqual(planFromPlay("a", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid, planFromPlay("b", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid);
+});
+
+test("plan: the Google access token request is a signed RS256 JWT, and Play's answers map to our errors", async () => {
+  const { generateKeyPairSync, createVerify } = await import("node:crypto");
+  const { googleAccessToken, verifyPlayPurchase } = await import("../src/plan");
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const sa = JSON.stringify({ client_email: "svc@x.iam.gserviceaccount.com", private_key: privateKey.export({ type: "pkcs8", format: "pem" }) });
+  let tokenBody = "";
+  const ok = async (url: string, init?: { body?: string }) => {
+    if (url.includes("oauth2")) { tokenBody = init?.body ?? ""; return { status: 200, json: async () => ({ access_token: "AT" }) }; }
+    return { status: 200, json: async () => ({ subscriptionState: "SUBSCRIPTION_STATE_ACTIVE" }) };
+  };
+  assert.equal(await googleAccessToken(sa, ok as never), "AT");
+  const jwt = decodeURIComponent(tokenBody.split("assertion=")[1]);
+  const [h, c, s] = jwt.split(".");
+  assert.equal(JSON.parse(Buffer.from(h, "base64url").toString()).alg, "RS256");
+  assert.equal(JSON.parse(Buffer.from(c, "base64url").toString()).iss, "svc@x.iam.gserviceaccount.com");
+  assert.ok(createVerify("RSA-SHA256").update(`${h}.${c}`).verify(publicKey, Buffer.from(s, "base64url")), "signature verifies");
+  const answer = (status: number) => async (url: string) => (url.includes("oauth2") ? { status: 200, json: async () => ({ access_token: "AT" }) } : { status, json: async () => ({}) });
+  await assert.rejects(verifyPlayPurchase("t", sa, answer(404) as never), /receipt-invalid/);
+  await assert.rejects(verifyPlayPurchase("t", sa, answer(403) as never), /plan-unavailable/);
+});
