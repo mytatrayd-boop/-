@@ -6,6 +6,7 @@ Idempotent: a product that already exists is reused and only the missing parts
 
   asc_subscriptions.py inspect   read only: app, groups, products, SAR price points
   asc_subscriptions.py apply     create what is missing
+  asc_subscriptions.py delete-stray   delete only the product ids listed in strayProductIds
 
 Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID (same as ios_signing.py), SPEC_FILE.
 Needs the API key role Admin or App Manager.
@@ -165,10 +166,33 @@ def ensure(sub: dict, spec: dict, mode: str):
     return True
 
 
+def delete_stray(spec: dict, group: dict):
+    """Delete only products named in spec["strayProductIds"] that are NOT among the wanted products."""
+    wanted = {p["productId"] for p in spec["products"]}
+    for pid in spec.get("strayProductIds", []):
+        if pid in wanted:
+            sys.exit(f"::error::refusing to delete {pid}: it is a wanted product")
+        subs = [s for s in pages(f"/subscriptionGroups/{group['id']}/subscriptions?limit=200")
+                if s["attributes"]["productId"] == pid]
+        if not subs:
+            print(f"[{pid}] not found, nothing to delete")
+            continue
+        sub = subs[0]
+        if sub["attributes"]["productId"] != pid:
+            sys.exit(f"::error::unexpected product id {sub['attributes']['productId']}")
+        status, res = request("DELETE", f"/subscriptions/{sub['id']}")
+        if status >= 300:
+            sys.exit(f"::error::delete {pid} -> {status}: {json.dumps(res, ensure_ascii=False)[:600]}")
+        print(f"[{pid}] deleted (id {sub['id']}, name {sub['attributes'].get('name')})")
+
+
 def main(mode: str):
     spec = json.loads(pathlib.Path(os.environ["SPEC_FILE"]).read_text())
     app = find_app(spec["bundleId"])
     group = find_group(app["id"], spec["group"], spec.get("groupDisplayName", ""), mode)
+    if mode == "delete-stray":
+        delete_stray(spec, group)
+        return
     print(f"app {app['id']} ({app['attributes'].get('name')}), group {group['id']}")
     subs = {s["attributes"]["productId"]: s
             for s in pages(f"/subscriptionGroups/{group['id']}/subscriptions?limit=200")}
@@ -194,7 +218,7 @@ def main(mode: str):
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] in (["inspect"], ["apply"]):
+    if sys.argv[1:] in (["inspect"], ["apply"], ["delete-stray"]):
         main(sys.argv[1])
     else:
         sys.exit(__doc__)

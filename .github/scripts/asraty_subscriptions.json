@@ -1,6 +1,7 @@
 {
   "bundleId": "sa.asraty.app",
   "group": "Asraty",
+  "strayProductIds": ["monthly"],
   "products": [
     {"productId": "asraty.monthly", "referenceName": "Asraty Monthly 5 (asraty.monthly)", "period": "ONE_MONTH", "level": 3, "price": "12.99",
      "name": "أسرتي — حتى ٥ أفراد (شهري)", "description": "اشتراك شهري لإدارة مهام أسرتك ومكافآتها لحد ٥ أبناء."},
