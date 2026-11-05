@@ -1,0 +1,26 @@
+name: Asraty — Google Play subscriptions
+
+# Creates the Asraty subscription products in Google Play with the Play service account
+# (PLAY_SERVICE_ACCOUNT_JSON; it needs "Manage orders and subscriptions" in Play Console).
+# "inspect" only reads; "apply" creates the missing products.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "inspect = read only, apply = create what is missing"
+        type: choice
+        options: [inspect, apply]
+        default: inspect
+
+jobs:
+  play:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run
+        env:
+          PLAY_SA_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          SPEC_FILE: .github/scripts/asraty_subscriptions.json
+        run: |
+          [ -n "$PLAY_SA_JSON" ] || { echo "::error::Missing secret PLAY_SERVICE_ACCOUNT_JSON"; exit 1; }
+          python3 -u .github/scripts/play_subscriptions.py "${{ inputs.mode }}"
