@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Add the newest processed build(s) of an app to its internal TestFlight group.
 
-  asc_testflight.py <bundle_id> [<group name>]
+  asc_testflight.py <bundle_id> [<group name>] [--auto]
 
 Prints the latest builds and their processing state, then adds the builds that are VALID
-(processed) and not yet in the internal group. Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID.
+(processed) and not yet in the internal group. With --auto the group also gets every future build
+automatically (hasAccessToAllBuilds). Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID.
 """
 import sys
 import pathlib
@@ -13,7 +14,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from ios_signing import api, request  # noqa: E402
 
 
-def main(bundle_id: str, group_name: str | None):
+def main(bundle_id: str, group_name: str | None, auto: bool = False):
     apps = api("GET", f"/apps?filter[bundleId]={bundle_id}")["data"]
     if not apps:
         sys.exit(f"::error::No app with bundle id {bundle_id}")
@@ -41,9 +42,16 @@ def main(bundle_id: str, group_name: str | None):
         print(f"added build {b['attributes']['version']} to group '{group['attributes']['name']}'")
     if not todo:
         print("nothing to add")
+    if auto:
+        status, res = request("PATCH", f"/betaGroups/{group['id']}", {"data": {
+            "type": "betaGroups", "id": group["id"], "attributes": {"hasAccessToAllBuilds": True}}})
+        if status >= 300:
+            sys.exit(f"::error::enable automatic distribution -> {status}: {str(res)[:500]}")
+        print(f"automatic distribution is ON for group '{group['attributes']['name']}'")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) not in (2, 3):
+    args = [a for a in sys.argv[1:] if a != "--auto"]
+    if not 1 <= len(args) <= 2:
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
+    main(args[0], args[1] if len(args) > 1 else None, "--auto" in sys.argv[1:])

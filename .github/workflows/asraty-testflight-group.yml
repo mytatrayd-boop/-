@@ -4,6 +4,11 @@ name: Asraty — add latest build to the internal TestFlight group
 # builds that are in their group) and prints the builds' processing state. Same secrets as asraty-ios.yml.
 on:
   workflow_dispatch:
+    inputs:
+      auto_distribution:
+        description: "Also turn on automatic distribution (every future build goes to the group)"
+        type: boolean
+        default: false
 
 jobs:
   group:
@@ -20,5 +25,5 @@ jobs:
           umask 077
           printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
           export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
-          python3 -u .github/scripts/asc_testflight.py sa.asraty.app
+          python3 -u .github/scripts/asc_testflight.py sa.asraty.app ${{ inputs.auto_distribution && '--auto' || '' }}
           rm -f "$RUNNER_TEMP/AuthKey.p8"
