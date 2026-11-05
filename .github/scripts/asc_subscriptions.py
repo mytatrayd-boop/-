@@ -6,6 +6,7 @@ Idempotent: a product that already exists is reused and only the missing parts
 
   asc_subscriptions.py inspect   read only: app, groups, products, SAR price points
   asc_subscriptions.py apply     create what is missing
+  asc_subscriptions.py reprice   change the price where it differs from the spec
   asc_subscriptions.py delete-stray   delete only the product ids listed in strayProductIds
 
 Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID (same as ios_signing.py), SPEC_FILE.
@@ -76,9 +77,14 @@ def find_group(app_id: str, name: str, display: str, mode: str) -> dict:
     return g
 
 
+def norm(price) -> str:
+    """Apple writes 10.0, the spec writes 10.00: compare as 2-decimal strings."""
+    return f"{float(price):.2f}"
+
+
 def sau_points(sub_id: str) -> dict:
     pts = pages(f"/subscriptions/{sub_id}/pricePoints?filter[territory]={TERRITORY}&limit=200")
-    return {p["attributes"]["customerPrice"]: p for p in pts}
+    return {norm(p["attributes"]["customerPrice"]): p for p in pts}
 
 
 def nearest(prices, target: float, n=5):
@@ -105,7 +111,7 @@ def ensure(sub: dict, spec: dict, mode: str):
     # Prices (the chosen SAR price, equalised to every other territory like the web UI does)
     existing = pages(f"/subscriptions/{sid}/prices?limit=200")
     points = sau_points(sid)
-    want = spec["price"]
+    want = norm(spec["price"])
     print(f"[{pid}] prices set: {len(existing)}; SAR {want} available: {want in points}")
     if not existing:
         if want not in points:
@@ -166,6 +172,62 @@ def ensure(sub: dict, spec: dict, mode: str):
     return True
 
 
+def current_sau_price(sid: str):
+    """The customer price now set for Saudi Arabia, or None."""
+    url = f"/subscriptions/{sid}/prices?include=subscriptionPricePoint,territory&limit=200"
+    included = {}
+    rows = []
+    while url:
+        res = api("GET", url)
+        rows += res.get("data", [])
+        for inc in res.get("included", []):
+            included[(inc["type"], inc["id"])] = inc
+        nxt = (res.get("links") or {}).get("next")
+        url = nxt.split("/v1", 1)[1] if nxt else None
+    for r in rows:
+        rel = r.get("relationships") or {}
+        terr = (rel.get("territory") or {}).get("data") or {}
+        pp = (rel.get("subscriptionPricePoint") or {}).get("data") or {}
+        if terr.get("id") == TERRITORY and pp:
+            inc = included.get(("subscriptionPricePoints", pp["id"]))
+            if inc:
+                return norm(inc["attributes"]["customerPrice"])
+    return None
+
+
+def reprice(spec: dict, group: dict):
+    """Set the price in every territory when the Saudi price differs from the spec."""
+    subs = {s["attributes"]["productId"]: s
+            for s in pages(f"/subscriptionGroups/{group['id']}/subscriptions?limit=200")}
+    for item in spec["products"]:
+        pid, want = item["productId"], norm(item["price"])
+        sub = subs.get(pid)
+        if not sub:
+            print(f"[{pid}] not found")
+            continue
+        now = current_sau_price(sub["id"])
+        if now == want:
+            print(f"[{pid}] already SAR {want}")
+            continue
+        points = sau_points(sub["id"])
+        if want not in points:
+            print(f"::error::[{pid}] SAR {want} is not a price point")
+            continue
+        base = points[want]
+        eq = pages(f"/subscriptionPricePoints/{base['id']}/equalizations?limit=200&include=territory")
+        chosen = {territory_of(p): p for p in eq}
+        chosen[TERRITORY] = base
+        for terr, p in chosen.items():
+            post("/subscriptionPrices", {"data": {
+                "type": "subscriptionPrices",
+                "attributes": {"preserveCurrentPrice": False},
+                "relationships": {
+                    "subscription": {"data": {"type": "subscriptions", "id": sub["id"]}},
+                    "subscriptionPricePoint": {"data": {"type": "subscriptionPricePoints", "id": p["id"]}}}}},
+                f"reprice {pid}/{terr}")
+        print(f"[{pid}] price changed from SAR {now} to SAR {want} in {len(chosen)} territories")
+
+
 def delete_stray(spec: dict, group: dict):
     """Delete only products named in spec["strayProductIds"] that are NOT among the wanted products."""
     wanted = {p["productId"] for p in spec["products"]}
@@ -193,6 +255,9 @@ def main(mode: str):
     if mode == "delete-stray":
         delete_stray(spec, group)
         return
+    if mode == "reprice":
+        reprice(spec, group)
+        return
     print(f"app {app['id']} ({app['attributes'].get('name')}), group {group['id']}")
     subs = {s["attributes"]["productId"]: s
             for s in pages(f"/subscriptionGroups/{group['id']}/subscriptions?limit=200")}
@@ -218,7 +283,7 @@ def main(mode: str):
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] in (["inspect"], ["apply"], ["delete-stray"]):
+    if sys.argv[1:] in (["inspect"], ["apply"], ["delete-stray"], ["reprice"]):
         main(sys.argv[1])
     else:
         sys.exit(__doc__)

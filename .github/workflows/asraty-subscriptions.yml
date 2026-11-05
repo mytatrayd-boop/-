@@ -13,7 +13,7 @@ on:
       mode:
         description: "inspect = read only, apply = create what is missing"
         type: choice
-        options: [inspect, apply, delete-stray]
+        options: [inspect, apply, reprice, delete-stray]
         default: inspect
 
 jobs:
