@@ -1,0 +1,24 @@
+name: Asraty — add latest build to the internal TestFlight group
+
+# Adds the newest processed build(s) of the app to its internal TestFlight group (testers only see
+# builds that are in their group) and prints the builds' processing state. Same secrets as asraty-ios.yml.
+on:
+  workflow_dispatch:
+
+jobs:
+  group:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run
+        env:
+          KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          for v in KEY ASC_KEY_ID ASC_ISSUER_ID; do [ -n "${!v}" ] || { echo "::error::Missing secret for $v"; exit 1; }; done
+          umask 077
+          printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          python3 -u .github/scripts/asc_testflight.py sa.asraty.app
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
