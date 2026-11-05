@@ -117,10 +117,13 @@ class _HeadIcon extends StatelessWidget {
 
 /// Pill in the header's bottom row (the signed-in name, sign-out): same height and style.
 class _Pill extends StatelessWidget {
-  const _Pill({required this.child, required this.onTap, required this.label});
+  const _Pill({required this.child, required this.onTap, required this.label, this.busy = false});
   final Widget child;
   final VoidCallback onTap;
   final String label;
+
+  /// Waiting on what this pill started: the same spinner as a busy [Btn], and taps are ignored.
+  final bool busy;
   @override
   Widget build(BuildContext context) => Semantics(
         button: true,
@@ -131,11 +134,56 @@ class _Pill extends StatelessWidget {
           shape: const StadiumBorder(),
           child: InkWell(
             customBorder: const StadiumBorder(),
-            onTap: onTap,
-            child: SizedBox(height: 42, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: child)),
+            onTap: busy ? null : onTap,
+            child: SizedBox(
+              height: 42,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: busy ? const Center(child: PulseDot(size: 20, color: Palette.brand)) : child,
+              ),
+            ),
           ),
         ),
       );
+}
+
+/// Sign-out in plain sight next to the signed-in name (testers could not find it in the settings).
+/// After the confirmation it shows the spinner until the session has ended.
+class _SignOutPill extends ConsumerStatefulWidget {
+  const _SignOutPill();
+  @override
+  ConsumerState<_SignOutPill> createState() => _SignOutPillState();
+}
+
+class _SignOutPillState extends ConsumerState<_SignOutPill> {
+  var _busy = false;
+
+  Future<void> _signOut() async {
+    final t = context.t, router = GoRouter.of(context), notifier = ref.read(backendProvider.notifier);
+    if (!await confirm(context, t.signOutConfirm, ok: t.signOut)) return;
+    if (mounted) setState(() => _busy = true);
+    try {
+      await notifier.signOut();
+      router.go('/');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return _Pill(
+      label: t.signOut,
+      busy: _busy,
+      onTap: _signOut,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.logout_rounded, size: 18, color: Palette.brand),
+        const SizedBox(width: 6),
+        Text(t.signOut, style: const TextStyle(color: Color(0xFF1E302C), fontSize: 13, fontWeight: FontWeight.w700)),
+      ]),
+    );
+  }
 }
 
 class _Header extends ConsumerWidget {
@@ -234,20 +282,7 @@ class _Header extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 // Sign-out in plain sight next to the signed-in name (testers could not find it in the settings).
-                _Pill(
-                  label: t.signOut,
-                  onTap: () async {
-                    final router = GoRouter.of(context);
-                    if (!await confirm(context, t.signOutConfirm, ok: t.signOut)) return;
-                    await ref.read(backendProvider.notifier).signOut();
-                    router.go('/');
-                  },
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.logout_rounded, size: 18, color: Palette.brand),
-                    const SizedBox(width: 6),
-                    Text(t.signOut, style: const TextStyle(color: ink, fontSize: 13, fontWeight: FontWeight.w700)),
-                  ]),
-                ),
+                const _SignOutPill(),
               ]),
               if (backend.isDemo) ...[
                 const SizedBox(height: 8),
