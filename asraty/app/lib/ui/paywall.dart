@@ -119,27 +119,55 @@ class _ActivationDialogState extends ConsumerState<_ActivationDialog> {
 }
 
 /// The subscription screen: three levels by the number of members (5 / 10 / 20), each monthly or yearly
-/// with a 7-day trial. Shown to a family admin without an active plan or code; also opened as "ترقية"
+/// with a 7-day trial. Compact: a monthly/yearly switch, one row per level (pick one), one button.
+/// Shown to a family admin without an active plan or code; also opened as "ترقية"
 /// ([upgrade]) from the add-member page when the family reaches its limit.
-class PaywallPage extends ConsumerWidget {
+class PaywallPage extends ConsumerStatefulWidget {
   const PaywallPage({super.key, this.upgrade = false});
   final bool upgrade;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PaywallPage> createState() => _PaywallPageState();
+}
+
+class _PaywallPageState extends ConsumerState<PaywallPage> {
+  var _yearly = true;
+  var _tier = 0;
+
+  @override
+  Widget build(BuildContext context) {
     ref.watch(accessProvider);
-    final t = context.t, store = ref.read(accessProvider.notifier).store;
-    Widget option(String id, String title, {bool best = false}) {
-      final p = store.product(id);
-      return Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-            Muted(p?.price ?? '—'),
-          ]),
+    final t = context.t, store = ref.read(accessProvider.notifier).store, pal = context.pal;
+    final upgrade = widget.upgrade;
+    String idOf(int i) => _yearly ? Access.tiers[i].yearly : Access.tiers[i].monthly;
+    final chosen = store.product(idOf(_tier));
+
+    Widget row(int i) {
+      final selected = i == _tier, tier = Access.tiers[i];
+      return Semantics(
+        selected: selected,
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _tier = i),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: selected ? pal.mintBg : null,
+              border: Border.all(color: selected ? pal.brandInk : pal.line, width: selected ? 2 : 1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(children: [
+              Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? pal.brandInk : pal.muted),
+              const SizedBox(width: 10),
+              Expanded(child: Text('${t.planTierUpTo} ${tier.members} ${t.planTierMembers}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+              Text(store.product(idOf(i))?.price ?? '—', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: pal.brandInk)),
+            ]),
+          ),
         ),
-        Btn(upgrade ? t.upgradePlan : t.startTrial, kind: best ? BtnKind.sun : BtnKind.main, small: true, onPressed: p == null ? null : () => store.buy(p)),
-      ]);
+      );
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -147,20 +175,13 @@ class PaywallPage extends ConsumerWidget {
       if (!upgrade) const Center(child: Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 54))),
       H2(t.paywallTitle),
       Muted(t.paywallSub),
-      const SizedBox(height: 12),
+      SegTabs<bool>(tabs: [(false, t.planMonthly, 0), (true, t.planYearly, 0)], value: _yearly, onChanged: (v) => setState(() => _yearly = v)),
       if (store.loading) const Center(child: Padding(padding: EdgeInsets.all(16), child: PulseDot(size: 32))),
-      for (final tier in Access.tiers)
-        OutlineCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('${t.planTierUpTo} ${tier.members} ${t.planTierMembers}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
-            const SizedBox(height: 8),
-            option(tier.monthly, t.planMonthly),
-            const Divider(height: 18),
-            option(tier.yearly, t.planYearly, best: true),
-          ]),
-        ),
-      if (store.error != null) ErrBox(store.error == 'store-unavailable' ? t.storeUnavailable : errorText(t, AppError(store.error!))),
-      const SizedBox(height: 6),
+      for (var i = 0; i < Access.tiers.length; i++) row(i),
+      const SizedBox(height: 4),
+      Btn(upgrade ? t.upgradePlan : t.startTrial, kind: BtnKind.sun, expand: true, onPressed: chosen == null ? null : () => store.buy(chosen)),
+      if (store.error != null) ...[const SizedBox(height: 8), ErrBox(store.error == 'store-unavailable' ? t.storeUnavailable : errorText(t, AppError(store.error!)))],
+      const SizedBox(height: 8),
       Muted(t.paywallFamily),
       const SizedBox(height: 6),
       Btn(t.restorePurchases, kind: BtnKind.ghost, onPressed: store.restore),
@@ -169,7 +190,7 @@ class PaywallPage extends ConsumerWidget {
         Center(
           child: TextButton(
             onPressed: () => showActivation(context, ref),
-            style: TextButton.styleFrom(foregroundColor: context.pal.brandInk),
+            style: TextButton.styleFrom(foregroundColor: pal.brandInk),
             child: Text(t.orUseCode, style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
         ),
