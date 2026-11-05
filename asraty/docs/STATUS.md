@@ -32,7 +32,7 @@
 ## Google Play
 - **الكود جاهز ومدموج (#128):** الخادم يتحقق من رمز الشراء عند Google، والتطبيق يرسل `platform=android`، و**البوابة مغلقة افتراضيًا** (مدخل `paywall` في `asraty-android.yml`)، فنسخة أندرويد مجانية. **لم يُنشر الخادم بعد** بهذا التحقق.
 - **حساب الخدمة:** `play-upload@asraty-2efd0.iam.gserviceaccount.com` (السر `PLAY_SERVICE_ACCOUNT_JSON`). في Play Console أُضيفت له على مستوى التطبيق: Manage orders and subscriptions وManage store presence وصلاحيتا الإصدار. واجهة Google Play Android Developer API مفعّلة في المشروع `asraty-2efd0`. وهناك حساب آخر `store-manager-bot` لا نعرف دوره. **رفض المالك منح Admin** (أقل صلاحية).
-- **منتجات Play لم تُنشأ.** `asraty-play-subscriptions.yml`: `inspect` نجح، و`apply` فشل مرتين (`403` ثم `400 FAILED_PRECONDITION`). **السبب المؤكد في Play Console:** «To monetize this app, set up a merchant account»، أي لا يوجد حساب تاجر. المالك وافق على تشغيل `apply` بمجرد اكتمال حساب التاجر.
+- **منتجات Play لم تُنشأ.** `asraty-play-subscriptions.yml`: `inspect` نجح، و`apply` فشل ثلاث مرات (`403` ثم `400 FAILED_PRECONDITION` مرتين، آخرها ٥ نوفمبر run 42056041450 عند `convertRegionPrices`، قبل إنشاء أي منتج). **السبب المؤكد في Play Console:** «To monetize this app, set up a merchant account»، أي لا يوجد حساب تاجر. المالك وافق على تشغيل `apply` بمجرد اكتمال حساب التاجر.
 - **حساب التاجر (ملف المدفوعات): لم يُرسل.** المسار: Play Console ← Manage account ← Play apps settings ← Payments profile. اختر ملف المالك «Individual profile for Play» ولا تُنشئ ملفًا جديدًا. الخانات: Business name = `Asraty`، Website **فارغة** (كُتب فيها نص بالخطأ مرة)، What do you sell = **Computer Software** (لا يوجد خيار Digital content)، Customer support email = `asraty200@gmail.com`، Credit card statement name = `ASRATY`.
 - **لا يُرسل النموذج قبل اعتماد العنوان الجديد:** عنوان الملف ما زال القديم (308)، وخانة «Use legal business info» تعرضه علنًا للمشترين. **طلب تغيير العنوان أُرسل إلى Google في ٥ نوفمبر مع إثبات العنوان الوطني، وهو قيد المراجعة (يراسلهم المالك بالبريد «خلال أيام»).** العنوان الصحيح: `6845 Mansour Ibn Muhammad Ibn Hamza St` / `As Salamah District, Unit 3005` / `Muhayil` / `Asir` / `63411` / Saudi Arabia.
 - **إفصاح «الجهة التجارية»** (قبل ١ فبراير ٢٠٢٧): **قرار المالك وحده**. قال إنه لا نشاط تجاري عنده؛ نبّهتُه أن تعريف Google يشمل إيرادات الاشتراكات، وأن الإقرار يجب أن يطابق الواقع، وأن البديل إيقاف التوزيع في الاتحاد الأوروبي والمملكة المتحدة وإعلان «غير تجارية». طلب إيقاف التوزيع هناك (يدويًا من Countries/regions) وتذكيره أنه من أجل الإفصاح، ولم يتأكد أنه فعل: اسأله. التذكير الذي وُضع للجلسة القديمة لن يصل لجلسة جديدة.
@@ -53,7 +53,7 @@
 - ☐ م: **لقطة مراجعة** لكل منتج (٨ منتجات: ٦ لأسرتي و٢ للمحة) بعد ظهور الأسعار في التطبيق.
 - ☐ م: **ترتيب مستويات** مجموعة أسرتي (٢٠ ثم ١٠ ثم ٥) يدويًا.
 - ☐ م: إرسال المنتجات مع إصدار التطبيق للمراجعة (لأسرتي ولمحة).
-- ☐ C: التحقق من سعري «لمحة» بتشغيل `asraty-subscriptions.yml` (app=lamha، mode=inspect) بعد تصحيح `reprice`.
+- ✅ التحقق من سعري «لمحة» بـ`inspect` (تشغيل ١٠، ٥ نوفمبر): 10.00 و100.00.
 - ✅ منتجات أسرتي الستة ومنتجا لمحة أُنشئت بالأسعار المعتمدة؛ والمنتج القديم `monthly` حُذف.
 
 ### TestFlight
