@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-05T11:55:35.103Z",
+  "generatedAt": "2026-11-07T12:17:11.929Z",
   "source": "yahoo",
   "dataFrom": "2026-07-10",
-  "dataTo": "2026-11-04",
+  "dataTo": "2026-11-06",
   "defaults": {
     "pivotK": 3,
     "lookbackBars": 156,
