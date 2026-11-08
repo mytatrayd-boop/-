@@ -1,0 +1,11 @@
+{
+  "name": "محاكي نافس 2026م — اختبارات وتقارير للمعلم",
+  "short_name": "محاكي نافس",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f6fb",
+  "theme_color": "#3a4bb8",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
