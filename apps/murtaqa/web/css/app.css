@@ -159,3 +159,30 @@ td.nm{position:sticky;right:0;background:var(--card);white-space:nowrap;font-wei
 .bub div{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11pt}
 .bub b{width:26px;text-align:left;font-size:10pt}
 .bub i{width:22px;height:22px;border:1.5px solid #000;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:9pt}
+
+/* التقرير الوصفي — شكل النموذج الرسمي */
+.off{color:var(--ink);line-height:1.9}
+.off h3{font-size:1.05rem;margin:14px 0 4px}
+.off .lh{display:block;width:100%;max-height:150px;object-fit:contain;margin-bottom:6px}
+.off-t{text-align:center;margin:6px 0 12px}.off-t .no{font-weight:800;font-size:1.15rem;margin-bottom:4px}
+.off-t .no span{display:inline-block;min-width:70px;border-bottom:1.5px dotted currentColor;text-align:center}
+.otb{width:100%;border-collapse:collapse;margin:6px 0 10px}
+.otb th,.otb td{border:1px solid currentColor;padding:6px 8px;text-align:center;vertical-align:top}
+.otb th{background:var(--bg);font-weight:700}
+.otb.sig td{height:90px;text-align:center}
+.off .two{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+.off .lst>div{padding-inline-start:10px}
+.off ul{margin:4px 0;padding-inline-start:22px}
+.off .proc{font-size:.92rem}
+@media print{.off{border:0;padding:0}.off .lh{max-height:30mm}.off textarea{background:transparent}}
+@media print{
+  .off{font-size:10.5pt;line-height:1.5}
+  .off p{margin:3px 0}.off h3{margin:9px 0 2px;font-size:11.5pt}
+  .off ul{margin:2px 0}.off .lst div{line-height:1.45}
+  .off textarea{min-height:55px!important;padding:4px 8px}
+  .otb{margin:4px 0 6px}.otb th,.otb td{padding:3px 6px}
+  .otb.sig td{height:55px}
+  .off .proc{font-size:9.5pt;margin:0}
+  .off .lh{max-height:24mm}
+  .otb,.off-t,.lst{break-inside:avoid}
+}

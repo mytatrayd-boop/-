@@ -266,7 +266,15 @@
     );
   };
 
-  /* ---------- التقرير الوصفي (نموذج تحسين نواتج التعلم) ---------- */
+  /* ---------- التقرير الوصفي (النموذج الرسمي لتحليل اختبارات تحسين نواتج التعلم) ---------- */
+  const OFFICIAL_PROC = [
+    'يستفيد المعلم من تحليل بطاقة الاختبارات الوطنية "نافس" في بناء الاختبارات بدءًا بالمهارات المنخفضة، ومن بنود التقرير أعلاه في بناء الاختبارات الهادفة إلى التحسين.',
+    'يصحِّح المعلم الاختبار، ثمَّ يحلِّل النتائج وفق التقرير أعلاه، ويسلِّم التقرير إلى لجنة التميز بالمدرسة ومقدم خدمات دعم التميز المدرسي لمراجعته وتقديم تغذية مباشرة.',
+    'يُراجع التقرير بتغذيته المباشرة من معلم المادة ومقدم خدمات دعم التميز المدرسي ومدير المدرسة، ثم يرفع إلى قسم الإشراف التربوي عبر التخزين السحابي.',
+    'يدرس المشرف المختص بالمادة في القسم مع اللجنة المشرفة على الخطط العلاجية عيِّنة من التقارير، ومن ثم تقديم التغذية الراجعة، وتيسير الدعم للمعلم حسب احتياجاته.',
+    'تزوَّد المدرسة بالتغذية الراجعة، ويتابع مدير المدرسة ولجنة التميز بمساندة مقدم خدمات الدعم تنفيذها، ويُدعم المعلم في تنفيذ الأساليب العلاجية المقدَّمة.',
+  ];
+  const DOTS = '..............................................................';
   V.desc = (id) => {
     const e = exam(id);
     if (!e) return V.exams();
@@ -274,33 +282,46 @@
     const rep = e.rep || {};
     const low = rs.length ? Math.round((st.sc.filter((x) => x.s.pct <= 50).length / rs.length) * 100) : 0;
     const lvl = st.avg >= 70 ? 0 : st.avg >= 50 ? 1 : 2;
+    const n = e.qids.length;
     const sk = Object.keys(st.skills).map((k) => ({ k, p: Math.round((st.skills[k].c / st.skills[k].t) * 100) }));
     const strong = sk.filter((x) => x.p >= 70).sort((a, b) => b.p - a.p), weak = sk.filter((x) => x.p < 70).sort((a, b) => a.p - b.p);
-    const list = (a, empty) => (a.length ? '<ol style="margin:4px 0;padding-inline-start:22px">' + a.map((x) => '<li>' + M.skillLabel(x.k) + ' (' + x.p + '%)</li>').join('') + '</ol>' : '<p class="mute">' + empty + '</p>');
-    const box = (v) => '<span style="display:inline-block;width:14px;height:14px;border:1.5px solid currentColor;border-radius:3px;vertical-align:middle;margin-inline:4px;text-align:center;line-height:12px">' + (v ? '✓' : '') + '</span>';
-    const skAll = Object.keys(st.skills).map((k) => M.skillLabel(k));
-    const sorted = D().exams.slice().sort((a, b) => a.created - b.created);
-    const no = rep.no || sorted.findIndex((x) => x.id === id) + 1;
-    const repTitle = 'التقرير الوصفي رقم (' + ind(no) + ')';
-    S.docTitle = repTitle + ' - ' + e.title;
-    const info = [['تاريخ الاختبار', rep.date || M.dateStr()], ['عدد الطلاب', rs.length], ['الصف', gradeOf(e) + (c ? ' — ' + c.name : '')], ['المادة', subjOf(e)], ['المدرسة', T.school || '']];
+    const numbered = (arr, min) => {
+      const items = arr.map((x) => M.skillLabel(x.k) + ' (' + x.p + '%)');
+      while (items.length < min) items.push(DOTS);
+      return items.map((x, i) => '<div>' + ind(i + 1) + '- ' + x + '</div>').join('');
+    };
+    const box = (v) => '( ' + (v ? '✓' : '&nbsp;&nbsp;') + ' )';
+    const skAll = Object.keys(st.skills).length ? Object.keys(st.skills) : Object.keys(M.SKILLS[e.s] || {});
+    const no = rep.no ? ind(rep.no) : '';
+    S.docTitle = 'التقرير الوصفي' + (rep.no ? ' رقم (' + ind(rep.no) + ')' : '') + ' - ' + e.title;
+    const th = (t) => '<th>' + t + '</th>';
+    const dateVal = rep.date || M.dateStr();
     return (
       '<div class="noprint"><p><a href="#/exam/' + id + '">← ' + esc(e.title) + '</a></p></div>' +
-      '<div class="row noprint"><h1 class="sp" id="repH">' + repTitle + '</h1><label class="row small" style="gap:6px">رقم التقرير <input type="number" min="1" style="width:80px" value="' + no + '" data-on="repNo" data-id="' + id + '"></label><button class="btn p" data-act="print">طباعة / PDF</button></div>' +
-      (rs.length ? '' : '<div class="note noprint">لا توجد نتائج بعد؛ ستُملأ الأرقام تلقائياً بعد إدخال النتائج.</div>') +
-      '<div class="card" style="margin-top:12px"><div class="ph" style="text-align:center"><b id="repT">' + repTitle + '</b><div>' + esc(e.title) + ' — ' + subjOf(e) + ' — ' + gradeOf(e) + '</div><div>تقرير وصفي لتحليل اختبارات تحسين نواتج التعلم</div><div>للعام الدراسي: ' + esc(T.year || '1448هـ') + '</div></div>' +
-      '<h2>أولاً: البيانات العامة للاختبار</h2><table class="tbl">' + info.map((x) => '<tr><th style="width:30%">' + x[0] + '</th><td>' + esc(x[1]) + '</td></tr>').join('') + '</table>' +
-      '<p><b>هدف الاختبار:</b> قياس المستوى لتحديد المهارات المتقنة وغير المتقنة، وبناء الأنشطة العلاجية والإثرائية، ومراجعة خطط التحسين بما يعزّز استمرار التقدّم.</p>' +
-      '<h2>ثانياً: وصف الاختبار</h2><p>تكوّن الاختبار من <b>' + e.qids.length + '</b> سؤالاً متنوعاً تقيس المهارات المستهدفة، وهي: ' + (skAll.length ? skAll.map((x, i) => (i + 1) + '- ' + x).join('، ') : Object.keys(M.SKILLS[e.s] || {}).map((k) => M.skillLabel(k)).join('، ')) + '.</p>' +
-      '<h2>ثالثاً: التحليل الوصفي للنتائج</h2><p><b>1- التحليل العام:</b> تشير النتائج إلى أن مستوى الطلبة في أداء الاختبار: ' + box(lvl === 0) + 'مرتفع ' + box(lvl === 1) + 'متوسط ' + box(lvl === 2) + 'منخفض</p>' +
-      '<table class="tbl"><tr><th>متوسط الدرجات</th><td>' + (rs.length ? (st.avg * e.qids.length / 100).toFixed(1) + ' من ' + e.qids.length + ' (' + st.avg + '%)' : '—') + '</td></tr><tr><th>أعلى درجة</th><td>' + (rs.length ? Math.round(st.max * e.qids.length / 100) + ' من ' + e.qids.length : '—') + '</td></tr><tr><th>أقل درجة</th><td>' + (rs.length ? Math.round(st.min * e.qids.length / 100) + ' من ' + e.qids.length : '—') + '</td></tr><tr><th>نسبة الطلبة الحاصلين على 50% من درجة الاختبار فأقل</th><td>' + (rs.length ? low + '%' : '—') + '</td></tr></table>' +
-      '<p><b>2- تحليل المهارات:</b></p><p>ظهرت نقاط القوة لدى الطلبة في المهارات التالية:</p>' + list(strong, 'لا توجد مهارة بلغت نسبة إتقانها 70% فأكثر.') +
-      '<p>في حين لوحظ ضعف في المهارات التالية التي تحتاج إلى دعم:</p>' + list(weak, 'لا توجد مهارات ضعف.') +
-      '<h2>رابعاً: احتياجات المعلم لمساندته في تحسين أداء طلبته</h2><textarea data-on="repText" data-k="needs" data-id="' + id + '" placeholder="الدعم والأدوات والتطوير المهني والمصادر المساندة">' + esc(rep.needs || '') + '</textarea>' +
-      '<h2>خامساً: التوصيات المباشرة من مقدِّم خدمات الدعم مع لجنة التميز بالمدرسة</h2>' +
+      '<div class="row noprint" style="margin-bottom:10px"><h1 class="sp" style="margin:0">التقرير الوصفي</h1><button class="btn p" data-act="print">طباعة / PDF</button></div>' +
+      '<div class="card noprint grid g3" style="margin-bottom:12px"><label class="f" style="margin:0"><span>رقم التقرير (اتركه فارغاً أو اكتب رقمك)</span><input type="number" min="1" value="' + (rep.no || '') + '" data-on="repNo" data-id="' + id + '"></label>' +
+      '<label class="f" style="margin:0"><span>تاريخ الاختبار</span><input type="text" value="' + esc(dateVal) + '" data-on="repDate" data-id="' + id + '"></label>' +
+      (rs.length ? '' : '<div class="note" style="align-self:end">لا توجد نتائج بعد؛ ستُملأ الأرقام تلقائياً بعد إدخال النتائج.</div>') + '</div>' +
+      '<div class="card off">' +
+      (T.letterhead === false ? '' : '<img class="lh" src="assets/letterhead.jpg" alt="">') +
+      '<div class="off-t"><div class="no">التقرير الوصفي رقم ( <span id="repN">' + no + '</span> )</div>' +
+      '<b>تقرير وصفي لتحليل اختبارات تحسين نواتج التعلم (ضمن خطة مئة يوم)، للعام: ' + esc(T.year || '1448هـ') + '</b></div>' +
+      '<h3>أولًا: البيانات العامة للاختبار:</h3>' +
+      '<table class="otb"><tr>' + ['تاريخ الاختبار', 'عدد الطلاب', 'الصف', 'المادة', 'المدرسة'].map(th).join('') + '</tr><tr><td id="repD">' + esc(dateVal) + '</td><td>' + rs.length + '</td><td>' + gradeOf(e) + (c ? ' — ' + esc(c.name) : '') + '</td><td>' + subjOf(e) + '</td><td>' + esc(T.school || '') + '</td></tr></table>' +
+      '<p><b>هدف الاختبار:</b></p><ul><li>قياس المستوى القبلي للطلبة؛ لتحديد المهارات المتقنة، والمهارات غير المتقنة، وبناء الأنشطة التعليمية والعلاجية والإثرائية وفقه.</li><li>قياس تكويني للطلبة؛ لتحديد مدى تقدمهم في المهارات المستهدفة، ومراجعة خطط وأنشطة التحسين بما يعزِّز استمرار التقدُّم.</li></ul>' +
+      '<h3>ثانيًا: وصف الاختبار.</h3><p>تكوّن الاختبار من عدد (<b>' + ind(n) + '</b>) من الأسئلة المتنوعة التي تقيس المهارات المستهدفة في الاختبارات الوطنية "نافس"، وهي:</p>' +
+      '<div class="two">' + skAll.map((k, i) => '<div>' + ind(i + 1) + '- ' + M.skillLabel(k) + '</div>').join('') + '</div>' +
+      '<h3>ثالثًا: التحليل الوصفي للنتائج.</h3><p><b>1- التحليل الوصفي العام:</b></p><p>تشير النتائج إلى أن مستوى الطلبة بصورة عامة في أداء الاختبار: ' + box(rs.length && lvl === 0) + ' مرتفع – ' + box(rs.length && lvl === 1) + ' متوسط – ' + box(rs.length && lvl === 2) + ' منخفض.</p>' +
+      '<table class="otb"><tr>' + ['متوسط الدرجات', 'أعلى درجة', 'أقل درجة', 'نسبة الطلبة الحاصلين على 50 % من درجة الاختبار فأقل'].map(th).join('') + '</tr><tr>' +
+      (rs.length ? '<td>' + (st.avg * n / 100).toFixed(1) + ' من ' + n + ' (' + st.avg + '%)</td><td>' + Math.round(st.max * n / 100) + ' من ' + n + '</td><td>' + Math.round(st.min * n / 100) + ' من ' + n + '</td><td>' + low + '%</td>' : '<td>&nbsp;</td><td></td><td></td><td></td>') + '</tr></table>' +
+      '<p><b>2- تحليل المهارات:</b></p><p>ظهرت نقاط القوة من قبل الطلبة في أداء المهارات التالية:</p><div class="lst">' + numbered(strong, 3) + '</div>' +
+      '<p>في حين لوحظ ضعف في المهارات التالية التي تحتاج إلى دعم:</p><div class="lst">' + numbered(weak, 3) + '</div>' +
+      '<h3>رابعًا: احتياجات المعلم لمساندته في تحسين أداء طلبته:</h3><textarea data-on="repText" data-k="needs" data-id="' + id + '" placeholder="يكتب المعلم احتياجاته من الدعم والأدوات والتطوير المهني والمصادر المساندة">' + esc(rep.needs || '') + '</textarea>' +
+      '<h3>خامسًا: التوصيات المباشرة من مقدِّم خدمات الدعم مع لجنة التميز بالمدرسة لتحسين أداء الطلبة:</h3>' +
       (weak.length ? '<div class="note noprint" style="margin-bottom:8px"><b>مقترحات جاهزة (انسخ ما يناسبك):</b><ul style="margin:4px 0 0;padding-inline-start:20px">' + weak.map((x) => '<li>' + M.ADVICE[x.k] + '</li>').join('') + '</ul></div>' : '') +
-      '<textarea data-on="repText" data-k="reco" data-id="' + id + '">' + esc(rep.reco || '') + '</textarea>' +
-      '<table class="tbl" style="margin-top:18px;text-align:center"><tr><td>اسم المعلم/ـة المعد/ة للتقرير<br><b>' + esc(T.name || '') + '</b><br><br>التوقيع: ..........</td><td>مقدم/ـة خدمة دعم التميز المدرسي<br><br><br>التوقيع: ..........</td><td>مدير/ة المدرسة<br><br><br>التوقيع: ..........</td></tr></table></div>'
+      '<textarea data-on="repText" data-k="reco" data-id="' + id + '" style="min-height:130px">' + esc(rep.reco || '') + '</textarea>' +
+      '<table class="otb sig"><tr><td>اسم المعلم/ـة المعد/ة للتقرير<br><b>' + esc(T.name || '') + '</b><br><br>التوقيع:</td><td>مقدم/ـة خدمة دعم التميز المدرسي<br><br><br>التوقيع:</td><td>مدير/ة المدرسة<br><br><br>التوقيع:</td></tr></table>' +
+      '<p style="margin-top:16px"><b>* الإجراءات المتَّبعة لإعداد الاختبار (التشخيصي/ المحاكي) وتنفيذه من قبل (المعلم) لطلبته:</b></p><ul class="proc">' + OFFICIAL_PROC.map((x) => '<li>' + x + '</li>').join('') + '</ul></div>'
     );
   };
 
@@ -308,7 +329,7 @@
   V.settings = () => {
     const T = D().teacher;
     return (
-      '<h1>الإعدادات</h1><div class="card"><h2>بيانات الطباعة</h2><p class="mute small">تظهر في رأس الاختبارات والتقارير.</p><div class="grid g3"><label class="f"><span>اسم المعلم/ـة</span><input type="text" data-on="tch" data-k="name" value="' + esc(T.name) + '"></label><label class="f"><span>اسم المدرسة</span><input type="text" data-on="tch" data-k="school" value="' + esc(T.school) + '"></label><label class="f"><span>العام الدراسي</span><input type="text" data-on="tch" data-k="year" value="' + esc(T.year || '1448هـ') + '"></label></div></div>' +
+      '<h1>الإعدادات</h1><div class="card"><h2>بيانات الطباعة</h2><p class="mute small">تظهر في رأس الاختبارات والتقارير.</p><div class="grid g3"><label class="f"><span>اسم المعلم/ـة</span><input type="text" data-on="tch" data-k="name" value="' + esc(T.name) + '"></label><label class="f"><span>اسم المدرسة</span><input type="text" data-on="tch" data-k="school" value="' + esc(T.school) + '"></label><label class="f"><span>العام الدراسي</span><input type="text" data-on="tch" data-k="year" value="' + esc(T.year || '1448هـ') + '"></label></div><label class="row" style="margin-top:6px"><input type="checkbox" data-on="lh"' + (T.letterhead === false ? '' : ' checked') + '> إظهار ترويسة إدارة التعليم في التقرير الوصفي المطبوع</label></div>' +
       '<div class="card" style="margin-top:14px"><h2>نسخة احتياطية</h2><p class="mute small">بياناتك محفوظة في هذا المتصفح فقط. خذ نسخة احتياطية قبل تغيير الجهاز أو مسح بيانات المتصفح.</p><div class="row"><button class="btn" data-act="backup">تنزيل نسخة احتياطية</button><label class="btn">استعادة من ملف<input type="file" accept=".json" data-on="restore" hidden></label><span class="sp"></span><button class="btn d" data-act="wipe">مسح كل البيانات</button></div></div>'
     );
   };
@@ -500,18 +521,22 @@
     repNo(el) {
       const e = exam(el.dataset.id); e.rep = e.rep || {};
       const v = parseInt(el.value, 10); e.rep.no = v > 0 ? v : 0; M.save();
-      const no = e.rep.no || 1, t = 'التقرير الوصفي رقم (' + ind(no) + ')';
-      ['repH', 'repT'].forEach((i) => { const x = document.getElementById(i); if (x) x.textContent = t; });
-      document.title = t + ' - ' + e.title;
+      const x = document.getElementById('repN'); if (x) x.textContent = e.rep.no ? ind(e.rep.no) : '';
+      document.title = 'التقرير الوصفي' + (e.rep.no ? ' رقم (' + ind(e.rep.no) + ')' : '') + ' - ' + e.title;
+    },
+    repDate(el) {
+      const e = exam(el.dataset.id); e.rep = e.rep || {}; e.rep.date = el.value; M.save();
+      const x = document.getElementById('repD'); if (x) x.textContent = el.value;
     },
     repText(el) { const e = exam(el.dataset.id); e.rep = e.rep || {}; e.rep[el.dataset.k] = el.value; M.save(); },
+    lh(el) { D().teacher.letterhead = el.checked; M.save(); },
     tch(el) { D().teacher[el.dataset.k] = el.value; M.save(); },
     restore(el) {
       const f = el.files[0]; if (!f) return;
       f.text().then((t) => { const o = JSON.parse(t); if (!o.exams || !o.classes) throw 0; M.db = Object.assign({ teacher: {}, results: [] }, o); M.save(); render(); toast('تمت الاستعادة'); }).catch(() => toast('الملف غير صالح'));
     },
   };
-  const LIVE = { repNo: 1, nwTitle: 1, nwNum: 1, exTitle: 1, repText: 1, tch: 1, search: 1, rowPaste: 0 };
+  const LIVE = { repNo: 1, repDate: 1, nwTitle: 1, nwNum: 1, exTitle: 1, repText: 1, tch: 1, search: 1, rowPaste: 0 };
 
   /* ================= التوجيه ================= */
   function render() {
