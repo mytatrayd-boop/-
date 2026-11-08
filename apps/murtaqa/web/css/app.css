@@ -190,3 +190,27 @@ td.nm{position:sticky;right:0;background:var(--card);white-space:nowrap;font-wei
 .foot{border-top:1px solid var(--line);color:var(--mute);text-align:center;padding:6px 0;font-size:.74rem;line-height:1.5}
 .foot .wrap{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
 .foot b{color:var(--ink)}
+
+/* القائمة: علوية على الحاسوب، سفلية بأيقونات على الجوال */
+.top nav a i{display:none}.top nav a .s{display:none}
+@media (max-width:720px){
+  .top .wrap{height:50px}
+  .top nav{position:fixed;inset-inline:0;bottom:0;z-index:30;flex:none;display:grid;grid-template-columns:repeat(6,1fr);gap:2px;overflow:visible;background:var(--card);border-top:1px solid var(--line);padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px))}
+  .top nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:52px;padding:4px 0;border-radius:12px;font-size:.74rem;line-height:1.25;white-space:normal;text-align:center}
+  .top nav a i{display:block;font-style:normal;font-size:1.3rem;line-height:1.2}
+  .top nav a .l{display:none}.top nav a .s{display:inline}
+  main{padding-bottom:30px}
+  .foot{margin-bottom:68px}
+  .bar-act{bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .taking .foot{margin-bottom:0}
+  .act{display:flex;align-items:center;gap:14px;text-align:right;padding:12px 16px}
+  .act .ic{font-size:1.6rem}.act b{margin:0;font-size:1rem}.act span.mute{display:block}
+  .act>span:not(.ic){flex:1}
+  .bar-act{padding:8px 12px}
+  .bar-act .wrap{gap:6px}
+  .bar-act .btn{min-height:38px;padding:5px 10px;font-size:.84rem}
+  .hero{padding:20px 18px}
+}
+.grid>.card{margin-top:0}
+@media (max-width:720px){.stat{padding:10px}.stat b{font-size:1.5rem}.grid{gap:10px}}
