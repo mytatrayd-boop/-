@@ -186,3 +186,6 @@ td.nm{position:sticky;right:0;background:var(--card);white-space:nowrap;font-wei
   .off .lh{max-height:24mm}
   .otb,.off-t,.lst{break-inside:avoid}
 }
+
+.foot{border-top:1px solid var(--line);background:var(--card);color:var(--mute);text-align:center;padding:18px 0;font-size:.92rem;line-height:1.8}
+.foot b{color:var(--ink)}
