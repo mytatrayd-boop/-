@@ -50,9 +50,9 @@
     return (
       '<div class="hero"><h1>أهلاً ' + esc(d.teacher.name || 'بك أيها المعلم') + '</h1><p>أنشئ اختباراً في دقيقة، اطبعه أو أرسله لطلابك، وخذ تقريراً جاهزاً بنقاط القوة والضعف.</p></div>' +
       '<div class="grid g3">' +
-      '<a class="card act" href="#/new"><span class="ic">📝</span><b>اختبار جديد</b><span class="mute small">اختر الصف والمادة والمهارات</span></a>' +
-      '<a class="card act" href="#/bank"><span class="ic">🗂️</span><b>بنك الأسئلة</b><span class="mute small">اسحب الأسئلة التي تريدها واطبعها</span></a>' +
-      '<a class="card act" href="#/classes"><span class="ic">👥</span><b>فصولي</b><span class="mute small">أضف طلابك لتصل التقارير بأسمائهم</span></a></div>' +
+      '<a class="card act" href="#/new"><span class="ic">📝</span><span><b>اختبار جديد</b><span class="mute small">اختر الصف والمادة والمهارات</span></span></a>' +
+      '<a class="card act" href="#/bank"><span class="ic">🗂️</span><span><b>بنك الأسئلة</b><span class="mute small">اسحب الأسئلة التي تريدها واطبعها</span></span></a>' +
+      '<a class="card act" href="#/classes"><span class="ic">👥</span><span><b>فصولي</b><span class="mute small">أضف طلابك لتصل التقارير بأسمائهم</span></span></a></div>' +
       '<div class="grid g4" style="margin:16px 0">' +
       [['فصول', d.classes.length], ['اختبارات', d.exams.length], ['نتائج مسجلة', d.results.length], ['سؤال في البنك', M.QUESTIONS.length]]
         .map((x) => '<div class="card stat"><b>' + x[1] + '</b><span class="mute">' + x[0] + '</span></div>').join('') + '</div>' +
