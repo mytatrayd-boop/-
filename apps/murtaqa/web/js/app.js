@@ -12,6 +12,8 @@
   const subjOf = (e) => M.SUBJECTS[e.s] || 'متعدد';
   const S = { f: { g: '6p', s: '', skill: '', lvl: '', txt: '' }, sel: new Set(), showAns: false, nw: null, timer: null };
 
+  const ind = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
+  const DEF_TITLE = M.NAME + ' — اختبارات وتقارير للمعلم';
   function toast(msg) {
     const t = document.createElement('div');
     t.className = 'toast'; t.textContent = msg;
@@ -277,12 +279,16 @@
     const list = (a, empty) => (a.length ? '<ol style="margin:4px 0;padding-inline-start:22px">' + a.map((x) => '<li>' + M.skillLabel(x.k) + ' (' + x.p + '%)</li>').join('') + '</ol>' : '<p class="mute">' + empty + '</p>');
     const box = (v) => '<span style="display:inline-block;width:14px;height:14px;border:1.5px solid currentColor;border-radius:3px;vertical-align:middle;margin-inline:4px;text-align:center;line-height:12px">' + (v ? '✓' : '') + '</span>';
     const skAll = Object.keys(st.skills).map((k) => M.skillLabel(k));
+    const sorted = D().exams.slice().sort((a, b) => a.created - b.created);
+    const no = rep.no || sorted.findIndex((x) => x.id === id) + 1;
+    const repTitle = 'التقرير الوصفي رقم (' + ind(no) + ')';
+    S.docTitle = repTitle + ' - ' + e.title;
     const info = [['تاريخ الاختبار', rep.date || M.dateStr()], ['عدد الطلاب', rs.length], ['الصف', gradeOf(e) + (c ? ' — ' + c.name : '')], ['المادة', subjOf(e)], ['المدرسة', T.school || '']];
     return (
       '<div class="noprint"><p><a href="#/exam/' + id + '">← ' + esc(e.title) + '</a></p></div>' +
-      '<div class="row noprint"><h1 class="sp">التقرير الوصفي لتحليل الاختبار</h1><button class="btn p" data-act="print">طباعة / PDF</button></div>' +
+      '<div class="row noprint"><h1 class="sp" id="repH">' + repTitle + '</h1><label class="row small" style="gap:6px">رقم التقرير <input type="number" min="1" style="width:80px" value="' + no + '" data-on="repNo" data-id="' + id + '"></label><button class="btn p" data-act="print">طباعة / PDF</button></div>' +
       (rs.length ? '' : '<div class="note noprint">لا توجد نتائج بعد؛ ستُملأ الأرقام تلقائياً بعد إدخال النتائج.</div>') +
-      '<div class="card" style="margin-top:12px"><div class="ph" style="text-align:center"><b>تقرير وصفي لتحليل اختبارات تحسين نواتج التعلم</b><div>للعام الدراسي: ' + esc(T.year || '1448هـ') + '</div></div>' +
+      '<div class="card" style="margin-top:12px"><div class="ph" style="text-align:center"><b id="repT">' + repTitle + '</b><div>' + esc(e.title) + ' — ' + subjOf(e) + ' — ' + gradeOf(e) + '</div><div>تقرير وصفي لتحليل اختبارات تحسين نواتج التعلم</div><div>للعام الدراسي: ' + esc(T.year || '1448هـ') + '</div></div>' +
       '<h2>أولاً: البيانات العامة للاختبار</h2><table class="tbl">' + info.map((x) => '<tr><th style="width:30%">' + x[0] + '</th><td>' + esc(x[1]) + '</td></tr>').join('') + '</table>' +
       '<p><b>هدف الاختبار:</b> قياس المستوى لتحديد المهارات المتقنة وغير المتقنة، وبناء الأنشطة العلاجية والإثرائية، ومراجعة خطط التحسين بما يعزّز استمرار التقدّم.</p>' +
       '<h2>ثانياً: وصف الاختبار</h2><p>تكوّن الاختبار من <b>' + e.qids.length + '</b> سؤالاً متنوعاً تقيس المهارات المستهدفة، وهي: ' + (skAll.length ? skAll.map((x, i) => (i + 1) + '- ' + x).join('، ') : Object.keys(M.SKILLS[e.s] || {}).map((k) => M.skillLabel(k)).join('، ')) + '.</p>' +
@@ -491,6 +497,13 @@
       setAnswers(e, el.dataset.s, M.parsePaper(el.value, e.qids.length));
       el.value = ''; repaintRow(e, el.dataset.s);
     },
+    repNo(el) {
+      const e = exam(el.dataset.id); e.rep = e.rep || {};
+      const v = parseInt(el.value, 10); e.rep.no = v > 0 ? v : 0; M.save();
+      const no = e.rep.no || 1, t = 'التقرير الوصفي رقم (' + ind(no) + ')';
+      ['repH', 'repT'].forEach((i) => { const x = document.getElementById(i); if (x) x.textContent = t; });
+      document.title = t + ' - ' + e.title;
+    },
     repText(el) { const e = exam(el.dataset.id); e.rep = e.rep || {}; e.rep[el.dataset.k] = el.value; M.save(); },
     tch(el) { D().teacher[el.dataset.k] = el.value; M.save(); },
     restore(el) {
@@ -498,7 +511,7 @@
       f.text().then((t) => { const o = JSON.parse(t); if (!o.exams || !o.classes) throw 0; M.db = Object.assign({ teacher: {}, results: [] }, o); M.save(); render(); toast('تمت الاستعادة'); }).catch(() => toast('الملف غير صالح'));
     },
   };
-  const LIVE = { nwTitle: 1, nwNum: 1, exTitle: 1, repText: 1, tch: 1, search: 1, rowPaste: 0 };
+  const LIVE = { repNo: 1, nwTitle: 1, nwNum: 1, exTitle: 1, repText: 1, tch: 1, search: 1, rowPaste: 0 };
 
   /* ================= التوجيه ================= */
   function render() {
@@ -507,9 +520,11 @@
     const name = p[0] || 'home';
     const v = V[name] || V.home;
     const y = window.scrollY;
+    S.docTitle = null;
     document.body.classList.toggle('taking', name === 'take');
     document.getElementById('app').innerHTML = v(p[1], p[2]);
     $$('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.r === name || (name === 'class' && a.dataset.r === 'classes') || (['exam', 'entry', 'import', 'report', 'sreport', 'desc'].includes(name) && a.dataset.r === 'exams')));
+    document.title = S.docTitle || DEF_TITLE;
     if (name === 'take') tickTimer();
     window.scrollTo(0, S.keepScroll ? y : 0);
     S.keepScroll = false;
