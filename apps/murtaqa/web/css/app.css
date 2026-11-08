@@ -16,7 +16,7 @@ a{color:var(--pri);text-decoration:none}
 h1,h2,h3{line-height:1.35;margin:0 0 .5em}
 h1{font-size:1.7rem}h2{font-size:1.25rem}h3{font-size:1.05rem}
 .wrap{max-width:1040px;margin:0 auto;padding:0 16px}
-main{padding:20px 0 90px}
+main{padding:20px 0 70px}
 
 /* الشريط العلوي */
 .top{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
@@ -187,5 +187,6 @@ td.nm{position:sticky;right:0;background:var(--card);white-space:nowrap;font-wei
   .otb,.off-t,.lst{break-inside:avoid}
 }
 
-.foot{border-top:1px solid var(--line);background:var(--card);color:var(--mute);text-align:center;padding:18px 0;font-size:.92rem;line-height:1.8}
+.foot{border-top:1px solid var(--line);color:var(--mute);text-align:center;padding:6px 0;font-size:.74rem;line-height:1.5}
+.foot .wrap{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
 .foot b{color:var(--ink)}
