@@ -277,7 +277,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         for (final g in m.valid) ...[g.text, g.start, g.end],
         m.cuts.map((c) => '${c.$1}-${c.$2}').join(','), surah, look.transShadow, look.reciterShadow, look.transFont, look.reciterFont, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow, look.align,
         look.headerMode, look.showName, look.showBasmala, look.headerSize, look.headerY, look.headerColor, look.dim,
-        look.boxOn, look.boxColor, look.boxOpacity, look.boxPad, look.boxRadius, look.textFx, look.trans, look.transSize, look.transY, look.transColor, trCache.length, look.reciter, look.reciterSecs, look.reciterSize, look.reciterY, look.reciterAll, look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, bgs.map((b) => '${b.path}${b.speed}').join(','), images.length,
+        look.boxOn, look.boxColor, look.boxOpacity, look.boxPad, look.boxRadius, look.textFx, look.trans, look.transSize, look.transGap, look.transColor, trCache.length, look.reciter, look.reciterSecs, look.reciterSize, look.reciterY, look.reciterAll, look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, bgs.map((b) => '${b.path}${b.speed}').join(','), images.length,
       ]);
 
   ui.Image? thumbAt(double t) {
@@ -890,7 +890,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         ),
         if (look.trans.isNotEmpty) ...[
           _slider('حجم الخط', look.transSize, 24, 80, (x) => look.transSize = x, div: 56),
-          _slider('الموضع', look.transY, 0.4, 0.95, (x) => look.transY = x, div: 55),
+          _slider('المسافة عن الآية', look.transGap, 0, 200, (x) => look.transGap = x, div: 40),
           _slider('الظل', look.transShadow, 0, 1, (x) => look.transShadow = x),
           _fontPicker(look.transFont, (v) => look.transFont = v),
           Row(children: [const Text('اللون  '), for (final c in swatches) _swatch(c, look.transColor, (x) => look.transColor = x)]),

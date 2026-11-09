@@ -42,7 +42,7 @@ class Look {
   String textFx = 'fade'; // تأثير ظهور النص: fade / slide / none
   // الترجمة أو التفسير تحت الآية ('' = بلا)
   String trans = '';
-  double transSize = 40, transY = 0.68;
+  double transSize = 40, transY = 0.68, transGap = 50; // transGap: المسافة الثابتة بين آخر سطر من الآية والترجمة
   Color transColor = const Color(0xFFE8E8E8);
   // اسم القارئ في بداية الفيديو
   String reciter = '';
@@ -137,22 +137,27 @@ Rect paintText(Canvas c, String text, Look l) {
 
 /// المقطع كاملاً: المستطيل الخلفي (إن فُعّل) ثم النص ثم الترجمة. يرجع المنطقة المرسومة.
 Rect paintSegment(Canvas c, String text, String tr, Look l) {
+  // الترجمة تتبع آخر سطر من الآية بمسافة ثابتة، فتبقى المسافة نفسها سواء كانت الآية سطراً أو عدة أسطر
+  Rect layout(Canvas cv) {
+    final t = paintText(cv, text, l);
+    return unionRect(t, paintTrans(cv, tr, l, top: t.isEmpty ? null : t.bottom + l.transGap));
+  }
+
   var back = Rect.zero;
   if (l.boxOn) {
     final rec = ui.PictureRecorder(); // قياس فقط
-    final dry = Canvas(rec);
-    back = unionRect(paintText(dry, text, l), paintTrans(dry, tr, l)).inflate(l.boxPad);
+    back = layout(Canvas(rec)).inflate(l.boxPad);
     rec.endRecording().dispose();
     if (!back.isEmpty) {
       c.drawRRect(RRect.fromRectAndRadius(back, Radius.circular(l.boxRadius)), Paint()..color = l.boxColor.withValues(alpha: l.boxOpacity));
     }
   }
-  return unionRect(back, unionRect(paintText(c, text, l), paintTrans(c, tr, l)));
+  return unionRect(back, layout(c));
 }
 
 ui.Picture segmentPicture(String text, String tr, Look l) => _cached(
     'S|$text|$tr|${l.fontSize}|${l.textY}|${l.width}|${l.lineGap}|${l.color.toARGB32()}|${l.shadow}|${l.align}|${l.boxOn}|${l.boxColor.toARGB32()}|'
-    '${l.boxOpacity}|${l.boxPad}|${l.boxRadius}|${l.trans}|${l.transSize}|${l.transY}|${l.transColor.toARGB32()}|${l.transShadow}|${l.transFont}',
+    '${l.boxOpacity}|${l.boxPad}|${l.boxRadius}|${l.trans}|${l.transSize}|${l.transGap}|${l.transColor.toARGB32()}|${l.transShadow}|${l.transFont}',
     (c) => paintSegment(c, text, tr, l));
 
 ui.Picture headerPicture(String? name, String? bas, Look l) => _cached(
@@ -164,7 +169,7 @@ ui.Picture reciterPicture(Look l) => _cached(
 Rect unionRect(Rect a, Rect b) => a.isEmpty ? b : b.isEmpty ? a : a.expandToInclude(b);
 
 /// الترجمة تحت الآية بخط النظام، موسّطة، حتى 7 أسطر.
-Rect paintTrans(Canvas c, String text, Look l) {
+Rect paintTrans(Canvas c, String text, Look l, {double? top}) {
   if (text.isEmpty) return Rect.zero;
   final tp = TextPainter(
     text: TextSpan(
@@ -176,7 +181,7 @@ Rect paintTrans(Canvas c, String text, Look l) {
     maxLines: 7,
     ellipsis: '…',
   )..layout(maxWidth: vw * l.width);
-  final at = Offset((vw - tp.width) / 2, vh * l.transY - tp.height / 2);
+  final at = Offset((vw - tp.width) / 2, top ?? vh * l.transY - tp.height / 2);
   tp.paint(c, at);
   return at & tp.size;
 }
