@@ -23,6 +23,10 @@ class Look {
   // أدوات تحسين الصورة (تُطبَّق على الخلفية في المعاينة والتصدير)
   double sharpen = 0.5, brightness = 0, contrast = 1, saturation = 1;
   bool hq = true; // تصدير عالي الجودة (معدل بيانات أعلى)
+  // مستطيل خلف النص (والترجمة) لتوضيح القراءة على الخلفيات الفاتحة أو المزدحمة
+  bool boxOn = false;
+  Color boxColor = Colors.black;
+  double boxOpacity = 0.5, boxPad = 36, boxRadius = 28;
   String textFx = 'fade'; // تأثير ظهور النص: fade / slide / none
   // الترجمة أو التفسير تحت الآية ('' = بلا)
   String trans = '';
@@ -114,6 +118,21 @@ Rect paintText(Canvas c, String text, Look l) {
     y += step;
   }
   return box;
+}
+
+/// المقطع كاملاً: المستطيل الخلفي (إن فُعّل) ثم النص ثم الترجمة. يرجع المنطقة المرسومة.
+Rect paintSegment(Canvas c, String text, String tr, Look l) {
+  var back = Rect.zero;
+  if (l.boxOn) {
+    final rec = ui.PictureRecorder(); // قياس فقط
+    final dry = Canvas(rec);
+    back = unionRect(paintText(dry, text, l), paintTrans(dry, tr, l)).inflate(l.boxPad);
+    rec.endRecording().dispose();
+    if (!back.isEmpty) {
+      c.drawRRect(RRect.fromRectAndRadius(back, Radius.circular(l.boxRadius)), Paint()..color = l.boxColor.withValues(alpha: l.boxOpacity));
+    }
+  }
+  return unionRect(back, unionRect(paintText(c, text, l), paintTrans(c, tr, l)));
 }
 
 Rect unionRect(Rect a, Rect b) => a.isEmpty ? b : b.isEmpty ? a : a.expandToInclude(b);

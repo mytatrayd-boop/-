@@ -270,7 +270,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         for (final g in m.valid) '${g.text}${g.start}${g.end}',
         m.cuts, surah, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow, look.align,
         look.headerMode, look.showName, look.showBasmala, look.headerSize, look.headerY, look.headerColor, look.dim,
-        look.textFx, look.trans, look.transSize, look.transY, look.transColor, trCache.length, look.reciter, look.reciterSecs, look.reciterSize, look.reciterY, look.reciterAll, look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) '${b.path}${b.speed}'], images.length,
+        look.boxOn, look.boxColor, look.boxOpacity, look.boxPad, look.boxRadius, look.textFx, look.trans, look.transSize, look.transY, look.transColor, trCache.length, look.reciter, look.reciterSecs, look.reciterSize, look.reciterY, look.reciterAll, look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) '${b.path}${b.speed}'], images.length,
       ].join('|');
 
   ui.Image? thumbAt(double t) {
@@ -841,6 +841,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         _slider('عرض السطر', look.width, 0.5, 0.95, (x) => look.width = x, div: 45),
         _slider('تباعد الأسطر', look.lineGap, 1.3, 2.6, (x) => look.lineGap = x, div: 13),
         _slider('الظل', look.shadow, 0, 1, (x) => look.shadow = x),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('مستطيل خلف النص'), value: look.boxOn, onChanged: (v) => refresh(() => look.boxOn = v)),
+        if (look.boxOn) ...[
+          _slider('الشفافية', look.boxOpacity, 0.05, 1, (x) => look.boxOpacity = x, div: 19),
+          _slider('هامش المستطيل', look.boxPad, 10, 90, (x) => look.boxPad = x, div: 16),
+          _slider('استدارة الزوايا', look.boxRadius, 0, 60, (x) => look.boxRadius = x, div: 12),
+          Row(children: [
+            const Text('اللون  '),
+            for (final c in const [Colors.black, Color(0xFF555555), Color(0xFF9E9E9E)]) _swatch(c, look.boxColor, (x) => look.boxColor = x),
+          ]),
+        ],
         _slider('الظهور والاختفاء', look.fade, 0, 1, (x) => look.fade = x),
         SegmentedButton<String>(
           segments: const [ButtonSegment(value: 'fade', label: Text('تلاشٍ')), ButtonSegment(value: 'slide', label: Text('انزلاق')), ButtonSegment(value: 'none', label: Text('مباشر'))],

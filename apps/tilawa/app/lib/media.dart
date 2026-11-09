@@ -203,7 +203,7 @@ Future<String> renderVideo({
   for (var i = 0; i < shifted.length; i++) {
     final (g, text, tr) = shifted[i];
     final png = '${dir.path}/seg_$i.png';
-    final (tb, tx, ty) = await layerPng((c) => unionRect(paintText(c, text, look), paintTrans(c, tr, look)));
+    final (tb, tx, ty) = await layerPng((c) => paintSegment(c, text, tr, look));
     await File(png).writeAsBytes(tb);
     final d = g.end - g.start, f = max(look.textFx == 'none' ? 0.04 : min(look.fade, d / 3), 0.04);
     final pos = look.textFx == 'slide'

@@ -73,8 +73,7 @@ class Composer {
       final a = min(1.0, min((t - g.start) / f, (g.end - t) / f));
       c.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: a.clamp(0, 1)));
       if (look.textFx == 'slide') c.translate(0, 50 * (1 - ((t - g.start) / f).clamp(0.0, 1.0)));
-      paintText(c, texts[i], look);
-      if (i < trs.length) paintTrans(c, trs[i], look);
+      paintSegment(c, texts[i], i < trs.length ? trs[i] : '', look);
       c.restore();
     }
     if (look.reciter.trim().isNotEmpty) {
