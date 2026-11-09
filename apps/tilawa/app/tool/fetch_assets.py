@@ -34,6 +34,16 @@ for tid in TRANS:
         out[int(s) - 1][int(a) - 1] = t.strip()
     assert all(all(x) for x in out), tid
     f.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+# خطوط عربية/لاتينية مفتوحة الترخيص (OFL) لاختيارها في الترجمة واسم القارئ
+GF = "https://raw.githubusercontent.com/google/fonts/main/ofl/"
+FONTS = {"Amiri": "amiri/Amiri-Regular.ttf", "Tajawal": "tajawal/Tajawal-Regular.ttf", "Almarai": "almarai/Almarai-Regular.ttf",
+         "Scheherazade": "scheherazadenew/ScheherazadeNew-Regular.ttf", "Lateef": "lateef/Lateef-Regular.ttf"}
+(OUT / "fonts").mkdir(exist_ok=True)
+for name, path in FONTS.items():
+    f = OUT / "fonts" / f"{name}.ttf"
+    if not f.exists():
+        with urllib.request.urlopen(GF + path, timeout=120) as r:
+            f.write_bytes(r.read())
 for f in ["hafs.otf", "bsml.ttf"]:
     (OUT / f).write_bytes((TILAWA / "assets" / f).read_bytes())
 for i, name in enumerate(backgrounds.PRESETS):

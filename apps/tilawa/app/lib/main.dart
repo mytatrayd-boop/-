@@ -75,7 +75,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   bool busy = false;
   bool editing = false; // تحرير نص المقطع في شريط صغير تحت المعاينة (لتبقى المعاينة ظاهرة)
   final editCtl = TextEditingController();
-  final reciterCtl = TextEditingController();
+  String editKind = 'seg'; // ما يحرره الشريط السفلي: seg نص المقطع / reciter اسم القارئ
   final trCache = <String, List<List<String>>>{};
   String? lastExport; // آخر فيديو مُصدَّر (للمشاركة)
 
@@ -238,10 +238,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final q = quran!;
     final (name, bas) = q.header(surah);
     final list = m.valid;
-    return Composer(m, look, activeBgs, images, textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
-        look.showName ? name : null, look.showBasmala ? bas : null,
-        trs: _trs(list));
+    final key = '${list.map((g) => g.text).join('\u0001')}|${q.nextWord(surah, to)}';
+    if (key != _fontKey) {
+      _fontKey = key;
+      _fontTexts = textsForFont([for (final g in list) g.text], q.nextWord(surah, to));
+    }
+    return Composer(m, look, activeBgs, images, _fontTexts, look.showName ? name : null, look.showBasmala ? bas : null,
+        trs: _trs(list), forceReciter: editing && editKind == 'reciter');
   }
+
+  String _fontKey = '';
+  List<String> _fontTexts = const [];
 
   /// ترجمة كل مقطع (بحسب رقم آيته) من الترجمة المختارة؛ '' إن لم تُختر أو لم تُحمَّل بعد.
   List<String> _trs(List<Segment> list) {
@@ -262,16 +269,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   final thumbs = <int, ui.Image>{};
   final _thumbQueue = <int>{};
-  String _thumbSig = '';
+  int _thumbSig = 0;
   Composer? _comp;
   bool _thumbBusy = false;
 
-  String _signature() => [
-        for (final g in m.valid) '${g.text}${g.start}${g.end}',
-        m.cuts, surah, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow, look.align,
+  int _signature() => Object.hashAll([
+        for (final g in m.valid) ...[g.text, g.start, g.end],
+        m.cuts.map((c) => '${c.$1}-${c.$2}').join(','), surah, look.transShadow, look.reciterShadow, look.transFont, look.reciterFont, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow, look.align,
         look.headerMode, look.showName, look.showBasmala, look.headerSize, look.headerY, look.headerColor, look.dim,
-        look.boxOn, look.boxColor, look.boxOpacity, look.boxPad, look.boxRadius, look.textFx, look.trans, look.transSize, look.transY, look.transColor, trCache.length, look.reciter, look.reciterSecs, look.reciterSize, look.reciterY, look.reciterAll, look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) '${b.path}${b.speed}'], images.length,
-      ].join('|');
+        look.boxOn, look.boxColor, look.boxOpacity, look.boxPad, look.boxRadius, look.textFx, look.trans, look.transSize, look.transY, look.transColor, trCache.length, look.reciter, look.reciterSecs, look.reciterSize, look.reciterY, look.reciterAll, look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, bgs.map((b) => '${b.path}${b.speed}').join(','), images.length,
+      ]);
 
   ui.Image? thumbAt(double t) {
     final key = (t * 2).round();
@@ -309,7 +316,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   void _openFullscreen() {
     if (m.valid.isEmpty || audioPath == null) return;
     player.pause();
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => PreviewPage(audio: audioPath!, composer: composer())));
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => PreviewPage(audio: audioPath!, composer: composer(), start: m.playhead)));
   }
 
   // ── التصدير ──
@@ -425,10 +432,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               minLines: 1,
               maxLines: 3,
               style: const TextStyle(fontSize: 18),
-              decoration: const InputDecoration(isDense: true, border: OutlineInputBorder(), hintText: 'نص المقطع'),
+              decoration: InputDecoration(isDense: true, border: const OutlineInputBorder(), hintText: editKind == 'reciter' ? 'اسم القارئ' : 'نص المقطع'),
               onChanged: (v) {
-                m.sel?.text = v.trim();
-                m.changed();
+                if (editKind == 'reciter') {
+                  refresh(() => look.reciter = v);
+                } else {
+                  m.sel?.text = v.trim();
+                  m.changed();
+                }
               },
             ),
           ),
@@ -441,7 +452,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         ]),
       );
 
-  Widget _editor() => editing && m.sel != null
+  Widget _editor() => editing && (editKind == 'reciter' || m.sel != null)
       ? Column(children: [Expanded(child: _previewArea()), _editBar()])
       : Column(children: [
         _topBar(),
@@ -634,7 +645,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     if (g == null) return;
     editCtl.text = g.text;
     m.checkpoint();
-    refresh(() => editing = true);
+    refresh(() {
+      editKind = 'seg';
+      editing = true;
+    });
   }
 
   void _splitSheet() {
@@ -877,17 +891,35 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         if (look.trans.isNotEmpty) ...[
           _slider('حجم الخط', look.transSize, 24, 80, (x) => look.transSize = x, div: 56),
           _slider('الموضع', look.transY, 0.4, 0.95, (x) => look.transY = x, div: 55),
+          _slider('الظل', look.transShadow, 0, 1, (x) => look.transShadow = x),
+          _fontPicker(look.transFont, (v) => look.transFont = v),
           Row(children: [const Text('اللون  '), for (final c in swatches) _swatch(c, look.transColor, (x) => look.transColor = x)]),
           const Text('تظهر ترجمة الآية مع كل مقطع منها. المصدر: Tanzil.net', style: TextStyle(fontSize: 12)),
         ],
       ]);
 
+  Widget _fontPicker(String current, void Function(String) on) => DropdownButton<String>(
+        isExpanded: true,
+        value: current,
+        items: [for (final e in fontOptions.entries) DropdownMenuItem(value: e.key, child: Text(e.value, style: TextStyle(fontFamily: e.key.isEmpty ? null : e.key)))],
+        onChanged: (v) => refresh(() => on(v ?? '')),
+      );
+
   Widget _reciterPanel() => _pad([
-        TextField(
-          controller: reciterCtl,
-          decoration: const InputDecoration(labelText: 'اسم القارئ (يظهر في الفيديو)', hintText: 'مثال: القارئ ...'),
-          onChanged: (v) => refresh(() => look.reciter = v),
+        OutlinedButton.icon(
+          onPressed: () {
+            Navigator.of(context).pop(); // تُغلق اللوحة ليبقى الاسم ظاهراً في المعاينة أثناء الكتابة
+            editCtl.text = look.reciter;
+            refresh(() {
+              editKind = 'reciter';
+              editing = true;
+            });
+          },
+          icon: const Icon(Icons.edit),
+          label: Text(look.reciter.isEmpty ? 'اكتب اسم القارئ' : look.reciter),
         ),
+        _fontPicker(look.reciterFont, (v) => look.reciterFont = v),
+        _slider('الظل', look.reciterShadow, 0, 1, (x) => look.reciterShadow = x),
         SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('يظهر طوال الفيديو'), value: look.reciterAll, onChanged: (v) => refresh(() => look.reciterAll = v)),
         if (!look.reciterAll) _slider('يظهر ${look.reciterSecs.round()} ث', look.reciterSecs, 2, 15, (x) => look.reciterSecs = x, div: 13),
         _slider('الحجم', look.reciterSize, 24, 90, (x) => look.reciterSize = x, div: 66),

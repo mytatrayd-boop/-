@@ -10,6 +10,18 @@ import 'quran.dart';
 
 const vw = 1080.0, vh = 1920.0;
 const rtlTrans = {'ar.muyassar', 'ur.jalandhry'};
+const fontOptions = {'': 'خط النظام', 'Amiri': 'أميري', 'Tajawal': 'تجوال', 'Almarai': 'المراعي', 'Scheherazade': 'شهرزاد', 'Lateef': 'لطيف'};
+
+// رسم المقاطع والترويسة مرة واحدة ثم إعادة استخدامه في كل إطار (التخطيط النصي هو الأثقل)
+final _pics = <String, ui.Picture>{};
+ui.Picture _cached(String key, void Function(Canvas) draw) {
+  if (_pics.length > 300) _pics.clear();
+  return _pics.putIfAbsent(key, () {
+    final rec = ui.PictureRecorder();
+    draw(Canvas(rec));
+    return rec.endRecording();
+  });
+}
 
 class Look {
   double fontSize = 60, textY = 0.40, width = 0.85, lineGap = 1.9, shadow = 0.85, fade = 0.35;
@@ -35,6 +47,9 @@ class Look {
   // اسم القارئ في بداية الفيديو
   String reciter = '';
   double reciterSecs = 5, reciterSize = 42, reciterY = 0.9;
+  // ظل وخط مستقلان للترجمة ولاسم القارئ ('' = خط النظام)
+  double transShadow = 0.85, reciterShadow = 0.85;
+  String transFont = '', reciterFont = '';
   bool reciterAll = false;
   bool zoom = false; // التقريب البطيء أثقل جزء في الإنتاج
   bool manyBgs = false;
@@ -135,13 +150,27 @@ Rect paintSegment(Canvas c, String text, String tr, Look l) {
   return unionRect(back, unionRect(paintText(c, text, l), paintTrans(c, tr, l)));
 }
 
+ui.Picture segmentPicture(String text, String tr, Look l) => _cached(
+    'S|$text|$tr|${l.fontSize}|${l.textY}|${l.width}|${l.lineGap}|${l.color.toARGB32()}|${l.shadow}|${l.align}|${l.boxOn}|${l.boxColor.toARGB32()}|'
+    '${l.boxOpacity}|${l.boxPad}|${l.boxRadius}|${l.trans}|${l.transSize}|${l.transY}|${l.transColor.toARGB32()}|${l.transShadow}|${l.transFont}',
+    (c) => paintSegment(c, text, tr, l));
+
+ui.Picture headerPicture(String? name, String? bas, Look l) => _cached(
+    'H|$name|$bas|${l.headerMode}|${l.headerSize}|${l.headerY}|${l.headerColor.toARGB32()}|${l.shadow}', (c) => paintHeader(c, name, bas, l));
+
+ui.Picture reciterPicture(Look l) => _cached(
+    'R|${l.reciter}|${l.reciterFont}|${l.reciterSize}|${l.reciterY}|${l.headerColor.toARGB32()}|${l.reciterShadow}', (c) => paintReciter(c, l));
+
 Rect unionRect(Rect a, Rect b) => a.isEmpty ? b : b.isEmpty ? a : a.expandToInclude(b);
 
 /// الترجمة تحت الآية بخط النظام، موسّطة، حتى 7 أسطر.
 Rect paintTrans(Canvas c, String text, Look l) {
   if (text.isEmpty) return Rect.zero;
   final tp = TextPainter(
-    text: TextSpan(text: text, style: TextStyle(fontSize: l.transSize, color: l.transColor, height: 1.35, shadows: _shadows(l.shadow))),
+    text: TextSpan(
+        text: text,
+        style: TextStyle(
+            fontFamily: l.transFont.isEmpty ? null : l.transFont, fontSize: l.transSize, color: l.transColor, height: 1.35, shadows: _shadows(l.transShadow))),
     textDirection: rtlTrans.contains(l.trans) ? TextDirection.rtl : TextDirection.ltr,
     textAlign: TextAlign.center,
     maxLines: 7,
@@ -156,7 +185,10 @@ Rect paintTrans(Canvas c, String text, Look l) {
 Rect paintReciter(Canvas c, Look l) {
   final name = l.reciter.trim();
   if (name.isEmpty) return Rect.zero;
-  final tp = _tp(name, TextStyle(fontSize: l.reciterSize, color: l.headerColor, shadows: _shadows(l.shadow)));
+  final tp = _tp(
+      name,
+      TextStyle(
+          fontFamily: l.reciterFont.isEmpty ? null : l.reciterFont, fontSize: l.reciterSize, color: l.headerColor, shadows: _shadows(l.reciterShadow)));
   final at = Offset((vw - tp.width) / 2, vh * l.reciterY - tp.height / 2);
   tp.paint(c, at);
   return at & tp.size;

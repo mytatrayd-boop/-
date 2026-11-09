@@ -64,8 +64,19 @@ flutter:
     - assets/
     - assets/model/
     - assets/tr/
+    - assets/fonts/
   fonts:
     - family: Hafs
       fonts: [{asset: assets/hafs.otf}]
     - family: Bsml
       fonts: [{asset: assets/bsml.ttf}]
+    - family: Amiri
+      fonts: [{asset: assets/fonts/Amiri.ttf}]
+    - family: Tajawal
+      fonts: [{asset: assets/fonts/Tajawal.ttf}]
+    - family: Almarai
+      fonts: [{asset: assets/fonts/Almarai.ttf}]
+    - family: Scheherazade
+      fonts: [{asset: assets/fonts/Scheherazade.ttf}]
+    - family: Lateef
+      fonts: [{asset: assets/fonts/Lateef.ttf}]

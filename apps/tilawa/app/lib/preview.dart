@@ -21,6 +21,7 @@ class Composer {
   final List<String> texts; // نصوص m.valid مرمّزة لخط المجمع
   final String? name, basmala;
   final List<String> trs; // ترجمة كل مقطع (فارغة إن لم تُختر ترجمة)
+  final bool forceReciter; // إظهار اسم القارئ دائماً (أثناء تحريره)
   late final List<Segment> segs = m.valid;
   late final double end = m.trimEnd < m.duration || segs.isEmpty ? m.trimEnd : min(segs.last.end + 0.8, m.duration);
   late final kept = keptRanges(m.trimStart, end, m.cuts);
@@ -29,7 +30,7 @@ class Composer {
     for (final g in segs) Segment(g.text, outTime(g.start, kept) ?? 0, outTime(g.end, kept) ?? 0)
   ], look);
 
-  Composer(this.m, this.look, this.bgs, this.images, this.texts, this.name, this.basmala, {this.trs = const []});
+  Composer(this.m, this.look, this.bgs, this.images, this.texts, this.name, this.basmala, {this.trs = const [], this.forceReciter = false});
 
   void _bg(Canvas c, int k, double local, double len, double alpha) {
     final b = bgs[k % bgs.length], img = (b.video ? videoFrameAt(b, local) : null) ?? images[b.preview];
@@ -65,7 +66,7 @@ class Composer {
       }
     }
     c.drawRect(Offset.zero & const Size(vw, vh), Paint()..color = Colors.black.withValues(alpha: look.dim));
-    paintHeader(c, name, basmala, look);
+    c.drawPicture(headerPicture(name, basmala, look));
     for (var i = 0; i < segs.length; i++) {
       final g = segs[i];
       if (t < g.start || t > g.end || m.skipCut(t) != null) continue;
@@ -73,14 +74,16 @@ class Composer {
       final a = min(1.0, min((t - g.start) / f, (g.end - t) / f));
       c.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: a.clamp(0, 1)));
       if (look.textFx == 'slide') c.translate(0, 50 * (1 - ((t - g.start) / f).clamp(0.0, 1.0)));
-      paintSegment(c, texts[i], i < trs.length ? trs[i] : '', look);
+      c.drawPicture(segmentPicture(texts[i], i < trs.length ? trs[i] : '', look));
       c.restore();
     }
     if (look.reciter.trim().isNotEmpty) {
       final o = outTime(t, kept) ?? 0, d = look.reciterAll ? outDuration : look.reciterSecs, f = min(0.5, d / 3);
-      if (o <= d) {
+      if (forceReciter) {
+        c.drawPicture(reciterPicture(look));
+      } else if (o <= d) {
         c.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: min(1.0, min(o / f, (d - o) / f)).clamp(0, 1)));
-        paintReciter(c, look);
+        c.drawPicture(reciterPicture(look));
         c.restore();
       }
     }
@@ -129,7 +132,8 @@ class _FramePainter extends CustomPainter {
 class PreviewPage extends StatefulWidget {
   final String audio;
   final Composer composer;
-  const PreviewPage({super.key, required this.audio, required this.composer});
+  final double start; // وقت البدء بالثواني (موضع المؤشر)
+  const PreviewPage({super.key, required this.audio, required this.composer, this.start = 0});
   @override
   State<PreviewPage> createState() => _PreviewPageState();
 }
@@ -144,13 +148,14 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    t = c.kept.first.$1;
-    player.setFilePath(widget.audio).then((_) => _play()).then((_) => ticker.start());
+    final s = widget.start;
+    t = c.kept.any((k) => s >= k.$1 && s < k.$2 - 0.05) ? s : c.kept.first.$1;
+    player.setFilePath(widget.audio).then((_) => _play(t)).then((_) => ticker.start());
   }
 
-  Future<void> _play() async {
+  Future<void> _play([double? from]) async {
     done = false;
-    await player.seek(Duration(milliseconds: (c.kept.first.$1 * 1000).round()));
+    await player.seek(Duration(milliseconds: ((from ?? c.kept.first.$1) * 1000).round()));
     player.play();
   }
 
