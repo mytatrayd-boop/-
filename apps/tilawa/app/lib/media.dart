@@ -4,7 +4,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:flutter/painting.dart' show decodeImageFromList;
 import 'package:ffmpeg_kit_flutter_new_min_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_min_gpl/return_code.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,11 +15,13 @@ import 'look.dart';
 import 'sync.dart';
 
 const fps = 30;
+const previewFps = 8, previewMaxSec = 10; // إطارات معاينة الفيديو
 
 class Bg {
   final String path, name;
   final bool video;
   String? thumb; // صورة للمعاينة (للفيديو)
+  List<ui.Image>? frames; // إطارات مصغّرة من الفيديو للمعاينة المتحركة
   double speed; // سرعة الفيديو: 0.5 = حركة بطيئة (يطول الفيديو)
   Bg(this.path, this.name, {this.video = false, this.thumb}) : speed = video ? 0.5 : 1;
   String get preview => thumb ?? path;
@@ -45,6 +49,23 @@ Future<String> videoThumb(String path) async {
   final out = '${(await workDir()).path}/thumb_${path.hashCode}.jpg';
   await _run(['-i', path, '-frames:v', '1', '-vf', 'scale=540:-2', out]);
   return out;
+}
+
+/// إطارات مصغّرة (8 في الثانية، حتى 10 ث) تجعل خلفية الفيديو تتحرك في المعاينة.
+Future<List<ui.Image>> videoFrames(String path) async {
+  final dir = Directory('${(await workDir()).path}/frames_${path.hashCode}');
+  if (dir.existsSync()) dir.deleteSync(recursive: true);
+  dir.createSync(recursive: true);
+  await _run(['-i', path, '-t', '$previewMaxSec', '-vf', 'fps=$previewFps,scale=270:-2', '-q:v', '5', '${dir.path}/f%03d.jpg']);
+  final files = dir.listSync().whereType<File>().toList()..sort((a, b) => a.path.compareTo(b.path));
+  return [for (final f in files) await decodeImageFromList(await f.readAsBytes())];
+}
+
+/// إطار الفيديو المناسب لزمن t داخل مقطع الخلفية (يتكرر كما في التصدير، وتُراعى السرعة).
+ui.Image? videoFrameAt(Bg b, double t) {
+  final f = b.frames;
+  if (f == null || f.isEmpty) return null;
+  return f[(t * b.speed * previewFps).floor().abs() % f.length];
 }
 
 bool isVideo(String path) => RegExp(r'\.(mp4|mov|m4v|webm|mkv|3gp)$', caseSensitive: false).hasMatch(path);
@@ -116,6 +137,7 @@ Future<String> renderVideo({
   required String? headerName,
   required String? headerBasmala,
   required List<(double, double)> kept,
+  int height = 1920, // 1920 = 1080p، و1280 = 720p
   required void Function(double) onProgress,
 }) async {
   final dir = await workDir();
@@ -190,11 +212,13 @@ Future<String> renderVideo({
     chain.add('[v$i][t$i]overlay=$tx:$ty:eof_action=pass[v${i + 1}]');
   }
   final out = '${dir.path}/tilawa_${DateTime.now().millisecondsSinceEpoch}.mp4';
-  final common = ['-filter_complex', chain.join(';'), '-map', '[v${shifted.length}]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
+  final small = height < 1920;
+  if (small) chain.add('[v${shifted.length}]scale=720:1280:flags=lanczos[vout]');
+  final common = ['-filter_complex', chain.join(';'), '-map', small ? '[vout]' : '[v${shifted.length}]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
   final tail = ['-r', '$fps', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out];
   // ترميز العتاد (MediaCodec) أسرع بكثير؛ إن لم يدعمه الجوال نرجع إلى x264 السريع
   try {
-    await _runAsync([...args, ...common, '-c:v', 'h264_mediacodec', '-b:v', look.hq ? '20M' : '8M', '-pix_fmt', 'nv12', ...tail], duration, onProgress);
+    await _runAsync([...args, ...common, '-c:v', 'h264_mediacodec', '-b:v', small ? (look.hq ? '10M' : '5M') : (look.hq ? '20M' : '8M'), '-pix_fmt', 'nv12', ...tail], duration, onProgress);
   } catch (_) {
     await _runAsync([...args, ...common, '-c:v', 'libx264', '-preset', look.hq ? 'veryfast' : 'superfast', '-crf', look.hq ? '17' : '22', '-pix_fmt', 'yuv420p', ...tail],
         duration, onProgress);

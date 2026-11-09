@@ -287,6 +287,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final list = m.valid;
     if (list.isEmpty) return;
     player.pause();
+    final h = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(title: const Text('جودة التصدير'), children: [
+        SimpleDialogOption(onPressed: () => Navigator.pop(ctx, 1920), child: const Text('1080p — أعلى جودة (أبطأ وحجم أكبر)')),
+        SimpleDialogOption(onPressed: () => Navigator.pop(ctx, 1280), child: const Text('720p — أسرع وأصغر حجماً')),
+      ]),
+    );
+    if (h == null || !mounted) return;
     final (name, bas) = q.header(surah);
     final prog = ValueNotifier(0.0);
     showDialog(
@@ -319,6 +327,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         headerName: look.showName ? name : null,
         headerBasmala: look.showBasmala ? bas : null,
         kept: keptRanges(0, end, m.cuts),
+        height: h,
         onProgress: (p) => prog.value = p,
       );
       await Gal.putVideo(out, album: 'تلاوة');
@@ -694,7 +703,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               final added = <Bg>[];
               for (final f in files.where((f) => f.path != null)) {
                 final v = isVideo(f.path!);
-                added.add(Bg(f.path!, f.name, video: v, thumb: v ? await videoThumb(f.path!) : null));
+                final b = Bg(f.path!, f.name, video: v, thumb: v ? await videoThumb(f.path!) : null);
+                if (v) b.frames = await videoFrames(f.path!);
+                added.add(b);
               }
               refresh(() {
                 if (!look.manyBgs) bgs.clear();

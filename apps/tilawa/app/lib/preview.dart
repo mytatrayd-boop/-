@@ -31,7 +31,7 @@ class Composer {
   Composer(this.m, this.look, this.bgs, this.images, this.texts, this.name, this.basmala);
 
   void _bg(Canvas c, int k, double local, double len, double alpha) {
-    final b = bgs[k % bgs.length], img = images[b.preview];
+    final b = bgs[k % bgs.length], img = (b.video ? videoFrameAt(b, local) : null) ?? images[b.preview];
     if (img == null) return;
     var sc = max(vw / img.width, vh / img.height);
     if (look.zoom && !b.video) sc *= 1 + 0.08 * (local / max(len, 0.1)).clamp(0, 1);
