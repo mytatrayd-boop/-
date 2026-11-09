@@ -1,5 +1,6 @@
 // تلاوة: ارفع تلاوة ← تعرّف تلقائي على الآيات وتوقيتها ← تحرير على طريقة CapCut ← فيديو 1080×1920.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -9,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'asr.dart';
 import 'editor.dart';
@@ -41,6 +43,15 @@ class TilawaApp extends StatelessWidget {
 const presets = ['ليل ونجوم', 'غروب', 'فجر', 'زمردي', 'أسود'];
 const swatches = [Colors.white, Color(0xFFF3E3B5), Color(0xFFE8C66A), Color(0xFFBFE3FF), Color(0xFFD7F5E6)];
 const accent = Color(0xFF55C7DE);
+const transOptions = {
+  '': 'بدون ترجمة',
+  'ar.muyassar': 'تفسير الميسر (عربي)',
+  'en.sahih': 'English — Saheeh International',
+  'fr.hamidullah': 'Français — Hamidullah',
+  'ur.jalandhry': 'اردو — جالندھری',
+  'id.indonesian': 'Indonesia — Kemenag',
+  'tr.diyanet': 'Türkçe — Diyanet',
+};
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -64,6 +75,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   bool busy = false;
   bool editing = false; // تحرير نص المقطع في شريط صغير تحت المعاينة (لتبقى المعاينة ظاهرة)
   final editCtl = TextEditingController();
+  final reciterCtl = TextEditingController();
+  final trCache = <String, List<List<String>>>{};
+  String? lastExport; // آخر فيديو مُصدَّر (للمشاركة)
 
   void refresh([VoidCallback? fn]) {
     setState(fn ?? () {});
@@ -176,7 +190,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final span = m.duration > 0 ? m.duration : 5.0 * texts.length;
     var t = 0.0;
     m.setSegments([
-      for (final x in texts) () { final d = span * letters(x) / total; final g = Segment(x, t, t + d - 0.15); t += d; return g; }()
+      for (final x in texts) () { final d = span * letters(x) / total; final g = Segment(x, t, t + d - 0.15, from + texts.indexOf(x)); t += d; return g; }()
     ]);
   }
 
@@ -225,7 +239,25 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final (name, bas) = q.header(surah);
     final list = m.valid;
     return Composer(m, look, activeBgs, images, textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
-        look.showName ? name : null, look.showBasmala ? bas : null);
+        look.showName ? name : null, look.showBasmala ? bas : null,
+        trs: _trs(list));
+  }
+
+  /// ترجمة كل مقطع (بحسب رقم آيته) من الترجمة المختارة؛ '' إن لم تُختر أو لم تُحمَّل بعد.
+  List<String> _trs(List<Segment> list) {
+    final tr = trCache[look.trans];
+    return [
+      for (final g in list)
+        tr != null && g.ayah >= 1 && g.ayah <= tr[surah - 1].length ? tr[surah - 1][g.ayah - 1] : ''
+    ];
+  }
+
+  Future<void> _setTrans(String id) async {
+    if (id.isNotEmpty && !trCache.containsKey(id)) {
+      final j = jsonDecode(await rootBundle.loadString('assets/tr/$id.json')) as List;
+      trCache[id] = [for (final s in j) (s as List).cast<String>()];
+    }
+    refresh(() => look.trans = id);
   }
 
   final thumbs = <int, ui.Image>{};
@@ -238,7 +270,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         for (final g in m.valid) '${g.text}${g.start}${g.end}',
         m.cuts, surah, look.fontSize, look.textY, look.width, look.lineGap, look.color, look.shadow, look.align,
         look.headerMode, look.showName, look.showBasmala, look.headerSize, look.headerY, look.headerColor, look.dim,
-        look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) '${b.path}${b.speed}'], images.length,
+        look.textFx, look.trans, look.transSize, look.transY, look.transColor, trCache.length, look.reciter, look.reciterSecs, look.reciterSize, look.reciterY, look.reciterAll, look.blur, look.sharpen, look.brightness, look.contrast, look.saturation, look.manyBgs, look.bgChange, look.bgEvery, look.transition, [for (final b in bgs) '${b.path}${b.speed}'], images.length,
       ].join('|');
 
   ui.Image? thumbAt(double t) {
@@ -322,6 +354,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         audio: a,
         segs: list,
         texts: textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
+        trans: _trs(list),
         bgs: activeBgs,
         look: look,
         headerName: look.showName ? name : null,
@@ -332,7 +365,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       );
       await Gal.putVideo(out, album: 'تلاوة');
       if (mounted) Navigator.of(context).pop();
-      _toast('حُفظ الفيديو في معرض الصور (ألبوم «تلاوة»)');
+      refresh(() => lastExport = out);
+      _toast('حُفظ الفيديو في معرض الصور (ألبوم «تلاوة»)', action: SnackBarAction(label: 'مشاركة', onPressed: _share));
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
       _toast('تعذر التصدير: $e');
@@ -341,8 +375,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     }
   }
 
-  void _toast(String s) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
+  void _toast(String s, {SnackBarAction? action}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s), action: action, duration: Duration(seconds: action == null ? 4 : 12)));
+    }
+  }
+
+  Future<void> _share() async {
+    final f = lastExport;
+    if (f == null || !File(f).existsSync()) return;
+    await SharePlus.instance.share(ShareParams(files: [XFile(f)], text: 'تلاوة'));
   }
 
   // ── الواجهة ──
@@ -435,6 +477,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             child: Text(quran == null ? 'تلاوة' : 'سورة ${quran!.names[surah - 1]} · 1080p', style: const TextStyle(fontSize: 14)),
           ),
           const Spacer(),
+          if (lastExport != null) IconButton(icon: const Icon(Icons.ios_share), tooltip: 'مشاركة آخر فيديو', onPressed: _share),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 22)),
             onPressed: busy ? null : export,
@@ -548,6 +591,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               _tool(Icons.wallpaper, 'الخلفية', () => _sheet(_bgPanel)),
               _tool(Icons.tune, 'تحسين الصورة', () => _sheet(_enhancePanel)),
               _tool(Icons.text_fields, 'النص', () => _sheet(_textPanel)),
+              _tool(Icons.translate, 'الترجمة', () => _sheet(_transPanel)),
+              _tool(Icons.mic, 'القارئ', () => _sheet(_reciterPanel)),
               _tool(Icons.title, 'الترويسة', () => _sheet(_headerPanel)),
               _tool(Icons.touch_app, 'مزامنة بالنقر', toggleTap),
             ];
@@ -643,7 +688,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           OutlinedButton(
             onPressed: () {
               final a = int.tryParse(addCtl.text);
-              if (a != null && a >= 1 && a <= n) m.addAt(q.ayahText(surah, a));
+              if (a != null && a >= 1 && a <= n) m.addAt(q.ayahText(surah, a), a);
             },
             child: const Text('+ أضف'),
           ),
@@ -798,12 +843,45 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         _slider('الظل', look.shadow, 0, 1, (x) => look.shadow = x),
         _slider('الظهور والاختفاء', look.fade, 0, 1, (x) => look.fade = x),
         SegmentedButton<String>(
+          segments: const [ButtonSegment(value: 'fade', label: Text('تلاشٍ')), ButtonSegment(value: 'slide', label: Text('انزلاق')), ButtonSegment(value: 'none', label: Text('مباشر'))],
+          selected: {look.textFx},
+          onSelectionChanged: (s) => refresh(() => look.textFx = s.first),
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<String>(
           segments: const [ButtonSegment(value: 'right', label: Text('يمين')), ButtonSegment(value: 'center', label: Text('توسيط')), ButtonSegment(value: 'left', label: Text('يسار'))],
           selected: {look.align},
           onSelectionChanged: (s) => refresh(() => look.align = s.first),
         ),
         const SizedBox(height: 8),
         Row(children: [const Text('اللون  '), for (final c in swatches) _swatch(c, look.color, (x) => look.color = x)]),
+      ]);
+
+  Widget _transPanel() => _pad([
+        DropdownButton<String>(
+          isExpanded: true,
+          value: look.trans,
+          items: [for (final e in transOptions.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
+          onChanged: (v) => _setTrans(v ?? ''),
+        ),
+        if (look.trans.isNotEmpty) ...[
+          _slider('حجم الخط', look.transSize, 24, 80, (x) => look.transSize = x, div: 56),
+          _slider('الموضع', look.transY, 0.4, 0.95, (x) => look.transY = x, div: 55),
+          Row(children: [const Text('اللون  '), for (final c in swatches) _swatch(c, look.transColor, (x) => look.transColor = x)]),
+          const Text('تظهر ترجمة الآية مع كل مقطع منها. المصدر: Tanzil.net', style: TextStyle(fontSize: 12)),
+        ],
+      ]);
+
+  Widget _reciterPanel() => _pad([
+        TextField(
+          controller: reciterCtl,
+          decoration: const InputDecoration(labelText: 'اسم القارئ (يظهر في الفيديو)', hintText: 'مثال: القارئ ...'),
+          onChanged: (v) => refresh(() => look.reciter = v),
+        ),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('يظهر طوال الفيديو'), value: look.reciterAll, onChanged: (v) => refresh(() => look.reciterAll = v)),
+        if (!look.reciterAll) _slider('يظهر ${look.reciterSecs.round()} ث', look.reciterSecs, 2, 15, (x) => look.reciterSecs = x, div: 13),
+        _slider('الحجم', look.reciterSize, 24, 90, (x) => look.reciterSize = x, div: 66),
+        _slider('الموضع', look.reciterY, 0.05, 0.97, (x) => look.reciterY = x, div: 46),
       ]);
 
   Widget _headerPanel() => _pad([

@@ -132,6 +132,7 @@ Future<String> renderVideo({
   required String audio,
   required List<Segment> segs,
   required List<String> texts, // نصوص المقاطع مرمّزة لخط المجمع
+  required List<String> trans, // ترجمة كل مقطع ('' = بلا)
   required List<Bg> bgs,
   required Look look,
   required String? headerName,
@@ -154,10 +155,10 @@ Future<String> renderVideo({
     return isStart ? duration : acc;
   }
 
-  final shifted = <(Segment, String)>[];
+  final shifted = <(Segment, String, String)>[];
   for (var i = 0; i < segs.length; i++) {
     final s = clampOut(segs[i].start, true), e = clampOut(segs[i].end, false);
-    if (e - s > 0.2) shifted.add((Segment(segs[i].text, s, e), texts[i]));
+    if (e - s > 0.2) shifted.add((Segment(segs[i].text, s, e), texts[i], trans[i]));
   }
   final points = bgSchedule(bgs.length, duration, [for (final x in shifted) x.$1], look);
   final td = look.transition != 'none' && points.length > 1 ? min(look.transDur, 1.5) : 0.0;
@@ -200,21 +201,36 @@ Future<String> renderVideo({
   chain.add('[${n + 1}:v]fps=$fps,format=rgba[hd]');
   chain.add('[bg][hd]overlay=$hx:$hy:eof_action=repeat[v0]');
   for (var i = 0; i < shifted.length; i++) {
-    final (g, text) = shifted[i];
+    final (g, text, tr) = shifted[i];
     final png = '${dir.path}/seg_$i.png';
-    final (tb, tx, ty) = await layerPng((c) => paintText(c, text, look));
+    final (tb, tx, ty) = await layerPng((c) => unionRect(paintText(c, text, look), paintTrans(c, tr, look)));
     await File(png).writeAsBytes(tb);
-    final d = g.end - g.start, f = min(look.fade, d / 3);
+    final d = g.end - g.start, f = max(look.textFx == 'none' ? 0.04 : min(look.fade, d / 3), 0.04);
+    final pos = look.textFx == 'slide'
+        ? "$tx:y='$ty+50*max(0,1-(t-${g.start.toStringAsFixed(3)})/${f.toStringAsFixed(3)})'"
+        : '$tx:$ty';
     args.addAll(['-loop', '1', '-framerate', '1', '-t', (d + 1).toStringAsFixed(3), '-i', png]);
     chain.add('[${i + n + 2}:v]fps=$fps,trim=duration=${d.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${f.toStringAsFixed(3)}:alpha=1,'
         'fade=out:st=${max(d - f, 0).toStringAsFixed(3)}:d=${f.toStringAsFixed(3)}:alpha=1,'
         'setpts=PTS+${g.start.toStringAsFixed(3)}/TB[t$i]');
-    chain.add('[v$i][t$i]overlay=$tx:$ty:eof_action=pass[v${i + 1}]');
+    chain.add('[v$i][t$i]overlay=$pos:eof_action=pass[v${i + 1}]');
+  }
+  var last = 'v${shifted.length}';
+  if (look.reciter.trim().isNotEmpty) {
+    final rd = look.reciterAll ? duration : min(look.reciterSecs, duration), rf = min(0.5, rd / 3);
+    final png = '${dir.path}/reciter.png';
+    final (rb, rx, ry) = await layerPng((c) => paintReciter(c, look));
+    await File(png).writeAsBytes(rb);
+    args.addAll(['-loop', '1', '-framerate', '1', '-t', (rd + 1).toStringAsFixed(3), '-i', png]);
+    chain.add('[${n + 2 + shifted.length}:v]fps=$fps,trim=duration=${rd.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${rf.toStringAsFixed(3)}:alpha=1,'
+        'fade=out:st=${max(rd - rf, 0).toStringAsFixed(3)}:d=${rf.toStringAsFixed(3)}:alpha=1[rc]');
+    chain.add('[$last][rc]overlay=$rx:$ry:eof_action=pass[vr]');
+    last = 'vr';
   }
   final out = '${dir.path}/tilawa_${DateTime.now().millisecondsSinceEpoch}.mp4';
   final small = height < 1920;
-  if (small) chain.add('[v${shifted.length}]scale=720:1280:flags=lanczos[vout]');
-  final common = ['-filter_complex', chain.join(';'), '-map', small ? '[vout]' : '[v${shifted.length}]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
+  if (small) chain.add('[$last]scale=720:1280:flags=lanczos[vout]');
+  final common = ['-filter_complex', chain.join(';'), '-map', small ? '[vout]' : '[$last]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
   final tail = ['-r', '$fps', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out];
   // ترميز العتاد (MediaCodec) أسرع بكثير؛ إن لم يدعمه الجوال نرجع إلى x264 السريع
   try {

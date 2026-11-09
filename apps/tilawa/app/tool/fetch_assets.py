@@ -20,6 +20,20 @@ con = sqlite3.connect(TILAWA / "assets" / "quran.db")
 quran = [[n, [t for (t,) in con.execute("SELECT text FROM ayah WHERE surah=? ORDER BY ayah", (i,))]]
          for i, n, _ in con.execute("SELECT id, name, ayat FROM surah ORDER BY id")]
 (OUT / "quran.json").write_text(json.dumps(quran, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+# ترجمات وتفسير من Tanzil.net (للاستخدام الشخصي مع نسبة المصدر)؛ كل ملف: قائمة سور، كل سورة قائمة آيات
+TRANS = ["ar.muyassar", "en.sahih", "fr.hamidullah", "ur.jalandhry", "id.indonesian", "tr.diyanet"]
+(OUT / "tr").mkdir(exist_ok=True)
+for tid in TRANS:
+    f = OUT / "tr" / f"{tid}.json"
+    if f.exists():
+        continue
+    with urllib.request.urlopen(f"https://tanzil.net/trans/{tid}", timeout=120) as r:
+        rows = [l.split("|", 2) for l in r.read().decode("utf-8").splitlines() if l and not l.startswith("#")]
+    out = [["" for _ in ayat] for _, ayat in quran]
+    for s, a, t in rows:
+        out[int(s) - 1][int(a) - 1] = t.strip()
+    assert all(all(x) for x in out), tid
+    f.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 for f in ["hafs.otf", "bsml.ttf"]:
     (OUT / f).write_bytes((TILAWA / "assets" / f).read_bytes())
 for i, name in enumerate(backgrounds.PRESETS):

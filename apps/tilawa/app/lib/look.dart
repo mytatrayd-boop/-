@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'quran.dart';
 
 const vw = 1080.0, vh = 1920.0;
+const rtlTrans = {'ar.muyassar', 'ur.jalandhry'};
 
 class Look {
   double fontSize = 60, textY = 0.40, width = 0.85, lineGap = 1.9, shadow = 0.85, fade = 0.35;
@@ -22,6 +23,15 @@ class Look {
   // أدوات تحسين الصورة (تُطبَّق على الخلفية في المعاينة والتصدير)
   double sharpen = 0.5, brightness = 0, contrast = 1, saturation = 1;
   bool hq = true; // تصدير عالي الجودة (معدل بيانات أعلى)
+  String textFx = 'fade'; // تأثير ظهور النص: fade / slide / none
+  // الترجمة أو التفسير تحت الآية ('' = بلا)
+  String trans = '';
+  double transSize = 40, transY = 0.68;
+  Color transColor = const Color(0xFFE8E8E8);
+  // اسم القارئ في بداية الفيديو
+  String reciter = '';
+  double reciterSecs = 5, reciterSize = 42, reciterY = 0.9;
+  bool reciterAll = false;
   bool zoom = false; // التقريب البطيء أثقل جزء في الإنتاج
   bool manyBgs = false;
   String bgChange = 'time'; // time / segment
@@ -104,6 +114,33 @@ Rect paintText(Canvas c, String text, Look l) {
     y += step;
   }
   return box;
+}
+
+Rect unionRect(Rect a, Rect b) => a.isEmpty ? b : b.isEmpty ? a : a.expandToInclude(b);
+
+/// الترجمة تحت الآية بخط النظام، موسّطة، حتى 7 أسطر.
+Rect paintTrans(Canvas c, String text, Look l) {
+  if (text.isEmpty) return Rect.zero;
+  final tp = TextPainter(
+    text: TextSpan(text: text, style: TextStyle(fontSize: l.transSize, color: l.transColor, height: 1.35, shadows: _shadows(l.shadow))),
+    textDirection: rtlTrans.contains(l.trans) ? TextDirection.rtl : TextDirection.ltr,
+    textAlign: TextAlign.center,
+    maxLines: 7,
+    ellipsis: '…',
+  )..layout(maxWidth: vw * l.width);
+  final at = Offset((vw - tp.width) / 2, vh * l.transY - tp.height / 2);
+  tp.paint(c, at);
+  return at & tp.size;
+}
+
+/// اسم القارئ.
+Rect paintReciter(Canvas c, Look l) {
+  final name = l.reciter.trim();
+  if (name.isEmpty) return Rect.zero;
+  final tp = _tp(name, TextStyle(fontSize: l.reciterSize, color: l.headerColor, shadows: _shadows(l.shadow)));
+  final at = Offset((vw - tp.width) / 2, vh * l.reciterY - tp.height / 2);
+  tp.paint(c, at);
+  return at & tp.size;
 }
 
 /// رمز واحد من خط الترويسة (QCF_BSML) في المنتصف بعرض محدد؛ يرجع ارتفاعه.

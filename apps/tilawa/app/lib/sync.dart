@@ -10,11 +10,12 @@ const sr = 16000;
 class Segment {
   String text;
   double start, end;
-  Segment(this.text, this.start, this.end);
-  Segment copy() => Segment(text, start, end);
-  Map<String, dynamic> toJson() => {'text': text, 'start': start, 'end': end};
-  factory Segment.fromJson(Map<String, dynamic> j) =>
-      Segment(j['text'] as String, (j['start'] as num).toDouble(), (j['end'] as num).toDouble());
+  int ayah; // رقم الآية (لربط الترجمة بها)؛ 0 = غير معروف
+  Segment(this.text, this.start, this.end, [this.ayah = 0]);
+  Segment copy() => Segment(text, start, end, ayah);
+  Map<String, dynamic> toJson() => {'text': text, 'start': start, 'end': end, 'ayah': ayah};
+  factory Segment.fromJson(Map<String, dynamic> j) => Segment(
+      j['text'] as String, (j['start'] as num).toDouble(), (j['end'] as num).toDouble(), (j['ayah'] as num?)?.toInt() ?? 0);
 }
 
 /// فترات الصمت: أهدأ من ذروة التلاوة بـ 32 ديسيبل، أو قريبة من أرضية الضجيج إن كان في التسجيل أصوات محيطة.
@@ -397,7 +398,7 @@ SyncResult? finishSync(Quran q, List<List<double>> units, List<(int, int)> block
   final surah = count.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   final mine = segs.where((s) => s.$2 == surah).toList();
   return SyncResult(surah, mine.map((s) => s.$3).reduce(min), mine.map((s) => s.$3).reduce(max),
-      [for (final s in mine) Segment(s.$1.text, _r(s.$1.start), _r(s.$1.end))]);
+      [for (final s in mine) Segment(s.$1.text, _r(s.$1.start), _r(s.$1.end), s.$3)]);
 }
 
 double _r(double x) => (x * 100).round() / 100;

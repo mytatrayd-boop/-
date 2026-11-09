@@ -20,6 +20,7 @@ class Composer {
   final Map<String, ui.Image> images; // صور الخلفيات المحمّلة
   final List<String> texts; // نصوص m.valid مرمّزة لخط المجمع
   final String? name, basmala;
+  final List<String> trs; // ترجمة كل مقطع (فارغة إن لم تُختر ترجمة)
   late final List<Segment> segs = m.valid;
   late final double end = m.trimEnd < m.duration || segs.isEmpty ? m.trimEnd : min(segs.last.end + 0.8, m.duration);
   late final kept = keptRanges(m.trimStart, end, m.cuts);
@@ -28,7 +29,7 @@ class Composer {
     for (final g in segs) Segment(g.text, outTime(g.start, kept) ?? 0, outTime(g.end, kept) ?? 0)
   ], look);
 
-  Composer(this.m, this.look, this.bgs, this.images, this.texts, this.name, this.basmala);
+  Composer(this.m, this.look, this.bgs, this.images, this.texts, this.name, this.basmala, {this.trs = const []});
 
   void _bg(Canvas c, int k, double local, double len, double alpha) {
     final b = bgs[k % bgs.length], img = (b.video ? videoFrameAt(b, local) : null) ?? images[b.preview];
@@ -68,11 +69,21 @@ class Composer {
     for (var i = 0; i < segs.length; i++) {
       final g = segs[i];
       if (t < g.start || t > g.end || m.skipCut(t) != null) continue;
-      final f = min(look.fade, (g.end - g.start) / 3);
-      final a = f > 0 ? min(1.0, min((t - g.start) / f, (g.end - t) / f)) : 1.0;
+      final f = max(look.textFx == 'none' ? 0.04 : min(look.fade, (g.end - g.start) / 3), 0.04);
+      final a = min(1.0, min((t - g.start) / f, (g.end - t) / f));
       c.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: a.clamp(0, 1)));
+      if (look.textFx == 'slide') c.translate(0, 50 * (1 - ((t - g.start) / f).clamp(0.0, 1.0)));
       paintText(c, texts[i], look);
+      if (i < trs.length) paintTrans(c, trs[i], look);
       c.restore();
+    }
+    if (look.reciter.trim().isNotEmpty) {
+      final o = outTime(t, kept) ?? 0, d = look.reciterAll ? outDuration : look.reciterSecs, f = min(0.5, d / 3);
+      if (o <= d) {
+        c.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: min(1.0, min(o / f, (d - o) / f)).clamp(0, 1)));
+        paintReciter(c, look);
+        c.restore();
+      }
     }
   }
 }

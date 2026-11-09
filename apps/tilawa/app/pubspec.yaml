@@ -40,6 +40,7 @@ dependencies:
   file_picker: ^13.1.0
   path_provider: ^2.1.6
   gal: ^2.3.3
+  share_plus: ^11.0.0
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +63,7 @@ flutter:
   assets:
     - assets/
     - assets/model/
+    - assets/tr/
   fonts:
     - family: Hafs
       fonts: [{asset: assets/hafs.otf}]

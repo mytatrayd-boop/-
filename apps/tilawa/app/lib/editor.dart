@@ -182,7 +182,7 @@ class EditorModel extends ChangeNotifier {
     if (k <= 0 || k >= words.length) return;
     checkpoint();
     final t = playhead > g.start + 0.3 && playhead < g.end - 0.3 ? playhead : (g.start + g.end) / 2;
-    final second = Segment(words.sublist(k).join(' '), t, g.end);
+    final second = Segment(words.sublist(k).join(' '), t, g.end, g.ayah);
     g.text = words.sublist(0, k).join(' ');
     g.end = t - 0.1;
     segs.insert(selected! + 1, second);
@@ -205,7 +205,7 @@ class EditorModel extends ChangeNotifier {
     checkpoint();
     final g = segs[i], d = g.end - g.start;
     final nextStart = i + 1 < segs.length ? segs[i + 1].start : duration;
-    final c = Segment(g.text, g.end + 0.15, min(g.end + 0.15 + d, max(nextStart - 0.15, g.end + 1.2)));
+    final c = Segment(g.text, g.end + 0.15, min(g.end + 0.15 + d, max(nextStart - 0.15, g.end + 1.2)), g.ayah);
     segs.insert(i + 1, c);
     selected = i + 1;
     notifyListeners();
@@ -220,10 +220,10 @@ class EditorModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addAt(String text) {
+  void addAt(String text, [int ayah = 0]) {
     checkpoint();
     final next = segs.where((g) => g.start > playhead).map((g) => g.start).fold(duration, min);
-    final g = Segment(text, playhead, min(playhead + 4, max(next - 0.15, playhead + 1)));
+    final g = Segment(text, playhead, min(playhead + 4, max(next - 0.15, playhead + 1)), ayah);
     segs.add(g);
     segs.sort((a, b) => a.start.compareTo(b.start));
     selected = segs.indexOf(g);
