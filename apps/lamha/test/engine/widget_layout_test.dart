@@ -283,6 +283,7 @@ void main() {
       expect(t.copyWith(primaryColor: () => null).primaryColor, isNull);
       expect(TileColor.values.map((c) => c.name), [
         'white', 'gold', 'green', 'blue', 'purple', 'pink', 'lightGray',
+        'cream', 'yellow', 'orange', 'red', 'lime', 'teal', 'cyan', 'brown', 'gray', 'black',
       ]);
     });
   });

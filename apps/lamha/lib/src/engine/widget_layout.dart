@@ -49,7 +49,18 @@ enum TileColor {
   blue(0xFF7FB2E5),
   purple(0xFFB39DDB),
   pink(0xFFEE9AB8),
-  lightGray(0xFFCFCFCF);
+  lightGray(0xFFCFCFCF),
+  // ألوان إضافية (طلب المالك ١٠/١١/٢٠٢٦): فاتحة تُقرأ على السمات الداكنة، والأسود للسمة الذهبية.
+  cream(0xFFF4EFE6),
+  yellow(0xFFFFE082),
+  orange(0xFFFFB74D),
+  red(0xFFE57373),
+  lime(0xFFC5E1A5),
+  teal(0xFF80CBC4),
+  cyan(0xFF80DEEA),
+  brown(0xFFA1887F),
+  gray(0xFF9E9E9E),
+  black(0xFF000000);
 
   const TileColor(this.argb);
 
