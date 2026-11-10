@@ -146,15 +146,6 @@ class _Body extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 4),
-        // العدّاد التنازلي للصلاة القادمة تحت الساعة: اختياري، مطفأ افتراضياً (٣٠/١٠/٢٠٢٦).
-        SwitchListTile(
-          key: const Key('prayer-countdown'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(l.prayerCountdownLabel, style: textTheme.titleMedium),
-          subtitle: Text(l.prayerCountdownHint),
-          value: s.prayerCountdown,
-          onChanged: c.setPrayerCountdown,
-        ),
         const SizedBox(height: 8),
         // نوافذ الشريط: تفعيل وإيقاف وترتيب بالسحب.
         FilledButton.tonalIcon(

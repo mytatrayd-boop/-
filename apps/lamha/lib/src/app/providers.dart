@@ -207,7 +207,6 @@ class SettingsController extends AsyncNotifier<AppState> {
       schedule: {
         ...cur.schedule,
         'opacity': fixed.opacity,
-        'prayerCountdown': fixed.prayerCountdown,
         'layout': [for (final t in layout) t.toScheduleJson()],
         'visible': {
           for (final e in WidgetElement.values)
@@ -264,9 +263,6 @@ class SettingsController extends AsyncNotifier<AppState> {
   Future<void> setFontScale(FontScale f) => _update(_s.copyWith(fontScale: f));
 
   Future<void> setDigits(DigitStyle d) => _update(_s.copyWith(digits: d));
-
-  Future<void> setPrayerCountdown(bool on) =>
-      _updateLight(_s.copyWith(prayerCountdown: on));
 
   /// عند التشغيل يُطلب إذن الإشعارات (أندرويد ١٣+)؛ يعيد false إذا رُفض.
   Future<bool> setLockNotification(bool on) async {

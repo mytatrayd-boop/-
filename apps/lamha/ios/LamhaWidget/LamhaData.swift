@@ -35,12 +35,33 @@ struct LamhaDay {
     let tradLine: String
 }
 
-/// نافذة من `layout` في الجدول (TileLayout.toScheduleJson في Dart): ما يظهر وترتيبه وحجم أيقونة القبلة.
+/// نافذة من `layout` في الجدول (TileLayout.toScheduleJson في Dart): ما يظهر وترتيبه وحجم أيقونة القبلة،
+/// ومعها شكلها: معامل الخط، وإظهار العنوان والسطر الفرعي، واللونان (nil = تلقائي).
 struct LamhaTile {
     let id: String
     let visible: Bool
     let span: Int
     let iconScale: Double
+    let fontScale: Double
+    let showTitle: Bool
+    let showSub: Bool
+    let primary: Color?
+    let secondary: Color?
+}
+
+/// شكل نافذة كما اختاره المستخدم في التطبيق: يُضرب به كل حجم نص، ويستبدل الألوان التلقائية.
+struct TileStyle {
+    var scale: CGFloat = 1
+    var showTitle = true
+    var showSub = true
+    var primary: Color? = nil
+    var secondary: Color? = nil
+
+    func size(_ v: CGFloat) -> CGFloat { v * scale }
+    /// لون النص الرئيسي: المختار، وإلا [fallback].
+    func main(_ fallback: Color) -> Color { primary ?? fallback }
+    /// لون النص الفرعي: المختار، وإلا [fallback].
+    func sub(_ fallback: Color) -> Color { secondary ?? fallback }
 }
 
 struct LamhaSnapshot {
@@ -58,8 +79,8 @@ struct LamhaSnapshot {
     let opacity: Double
     let weather: String?
     let days: [LamhaDay]
-    /// العدّاد التنازلي للصلاة القادمة تحت الساعة: اختياري ومطفأ افتراضياً (prayerCountdown في الجدول).
-    let prayerCountdown: Bool
+    /// معامل الخط العام (إعداد «حجم الخط»)، يُضرب به معامل كل نافذة.
+    let fontScale: Double
     /// النوافذ بترتيبها في تخطيط التطبيق؛ فارغة لجدول أقدم بلا layout.
     let tiles: [LamhaTile]
 
@@ -72,6 +93,22 @@ struct LamhaSnapshot {
     /// موضع أقدم عنصر من [ids] في الترتيب، وتُرتَّب الكتل به (غير الموجود آخراً).
     func position(_ ids: [String]) -> Int {
         ids.compactMap { id in tiles.firstIndex { $0.id == id } }.min() ?? Int.max
+    }
+
+    /// شكل أول نافذة ظاهرة من [ids] (وإلا أول موجودة، وإلا الافتراضي). الساعة تحلّ محلها الصلاة القادمة
+    /// في آيفون، فمعاملها الافتراضي ٢ يُعدّ أساسًا (١×).
+    func style(_ ids: [String]) -> TileStyle {
+        guard let t = tiles.first(where: { ids.contains($0.id) && $0.visible })
+            ?? tiles.first(where: { ids.contains($0.id) })
+        else { return TileStyle(scale: CGFloat(fontScale)) }
+        let base: Double = t.id == "clock" ? 2 : 1
+        return TileStyle(
+            scale: CGFloat(fontScale * t.fontScale / base),
+            showTitle: t.showTitle,
+            showSub: t.showSub,
+            primary: t.primary,
+            secondary: t.secondary
+        )
     }
 
     /// حجم أيقونة القبلة (٠٫٥–١٫٦، ١ افتراضياً).
@@ -144,7 +181,12 @@ func loadSnapshot() -> LamhaSnapshot? {
             id: id,
             visible: t["visible"] as? Bool ?? true,
             span: (t["span"] as? NSNumber)?.intValue ?? 1,
-            iconScale: (t["iconScale"] as? NSNumber)?.doubleValue ?? 1
+            iconScale: (t["iconScale"] as? NSNumber)?.doubleValue ?? 1,
+            fontScale: min(max((t["fontScale"] as? NSNumber)?.doubleValue ?? 1, 0.5), 3),
+            showTitle: t["showTitle"] as? Bool ?? true,
+            showSub: t["showSub"] as? Bool ?? true,
+            primary: (t["primaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
+            secondary: (t["secondaryColor"] as? NSNumber).map { color($0, 0xFF000000) }
         )
     }
     // الشفافية من مفتاحها المنفصل في App Group أولاً (يكتبه التطبيق مع كل حفظ)، ثم من الجدول.
@@ -198,7 +240,7 @@ func loadSnapshot() -> LamhaSnapshot? {
         opacity: Double(opacityPercent) / 100,
         weather: weatherText,
         days: days,
-        prayerCountdown: root["prayerCountdown"] as? Bool ?? false,
+        fontScale: min(max((root["fontScale"] as? NSNumber)?.doubleValue ?? 1, 0.5), 3),
         tiles: tiles
     )
 }

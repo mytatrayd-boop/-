@@ -62,8 +62,8 @@ void main() {
       'primaryColor': null, 'secondaryColor': null, 'iconScale': 1.0,
     });
     expect(schedule['digits'], 'arabic');
-    // العدّاد التنازلي للصلاة اختياري ومطفأ افتراضياً.
-    expect(schedule['prayerCountdown'], false);
+    // العدّاد التنازلي للصلاة حُذف نهائياً (١٠/١١/٢٠٢٦).
+    expect(schedule.containsKey('prayerCountdown'), isFalse);
   });
 
   test('مفاتيح كل يوم وقيم اليوم الأول', () {
