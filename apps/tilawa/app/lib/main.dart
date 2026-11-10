@@ -16,6 +16,7 @@ import 'asr.dart';
 import 'editor.dart';
 import 'look.dart';
 import 'media.dart';
+import 'mixer.dart';
 import 'preview.dart';
 import 'project.dart';
 import 'quran.dart';
@@ -87,6 +88,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   List<ProjectMeta> projects = [];
   bool _dirty = false;
   Timer? _saver;
+  OverlayMixer? mixer; // تشغيل المسار الصوتي الثاني مع الأول
 
   // ── التراجع والإعادة لتعديلات الشكل والخلفيات (تعديلات المقاطع في EditorModel) ──
   bool _hist = false; // يُفعَّل بعد فتح المشروع، فلا تُسجَّل تغييرات التحميل
@@ -162,6 +164,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     _presetBg(0).then((b) => refresh(() => bgs.add(b)));
     // كل إطار أثناء التشغيل: المؤشر يتبع الصوت، ويقفز فوق الأجزاء المحذوفة
     createTicker((_) {
+      mixer?.update(m.overlays, player.position.inMilliseconds / 1000, player.playing);
       if (!player.playing) return;
       final t = player.position.inMilliseconds / 1000;
       final skip = m.skipCut(t);
@@ -187,6 +190,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
 
   @override
   void dispose() {
+    mixer?.dispose();
     _saver?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -246,6 +250,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         'segs': [for (final g in m.segs) g.toJson()],
         'cuts': [for (final (a, b) in m.cuts) [a, b]],
         'splits': m.splits,
+        'overlays': [for (final o in m.overlays) o.toJson()],
         'playhead': m.playhead,
         'look': look.toJson(),
         'bgs': bgJson,
@@ -273,6 +278,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   }
 
   Future<void> _resetEditor() async {
+    mixer?.dispose();
+    mixer = null;
     _hist = false;
     _bgPool.clear();
     final b = await _presetBg(0);
@@ -328,10 +335,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       final path = await _audioFile();
       final a = await decode16k(path);
       await player.setFilePath(path);
+      mixer?.dispose();
+      mixer = OverlayMixer(path, m.toDisp);
       audioPath = path;
       audio16 = a;
       m.setAudio(a);
       m.clipEdges = [for (final c in clips.skip(1)) c.start];
+      m.overlays = [for (final o in (data['overlays'] as List? ?? const [])) AudioLayer.fromJson(o as Map<String, dynamic>)];
       m.restore(
         [for (final g in data['segs'] as List) Segment.fromJson(g as Map<String, dynamic>)],
         [for (final c in data['cuts'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())],
@@ -474,6 +484,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       final path = await _audioFile();
       final full = clips.length == 1 ? one : await decode16k(path);
       await player.setFilePath(path);
+      mixer?.dispose();
+      mixer = OverlayMixer(path, m.toDisp);
       audioPath = path;
       audio16 = full;
       m.setAudio(full, keep: !first);
@@ -775,6 +787,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         trans: _trs(list),
         bgs: activeBgs,
         look: look,
+        overlays: m.overlays,
         segSurahs: [for (final g in list) _sOf(g)],
         headerOf: _headerOf,
         kept: keptRanges(0, end, m.cuts),
@@ -1093,10 +1106,18 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
               _tool(Icons.call_merge, 'دمج مع التالي', m.mergeNext),
               _tool(Icons.delete_outline, 'حذف', m.deleteSeg),
             ];
+          } else if (m.ovSel != null) {
+            back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
+            items = [
+              _tool(Icons.volume_up, 'مستوى الصوت', () => _sheet(_ovVolPanel)),
+              _tool(Icons.delete_outline, 'حذف', m.deleteOverlay),
+            ];
           } else if (m.audioSel != null) {
             back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
             items = [
               _tool(Icons.content_cut, 'تقسيم', m.splitAudio),
+              _tool(Icons.vertical_align_bottom, 'نقل إلى مسار ثانٍ', () => m.toLane2(move: true)),
+              _tool(Icons.content_copy, 'نسخ إلى مسار ثانٍ', () => m.toLane2(move: false)),
               _tool(Icons.delete_outline, 'حذف', m.deleteAudio),
               _tool(Icons.restore, 'استرجاع المحذوف', m.cuts.isEmpty ? null : m.restoreAudio),
             ];
@@ -1359,6 +1380,18 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
           );
         },
       );
+
+  Widget _ovVolPanel() {
+    final o = m.ovSel;
+    if (o == null) return const SizedBox();
+    return _pad([
+      _slider('مستوى الصوت ${(o.vol * 100).round()}٪', o.vol, 0, 1, (x) {
+        o.vol = x;
+        m.changed();
+      }, div: 20),
+      const Text('اسحب القطعة أفقياً على المسار الثاني لتغيير موضعها. تُسمع مع المسار الأول معاً.', style: TextStyle(fontSize: 12)),
+    ]);
+  }
 
   Widget _enhancePanel() => _pad([
         _slider('الحدّة', look.sharpen, 0, 1.5, (x) => look.sharpen = x, div: 15),

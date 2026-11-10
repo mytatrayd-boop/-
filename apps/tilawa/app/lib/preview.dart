@@ -9,6 +9,7 @@ import 'package:just_audio/just_audio.dart';
 
 import 'editor.dart';
 import 'look.dart';
+import 'mixer.dart';
 import 'media.dart';
 import 'sync.dart';
 
@@ -150,6 +151,7 @@ class PreviewPage extends StatefulWidget {
 
 class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStateMixin {
   final player = AudioPlayer();
+  late final OverlayMixer mixer = OverlayMixer(widget.audio, c.m.toDisp);
   late final Ticker ticker = createTicker((_) => _tick());
   Composer get c => widget.composer;
   double t = 0;
@@ -172,6 +174,7 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
   void _tick() {
     if (!mounted) return;
     final now = player.position.inMilliseconds / 1000;
+    mixer.update(c.m.overlays, now, player.playing);
     final skip = c.m.skipCut(now);
     if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
     if (now >= c.end && !done) {
@@ -184,6 +187,7 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
   @override
   void dispose() {
     ticker.dispose();
+    mixer.dispose();
     player.dispose();
     super.dispose();
   }

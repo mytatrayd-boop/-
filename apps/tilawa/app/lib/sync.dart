@@ -7,6 +7,17 @@ import 'quran.dart';
 
 const sr = 16000;
 
+/// قطعة صوت على المسار الثاني: جزء من ملف الصوت [src0، src1] يُسمع مع المسار الأول ابتداءً من الزمن at
+/// (زمن العرض بعد القصّ)، بمستوى صوت vol من 0 إلى 1.
+class AudioLayer {
+  double src0, src1, at, vol;
+  AudioLayer(this.src0, this.src1, this.at, [this.vol = 1.0]);
+  double get len => src1 - src0;
+  Map<String, dynamic> toJson() => {'a': src0, 'b': src1, 'at': at, 'v': vol};
+  factory AudioLayer.fromJson(Map<String, dynamic> j) => AudioLayer(
+      (j['a'] as num).toDouble(), (j['b'] as num).toDouble(), (j['at'] as num).toDouble(), (j['v'] as num?)?.toDouble() ?? 1.0);
+}
+
 class Segment {
   String text;
   double start, end;

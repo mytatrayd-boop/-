@@ -147,6 +147,7 @@ Future<String> renderVideo({
   required List<int> segSurahs, // سورة كل مقطع (تتغير الترويسة عند تغيّر السورة)
   required (String?, String?) Function(int surah) headerOf,
   required List<(double, double)> kept,
+  List<AudioLayer> overlays = const [], // المسار الصوتي الثاني (يُمزج مع الأول)
   int height = 1920, // 1920 = 1080p، و1280 = 720p
   required void Function(double) onProgress,
 }) async {
@@ -259,8 +260,25 @@ Future<String> renderVideo({
     chain.add('[$last][rc]overlay=$rx:$ry:eof_action=pass[vr]');
     last = 'vr';
   }
+  // المسار الصوتي الثاني: كل قطعة تُقص من الملف وتؤخَّر إلى موضعها ثم تُمزج مع الصوت الأول بمستواها
+  var audioOut = 'aout';
+  final ovs = [for (final o in overlays) if (o.len > 0.05 && o.at < duration) o];
+  if (ovs.isNotEmpty) {
+    var nIn = base + shifted.length + (look.reciter.trim().isNotEmpty ? 1 : 0);
+    final labels = <String>[];
+    for (var j = 0; j < ovs.length; j++) {
+      final o = ovs[j];
+      args.addAll(['-i', audio]);
+      final ms = (o.at * 1000).round();
+      chain.add('[${nIn++}:a]atrim=start=${o.src0.toStringAsFixed(3)}:end=${o.src1.toStringAsFixed(3)},asetpts=PTS-STARTPTS,'
+          'volume=${o.vol.clamp(0.0, 1.0).toStringAsFixed(2)},adelay=$ms:all=1[ov$j]');
+      labels.add('[ov$j]');
+    }
+    chain.add('[aout]${labels.join()}amix=inputs=${1 + ovs.length}:duration=first:normalize=0[amix]');
+    audioOut = 'amix';
+  }
   final out = '${dir.path}/tilawa_${DateTime.now().millisecondsSinceEpoch}.mp4';
-  final common = ['-filter_complex', chain.join(';'), '-map', '[$last]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
+  final common = ['-filter_complex', chain.join(';'), '-map', '[$last]', '-map', '[$audioOut]', '-t', duration.toStringAsFixed(3)];
   final tail = ['-r', '$fps', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out];
   // ترميز العتاد (MediaCodec) أسرع بكثير؛ إن لم يدعمه الجوال نرجع إلى x264 السريع
   try {

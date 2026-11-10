@@ -20,6 +20,8 @@ class EditorModel extends ChangeNotifier {
   (double, double)? audioSel; // قطعة الصوت المحددة
   Float32List peaks = Float32List(0); // أعلى قيمة لكل 10 ملي ثانية
   double pps = 60; // بكسل لكل ثانية
+  List<AudioLayer> overlays = []; // قطع المسار الصوتي الثاني
+  AudioLayer? ovSel; // القطعة المحددة على المسار الثاني
   List<double> clipEdges = []; // بدايات المقاطع الصوتية (ما عدا الأول) لرسم حدودها على الخط الزمني
   final List<String> _undo = [], _redo = [];
 
@@ -32,6 +34,8 @@ class EditorModel extends ChangeNotifier {
       playhead = 0;
       cuts = [];
       splits = [];
+      overlays = [];
+      ovSel = null;
       selected = null;
       audioSel = null;
     }
@@ -77,6 +81,7 @@ class EditorModel extends ChangeNotifier {
       's': segs.map((g) => g.toJson()).toList(),
       'c': [for (final (x, y) in cuts) [x, y]],
       'p': splits,
+      'o': [for (final o in overlays) o.toJson()],
       if (ex != null) 'x': ex,
     });
   }
@@ -86,6 +91,8 @@ class EditorModel extends ChangeNotifier {
     segs = [for (final g in j['s'] as List) Segment.fromJson(g as Map<String, dynamic>)];
     cuts = [for (final c in j['c'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())];
     splits = [for (final p in j['p'] as List) (p as num).toDouble()];
+    if (j['o'] is List) overlays = [for (final o in j['o'] as List) AudioLayer.fromJson(o as Map<String, dynamic>)];
+    ovSel = null;
     selected = null;
     audioSel = null;
     final x = j['x'];
@@ -131,6 +138,7 @@ class EditorModel extends ChangeNotifier {
   void select(int? i) {
     selected = i;
     audioSel = null;
+    ovSel = null;
     notifyListeners();
   }
 
@@ -269,6 +277,7 @@ class EditorModel extends ChangeNotifier {
   // ── أدوات الصوت ──
   void selectAudioAt(double t) {
     selected = null;
+    ovSel = null;
     audioSel = audioClips.where((c) => t >= c.$1 && t <= c.$2).firstOrNull;
     notifyListeners();
   }
@@ -285,17 +294,53 @@ class EditorModel extends ChangeNotifier {
   void deleteAudio() {
     final s = audioSel;
     if (s == null) return;
-    final (a, b) = s;
     checkpoint();
+    _cutRange(s.$1, s.$2);
+    audioSel = null;
+    selected = null;
+    notifyListeners();
+  }
+
+  void _cutRange(double a, double b) {
     cuts = [...cuts, (a, b)];
     segs = [
       for (final g in segs)
         if (!(g.start >= a - 0.05 && g.end <= b + 0.05))
           g.end > a && g.end <= b ? (g..end = a) : g.start >= a && g.start < b ? (g..start = b) : g
     ];
+    if (skipCut(playhead) != null) playhead = skipCut(playhead)!.clamp(0, duration);
+  }
+
+  // ── المسار الصوتي الثاني ──
+  /// ينقل قطعة الصوت المحددة (أو ينسخها) إلى المسار الثاني في مكانها نفسه، فتُسمع مع الأول ويمكن سحبها أفقياً.
+  /// النقل يحذفها من المسار الأول ويُغلق مكانها (كالحذف)، والنسخ يُبقي الأول كما هو.
+  void toLane2({required bool move}) {
+    final s = audioSel;
+    if (s == null) return;
+    final (a, b) = s;
+    checkpoint();
+    final layer = AudioLayer(a, b, toDisp(a)); // قبل القص: موضعها في زمن العرض
+    if (move) _cutRange(a, b);
+    overlays = [...overlays, layer];
     audioSel = null;
     selected = null;
-    if (skipCut(playhead) != null) playhead = skipCut(playhead)!.clamp(0, duration);
+    ovSel = layer;
+    notifyListeners();
+  }
+
+  void selectOverlayAt(double disp) {
+    selected = null;
+    audioSel = null;
+    ovSel = overlays.where((o) => disp >= o.at && disp <= o.at + o.len).firstOrNull;
+    notifyListeners();
+  }
+
+  void deleteOverlay() {
+    final o = ovSel;
+    if (o == null) return;
+    checkpoint();
+    overlays = [...overlays]..remove(o);
+    ovSel = null;
     notifyListeners();
   }
 
@@ -340,7 +385,8 @@ class EditorModel extends ChangeNotifier {
 
 // ── الخط الزمني ──
 const _rulerH = 22.0, _filmTop = 26.0, _filmH = 64.0, _segTop = 96.0, _segH = 40.0, _waveTop = 142.0, _waveH = 40.0;
-const tlHeight = 188.0;
+const _lane2Top = 188.0, _lane2H = 40.0; // المسار الصوتي الثاني
+const tlHeight = 236.0;
 
 class Timeline extends StatefulWidget {
   final EditorModel m;
@@ -376,7 +422,9 @@ class _TimelineState extends State<Timeline> {
       return GestureDetector(
         onTapUp: (d) {
           final p = d.localPosition;
-          if (p.dy >= _segTop && p.dy < _segTop + _segH) {
+          if (p.dy >= _lane2Top) {
+            m.selectOverlayAt(m.toDisp(m.playhead) + (p.dx - _w / 2) / m.pps);
+          } else if (p.dy >= _segTop && p.dy < _segTop + _segH) {
             m.select(_segAt(p.dx));
           } else if (p.dy >= _waveTop) {
             m.selectAudioAt(x2t(p.dx));
@@ -392,7 +440,18 @@ class _TimelineState extends State<Timeline> {
           _moved = false;
           _mode = 'scrub';
           final g = m.sel;
-          if (d.pointerCount == 1 && g != null && p.dy >= _segTop && p.dy < _segTop + _segH) {
+          if (d.pointerCount == 1 && p.dy >= _lane2Top) {
+            // لمس قطعة على المسار الثاني: تُحدَّد ويمكن سحبها أفقياً
+            final at = m.toDisp(m.playhead) + (p.dx - _w / 2) / m.pps;
+            final o = m.overlays.where((o) => at >= o.at && at <= o.at + o.len).firstOrNull;
+            if (o != null) {
+              m.ovSel = o;
+              m.selected = null;
+              m.audioSel = null;
+              _mode = 'ov';
+              _a0 = o.at;
+            }
+          } else if (d.pointerCount == 1 && g != null && p.dy >= _segTop && p.dy < _segTop + _segH) {
             final xs = t2x(g.start), xe = t2x(g.end);
             if ((p.dx - xs).abs() < 20) {
               _mode = 'start';
@@ -416,6 +475,11 @@ class _TimelineState extends State<Timeline> {
             if (_mode != 'scrub') m.checkpoint();
           }
           if (!_moved) return;
+          if (_mode == 'ov' && m.ovSel != null) {
+            m.ovSel!.at = (_a0 + dt).clamp(0.0, max(0.0, m.dispDuration - 0.3));
+            m.changed();
+            return;
+          }
           final g = m.sel, i = m.selected;
           if (_mode == 'scrub' || g == null || i == null) {
             // سحب الخط الزمني يحرّك الوقت تحت المؤشر الثابت
@@ -524,6 +588,31 @@ class _TimelinePainter extends CustomPainter {
         c.drawRect(Rect.fromLTWH(px, mid - v * (_waveH - 8) / 2, 1.4, max(1, v * (_waveH - 8))), wave);
       }
       if (selected) {
+        c.drawRRect(rect, Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = Colors.white);
+      }
+    }
+    // المسار الصوتي الثاني: قطع تتداخل زمنياً مع المسار الأول
+    c.drawRect(Rect.fromLTWH(0, _lane2Top - 2, w, 1), Paint()..color = Colors.white10);
+    for (final o in m.overlays) {
+      final l = dx(o.at), r = dx(o.at + o.len);
+      if (r < 0 || l > w) continue;
+      final sel = identical(o, m.ovSel);
+      final rect = RRect.fromRectAndRadius(Rect.fromLTRB(l + 1, _lane2Top, r - 1, _lane2Top + _lane2H), const Radius.circular(5));
+      c.drawRRect(rect, Paint()..color = sel ? const Color(0xFF3F5FB8) : const Color(0xFF2A3F78));
+      final wave = Paint()..color = const Color(0xFFA9C2FF).withValues(alpha: sel ? 0.95 : 0.7);
+      final mid = _lane2Top + _lane2H / 2;
+      for (var px = max(l + 2, 0.0); px < min(r - 2, w); px += 2) {
+        final i0 = ((o.src0 + (px - l) / m.pps) * 100).floor(), i1 = i0 + max(1, (2 / m.pps * 100).ceil());
+        var v = 0.0;
+        for (var i = max(0, i0); i < min(m.peaks.length, i1); i++) {
+          v = max(v, m.peaks[i]);
+        }
+        c.drawRect(Rect.fromLTWH(px, mid - v * (_lane2H - 8) / 2, 1.4, max(1, v * (_lane2H - 8))), wave);
+      }
+      if (sel) {
         c.drawRRect(rect, Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
