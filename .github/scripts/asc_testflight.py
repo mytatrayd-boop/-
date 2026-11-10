@@ -57,11 +57,17 @@ def main(bundle_id: str, group_name: str | None, auto: bool = False, tester: str
         state = a.get("processingState")
         mark = "in group" if b["id"] in in_group else "NOT in group"
         print(f"build {a['version']} (v{ver}) uploaded {a.get('uploadedDate')} state={state} expired={a.get('expired')} {mark}")
-    todo = [b for b in builds["data"] if b["attributes"].get("processingState") == "VALID" and not b["attributes"].get("expired") and b["id"] not in in_group][:3]
+    # مجموعة بتوزيع تلقائي (hasAccessToAllBuilds) تأخذ كل نسخة وحدها، ولا تقبل إضافة يدوية.
+    todo = [] if group["attributes"].get("hasAccessToAllBuilds") else [
+        b for b in builds["data"] if b["attributes"].get("processingState") == "VALID"
+        and not b["attributes"].get("expired") and b["id"] not in in_group][:3]
+    if group["attributes"].get("hasAccessToAllBuilds"):
+        print(f"group '{group['attributes']['name']}' has automatic distribution: every build is in it")
     for b in todo:
         status, res = request("POST", f"/betaGroups/{group['id']}/relationships/builds", {"data": [{"type": "builds", "id": b["id"]}]})
         if status >= 300:
-            sys.exit(f"::error::add build {b['attributes']['version']} -> {status}: {str(res)[:500]}")
+            print(f"::warning::add build {b['attributes']['version']} -> {status}: {str(res)[:500]}")
+            continue
         print(f"added build {b['attributes']['version']} to group '{group['attributes']['name']}'")
     if not todo:
         print("nothing to add")
