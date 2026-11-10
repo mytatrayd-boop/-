@@ -1,10 +1,19 @@
-name: Asraty — add latest build to the internal TestFlight group
+name: TestFlight — internal group (builds and testers)
 
 # Adds the newest processed build(s) of the app to its internal TestFlight group (testers only see
 # builds that are in their group) and prints the builds' processing state. Same secrets as asraty-ios.yml.
 on:
   workflow_dispatch:
     inputs:
+      app:
+        description: "which app"
+        type: choice
+        options: [asraty, lamha]
+        default: asraty
+      tester_email:
+        description: "optional: add this email as an internal tester (Apple emails the invitation)"
+        type: string
+        default: ""
       auto_distribution:
         description: "Also turn on automatic distribution (every future build goes to the group)"
         type: boolean
@@ -20,10 +29,12 @@ jobs:
           KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          TESTER: ${{ inputs.tester_email }}
         run: |
           for v in KEY ASC_KEY_ID ASC_ISSUER_ID; do [ -n "${!v}" ] || { echo "::error::Missing secret for $v"; exit 1; }; done
           umask 077
           printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
           export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
-          python3 -u .github/scripts/asc_testflight.py sa.asraty.app ${{ inputs.auto_distribution && '--auto' || '' }}
+          case "${{ inputs.app }}" in lamha) BUNDLE=sa.lamha.lamha ;; *) BUNDLE=sa.asraty.app ;; esac
+          python3 -u .github/scripts/asc_testflight.py "$BUNDLE" ${{ inputs.auto_distribution && '--auto' || '' }} --tester "$TESTER"
           rm -f "$RUNNER_TEMP/AuthKey.p8"
