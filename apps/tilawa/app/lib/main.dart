@@ -89,6 +89,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   bool _dirty = false;
   Timer? _saver;
   OverlayMixer? mixer; // تشغيل المسار الصوتي الثاني مع الأول
+  bool _muteOn = false;
 
   // ── التراجع والإعادة لتعديلات الشكل والخلفيات (تعديلات المقاطع في EditorModel) ──
   bool _hist = false; // يُفعَّل بعد فتح المشروع، فلا تُسجَّل تغييرات التحميل
@@ -167,6 +168,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       mixer?.update(m.overlays, player.position.inMilliseconds / 1000, player.playing);
       if (!player.playing) return;
       final t = player.position.inMilliseconds / 1000;
+      final mute = m.isMuted(t); // الجزء الذي نُقل صوته للمسار الثاني صامت في الأول
+      if (mute != _muteOn) {
+        _muteOn = mute;
+        player.setVolume(mute ? 0 : 1);
+      }
       final skip = m.skipCut(t);
       if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
       if (t >= m.duration - 0.05) {
@@ -251,6 +257,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         'cuts': [for (final (a, b) in m.cuts) [a, b]],
         'splits': m.splits,
         'overlays': [for (final o in m.overlays) o.toJson()],
+        'muted': [for (final (a, b) in m.muted) [a, b]],
         'playhead': m.playhead,
         'look': look.toJson(),
         'bgs': bgJson,
@@ -342,6 +349,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       m.setAudio(a);
       m.clipEdges = [for (final c in clips.skip(1)) c.start];
       m.overlays = [for (final o in (data['overlays'] as List? ?? const [])) AudioLayer.fromJson(o as Map<String, dynamic>)];
+      m.muted = [for (final c in (data['muted'] as List? ?? const [])) ((c[0] as num).toDouble(), (c[1] as num).toDouble())];
       m.restore(
         [for (final g in data['segs'] as List) Segment.fromJson(g as Map<String, dynamic>)],
         [for (final c in data['cuts'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())],
@@ -788,6 +796,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         bgs: activeBgs,
         look: look,
         overlays: m.overlays,
+        muted: m.muted,
         segSurahs: [for (final g in list) _sOf(g)],
         headerOf: _headerOf,
         kept: keptRanges(0, end, m.cuts),
@@ -1117,6 +1126,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
             items = [
               _tool(Icons.content_cut, 'تقسيم', m.splitAudio),
               _tool(Icons.vertical_align_bottom, 'نقل إلى مسار ثانٍ', () => m.toLane2(move: true)),
+              if (m.muted.isNotEmpty) _tool(Icons.volume_up, 'إعادة الصوت للأول', m.unmuteSelected),
               _tool(Icons.content_copy, 'نسخ إلى مسار ثانٍ', () => m.toLane2(move: false)),
               _tool(Icons.delete_outline, 'حذف', m.deleteAudio),
               _tool(Icons.restore, 'استرجاع المحذوف', m.cuts.isEmpty ? null : m.restoreAudio),

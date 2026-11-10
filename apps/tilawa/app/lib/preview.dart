@@ -152,6 +152,7 @@ class PreviewPage extends StatefulWidget {
 class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStateMixin {
   final player = AudioPlayer();
   late final OverlayMixer mixer = OverlayMixer(widget.audio, c.m.toDisp);
+  bool _muteOn = false;
   late final Ticker ticker = createTicker((_) => _tick());
   Composer get c => widget.composer;
   double t = 0;
@@ -175,6 +176,11 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
     if (!mounted) return;
     final now = player.position.inMilliseconds / 1000;
     mixer.update(c.m.overlays, now, player.playing);
+    final mute = c.m.isMuted(now);
+    if (mute != _muteOn) {
+      _muteOn = mute;
+      player.setVolume(mute ? 0 : 1);
+    }
     final skip = c.m.skipCut(now);
     if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
     if (now >= c.end && !done) {

@@ -21,6 +21,7 @@ class EditorModel extends ChangeNotifier {
   Float32List peaks = Float32List(0); // أعلى قيمة لكل 10 ملي ثانية
   double pps = 60; // بكسل لكل ثانية
   List<AudioLayer> overlays = []; // قطع المسار الصوتي الثاني
+  List<(double, double)> muted = []; // أجزاء من المسار الأول صامتة (نُقل صوتها إلى المسار الثاني) بوقت الملف
   AudioLayer? ovSel; // القطعة المحددة على المسار الثاني
   List<double> clipEdges = []; // بدايات المقاطع الصوتية (ما عدا الأول) لرسم حدودها على الخط الزمني
   final List<String> _undo = [], _redo = [];
@@ -35,6 +36,7 @@ class EditorModel extends ChangeNotifier {
       cuts = [];
       splits = [];
       overlays = [];
+      muted = [];
       ovSel = null;
       selected = null;
       audioSel = null;
@@ -82,6 +84,7 @@ class EditorModel extends ChangeNotifier {
       'c': [for (final (x, y) in cuts) [x, y]],
       'p': splits,
       'o': [for (final o in overlays) o.toJson()],
+      'm': [for (final (x, y) in muted) [x, y]],
       if (ex != null) 'x': ex,
     });
   }
@@ -92,6 +95,7 @@ class EditorModel extends ChangeNotifier {
     cuts = [for (final c in j['c'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())];
     splits = [for (final p in j['p'] as List) (p as num).toDouble()];
     if (j['o'] is List) overlays = [for (final o in j['o'] as List) AudioLayer.fromJson(o as Map<String, dynamic>)];
+    if (j['m'] is List) muted = [for (final c in j['m'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())];
     ovSel = null;
     selected = null;
     audioSel = null;
@@ -313,18 +317,35 @@ class EditorModel extends ChangeNotifier {
 
   // ── المسار الصوتي الثاني ──
   /// ينقل قطعة الصوت المحددة (أو ينسخها) إلى المسار الثاني في مكانها نفسه، فتُسمع مع الأول ويمكن سحبها أفقياً.
-  /// النقل يحذفها من المسار الأول ويُغلق مكانها (كالحذف)، والنسخ يُبقي الأول كما هو.
+  /// صوت فقط: لا يتغير نص الآيات ولا توقيتها. النقل يُسكت الجزء الأصلي في المسار الأول (دون إغلاق الفراغ)،
+  /// والنسخ يُبقي الأول كما هو.
   void toLane2({required bool move}) {
     final s = audioSel;
     if (s == null) return;
     final (a, b) = s;
     checkpoint();
     final layer = AudioLayer(a, b, toDisp(a)); // قبل القص: موضعها في زمن العرض
-    if (move) _cutRange(a, b);
+    if (move) muted = [...muted, (a, b)];
     overlays = [...overlays, layer];
     audioSel = null;
     selected = null;
     ovSel = layer;
+    notifyListeners();
+  }
+
+  bool isMuted(double t) {
+    for (final (a, b) in muted) {
+      if (t >= a && t < b) return true;
+    }
+    return false;
+  }
+
+  /// يعيد الصوت الأصلي للمقطع المحدد (يلغي الإسكات الذي سبّبه نقله إلى المسار الثاني).
+  void unmuteSelected() {
+    final s = audioSel;
+    if (s == null) return;
+    checkpoint();
+    muted = [for (final r in muted) if (!(r.$1 < s.$2 && r.$2 > s.$1)) r];
     notifyListeners();
   }
 
@@ -593,6 +614,13 @@ class _TimelinePainter extends CustomPainter {
           ..strokeWidth = 2
           ..color = Colors.white);
       }
+    }
+    // الأجزاء الصامتة في المسار الأول (نُقل صوتها إلى الثاني)
+    for (final (a, b) in m.muted) {
+      final l = dx(m.toDisp(a)), r = dx(m.toDisp(b));
+      if (r < 0 || l > w || r - l < 1) continue;
+      c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(l + 1, _waveTop, r - 1, _waveTop + _waveH), const Radius.circular(5)),
+          Paint()..color = const Color(0xCC161616));
     }
     // المسار الصوتي الثاني: قطع تتداخل زمنياً مع المسار الأول
     c.drawRect(Rect.fromLTWH(0, _lane2Top - 2, w, 1), Paint()..color = Colors.white10);

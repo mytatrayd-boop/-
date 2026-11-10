@@ -86,24 +86,32 @@ void main() {
     expect(state, 'بعد');
   });
 
-  test('نقل قطعة صوت إلى المسار الثاني ونسخها، مع التراجع', () {
+  test('نقل قطعة صوت إلى المسار الثاني: صوت فقط والنص والتوقيت كما هما', () {
     final m = EditorModel()..setAudio(Float32List(sr * 20));
     m.segs = [Segment('أ', 1, 3), Segment('ب', 6, 8)];
     m.audioSel = (5.0, 9.0);
     m.toLane2(move: true);
     expect(m.overlays.single.at, 5.0);
     expect(m.overlays.single.len, 4.0);
-    expect(m.cuts, [(5.0, 9.0)]); // النقل يحذفها من الأول ويُغلق مكانها
-    expect(m.segs.length, 1);
+    expect(m.muted, [(5.0, 9.0)]); // الأصلي صامت
+    expect(m.cuts, isEmpty); // لا إغلاق للفراغ
+    expect(m.segs.length, 2); // النص كما هو
+    expect(m.segs[1].start, 6);
+    expect(m.isMuted(6), true);
+    expect(m.isMuted(9.5), false);
     m.undo();
     expect(m.overlays, isEmpty);
-    expect(m.cuts, isEmpty);
-    expect(m.segs.length, 2);
+    expect(m.muted, isEmpty);
     m.audioSel = (5.0, 9.0);
-    m.toLane2(move: false); // النسخ يُبقي المسار الأول كما هو
-    expect(m.cuts, isEmpty);
+    m.toLane2(move: false); // النسخ يُبقي الأول مسموعاً
+    expect(m.muted, isEmpty);
     expect(m.overlays.length, 1);
     final l = AudioLayer.fromJson(m.overlays.single.toJson());
     expect((l.src0, l.src1, l.at, l.vol), (5.0, 9.0, 5.0, 1.0));
+    m.audioSel = (5.0, 9.0);
+    m.toLane2(move: true);
+    m.audioSel = (5.0, 9.0);
+    m.unmuteSelected(); // إعادة الصوت للأول
+    expect(m.muted, isEmpty);
   });
 }

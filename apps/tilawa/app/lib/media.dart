@@ -148,6 +148,7 @@ Future<String> renderVideo({
   required (String?, String?) Function(int surah) headerOf,
   required List<(double, double)> kept,
   List<AudioLayer> overlays = const [], // المسار الصوتي الثاني (يُمزج مع الأول)
+  List<(double, double)> muted = const [], // أجزاء صامتة في الأول بوقت الملف
   int height = 1920, // 1920 = 1080p، و1280 = 720p
   required void Function(double) onProgress,
 }) async {
@@ -200,9 +201,13 @@ Future<String> renderVideo({
   final n = points.length;
   // الصوت: الأجزاء الباقية متصلة
   args.addAll(['-i', audio]);
+  // الإسكات يُطبَّق قبل القص (يرى أوقات الملف الأصلية)
+  final mute = muted.isEmpty
+      ? ''
+      : "volume=0:enable='${[for (final (a, b) in muted) 'between(t,${a.toStringAsFixed(3)},${b.toStringAsFixed(3)})'].join('+')}',";
   final parts = [
     for (var k = 0; k < kept.length; k++)
-      '[$n:a]atrim=start=${kept[k].$1.toStringAsFixed(3)}:end=${kept[k].$2.toStringAsFixed(3)},asetpts=PTS-STARTPTS[a$k]'
+      '[$n:a]${mute}atrim=start=${kept[k].$1.toStringAsFixed(3)}:end=${kept[k].$2.toStringAsFixed(3)},asetpts=PTS-STARTPTS[a$k]'
   ];
   chain.addAll(parts);
   chain.add('${[for (var k = 0; k < kept.length; k++) '[a$k]'].join()}concat=n=${kept.length}:v=0:a=1[aout]');
