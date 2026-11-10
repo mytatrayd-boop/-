@@ -117,21 +117,22 @@ double? outTime(double t, List<(double, double)> kept) {
   return null;
 }
 
-(List<String>, String) _clip(Bg bg, double len, bool zoom) {
+(List<String>, String) _clip(Bg bg, double len, bool zoom, int w, int h) {
   if (!bg.video) {
     final args = ['-loop', '1', '-framerate', '$fps', '-t', len.toStringAsFixed(3), '-i', bg.path];
     final frames = (len * fps).ceil() + 1;
+    final bw = (w * 1.1).round() & ~1, bh = (h * 1.1).round() & ~1; // هامش للتقريب البطيء
     final f = zoom
-        ? 'scale=1188:2112:force_original_aspect_ratio=increase:flags=lanczos,crop=1188:2112,'
-            "zoompan=z='1+0.08*on/$frames':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=$fps"
-        : 'scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,fps=$fps';
+        ? 'scale=$bw:$bh:force_original_aspect_ratio=increase:flags=lanczos,crop=$bw:$bh,'
+            "zoompan=z='1+0.08*on/$frames':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${w}x$h:fps=$fps"
+        : 'scale=$w:$h:force_original_aspect_ratio=increase:flags=lanczos,crop=$w:$h,fps=$fps';
     return (args, f);
   }
   // الحركة البطيئة: setpts يمدّ الزمن فيحتاج الفيديو مصدراً أقل ويطول مقطعه
   final slow = bg.speed == 1 ? '' : 'setpts=${(1 / bg.speed).toStringAsFixed(3)}*PTS,';
   return (
     ['-stream_loop', '-1', '-t', (len * bg.speed + 1).toStringAsFixed(3), '-i', bg.path],
-    '${slow}scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,fps=$fps'
+    '${slow}scale=$w:$h:force_original_aspect_ratio=increase:flags=lanczos,crop=$w:$h,fps=$fps'
   );
 }
 
@@ -150,6 +151,9 @@ Future<String> renderVideo({
   required void Function(double) onProgress,
 }) async {
   final dir = await workDir();
+  // 720p يُرسم بدقته مباشرة (الخلفية والتحسين والطبقات) بدل رسمه 1080p ثم تصغيره: أسرع بكثير
+  final small = height < 1920;
+  final ow = small ? 720 : 1080, oh = small ? 1280 : 1920, sc = ow / 1080;
   final duration = kept.fold(0.0, (s, k) => s + k.$2 - k.$1);
   // كل مقطع يُنقل إلى وقت الفيديو؛ ما وقع في جزء محذوف يُقص على حدوده
   double clampOut(double t, bool isStart) {
@@ -174,7 +178,7 @@ Future<String> renderVideo({
   final args = <String>[], chain = <String>[];
   for (var k = 0; k < points.length; k++) {
     final end = k + 1 < points.length ? points[k + 1] + td : duration;
-    final (a, f) = _clip(bgs[k % bgs.length], end - points[k], look.zoom);
+    final (a, f) = _clip(bgs[k % bgs.length], end - points[k], look.zoom, ow, oh);
     args.addAll(a);
     chain.add('[$k:v]$f,setsar=1,format=yuv420p,trim=duration=${(end - points[k]).toStringAsFixed(3)},setpts=PTS-STARTPTS[c$k]');
   }
@@ -218,10 +222,10 @@ Future<String> renderVideo({
     final (sid, ra, rb) = runs[r];
     final (hName, hBas) = headerOf(sid);
     final head = '${dir.path}/header$r.png';
-    final (hb, hx, hy) = await layerPng((c) => paintHeader(c, hName, hBas, look));
+    final (hb, hx, hy) = await layerPng((c) => paintHeader(c, hName, hBas, look), scale: sc);
     await File(head).writeAsBytes(hb);
     args.addAll(['-loop', '1', '-framerate', '1', '-t', duration.toStringAsFixed(3), '-i', head]);
-    chain.add('[${n + 1 + r}:v]fps=$fps,format=rgba[hd$r]');
+    chain.add('[${n + 1 + r}:v]format=rgba[hd$r]'); // ثابتة: يكفي إطار في الثانية، والتركيب يكرر آخر إطار
     final label = r == runs.length - 1 ? 'v0' : 'hv$r';
     chain.add("[$prev][hd$r]overlay=$hx:$hy:enable='between(t,${ra.toStringAsFixed(3)},${rb.toStringAsFixed(3)})':eof_action=repeat[$label]");
     prev = label;
@@ -230,40 +234,39 @@ Future<String> renderVideo({
   for (var i = 0; i < shifted.length; i++) {
     final (g, text, tr, _) = shifted[i];
     final png = '${dir.path}/seg_$i.png';
-    final (tb, tx, ty) = await layerPng((c) => paintSegment(c, text, tr, look));
+    final (tb, tx, ty) = await layerPng((c) => paintSegment(c, text, tr, look), scale: sc);
     await File(png).writeAsBytes(tb);
     final d = g.end - g.start, f = max(look.textFx == 'none' ? 0.04 : min(look.fade, d / 3), 0.04);
     final pos = look.textFx == 'slide'
-        ? "$tx:y='$ty+50*max(0,1-(t-${g.start.toStringAsFixed(3)})/${f.toStringAsFixed(3)})'"
+        ? "$tx:y='$ty+${(50 * sc).round()}*max(0,1-(t-${g.start.toStringAsFixed(3)})/${f.toStringAsFixed(3)})'"
         : '$tx:$ty';
     args.addAll(['-loop', '1', '-framerate', '1', '-t', (d + 1).toStringAsFixed(3), '-i', png]);
-    chain.add('[${i + base}:v]fps=$fps,trim=duration=${d.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${f.toStringAsFixed(3)}:alpha=1,'
+    chain.add('[${i + base}:v]fps=15,trim=duration=${d.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${f.toStringAsFixed(3)}:alpha=1,'
         'fade=out:st=${max(d - f, 0).toStringAsFixed(3)}:d=${f.toStringAsFixed(3)}:alpha=1,'
         'setpts=PTS+${g.start.toStringAsFixed(3)}/TB[t$i]');
-    chain.add('[v$i][t$i]overlay=$pos:eof_action=pass[v${i + 1}]');
+    // enable: خارج نافذة المقطع يمرّ الإطار بلا معالجة (يوفّر عملاً كثيراً مع عشرات المقاطع)
+    chain.add("[v$i][t$i]overlay=$pos:enable='between(t,${g.start.toStringAsFixed(3)},${g.end.toStringAsFixed(3)})':eof_action=pass[v${i + 1}]");
   }
   var last = 'v${shifted.length}';
   if (look.reciter.trim().isNotEmpty) {
     final rd = look.reciterAll ? duration : min(look.reciterSecs, duration), rf = min(0.5, rd / 3);
     final png = '${dir.path}/reciter.png';
-    final (rb, rx, ry) = await layerPng((c) => paintReciter(c, look));
+    final (rb, rx, ry) = await layerPng((c) => paintReciter(c, look), scale: sc);
     await File(png).writeAsBytes(rb);
     args.addAll(['-loop', '1', '-framerate', '1', '-t', (rd + 1).toStringAsFixed(3), '-i', png]);
-    chain.add('[${base + shifted.length}:v]fps=$fps,trim=duration=${rd.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${rf.toStringAsFixed(3)}:alpha=1,'
+    chain.add('[${base + shifted.length}:v]fps=15,trim=duration=${rd.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${rf.toStringAsFixed(3)}:alpha=1,'
         'fade=out:st=${max(rd - rf, 0).toStringAsFixed(3)}:d=${rf.toStringAsFixed(3)}:alpha=1[rc]');
     chain.add('[$last][rc]overlay=$rx:$ry:eof_action=pass[vr]');
     last = 'vr';
   }
   final out = '${dir.path}/tilawa_${DateTime.now().millisecondsSinceEpoch}.mp4';
-  final small = height < 1920;
-  if (small) chain.add('[$last]scale=720:1280:flags=lanczos[vout]');
-  final common = ['-filter_complex', chain.join(';'), '-map', small ? '[vout]' : '[$last]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
+  final common = ['-filter_complex', chain.join(';'), '-map', '[$last]', '-map', '[aout]', '-t', duration.toStringAsFixed(3)];
   final tail = ['-r', '$fps', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out];
   // ترميز العتاد (MediaCodec) أسرع بكثير؛ إن لم يدعمه الجوال نرجع إلى x264 السريع
   try {
     await _runAsync([...args, ...common, '-c:v', 'h264_mediacodec', '-b:v', small ? (look.hq ? '10M' : '5M') : (look.hq ? '20M' : '8M'), '-pix_fmt', 'nv12', ...tail], duration, onProgress);
   } catch (_) {
-    await _runAsync([...args, ...common, '-c:v', 'libx264', '-preset', look.hq ? 'veryfast' : 'superfast', '-crf', look.hq ? '17' : '22', '-pix_fmt', 'yuv420p', ...tail],
+    await _runAsync([...args, ...common, '-c:v', 'libx264', '-preset', look.hq ? 'veryfast' : 'superfast', '-crf', look.hq ? '18' : '23', '-pix_fmt', 'yuv420p', ...tail],
         duration, onProgress);
   }
   return out;

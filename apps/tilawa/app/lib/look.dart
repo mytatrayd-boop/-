@@ -356,15 +356,18 @@ Rect paintHeader(Canvas c, String? name, String? bas, Look l) {
 
 /// طبقة PNG شفافة مقصوصة على ما رُسم فيها (مع هامش للظل): ترجع الصورة وموضعها في الإطار.
 /// الطبقة الصغيرة أسرع بكثير في التركيب من طبقة بمقاس الشاشة كاملة.
-Future<(Uint8List, int, int)> layerPng(Rect Function(Canvas) paint) async {
+/// scale: نسبة دقة الإخراج إلى 1080 (التصدير 720p = 2/3) فتُرسم الطبقة بدقتها النهائية ولا يُكبَّر ويُصغَّر الإطار كله.
+Future<(Uint8List, int, int)> layerPng(Rect Function(Canvas) paint, {double scale = 1}) async {
   final probe = ui.PictureRecorder();
   final box = paint(Canvas(probe)); // قياس فقط
   probe.endRecording().dispose();
   final r = box.isEmpty ? const Rect.fromLTWH(0, 0, 2, 2) : box.inflate(28).intersect(const Rect.fromLTWH(0, 0, vw, vh));
-  final x = r.left.floor() & ~1, y = r.top.floor() & ~1;
-  final w = (r.right.ceil() - x + 1) & ~1, h = (r.bottom.ceil() - y + 1) & ~1;
+  final x = (r.left * scale).floor() & ~1, y = (r.top * scale).floor() & ~1;
+  final w = ((r.right * scale).ceil() - x + 1) & ~1, h = ((r.bottom * scale).ceil() - y + 1) & ~1;
   final rec = ui.PictureRecorder();
-  final c = Canvas(rec)..translate(-x.toDouble(), -y.toDouble());
+  final c = Canvas(rec)
+    ..translate(-x.toDouble(), -y.toDouble())
+    ..scale(scale);
   paint(c);
   final img = await rec.endRecording().toImage(w, h);
   final data = await img.toByteData(format: ui.ImageByteFormat.png);
