@@ -285,7 +285,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get depositsSection => 'الإيداعات الظاهرة';
 
   @override
-  String get customizeTitle => 'تخصيص الودجت';
+  String get customizeTitle => 'الودجت';
 
   @override
   String get resetLayout => 'استعادة الافتراضي';
@@ -313,7 +313,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tileHint =>
-      'اضغط على مربع في المعاينة أو في الشريط لتعديله، واضغط مطولاً على عنصر في الشريط واسحبه لإعادة الترتيب.';
+      'اضغط على عنصر في القائمة أو في المعاينة لتعديل حجمه وألوانه ومحتواه، واسحب المقبض لتغيير الترتيب.';
 
   @override
   String tileSpanName(String span) {
@@ -434,13 +434,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get qiblaIconSizeLabel => 'حجم أيقونة البوصلة';
 
   @override
-  String get tilesManageTitle => 'نوافذ الودجت';
-
-  @override
-  String get tilesManageHint =>
-      'فعّل النوافذ التي تريدها أو أوقفها، واسحب المقبض لتغيير الترتيب. النوافذ المتبقية تتمدد لتملأ الودجت.';
-
-  @override
   String get tilesLastOne => 'يجب أن تبقى نافذة واحدة على الأقل';
 
   @override
@@ -480,4 +473,34 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paywallNotActive => 'لا يوجد اشتراك فعّال على حساب آبل هذا.';
+
+  @override
+  String get tabSize => 'الحجم';
+
+  @override
+  String get tabColors => 'الألوان';
+
+  @override
+  String get tabContent => 'المحتوى';
+
+  @override
+  String get tileNoContent => 'لا خيارات محتوى لهذا العنصر';
+
+  @override
+  String get colorPresetsLabel => 'ألوان جاهزة';
+
+  @override
+  String colorPresetName(String name) {
+    String _temp0 = intl.Intl.selectLogic(name, {
+      'auto': 'تلقائي',
+      'gold': 'ذهبي',
+      'white': 'أبيض',
+      'green': 'أخضر',
+      'blue': 'أزرق',
+      'rose': 'وردي',
+      'dark': 'داكن',
+      'other': '$name',
+    });
+    return '$_temp0';
+  }
 }

@@ -41,6 +41,18 @@ enum FontScale {
   );
 }
 
+/// «ألوان جاهزة» (شاشة الودجت، ١٠/١١/٢٠٢٦): لون رئيسي وفرعي يطبَّقان على كل العناصر دفعة واحدة.
+/// auto = حسب السمة (يمسح الألوان المختارة).
+const colorPresets = <({String name, TileColor? primary, TileColor? secondary})>[
+  (name: 'auto', primary: null, secondary: null),
+  (name: 'gold', primary: TileColor.gold, secondary: TileColor.cream),
+  (name: 'white', primary: TileColor.white, secondary: TileColor.lightGray),
+  (name: 'green', primary: TileColor.green, secondary: TileColor.lime),
+  (name: 'blue', primary: TileColor.blue, secondary: TileColor.cyan),
+  (name: 'rose', primary: TileColor.pink, secondary: TileColor.purple),
+  (name: 'dark', primary: TileColor.black, secondary: TileColor.gray),
+];
+
 /// لوحة ألوان الخط الثابتة (ARGB). اللون null = تلقائي حسب السمة والعنصر.
 enum TileColor {
   white(0xFFFFFFFF),

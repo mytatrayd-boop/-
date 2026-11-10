@@ -11,7 +11,6 @@ import 'customize_screen.dart';
 import 'places.dart';
 import 'providers.dart';
 import 'qibla_screen.dart';
-import 'tiles_screen.dart';
 import 'widget_preview.dart';
 
 /// شاشة الإعدادات الوحيدة (SPEC ٧، DESIGN «تطبيق الإعدادات»).
@@ -147,18 +146,7 @@ class _Body extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         const SizedBox(height: 8),
-        // نوافذ الشريط: تفعيل وإيقاف وترتيب بالسحب.
-        FilledButton.tonalIcon(
-          key: const Key('tiles-button'),
-          icon: const Icon(Icons.view_agenda_outlined),
-          label: Text(l.tilesManageTitle),
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-            settings: const RouteSettings(name: TilesScreen.routeName),
-            builder: (_) => const TilesScreen(),
-          )),
-        ),
-        const SizedBox(height: 8),
-        // الميزة ٥: ترتيب المربعات وأحجامها وألوانها.
+        // شاشة «الودجت» الواحدة: الترتيب والإظهار والحجم والألوان والمحتوى.
         FilledButton.tonalIcon(
           key: const Key('customize-button'),
           icon: const Icon(Icons.dashboard_customize),

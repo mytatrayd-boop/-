@@ -336,6 +336,13 @@ class SettingsController extends AsyncNotifier<AppState> {
           ]),
           commit: commit);
 
+  /// «ألوان جاهزة»: اللونان لكل العناصر في حفظ واحد (null = تلقائي).
+  Future<void> applyColors(TileColor? primary, TileColor? secondary) =>
+      _updateLight(_s.copyWith(layout: [
+        for (final t in _s.layout)
+          t.copyWith(primaryColor: () => primary, secondaryColor: () => secondary),
+      ]));
+
   Future<void> setVisible(WidgetElement e, bool on) =>
       updateTile(e, (t) => t.copyWith(visible: on));
 

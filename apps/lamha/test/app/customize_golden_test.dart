@@ -5,9 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'app_helpers.dart' show loadImages;
-import 'customize_screen_test.dart' show openCustomize, select;
+import 'customize_screen_test.dart' show openCustomize, select, tab;
 
-/// لقطة شاشة «تخصيص الودجت» (الميزة ٥ب) بخط Tajawal بمقاس جوال، في mockups/customize_screen.png
+/// لقطتا شاشة «الودجت» بخط Tajawal بمقاس جوال: الشاشة في mockups/customize_screen.png، ولوحة عنصر
+/// (تبويب الألوان) في mockups/customize_sheet.png
 /// (تُحدَّث بـ --update-goldens).
 Future<void> _loadFont(String family, List<String> paths) async {
   final loader = FontLoader(family);
@@ -20,7 +21,7 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 void main() {
-  testWidgets('لقطة شاشة التخصيص (مواقيت الصلاة مختارة)', (tester) async {
+  Future<void> setUp(WidgetTester tester) async {
     await _loadFont('Tajawal', [
       'assets/fonts/Tajawal-Regular.ttf',
       'assets/fonts/Tajawal-Medium.ttf',
@@ -30,11 +31,25 @@ void main() {
     tester.view.physicalSize = const Size(412 * 2, 915 * 2);
     tester.view.devicePixelRatio = 2;
     await tester.pumpAndSettle();
-    await select(tester, 'prayerTimes');
+  }
+
+  testWidgets('لقطة شاشة الودجت', (tester) async {
+    await setUp(tester);
     await loadImages(tester);
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../mockups/customize_screen.png'),
+    );
+  }, tags: ['golden']);
+
+  testWidgets('لقطة لوحة عنصر (الفصل، تبويب الألوان)', (tester) async {
+    await setUp(tester);
+    await select(tester, 'season');
+    await tab(tester, 'colors');
+    await loadImages(tester);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../mockups/customize_sheet.png'),
     );
   }, tags: ['golden']);
 }

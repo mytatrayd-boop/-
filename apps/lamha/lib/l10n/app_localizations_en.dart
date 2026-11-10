@@ -287,7 +287,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get depositsSection => 'Shown deposits';
 
   @override
-  String get customizeTitle => 'Customize widget';
+  String get customizeTitle => 'Widget';
 
   @override
   String get resetLayout => 'Restore defaults';
@@ -315,7 +315,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tileHint =>
-      'Tap a tile in the preview or the strip to edit it. Long-press an item in the strip and drag it to reorder.';
+      'Tap an item in the list or the preview to edit its size, colours and content; drag the handle to reorder.';
 
   @override
   String tileSpanName(String span) {
@@ -436,13 +436,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qiblaIconSizeLabel => 'Compass icon size';
 
   @override
-  String get tilesManageTitle => 'Widget tiles';
-
-  @override
-  String get tilesManageHint =>
-      'Turn tiles on or off and drag the handle to reorder them. The remaining tiles expand to fill the widget.';
-
-  @override
   String get tilesLastOne => 'At least one tile must stay on';
 
   @override
@@ -484,4 +477,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get paywallNotActive =>
       'There is no active subscription on this Apple account.';
+
+  @override
+  String get tabSize => 'Size';
+
+  @override
+  String get tabColors => 'Colours';
+
+  @override
+  String get tabContent => 'Content';
+
+  @override
+  String get tileNoContent => 'No content options for this item';
+
+  @override
+  String get colorPresetsLabel => 'Colour presets';
+
+  @override
+  String colorPresetName(String name) {
+    String _temp0 = intl.Intl.selectLogic(name, {
+      'auto': 'Auto',
+      'gold': 'Gold',
+      'white': 'White',
+      'green': 'Green',
+      'blue': 'Blue',
+      'rose': 'Rose',
+      'dark': 'Dark',
+      'other': '$name',
+    });
+    return '$_temp0';
+  }
 }
