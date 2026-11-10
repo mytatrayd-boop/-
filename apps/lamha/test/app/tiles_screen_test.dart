@@ -133,7 +133,6 @@ void main() {
     expect(actual['layout'], expected['layout']);
     expect(actual['visible'], expected['visible']);
     expect(actual['opacity'], expected['opacity']);
-    expect(actual['prayerCountdown'], expected['prayerCountdown']);
     expect(actual['days'], expected['days']);
   });
 }

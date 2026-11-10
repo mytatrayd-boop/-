@@ -340,6 +340,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'purple': 'Purple',
       'pink': 'Pink',
       'lightGray': 'Light gray',
+      'cream': 'Cream',
+      'yellow': 'Yellow',
+      'orange': 'Orange',
+      'red': 'Red',
+      'lime': 'Light green',
+      'teal': 'Teal',
+      'cyan': 'Cyan',
+      'brown': 'Brown',
+      'gray': 'Gray',
       'other': '$color',
     });
     return '$_temp0';

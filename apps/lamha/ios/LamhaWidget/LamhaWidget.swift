@@ -3,7 +3,7 @@ import WidgetKit
 
 // ودجت «لمحة» لآيفون (الميزة ٤): كبيرة ومتوسطة وصغيرة للشاشة الرئيسية، ومستطيلة وسطر لشاشة القفل.
 // النوع "LamhaWidget" كما في services.dart (widgetName)، فيعيد التطبيق تحميلها بعد كل حفظ.
-// لا ساعة دقيقة بدقيقة في ودجت آيفون، فمكانها الصلاة القادمة بعدّاد حي.
+// لا ساعة دقيقة بدقيقة في ودجت آيفون، فمكانها الصلاة القادمة (واسمها ووقتها). لا عدّاد تنازلي (حُذف نهائياً).
 
 private let qiblaURL = URL(string: "lamha://qibla?homeWidget")!
 private let appURL = URL(string: "lamha://open?homeWidget")!
@@ -146,19 +146,14 @@ struct NextPrayerView: View {
     let prayer: Prayer?
     let accent: Color
     var big = true
-    /// العدّاد التنازلي تحت الوقت: اختياري ومطفأ افتراضياً (إعداد «العدّاد التنازلي للصلاة القادمة»).
-    var countdown = false
+    var style = TileStyle()
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             if let p = prayer {
-                Text(p.name).font(.system(size: big ? 26 : 20, weight: .bold)).foregroundStyle(accent)
-                Text(p.text).font(.system(size: big ? 16 : 13, weight: .medium)).foregroundStyle(textColor)
-                if countdown {
-                    Text(p.time, style: .timer)
-                        .font(.system(size: big ? 15 : 12, weight: .medium).monospacedDigit())
-                        .foregroundStyle(dimColor)
-                        .multilineTextAlignment(.leading)
-                }
+                Text(p.name).font(.system(size: style.size(big ? 26 : 20), weight: .bold))
+                    .foregroundStyle(style.main(accent)).lineLimit(1).minimumScaleFactor(0.6)
+                Text(p.text).font(.system(size: style.size(big ? 16 : 13), weight: .medium))
+                    .foregroundStyle(style.main(textColor)).lineLimit(1).minimumScaleFactor(0.6)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -170,14 +165,18 @@ struct PrayerRow: View {
     let accent: Color
     /// يتمدد رأسياً ليملأ ما تركته النوافذ المخفية.
     var stretch = false
+    var style = TileStyle()
     var body: some View {
         HStack(spacing: 4) {
             ForEach(Array(prayers.enumerated()), id: \.offset) { i, p in
                 VStack(spacing: 2) {
-                    Text(p.name).font(.system(size: 14, weight: .bold))
-                    Text(p.text).font(.system(size: 11, weight: .medium))
+                    Text(p.name).font(.system(size: style.size(14), weight: .bold))
+                        .foregroundStyle(style.main(i == 0 ? accent : textColor))
+                    if style.showSub {
+                        Text(p.text).font(.system(size: style.size(11), weight: .medium))
+                            .foregroundStyle(style.sub(i == 0 ? accent : textColor))
+                    }
                 }
-                .foregroundStyle(i == 0 ? accent : textColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity)
@@ -192,6 +191,7 @@ struct PrayerRow: View {
 struct DepositsGrid: View {
     let deposits: [Deposit]
     var stretch = false
+    var style = TileStyle()
     var body: some View {
         let cols = deposits.count > 3 ? 2 : 1
         let rows = stride(from: 0, to: deposits.count, by: cols).map { Array(deposits[$0..<min($0 + cols, deposits.count)]) }
@@ -200,11 +200,11 @@ struct DepositsGrid: View {
                 HStack(spacing: 3) {
                     ForEach(row) { d in
                         HStack(spacing: 4) {
-                            Text(d.label).foregroundStyle(textColor).lineLimit(1)
+                            Text(d.label).foregroundStyle(style.main(textColor)).lineLimit(1)
                             Spacer(minLength: 2)
-                            Text(d.days).foregroundStyle(dimColor).lineLimit(1)
+                            if style.showSub { Text(d.days).foregroundStyle(style.sub(dimColor)).lineLimit(1) }
                         }
-                        .font(.system(size: 12))
+                        .font(.system(size: style.size(12)))
                         .minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity, maxHeight: stretch ? CGFloat.infinity : nil)
                         .padding(.horizontal, 7)
@@ -222,10 +222,15 @@ struct SeasonBox: View {
     let title: String
     let sub: String
     var stretch = false
+    var style = TileStyle()
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(textColor)
-            Text(sub).font(.system(size: 11)).foregroundStyle(dimColor).lineLimit(2)
+            Text(title).font(.system(size: style.size(15), weight: .bold)).foregroundStyle(style.main(textColor))
+                .lineLimit(1).minimumScaleFactor(0.7)
+            if style.showSub {
+                Text(sub).font(.system(size: style.size(11))).foregroundStyle(style.sub(dimColor)).lineLimit(2)
+                    .minimumScaleFactor(0.7)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: stretch ? CGFloat.infinity : nil, alignment: .leading)
         .padding(6)
@@ -239,13 +244,15 @@ struct TradSeasonBox: View {
     let after: String
     let line: String
     var stretch = false
+    var style = TileStyle()
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            (Text(name).font(.system(size: 15, weight: .bold)).foregroundColor(textColor)
-                + Text(" (" + after + ")").font(.system(size: 11)).foregroundColor(dimColor))
-                .lineLimit(1)
-            if !line.isEmpty {
-                Text(line).font(.system(size: 11)).foregroundStyle(dimColor).lineLimit(3)
+            (Text(name).font(.system(size: style.size(15), weight: .bold)).foregroundColor(style.main(textColor))
+                + Text(" (" + after + ")").font(.system(size: style.size(11))).foregroundColor(style.sub(dimColor)))
+                .lineLimit(1).minimumScaleFactor(0.7)
+            if style.showSub && !line.isEmpty {
+                Text(line).font(.system(size: style.size(11))).foregroundStyle(style.sub(dimColor)).lineLimit(3)
+                    .minimumScaleFactor(0.7)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: stretch ? CGFloat.infinity : nil, alignment: .leading)
@@ -292,22 +299,27 @@ struct LamhaWidgetView: View {
     private func next(_ s: LamhaSnapshot) -> Prayer? { s.upcomingPrayers(from: entry.date).first }
 
     private func header(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(day.weekday).font(.system(size: 18, weight: .bold)).foregroundStyle(textColor)
-            Text("📍 " + s.city + (s.weather.map { " " + $0 } ?? ""))
-                .font(.system(size: 12)).foregroundStyle(dimColor).lineLimit(1)
+        let st = s.style(["dayWeather", "weather"])
+        return VStack(alignment: .leading, spacing: 1) {
+            Text(day.weekday).font(.system(size: st.size(18), weight: .bold)).foregroundStyle(st.main(textColor))
+                .lineLimit(1).minimumScaleFactor(0.7)
+            if st.showSub {
+                Text("📍 " + s.city + (s.weather.map { " " + $0 } ?? ""))
+                    .font(.system(size: st.size(12))).foregroundStyle(st.sub(dimColor)).lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
         }
     }
 
     /// كبسولتا التاريخين حسب ما فُعّل: الهجري والميلادي كلٌّ على حدة (أو «التاريخان» القديمة).
     private func dates(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
         let both = s.isVisible("dates")
-        let hijri: String? = (both || s.isVisible("hijri")) ? day.hijri : nil
-        let gregorian: String? = (both || s.isVisible("gregorian")) ? day.gregorian : nil
-        let items: [String] = [hijri, gregorian].compactMap { $0 }
+        let hijri: (String, TileStyle)? = (both || s.isVisible("hijri")) ? (day.hijri, s.style(both ? ["dates"] : ["hijri"])) : nil
+        let gregorian: (String, TileStyle)? = (both || s.isVisible("gregorian")) ? (day.gregorian, s.style(both ? ["dates"] : ["gregorian"])) : nil
+        let items: [(String, TileStyle)] = [hijri, gregorian].compactMap { $0 }
         return VStack(alignment: .leading, spacing: 3) {
-            ForEach(items, id: \.self) { t in
-                Text(t).font(.system(size: 13, weight: .bold)).foregroundStyle(textColor)
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                Text(item.0).font(.system(size: item.1.size(13), weight: .bold)).foregroundStyle(item.1.main(textColor))
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8).padding(.vertical, 5)
@@ -317,13 +329,16 @@ struct LamhaWidgetView: View {
     }
 
     private func qibla(_ s: LamhaSnapshot, width: CGFloat) -> some View {
-        Link(destination: qiblaURL) {
+        let st = s.style(["qibla"])
+        return Link(destination: qiblaURL) {
             VStack(spacing: 1) {
                 QiblaIcon(degrees: s.qiblaDegrees, dark: s.iconBackground, faceOpacity: s.opacity)
-                Text(s.qiblaAngleText).font(.system(size: 14, weight: .bold)).foregroundStyle(textColor)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                Text("من الشمال · " + s.qiblaDirection).font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(dimColor).lineLimit(1).minimumScaleFactor(0.6)
+                if st.showTitle {
+                    Text(s.qiblaAngleText).font(.system(size: st.size(14), weight: .bold)).foregroundStyle(st.main(textColor))
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                    Text("من الشمال · " + s.qiblaDirection).font(.system(size: st.size(9), weight: .medium))
+                        .foregroundStyle(st.sub(dimColor)).lineLimit(1).minimumScaleFactor(0.6)
+                }
             }
         }
         .frame(width: width)
@@ -350,7 +365,7 @@ struct LamhaWidgetView: View {
                 view: AnyView(
                     HStack(alignment: .top) {
                         if showPrayer {
-                            NextPrayerView(prayer: next(s), accent: s.accent, countdown: s.prayerCountdown)
+                            NextPrayerView(prayer: next(s), accent: s.accent, style: s.style(["clock", "prayer"]))
                         }
                         if showHeader { header(s, day) }
                     }
@@ -369,7 +384,8 @@ struct LamhaWidgetView: View {
                         if showDates { dates(s, day) }
                         if showQibla { qibla(s, width: CGFloat(70 * s.qiblaIconScale)) }
                     }
-                    .frame(maxHeight: CGFloat.infinity)
+                    // ارتفاع أدنى يتبع حجم أيقونة القبلة (وإلا قيّدها الارتفاع المتاح فلم يستجب التكبير).
+                    .frame(minHeight: showQibla ? CGFloat(70 * s.qiblaIconScale) + 34 : 0, maxHeight: CGFloat.infinity)
                 )
             ))
         }
@@ -377,14 +393,14 @@ struct LamhaWidgetView: View {
             blocks.append(LamhaBlock(
                 id: "prayerTimes",
                 position: s.position(["prayerTimes"]),
-                view: AnyView(PrayerRow(prayers: s.rotatedPrayers(at: entry.date), accent: s.accent, stretch: true))
+                view: AnyView(PrayerRow(prayers: s.rotatedPrayers(at: entry.date), accent: s.accent, stretch: true, style: s.style(["prayerTimes"])))
             ))
         }
         if s.isVisible("deposit") {
             blocks.append(LamhaBlock(
                 id: "deposit",
                 position: s.position(["deposit"]),
-                view: AnyView(DepositsGrid(deposits: Array(day.deposits.prefix(6)), stretch: true))
+                view: AnyView(DepositsGrid(deposits: Array(day.deposits.prefix(6)), stretch: true, style: s.style(["deposit"])))
             ))
         }
         // الفصل والموسم في صف واحد: الموقوف منهما يختفي والآخر يملأ الصف.
@@ -396,9 +412,9 @@ struct LamhaWidgetView: View {
                 position: s.position(["season", "tradSeason"]),
                 view: AnyView(
                     HStack(spacing: 6) {
-                        if showSeason { SeasonBox(title: day.seasonName, sub: day.seasonAfter, stretch: true) }
+                        if showSeason { SeasonBox(title: day.seasonName, sub: day.seasonAfter, stretch: true, style: s.style(["season"])) }
                         if showTrad {
-                            TradSeasonBox(name: day.tradName, after: day.tradAfter, line: day.tradLine, stretch: true)
+                            TradSeasonBox(name: day.tradName, after: day.tradAfter, line: day.tradLine, stretch: true, style: s.style(["tradSeason"]))
                                 .layoutPriority(1)
                         }
                     }
@@ -411,7 +427,7 @@ struct LamhaWidgetView: View {
     private func medium(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
         VStack(spacing: 6) {
             HStack(alignment: .top, spacing: 8) {
-                NextPrayerView(prayer: next(s), accent: s.accent, big: false, countdown: s.prayerCountdown)
+                NextPrayerView(prayer: next(s), accent: s.accent, big: false, style: s.style(["clock", "prayer"]))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(day.weekday).font(.system(size: 15, weight: .bold)).foregroundStyle(textColor)
                     Text(day.hijri).font(.system(size: 11)).foregroundStyle(dimColor).lineLimit(1)
@@ -419,14 +435,14 @@ struct LamhaWidgetView: View {
                 if s.isVisible("qibla") { qibla(s, width: CGFloat(52 * s.qiblaIconScale)) }
             }
             if s.isVisible("prayerTimes") {
-                PrayerRow(prayers: s.rotatedPrayers(at: entry.date), accent: s.accent)
+                PrayerRow(prayers: s.rotatedPrayers(at: entry.date), accent: s.accent, style: s.style(["prayerTimes"]))
             }
         }
     }
 
     private func small(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            NextPrayerView(prayer: next(s), accent: s.accent, big: false, countdown: s.prayerCountdown)
+            NextPrayerView(prayer: next(s), accent: s.accent, big: false, style: s.style(["clock", "prayer"]))
             Spacer(minLength: 0)
             Text(day.hijri).font(.system(size: 11, weight: .medium)).foregroundStyle(textColor)
                 .lineLimit(1).minimumScaleFactor(0.7)
@@ -442,7 +458,6 @@ struct LamhaWidgetView: View {
         VStack(alignment: .leading, spacing: 1) {
             if let p = next(s) {
                 Text(p.name + " · " + p.text).font(.system(size: 15, weight: .bold))
-                Text(p.time, style: .timer).font(.system(size: 13).monospacedDigit())
             }
             Text("القبلة " + s.qiblaText).font(.system(size: 12)).lineLimit(1)
         }

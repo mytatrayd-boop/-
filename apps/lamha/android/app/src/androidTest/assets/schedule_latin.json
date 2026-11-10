@@ -183,7 +183,6 @@
   "lockNotification": false,
   "fontScale": 1.0,
   "digits": "latin",
-  "prayerCountdown": false,
   "weather": {
     "temp": 26.2,
     "code": 0,

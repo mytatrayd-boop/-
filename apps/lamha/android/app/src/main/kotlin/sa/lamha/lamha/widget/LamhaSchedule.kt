@@ -49,8 +49,6 @@ data class LamhaDay(
     val seasonAfter: String = "",
     val tradAfter: String = "",
     val tradPoints: List<String> = emptyList(),
-    /// العدّاد التنازلي في مربع «الصلاة القادمة»: اختياري ومطفأ افتراضياً (prayerCountdown في الجدول).
-    val prayerCountdown: Boolean = false,
 )
 
 /// [remaining] «باقي ٨ أيام»، و[after] «بعد ٨ أيام» للإشعار، و[days] «١٤ يوماً» لأعمدة الإيداعات.
@@ -236,7 +234,6 @@ object LamhaSchedule {
             fontScale = root.optDouble("fontScale", 1.0).toFloat(),
             layout = layoutOf(root) ?: LamhaLogic.defaultLayout(visible),
             latinDigits = root.optString("digits", "arabic") == "latin",
-            prayerCountdown = root.optBoolean("prayerCountdown", false),
             prayersToday = today,
             prayersTomorrow = tomorrow,
             seasonAfter = season.optString("afterText", ""),

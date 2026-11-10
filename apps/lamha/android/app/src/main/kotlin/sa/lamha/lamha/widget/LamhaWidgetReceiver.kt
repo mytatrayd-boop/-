@@ -21,7 +21,6 @@ import android.text.style.RelativeSizeSpan
 import android.text.Spanned
 import android.text.SpannableString
 import android.os.Bundle
-import android.os.SystemClock
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.Log
@@ -496,7 +495,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// عدد الأسطر الثانوية الأساسية (كل منها سطر واحد) لمربع [element]، كـ coreSizes في المعاينة.
         private fun subCount(day: LamhaDay, element: String): Int = when (element) {
-            "prayer" -> if (day.nextPrayer != null) (if (day.prayerCountdown) 2 else 1) else 0
+            "prayer" -> if (day.nextPrayer != null) 1 else 0
             "season" -> 1
             else -> if (day.tradDescription.isEmpty()) 0 else 1
         }
@@ -635,17 +634,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     val next = day.nextPrayer
                     value = next?.name ?: ""
                     sub1 = next?.text
-                    // العدّاد اختياري (prayerCountdown) ومطفأ افتراضياً؛ بدونه لا سطر عدّاد ولا Chronometer.
-                    if (next != null && day.prayerCountdown) {
-                        // عدّاد النظام التنازلي حتى الصلاة («باقي ٦:٠٤:١٩»)، فلا يحتاج تحديثاً كل ثانية.
-                        val base = SystemClock.elapsedRealtime() + (next.atMillis - env.now)
-                        // في المربع الضيق: بلا «باقي»، ثم يصغر قليلاً (fitTile)، وإلا يُخفى.
-                        var format = ctx.getString(R.string.countdown_format)
-                        if (availDp > 0f && textWidthDp(ctx, String.format(format, "00:00:00"), subSp, false) > availDp) format = "%s"
-                        countWidth = textWidthDp(ctx, String.format(format, "00:00:00"), subSp, false)
-                        rv.setChronometer(R.id.tile_countdown, base, format, true)
-                        rv.setChronometerCountDown(R.id.tile_countdown, true)
-                    }
+                    // لا عدّاد تنازلي في مربع الصلاة (حُذف نهائياً بطلب المالك ١٠/١١/٢٠٢٦).
                 }
                 "season" -> {
                     value = day.seasonName

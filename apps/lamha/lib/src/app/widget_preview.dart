@@ -301,7 +301,6 @@ class WidgetPreview extends StatelessWidget {
           day,
           nextDay,
           digits,
-          countdown: schedule['prayerCountdown'] == true,
         ),
         WidgetElement.qibla => _QiblaTile(
           angle: '${formatDigits(qiblaDeg.round(), digits)}°',
@@ -552,26 +551,22 @@ class WidgetPreview extends StatelessWidget {
     Color accent,
     Map day,
     Map? nextDay,
-    DigitStyle digits, {
-    required bool countdown,
-  }) {
+    DigitStyle digits,
+  ) {
     Map? next;
-    DateTime? at;
     final today = (day['prayers'] as Map).cast<String, Map>();
     for (final e in today.entries) {
       if (e.key == PrayerName.sunrise.name) continue;
       final t = DateTime.parse(e.value['time'] as String);
       if (t.isAfter(now)) {
         next = e.value;
-        at = t;
         break;
       }
     }
     if (next == null && nextDay != null) {
       next = (nextDay['prayers'] as Map)['fajr'] as Map;
-      at = DateTime.parse(next['time'] as String);
     }
-    // الاسم، ثم وقت الصلاة، ثم العدّاد بصيغة Chronometer (كما في LamhaWidgetReceiver.kt).
+    // الاسم ثم وقت الصلاة (لا عدّاد تنازلي: حُذف نهائياً بطلب المالك ١٠/١١/٢٠٢٦).
     return _Tile(
       kind: WidgetElement.prayer,
       title: l.tilePrayer,
@@ -581,16 +576,6 @@ class WidgetPreview extends StatelessWidget {
       subs: [
         if (next != null)
           (text: next['text'] as String, lines: 1, compact: null),
-        // العدّاد اختياري (prayerCountdown، مطفأ افتراضياً)؛ لا يُختصر: بلا «باقي» إن لم يتسع،
-        // ثم يصغر قليلاً، وإلا يُخفى.
-        if (countdown && at != null)
-          (
-            text: l.countdownText(
-              formatDigits(countdownClock(at.difference(now)), digits),
-            ),
-            lines: 1,
-            compact: formatDigits(countdownClock(at.difference(now)), digits),
-          ),
       ],
     );
   }

@@ -338,6 +338,15 @@ class AppLocalizationsAr extends AppLocalizations {
       'purple': 'بنفسجي',
       'pink': 'وردي',
       'lightGray': 'رمادي فاتح',
+      'cream': 'كريمي',
+      'yellow': 'أصفر',
+      'orange': 'برتقالي',
+      'red': 'أحمر',
+      'lime': 'أخضر فاتح',
+      'teal': 'تركوازي',
+      'cyan': 'سماوي',
+      'brown': 'بني',
+      'gray': 'رمادي',
       'other': '$color',
     });
     return '$_temp0';

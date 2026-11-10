@@ -527,7 +527,7 @@ abstract class AppLocalizations {
   /// ألوان الخط؛ auto حسب السمة
   ///
   /// In ar, this message translates to:
-  /// **'{color, select, auto{تلقائي} white{أبيض} black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} other{{color}}}'**
+  /// **'{color, select, auto{تلقائي} white{أبيض} black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} cream{كريمي} yellow{أصفر} orange{برتقالي} red{أحمر} lime{أخضر فاتح} teal{تركوازي} cyan{سماوي} brown{بني} gray{رمادي} other{{color}}}'**
   String tileColorName(String color);
 
   /// مفتاح عنوان المربع

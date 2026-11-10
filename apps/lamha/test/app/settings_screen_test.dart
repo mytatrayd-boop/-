@@ -421,16 +421,14 @@ void main() {
     }
   });
 
-  testWidgets('الصلاة القادمة القديمة في ترتيب مخصص: الاسم ثم الوقت ثم العدّاد', (tester) async {
+  testWidgets('الصلاة القادمة القديمة في ترتيب مخصص: الاسم ثم الوقت بلا عدّاد', (tester) async {
     final city = parseCities(readAsset('assets/cities.json')).first;
     // مخصص (لون واحد مختلف)، فلا يُرحَّل إلى الترتيب الجديد.
     final custom = [
       for (final t in legacyDefaultLayout)
         t.id == WidgetElement.season ? t.copyWith(primaryColor: () => TileColor.white) : t,
     ];
-    // العدّاد اختياري ومطفأ افتراضياً (٣٠/١٠/٢٠٢٦)، فيُفعَّل هنا ليظهر سطره.
-    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'})
-        .copyWith(layout: custom, prayerCountdown: true);
+    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'}).copyWith(layout: custom);
     final bridge = await pumpApp(tester, prefs: {LamhaSettings.prefsKey: s.encode()});
     expect(tile(WidgetElement.prayer), findsOneWidget);
     expect(tile(WidgetElement.prayerTimes), findsNothing);
@@ -439,39 +437,20 @@ void main() {
     Finder inTile(String key) => find.descendant(of: tile(WidgetElement.prayer), matching: find.byKey(Key(key)));
     expect(tester.widget<Text>(inTile('tile-value')).data, asr['name']);
     final subs = [
-      for (var i = 0; i < 2; i++)
+      for (var i = 0; i < 3; i++)
         if (inTile('tile-sub-$i').evaluate().isNotEmpty) tester.widget<Text>(inTile('tile-sub-$i')).data,
     ];
-    if (subs.length == 2) expect(subs.first, asr['text']);
-    expect(subs.last, matches(RegExp(r'^(باقي )?[٠-٩]+:[٠-٩]{2}:[٠-٩]{2}$')));
+    expect(subs.length, lessThanOrEqualTo(1), reason: 'سطر واحد فقط (الوقت)، بلا عدّاد');
+    if (subs.isNotEmpty) expect(subs.first, asr['text']);
+    expect(subs.where((t) => t != null && t.startsWith('باقي')), isEmpty);
   });
 
-  testWidgets('العدّاد التنازلي للصلاة القادمة مطفأ افتراضياً، ومفتاح الإعدادات يشغّله ويحفظه', (tester) async {
+  testWidgets('العدّاد التنازلي للصلاة حُذف نهائياً: لا مفتاح في الإعدادات ولا في الجدول', (tester) async {
     final city = parseCities(readAsset('assets/cities.json')).first;
-    final custom = [
-      for (final t in legacyDefaultLayout)
-        t.id == WidgetElement.season ? t.copyWith(primaryColor: () => TileColor.white) : t,
-    ];
-    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'}).copyWith(layout: custom);
+    final s = LamhaSettings.defaults(city, {'salary', 'citizen_account'});
     final bridge = await pumpApp(tester, prefs: {LamhaSettings.prefsKey: s.encode()});
-    expect(bridge.last['prayerCountdown'], false);
-    Finder inTile(String key) => find.descendant(of: tile(WidgetElement.prayer), matching: find.byKey(Key(key)));
-    final timer = RegExp(r'[٠-٩]+:[٠-٩]{2}');
-    bool hasTimer() => [
-          for (var i = 0; i < 3; i++)
-            if (inTile('tile-sub-$i').evaluate().isNotEmpty) tester.widget<Text>(inTile('tile-sub-$i')).data!,
-        ].any((t) => t.startsWith('باقي') || (timer.hasMatch(t) && t.split(':').length == 3));
-    expect(hasTimer(), isFalse);
-
-    final sw = find.byKey(const Key('prayer-countdown'));
-    await tester.ensureVisible(sw);
-    expect(tester.widget<SwitchListTile>(sw).value, isFalse);
-    await tester.tap(sw);
-    await tester.pumpAndSettle();
-    expect(bridge.last['prayerCountdown'], true);
-    expect(hasTimer(), isTrue);
-    final prefs = await SharedPreferences.getInstance();
-    expect((jsonDecode(prefs.getString(LamhaSettings.prefsKey)!) as Map)['prayerCountdown'], true);
+    expect(bridge.last.containsKey('prayerCountdown'), isFalse);
+    expect(find.byKey(const Key('prayer-countdown')), findsNothing);
   });
 
   test('لام الجر', () {

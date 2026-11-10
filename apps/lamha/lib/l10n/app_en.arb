@@ -71,7 +71,7 @@
   "dragHandle": "Long-press and drag to reorder",
   "tileHint": "Tap a tile in the preview or the strip to edit it. Long-press an item in the strip and drag it to reorder.",
   "tileSpanName": "{span, select, small{Small} medium{Medium} wide{Wide} other{{span}}}",
-  "tileColorName": "{color, select, auto{Automatic} white{White} black{Black} gold{Gold} green{Green} blue{Blue} purple{Purple} pink{Pink} lightGray{Light gray} other{{color}}}",
+  "tileColorName": "{color, select, auto{Automatic} white{White} black{Black} gold{Gold} green{Green} blue{Blue} purple{Purple} pink{Pink} lightGray{Light gray} cream{Cream} yellow{Yellow} orange{Orange} red{Red} lime{Light green} teal{Teal} cyan{Cyan} brown{Brown} gray{Gray} other{{color}}}",
   "tileShowTitle": "Show title",
   "tileShowSub": "Show secondary line",
   "digitsLabel": "Digits",
