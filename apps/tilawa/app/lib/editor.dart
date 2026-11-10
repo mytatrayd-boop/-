@@ -67,11 +67,20 @@ class EditorModel extends ChangeNotifier {
   }
 
   // ── التراجع والإعادة ──
-  String _snap() => jsonEncode({
-        's': segs.map((g) => g.toJson()).toList(),
-        'c': [for (final (x, y) in cuts) [x, y]],
-        'p': splits,
-      });
+  // حالة إضافية (الشكل والخلفيات) يوفّرها المحرر كنص JSON فيشملها التراجع والإعادة مع تعديلات المقاطع
+  String Function()? extraSnap;
+  void Function(String)? extraRestore;
+
+  String _snap([String? extra]) {
+    final ex = extra ?? extraSnap?.call();
+    return jsonEncode({
+      's': segs.map((g) => g.toJson()).toList(),
+      'c': [for (final (x, y) in cuts) [x, y]],
+      'p': splits,
+      if (ex != null) 'x': ex,
+    });
+  }
+
   void _restore(String j0) {
     final j = jsonDecode(j0) as Map<String, dynamic>;
     segs = [for (final g in j['s'] as List) Segment.fromJson(g as Map<String, dynamic>)];
@@ -79,11 +88,20 @@ class EditorModel extends ChangeNotifier {
     splits = [for (final p in j['p'] as List) (p as num).toDouble()];
     selected = null;
     audioSel = null;
+    final x = j['x'];
+    if (x is String) extraRestore?.call(x);
     notifyListeners();
   }
 
-  void checkpoint() {
-    _undo.add(_snap());
+  void clearHistory() {
+    _undo.clear();
+    _redo.clear();
+    notifyListeners();
+  }
+
+  /// extra: حالة الشكل والخلفيات قبل التعديل (إن كان التعديل فيها لا في المقاطع).
+  void checkpoint({String? extra}) {
+    _undo.add(_snap(extra));
     _redo.clear();
     if (_undo.length > 80) _undo.removeAt(0);
   }

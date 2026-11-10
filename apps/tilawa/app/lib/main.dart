@@ -88,16 +88,72 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   bool _dirty = false;
   Timer? _saver;
 
+  // ── التراجع والإعادة لتعديلات الشكل والخلفيات (تعديلات المقاطع في EditorModel) ──
+  bool _hist = false; // يُفعَّل بعد فتح المشروع، فلا تُسجَّل تغييرات التحميل
+  bool _restoring = false;
+  String _lastExtra = '';
+  DateTime _extraAt = DateTime(2000);
+  final _bgPool = <String, Bg>{}; // كل خلفيات المشروع بمساراتها، لإرجاع المحذوف بالتراجع
+  final undoCtl = UndoHistoryController(); // تراجع الكتابة داخل حقل تحرير النص
+
+  String _extraSnap() => jsonEncode({
+        'look': look.toJson(),
+        'bgs': [for (final b in bgs) {'p': b.path, 's': b.speed}],
+      });
+
+  void _restoreExtra(String s) {
+    final j = jsonDecode(s) as Map<String, dynamic>;
+    _restoring = true;
+    refresh(() {
+      look.fromJson((j['look'] as Map).cast<String, dynamic>());
+      final list = <Bg>[];
+      for (final e in j['bgs'] as List) {
+        final b = _bgPool[(e as Map)['p']];
+        if (b != null) list.add(b..speed = (e['s'] as num).toDouble());
+      }
+      if (list.isNotEmpty) {
+        bgs
+          ..clear()
+          ..addAll(list);
+      }
+    });
+    _restoring = false;
+    _lastExtra = _extraSnap();
+    if (look.trans.isNotEmpty && !trCache.containsKey(look.trans)) _setTrans(look.trans);
+  }
+
+  /// يبدأ تسجيل التراجع من الحالة الحالية (بعد اكتمال فتح مشروع أو إنشائه).
+  void _startHistory() {
+    _lastExtra = _extraSnap();
+    _hist = true;
+    m.clearHistory();
+  }
+
   void refresh([VoidCallback? fn]) {
+    final before = _hist && !_restoring && fn != null ? _lastExtra : null;
     setState(fn ?? () {});
     ui0.value++;
     _dirty = true;
+    if (before != null) {
+      final after = _extraSnap();
+      if (after != before) {
+        final now = DateTime.now();
+        // سحب منزلق أو كتابة متصلة = تراجع واحد
+        final pushed = now.difference(_extraAt) > const Duration(milliseconds: 700);
+        if (pushed) m.checkpoint(extra: before);
+        _extraAt = now;
+        _lastExtra = after;
+        if (pushed) m.changed();
+      }
+    }
   }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    m.extraSnap = _extraSnap;
+    m.extraRestore = _restoreExtra;
     _saver = Timer.periodic(const Duration(seconds: 4), (_) {
       if (_dirty && !busy) _saveProject();
     });
@@ -142,7 +198,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       final d = await rootBundle.load('assets/bg$i.jpg');
       await f.writeAsBytes(d.buffer.asUint8List());
     }
-    return Bg(f.path, presets[i]);
+    return _bgPool.putIfAbsent(f.path, () => Bg(f.path, presets[i]));
   }
 
   // ── المشاريع المحفوظة ──
@@ -217,6 +273,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   }
 
   Future<void> _resetEditor() async {
+    _hist = false;
+    _bgPool.clear();
     final b = await _presetBg(0);
     m.setSegments([]);
     m.setAudio(Float32List(0));
@@ -249,6 +307,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
 
   Future<void> openProject(String id) async {
     if (quran == null || busy) return;
+    _hist = false;
+    _bgPool.clear();
     refresh(() {
       busy = true;
       status = 'فتح المشروع…';
@@ -282,6 +342,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       await _setTrans(look.trans);
       await _restoreBgs(data['bgs'] as List? ?? []);
       await player.seek(Duration(milliseconds: (m.playhead * 1000).round()));
+      _startHistory();
       refresh(() => status = '');
       _dirty = false;
     } catch (e) {
@@ -309,6 +370,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       final b = Bg(f.path, e['name'] as String? ?? '', video: v, thumb: v ? await videoThumb(f.path) : null);
       b.speed = (e['speed'] as num?)?.toDouble() ?? b.speed;
       if (v) b.frames = await videoFrames(f.path);
+      _bgPool[f.path] = b;
       out.add(b);
     }
     if (out.isEmpty) out.add(await _presetBg(0));
@@ -387,6 +449,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     ClipInfo? added;
     try {
       if (first) {
+        _hist = false;
+        _bgPool.clear();
         newId = ProjectStore.newId();
         projDir = await ProjectStore.dir(newId);
         projectId = newId;
@@ -416,6 +480,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       m.clipEdges = [for (final c in clips.skip(1)) c.start];
       _cleanCombined(path);
       if (first) _distribute();
+      if (first) _startHistory();
       refresh(() => status = '');
       await autoSync(clips.length - 1);
     } catch (e) {
@@ -512,6 +577,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       await player.seek(Duration(milliseconds: (m.playhead * 1000).round()));
       player.play();
     }
+  }
+
+  /// قفزة مباشرة إلى وقت معيّن (البداية أو النهاية)، ويتابع التشغيل من هناك إن كان جارياً.
+  Future<void> _jump(double t) async {
+    final at = t.clamp(0.0, m.duration);
+    m.seek(at);
+    await player.seek(Duration(milliseconds: (at * 1000).round()));
   }
 
   Future<void> toggleTap() async {
@@ -810,6 +882,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
           Expanded(
             child: TextField(
               controller: editCtl,
+              undoController: undoCtl,
               autofocus: true,
               minLines: 1,
               maxLines: 3,
@@ -830,6 +903,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
                 }
               },
             ),
+          ),
+          ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: undoCtl,
+            builder: (_, v, _) => Row(mainAxisSize: MainAxisSize.min, children: [
+              IconButton(onPressed: v.canUndo ? undoCtl.undo : null, icon: const Icon(Icons.undo), tooltip: 'تراجع عن الكتابة أو الحذف'),
+              IconButton(onPressed: v.canRedo ? undoCtl.redo : null, icon: const Icon(Icons.redo), tooltip: 'إعادة'),
+            ]),
           ),
           if (editKind == 'trans')
             TextButton(
@@ -938,6 +1018,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         },
       );
 
+  /// زر مدمج لصف التحكم (ليتسع الصف كله على شاشة 360 بكسل).
+  Widget _cb(IconData icon, VoidCallback? on, String tip, {double size = 24, double width = 38}) => IconButton(
+        onPressed: on,
+        icon: Icon(icon),
+        iconSize: size,
+        tooltip: tip,
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints.tightFor(width: width, height: 40),
+      );
+
   Widget _controls() => ListenableBuilder(
         listenable: m,
         builder: (context, _) => Directionality(
@@ -945,13 +1035,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Row(children: [
-              IconButton(onPressed: m.canUndo ? m.undo : null, icon: const Icon(Icons.undo), tooltip: 'تراجع'),
-              IconButton(onPressed: m.canRedo ? m.redo : null, icon: const Icon(Icons.redo), tooltip: 'إعادة'),
-              Text('${fmtTime(m.toDisp(m.playhead))} / ${fmtTime(m.dispDuration)}', style: const TextStyle(fontSize: 13)),
+              _cb(Icons.undo, m.canUndo ? m.undo : null, 'تراجع'),
+              _cb(Icons.redo, m.canRedo ? m.redo : null, 'إعادة'),
+              Text('${fmtTime(m.toDisp(m.playhead))} / ${fmtTime(m.dispDuration)}', style: const TextStyle(fontSize: 12)),
               const Spacer(),
-              IconButton(iconSize: 34, onPressed: togglePlay, icon: Icon(player.playing ? Icons.pause : Icons.play_arrow)),
+              _cb(Icons.skip_previous, m.duration > 0 ? () => _jump(0) : null, 'إلى البداية'),
+              _cb(player.playing ? Icons.pause : Icons.play_arrow, togglePlay, player.playing ? 'إيقاف' : 'تشغيل', size: 32, width: 46),
+              _cb(Icons.skip_next, m.duration > 0 ? () => _jump(m.kept.isEmpty ? m.duration : m.kept.last.$2) : null, 'إلى النهاية'),
               const Spacer(),
-              IconButton(onPressed: _openFullscreen, icon: const Icon(Icons.fullscreen), tooltip: 'ملء الشاشة'),
+              _cb(Icons.fullscreen, _openFullscreen, 'ملء الشاشة'),
             ]),
           ),
         ),
@@ -1048,6 +1140,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   void _editTextSheet() {
     final g = m.sel;
     if (g == null) return;
+    undoCtl.value = UndoHistoryValue.empty;
     editCtl.text = g.text;
     m.checkpoint();
     refresh(() {
@@ -1060,6 +1153,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     final g = m.sel;
     if (g == null) return;
     final list = m.valid, i = list.indexOf(g);
+    undoCtl.value = UndoHistoryValue.empty;
     editCtl.text = i >= 0 ? _trs(list)[i] : '';
     m.checkpoint();
     refresh(() {
@@ -1189,6 +1283,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
                 }
                 final b = Bg(p, f.name, video: v, thumb: v ? await videoThumb(p) : null);
                 if (v) b.frames = await videoFrames(p);
+                _bgPool[p] = b;
                 added.add(b);
               }
               refresh(() {
@@ -1334,6 +1429,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         OutlinedButton.icon(
           onPressed: () {
             Navigator.of(context).pop(); // تُغلق اللوحة ليبقى الاسم ظاهراً في المعاينة أثناء الكتابة
+            undoCtl.value = UndoHistoryValue.empty;
             editCtl.text = look.reciter;
             refresh(() {
               editKind = 'reciter';

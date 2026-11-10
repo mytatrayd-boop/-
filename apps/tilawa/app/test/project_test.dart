@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tilawa_app/editor.dart';
 import 'package:tilawa_app/look.dart';
 import 'package:tilawa_app/project.dart';
 import 'package:tilawa_app/quran.dart';
@@ -64,5 +66,23 @@ void main() {
     const ayah = 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ';
     final x = ayahRange(ayah, 'رَبِّ الْعَالَمِينَ'), y = ayahRange(ayah, 'رَبِّ الْعَالَمِينَ');
     expect(x, y);
+  });
+
+  test('التراجع والإعادة يشملان حالة الشكل المحفوظة مع المقاطع', () {
+    var state = 'قبل';
+    final m = EditorModel()
+      ..extraSnap = (() => state)
+      ..extraRestore = ((s) => state = s);
+    m.setAudio(Float32List(16000));
+    m.checkpoint(extra: 'قبل'); // تعديل شكل: الحالة السابقة تُحفظ صراحةً
+    state = 'بعد';
+    m.undo();
+    expect(state, 'قبل');
+    m.redo();
+    expect(state, 'بعد');
+    m.checkpoint(); // تعديل مقاطع: الحالة الحالية تُلتقط تلقائياً
+    state = 'ثالث';
+    m.undo();
+    expect(state, 'بعد');
   });
 }
