@@ -17,6 +17,7 @@ import 'editor.dart';
 import 'look.dart';
 import 'media.dart';
 import 'preview.dart';
+import 'project.dart';
 import 'quran.dart';
 import 'sync.dart';
 
@@ -59,7 +60,7 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> with TickerProviderStateMixin {
+class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindingObserver {
   final m = EditorModel();
   final look = Look();
   final player = AudioPlayer();
@@ -78,15 +79,29 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   String editKind = 'seg'; // ما يحرره الشريط السفلي: seg نص المقطع / reciter اسم القارئ
   final trCache = <String, List<List<String>>>{};
   String? lastExport; // آخر فيديو مُصدَّر (للمشاركة)
+  // المشروع المفتوح والمشاريع المحفوظة
+  String? projectId;
+  String projectName = '';
+  Directory? projDir;
+  final clips = <ClipInfo>[]; // المقاطع الصوتية بالترتيب (تُدمج في ملف واحد للتشغيل والتصدير)
+  List<ProjectMeta> projects = [];
+  bool _dirty = false;
+  Timer? _saver;
 
   void refresh([VoidCallback? fn]) {
     setState(fn ?? () {});
     ui0.value++;
+    _dirty = true;
   }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _saver = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (_dirty && !busy) _saveProject();
+    });
+    _loadProjects();
     rootBundle.loadString('assets/quran.json').then((s) => refresh(() => quran = Quran.fromJson(s)));
     _presetBg(0).then((b) => refresh(() => bgs.add(b)));
     // كل إطار أثناء التشغيل: المؤشر يتبع الصوت، ويقفز فوق الأجزاء المحذوفة
@@ -103,7 +118,22 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       m.changed();
     }).start();
     player.playingStream.listen((_) => refresh());
-    m.addListener(() => ui0.value++);
+    m.addListener(() {
+      ui0.value++;
+      if (!player.playing) _dirty = true; // أثناء التشغيل يتحرك المؤشر فقط
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _saveProject(); // لا يضيع العمل إن أُغلق التطبيق
+  }
+
+  @override
+  void dispose() {
+    _saver?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<Bg> _presetBg(int i) async {
@@ -115,33 +145,306 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     return Bg(f.path, presets[i]);
   }
 
-  // ── الملف الصوتي والتعرف ──
-  Future<void> pickAudio() async {
-    final path = (await FilePicker.pickFile(type: FileType.any))?.path;
-    if (path == null) return;
+  // ── المشاريع المحفوظة ──
+  int _sOf(Segment g) => g.surah == 0 ? surah : g.surah;
+
+  Future<void> _loadProjects() async {
+    final l = await ProjectStore.list();
+    if (mounted) refresh(() => projects = l);
+  }
+
+  String _summary() {
+    final q = quran;
+    if (q == null) return '';
+    final ids = <int>{for (final g in m.segs) if (g.surah > 0) g.surah};
+    if (ids.isEmpty) ids.add(surah);
+    return ids.map((s) => 'سورة ${q.names[s - 1]}').join('، ');
+  }
+
+  Future<void> _saveProject() async {
+    final id = projectId, dir = projDir;
+    if (id == null || dir == null || audioPath == null || m.duration <= 0) return;
+    _dirty = false;
+    String? rel(String p) => p.startsWith('${dir.path}/') ? p.substring(dir.path.length + 1) : null;
+    final bgJson = <Map<String, dynamic>>[];
+    for (final b in bgs) {
+      final pi = presets.indexOf(b.name);
+      if (pi >= 0 && b.path.endsWith('/bg$pi.jpg')) {
+        bgJson.add({'preset': pi});
+      } else if (rel(b.path) != null) {
+        bgJson.add({'file': rel(b.path), 'name': b.name, 'video': b.video, 'speed': b.speed});
+      }
+    }
+    try {
+      await ProjectStore.save(id, {
+        'v': 1,
+        'id': id,
+        'name': projectName,
+        'updated': DateTime.now().millisecondsSinceEpoch,
+        'duration': m.dispDuration,
+        'summary': _summary(),
+        'surah': surah,
+        'from': from,
+        'to': to,
+        'clips': [for (final c in clips) c.toJson()],
+        'segs': [for (final g in m.segs) g.toJson()],
+        'cuts': [for (final (a, b) in m.cuts) [a, b]],
+        'splits': m.splits,
+        'playhead': m.playhead,
+        'look': look.toJson(),
+        'bgs': bgJson,
+      });
+    } catch (_) {
+      _dirty = true; // نعيد المحاولة في الدورة التالية
+    }
+  }
+
+  /// الملف الصوتي الذي يُشغَّل ويُصدَّر منه: مقطع واحد كما هو، أو ملف مدمج من كل المقاطع.
+  Future<String> _audioFile() async {
+    final dir = projDir!.path;
+    if (clips.length == 1) return '$dir/clips/${clips.first.file}';
+    final out = '$dir/combined_${clips.length}.m4a';
+    if (!File(out).existsSync()) await concatAudio([for (final c in clips) '$dir/clips/${c.file}'], out);
+    return out;
+  }
+
+  void _cleanCombined(String keep) {
+    final d = projDir;
+    if (d == null) return;
+    for (final f in d.listSync().whereType<File>()) {
+      if (f.path.contains('/combined_') && f.path != keep) f.deleteSync();
+    }
+  }
+
+  Future<void> _resetEditor() async {
+    final b = await _presetBg(0);
+    m.setSegments([]);
+    m.setAudio(Float32List(0));
+    m.clipEdges = [];
+    look.fromJson({});
+    refresh(() {
+      projectId = null;
+      projDir = null;
+      projectName = '';
+      audioPath = null;
+      audio16 = null;
+      clips.clear();
+      editing = false;
+      surah = 70;
+      from = 1;
+      to = 5;
+      bgs
+        ..clear()
+        ..add(b);
+    });
+  }
+
+  Future<void> _closeProject() async {
+    await player.pause();
+    await _saveProject();
+    await _resetEditor();
+    _dirty = false;
+    _loadProjects();
+  }
+
+  Future<void> openProject(String id) async {
+    if (quran == null || busy) return;
     refresh(() {
       busy = true;
-      status = 'قراءة الملف…';
+      status = 'فتح المشروع…';
     });
     try {
+      final data = await ProjectStore.load(id);
+      if (data == null) throw Exception('الملف غير موجود');
+      projDir = await ProjectStore.dir(id);
+      projectId = id;
+      projectName = data['name'] as String? ?? '';
+      clips
+        ..clear()
+        ..addAll([for (final c in data['clips'] as List) ClipInfo.fromJson(c as Map<String, dynamic>)]);
+      surah = (data['surah'] as num?)?.toInt() ?? 70;
+      from = (data['from'] as num?)?.toInt() ?? 1;
+      to = (data['to'] as num?)?.toInt() ?? 5;
+      final path = await _audioFile();
       final a = await decode16k(path);
       await player.setFilePath(path);
       audioPath = path;
       audio16 = a;
       m.setAudio(a);
-      _distribute();
+      m.clipEdges = [for (final c in clips.skip(1)) c.start];
+      m.restore(
+        [for (final g in data['segs'] as List) Segment.fromJson(g as Map<String, dynamic>)],
+        [for (final c in data['cuts'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())],
+        [for (final p in data['splits'] as List) (p as num).toDouble()],
+        (data['playhead'] as num?)?.toDouble() ?? 0,
+      );
+      look.fromJson((data['look'] as Map?)?.cast<String, dynamic>() ?? {});
+      await _setTrans(look.trans);
+      await _restoreBgs(data['bgs'] as List? ?? []);
+      await player.seek(Duration(milliseconds: (m.playhead * 1000).round()));
       refresh(() => status = '');
-      await autoSync();
+      _dirty = false;
     } catch (e) {
+      projectId = null;
+      projDir = null;
+      audioPath = null;
+      clips.clear();
+      refresh(() => status = 'تعذر فتح المشروع: $e');
+    } finally {
+      refresh(() => busy = false);
+    }
+  }
+
+  Future<void> _restoreBgs(List list) async {
+    final out = <Bg>[];
+    for (final j in list) {
+      final e = j as Map<String, dynamic>;
+      if (e['preset'] is int) {
+        out.add(await _presetBg(e['preset'] as int));
+        continue;
+      }
+      final f = File('${projDir!.path}/${e['file']}');
+      if (!f.existsSync()) continue;
+      final v = e['video'] as bool? ?? false;
+      final b = Bg(f.path, e['name'] as String? ?? '', video: v, thumb: v ? await videoThumb(f.path) : null);
+      b.speed = (e['speed'] as num?)?.toDouble() ?? b.speed;
+      if (v) b.frames = await videoFrames(f.path);
+      out.add(b);
+    }
+    if (out.isEmpty) out.add(await _presetBg(0));
+    refresh(() => bgs
+      ..clear()
+      ..addAll(out));
+  }
+
+  Future<String?> _askName(String title, String initial) {
+    final ctl = TextEditingController(text: initial);
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: TextField(controller: ctl, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, ctl.text.trim()), child: const Text('حفظ')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _renameCurrent() async {
+    final n = await _askName('اسم المشروع', projectName);
+    if (n == null || n.isEmpty) return;
+    refresh(() => projectName = n);
+  }
+
+  Future<void> _renameInList(ProjectMeta p) async {
+    final n = await _askName('اسم المشروع', p.name);
+    if (n == null || n.isEmpty) return;
+    final data = await ProjectStore.load(p.id);
+    if (data == null) return;
+    data['name'] = n;
+    await ProjectStore.save(p.id, data);
+    _loadProjects();
+  }
+
+  Future<void> _deleteInList(ProjectMeta p) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('حذف «${p.name}»؟'),
+        content: const Text('يُحذف المشروع وملفاته الصوتية من الجوال نهائياً. الفيديوهات المصدَّرة في المعرض لا تتأثر.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('حذف')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await ProjectStore.delete(p.id);
+    _loadProjects();
+  }
+
+  // ── المقاطع الصوتية والتعرف ──
+  String _baseName(String n) {
+    final d = n.lastIndexOf('.');
+    return d > 0 ? n.substring(0, d) : n;
+  }
+
+  /// مشروع جديد (أول مقطع) أو إضافة مقطع صوتي لمشروع مفتوح.
+  Future<void> addClip() async {
+    if (quran == null || busy) return;
+    final picked = await FilePicker.pickFile(type: FileType.any);
+    final src = picked?.path;
+    if (picked == null || src == null) return;
+    final first = projectId == null;
+    player.pause();
+    refresh(() {
+      busy = true;
+      status = 'قراءة الملف…';
+    });
+    String? newId;
+    ClipInfo? added;
+    try {
+      if (first) {
+        newId = ProjectStore.newId();
+        projDir = await ProjectStore.dir(newId);
+        projectId = newId;
+        projectName = _baseName(picked.name);
+        clips.clear();
+        look.fromJson({});
+        final b = await _presetBg(0);
+        bgs
+          ..clear()
+          ..add(b);
+      }
+      final dir = projDir!;
+      Directory('${dir.path}/clips').createSync(recursive: true);
+      final dot = picked.name.lastIndexOf('.');
+      final file = 'clip${clips.length}${dot >= 0 ? picked.name.substring(dot) : '.audio'}';
+      await File(src).copy('${dir.path}/clips/$file');
+      final one = await decode16k('${dir.path}/clips/$file');
+      final start = clips.isEmpty ? 0.0 : clips.last.end;
+      added = ClipInfo(file, picked.name, start, start + one.length / sr);
+      clips.add(added);
+      final path = await _audioFile();
+      final full = clips.length == 1 ? one : await decode16k(path);
+      await player.setFilePath(path);
+      audioPath = path;
+      audio16 = full;
+      m.setAudio(full, keep: !first);
+      m.clipEdges = [for (final c in clips.skip(1)) c.start];
+      _cleanCombined(path);
+      if (first) _distribute();
+      refresh(() => status = '');
+      await autoSync(clips.length - 1);
+    } catch (e) {
+      if (first) {
+        if (newId != null) await ProjectStore.delete(newId);
+        projectId = null;
+        projDir = null;
+        audioPath = null;
+        clips.clear();
+      } else if (added != null) {
+        clips.remove(added); // يبقى المشروع كما كان
+      }
       refresh(() => status = 'تعذرت قراءة الملف الصوتي.');
     } finally {
       refresh(() => busy = false);
     }
   }
 
-  Future<void> autoSync() async {
+  /// التعرف على المقطع الصوتي رقم clipIdx (الافتراضي: المقطع الذي عنده المؤشر) واستبدال مقاطعه فقط.
+  Future<void> autoSync([int? clipIdx]) async {
     final a = audio16, q = quran;
-    if (a == null || q == null) return;
+    if (a == null || q == null || clips.isEmpty) return;
+    var idx = clipIdx ?? clips.indexWhere((c) => m.playhead < c.end);
+    if (idx < 0) idx = clips.length - 1;
+    final clip = clips[idx];
+    final s0 = (clip.start * sr).round().clamp(0, a.length), s1 = (clip.end * sr).round().clamp(s0, a.length);
+    final slice = Float32List.sublistView(a, s0, s1);
+    final t0 = s0 / sr;
+    final tag = clips.length > 1 ? 'المقطع ${idx + 1}: ' : '';
     refresh(() {
       busy = true;
       progress = 0;
@@ -149,25 +452,30 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     });
     try {
       asr ??= await Asr.start();
-      final units = breathUnits(a), blocks = packBlocks(units), texts = <String>[];
+      final units = breathUnits(slice), blocks = packBlocks(units), texts = <String>[];
       for (var k = 0; k < blocks.length; k++) {
         refresh(() {
-          status = 'التعرف على الآيات ${((k / blocks.length) * 100).round()}٪';
+          status = '${tag}التعرف على الآيات ${((k / blocks.length) * 100).round()}٪';
           progress = k / blocks.length;
         });
         final s = (units[blocks[k].$1][0] * sr).floor(), e = (units[blocks[k].$2][1] * sr).ceil();
-        texts.add(await asr!.transcribe(Float32List.sublistView(a, s, e.clamp(s, a.length))));
+        texts.add(await asr!.transcribe(Float32List.sublistView(slice, s, e.clamp(s, slice.length))));
       }
       final r = finishSync(q, units, blocks, texts);
       if (r == null) {
-        refresh(() => status = 'لم أتعرف على الآيات. اختر السورة والآيات من «الآيات».');
+        refresh(() => status = '${tag}لم أتعرف على الآيات. اختر السورة والآيات من «الآيات».');
         return;
       }
       surah = r.surah;
       from = r.from;
       to = r.to;
-      m.setSegments(r.segs);
-      refresh(() => status = 'سورة ${q.names[r.surah - 1]}، الآيات $from–$to');
+      final fresh = [for (final g in r.segs) Segment(g.text, g.start + t0, g.end + t0, g.ayah, r.surah)];
+      final others = [
+        for (final g in m.segs)
+          if (!((g.start + g.end) / 2 >= clip.start && (g.start + g.end) / 2 < clip.end)) g
+      ];
+      m.setSegments([...others, ...fresh]..sort((x, y) => x.start.compareTo(y.start)));
+      refresh(() => status = '${tag}سورة ${q.names[r.surah - 1]}، الآيات $from–$to');
       Future.delayed(const Duration(seconds: 4), () => refresh(() => status = ''));
     } catch (e) {
       refresh(() => status = 'تعذر التعرف: $e');
@@ -190,7 +498,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final span = m.duration > 0 ? m.duration : 5.0 * texts.length;
     var t = 0.0;
     m.setSegments([
-      for (final x in texts) () { final d = span * letters(x) / total; final g = Segment(x, t, t + d - 0.15, from + texts.indexOf(x)); t += d; return g; }()
+      for (final x in texts) () { final d = span * letters(x) / total; final g = Segment(x, t, t + d - 0.15, from + texts.indexOf(x), surah); t += d; return g; }()
     ]);
   }
 
@@ -238,13 +546,29 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final q = quran!;
     final (name, bas) = q.header(surah);
     final list = m.valid;
-    final key = '${list.map((g) => g.text).join('\u0001')}|${q.nextWord(surah, to)}';
+    final tail = _tail(list);
+    final key = '${list.map((g) => g.text).join('\u0001')}|$tail';
     if (key != _fontKey) {
       _fontKey = key;
-      _fontTexts = textsForFont([for (final g in list) g.text], q.nextWord(surah, to));
+      _fontTexts = textsForFont([for (final g in list) g.text], tail);
     }
     return Composer(m, look, activeBgs, images, _fontTexts, look.showName ? name : null, look.showBasmala ? bas : null,
-        trs: _trs(list), forceReciter: editing && editKind == 'reciter');
+        trs: _trs(list), forceReciter: editing && editKind == 'reciter', segSurahs: [for (final g in list) _sOf(g)], headerOf: _headerOf);
+  }
+
+  (String?, String?) _headerOf(int s) {
+    final q = quran;
+    if (q == null || s < 1 || s > q.names.length) return (null, null);
+    final (n, b) = q.header(s);
+    return (look.showName ? n : null, look.showBasmala ? b : null);
+  }
+
+  /// أول كلمة بعد آخر مقطع (تؤثر في تحويل ترميز التنوين لخط المجمع).
+  String _tail(List<Segment> list) {
+    final q = quran;
+    if (q == null || list.isEmpty) return '';
+    final g = list.last, s = _sOf(g);
+    return s < 1 || s > q.names.length ? '' : q.nextWord(s, g.ayah > 0 ? g.ayah : to);
   }
 
   String _fontKey = '';
@@ -255,7 +579,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     final tr = trCache[look.trans];
     return [
       for (final g in list)
-        tr != null && g.ayah >= 1 && g.ayah <= tr[surah - 1].length ? tr[surah - 1][g.ayah - 1] : ''
+        tr != null && _sOf(g) >= 1 && g.ayah >= 1 && g.ayah <= tr[_sOf(g) - 1].length ? tr[_sOf(g) - 1][g.ayah - 1] : ''
     ];
   }
 
@@ -334,7 +658,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       ]),
     );
     if (h == null || !mounted) return;
-    final (name, bas) = q.header(surah);
     final prog = ValueNotifier(0.0);
     showDialog(
       context: context,
@@ -360,12 +683,12 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       final out = await renderVideo(
         audio: a,
         segs: list,
-        texts: textsForFont([for (final g in list) g.text], q.nextWord(surah, to)),
+        texts: textsForFont([for (final g in list) g.text], _tail(list)),
         trans: _trs(list),
         bgs: activeBgs,
         look: look,
-        headerName: look.showName ? name : null,
-        headerBasmala: look.showBasmala ? bas : null,
+        segSurahs: [for (final g in list) _sOf(g)],
+        headerOf: _headerOf,
         kept: keptRanges(0, end, m.cuts),
         height: h,
         onProgress: (p) => prog.value = p,
@@ -398,28 +721,71 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: audioPath == null ? _welcome() : _editor()),
+      body: SafeArea(child: audioPath == null ? _projectList() : _editor()),
     );
   }
 
-  Widget _welcome() => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('تلاوة', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            const Text('ارفع تلاوة، فيتعرف التطبيق على الآيات ويوقّتها، ثم تحرّر وتصدّر الفيديو.', textAlign: TextAlign.center),
-            const SizedBox(height: 24),
+  Widget _projectList() => Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(children: [
+            const Text('تلاوة', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600)),
+            const Spacer(),
             FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.black),
-              onPressed: busy || quran == null ? null : pickAudio,
+              onPressed: busy || quran == null ? null : addClip,
               icon: const Icon(Icons.add),
-              label: const Text('مشروع جديد: اختر التلاوة'),
+              label: const Text('مشروع جديد'),
             ),
-            if (status.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 16), child: Text(status)),
           ]),
         ),
-      );
+        if (status.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(children: [
+              if (busy) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              if (busy) const SizedBox(width: 10),
+              Expanded(child: Text(status)),
+            ]),
+          ),
+        Expanded(
+          child: projects.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text('لا توجد مشاريع بعد.\nابدأ مشروعاً جديداً: ارفع تلاوة فيتعرف التطبيق على الآيات ويوقّتها، ثم تحرّر وتصدّر. مشاريعك تُحفظ هنا تلقائياً.',
+                        textAlign: TextAlign.center),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+                  itemCount: projects.length,
+                  itemBuilder: (_, i) {
+                    final p = projects[i];
+                    final d = p.updated;
+                    final when = '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+                    return Card(
+                      color: const Color(0xFF1C1C1C),
+                      child: ListTile(
+                        enabled: !busy,
+                        onTap: () => openProject(p.id),
+                        leading: const Icon(Icons.movie_creation_outlined, color: accent),
+                        title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: Text('${p.summary}\n${fmtTime(p.duration)} · ${p.clips} مقطع صوتي · $when'),
+                        isThreeLine: true,
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (v) => v == 'rename' ? _renameInList(p) : _deleteInList(p),
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'rename', child: Text('إعادة تسمية')),
+                            PopupMenuItem(value: 'delete', child: Text('حذف')),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ]);
 
   Widget _editBar() => Container(
         color: const Color(0xFF181818),
@@ -480,12 +846,18 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   Widget _topBar() => Padding(
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
         child: Row(children: [
-          IconButton(icon: const Icon(Icons.close), tooltip: 'مشروع جديد', onPressed: busy ? null : pickAudio),
+          IconButton(icon: const Icon(Icons.arrow_back), tooltip: 'حفظ والعودة للمشاريع', onPressed: busy ? null : _closeProject),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(color: const Color(0xFF242424), borderRadius: BorderRadius.circular(10)),
-            child: Text(quran == null ? 'تلاوة' : 'سورة ${quran!.names[surah - 1]} · 1080p', style: const TextStyle(fontSize: 14)),
+          Flexible(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: _renameCurrent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(color: const Color(0xFF242424), borderRadius: BorderRadius.circular(10)),
+                child: Text(projectName.isEmpty ? 'مشروع' : projectName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
+              ),
+            ),
           ),
           const Spacer(),
           if (lastExport != null) IconButton(icon: const Icon(Icons.ios_share), tooltip: 'مشاركة آخر فيديو', onPressed: _share),
@@ -596,7 +968,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             ];
           } else {
             items = [
-              _tool(Icons.auto_fix_high, 'تعرّف تلقائي', busy ? null : autoSync),
+              _tool(Icons.library_music, 'إضافة مقطع صوتي', busy ? null : addClip),
+              _tool(Icons.auto_fix_high, 'تعرّف تلقائي', busy ? null : () => autoSync()),
               _tool(Icons.menu_book, 'الآيات', _ayatSheet),
               _tool(Icons.graphic_eq, 'الصوت', () => m.selectAudioAt(m.playhead)),
               _tool(Icons.wallpaper, 'الخلفية', () => _sheet(_bgPanel)),
@@ -702,7 +1075,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           OutlinedButton(
             onPressed: () {
               final a = int.tryParse(addCtl.text);
-              if (a != null && a >= 1 && a <= n) m.addAt(q.ayahText(surah, a), a);
+              if (a != null && a >= 1 && a <= n) m.addAt(q.ayahText(surah, a), a, surah);
             },
             child: const Text('+ أضف'),
           ),
@@ -762,8 +1135,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               final added = <Bg>[];
               for (final f in files.where((f) => f.path != null)) {
                 final v = isVideo(f.path!);
-                final b = Bg(f.path!, f.name, video: v, thumb: v ? await videoThumb(f.path!) : null);
-                if (v) b.frames = await videoFrames(f.path!);
+                var p = f.path!;
+                final dir = projDir;
+                if (dir != null) {
+                  // نسخة داخل المشروع حتى لا تضيع الخلفية إن حُذف الملف الأصلي
+                  Directory('${dir.path}/bg').createSync(recursive: true);
+                  p = '${dir.path}/bg/${DateTime.now().microsecondsSinceEpoch}_${f.name}';
+                  await File(f.path!).copy(p);
+                }
+                final b = Bg(p, f.name, video: v, thumb: v ? await videoThumb(p) : null);
+                if (v) b.frames = await videoFrames(p);
                 added.add(b);
               }
               refresh(() {

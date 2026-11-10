@@ -20,17 +20,21 @@ class EditorModel extends ChangeNotifier {
   (double, double)? audioSel; // قطعة الصوت المحددة
   Float32List peaks = Float32List(0); // أعلى قيمة لكل 10 ملي ثانية
   double pps = 60; // بكسل لكل ثانية
+  List<double> clipEdges = []; // بدايات المقاطع الصوتية (ما عدا الأول) لرسم حدودها على الخط الزمني
   final List<String> _undo = [], _redo = [];
 
-  void setAudio(Float32List a16) {
+  /// keep = true: مقطع صوتي أُضيف للمشروع، فنحدّث المدة والموجة دون مسّ المقاطع والقصّ والتراجع.
+  void setAudio(Float32List a16, {bool keep = false}) {
     duration = a16.length / sr;
-    trimStart = 0;
     trimEnd = duration;
-    playhead = 0;
-    cuts = [];
-    splits = [];
-    selected = null;
-    audioSel = null;
+    if (!keep) {
+      trimStart = 0;
+      playhead = 0;
+      cuts = [];
+      splits = [];
+      selected = null;
+      audioSel = null;
+    }
     final n = a16.length ~/ 160;
     peaks = Float32List(n);
     for (var i = 0; i < n; i++) {
@@ -44,8 +48,21 @@ class EditorModel extends ChangeNotifier {
     for (var i = 0; i < n; i++) {
       peaks[i] /= top;
     }
-    _undo.clear();
-    _redo.clear();
+    if (!keep) {
+      _undo.clear();
+      _redo.clear();
+    }
+    notifyListeners();
+  }
+
+  /// استرجاع حالة محفوظة (فتح مشروع).
+  void restore(List<Segment> s, List<(double, double)> c, List<double> p, double at) {
+    segs = s;
+    cuts = c;
+    splits = p;
+    playhead = at.clamp(0, duration);
+    selected = null;
+    audioSel = null;
     notifyListeners();
   }
 
@@ -182,7 +199,7 @@ class EditorModel extends ChangeNotifier {
     if (k <= 0 || k >= words.length) return;
     checkpoint();
     final t = playhead > g.start + 0.3 && playhead < g.end - 0.3 ? playhead : (g.start + g.end) / 2;
-    final second = Segment(words.sublist(k).join(' '), t, g.end, g.ayah);
+    final second = Segment(words.sublist(k).join(' '), t, g.end, g.ayah, g.surah);
     g.text = words.sublist(0, k).join(' ');
     g.end = t - 0.1;
     segs.insert(selected! + 1, second);
@@ -205,7 +222,7 @@ class EditorModel extends ChangeNotifier {
     checkpoint();
     final g = segs[i], d = g.end - g.start;
     final nextStart = i + 1 < segs.length ? segs[i + 1].start : duration;
-    final c = Segment(g.text, g.end + 0.15, min(g.end + 0.15 + d, max(nextStart - 0.15, g.end + 1.2)), g.ayah);
+    final c = Segment(g.text, g.end + 0.15, min(g.end + 0.15 + d, max(nextStart - 0.15, g.end + 1.2)), g.ayah, g.surah);
     segs.insert(i + 1, c);
     selected = i + 1;
     notifyListeners();
@@ -220,10 +237,10 @@ class EditorModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addAt(String text, [int ayah = 0]) {
+  void addAt(String text, [int ayah = 0, int surah = 0]) {
     checkpoint();
     final next = segs.where((g) => g.start > playhead).map((g) => g.start).fold(duration, min);
-    final g = Segment(text, playhead, min(playhead + 4, max(next - 0.15, playhead + 1)), ayah);
+    final g = Segment(text, playhead, min(playhead + 4, max(next - 0.15, playhead + 1)), ayah, surah);
     segs.add(g);
     segs.sort((a, b) => a.start.compareTo(b.start));
     selected = segs.indexOf(g);
@@ -494,6 +511,14 @@ class _TimelinePainter extends CustomPainter {
           ..strokeWidth = 2
           ..color = Colors.white);
       }
+    }
+    // حدود المقاطع الصوتية المضافة
+    for (final e in m.clipEdges) {
+      final x = dx(m.toDisp(e));
+      if (x < 0 || x > w) continue;
+      c.drawLine(Offset(x, _waveTop - 3), Offset(x, _waveTop + _waveH + 3), Paint()
+        ..color = const Color(0xFFE8B931)
+        ..strokeWidth = 2);
     }
     // المؤشر الثابت في المنتصف
     c.drawLine(Offset(w / 2, _rulerH), Offset(w / 2, size.height), Paint()

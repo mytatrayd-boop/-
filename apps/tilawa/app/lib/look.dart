@@ -56,6 +56,112 @@ class Look {
   String bgChange = 'time'; // time / segment
   double bgEvery = 8, transDur = 1;
   String transition = 'fade';
+
+  Map<String, dynamic> toJson() => {
+        'fontSize': fontSize,
+        'textY': textY,
+        'width': width,
+        'lineGap': lineGap,
+        'shadow': shadow,
+        'fade': fade,
+        'headerSize': headerSize,
+        'headerY': headerY,
+        'dim': dim,
+        'blur': blur,
+        'sharpen': sharpen,
+        'brightness': brightness,
+        'contrast': contrast,
+        'saturation': saturation,
+        'boxOpacity': boxOpacity,
+        'boxPad': boxPad,
+        'boxRadius': boxRadius,
+        'transSize': transSize,
+        'transY': transY,
+        'transGap': transGap,
+        'reciterSecs': reciterSecs,
+        'reciterSize': reciterSize,
+        'reciterY': reciterY,
+        'transShadow': transShadow,
+        'reciterShadow': reciterShadow,
+        'bgEvery': bgEvery,
+        'transDur': transDur,
+        'align': align,
+        'headerMode': headerMode,
+        'textFx': textFx,
+        'trans': trans,
+        'reciter': reciter,
+        'transFont': transFont,
+        'reciterFont': reciterFont,
+        'bgChange': bgChange,
+        'transition': transition,
+        'showName': showName,
+        'showBasmala': showBasmala,
+        'hq': hq,
+        'boxOn': boxOn,
+        'reciterAll': reciterAll,
+        'zoom': zoom,
+        'manyBgs': manyBgs,
+        'color': color.toARGB32(),
+        'headerColor': headerColor.toARGB32(),
+        'boxColor': boxColor.toARGB32(),
+        'transColor': transColor.toARGB32(),
+      };
+
+  /// يطبّق القيم المحفوظة؛ المفقود منها يعود للقيمة الافتراضية ({} = إعادة الضبط).
+  void fromJson(Map<String, dynamic> j) {
+    final d = Look();
+    double n(String k, double def) => (j[k] as num?)?.toDouble() ?? def;
+    String s(String k, String def) => j[k] as String? ?? def;
+    bool b(String k, bool def) => j[k] as bool? ?? def;
+    Color c(String k, Color def) => j[k] is int ? Color(j[k] as int) : def;
+    fontSize = n('fontSize', d.fontSize);
+    textY = n('textY', d.textY);
+    width = n('width', d.width);
+    lineGap = n('lineGap', d.lineGap);
+    shadow = n('shadow', d.shadow);
+    fade = n('fade', d.fade);
+    headerSize = n('headerSize', d.headerSize);
+    headerY = n('headerY', d.headerY);
+    dim = n('dim', d.dim);
+    blur = n('blur', d.blur);
+    sharpen = n('sharpen', d.sharpen);
+    brightness = n('brightness', d.brightness);
+    contrast = n('contrast', d.contrast);
+    saturation = n('saturation', d.saturation);
+    boxOpacity = n('boxOpacity', d.boxOpacity);
+    boxPad = n('boxPad', d.boxPad);
+    boxRadius = n('boxRadius', d.boxRadius);
+    transSize = n('transSize', d.transSize);
+    transY = n('transY', d.transY);
+    transGap = n('transGap', d.transGap);
+    reciterSecs = n('reciterSecs', d.reciterSecs);
+    reciterSize = n('reciterSize', d.reciterSize);
+    reciterY = n('reciterY', d.reciterY);
+    transShadow = n('transShadow', d.transShadow);
+    reciterShadow = n('reciterShadow', d.reciterShadow);
+    bgEvery = n('bgEvery', d.bgEvery);
+    transDur = n('transDur', d.transDur);
+    align = s('align', d.align);
+    headerMode = s('headerMode', d.headerMode);
+    textFx = s('textFx', d.textFx);
+    trans = s('trans', d.trans);
+    reciter = s('reciter', d.reciter);
+    transFont = s('transFont', d.transFont);
+    reciterFont = s('reciterFont', d.reciterFont);
+    bgChange = s('bgChange', d.bgChange);
+    transition = s('transition', d.transition);
+    showName = b('showName', d.showName);
+    showBasmala = b('showBasmala', d.showBasmala);
+    hq = b('hq', d.hq);
+    boxOn = b('boxOn', d.boxOn);
+    reciterAll = b('reciterAll', d.reciterAll);
+    zoom = b('zoom', d.zoom);
+    manyBgs = b('manyBgs', d.manyBgs);
+    color = c('color', d.color);
+    headerColor = c('headerColor', d.headerColor);
+    boxColor = c('boxColor', d.boxColor);
+    transColor = c('transColor', d.transColor);
+  }
 }
 
 List<Shadow> _shadows(double s) =>

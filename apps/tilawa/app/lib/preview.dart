@@ -22,6 +22,8 @@ class Composer {
   final String? name, basmala;
   final List<String> trs; // ترجمة كل مقطع (فارغة إن لم تُختر ترجمة)
   final bool forceReciter; // إظهار اسم القارئ دائماً (أثناء تحريره)
+  final List<int> segSurahs; // سورة كل مقطع (للترويسة)
+  final (String?, String?) Function(int surah)? headerOf;
   late final List<Segment> segs = m.valid;
   late final double end = m.trimEnd < m.duration || segs.isEmpty ? m.trimEnd : min(segs.last.end + 0.8, m.duration);
   late final kept = keptRanges(m.trimStart, end, m.cuts);
@@ -30,7 +32,7 @@ class Composer {
     for (final g in segs) Segment(g.text, outTime(g.start, kept) ?? 0, outTime(g.end, kept) ?? 0)
   ], look);
 
-  Composer(this.m, this.look, this.bgs, this.images, this.texts, this.name, this.basmala, {this.trs = const [], this.forceReciter = false});
+  Composer(this.m, this.look, this.bgs, this.images, this.texts, this.name, this.basmala, {this.trs = const [], this.forceReciter = false, this.segSurahs = const [], this.headerOf});
 
   void _bg(Canvas c, int k, double local, double len, double alpha) {
     final b = bgs[k % bgs.length], img = (b.video ? videoFrameAt(b, local) : null) ?? images[b.preview];
@@ -66,7 +68,15 @@ class Composer {
       }
     }
     c.drawRect(Offset.zero & const Size(vw, vh), Paint()..color = Colors.black.withValues(alpha: look.dim));
-    c.drawPicture(headerPicture(name, basmala, look));
+    var hn = name, hb = basmala;
+    if (headerOf != null && segSurahs.length == segs.length && segs.isNotEmpty) {
+      var k = 0; // المقطع الجاري (أو آخر مقطع بدأ)
+      while (k + 1 < segs.length && segs[k + 1].start <= t) {
+        k++;
+      }
+      (hn, hb) = headerOf!(segSurahs[k]);
+    }
+    c.drawPicture(headerPicture(hn, hb, look));
     for (var i = 0; i < segs.length; i++) {
       final g = segs[i];
       if (t < g.start || t > g.end || m.skipCut(t) != null) continue;

@@ -68,6 +68,14 @@ ui.Image? videoFrameAt(Bg b, double t) {
   return f[(t * b.speed * previewFps).floor().abs() % f.length];
 }
 
+/// يدمج ملفات صوتية بالترتيب في ملف واحد (AAC) للتشغيل والتصدير. تُعاد القراءة من الأصول كل مرة فلا تتراكم خسارة الترميز.
+Future<void> concatAudio(List<String> files, String out) async {
+  final inputs = [for (final f in files) ...['-i', f]];
+  final prep = [for (var i = 0; i < files.length; i++) '[$i:a]aresample=44100,aformat=channel_layouts=stereo[a$i]'];
+  final join = '${[for (var i = 0; i < files.length; i++) '[a$i]'].join()}concat=n=${files.length}:v=0:a=1[aout]';
+  await _run([...inputs, '-filter_complex', [...prep, join].join(';'), '-map', '[aout]', '-c:a', 'aac', '-b:a', '192k', out]);
+}
+
 bool isVideo(String path) => RegExp(r'\.(mp4|mov|m4v|webm|mkv|3gp)$', caseSensitive: false).hasMatch(path);
 
 /// أوقات تبدّل الخلفية [0، t1، ...]. خلفية واحدة = بلا تبدّل.
@@ -135,8 +143,8 @@ Future<String> renderVideo({
   required List<String> trans, // ترجمة كل مقطع ('' = بلا)
   required List<Bg> bgs,
   required Look look,
-  required String? headerName,
-  required String? headerBasmala,
+  required List<int> segSurahs, // سورة كل مقطع (تتغير الترويسة عند تغيّر السورة)
+  required (String?, String?) Function(int surah) headerOf,
   required List<(double, double)> kept,
   int height = 1920, // 1920 = 1080p، و1280 = 720p
   required void Function(double) onProgress,
@@ -155,10 +163,10 @@ Future<String> renderVideo({
     return isStart ? duration : acc;
   }
 
-  final shifted = <(Segment, String, String)>[];
+  final shifted = <(Segment, String, String, int)>[];
   for (var i = 0; i < segs.length; i++) {
     final s = clampOut(segs[i].start, true), e = clampOut(segs[i].end, false);
-    if (e - s > 0.2) shifted.add((Segment(segs[i].text, s, e), texts[i], trans[i]));
+    if (e - s > 0.2) shifted.add((Segment(segs[i].text, s, e), texts[i], trans[i], segSurahs[i]));
   }
   final points = bgSchedule(bgs.length, duration, [for (final x in shifted) x.$1], look);
   final td = look.transition != 'none' && points.length > 1 ? min(look.transDur, 1.5) : 0.0;
@@ -194,14 +202,33 @@ Future<String> renderVideo({
   chain.addAll(parts);
   chain.add('${[for (var k = 0; k < kept.length; k++) '[a$k]'].join()}concat=n=${kept.length}:v=0:a=1[aout]');
   // طبقات صغيرة مقصوصة، تُقرأ صورها مرة في الثانية وتُكرر إطاراتها (أسرع بكثير)
-  final head = '${dir.path}/header.png';
-  final (hb, hx, hy) = await layerPng((c) => paintHeader(c, headerName, headerBasmala, look));
-  await File(head).writeAsBytes(hb);
-  args.addAll(['-loop', '1', '-framerate', '1', '-t', duration.toStringAsFixed(3), '-i', head]);
-  chain.add('[${n + 1}:v]fps=$fps,format=rgba[hd]');
-  chain.add('[bg][hd]overlay=$hx:$hy:eof_action=repeat[v0]');
+  // ترويسة لكل سورة: تتغير عند الانتقال بين مقاطع صوتية من سور مختلفة
+  final runs = <(int, double, double)>[]; // السورة، من، إلى
+  for (final s in shifted) {
+    if (runs.isEmpty) {
+      runs.add((s.$4, 0.0, duration));
+    } else if (runs.last.$1 != s.$4) {
+      runs[runs.length - 1] = (runs.last.$1, runs.last.$2, s.$1.start);
+      runs.add((s.$4, s.$1.start, duration));
+    }
+  }
+  if (runs.isEmpty) runs.add((segSurahs.isEmpty ? 0 : segSurahs.first, 0.0, duration));
+  var prev = 'bg';
+  for (var r = 0; r < runs.length; r++) {
+    final (sid, ra, rb) = runs[r];
+    final (hName, hBas) = headerOf(sid);
+    final head = '${dir.path}/header$r.png';
+    final (hb, hx, hy) = await layerPng((c) => paintHeader(c, hName, hBas, look));
+    await File(head).writeAsBytes(hb);
+    args.addAll(['-loop', '1', '-framerate', '1', '-t', duration.toStringAsFixed(3), '-i', head]);
+    chain.add('[${n + 1 + r}:v]fps=$fps,format=rgba[hd$r]');
+    final label = r == runs.length - 1 ? 'v0' : 'hv$r';
+    chain.add("[$prev][hd$r]overlay=$hx:$hy:enable='between(t,${ra.toStringAsFixed(3)},${rb.toStringAsFixed(3)})':eof_action=repeat[$label]");
+    prev = label;
+  }
+  final base = n + 1 + runs.length; // أول رقم إدخال بعد الترويسات
   for (var i = 0; i < shifted.length; i++) {
-    final (g, text, tr) = shifted[i];
+    final (g, text, tr, _) = shifted[i];
     final png = '${dir.path}/seg_$i.png';
     final (tb, tx, ty) = await layerPng((c) => paintSegment(c, text, tr, look));
     await File(png).writeAsBytes(tb);
@@ -210,7 +237,7 @@ Future<String> renderVideo({
         ? "$tx:y='$ty+50*max(0,1-(t-${g.start.toStringAsFixed(3)})/${f.toStringAsFixed(3)})'"
         : '$tx:$ty';
     args.addAll(['-loop', '1', '-framerate', '1', '-t', (d + 1).toStringAsFixed(3), '-i', png]);
-    chain.add('[${i + n + 2}:v]fps=$fps,trim=duration=${d.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${f.toStringAsFixed(3)}:alpha=1,'
+    chain.add('[${i + base}:v]fps=$fps,trim=duration=${d.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${f.toStringAsFixed(3)}:alpha=1,'
         'fade=out:st=${max(d - f, 0).toStringAsFixed(3)}:d=${f.toStringAsFixed(3)}:alpha=1,'
         'setpts=PTS+${g.start.toStringAsFixed(3)}/TB[t$i]');
     chain.add('[v$i][t$i]overlay=$pos:eof_action=pass[v${i + 1}]');
@@ -222,7 +249,7 @@ Future<String> renderVideo({
     final (rb, rx, ry) = await layerPng((c) => paintReciter(c, look));
     await File(png).writeAsBytes(rb);
     args.addAll(['-loop', '1', '-framerate', '1', '-t', (rd + 1).toStringAsFixed(3), '-i', png]);
-    chain.add('[${n + 2 + shifted.length}:v]fps=$fps,trim=duration=${rd.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${rf.toStringAsFixed(3)}:alpha=1,'
+    chain.add('[${base + shifted.length}:v]fps=$fps,trim=duration=${rd.toStringAsFixed(3)},format=rgba,fade=in:st=0:d=${rf.toStringAsFixed(3)}:alpha=1,'
         'fade=out:st=${max(rd - rf, 0).toStringAsFixed(3)}:d=${rf.toStringAsFixed(3)}:alpha=1[rc]');
     chain.add('[$last][rc]overlay=$rx:$ry:eof_action=pass[vr]');
     last = 'vr';
