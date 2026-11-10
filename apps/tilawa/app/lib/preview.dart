@@ -189,7 +189,16 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        // عند الرجوع نُرجع الوقت الذي وصلت إليه المعاينة ليتابع الشريط من هناك
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) Navigator.of(context).pop(t);
+        },
+        child: _scaffold(),
+      );
+
+  Widget _scaffold() => Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(backgroundColor: Colors.black, title: const Text('معاينة')),
         body: Column(children: [

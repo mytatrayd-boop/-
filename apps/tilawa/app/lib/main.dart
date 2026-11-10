@@ -648,10 +648,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     _thumbBusy = false;
   }
 
-  void _openFullscreen() {
+  Future<void> _openFullscreen() async {
     if (m.valid.isEmpty || audioPath == null) return;
     player.pause();
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => PreviewPage(audio: audioPath!, composer: composer(), start: m.playhead)));
+    final t = await Navigator.of(context).push<double>(MaterialPageRoute(builder: (_) => PreviewPage(audio: audioPath!, composer: composer(), start: m.playhead)));
+    if (t == null || !mounted) return;
+    // الشريط يتابع من حيث وصلت المعاينة
+    final at = (m.skipCut(t) ?? t).clamp(0.0, m.duration);
+    m.seek(at);
+    await player.seek(Duration(milliseconds: (at * 1000).round()));
   }
 
   // ── التصدير ──
