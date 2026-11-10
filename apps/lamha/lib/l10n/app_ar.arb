@@ -326,7 +326,7 @@
   "@depositsSection": {
     "description": "عنوان مفاتيح الإيداعات في الإعدادات"
   },
-  "customizeTitle": "تخصيص الودجت",
+  "customizeTitle": "الودجت",
   "@customizeTitle": {
     "description": "زر الإعدادات وعنوان شاشة التخصيص (الميزة ٥)"
   },
@@ -362,7 +362,7 @@
   "@dragHandle": {
     "description": "تلميح مقبض السحب"
   },
-  "tileHint": "اضغط على مربع في المعاينة أو في الشريط لتعديله، واضغط مطولاً على عنصر في الشريط واسحبه لإعادة الترتيب.",
+  "tileHint": "اضغط على عنصر في القائمة أو في المعاينة لتعديل حجمه وألوانه ومحتواه، واسحب المقبض لتغيير الترتيب.",
   "@tileHint": {
     "description": "إرشاد أعلى القائمة"
   },
@@ -393,51 +393,125 @@
     "description": "مفتاح الأسطر الثانوية"
   },
   "digitsLabel": "الأرقام",
-  "@digitsLabel": {"description": "عنوان اختيار شكل الأرقام في الودجت (الميزة ٦)"},
+  "@digitsLabel": {
+    "description": "عنوان اختيار شكل الأرقام في الودجت (الميزة ٦)"
+  },
   "digitsName": "{style, select, arabic{عربية (١٢٣)} latin{إنجليزية (123)} other{{style}}}",
-  "@digitsName": {"description": "اسم شكل الأرقام", "placeholders": {"style": {"type": "String"}}},
+  "@digitsName": {
+    "description": "اسم شكل الأرقام",
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
   "depositsTitle": "متبقي على:",
-  "@depositsTitle": {"description": "عنوان مربع الإيداعات (الميزة ٦)"},
+  "@depositsTitle": {
+    "description": "عنوان مربع الإيداعات (الميزة ٦)"
+  },
   "tradPointsTitle": "في {season}:",
-  "@tradPointsTitle": {"description": "عنوان مربع وصف الموسم، مثل «في الوسم:»", "placeholders": {"season": {"type": "String"}}},
+  "@tradPointsTitle": {
+    "description": "عنوان مربع وصف الموسم، مثل «في الوسم:»",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
   "pointText": "- {point}",
-  "@pointText": {"description": "نقطة في وصف الموسم", "placeholders": {"point": {"type": "String"}}},
+  "@pointText": {
+    "description": "نقطة في وصف الموسم",
+    "placeholders": {
+      "point": {
+        "type": "String"
+      }
+    }
+  },
   "nextAfter": "{next} {after}",
-  "@nextAfter": {"description": "مثل: الشتاء بعد ٦٠ يوماً", "placeholders": {"next": {"type": "String"}, "after": {"type": "String"}}},
+  "@nextAfter": {
+    "description": "مثل: الشتاء بعد ٦٠ يوماً",
+    "placeholders": {
+      "next": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "cityIcon": "📍 {city} {icon}",
-  "@cityIcon": {"description": "سطر المدينة في مربع اليوم والطقس، icon رمز الطقس أو فارغ", "placeholders": {"city": {"type": "String"}, "icon": {"type": "String"}}},
+  "@cityIcon": {
+    "description": "سطر المدينة في مربع اليوم والطقس، icon رمز الطقس أو فارغ",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "icon": {
+        "type": "String"
+      }
+    }
+  },
   "qiblaTabCompass": "البوصلة",
-  "@qiblaTabCompass": {"description": "شاشة القبلة"},
+  "@qiblaTabCompass": {
+    "description": "شاشة القبلة"
+  },
   "qiblaTabMap": "الخريطة",
-  "@qiblaTabMap": {"description": "شاشة القبلة"},
+  "@qiblaTabMap": {
+    "description": "شاشة القبلة"
+  },
   "qiblaHoldFlat": "ضع هاتفك أفقياً للحصول على أفضل نتيجة",
-  "@qiblaHoldFlat": {"description": "شاشة القبلة"},
+  "@qiblaHoldFlat": {
+    "description": "شاشة القبلة"
+  },
   "qiblaMyLocation": "موقعك الحالي",
-  "@qiblaMyLocation": {"description": "شاشة القبلة"},
+  "@qiblaMyLocation": {
+    "description": "شاشة القبلة"
+  },
   "qiblaLocating": "جارٍ تحديد موقعك…",
-  "@qiblaLocating": {"description": "شاشة القبلة"},
+  "@qiblaLocating": {
+    "description": "شاشة القبلة"
+  },
   "qiblaSavedLocation": "تعذّر تحديد موقعك الآن، فالحساب من المدينة المحفوظة: {city}",
-  "@qiblaSavedLocation": {"description": "شاشة القبلة", "placeholders": {"city": {"type": "String"}}},
+  "@qiblaSavedLocation": {
+    "description": "شاشة القبلة",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
   "qiblaMapDirection": "الاتجاه من الشمال",
-  "@qiblaMapDirection": {"description": "شاشة القبلة"},
+  "@qiblaMapDirection": {
+    "description": "شاشة القبلة"
+  },
   "qiblaMapDistance": "تبعد عن الكعبة",
-  "@qiblaMapDistance": {"description": "شاشة القبلة"},
+  "@qiblaMapDistance": {
+    "description": "شاشة القبلة"
+  },
   "qiblaMapOffline": "تحتاج الخريطة اتصالاً بالإنترنت",
-  "@qiblaMapOffline": {"description": "شاشة القبلة"},
+  "@qiblaMapOffline": {
+    "description": "شاشة القبلة"
+  },
   "prayerCountdownLabel": "العدّاد التنازلي للصلاة القادمة",
-  "@prayerCountdownLabel": {"description": "إعدادات لمحة"},
+  "@prayerCountdownLabel": {
+    "description": "إعدادات لمحة"
+  },
   "prayerCountdownHint": "يظهر تحت الساعة في الودجت. مطفأ افتراضياً.",
-  "@prayerCountdownHint": {"description": "إعدادات لمحة"},
+  "@prayerCountdownHint": {
+    "description": "إعدادات لمحة"
+  },
   "qiblaIconSizeLabel": "حجم أيقونة البوصلة",
-  "@qiblaIconSizeLabel": {"description": "إعدادات لمحة"},
-  "tilesManageTitle": "نوافذ الودجت",
-  "@tilesManageTitle": {"description": "إعدادات لمحة"},
-  "tilesManageHint": "فعّل النوافذ التي تريدها أو أوقفها، واسحب المقبض لتغيير الترتيب. النوافذ المتبقية تتمدد لتملأ الودجت.",
-  "@tilesManageHint": {"description": "إعدادات لمحة"},
+  "@qiblaIconSizeLabel": {
+    "description": "إعدادات لمحة"
+  },
   "tilesLastOne": "يجب أن تبقى نافذة واحدة على الأقل",
-  "@tilesLastOne": {"description": "إعدادات لمحة"},
+  "@tilesLastOne": {
+    "description": "إعدادات لمحة"
+  },
   "tilesDragHandle": "اسحب لإعادة الترتيب",
-  "@tilesDragHandle": {"description": "إعدادات لمحة"},
+  "@tilesDragHandle": {
+    "description": "إعدادات لمحة"
+  },
   "paywallTitle": "اشترك في لمحة",
   "paywallSub": "ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من إعدادات حسابك على آبل.",
   "paywallMonthly": "شهري",
@@ -448,5 +522,34 @@
   "paywallChecking": "جارٍ التحقق من اشتراكك…",
   "paywallUnavailable": "المتجر غير متاح الآن. حاول لاحقًا.",
   "paywallVerifyFailed": "تعذّر التحقق من الاشتراك الآن. حاول لاحقًا، فلن يضيع اشتراكك.",
-  "paywallNotActive": "لا يوجد اشتراك فعّال على حساب آبل هذا."
+  "paywallNotActive": "لا يوجد اشتراك فعّال على حساب آبل هذا.",
+  "tabSize": "الحجم",
+  "@tabSize": {
+    "description": "شاشة الودجت"
+  },
+  "tabColors": "الألوان",
+  "@tabColors": {
+    "description": "شاشة الودجت"
+  },
+  "tabContent": "المحتوى",
+  "@tabContent": {
+    "description": "شاشة الودجت"
+  },
+  "tileNoContent": "لا خيارات محتوى لهذا العنصر",
+  "@tileNoContent": {
+    "description": "شاشة الودجت"
+  },
+  "colorPresetsLabel": "ألوان جاهزة",
+  "@colorPresetsLabel": {
+    "description": "شاشة الودجت"
+  },
+  "colorPresetName": "{name, select, auto{تلقائي} gold{ذهبي} white{أبيض} green{أخضر} blue{أزرق} rose{وردي} dark{داكن} other{{name}}}",
+  "@colorPresetName": {
+    "description": "ألوان جاهزة لكل العناصر",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

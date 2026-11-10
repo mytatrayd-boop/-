@@ -461,7 +461,7 @@ abstract class AppLocalizations {
   /// زر الإعدادات وعنوان شاشة التخصيص (الميزة ٥)
   ///
   /// In ar, this message translates to:
-  /// **'تخصيص الودجت'**
+  /// **'الودجت'**
   String get customizeTitle;
 
   /// زر إعادة التخطيط الافتراضي
@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// إرشاد أعلى القائمة
   ///
   /// In ar, this message translates to:
-  /// **'اضغط على مربع في المعاينة أو في الشريط لتعديله، واضغط مطولاً على عنصر في الشريط واسحبه لإعادة الترتيب.'**
+  /// **'اضغط على عنصر في القائمة أو في المعاينة لتعديل حجمه وألوانه ومحتواه، واسحب المقبض لتغيير الترتيب.'**
   String get tileHint;
 
   /// عرض المربع ١/٢/٣
@@ -659,18 +659,6 @@ abstract class AppLocalizations {
   /// إعدادات لمحة
   ///
   /// In ar, this message translates to:
-  /// **'نوافذ الودجت'**
-  String get tilesManageTitle;
-
-  /// إعدادات لمحة
-  ///
-  /// In ar, this message translates to:
-  /// **'فعّل النوافذ التي تريدها أو أوقفها، واسحب المقبض لتغيير الترتيب. النوافذ المتبقية تتمدد لتملأ الودجت.'**
-  String get tilesManageHint;
-
-  /// إعدادات لمحة
-  ///
-  /// In ar, this message translates to:
   /// **'يجب أن تبقى نافذة واحدة على الأقل'**
   String get tilesLastOne;
 
@@ -745,6 +733,42 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا يوجد اشتراك فعّال على حساب آبل هذا.'**
   String get paywallNotActive;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجم'**
+  String get tabSize;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'الألوان'**
+  String get tabColors;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'المحتوى'**
+  String get tabContent;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'لا خيارات محتوى لهذا العنصر'**
+  String get tileNoContent;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'ألوان جاهزة'**
+  String get colorPresetsLabel;
+
+  /// ألوان جاهزة لكل العناصر
+  ///
+  /// In ar, this message translates to:
+  /// **'{name, select, auto{تلقائي} gold{ذهبي} white{أبيض} green{أخضر} blue{أزرق} rose{وردي} dark{داكن} other{{name}}}'**
+  String colorPresetName(String name);
 }
 
 class _AppLocalizationsDelegate
