@@ -1001,6 +1001,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Stack(alignment: Alignment.center, children: [
               GestureDetector(onTap: togglePlay, child: FrameView(comp, m.playhead)),
+              // الوقت فوق المعاينة (لا في صف الأزرار، حتى لا يضيق الصف ويُقطع زر ملء الشاشة)
+              Positioned(
+                bottom: 10,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
+                  child: Text('${fmtTime(m.toDisp(m.playhead))} / ${fmtTime(m.dispDuration)}',
+                      textDirection: TextDirection.ltr, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                ),
+              ),
               if (status.isNotEmpty || progress != null)
                 Positioned(
                   top: 8,
@@ -1037,7 +1048,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
             child: Row(children: [
               _cb(Icons.undo, m.canUndo ? m.undo : null, 'تراجع'),
               _cb(Icons.redo, m.canRedo ? m.redo : null, 'إعادة'),
-              Text('${fmtTime(m.toDisp(m.playhead))} / ${fmtTime(m.dispDuration)}', style: const TextStyle(fontSize: 12)),
               const Spacer(),
               _cb(Icons.skip_previous, m.duration > 0 ? () => _jump(0) : null, 'إلى البداية'),
               _cb(player.playing ? Icons.pause : Icons.play_arrow, togglePlay, player.playing ? 'إيقاف' : 'تشغيل', size: 32, width: 46),
