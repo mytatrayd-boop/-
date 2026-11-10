@@ -12,11 +12,14 @@ class Segment {
   double start, end;
   int ayah; // رقم الآية (لربط الترجمة بها)؛ 0 = غير معروف
   int surah; // رقم السورة (تختلف بين المقاطع الصوتية في المشروع الواحد)؛ 0 = غير معروف
+  String? tr; // ترجمة معدّلة يدوياً لهذا المقطع؛ null = تلقائية (الجزء المقابل من ترجمة الآية)
   Segment(this.text, this.start, this.end, [this.ayah = 0, this.surah = 0]);
-  Segment copy() => Segment(text, start, end, ayah, surah);
-  Map<String, dynamic> toJson() => {'text': text, 'start': start, 'end': end, 'ayah': ayah, 'surah': surah};
+  Segment copy() => Segment(text, start, end, ayah, surah)..tr = tr;
+  Map<String, dynamic> toJson() =>
+      {'text': text, 'start': start, 'end': end, 'ayah': ayah, 'surah': surah, if (tr != null) 'tr': tr};
   factory Segment.fromJson(Map<String, dynamic> j) => Segment(j['text'] as String, (j['start'] as num).toDouble(),
-      (j['end'] as num).toDouble(), (j['ayah'] as num?)?.toInt() ?? 0, (j['surah'] as num?)?.toInt() ?? 0);
+      (j['end'] as num).toDouble(), (j['ayah'] as num?)?.toInt() ?? 0, (j['surah'] as num?)?.toInt() ?? 0)
+    ..tr = j['tr'] as String?;
 }
 
 /// فترات الصمت: أهدأ من ذروة التلاوة بـ 32 ديسيبل، أو قريبة من أرضية الضجيج إن كان في التسجيل أصوات محيطة.

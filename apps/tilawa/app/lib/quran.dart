@@ -1,5 +1,6 @@
 // نص المصحف (Tanzil عثماني، حفص) وتجهيزه للمطابقة وللرسم بخط مجمع الملك فهد.
 import 'dart:convert';
+import 'dart:math';
 
 const basmala = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ';
 const _digits = '٠١٢٣٤٥٦٧٨٩';
@@ -46,6 +47,60 @@ List<String> textsForFont(List<String> texts, [String tail = '']) {
   return [
     for (final ws in split) () { final s = conv.sublist(pos, pos + ws.length).join(' '); pos += ws.length; return s; }()
   ];
+}
+
+/// موضع كلمات المقطع داخل نص الآية كنسبتين (من، إلى) بين 0 و1 بحسب عدد الحروف؛
+/// null إن لم يُعثر عليها (نص عُدّل يدوياً).
+(double, double)? ayahRange(String ayah, String seg) {
+  final aw = ayah.split(' ').where((w) => w.isNotEmpty).toList();
+  final sw = seg.split(' ').where((w) => w.isNotEmpty && !isNum(w)).toList();
+  if (aw.isEmpty || sw.isEmpty || sw.length > aw.length) return null;
+  final an = aw.map(norm).toList(), sn = sw.map(norm).toList();
+  var at = -1;
+  for (var i = 0; i + sn.length <= an.length && at < 0; i++) {
+    var ok = true;
+    for (var k = 0; k < sn.length; k++) {
+      if (an[i + k] != sn[k]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) at = i;
+  }
+  if (at < 0) return null;
+  final w = [for (final x in aw) letters(x)];
+  final total = w.fold(0, (s, x) => s + x);
+  final before = w.sublist(0, at).fold(0, (s, x) => s + x);
+  final inside = w.sublist(at, at + sn.length).fold(0, (s, x) => s + x);
+  return (before / total, (before + inside) / total);
+}
+
+final _endPunct = RegExp(r'[.,;:!?،؛؟—–)\]»”"]$');
+
+/// الجزء من الترجمة أو التفسير المقابل لنسبتي الآية (من، إلى): تقسيم تقريبي بحسب الحروف،
+/// ويُقرَّب الحد إلى أقرب علامة وقف قريبة فتنتهي القطع عند نهاية عبارة قدر الإمكان.
+String sliceTranslation(String tr, double f0, double f1) {
+  final t = tr.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  final n = t.length;
+  if (n == 0 || (f0 <= 0 && f1 >= 1)) return tr;
+  int cut(double f) {
+    final c = (n * f).round().clamp(0, n);
+    if (c <= 0 || c >= n) return c;
+    final w = max(1, (n * 0.12).round());
+    var best = c, bd = 1 << 30;
+    for (var j = max(1, c - w); j <= min(n - 1, c + w); j++) {
+      if (_endPunct.hasMatch(t[j - 1]) && (j - c).abs() < bd) {
+        best = j;
+        bd = (j - c).abs();
+      }
+    }
+    return best;
+  }
+
+  final a = min(cut(f0), n - 1);
+  var b = cut(f1);
+  if (b <= a) b = min(n, a + 1);
+  return t.sublist(a, b).join(' ');
 }
 
 class Word {

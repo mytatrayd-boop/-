@@ -574,12 +574,23 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   String _fontKey = '';
   List<String> _fontTexts = const [];
 
-  /// ترجمة كل مقطع (بحسب رقم آيته) من الترجمة المختارة؛ '' إن لم تُختر أو لم تُحمَّل بعد.
+  /// ترجمة كل مقطع: الجزء المقابل لكلماته من ترجمة آيته (تقسيم تقريبي بحسب الحروف)، أو ما عدّله المالك يدوياً.
+  String _trKey = '';
+  List<String> _trOut = const [];
   List<String> _trs(List<Segment> list) {
-    final tr = trCache[look.trans];
-    return [
+    final key = '${look.trans}|${trCache.length}|${list.map((g) => '${g.text}|${g.surah}|${g.ayah}|${g.tr}').join('\u0001')}';
+    if (key == _trKey) return _trOut;
+    final tr = trCache[look.trans], q = quran;
+    _trKey = key;
+    return _trOut = [
       for (final g in list)
-        tr != null && _sOf(g) >= 1 && g.ayah >= 1 && g.ayah <= tr[_sOf(g) - 1].length ? tr[_sOf(g) - 1][g.ayah - 1] : ''
+        () {
+          if (g.tr != null) return g.tr!;
+          final s = _sOf(g);
+          if (tr == null || q == null || s < 1 || s > tr.length || g.ayah < 1 || g.ayah > tr[s - 1].length) return '';
+          final full = tr[s - 1][g.ayah - 1], r = ayahRange(q.ayat[s - 1][g.ayah - 1], g.text);
+          return r == null ? full : sliceTranslation(full, r.$1, r.$2);
+        }()
     ];
   }
 
@@ -798,10 +809,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
               minLines: 1,
               maxLines: 3,
               style: const TextStyle(fontSize: 18),
-              decoration: InputDecoration(isDense: true, border: const OutlineInputBorder(), hintText: editKind == 'reciter' ? 'اسم القارئ' : 'نص المقطع'),
+              decoration: InputDecoration(
+                  isDense: true,
+                  border: const OutlineInputBorder(),
+                  hintText: editKind == 'reciter' ? 'اسم القارئ' : editKind == 'trans' ? 'الترجمة أو التفسير لهذا المقطع' : 'نص المقطع'),
               onChanged: (v) {
                 if (editKind == 'reciter') {
                   refresh(() => look.reciter = v);
+                } else if (editKind == 'trans') {
+                  m.sel?.tr = v;
+                  m.changed();
                 } else {
                   m.sel?.text = v.trim();
                   m.changed();
@@ -809,6 +826,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
               },
             ),
           ),
+          if (editKind == 'trans')
+            TextButton(
+              onPressed: () {
+                m.sel?.tr = null; // رجوع للتقسيم التلقائي
+                m.changed();
+                refresh(() => editing = false);
+              },
+              child: const Text('تلقائي'),
+            ),
           const SizedBox(width: 8),
           IconButton.filled(
             style: IconButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.black),
@@ -952,6 +978,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
             back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
             items = [
               _tool(Icons.edit_note, 'تحرير النص', _editTextSheet),
+              _tool(Icons.translate, 'تحرير الترجمة', look.trans.isEmpty ? null : _editTransSheet),
               _tool(Icons.content_cut, 'تقسيم', _splitSheet),
               _tool(Icons.start, 'البداية هنا', m.setStartHere),
               _tool(Icons.keyboard_tab, 'النهاية هنا', m.setEndHere),
@@ -1020,6 +1047,18 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     m.checkpoint();
     refresh(() {
       editKind = 'seg';
+      editing = true;
+    });
+  }
+
+  void _editTransSheet() {
+    final g = m.sel;
+    if (g == null) return;
+    final list = m.valid, i = list.indexOf(g);
+    editCtl.text = i >= 0 ? _trs(list)[i] : '';
+    m.checkpoint();
+    refresh(() {
+      editKind = 'trans';
       editing = true;
     });
   }

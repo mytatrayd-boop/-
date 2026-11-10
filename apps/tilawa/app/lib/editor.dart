@@ -222,7 +222,7 @@ class EditorModel extends ChangeNotifier {
     checkpoint();
     final g = segs[i], d = g.end - g.start;
     final nextStart = i + 1 < segs.length ? segs[i + 1].start : duration;
-    final c = Segment(g.text, g.end + 0.15, min(g.end + 0.15 + d, max(nextStart - 0.15, g.end + 1.2)), g.ayah, g.surah);
+    final c = Segment(g.text, g.end + 0.15, min(g.end + 0.15 + d, max(nextStart - 0.15, g.end + 1.2)), g.ayah, g.surah)..tr = g.tr;
     segs.insert(i + 1, c);
     selected = i + 1;
     notifyListeners();
