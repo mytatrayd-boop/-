@@ -507,4 +507,8 @@ class AppLocalizationsEn extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get opacityNeedsBackground =>
+      'iPhone doesn\'t allow truly transparent widgets, so white shows through. To mimic transparency, take a screenshot of an empty home screen and choose it under \"Wallpaper screenshot\" below.';
 }

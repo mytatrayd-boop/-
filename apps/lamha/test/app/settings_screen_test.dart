@@ -267,6 +267,26 @@ void main() {
     expect((bridge.last['city'] as Map)['name'], 'الخرج');
   });
 
+  testWidgets('آيفون: الشفافية بلا لقطة خلفية تعرض تنبيهاً (لا ودجت شفافة في آيفون)، وأندرويد بلا تنبيه', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    await pumpApp(tester);
+    expect(find.byKey(const Key('opacity-ios-hint')), findsNothing, reason: 'معتمة تماماً');
+    final r = tester.getRect(find.byKey(const Key('opacity-slider')));
+    await tester.tapAt(r.center);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('opacity-ios-hint')), findsOneWidget);
+    expect(find.textContaining('لقطة الخلفية'), findsWidgets);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('أندرويد: لا تنبيه للشفافية', (tester) async {
+    await pumpApp(tester);
+    final r = tester.getRect(find.byKey(const Key('opacity-slider')));
+    await tester.tapAt(r.center);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('opacity-ios-hint')), findsNothing);
+  });
+
   testWidgets('زر لقطة الخلفية لا يظهر في أندرويد', (tester) async {
     await pumpApp(tester);
     expect(find.byKey(const Key('background-button')), findsNothing);

@@ -769,6 +769,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{name, select, auto{تلقائي} gold{ذهبي} white{أبيض} green{أخضر} blue{أزرق} rose{وردي} dark{داكن} other{{name}}}'**
   String colorPresetName(String name);
+
+  /// تنبيه الشفافية في آيفون
+  ///
+  /// In ar, this message translates to:
+  /// **'آيفون لا يسمح بودجت شفافة فعلاً، فيظهر اللون الأبيض خلفها. لمحاكاة الشفافية: خذ لقطة لشاشتك الرئيسية فارغة، ثم اختر «لقطة الخلفية» بالأسفل.'**
+  String get opacityNeedsBackground;
 }
 
 class _AppLocalizationsDelegate

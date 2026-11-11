@@ -477,7 +477,13 @@ struct LamhaWidget: Widget {
             let s = entry.snapshot
             LamhaWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    (s?.background ?? .black).opacity(s?.opacity ?? 1)
+                    // صورة الخلفية (إن اختيرت) ثم لون السمة بالشفافية فوقها.
+                    ZStack {
+                        if let img = s?.wallpaper {
+                            Image(uiImage: img).resizable().scaledToFill()
+                        }
+                        (s?.background ?? .black).opacity(s?.opacity ?? 1)
+                    }
                 }
         }
         .configurationDisplayName("لمحة")
