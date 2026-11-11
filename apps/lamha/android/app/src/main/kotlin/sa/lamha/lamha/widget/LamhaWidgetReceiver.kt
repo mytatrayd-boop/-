@@ -413,7 +413,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     val rect = spec.rect
                     val span = LamhaLogic.spanOfWidth(rect?.getOrNull(2) ?: 6)
                     val inner = if (cellDp > 0f) (rect?.getOrNull(3) ?: 1) * cellDp - 8f else 0f
-                    val content = tile(env, spec, span, env.day.fontScale * spec.fontScale, inner)
+                    // الكبسولة تُنقص هامشها ٤dp كما في الصفوف القديمة، فيصغر نصها ليتسع.
+                    val fit = if (n.id in CAPSULES && inner > 0f) inner - 4f else inner
+                    val content = tile(env, spec, span, env.day.fontScale * spec.fontScale, fit)
                     if (n.id in CAPSULES) {
                         // الكبسولة بوزن رأسي (widget_tile_capsule): داخل عمود كما في الصفوف القديمة.
                         val stack = RemoteViews(pkg, R.layout.widget_tile_stack)
