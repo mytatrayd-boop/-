@@ -39,7 +39,13 @@ struct LamhaProvider: TimelineProvider {
                 times.append(midnight)
             }
         }
-        let limit = now.addingTimeInterval(24 * 3600)
+        // الساعة في آيفون (طلب المالك ١١/١١/٢٠٢٦): مدخل كل دقيقة لـ٩٠ دقيقة ثم إعادة تحميل، فتتقدم الساعة.
+        let clock = snap.map { $0.isVisible("clock") } ?? false
+        if clock {
+            let minute = Date(timeIntervalSince1970: (now.timeIntervalSince1970 / 60).rounded(.down) * 60)
+            times += (1...90).map { minute.addingTimeInterval(Double($0) * 60) }
+        }
+        let limit = now.addingTimeInterval(clock ? 90 * 60 : 24 * 3600)
         let entries = Array(Set(times)).filter { $0 <= limit }.sorted().map { LamhaEntry(date: $0, snapshot: snap) }
         completion(Timeline(entries: entries, policy: .after(entries.last?.date.addingTimeInterval(60) ?? limit)))
     }
@@ -156,6 +162,23 @@ struct NextPrayerView: View {
                     .foregroundStyle(style.main(textColor)).lineLimit(1).minimumScaleFactor(0.6)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// الساعة بتوقيت المدينة مع «ص/م» (مكان الصلاة القادمة سابقاً؛ الصلاة القادمة أولى صف المواقيت).
+struct ClockView: View {
+    let text: (time: String, period: String)
+    var big = true
+    var style = TileStyle()
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(text.time).font(.system(size: style.size(big ? 40 : 28), weight: .bold))
+                .foregroundStyle(style.main(textColor))
+            Text(text.period).font(.system(size: style.size(big ? 16 : 13), weight: .medium))
+                .foregroundStyle(style.sub(dimColor))
+        }
+        .lineLimit(1).minimumScaleFactor(0.5)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -364,8 +387,10 @@ struct LamhaWidgetView: View {
                 position: s.position(["clock", "prayer", "dayWeather", "weather"]),
                 view: AnyView(
                     HStack(alignment: .top) {
-                        if showPrayer {
-                            NextPrayerView(prayer: next(s), accent: s.accent, style: s.style(["clock", "prayer"]))
+                        if s.isVisible("clock") {
+                            ClockView(text: s.clockText(at: entry.date), style: s.style(["clock"]))
+                        } else if showPrayer {
+                            NextPrayerView(prayer: next(s), accent: s.accent, style: s.style(["prayer"]))
                         }
                         if showHeader { header(s, day) }
                     }
@@ -427,7 +452,11 @@ struct LamhaWidgetView: View {
     private func medium(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
         VStack(spacing: 6) {
             HStack(alignment: .top, spacing: 8) {
-                NextPrayerView(prayer: next(s), accent: s.accent, big: false, style: s.style(["clock", "prayer"]))
+                if s.isVisible("clock") {
+                    ClockView(text: s.clockText(at: entry.date), big: false, style: s.style(["clock"]))
+                } else {
+                    NextPrayerView(prayer: next(s), accent: s.accent, big: false, style: s.style(["clock", "prayer"]))
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(day.weekday).font(.system(size: 15, weight: .bold)).foregroundStyle(textColor)
                     Text(day.hijri).font(.system(size: 11)).foregroundStyle(dimColor).lineLimit(1)

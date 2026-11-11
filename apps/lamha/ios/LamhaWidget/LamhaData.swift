@@ -86,6 +86,8 @@ struct LamhaSnapshot {
     let days: [LamhaDay]
     /// معامل الخط العام (إعداد «حجم الخط»)، يُضرب به معامل كل نافذة.
     let fontScale: Double
+    /// إعداد «شكل الأرقام»: true = 0123 (latin)، false = ٠١٢٣.
+    let latinDigits: Bool
     /// النوافذ بترتيبها في تخطيط التطبيق؛ فارغة لجدول أقدم بلا layout.
     let tiles: [LamhaTile]
 
@@ -119,6 +121,18 @@ struct LamhaSnapshot {
     /// حجم أيقونة القبلة (٠٫٥–١٫٦، ١ افتراضياً).
     var qiblaIconScale: Double {
         min(max(tiles.first { $0.id == "qibla" }?.iconScale ?? 1, 0.5), 1.6)
+    }
+
+    /// الساعة بتوقيت المدينة: «١٠:٣٥» و«ص» أو «م» (كساعة أندرويد وDart).
+    func clockText(at date: Date) -> (time: String, period: String) {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: latinDigits ? "en_US_POSIX" : "ar")
+        f.timeZone = timeZone
+        f.dateFormat = "h:mm"
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = timeZone
+        return (f.string(from: date), cal.component(.hour, from: date) < 12 ? "ص" : "م")
     }
 
     /// يوم [date] بتوقيت المدينة، وإلا أول يوم.
@@ -262,6 +276,7 @@ func loadSnapshot() -> LamhaSnapshot? {
         weather: weatherText,
         days: days,
         fontScale: min(max((root["fontScale"] as? NSNumber)?.doubleValue ?? 1, 0.5), 3),
+        latinDigits: (root["digits"] as? String) == "latin",
         tiles: tiles
     )
 }
