@@ -125,6 +125,7 @@ class LamhaSettings {
     bool? lockNotification,
     FontScale? fontScale,
     DigitStyle? digits,
+    bool clearBackground = false,
   }) =>
       LamhaSettings(
         cityId: cityId ?? this.cityId,
@@ -136,7 +137,8 @@ class LamhaSettings {
         deposits: deposits ?? this.deposits,
         layout: layout ?? this.layout,
         opacity: opacity ?? this.opacity,
-        backgroundFile: backgroundFile ?? this.backgroundFile,
+        backgroundFile:
+            clearBackground ? null : backgroundFile ?? this.backgroundFile,
         theme: theme ?? this.theme,
         lockNotification: lockNotification ?? this.lockNotification,
         fontScale: fontScale ?? this.fontScale,

@@ -267,6 +267,26 @@ void main() {
     expect((bridge.last['city'] as Map)['name'], 'الخرج');
   });
 
+  testWidgets('آيفون: الشفافية بلا لقطة خلفية تعرض تنبيهاً (لا ودجت شفافة في آيفون)، وأندرويد بلا تنبيه', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    await pumpApp(tester);
+    expect(find.byKey(const Key('opacity-ios-hint')), findsNothing, reason: 'معتمة تماماً');
+    final r = tester.getRect(find.byKey(const Key('opacity-slider')));
+    await tester.tapAt(r.center);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('opacity-ios-hint')), findsOneWidget);
+    expect(find.textContaining('لقطة الخلفية'), findsWidgets);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('أندرويد: لا تنبيه للشفافية', (tester) async {
+    await pumpApp(tester);
+    final r = tester.getRect(find.byKey(const Key('opacity-slider')));
+    await tester.tapAt(r.center);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('opacity-ios-hint')), findsNothing);
+  });
+
   testWidgets('زر لقطة الخلفية لا يظهر في أندرويد', (tester) async {
     await pumpApp(tester);
     expect(find.byKey(const Key('background-button')), findsNothing);
@@ -290,6 +310,24 @@ void main() {
     expect(store.picks, 1);
     expect(bridge.last['background'], 'wallpaper.jpg');
     expect(find.text('حُفظت لقطة الخلفية'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('آيفون: حذف لقطة الخلفية يعيد الودجت للون السمة، ويختفي زر الحذف', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final store = FakeBackgroundStore();
+    final bridge = await pumpApp(tester, background: store);
+    expect(find.byKey(const Key('background-remove')), findsNothing, reason: 'لا لقطة بعد');
+    await tester.tap(find.byKey(const Key('background-button')));
+    await tester.pumpAndSettle();
+    expect(bridge.last['background'], 'wallpaper.jpg');
+    final remove = find.byKey(const Key('background-remove'));
+    await tester.ensureVisible(remove);
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(bridge.last['background'], isNull);
+    expect(find.byKey(const Key('background-remove')), findsNothing);
+    expect(find.text('حُذفت لقطة الخلفية، وعادت الودجت للون السمة'), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
 

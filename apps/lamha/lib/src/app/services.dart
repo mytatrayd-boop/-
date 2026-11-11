@@ -181,7 +181,8 @@ class HomeWidgetLaunch implements WidgetLaunch {
 }
 
 /// قراءة من حساس البوصلة: الاتجاه من الشمال، والخطأ المحتمل بالدرجات.
-typedef CompassReading = ({double? heading, double? accuracy});
+/// [magnetic] = true إذا كان الاتجاه مغناطيسياً (يُضاف له الانحراف)، false إذا كان للشمال الحقيقي.
+typedef CompassReading = ({double? heading, double? accuracy, bool magnetic});
 
 /// حساس البوصلة (flutter_compass). null إذا لم يتوفر في الجهاز.
 abstract class CompassSource {
@@ -191,7 +192,23 @@ abstract class CompassSource {
 class FlutterCompassSource implements CompassSource {
   @override
   Stream<CompassReading>? readings() => FlutterCompass.events
-      ?.map((e) => (heading: e.heading, accuracy: e.accuracy));
+      ?.map((e) => (heading: e.heading, accuracy: e.accuracy, magnetic: true));
+}
+
+/// آيفون: قناة sa.lamha/heading في AppDelegate (HeadingStream). الشمال الحقيقي إن عُرف الموقع،
+/// وإلا المغناطيسي، وتصل القراءات أثناء المعايرة أيضاً (دقتها سالبة فتظهر رسالة المعايرة).
+class IosHeadingSource implements CompassSource {
+  static const _channel = EventChannel('sa.lamha/heading');
+
+  @override
+  Stream<CompassReading>? readings() => _channel.receiveBroadcastStream().map((e) {
+        final m = e as Map;
+        return (
+          heading: (m['heading'] as num?)?.toDouble(),
+          accuracy: (m['accuracy'] as num?)?.toDouble(),
+          magnetic: m['true'] != true,
+        );
+      });
 }
 
 /// الطقس الحالي من Open-Meteo (بلا مفتاح).

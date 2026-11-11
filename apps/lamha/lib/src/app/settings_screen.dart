@@ -104,6 +104,19 @@ class _Body extends ConsumerWidget {
           onChanged: (v) => c.setOpacity(100 - v.round(), commit: false),
           onChangeEnd: (v) => c.setOpacity(100 - v.round()),
         ),
+        // آيفون لا يسمح بودجت شفافة: تحت اللون الشفاف تظهر لوحة النظام البيضاء، فالشفافية تحتاج صورة الخلفية.
+        if (defaultTargetPlatform == TargetPlatform.iOS &&
+            s.opacity < 100 &&
+            state.backgroundPath == null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              l.opacityNeedsBackground,
+              key: const Key('opacity-ios-hint'),
+              textAlign: TextAlign.right,
+              style: textTheme.bodySmall,
+            ),
+          ),
         Text(l.themeLabel, style: textTheme.titleMedium),
         const SizedBox(height: 8),
         _ThemePicker(
@@ -169,6 +182,16 @@ class _Body extends ConsumerWidget {
                 // حاوية App Group غير متاحة، أو القناة غير مسجلة، أو رُفض إذن الصور.
                 toast(l.backgroundError);
               }
+            },
+          ),
+        if (defaultTargetPlatform == TargetPlatform.iOS && s.backgroundFile != null)
+          TextButton.icon(
+            key: const Key('background-remove'),
+            icon: const Icon(Icons.delete_outline),
+            label: Text(l.backgroundRemove),
+            onPressed: () async {
+              await c.clearBackground();
+              toast(l.backgroundRemoved);
             },
           ),
         const SizedBox(height: 16),

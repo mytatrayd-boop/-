@@ -503,4 +503,14 @@ class AppLocalizationsAr extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get opacityNeedsBackground =>
+      'آيفون لا يسمح بودجت شفافة فعلاً، فيظهر اللون الأبيض خلفها. لمحاكاة الشفافية: خذ لقطة لشاشتك الرئيسية فارغة، ثم اختر «لقطة الخلفية» بالأسفل.';
+
+  @override
+  String get backgroundRemove => 'حذف لقطة الخلفية';
+
+  @override
+  String get backgroundRemoved => 'حُذفت لقطة الخلفية، وعادت الودجت للون السمة';
 }

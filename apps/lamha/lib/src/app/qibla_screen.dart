@@ -128,7 +128,10 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
 
   void _onReading(CompassReading r) {
     final qibla = _qibla;
-    final heading = r.heading == null ? null : normalizeDegrees(r.heading! + _declination);
+    // الانحراف للقراءة المغناطيسية فقط (آيفون يرسل الشمال الحقيقي متى عرف الموقع).
+    final heading = r.heading == null
+        ? null
+        : normalizeDegrees(r.heading! + (r.magnetic ? _declination : 0));
     // التطابق من القراءة نفسها (فوري)، والقرص من القراءة المنعّمة.
     final aligned = qibla != null &&
         heading != null &&

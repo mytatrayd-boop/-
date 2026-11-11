@@ -37,7 +37,9 @@ final placeGeocoderProvider =
     Provider<PlaceGeocoder>((ref) => GeocodingPlaceGeocoder());
 
 final compassSourceProvider =
-    Provider<CompassSource>((ref) => FlutterCompassSource());
+    Provider<CompassSource>((ref) => defaultTargetPlatform == TargetPlatform.iOS
+        ? IosHeadingSource()
+        : FlutterCompassSource());
 
 final declinationProvider =
     Provider<DeclinationSource>((ref) => AndroidDeclinationSource());
@@ -379,6 +381,12 @@ class SettingsController extends AsyncNotifier<AppState> {
     _backgroundPath = await store.resolve(name);
     await _update(_s.copyWith(backgroundFile: name));
     return true;
+  }
+
+  /// حذف لقطة الخلفية والعودة للون السمة وحده (الملف يبقى في الحاوية ويُستبدل عند اختيار لقطة جديدة).
+  Future<void> clearBackground() async {
+    _backgroundPath = null;
+    await _update(_s.copyWith(clearBackground: true));
   }
 }
 

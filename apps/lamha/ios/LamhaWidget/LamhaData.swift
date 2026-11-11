@@ -1,5 +1,7 @@
 import Foundation
+import ImageIO
 import SwiftUI
+import UIKit
 
 // قراءة جدول «لمحة» من حاوية App Group (يكتبه التطبيق بمفتاح schedule، كـ LamhaSchedule.kt).
 // الودجت تقرأ ولا تحسب: كل النصوص جاهزة من محرك Dart.
@@ -77,6 +79,9 @@ struct LamhaSnapshot {
     let iconBackground: Color
     let background: Color
     let opacity: Double
+    /// صورة الخلفية التي اختارها المستخدم (لقطة شاشته الرئيسية) من حاوية App Group، مصغّرة لحدود ذاكرة الودجت.
+    /// آيفون لا يسمح بودجت شفافة فعلاً: تحت اللون الشفاف تظهر لوحة النظام البيضاء، فالصورة تحاكي الشفافية.
+    let wallpaper: UIImage?
     let weather: String?
     let days: [LamhaDay]
     /// معامل الخط العام (إعداد «حجم الخط»)، يُضرب به معامل كل نافذة.
@@ -166,6 +171,21 @@ private func color(_ value: Any?, _ fallback: UInt32) -> Color {
     )
 }
 
+/// يقرأ [name] من حاوية App Group مصغّرة إلى [maxPixel] (الودجت محدودة الذاكرة نحو ٣٠ ميغابايت).
+private func loadWallpaper(_ name: String?, maxPixel: Int = 900) -> UIImage? {
+    guard let name, !name.isEmpty, !name.contains("/"),
+          let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId),
+          let src = CGImageSourceCreateWithURL(dir.appendingPathComponent(name) as CFURL, nil)
+    else { return nil }
+    let opts: [CFString: Any] = [
+        kCGImageSourceCreateThumbnailFromImageAlways: true,
+        kCGImageSourceCreateThumbnailWithTransform: true,
+        kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+    ]
+    guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+    return UIImage(cgImage: cg)
+}
+
 func loadSnapshot() -> LamhaSnapshot? {
     guard let json = UserDefaults(suiteName: appGroupId)?.string(forKey: scheduleKey),
           let data = json.data(using: .utf8),
@@ -238,6 +258,7 @@ func loadSnapshot() -> LamhaSnapshot? {
         iconBackground: color(NSNumber(value: darkened(argb(theme["accent"], 0xFFD6AA5C))), 0xFF3C301A),
         background: color(theme["background"], 0xFF000000),
         opacity: Double(opacityPercent) / 100,
+        wallpaper: loadWallpaper(root["background"] as? String),
         weather: weatherText,
         days: days,
         fontScale: min(max((root["fontScale"] as? NSNumber)?.doubleValue ?? 1, 0.5), 3),

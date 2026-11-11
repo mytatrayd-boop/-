@@ -551,5 +551,17 @@
         "type": "String"
       }
     }
+  },
+  "opacityNeedsBackground": "آيفون لا يسمح بودجت شفافة فعلاً، فيظهر اللون الأبيض خلفها. لمحاكاة الشفافية: خذ لقطة لشاشتك الرئيسية فارغة، ثم اختر «لقطة الخلفية» بالأسفل.",
+  "@opacityNeedsBackground": {
+    "description": "تنبيه الشفافية في آيفون"
+  },
+  "backgroundRemove": "حذف لقطة الخلفية",
+  "backgroundRemoved": "حُذفت لقطة الخلفية، وعادت الودجت للون السمة",
+  "@backgroundRemove": {
+    "description": "إعدادات لمحة (آيفون)"
+  },
+  "@backgroundRemoved": {
+    "description": "إعدادات لمحة (آيفون)"
   }
 }
