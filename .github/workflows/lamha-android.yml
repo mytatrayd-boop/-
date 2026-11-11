@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - uses: subosito/flutter-action@v2
-        with: { channel: stable, cache: true }
+        with: { channel: stable, flutter-version: '3.47.9', cache: true } # مثبّت: 3.50 يعدّ material.dart متقادماً فيفشل flutter analyze
 
       - run: flutter pub get
       - run: flutter analyze
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - uses: subosito/flutter-action@v2
-        with: { channel: stable, cache: true }
+        with: { channel: stable, flutter-version: '3.47.9', cache: true } # مثبّت: 3.50 يعدّ material.dart متقادماً فيفشل flutter analyze
 
       # خطوات KVM الموثقة في reactivecircus/android-emulator-runner لـ ubuntu-latest.
       - name: Enable KVM

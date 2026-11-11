@@ -1,12 +1,9 @@
 name: Lamha — Android smoke (release on emulator)
 
 # تشخيص: يبني نسخة الإصدار (R8 وتصغير الموارد كما في Google Play، بتوقيع debug) ويشغّلها على محاكي أندرويد،
-# ويطبع سجل الأعطال في الـ job. يعمل بـ push على فرع العمل أو يدوياً. لا يرفع شيئاً.
+# ويطبع سجل الأعطال في الـ job (بعد تثبيت نسخة قديمة وتحديثها). يدوي فقط. لا يرفع شيئاً.
 on:
   workflow_dispatch:
-  push:
-    branches: [claude/new-session-g614ew]
-    paths: ['.github/workflows/lamha-smoke.yml', '.github/scripts/lamha_smoke.sh', 'apps/lamha/android/**']
 
 permissions:
   contents: read
@@ -21,7 +18,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - uses: subosito/flutter-action@v2
-        with: { channel: stable, cache: true }
+        with: { channel: stable, flutter-version: '3.47.9', cache: true } # مثبّت: 3.50 يعدّ material.dart متقادماً فيفشل flutter analyze
       - name: Enable KVM
         working-directory: .
         run: |

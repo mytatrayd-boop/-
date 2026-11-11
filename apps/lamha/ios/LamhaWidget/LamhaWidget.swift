@@ -321,9 +321,10 @@ struct LamhaWidgetView: View {
 
     private func next(_ s: LamhaSnapshot) -> Prayer? { s.upcomingPrayers(from: entry.date).first }
 
-    private func header(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
+    /// [centered]: في التخطيط الحر يتوسط النص مربعه (طلب المالك ١١/١١/٢٠٢٦)، وفي الترتيب القديم يبقى عند البداية.
+    private func header(_ s: LamhaSnapshot, _ day: LamhaDay, centered: Bool = false) -> some View {
         let st = s.style(["dayWeather", "weather"])
-        return VStack(alignment: .leading, spacing: 1) {
+        return VStack(alignment: centered ? .center : .leading, spacing: 1) {
             Text(day.weekday).font(.system(size: st.size(18), weight: .bold)).foregroundStyle(st.main(textColor))
                 .lineLimit(1).minimumScaleFactor(0.7)
             if st.showSub {
@@ -332,6 +333,8 @@ struct LamhaWidgetView: View {
                     .minimumScaleFactor(0.7)
             }
         }
+        .multilineTextAlignment(centered ? .center : .leading)
+        .frame(maxWidth: centered ? .infinity : nil)
     }
 
     /// كبسولتا التاريخين حسب ما فُعّل: الهجري والميلادي كلٌّ على حدة (أو «التاريخان» القديمة).
@@ -419,7 +422,7 @@ struct LamhaWidgetView: View {
         case "prayer":
             NextPrayerView(prayer: next(s), accent: s.accent, style: s.style(["prayer"]))
         case "dayWeather", "weather":
-            header(s, day)
+            header(s, day, centered: true)
         case "hijri", "gregorian":
             let st = s.style([id])
             Text(id == "hijri" ? day.hijri : day.gregorian)
