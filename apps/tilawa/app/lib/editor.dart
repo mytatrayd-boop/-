@@ -12,6 +12,21 @@ import 'media.dart';
 import 'quran.dart';
 import 'sync.dart';
 
+/// يطرح المدى [a, b] من قائمة أمداء، فيشطر المدى الذي يحتويه جزئياً بدل حذفه كله.
+List<(double, double)> subtractRange(List<(double, double)> ranges, double a, double b) {
+  const eps = 0.005;
+  final out = <(double, double)>[];
+  for (final (x, y) in ranges) {
+    if (y <= a + eps || x >= b - eps) {
+      out.add((x, y));
+      continue;
+    }
+    if (x < a - eps) out.add((x, a));
+    if (y > b + eps) out.add((b, y));
+  }
+  return out;
+}
+
 Map<double, ClipFx> fxFromJson(List l) => {
       for (final e in l)
         (e[0] as num).toDouble(): ClipFx((e[1] as num).toDouble(), (e[2] as num).toDouble(), (e[3] as num).toDouble())
@@ -381,7 +396,7 @@ class EditorModel extends ChangeNotifier {
     } else {
       fx = {...fx, o.src0: f};
     }
-    muted = [for (final r in muted) if (!(r.$1 < o.src1 && r.$2 > o.src0)) r];
+    muted = subtractRange(muted, o.src0, o.src1); // يُعاد صوت هذا الجزء فقط، وبقية المنطقة تبقى صامتة ما دام جزؤها في الثاني
     ovSel = null;
     notifyListeners();
   }

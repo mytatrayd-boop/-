@@ -138,4 +138,24 @@ void main() {
     m.undo();
     expect(m.overlays.single.fadeIn, 0.5);
   });
+
+  test('تقسيم قطعة المسار الثاني وإرجاع جزء منها لا يُعيد صوت المنطقة كلها', () {
+    final m = EditorModel()..setAudio(Float32List(sr * 20));
+    m.splits = [10.0];
+    m.liftToLane2(10, 20, 10); // القطعة 10..20 في الثاني، والمنطقة صامتة في الأول
+    m.seekDisp(15);
+    m.splitOverlay(); // جزآن: 10..15 و15..20
+    expect(m.overlays.length, 2);
+    final second = m.overlays.firstWhere((o) => o.src0 == 15.0);
+    m.returnToLane1(second);
+    expect(m.muted, [(10.0, 15.0)]); // الجزء الأول ما زال في الثاني فمكانه صامت
+    expect(m.overlays.single.src1, 15.0);
+    expect(m.isMuted(12), true);
+    expect(m.isMuted(17), false); // الجزء المُرجَع يُسمع في الأول
+    m.returnToLane1(m.overlays.single);
+    expect(m.muted, isEmpty);
+    expect(subtractRange([(0.0, 10.0)], 3, 5), [(0.0, 3.0), (5.0, 10.0)]);
+    expect(subtractRange([(0.0, 10.0)], -1, 11), isEmpty);
+    expect(subtractRange([(0.0, 2.0), (8.0, 10.0)], 3, 5), [(0.0, 2.0), (8.0, 10.0)]);
+  });
 }
