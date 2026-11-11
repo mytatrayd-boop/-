@@ -8,6 +8,11 @@ on:
   push:
     paths: ['apps/lamha/**', '.github/workflows/lamha-ios.yml', '.github/scripts/ios_signing.py']
   workflow_dispatch:
+    inputs:
+      paywall:
+        description: "Subscription gate on (off = test build without paywall, while the Paid Apps agreement is pending)"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -37,7 +42,7 @@ jobs:
 
       - name: Flutter build (no codesign, app + widget)
         # The iPhone app is paid: a monthly/yearly subscription (checked by the «أسرتي» server).
-        run: flutter build ios --release --no-codesign --dart-define=PAYWALL=true --build-number=${{ github.run_number }}
+        run: flutter build ios --release --no-codesign --dart-define=PAYWALL=${{ github.event_name != 'workflow_dispatch' || inputs.paywall }} --build-number=${{ github.run_number }}
 
       - name: Widget extension is embedded
         run: |
