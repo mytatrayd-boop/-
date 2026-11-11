@@ -103,6 +103,7 @@ Map<String, Object?> buildSchedule(
     });
   }
 
+  final freeRects = rectsOf(s.layout);
   final schedule = <String, Object?>{
     'schemaVersion': scheduleSchemaVersion,
     'generatedAt': (generatedAt ?? from).toUtc().toIso8601String(),
@@ -122,7 +123,10 @@ Map<String, Object?> buildSchedule(
     'visible': {
       for (final e in WidgetElement.values) e.name: s.visible.contains(e),
     },
-    'layout': [for (final t in s.layout) t.toScheduleJson()],
+    // التخطيط الحر (DECISIONS ٢٧): كل مربع بمستطيله الفعلي، وشجرة القص التي ترسمها الودجتان.
+    'layout': [for (final t in withRects(s.layout, freeRects)) t.toScheduleJson()],
+    'grid': [freeCols, freeRows],
+    'tree': (cutTree(freeRects) ?? const CutNode.empty()).toJson(),
     'opacity': s.opacity,
     // اسم ملف اللقطة نسبياً داخل حاوية group.sa.lamha.shared؛ null بلا صورة أو في أندرويد.
     'background': s.background,

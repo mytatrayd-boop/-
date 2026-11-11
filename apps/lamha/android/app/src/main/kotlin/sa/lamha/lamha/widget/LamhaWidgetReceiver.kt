@@ -187,6 +187,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val CLOCK_SAMPLE = "١٢:٥٨"
         private const val TILE_GAP_DP = 2f
         private const val FIT_MARGIN_DP = 2f
+        /// هامش الخانة في التخطيط الحر: حشوة الورقة ٨dp وأمان ٤dp، لأن المحاكي يعطي الودجت أقل قليلاً من maxHeight.
+        private const val FREE_FIT_SLACK_DP = 12f
 
         /// أدنى تصغير للعنوان والقيمة (tileMinFit)، ولسطور العمود الأيسر.
         private const val TILE_MIN_FIT = 0.7f
@@ -302,6 +304,17 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 ?: ctx.getString(R.string.weather_unknown)
             val placed = rows.flatten().flatMap { LamhaLogic.cellElements(it.id) }.toSet()
             val fresh = LamhaLogic.freshWeather(weather, now, day.weatherMaxAgeMinutes)
+            // التخطيط الحر (DECISIONS ٢٧): شجرة القص من الجدول، صفوفاً وأعمدة بأوزانها، كالمعاينة وآيفون.
+            day.tree?.let { tree ->
+                val leaves = mutableSetOf<String>().also { collectLeaves(tree, it) }
+                val fenv = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, leaves, fresh)
+                val cellDp = if (maxHeight > 0) (maxHeight - 20f) / LamhaLogic.FREE_ROWS else 0f
+                rv.removeAllViews(R.id.grid)
+                val root = RemoteViews(context.packageName, FREE_V[FREE_V.size - 1])
+                root.addView(R.id.fslot, freeNode(fenv, tree, byId, cellDp))
+                rv.addView(R.id.grid, root)
+                return rv
+            }
             val env = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, placed, fresh)
             fun scaleOf(id: String) = day.fontScale * (byId[id]?.fontScale ?: 1f)
             // الخانة المكدسة (التاريخان وتحتهما المدينة): مجموع ارتفاعيهما، وحشوة الخانة مرة.
@@ -371,6 +384,59 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 rv.addView(R.id.grid, rowViews)
             }
             return rv
+        }
+
+        /// خانات التخطيط الحر بأوزانها ١–١٠: أفقية (عرض بالوزن) ورأسية (ارتفاع بالوزن).
+        private val FREE_H = intArrayOf(
+            R.layout.widget_free_h1, R.layout.widget_free_h2, R.layout.widget_free_h3, R.layout.widget_free_h4,
+            R.layout.widget_free_h5, R.layout.widget_free_h6, R.layout.widget_free_h7, R.layout.widget_free_h8,
+            R.layout.widget_free_h9, R.layout.widget_free_h10,
+        )
+        private val FREE_V = intArrayOf(
+            R.layout.widget_free_v1, R.layout.widget_free_v2, R.layout.widget_free_v3, R.layout.widget_free_v4,
+            R.layout.widget_free_v5, R.layout.widget_free_v6, R.layout.widget_free_v7, R.layout.widget_free_v8,
+            R.layout.widget_free_v9, R.layout.widget_free_v10,
+        )
+
+        private fun collectLeaves(n: LamhaLogic.CutTree, out: MutableSet<String>) {
+            when (n) {
+                is LamhaLogic.CutTree.Leaf -> out.add(n.id)
+                is LamhaLogic.CutTree.Split -> n.children.forEach { collectLeaves(it.second, out) }
+                LamhaLogic.CutTree.Empty -> Unit
+            }
+        }
+
+        /// جزء من الشجرة: مربع بحشوته، أو فراغ، أو صف/عمود أجزاؤه بأوزانها.
+        private fun freeNode(env: Env, n: LamhaLogic.CutTree, byId: Map<String, LamhaLogic.Tile>, cellDp: Float): RemoteViews {
+            val pkg = env.context.packageName
+            return when (n) {
+                is LamhaLogic.CutTree.Leaf -> RemoteViews(pkg, R.layout.widget_free_leaf).apply {
+                    val spec = byId[n.id] ?: LamhaLogic.Tile(n.id)
+                    val rect = spec.rect
+                    val span = LamhaLogic.spanOfWidth(rect?.getOrNull(2) ?: 6)
+                    val inner = if (cellDp > 0f) (rect?.getOrNull(3) ?: 1) * cellDp - FREE_FIT_SLACK_DP else 0f
+                    // الكبسولة تُنقص هامشها ٤dp كما في الصفوف القديمة، فيصغر نصها ليتسع.
+                    val fit = if (n.id in CAPSULES && inner > 0f) inner - 4f else inner
+                    val content = tile(env, spec, span, env.day.fontScale * spec.fontScale, fit)
+                    if (n.id in CAPSULES) {
+                        // الكبسولة بوزن رأسي (widget_tile_capsule): داخل عمود كما في الصفوف القديمة.
+                        val stack = RemoteViews(pkg, R.layout.widget_tile_stack)
+                        stack.addView(R.id.stack, content)
+                        addView(R.id.fleaf, stack)
+                    } else {
+                        addView(R.id.fleaf, content)
+                    }
+                }
+                LamhaLogic.CutTree.Empty -> RemoteViews(pkg, R.layout.widget_free_leaf)
+                is LamhaLogic.CutTree.Split -> RemoteViews(pkg, if (n.vertical) R.layout.widget_free_box_v else R.layout.widget_free_box_h).apply {
+                    for ((w, child) in n.children) {
+                        val slots = if (n.vertical) FREE_V else FREE_H
+                        val slot = RemoteViews(pkg, slots[(w - 1).coerceIn(0, slots.size - 1)])
+                        slot.addView(R.id.fslot, freeNode(env, child, byId, cellDp))
+                        addView(R.id.fbox, slot)
+                    }
+                }
+            }
         }
 
         /// خانات بلا صندوق: صفوفها بقدر محتواها (rowHeights: flexible، _lineTiles في المعاينة).

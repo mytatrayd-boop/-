@@ -158,7 +158,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<Text>(find.byKey(const Key('panel-name'))).data, 'الفصل');
     // الحجم أولاً: العرض وحجم الخط، بلا ألوان ولا مفاتيح محتوى.
-    expect(find.byKey(const Key('span-season')), findsOneWidget);
+    expect(find.byKey(const Key('tilefont-season')), findsOneWidget);
     expect(find.byKey(const Key('tilefont-season')), findsOneWidget);
     expect(find.byKey(const Key('primary-season-auto')), findsNothing);
     expect(find.byKey(const Key('showtitle-season')), findsNothing);
@@ -258,7 +258,8 @@ void main() {
     expect(find.byKey(const Key('span-qibla')), findsNothing);
     final iconSlider = tester.widget<Slider>(find.byKey(const Key('qibla-icon-size')));
     expect((iconSlider.min, iconSlider.max, iconSlider.divisions, iconSlider.value), (0.5, 1.6, 22, 1.0));
-    final before = tester.getRect(tile('qibla')).width;
+    Finder icon() => find.descendant(of: tile('qibla'), matching: find.byKey(const Key('preview-qibla-icon')));
+    final before = tester.getSize(icon()).width;
     final sliderBox = find.byKey(const Key('qibla-icon-size'));
     final c = tester.getCenter(sliderBox);
     final w = tester.getSize(sliderBox).width;
@@ -267,16 +268,15 @@ void main() {
     final g = await tester.startGesture(c);
     await g.moveTo(Offset(c.dx - w / 2 + 2, c.dy));
     await tester.pump();
-    expect(tester.getRect(tile('qibla')).width, greaterThan(before * 1.5));
+    expect(tester.getSize(icon()).width, greaterThanOrEqualTo(before), reason: 'الأيقونة لا تصغر بالتكبير');
     expect(bridge.saved.length, saves, reason: 'لا حفظ أثناء السحب');
     await g.up();
     await tester.pumpAndSettle();
     expect(tileOf(bridge, 'qibla')['iconScale'], 1.6);
-    expect(tileOf(bridge, 'qibla')['span'], 2, reason: 'عرض الخانة يتبع حجم الأيقونة');
     await tester.tapAt(Offset(c.dx + w / 2 - 2, c.dy));
     await tester.pumpAndSettle();
     expect(tileOf(bridge, 'qibla')['iconScale'], 0.5);
-    expect(tileOf(bridge, 'qibla')['span'], 1);
+    expect(tester.getSize(icon()).width, lessThan(before), reason: 'الأيقونة تصغر داخل مربعها');
 
     // شريط ٠٫٨–٢٫٠ بخطوة ٠٫١، والقيمة معروضة.
     await select(tester, 'deposit');
@@ -363,13 +363,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(order(bridge), after);
 
-    await select(tester, 'clock');
-    await tapKey(tester, 'span-clock-1');
-    await closeSheet(tester);
     await tester.tap(find.byKey(const Key('reset-layout')));
     await tester.pumpAndSettle();
     expect(order(bridge), [for (final t in defaultLayout) t.id.name]);
-    expect(tileOf(bridge, 'clock')['span'], 2);
+    expect(tileOf(bridge, 'clock')['rect'], [0, 0, 4, 2]);
   });
 
   testWidgets('التعديل الخفيف (الإظهار والترتيب) يطابق بناء الجدول كاملاً', (tester) async {
@@ -397,14 +394,38 @@ void main() {
     expect(actual['days'], expected['days']);
   });
 
-  testWidgets('أكثر من خمسة صفوف: علامة على صف ما لا يتسع ورسالة في لوحته', (
-    tester,
-  ) async {
+  /// سحب تدريجي (يتجاوز حد بدء السحب) من مركز [key] بإزاحة [by].
+  Future<void> dragKey(WidgetTester tester, String key, Offset by) async {
+    final g = await tester.startGesture(tester.getCenter(find.byKey(Key(key))));
+    for (var i = 0; i < 10; i++) {
+      await g.moveBy(by / 10);
+      await tester.pump();
+    }
+    await g.up();
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('المحرر الحر: سحب مربع يحرّكه، ومقبضه يكبّره، والباقي يصعد بلا فجوات', (tester) async {
+    final bridge = await openCustomize(tester);
+    final cell = tester.getSize(find.byKey(const Key('free-box-hijri'))).height + 4;
+    // المواقيت إلى أعلى الودجت: تأخذ الصف الأول وينزل الباقي.
+    await dragKey(tester, 'free-box-prayerTimes', Offset(0, -4 * cell));
+    expect(tileOf(bridge, 'prayerTimes')['rect'], [0, 0, 6, 2]);
+    expect(tileOf(bridge, 'clock')['rect'], [0, 2, 4, 2]);
+    expect(tester.getRect(tile('prayerTimes')).bottom, lessThan(tester.getRect(tile('clock')).top));
+    // تكبير البوصلة من مقبضها: أعرض بخلية (يساراً) وأطول بخليتين.
+    await dragKey(tester, 'free-handle-qibla', Offset(-cell * 1.6, 2 * cell));
+    final q = (tileOf(bridge, 'qibla')['rect'] as List).cast<int>();
+    expect(q[3], 4, reason: 'أطول بخليتين');
+    // لا تداخل بين ما في الجدول، والودجت ترسم الشجرة نفسها.
+    expect(bridge.last['tree'], isNotNull);
+  });
+
+  testWidgets('ما يتجاوز أسفل الشبكة: علامة على صفه ورسالة في لوحته', (tester) async {
     await openCustomize(tester);
-    await select(tester, 'dayWeather');
-    await tapKey(tester, 'span-dayWeather-3');
-    await closeSheet(tester);
-    // الساعة ثم اليوم والطقس في صف جديد، فالصف الأخير (الفصل والموسم) خارج الودجت.
+    final cell = tester.getSize(find.byKey(const Key('free-box-hijri'))).height + 4;
+    // اليوم والطقس أطول بخليتين: يدفع ما تحته فيخرج آخر صف (الفصل والموسم).
+    await dragKey(tester, 'free-handle-dayWeather', Offset(0, 2 * cell));
     expect(find.byKey(const Key('chip-overflow-season')), findsOneWidget);
     expect(find.byKey(const Key('chip-overflow-deposit')), findsNothing);
     expect(tile('season'), findsNothing);

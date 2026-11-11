@@ -77,11 +77,11 @@ void main() {
     });
   });
 
-  testWidgets('الإيداعات بعرض ١: عمود واحد، وبعرض ٣: حتى ثلاثة', (tester) async {
+  testWidgets('الإيداعات بعرض صغير (خليتان): إيداع واحد', (tester) async {
+    final rects = rectsOf(defaultLayout);
+    final placed = place(rects, WidgetElement.deposit, const GridRect(0, 6, 2, 2));
     final s = LamhaSettings.defaults(city, {'salary', 'citizen_account', 'housing_support'}).copyWith(
-      layout: [
-        for (final t in defaultLayout) t.id == WidgetElement.deposit ? t.copyWith(span: 1) : t,
-      ],
+      layout: withRects(defaultLayout, placed),
     );
     await pumpApp(tester, prefs: {LamhaSettings.prefsKey: s.encode()});
     expect(find.byKey(const Key('deposit-name-0')), findsOneWidget);

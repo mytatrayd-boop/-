@@ -69,6 +69,8 @@ object LamhaScreens {
         for ((name, edit) in LAYOUT_CASES) {
             val root = JSONObject(base("black"))
             root.put("layout", edit(root.getJSONArray("layout")))
+            // حالات التخطيط القديم (بالعرض ١–٣): بلا شجرة، فتُرسم بالصفوف القديمة كجدول أقدم.
+            root.remove("tree")
             for ((size, w, h) in SIZES) out += Triple("lamha_${name}_$size.png", root.toString(), w to h)
         }
         return out
@@ -157,10 +159,18 @@ object LamhaScreens {
         parent.draw(canvas)
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         val layout = LamhaSchedule.layoutOf(JSONObject(schedule)) ?: emptyList()
-        val placed = LamhaLogic.packRows(
+        // التخطيط الحر: الظاهر ما في الشجرة؛ وجدول بلا شجرة بالصفوف القديمة.
+        val tree = LamhaSchedule.treeOf(JSONObject(schedule).optJSONObject("tree"))
+        val placed = if (tree != null) leaves(tree) else LamhaLogic.packRows(
             LamhaLogic.stackCells(layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) }),
         ).flatten().flatMap { LamhaLogic.cellElements(it.id) }.toSet()
         return check(ctx, parent, placed) + valueSizes(ctx, parent, JSONObject(schedule), layout)
+    }
+
+    private fun leaves(n: LamhaLogic.CutTree): Set<String> = when (n) {
+        is LamhaLogic.CutTree.Leaf -> setOf(n.id)
+        is LamhaLogic.CutTree.Split -> n.children.flatMap { leaves(it.second) }.toSet()
+        LamhaLogic.CutTree.Empty -> emptySet()
     }
 
     /// حجم القيمة الفعلي ≥ ٩٠٪ من المطلوب (العام × المربع × ٢٠) إذا اتسعت أعرض كلمة فيها بالحجم
@@ -227,7 +237,7 @@ object LamhaScreens {
                     out += "$label: مقصوص رأسياً (${r.top}..${r.bottom} في ${idName(p)} $top..$bottom)"
                     break
                 }
-                if (p.id == R.id.slot) break
+                if (p.id == R.id.slot || p.id == R.id.fleaf) break
                 p = p.parent as? ViewGroup
             }
             val max = t.maxLines

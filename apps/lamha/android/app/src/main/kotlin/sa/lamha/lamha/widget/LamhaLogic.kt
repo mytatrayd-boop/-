@@ -26,7 +26,23 @@ object LamhaLogic {
         val secondaryColor: Int? = null,
         /// حجم أيقونة القبلة (٠٫٥–١٫٦، tileIconScale في Dart)؛ لا أثر له في غيرها.
         val iconScale: Float = 1f,
+        /// التخطيط الحر: [x, y, w, h] بخلايا الشبكة ٦×١٠ (free_layout.dart)؛ null لجدول أقدم.
+        val rect: List<Int>? = null,
     )
+
+    /// شجرة القص من الجدول (`tree`، cutTree في Dart): الودجت ترسمها صفوفاً وأعمدة بالأوزان ولا تحسب.
+    sealed class CutTree {
+        data class Leaf(val id: String) : CutTree()
+        object Empty : CutTree()
+        /// [vertical]: الأبناء من الأعلى؛ وإلا من اليمين (RTL).
+        data class Split(val vertical: Boolean, val children: List<Pair<Int, CutTree>>) : CutTree()
+    }
+
+    /// عرض المستطيل بوحدات التخطيط القديم (spanOfWidth في Dart).
+    fun spanOfWidth(w: Int): Int = if (w <= 2) 1 else if (w <= 4) 2 else 3
+
+    /// أقصى وزن لخانة (ارتفاع الشبكة)، ولكل وزن ملف خانة.
+    const val FREE_ROWS = 10
 
     /// الترتيب الافتراضي (defaultLayout في Dart، الميزة ٦: تصميم المالك ٣). القديمة في آخره مخفية.
     val DEFAULT_LAYOUT = listOf(

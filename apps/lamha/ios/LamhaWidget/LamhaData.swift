@@ -66,6 +66,26 @@ struct TileStyle {
     func sub(_ fallback: Color) -> Color { secondary ?? fallback }
 }
 
+/// شجرة القص من الجدول (`tree`، free_layout.dart في Dart): الودجت مقسومة صفوفاً وأعمدة متداخلة
+/// بأوزان صحيحة، وفي كل ورقة عنصر أو فراغ. الودجت ترسمها كما هي ولا تحسب.
+indirect enum CutTree {
+    case tile(String)
+    case empty
+    /// vertical: الأبناء من الأعلى للأسفل؛ وإلا من اليمين لليسار (RTL).
+    case split(vertical: Bool, children: [(weight: Int, node: CutTree)])
+
+    static func parse(_ j: Any?) -> CutTree? {
+        guard let m = j as? [String: Any] else { return nil }
+        if let t = m["tile"] as? String { return .tile(t) }
+        if let ch = m["children"] as? [[String: Any]], !ch.isEmpty {
+            return .split(vertical: (m["dir"] as? String) == "v", children: ch.map {
+                (weight: max(($0["w"] as? NSNumber)?.intValue ?? 1, 1), node: CutTree.parse($0) ?? .empty)
+            })
+        }
+        return .empty
+    }
+}
+
 struct LamhaSnapshot {
     let city: String
     let timeZone: TimeZone
@@ -88,6 +108,8 @@ struct LamhaSnapshot {
     let fontScale: Double
     /// إعداد «شكل الأرقام»: true = 0123 (latin)، false = ٠١٢٣.
     let latinDigits: Bool
+    /// التخطيط الحر؛ nil لجدول أقدم بلا شجرة (يُرسم بالكتل القديمة).
+    let tree: CutTree?
     /// النوافذ بترتيبها في تخطيط التطبيق؛ فارغة لجدول أقدم بلا layout.
     let tiles: [LamhaTile]
 
@@ -277,6 +299,7 @@ func loadSnapshot() -> LamhaSnapshot? {
         days: days,
         fontScale: min(max((root["fontScale"] as? NSNumber)?.doubleValue ?? 1, 0.5), 3),
         latinDigits: (root["digits"] as? String) == "latin",
+        tree: CutTree.parse(root["tree"]),
         tiles: tiles
     )
 }

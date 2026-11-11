@@ -76,10 +76,11 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
     final l = AppLocalizations.of(context);
     final c = ref.read(settingsControllerProvider.notifier);
     final layout = state.settings.layout;
-    final placed = placedElements([
-      for (final t in layout)
-        if (t.visible) (id: t.id.name, span: t.span),
-    ]);
+    // ما لا يتسع في الشبكة (أسفلها) لا يظهر في الودجت.
+    final placed = {
+      for (final e in rectsOf(layout).entries)
+        if (e.value.bottom <= freeRows) e.key.name,
+    };
     // المعاينة ٣٣٨×٣٥٤ وحولها خلفية ١٦، وتصغر لتأخذ ٤٠٪ من ارتفاع الشاشة حداً أقصى.
     final previewSize = previewWidgetSize + const Offset(32, 32);
     final visibleCount = layout.where((t) => t.visible).length;
@@ -106,6 +107,13 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
                     systemColors: state.systemColors,
                     onTileTap: _edit,
                     selected: _open,
+                    overlay: (grid) => FreeEditor(
+                      grid: grid,
+                      rects: rectsOf(layout),
+                      selected: _open,
+                      onTap: _edit,
+                      onPlace: c.placeTile,
+                    ),
                   ),
                 ),
               ),
@@ -348,10 +356,11 @@ class TileSheet extends ConsumerWidget {
     if (state == null) return const SizedBox.shrink();
     final layout = state.settings.layout;
     final tile = layout.firstWhere((t) => t.id == id);
-    final placed = placedElements([
-      for (final t in layout)
-        if (t.visible) (id: t.id.name, span: t.span),
-    ]);
+    // ما لا يتسع في الشبكة (أسفلها) لا يظهر في الودجت.
+    final placed = {
+      for (final e in rectsOf(layout).entries)
+        if (e.value.bottom <= freeRows) e.key.name,
+    };
     return SizedBox(
       key: const Key('tile-panel'),
       height: height,
@@ -531,25 +540,6 @@ class TileSettings extends ConsumerWidget {
             onChanged: (v) => c.setQiblaIconScale(v, commit: false),
             onChangeEnd: (v) => c.setQiblaIconScale(v),
           ),
-        ] else if (size) ...[
-          title(l.tileSpanLabel),
-          SegmentedButton<int>(
-            key: Key('span-${id.name}'),
-            showSelectedIcon: false,
-            segments: [
-              for (final e in spanNames.entries)
-                ButtonSegment(
-                  value: e.key,
-                  label: Text(
-                    l.tileSpanName(e.value),
-                    key: Key('span-${id.name}-${e.key}'),
-                  ),
-                ),
-            ],
-            selected: {tile.span},
-            onSelectionChanged: (v) =>
-                c.updateTile(id, (t) => t.copyWith(span: v.first)),
-          ),
         ],
         if (size) ...[
           Padding(
@@ -672,6 +662,156 @@ class _ColorRow extends StatelessWidget {
                       : color == selected
                       ? const Icon(Icons.check, size: 16, color: Colors.black87)
                       : null,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// محرر التخطيط الحر فوق المعاينة (طلب المالك ١١/١١/٢٠٢٦): كل عنصر ظاهر صندوق على الشبكة؛ الضغط
+/// يفتح لوحته، والسحب يحرّكه، ومقبض الزاوية السفلى (يسار في RTL) يكبّره ويصغّره. يُثبَّت على
+/// الخلايا عند الإفلات، وما يتداخل ينزل ثم يصعد الجميع (placeTile).
+class FreeEditor extends StatefulWidget {
+  const FreeEditor({
+    super.key,
+    required this.grid,
+    required this.rects,
+    required this.selected,
+    required this.onTap,
+    required this.onPlace,
+  });
+
+  /// مقاس شبكة المربعات بالبكسل.
+  final Size grid;
+  final Map<WidgetElement, GridRect> rects;
+  final WidgetElement? selected;
+  final ValueChanged<WidgetElement> onTap;
+
+  /// يعيد false إذا رُفض الموضع.
+  final Future<bool> Function(WidgetElement id, GridRect target) onPlace;
+
+  @override
+  State<FreeEditor> createState() => _FreeEditorState();
+}
+
+class _FreeEditorState extends State<FreeEditor> {
+  WidgetElement? _active;
+  var _resizing = false;
+  Offset _delta = Offset.zero;
+
+  double get _cw => widget.grid.width / freeCols;
+  double get _ch => widget.grid.height / freeRows;
+
+  /// المستطيل بالبكسل: x يُعدّ من اليمين.
+  Rect _px(GridRect r) => Rect.fromLTWH((freeCols - r.x - r.w) * _cw, r.y * _ch, r.w * _cw, r.h * _ch);
+
+  /// موضع الإفلات على الخلايا من الإزاحة.
+  GridRect _target(GridRect r) {
+    final dx = (_delta.dx / _cw).round();
+    final dy = (_delta.dy / _ch).round();
+    if (_resizing) {
+      // المقبض يسار أسفل: السحب يساراً يزيد العرض (x ثابت من اليمين)، ولأسفل يزيد الارتفاع.
+      return GridRect(r.x, r.y, (r.w - dx).clamp(1, freeCols - r.x), (r.h + dy).clamp(1, freeRows));
+    }
+    return GridRect((r.x - dx).clamp(0, freeCols - r.w), (r.y + dy).clamp(0, freeRows - 1), r.w, r.h);
+  }
+
+  Future<void> _end() async {
+    final id = _active;
+    if (id == null) return;
+    final target = _target(widget.rects[id]!);
+    setState(() {
+      _active = null;
+      _delta = Offset.zero;
+    });
+    if (target == widget.rects[id]) return;
+    final ok = await widget.onPlace(id, target);
+    if (!ok && mounted) {
+      final l = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l.freeLayoutRejected)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        for (final e in widget.rects.entries)
+          if (e.value.bottom <= freeRows) ...[
+            Positioned.fromRect(
+              rect: _px(e.value).deflate(2),
+              child: GestureDetector(
+                key: Key('free-box-${e.key.name}'),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => widget.onTap(e.key),
+                onPanStart: (_) => setState(() {
+                  _active = e.key;
+                  _resizing = false;
+                  _delta = Offset.zero;
+                }),
+                onPanUpdate: (d) => setState(() => _delta += d.delta),
+                onPanEnd: (_) => _end(),
+                onPanCancel: () => setState(() => _active = null),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: e.key == widget.selected || e.key == _active ? scheme.primary : Colors.white38,
+                      width: e.key == widget.selected || e.key == _active ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+            // مقبض التكبير في الزاوية السفلى اليسرى.
+            Positioned(
+              left: _px(e.value).left - 6,
+              top: _px(e.value).bottom - 22,
+              width: 28,
+              height: 28,
+              child: GestureDetector(
+                key: Key('free-handle-${e.key.name}'),
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (_) => setState(() {
+                  _active = e.key;
+                  _resizing = true;
+                  _delta = Offset.zero;
+                }),
+                onPanUpdate: (d) => setState(() => _delta += d.delta),
+                onPanEnd: (_) => _end(),
+                onPanCancel: () => setState(() => _active = null),
+                child: Center(
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        // الإطار الشبحي حيث سيستقر العنصر.
+        if (_active != null && widget.rects[_active] != null)
+          Positioned.fromRect(
+            key: const Key('free-ghost'),
+            rect: _px(_target(widget.rects[_active]!)).deflate(2),
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.25),
+                  border: Border.all(color: scheme.primary, width: 2),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),

@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// إرشاد أعلى القائمة
   ///
   /// In ar, this message translates to:
-  /// **'اضغط على عنصر في القائمة أو في المعاينة لتعديل حجمه وألوانه ومحتواه، واسحب المقبض لتغيير الترتيب.'**
+  /// **'اسحب أي مربع في المعاينة لتحريكه، ومقبض زاويته لتكبيره أو تصغيره، واضغطه لتعديل خطه وألوانه ومحتواه. العناصر تصعد تلقائياً لتملأ الفراغ.'**
   String get tileHint;
 
   /// عرض المربع ١/٢/٣
@@ -817,6 +817,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{slot, select, top{أعلى} middle{وسط} bottom{أسفل} other{{slot}}}'**
   String cropSlotName(String slot);
+
+  /// محرر التخطيط الحر
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن هذا الترتيب في الودجت. جرّب موضعاً أو مقاساً آخر.'**
+  String get freeLayoutRejected;
 }
 
 class _AppLocalizationsDelegate

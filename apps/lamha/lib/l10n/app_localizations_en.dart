@@ -315,7 +315,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tileHint =>
-      'Tap an item in the list or the preview to edit its size, colours and content; drag the handle to reorder.';
+      'Drag a box in the preview to move it and its corner handle to resize; tap it to edit its font, colours and content. Items move up to fill gaps.';
 
   @override
   String tileSpanName(String span) {
@@ -548,4 +548,8 @@ class AppLocalizationsEn extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get freeLayoutRejected =>
+      'That arrangement can\'t be drawn on the widget. Try another position or size.';
 }

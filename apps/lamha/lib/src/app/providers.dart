@@ -209,7 +209,10 @@ class SettingsController extends AsyncNotifier<AppState> {
       schedule: {
         ...cur.schedule,
         'opacity': fixed.opacity,
-        'layout': [for (final t in layout) t.toScheduleJson()],
+        // كما يبنيها buildSchedule: المستطيلات الفعلية والشجرة.
+        'layout': [for (final t in withRects(layout, rectsOf(layout))) t.toScheduleJson()],
+        'grid': [freeCols, freeRows],
+        'tree': (cutTree(rectsOf(layout)) ?? const CutNode.empty()).toJson(),
         'visible': {
           for (final e in WidgetElement.values)
             e.name: layout.any((t) => t.id == e && t.visible),
@@ -345,8 +348,20 @@ class SettingsController extends AsyncNotifier<AppState> {
           t.copyWith(primaryColor: () => primary, secondaryColor: () => secondary),
       ]));
 
+  /// التخطيط الحر: يضع [id] في [target] (تحريك أو تكبير)، ويدفع ما يتداخل ثم يصعد الجميع. يعيد false
+  /// دون حفظ إذا تعذر تقسيم الناتج صفوفاً وأعمدة (cutTree) فلا ترسمه الودجتان.
+  Future<bool> placeTile(WidgetElement id, GridRect target) async {
+    final min = minSize(id);
+    final t = GridRect(target.x, target.y, target.w < min.w ? min.w : target.w, target.h < min.h ? min.h : target.h);
+    final next = place(rectsOf(_s.layout), id, t);
+    if (cutTree(next) == null) return false;
+    await _updateLight(_s.copyWith(layout: withRects(_s.layout, next)));
+    return true;
+  }
+
+  /// إظهار عنصر يضعه في أول فراغ (لا في مستطيله القديم فوق غيره).
   Future<void> setVisible(WidgetElement e, bool on) =>
-      updateTile(e, (t) => t.copyWith(visible: on));
+      updateTile(e, (t) => t.copyWith(visible: on, rect: on ? () => null : null));
 
   /// حجم أيقونة القبلة (٠٫٥–١٫٦)؛ عرض الخانة يتبعه تلقائياً (qiblaSpanFor).
   Future<void> setQiblaIconScale(double v, {bool commit = true}) =>
@@ -358,7 +373,8 @@ class SettingsController extends AsyncNotifier<AppState> {
     final l = [..._s.layout];
     final t = l.removeAt(from);
     l.insert(to.clamp(0, l.length), t);
-    return _updateLight(_s.copyWith(layout: l));
+    // التخطيط الحر: الترتيب الجديد يُرصّ من جديد بمقاسات العناصر نفسها.
+    return _updateLight(_s.copyWith(layout: reflow(l)));
   }
 
   Future<void> resetLayout() =>
