@@ -374,13 +374,12 @@ class SettingsController extends AsyncNotifier<AppState> {
   }
 
   /// يعيد true إذا اختيرت صورة وحُفظت.
-  Future<bool> pickBackground() async {
+  /// يحفظ لقطة الخلفية المقصوصة [png] ويعيد رسم الودجت بها.
+  Future<void> saveBackground(Uint8List png) async {
     final store = ref.read(backgroundStoreProvider);
-    final name = await store.pickAndSave();
-    if (name == null) return false;
+    final name = await store.save(png);
     _backgroundPath = await store.resolve(name);
     await _update(_s.copyWith(backgroundFile: name));
-    return true;
   }
 
   /// حذف لقطة الخلفية والعودة للون السمة وحده (الملف يبقى في الحاوية ويُستبدل عند اختيار لقطة جديدة).

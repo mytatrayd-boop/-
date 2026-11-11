@@ -563,5 +563,35 @@
   },
   "@backgroundRemoved": {
     "description": "إعدادات لمحة (آيفون)"
+  },
+  "cropTitle": "ضبط لقطة الخلفية",
+  "@cropTitle": {
+    "description": "شاشة قص لقطة الخلفية"
+  },
+  "cropSave": "حفظ",
+  "@cropSave": {
+    "description": "شاشة قص لقطة الخلفية"
+  },
+  "cropHint": "اختر مقاس الودجت وموضعه في شاشتك، ثم اسحب الإطار حتى يطابق مكان الودجت تماماً.",
+  "@cropHint": {
+    "description": "شاشة قص لقطة الخلفية"
+  },
+  "cropSizeName": "{size, select, large{كبير} medium{متوسط} other{{size}}}",
+  "cropSlotName": "{slot, select, top{أعلى} middle{وسط} bottom{أسفل} other{{slot}}}",
+  "@cropSizeName": {
+    "description": "مقاس الودجت",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "@cropSlotName": {
+    "description": "موضع الودجت",
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,24 +51,41 @@ class FakeLocation implements LocationService {
       result;
 }
 
-/// حاوية App Group وهمية: تحفظ اسم الملف ولا تلمس القرص.
+/// حاوية App Group وهمية: [picked] صورة المعرض (لقطة ٧٥٠×١٣٣٤ افتراضياً)، وتحفظ ولا تلمس القرص.
 class FakeBackgroundStore implements BackgroundStore {
-  FakeBackgroundStore([this.picked = 'wallpaper.jpg', this.error]);
+  FakeBackgroundStore([this.picked = const _DefaultShot(), this.error]);
 
-  final String? picked;
+  /// ‏_DefaultShot = ‏لقطة رمادية بمقاس آيفون SE تُولَّد عند الطلب.
+  final Object? picked;
   final Object? error;
   var picks = 0;
+  final saved = <Uint8List>[];
 
   @override
-  Future<String?> pickAndSave() async {
+  Future<Uint8List?> pick() async {
     picks++;
     if (error != null) throw error!;
-    return picked;
+    final p = picked;
+    if (p is _DefaultShot) return seShot;
+    return p as Uint8List?;
+  }
+
+  @override
+  Future<String> save(Uint8List png) async {
+    saved.add(png);
+    return 'wallpaper.png';
   }
 
   @override
   Future<String?> resolve(String fileName) async => null;
 }
+
+class _DefaultShot {
+  const _DefaultShot();
+}
+
+/// لقطة PNG ‏٧٥٠×١٣٣٤ (آيفون SE) بلون واحد.
+final seShot = File('test/fixtures/se_shot.png').readAsBytesSync();
 
 /// geocoding وهمي: اسم ثابت أو خطأ (لا إنترنت).
 class FakeGeocoder implements PlaceGeocoder {

@@ -517,4 +517,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backgroundRemoved => 'Wallpaper screenshot removed';
+
+  @override
+  String get cropTitle => 'Fit wallpaper';
+
+  @override
+  String get cropSave => 'Save';
+
+  @override
+  String get cropHint =>
+      'Choose the widget size and position, then drag the frame until it matches the widget exactly.';
+
+  @override
+  String cropSizeName(String size) {
+    String _temp0 = intl.Intl.selectLogic(size, {
+      'large': 'Large',
+      'medium': 'Medium',
+      'other': '$size',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String cropSlotName(String slot) {
+    String _temp0 = intl.Intl.selectLogic(slot, {
+      'top': 'Top',
+      'middle': 'Middle',
+      'bottom': 'Bottom',
+      'other': '$slot',
+    });
+    return '$_temp0';
+  }
 }

@@ -513,4 +513,35 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get backgroundRemoved => 'حُذفت لقطة الخلفية، وعادت الودجت للون السمة';
+
+  @override
+  String get cropTitle => 'ضبط لقطة الخلفية';
+
+  @override
+  String get cropSave => 'حفظ';
+
+  @override
+  String get cropHint =>
+      'اختر مقاس الودجت وموضعه في شاشتك، ثم اسحب الإطار حتى يطابق مكان الودجت تماماً.';
+
+  @override
+  String cropSizeName(String size) {
+    String _temp0 = intl.Intl.selectLogic(size, {
+      'large': 'كبير',
+      'medium': 'متوسط',
+      'other': '$size',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String cropSlotName(String slot) {
+    String _temp0 = intl.Intl.selectLogic(slot, {
+      'top': 'أعلى',
+      'middle': 'وسط',
+      'bottom': 'أسفل',
+      'other': '$slot',
+    });
+    return '$_temp0';
+  }
 }
