@@ -413,7 +413,15 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     val rect = spec.rect
                     val span = LamhaLogic.spanOfWidth(rect?.getOrNull(2) ?: 6)
                     val inner = if (cellDp > 0f) (rect?.getOrNull(3) ?: 1) * cellDp - 8f else 0f
-                    addView(R.id.fleaf, tile(env, spec, span, env.day.fontScale * spec.fontScale, inner))
+                    val content = tile(env, spec, span, env.day.fontScale * spec.fontScale, inner)
+                    if (n.id in CAPSULES) {
+                        // الكبسولة بوزن رأسي (widget_tile_capsule): داخل عمود كما في الصفوف القديمة.
+                        val stack = RemoteViews(pkg, R.layout.widget_tile_stack)
+                        stack.addView(R.id.stack, content)
+                        addView(R.id.fleaf, stack)
+                    } else {
+                        addView(R.id.fleaf, content)
+                    }
                 }
                 LamhaLogic.CutTree.Empty -> RemoteViews(pkg, R.layout.widget_free_leaf)
                 is LamhaLogic.CutTree.Split -> RemoteViews(pkg, if (n.vertical) R.layout.widget_free_box_v else R.layout.widget_free_box_h).apply {
