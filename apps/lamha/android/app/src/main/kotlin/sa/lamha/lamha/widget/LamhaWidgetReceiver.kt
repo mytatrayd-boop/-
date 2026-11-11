@@ -187,6 +187,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val CLOCK_SAMPLE = "١٢:٥٨"
         private const val TILE_GAP_DP = 2f
         private const val FIT_MARGIN_DP = 2f
+        /// هامش الخانة في التخطيط الحر: حشوة الورقة ٨dp وأمان ٤dp، لأن المحاكي يعطي الودجت أقل قليلاً من maxHeight.
+        private const val FREE_FIT_SLACK_DP = 12f
 
         /// أدنى تصغير للعنوان والقيمة (tileMinFit)، ولسطور العمود الأيسر.
         private const val TILE_MIN_FIT = 0.7f
@@ -412,7 +414,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     val spec = byId[n.id] ?: LamhaLogic.Tile(n.id)
                     val rect = spec.rect
                     val span = LamhaLogic.spanOfWidth(rect?.getOrNull(2) ?: 6)
-                    val inner = if (cellDp > 0f) (rect?.getOrNull(3) ?: 1) * cellDp - 8f else 0f
+                    val inner = if (cellDp > 0f) (rect?.getOrNull(3) ?: 1) * cellDp - FREE_FIT_SLACK_DP else 0f
                     // الكبسولة تُنقص هامشها ٤dp كما في الصفوف القديمة، فيصغر نصها ليتسع.
                     val fit = if (n.id in CAPSULES && inner > 0f) inner - 4f else inner
                     val content = tile(env, spec, span, env.day.fontScale * spec.fontScale, fit)
