@@ -26,14 +26,15 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
   /// حول المعاينة: اللوحة السفلية تقف تحت حدّها فلا تحجب الودجت (طلب المالك ١١/١١/٢٠٢٦).
   final _previewKey = GlobalKey();
 
-  /// ارتفاع محتوى اللوحة: ما تحت المعاينة ناقص مقبض اللوحة، بين ٢٢٠ و٤٤٠.
+  /// ارتفاع محتوى اللوحة: ما تحت المعاينة ناقص مقبض اللوحة، بين ١٦٠ و٤٤٠ (المعاينة أكبر الآن، ومحتوى
+  /// اللوحة يُمرَّر).
   double _sheetHeight() {
     final screen = MediaQuery.sizeOf(context).height;
     final box = _previewKey.currentContext?.findRenderObject() as RenderBox?;
     final bottom = box == null || !box.hasSize
         ? screen * 0.5
         : box.localToGlobal(Offset(0, box.size.height)).dy;
-    return (screen - bottom - kMinInteractiveDimension - 8).clamp(220.0, 440.0);
+    return (screen - bottom - kMinInteractiveDimension - 8).clamp(160.0, 440.0);
   }
 
   Future<void> _edit(WidgetElement e) async {
@@ -48,6 +49,73 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
     );
     if (mounted) setState(() => _open = null);
   }
+
+  /// المعاينة بمحرر التخطيط الحر، مصغّرة لتتسع مكانها.
+  Widget _preview(AppState state, Key key, {ValueChanged<WidgetElement>? onTap}) {
+    final layout = state.settings.layout;
+    final c = ref.read(settingsControllerProvider.notifier);
+    final tap = onTap ?? _edit;
+    return FittedBox(
+      fit: BoxFit.contain,
+      child: SizedBox.fromSize(
+        size: previewWidgetSize + const Offset(32, 32),
+        child: RepaintBoundary(
+          key: key,
+          child: WidgetPreview(
+            schedule: state.schedule,
+            now: ref.read(clockProvider)(),
+            backgroundPath: state.backgroundPath,
+            systemColors: state.systemColors,
+            onTileTap: tap,
+            selected: _open,
+            overlay: (grid) => FreeEditor(
+              grid: grid,
+              rects: rectsOf(layout),
+              selected: _open,
+              onTap: tap,
+              onPlace: c.placeTile,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// المعاينة بكامل الشاشة للسحب والتكبير بدقة؛ الضغط على مربع يفتح لوحته فوقها.
+  Future<void> _fullscreen() => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (context) => Consumer(
+            builder: (context, ref, _) {
+              final l = AppLocalizations.of(context);
+              final state = ref.watch(settingsControllerProvider).value;
+              return Scaffold(
+                appBar: AppBar(title: Text(l.customizeTitle)),
+                body: state == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Center(
+                            child: _preview(
+                              state,
+                              const Key('fullscreen-preview'),
+                              onTap: (e) => showModalBottomSheet<void>(
+                                context: context,
+                                showDragHandle: true,
+                                isScrollControlled: true,
+                                barrierColor: Colors.black26,
+                                builder: (_) => TileSheet(id: e, height: 360),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+              );
+            },
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -81,8 +149,8 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
       for (final e in rectsOf(layout).entries)
         if (e.value.bottom <= freeRows) e.key.name,
     };
-    // المعاينة ٣٣٨×٣٥٤ وحولها خلفية ١٦، وتصغر لتأخذ ٤٠٪ من ارتفاع الشاشة حداً أقصى.
-    final previewSize = previewWidgetSize + const Offset(32, 32);
+    // المعاينة بعرض الشاشة وحولها خلفية ١٦، وتصغر لتأخذ ٥٥٪ من ارتفاع الشاشة حداً أقصى (كانت ٤٠٪ فصغرت
+    // جداً على آيفون الصغير، ملاحظة المالك ١١/١١/٢٠٢٦). زر «ملء الشاشة» يفتحها بكامل الشاشة للتعديل.
     final visibleCount = layout.where((t) => t.visible).length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,49 +160,47 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.4,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.55,
             ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: SizedBox.fromSize(
-                size: previewSize,
-                child: RepaintBoundary(
-                  key: const Key('customize-preview'),
-                  child: WidgetPreview(
-                    schedule: state.schedule,
-                    now: ref.read(clockProvider)(),
-                    backgroundPath: state.backgroundPath,
-                    systemColors: state.systemColors,
-                    onTileTap: _edit,
-                    selected: _open,
-                    overlay: (grid) => FreeEditor(
-                      grid: grid,
-                      rects: rectsOf(layout),
-                      selected: _open,
-                      onTap: _edit,
-                      onPlace: c.placeTile,
-                    ),
+            child: Stack(
+              children: [
+                Center(child: _preview(state, const Key('customize-preview'))),
+                PositionedDirectional(
+                  top: 0,
+                  end: 0,
+                  child: IconButton.filledTonal(
+                    key: const Key('preview-fullscreen'),
+                    tooltip: l.previewFullscreen,
+                    icon: const Icon(Icons.fullscreen),
+                    onPressed: _fullscreen,
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-          child: Text(
-            l.tileHint,
-            textAlign: TextAlign.right,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        _Presets(layout: layout),
-        const Divider(height: 1),
+        const SizedBox(height: 4),
         Expanded(
           child: ReorderableListView.builder(
             key: const Key('tile-list'),
             buildDefaultDragHandles: false,
             padding: const EdgeInsets.only(bottom: 16),
+            // التلميح والألوان الجاهزة تتحرك مع القائمة فتبقى المساحة للمعاينة.
+            header: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                  child: Text(
+                    l.tileHint,
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                _Presets(layout: layout),
+                const Divider(height: 1),
+              ],
+            ),
             itemCount: layout.length,
             onReorderItem: c.moveTile,
             itemBuilder: (context, i) {
@@ -699,7 +765,12 @@ class FreeEditor extends StatefulWidget {
 
 class _FreeEditorState extends State<FreeEditor> {
   WidgetElement? _active;
-  var _resizing = false;
+
+  /// المربع الذي تظهر مقابضه الأربعة (آخر ما ضُغط أو سُحب، أو المفتوحة لوحته).
+  WidgetElement? _sel;
+
+  /// الزاوية المسحوبة للتكبير، أو null للتحريك.
+  ({bool left, bool top})? _corner;
   Offset _delta = Offset.zero;
 
   double get _cw => widget.grid.width / freeCols;
@@ -708,15 +779,28 @@ class _FreeEditorState extends State<FreeEditor> {
   /// المستطيل بالبكسل: x يُعدّ من اليمين.
   Rect _px(GridRect r) => Rect.fromLTWH((freeCols - r.x - r.w) * _cw, r.y * _ch, r.w * _cw, r.h * _ch);
 
-  /// موضع الإفلات على الخلايا من الإزاحة.
+  /// موضع الإفلات على الخلايا من الإزاحة. [_corner]: المقبض المسحوب (left/top بالبكسل على الشاشة)،
+  /// وكل زاوية تحرك ضلعيها فقط، فيكبر المربع أو يصغر في أي اتجاه.
   GridRect _target(GridRect r) {
     final dx = (_delta.dx / _cw).round();
     final dy = (_delta.dy / _ch).round();
-    if (_resizing) {
-      // المقبض يسار أسفل: السحب يساراً يزيد العرض (x ثابت من اليمين)، ولأسفل يزيد الارتفاع.
-      return GridRect(r.x, r.y, (r.w - dx).clamp(1, freeCols - r.x), (r.h + dy).clamp(1, freeRows));
+    final corner = _corner;
+    if (corner == null) {
+      return GridRect((r.x - dx).clamp(0, freeCols - r.w), (r.y + dy).clamp(0, freeRows - 1), r.w, r.h);
     }
-    return GridRect((r.x - dx).clamp(0, freeCols - r.w), (r.y + dy).clamp(0, freeRows - 1), r.w, r.h);
+    // x يُعدّ من اليمين: الضلع الأيسر على الشاشة هو x+w، والأيمن هو x.
+    var x = r.x, y = r.y, right = r.x + r.w, bottom = r.y + r.h;
+    if (corner.left) {
+      right = (right - dx).clamp(x + 1, freeCols);
+    } else {
+      x = (x - dx).clamp(0, right - 1);
+    }
+    if (corner.top) {
+      y = (y + dy).clamp(0, bottom - 1);
+    } else {
+      bottom = (bottom + dy).clamp(y + 1, y + freeRows);
+    }
+    return GridRect(x, y, right - x, bottom - y);
   }
 
   Future<void> _end() async {
@@ -750,10 +834,14 @@ class _FreeEditorState extends State<FreeEditor> {
               child: GestureDetector(
                 key: Key('free-box-${e.key.name}'),
                 behavior: HitTestBehavior.opaque,
-                onTap: () => widget.onTap(e.key),
+                onTap: () {
+                  setState(() => _sel = e.key);
+                  widget.onTap(e.key);
+                },
                 onPanStart: (_) => setState(() {
                   _active = e.key;
-                  _resizing = false;
+                  _sel = e.key;
+                  _corner = null;
                   _delta = Offset.zero;
                 }),
                 onPanUpdate: (d) => setState(() => _delta += d.delta),
@@ -762,26 +850,40 @@ class _FreeEditorState extends State<FreeEditor> {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: e.key == widget.selected || e.key == _active ? scheme.primary : Colors.white38,
-                      width: e.key == widget.selected || e.key == _active ? 2 : 1,
+                      color: e.key == (_sel ?? widget.selected) || e.key == _active ? scheme.primary : Colors.white38,
+                      width: e.key == (_sel ?? widget.selected) || e.key == _active ? 2 : 1,
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
             ),
-            // مقبض التكبير في الزاوية السفلى اليسرى.
+          ],
+        // مقابض التكبير الأربعة للمربع المحدد فقط، فوق كل المربعات فلا يغطيها جار ولا تتداخل مقابض
+        // مربعين في زاوية مشتركة (منطقة لمس ٤٤، ونقطة ١٨). أسماؤها: free-handle-<العنصر> للزاوية السفلى
+        // اليسرى، وfree-handle-<الزاوية>-<العنصر> للبقية.
+        for (final e in widget.rects.entries)
+          if (e.key == (_sel ?? widget.selected) && e.value.bottom <= freeRows)
+          for (final corner in const [
+            (left: true, top: false),
+            (left: false, top: false),
+            (left: true, top: true),
+            (left: false, top: true),
+          ])
             Positioned(
-              left: _px(e.value).left - 6,
-              top: _px(e.value).bottom - 22,
-              width: 28,
-              height: 28,
+              // مركز المقبض داخل الزاوية بـ ٨ فيبقى قابلاً للمس على حافة الشبكة.
+              left: (corner.left ? _px(e.value).left + 8 : _px(e.value).right - 8) - 22,
+              top: (corner.top ? _px(e.value).top + 8 : _px(e.value).bottom - 8) - 22,
+              width: 44,
+              height: 44,
               child: GestureDetector(
-                key: Key('free-handle-${e.key.name}'),
+                key: Key(corner.left && !corner.top
+                    ? 'free-handle-${e.key.name}'
+                    : 'free-handle-${corner.top ? 't' : 'b'}${corner.left ? 'l' : 'r'}-${e.key.name}'),
                 behavior: HitTestBehavior.opaque,
                 onPanStart: (_) => setState(() {
                   _active = e.key;
-                  _resizing = true;
+                  _corner = corner;
                   _delta = Offset.zero;
                 }),
                 onPanUpdate: (d) => setState(() => _delta += d.delta),
@@ -789,8 +891,8 @@ class _FreeEditorState extends State<FreeEditor> {
                 onPanCancel: () => setState(() => _active = null),
                 child: Center(
                   child: Container(
-                    width: 14,
-                    height: 14,
+                    width: 18,
+                    height: 18,
                     decoration: BoxDecoration(
                       color: scheme.primary,
                       shape: BoxShape.circle,
@@ -800,7 +902,6 @@ class _FreeEditorState extends State<FreeEditor> {
                 ),
               ),
             ),
-          ],
         // الإطار الشبحي حيث سيستقر العنصر.
         if (_active != null && widget.rects[_active] != null)
           Positioned.fromRect(

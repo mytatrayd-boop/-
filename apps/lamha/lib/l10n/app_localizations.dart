@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// إرشاد أعلى القائمة
   ///
   /// In ar, this message translates to:
-  /// **'اسحب أي مربع في المعاينة لتحريكه، ومقبض زاويته لتكبيره أو تصغيره، واضغطه لتعديل خطه وألوانه ومحتواه. العناصر تصعد تلقائياً لتملأ الفراغ.'**
+  /// **'اسحب أي مربع في المعاينة لتحريكه. اضغطه لفتح لوحة خطه وألوانه ومحتواه، وتظهر في زواياه الأربع مقابض لتكبيره أو تصغيره من أي جهة. زر «ملء الشاشة» للتعديل بدقة. العناصر تصعد تلقائياً لتملأ الفراغ.'**
   String get tileHint;
 
   /// عرض المربع ١/٢/٣
@@ -823,6 +823,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا يمكن هذا الترتيب في الودجت. جرّب موضعاً أو مقاساً آخر.'**
   String get freeLayoutRejected;
+
+  /// زر فتح معاينة الودجت بكامل الشاشة في شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'ملء الشاشة'**
+  String get previewFullscreen;
 }
 
 class _AppLocalizationsDelegate

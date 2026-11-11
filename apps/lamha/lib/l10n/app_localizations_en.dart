@@ -315,7 +315,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tileHint =>
-      'Drag a box in the preview to move it and its corner handle to resize; tap it to edit its font, colours and content. Items move up to fill gaps.';
+      'Drag a box in the preview to move it. Tap it to edit its font, colours and content; handles appear on its four corners to resize it in any direction. Use full screen for precision. Items move up to fill gaps.';
 
   @override
   String tileSpanName(String span) {
@@ -552,4 +552,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get freeLayoutRejected =>
       'That arrangement can\'t be drawn on the widget. Try another position or size.';
+
+  @override
+  String get previewFullscreen => 'Full screen';
 }
