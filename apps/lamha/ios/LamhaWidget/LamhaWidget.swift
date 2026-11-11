@@ -370,9 +370,92 @@ struct LamhaWidgetView: View {
     /// الودجت الكبيرة (طلب المالك ٣٠/١٠/٢٠٢٦): تتبع تخطيط التطبيق. كل كتلة بترتيب أول نافذة لها
     /// فيه، والنافذة الموقوفة تختفي والباقية تتمدد لتملأ الودجت (كما تفعل المعاينة وأندرويد).
     private func large(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
-        let blocks = largeBlocks(s, day).sorted { $0.position < $1.position }
-        return VStack(spacing: 8) {
-            ForEach(blocks) { b in b.view }
+        Group {
+            if let tree = s.tree {
+                // التخطيط الحر: شجرة التطبيق نفسها، وحول كل مربع نصف التباعد (كالمعاينة: tileSpacing / 2).
+                node(tree, s, day).padding(-4)
+            } else {
+                let blocks = largeBlocks(s, day).sorted { $0.position < $1.position }
+                VStack(spacing: 8) {
+                    ForEach(blocks) { b in b.view }
+                }
+            }
+        }
+    }
+
+    /// ورقة أو تقسيم: كل جزء بنسبة وزنه من المقاس المتاح.
+    private func node(_ n: CutTree, _ s: LamhaSnapshot, _ day: LamhaDay) -> AnyView {
+        switch n {
+        case .empty:
+            return AnyView(Color.clear)
+        case .tile(let id):
+            return AnyView(tile(id, s, day).frame(maxWidth: .infinity, maxHeight: .infinity).padding(4))
+        case .split(let vertical, let children):
+            let total = CGFloat(children.reduce(0) { $0 + $1.weight })
+            return AnyView(GeometryReader { g in
+                if vertical {
+                    VStack(spacing: 0) {
+                        ForEach(Array(children.enumerated()), id: \.offset) { _, c in
+                            node(c.node, s, day).frame(width: g.size.width, height: g.size.height * CGFloat(c.weight) / total)
+                        }
+                    }
+                } else {
+                    HStack(spacing: 0) {
+                        ForEach(Array(children.enumerated()), id: \.offset) { _, c in
+                            node(c.node, s, day).frame(width: g.size.width * CGFloat(c.weight) / total, height: g.size.height)
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    /// عنصر واحد في مستطيله (أسماء WidgetElement في Dart).
+    @ViewBuilder
+    private func tile(_ id: String, _ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
+        switch id {
+        case "clock":
+            ClockView(text: s.clockText(at: entry.date), style: s.style(["clock"]))
+        case "prayer":
+            NextPrayerView(prayer: next(s), accent: s.accent, style: s.style(["prayer"]))
+        case "dayWeather", "weather":
+            header(s, day)
+        case "hijri", "gregorian":
+            let st = s.style([id])
+            Text(id == "hijri" ? day.hijri : day.gregorian)
+                .font(.system(size: st.size(13), weight: .bold)).foregroundStyle(st.main(textColor))
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .background(Capsule().fill(boxColor))
+        case "dates":
+            dates(s, day)
+        case "qibla":
+            GeometryReader { g in
+                let st = s.style(["qibla"])
+                // الأيقونة تملأ مربعها (بحجمها المختار ٠٫٥–١٫٦ من ٦٢٪ من أصغر بُعديه) وتحتها الزاوية والاتجاه.
+                let text: CGFloat = st.showTitle ? 30 : 0
+                let side = max(min(g.size.width, g.size.height - text) * CGFloat(0.62 * s.qiblaIconScale), 20)
+                qibla(s, width: min(side, g.size.width))
+                    .frame(width: g.size.width, height: g.size.height)
+            }
+        case "prayerTimes":
+            PrayerRow(prayers: s.rotatedPrayers(at: entry.date), accent: s.accent, stretch: true, style: s.style(["prayerTimes"]))
+        case "deposit":
+            DepositsGrid(deposits: Array(day.deposits.prefix(6)), stretch: true, style: s.style(["deposit"]))
+        case "season":
+            SeasonBox(title: day.seasonName, sub: day.seasonAfter, stretch: true, style: s.style(["season"]))
+        case "tradSeason":
+            TradSeasonBox(name: day.tradName, after: day.tradAfter, line: day.tradLine, stretch: true, style: s.style(["tradSeason"]))
+        case "tradPoints":
+            let st = s.style(["tradPoints"])
+            Text(day.tradLine).font(.system(size: st.size(12))).foregroundStyle(st.main(textColor))
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 12).fill(boxColor))
+        default:
+            Color.clear
         }
     }
 

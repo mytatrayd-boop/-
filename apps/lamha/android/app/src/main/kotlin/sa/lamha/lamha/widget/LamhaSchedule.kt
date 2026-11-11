@@ -49,6 +49,8 @@ data class LamhaDay(
     val seasonAfter: String = "",
     val tradAfter: String = "",
     val tradPoints: List<String> = emptyList(),
+    /// التخطيط الحر؛ null لجدول أقدم (يُرسم بالصفوف القديمة).
+    val tree: LamhaLogic.CutTree? = null,
 )
 
 /// [remaining] «باقي ٨ أيام»، و[after] «بعد ٨ أيام» للإشعار، و[days] «١٤ يوماً» لأعمدة الإيداعات.
@@ -155,8 +157,24 @@ object LamhaSchedule {
                 primaryColor = if (t.isNull("primaryColor")) null else t.getLong("primaryColor").toInt(),
                 secondaryColor = if (t.isNull("secondaryColor")) null else t.getLong("secondaryColor").toInt(),
                 iconScale = t.optDouble("iconScale", 1.0).toFloat().coerceIn(0.5f, 1.6f),
+                rect = t.optJSONArray("rect")?.let { r -> (0 until r.length()).map { r.getInt(it) } },
             )
         }
+    }
+
+    /// `tree` من الجدول (CutNode.toJson في Dart)، أو null لجدول أقدم.
+    fun treeOf(j: JSONObject?): LamhaLogic.CutTree? {
+        if (j == null) return null
+        if (j.has("tile")) return LamhaLogic.CutTree.Leaf(j.getString("tile"))
+        val ch = j.optJSONArray("children") ?: return LamhaLogic.CutTree.Empty
+        if (ch.length() == 0) return LamhaLogic.CutTree.Empty
+        return LamhaLogic.CutTree.Split(
+            j.optString("dir") == "v",
+            (0 until ch.length()).map {
+                val c = ch.getJSONObject(it)
+                c.optInt("w", 1).coerceIn(1, LamhaLogic.FREE_ROWS) to (treeOf(c) ?: LamhaLogic.CutTree.Empty)
+            },
+        )
     }
 
     private fun parse(root: JSONObject, nowMillis: Long): LamhaDay {
@@ -239,6 +257,7 @@ object LamhaSchedule {
             seasonAfter = season.optString("afterText", ""),
             tradAfter = trad.optString("afterText", ""),
             tradPoints = trad.optJSONArray("points")?.let { a -> (0 until a.length()).map { a.getString(it) } } ?: emptyList(),
+            tree = treeOf(root.optJSONObject("tree")),
         )
     }
 }
