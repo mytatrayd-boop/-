@@ -280,6 +280,38 @@ test("prayer tasks only for the running prayer; late ones are worth no points", 
   await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4, enabled: true }, owner.idToken);
 });
 
+test("مهلة أداء الصلاة: للجميع أو لفرد، وتحدد نقاط الصلاة، ولا يمسحها تغيير الموقع", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
+  await rejects(call("api", { op: "setPrayerGrace", target: "all", grace: { fajr: 60 } }, kid.idToken), "no-permission");
+  await rejects(call("api", { op: "setPrayerGrace", target: "all", grace: { fajr: 1 } }, owner.idToken), "bad-number");
+  await rejects(call("api", { op: "setPrayerGrace", target: owner.personId, grace: { fajr: 60 } }, owner.idToken), "person-not-found");
+  const { currentPrayer, prayerPoints } = await import("../build/src/prayer.js");
+  const now = currentPrayer(24.7136, 46.6753, Date.now());
+  await call("api", { op: "setPrayerGrace", target: "all", grace: { [now.key]: 60, fajr: 45 } }, owner.idToken);
+  await call("api", { op: "setPrayerGrace", target: kid.personId, grace: { [now.key]: 240 } }, owner.idToken);
+  let g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g.all.fajr, 45);
+  assert.equal(g[kid.personId][now.key], 240);
+  // تغيير الموقع أو النقاط لا يمسح المهلة.
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
+  g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g[kid.personId][now.key], 240);
+  // النقاط بمهلة الفرد (٢٤٠ دقيقة).
+  await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).delete();
+  await call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken);
+  const c = await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).get();
+  assert.equal(c.data().points, prayerPoints(now, 4, Date.now(), 240));
+  // «الكل» يمسح قيمة الفرد، وnull يعيد الافتراضي.
+  await call("api", { op: "setPrayerGrace", target: "all", grace: { [now.key]: 30 } }, owner.idToken);
+  g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g[kid.personId]?.[now.key], undefined);
+  await call("api", { op: "setPrayerGrace", target: "all", grace: { [now.key]: null, fajr: null } }, owner.idToken);
+  g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g.all?.[now.key], undefined);
+});
+
 test("prizes: reminder an hour before, then the top member wins with a card for all", async () => {
   await rejects(call("api", { op: "addPrize", name: "x", period: "daily", awardAt: Date.now() - 1000 }, owner.idToken), "bad-time");
   await call("api", { op: "addPrize", name: "رحلة", emoji: "🏆", period: "daily", awardAt: Date.now() + 30 * 60000 }, owner.idToken);

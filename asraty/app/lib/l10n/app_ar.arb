@@ -948,5 +948,65 @@
   "deleteAllAlertsConfirm": "سيُحذف كل تنبيه أُرسل للأسرة ويختفي من عند الجميع. هل أنت متأكد؟",
   "allAlertsDeleted": "حُذفت جميع التنبيهات ✓",
   "alertsCount": "عدد التنبيهات المحفوظة: {n}",
-  "@alertsCount": {"placeholders": {"n": {"type": "int"}}}
+  "@alertsCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "graceTitle": "مهلة أداء الصلاة",
+  "@graceTitle": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceSub": "المدة بعد الأذان التي تُحتسب فيها نقاط كل صلاة. بعدها تبقى الصلاة مهمة بلا نقاط حتى الصلاة التالية.",
+  "@graceSub": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceTarget": "لمن؟",
+  "@graceTarget": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceAll": "كل الأفراد",
+  "@graceAll": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceDefault": "افتراضي",
+  "@graceDefault": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceLess": "إنقاص",
+  "@graceLess": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceMore": "زيادة",
+  "@graceMore": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceSaved": "حُفظت مهلة الصلاة ✓",
+  "@graceSaved": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceNeedPrayer": "فعّل «تذكير الصلاة» وحدّد موقع الأسرة أولاً.",
+  "@graceNeedPrayer": {
+    "description": "مهلة أداء الصلاة"
+  },
+  "graceMinutes": "{n} د",
+  "@graceMinutes": {
+    "description": "دقائق المهلة",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "graceEndsAt": "تنتهي النقاط {time}",
+  "@graceEndsAt": {
+    "description": "وقت انتهاء النقاط",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }

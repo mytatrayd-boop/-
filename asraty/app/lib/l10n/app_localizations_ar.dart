@@ -1837,4 +1837,42 @@ class L10nAr extends L10n {
   String alertsCount(int n) {
     return 'عدد التنبيهات المحفوظة: $n';
   }
+
+  @override
+  String get graceTitle => 'مهلة أداء الصلاة';
+
+  @override
+  String get graceSub =>
+      'المدة بعد الأذان التي تُحتسب فيها نقاط كل صلاة. بعدها تبقى الصلاة مهمة بلا نقاط حتى الصلاة التالية.';
+
+  @override
+  String get graceTarget => 'لمن؟';
+
+  @override
+  String get graceAll => 'كل الأفراد';
+
+  @override
+  String get graceDefault => 'افتراضي';
+
+  @override
+  String get graceLess => 'إنقاص';
+
+  @override
+  String get graceMore => 'زيادة';
+
+  @override
+  String get graceSaved => 'حُفظت مهلة الصلاة ✓';
+
+  @override
+  String get graceNeedPrayer => 'فعّل «تذكير الصلاة» وحدّد موقع الأسرة أولاً.';
+
+  @override
+  String graceMinutes(int n) {
+    return '$n د';
+  }
+
+  @override
+  String graceEndsAt(String time) {
+    return 'تنتهي النقاط $time';
+  }
 }

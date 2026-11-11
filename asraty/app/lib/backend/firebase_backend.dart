@@ -141,7 +141,7 @@ class FirebaseBackend extends Backend {
       _cycleStartedAt = cy is Timestamp ? cy.toDate() : null;
       final p = d.data()?['prayer'];
       _prayer = p is Map && p['lat'] is num && p['lng'] is num
-          ? PrayerSettings(enabled: p['enabled'] != false, lat: (p['lat'] as num).toDouble(), lng: (p['lng'] as num).toDouble(), points: _int(p['points']))
+          ? PrayerSettings(enabled: p['enabled'] != false, lat: (p['lat'] as num).toDouble(), lng: (p['lng'] as num).toDouble(), points: _int(p['points']), grace: _grace(p['grace']))
           : null;
       final pl = d.data()?['plan'];
       _plan = pl is Map && pl['tier'] is num
@@ -449,6 +449,19 @@ class FirebaseBackend extends Backend {
   @override
   Future<void> setPrayer({required double lat, required double lng, required int points, required bool enabled}) =>
       _op('setPrayer', {'lat': lat, 'lng': lng, 'points': points, 'enabled': enabled});
+
+  @override
+  Future<void> setPrayerGrace(String target, Map<String, int?> grace) => _op('setPrayerGrace', {'target': target, 'grace': grace});
+
+  static Map<String, Map<String, int>> _grace(Object? v) => {
+        if (v is Map)
+          for (final e in v.entries)
+            if (e.value is Map)
+              '${e.key}': {
+                for (final g in (e.value as Map).entries)
+                  if (g.value is num) '${g.key}': (g.value as num).toInt(),
+              },
+      };
 
   // ---------------------------------------------------------------- notices
   @override

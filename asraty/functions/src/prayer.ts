@@ -15,6 +15,23 @@ export interface PrayerSettings {
   lat: number;
   lng: number;
   points: number;
+  /**
+   * «مهلة أداء الصلاة» (owner's request, Nov 2026): minutes after the adhan a prayer keeps its points,
+   * per prayer. `all` applies to every member; a member id overrides it for that member. A missing
+   * value keeps the default (30 minutes; Isha until 11 pm).
+   */
+  grace?: PrayerGrace;
+}
+
+export type PrayerGrace = Record<string, Partial<Record<PrayerKey, number>>>;
+
+/** Grace minutes the admin can pick (the window still closes at the next prayer). */
+export const GRACE_MIN = 5;
+export const GRACE_MAX = 240;
+
+/** A member's grace for `key`: their own, else the family's, else undefined (the default rule). */
+export function graceFor(s: Pick<PrayerSettings, "grace"> | undefined, personId: string, key: PrayerKey): number | undefined {
+  return s?.grace?.[personId]?.[key] ?? s?.grace?.all?.[key];
 }
 
 const RIYADH_OFFSET_MS = 3 * 3600 * 1000;
@@ -35,8 +52,12 @@ export const PRAYER_GRACE_MS = 30 * 60e3;
 /** Isha keeps its points until this Riyadh hour (owner's decision, Oct 2026). */
 export const ISHA_UNTIL_HOUR = 23;
 
-/** When a prayer that started at `start` becomes late (mirrored in app/lib/core/models.dart lateAt). */
-export function lateAfter(w: { key?: PrayerKey; start: number }): number {
+/**
+ * When a prayer that started at `start` becomes late (mirrored in app/lib/core/models.dart lateFrom).
+ * `minutes` is the admin's grace for this member and prayer; without it, the default rule.
+ */
+export function lateAfter(w: { key?: PrayerKey; start: number }, minutes?: number): number {
+  if (minutes !== undefined) return w.start + minutes * 60e3;
   const grace = w.start + PRAYER_GRACE_MS;
   if (w.key !== "isha") return grace;
   const d = new Date(w.start + RIYADH_OFFSET_MS);
@@ -45,7 +66,8 @@ export function lateAfter(w: { key?: PrayerKey; start: number }): number {
 }
 
 /** Points a prayer earns when marked done at `ms` (none once it is late). */
-export const prayerPoints = (w: { key?: PrayerKey; start: number }, points: number, ms: number) => (ms > lateAfter(w) ? 0 : points);
+export const prayerPoints = (w: { key?: PrayerKey; start: number }, points: number, ms: number, minutes?: number) =>
+  ms > lateAfter(w, minutes) ? 0 : points;
 
 export interface PrayerWindow {
   key: PrayerKey;

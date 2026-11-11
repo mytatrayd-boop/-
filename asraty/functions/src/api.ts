@@ -9,7 +9,7 @@ import {
 import { issueCode } from "./authCodes";
 import { FamilyPlan, FoundPlan, FREE_MEMBERS, LEGACY_BEFORE, bestFromReceipt, memberLimit, planFromPlay, verifyPlayPurchase, verifyReceipt } from "./plan";
 import { credRef } from "./passwords";
-import { PRAYER_NAMES, PrayerSettings, currentPrayer, parsePrayerTaskId, prayerPoints } from "./prayer";
+import { GRACE_MAX, GRACE_MIN, PRAYERS, PRAYER_NAMES, PrayerSettings, currentPrayer, graceFor, parsePrayerTaskId, prayerPoints } from "./prayer";
 
 interface Ctx {
   fid: string;
@@ -368,7 +368,7 @@ const ops: Record<string, Handler> = {
       const now = Date.now();
       const w = currentPrayer(s.lat, s.lng, now);
       if (w.key !== prayer.key) fail("prayer-over");
-      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: prayerPoints(w, s.points, now), pk: w.dayKey };
+      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: prayerPoints(w, s.points, now, graceFor(s, c.me.id, w.key)), pk: w.dayKey };
     })() : null;
     const familyPrayerOn = ((await fam(c.fid).get()).data()?.prayer as PrayerSettings | undefined)?.enabled === true;
     const tRef = fam(c.fid).collection("tasks").doc(taskId);
@@ -553,7 +553,32 @@ const ops: Record<string, Handler> = {
     const lat = Number(c.data.lat), lng = Number(c.data.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 66 || Math.abs(lng) > 180) fail("bad-location", {}, "invalid-argument");
     const points = int(c.data.points ?? 5, 1, 1000);
-    await fam(c.fid).update({ prayer: { enabled: c.data.enabled !== false, lat, lng, points } });
+    // Field paths, so the grace periods («مهلة أداء الصلاة») survive a location or points change.
+    await fam(c.fid).update({ "prayer.enabled": c.data.enabled !== false, "prayer.lat": lat, "prayer.lng": lng, "prayer.points": points });
+    return {};
+  },
+
+  /**
+   * «مهلة أداء الصلاة»: minutes each prayer keeps its points, for every member (`target: "all"`, which
+   * also clears the members' own values for those prayers) or one member. `null` restores the default.
+   */
+  async setPrayerGrace(c) {
+    need(c, "tasks");
+    const target = String(c.data.target ?? "");
+    if (target !== "all") {
+      const p = await person(c.fid, target);
+      if (p.role !== "member") fail("person-not-found", {}, "not-found");
+    }
+    const grace = (c.data.grace ?? {}) as Record<string, unknown>;
+    const update: Record<string, unknown> = {};
+    const members = target === "all" ? (await getPeople(c.fid)).filter((p) => p.role === "member") : [];
+    for (const k of PRAYERS) {
+      if (!(k in grace)) continue;
+      const v = grace[k];
+      update[`prayer.grace.${target}.${k}`] = v === null ? FieldValue.delete() : int(v, GRACE_MIN, GRACE_MAX);
+      for (const m of members) update[`prayer.grace.${m.id}.${k}`] = FieldValue.delete();
+    }
+    if (Object.keys(update).length) await fam(c.fid).update(update);
     return {};
   },
 
