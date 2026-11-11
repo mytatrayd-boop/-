@@ -7,6 +7,7 @@ import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
 import '../engine/widget_theme.dart';
+import 'crop_screen.dart';
 import 'customize_screen.dart';
 import 'places.dart';
 import 'providers.dart';
@@ -177,7 +178,16 @@ class _Body extends ConsumerWidget {
             label: Text(l.backgroundButton),
             onPressed: () async {
               try {
-                if (await c.pickBackground()) toast(l.backgroundSaved);
+                // اللقطة ثم شاشة القص على موضع الودجت، ثم الحفظ.
+                final bytes = await ref.read(backgroundStoreProvider).pick();
+                if (bytes == null || !context.mounted) return;
+                final png = await Navigator.of(context).push<Uint8List>(MaterialPageRoute(
+                  settings: const RouteSettings(name: CropScreen.routeName),
+                  builder: (_) => CropScreen(bytes: bytes),
+                ));
+                if (png == null) return;
+                await c.saveBackground(png);
+                toast(l.backgroundSaved);
               } catch (_) {
                 // حاوية App Group غير متاحة، أو القناة غير مسجلة، أو رُفض إذن الصور.
                 toast(l.backgroundError);

@@ -29,6 +29,23 @@ double bgAlpha(WidgetTester tester) {
   return (box.decoration as BoxDecoration).color!.a;
 }
 
+/// زر «لقطة الخلفية» ثم شاشة القص بالموضع المقدّر، ثم «حفظ». فك الصورة وترميزها يحتاجان runAsync.
+Future<void> pickAndCrop(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('background-button')));
+  for (var i = 0; i < 20 && find.byKey(const Key('crop-frame')).evaluate().isEmpty; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+  }
+  expect(find.byKey(const Key('crop-frame')), findsOneWidget);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('crop-save')));
+  for (var i = 0; i < 40 && find.byKey(const Key('crop-frame')).evaluate().isNotEmpty; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+  }
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('من اليمين لليسار، والمعاينة بترتيب تصميم المالك ٣', (tester) async {
     await pumpApp(tester);
@@ -305,10 +322,14 @@ void main() {
     final store = FakeBackgroundStore();
     final bridge = await pumpApp(tester, background: store);
     expect(bridge.last['background'], isNull);
-    await tester.tap(find.byKey(const Key('background-button')));
-    await tester.pumpAndSettle();
+    await pickAndCrop(tester);
     expect(store.picks, 1);
-    expect(bridge.last['background'], 'wallpaper.jpg');
+    // القطعة المحفوظة بمقاس الودجت الكبيرة في آيفون SE (٣٢١×٣٢٤ نقطة @2).
+    expect(store.saved, hasLength(1));
+    final png = store.saved.single;
+    int be32(int o) => (png[o] << 24) | (png[o + 1] << 16) | (png[o + 2] << 8) | png[o + 3];
+    expect((be32(16), be32(20)), (642, 648));
+    expect(bridge.last['background'], 'wallpaper.png');
     expect(find.text('حُفظت لقطة الخلفية'), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
@@ -318,9 +339,8 @@ void main() {
     final store = FakeBackgroundStore();
     final bridge = await pumpApp(tester, background: store);
     expect(find.byKey(const Key('background-remove')), findsNothing, reason: 'لا لقطة بعد');
-    await tester.tap(find.byKey(const Key('background-button')));
-    await tester.pumpAndSettle();
-    expect(bridge.last['background'], 'wallpaper.jpg');
+    await pickAndCrop(tester);
+    expect(bridge.last['background'], 'wallpaper.png');
     final remove = find.byKey(const Key('background-remove'));
     await tester.ensureVisible(remove);
     await tester.tap(remove);

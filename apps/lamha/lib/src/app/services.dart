@@ -115,8 +115,11 @@ class GeolocatorLocationService implements LocationService {
 /// اختيار لقطة الخلفية (آيفون) وحفظها في حاوية App Group [appGroupId]
 /// لتقرأها الودجت من حاويتها. القص على مقاس الودجت في ميزة لاحقة.
 abstract class BackgroundStore {
-  /// اسم الملف المحفوظ داخل الحاوية (نسبي)، أو null إذا ألغى المستخدم.
-  Future<String?> pickAndSave();
+  /// صورة من المعرض (لقطة الشاشة الرئيسية)، أو null إذا ألغى المستخدم.
+  Future<Uint8List?> pick();
+
+  /// يحفظ [png] (المقصوصة على موضع الودجت) في الحاوية ويعيد اسم الملف النسبي.
+  Future<String> save(Uint8List png);
 
   /// المسار الكامل للملف [fileName] لعرضه في المعاينة، أو null.
   Future<String?> resolve(String fileName);
@@ -130,15 +133,21 @@ class AppGroupBackgroundStore implements BackgroundStore {
       appGroupChannel.invokeMethod<String>('containerPath', appGroupId);
 
   @override
-  Future<String?> pickAndSave() async {
+  Future<Uint8List?> pick() async {
     final file = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (file == null) return null;
+    return file?.readAsBytes();
+  }
+
+  /// اسم جديد في كل حفظ (فلا تبقى نسخة قديمة في ذاكرة الودجت)، وتُحذف اللقطات السابقة.
+  @override
+  Future<String> save(Uint8List png) async {
     final dir = await _container();
     if (dir == null) throw StateError('App Group غير متاح: $appGroupId');
-    final dot = file.name.lastIndexOf('.');
-    final ext = dot >= 0 ? file.name.substring(dot) : '.png';
-    final name = 'wallpaper$ext';
-    await file.saveTo('$dir${Platform.pathSeparator}$name');
+    for (final f in Directory(dir).listSync().whereType<File>()) {
+      if (f.uri.pathSegments.last.startsWith('wallpaper')) f.deleteSync();
+    }
+    final name = 'wallpaper-${DateTime.now().millisecondsSinceEpoch}.png';
+    await File('$dir${Platform.pathSeparator}$name').writeAsBytes(png, flush: true);
     return name;
   }
 

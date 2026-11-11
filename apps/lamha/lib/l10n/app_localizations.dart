@@ -787,6 +787,36 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'حُذفت لقطة الخلفية، وعادت الودجت للون السمة'**
   String get backgroundRemoved;
+
+  /// شاشة قص لقطة الخلفية
+  ///
+  /// In ar, this message translates to:
+  /// **'ضبط لقطة الخلفية'**
+  String get cropTitle;
+
+  /// شاشة قص لقطة الخلفية
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get cropSave;
+
+  /// شاشة قص لقطة الخلفية
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مقاس الودجت وموضعه في شاشتك، ثم اسحب الإطار حتى يطابق مكان الودجت تماماً.'**
+  String get cropHint;
+
+  /// مقاس الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'{size, select, large{كبير} medium{متوسط} other{{size}}}'**
+  String cropSizeName(String size);
+
+  /// موضع الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'{slot, select, top{أعلى} middle{وسط} bottom{أسفل} other{{slot}}}'**
+  String cropSlotName(String slot);
 }
 
 class _AppLocalizationsDelegate
