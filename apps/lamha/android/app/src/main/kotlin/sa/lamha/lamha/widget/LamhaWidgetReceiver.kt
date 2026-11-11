@@ -64,7 +64,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         widgetData: SharedPreferences,
     ) {
         for (id in appWidgetIds) {
-            appWidgetManager.updateAppWidget(id, views(context, widgetData, appWidgetManager.getAppWidgetOptions(id)))
+            safeUpdate(context, appWidgetManager, id, views(context, widgetData, appWidgetManager.getAppWidgetOptions(id)))
         }
         afterUpdate(context, widgetData)
     }
@@ -76,7 +76,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         newOptions: Bundle,
     ) {
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
-        appWidgetManager.updateAppWidget(appWidgetId, views(context, HomeWidgetPlugin.getData(context), newOptions))
+        safeUpdate(context, appWidgetManager, appWidgetId, views(context, HomeWidgetPlugin.getData(context), newOptions))
     }
 
     private fun afterUpdate(context: Context, widgetData: SharedPreferences) {
@@ -214,7 +214,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val mgr = AppWidgetManager.getInstance(context)
             val ids = mgr.getAppWidgetIds(ComponentName(context, LamhaWidgetReceiver::class.java))
             val prefs = HomeWidgetPlugin.getData(context)
-            for (id in ids) mgr.updateAppWidget(id, views(context, prefs, mgr.getAppWidgetOptions(id)))
+            for (id in ids) safeUpdate(context, mgr, id, views(context, prefs, mgr.getAppWidgetOptions(id)))
             LamhaNotification.refresh(context, LamhaSchedule.read(prefs.getString(SCHEDULE_KEY, null), System.currentTimeMillis()))
         }
 
@@ -247,6 +247,21 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 Log.e("LamhaWidget", "buildViews", e)
                 errorViews(context, e)
             }
+
+        /// إرسال الودجت إلى النظام. إن رفضها (تداخل زائد، حجم كبير) تُرسَل رسالة الخطأ بدلها، فلا يسقط
+        /// التطبيق مع كل فتح كما حدث في 1.1.0+10 («Too many nested views» من updateAppWidget).
+        fun safeUpdate(context: Context, mgr: AppWidgetManager, id: Int, rv: RemoteViews) {
+            try {
+                mgr.updateAppWidget(id, rv)
+            } catch (e: Exception) {
+                Log.e("LamhaWidget", "updateAppWidget", e)
+                try {
+                    mgr.updateAppWidget(id, errorViews(context, e))
+                } catch (e2: Exception) {
+                    Log.e("LamhaWidget", "updateAppWidget(error)", e2)
+                }
+            }
+        }
 
         fun errorViews(context: Context, e: Throwable): RemoteViews =
             RemoteViews(context.packageName, R.layout.widget_setup).apply {
@@ -305,14 +320,14 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val placed = rows.flatten().flatMap { LamhaLogic.cellElements(it.id) }.toSet()
             val fresh = LamhaLogic.freshWeather(weather, now, day.weatherMaxAgeMinutes)
             // التخطيط الحر (DECISIONS ٢٧): شجرة القص من الجدول، صفوفاً وأعمدة بأوزانها، كالمعاينة وآيفون.
-            day.tree?.let { tree ->
+            // شجرة أعمق من الحد (لا يكتبها التطبيق، cutTreeMaxDepth في Dart) تُرسم بالصفوف القديمة بدل أن يرفضها النظام.
+            day.tree?.takeIf { LamhaLogic.treeDepth(it) <= LamhaLogic.FREE_MAX_DEPTH }?.let { tree ->
                 val leaves = mutableSetOf<String>().also { collectLeaves(tree, it) }
                 val fenv = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, leaves, fresh)
                 val cellDp = if (maxHeight > 0) (maxHeight - 20f) / LamhaLogic.FREE_ROWS else 0f
                 rv.removeAllViews(R.id.grid)
-                val root = RemoteViews(context.packageName, FREE_V[FREE_V.size - 1])
-                root.addView(R.id.fslot, freeNode(fenv, tree, byId, cellDp))
-                rv.addView(R.id.grid, root)
+                // الجذر جزء وحيد في grid (عمود رأسي) بوزن كامل فيملؤه، بلا غلاف يزيد التداخل.
+                rv.addView(R.id.grid, freeNode(fenv, tree, byId, cellDp, vertical = true, weight = LamhaLogic.FREE_ROWS))
                 return rv
             }
             val env = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, placed, fresh)
@@ -386,16 +401,20 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             return rv
         }
 
-        /// خانات التخطيط الحر بأوزانها ١–١٠: أفقية (عرض بالوزن) ورأسية (ارتفاع بالوزن).
-        private val FREE_H = intArrayOf(
-            R.layout.widget_free_h1, R.layout.widget_free_h2, R.layout.widget_free_h3, R.layout.widget_free_h4,
-            R.layout.widget_free_h5, R.layout.widget_free_h6, R.layout.widget_free_h7, R.layout.widget_free_h8,
-            R.layout.widget_free_h9, R.layout.widget_free_h10,
+        /// أجزاء التخطيط الحر: لكل نوع (تقسيم رأسي، تقسيم أفقي، مربع) ولكل اتجاه أب (صف h أو عمود v) ملف
+        /// بالوزن ١–١٠ فيه نفسه. لا خانة تغلّف الجزء: النظام يرفض أكثر من ١٠ مستويات addView متداخلة
+        /// («Too many nested views»)، فيرمي updateAppWidget خطأً يُسقط التطبيق (إصدار 1.1.0+10).
+        private val FREE_BOX_V = mapOf(
+            false to intArrayOf(R.layout.widget_free_box_v_h1, R.layout.widget_free_box_v_h2, R.layout.widget_free_box_v_h3, R.layout.widget_free_box_v_h4, R.layout.widget_free_box_v_h5, R.layout.widget_free_box_v_h6, R.layout.widget_free_box_v_h7, R.layout.widget_free_box_v_h8, R.layout.widget_free_box_v_h9, R.layout.widget_free_box_v_h10),
+            true to intArrayOf(R.layout.widget_free_box_v_v1, R.layout.widget_free_box_v_v2, R.layout.widget_free_box_v_v3, R.layout.widget_free_box_v_v4, R.layout.widget_free_box_v_v5, R.layout.widget_free_box_v_v6, R.layout.widget_free_box_v_v7, R.layout.widget_free_box_v_v8, R.layout.widget_free_box_v_v9, R.layout.widget_free_box_v_v10),
         )
-        private val FREE_V = intArrayOf(
-            R.layout.widget_free_v1, R.layout.widget_free_v2, R.layout.widget_free_v3, R.layout.widget_free_v4,
-            R.layout.widget_free_v5, R.layout.widget_free_v6, R.layout.widget_free_v7, R.layout.widget_free_v8,
-            R.layout.widget_free_v9, R.layout.widget_free_v10,
+        private val FREE_BOX_H = mapOf(
+            false to intArrayOf(R.layout.widget_free_box_h_h1, R.layout.widget_free_box_h_h2, R.layout.widget_free_box_h_h3, R.layout.widget_free_box_h_h4, R.layout.widget_free_box_h_h5, R.layout.widget_free_box_h_h6, R.layout.widget_free_box_h_h7, R.layout.widget_free_box_h_h8, R.layout.widget_free_box_h_h9, R.layout.widget_free_box_h_h10),
+            true to intArrayOf(R.layout.widget_free_box_h_v1, R.layout.widget_free_box_h_v2, R.layout.widget_free_box_h_v3, R.layout.widget_free_box_h_v4, R.layout.widget_free_box_h_v5, R.layout.widget_free_box_h_v6, R.layout.widget_free_box_h_v7, R.layout.widget_free_box_h_v8, R.layout.widget_free_box_h_v9, R.layout.widget_free_box_h_v10),
+        )
+        private val FREE_LEAF = mapOf(
+            false to intArrayOf(R.layout.widget_free_leaf_h1, R.layout.widget_free_leaf_h2, R.layout.widget_free_leaf_h3, R.layout.widget_free_leaf_h4, R.layout.widget_free_leaf_h5, R.layout.widget_free_leaf_h6, R.layout.widget_free_leaf_h7, R.layout.widget_free_leaf_h8, R.layout.widget_free_leaf_h9, R.layout.widget_free_leaf_h10),
+            true to intArrayOf(R.layout.widget_free_leaf_v1, R.layout.widget_free_leaf_v2, R.layout.widget_free_leaf_v3, R.layout.widget_free_leaf_v4, R.layout.widget_free_leaf_v5, R.layout.widget_free_leaf_v6, R.layout.widget_free_leaf_v7, R.layout.widget_free_leaf_v8, R.layout.widget_free_leaf_v9, R.layout.widget_free_leaf_v10),
         )
 
         private fun collectLeaves(n: LamhaLogic.CutTree, out: MutableSet<String>) {
@@ -407,10 +426,14 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         }
 
         /// جزء من الشجرة: مربع بحشوته، أو فراغ، أو صف/عمود أجزاؤه بأوزانها.
-        private fun freeNode(env: Env, n: LamhaLogic.CutTree, byId: Map<String, LamhaLogic.Tile>, cellDp: Float): RemoteViews {
+        /// [vertical]: اتجاه الأب (عمود أم صف)، و[weight] وزن الجزء فيه.
+        private fun freeNode(
+            env: Env, n: LamhaLogic.CutTree, byId: Map<String, LamhaLogic.Tile>, cellDp: Float, vertical: Boolean, weight: Int,
+        ): RemoteViews {
             val pkg = env.context.packageName
+            fun layout(kind: Map<Boolean, IntArray>) = kind.getValue(vertical)[(weight - 1).coerceIn(0, LamhaLogic.FREE_ROWS - 1)]
             return when (n) {
-                is LamhaLogic.CutTree.Leaf -> RemoteViews(pkg, R.layout.widget_free_leaf).apply {
+                is LamhaLogic.CutTree.Leaf -> RemoteViews(pkg, layout(FREE_LEAF)).apply {
                     val spec = byId[n.id] ?: LamhaLogic.Tile(n.id)
                     val rect = spec.rect
                     val span = LamhaLogic.spanOfWidth(rect?.getOrNull(2) ?: 6)
@@ -427,13 +450,10 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                         addView(R.id.fleaf, content)
                     }
                 }
-                LamhaLogic.CutTree.Empty -> RemoteViews(pkg, R.layout.widget_free_leaf)
-                is LamhaLogic.CutTree.Split -> RemoteViews(pkg, if (n.vertical) R.layout.widget_free_box_v else R.layout.widget_free_box_h).apply {
+                LamhaLogic.CutTree.Empty -> RemoteViews(pkg, layout(FREE_LEAF))
+                is LamhaLogic.CutTree.Split -> RemoteViews(pkg, layout(if (n.vertical) FREE_BOX_V else FREE_BOX_H)).apply {
                     for ((w, child) in n.children) {
-                        val slots = if (n.vertical) FREE_V else FREE_H
-                        val slot = RemoteViews(pkg, slots[(w - 1).coerceIn(0, slots.size - 1)])
-                        slot.addView(R.id.fslot, freeNode(env, child, byId, cellDp))
-                        addView(R.id.fbox, slot)
+                        addView(R.id.fbox, freeNode(env, child, byId, cellDp, n.vertical, w))
                     }
                 }
             }

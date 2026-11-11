@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lamha/src/engine/widget_layout.dart';
 
@@ -101,5 +103,46 @@ void main() {
       final r = rectsOf([for (final id in order) TileLayout(id)]);
       expect(cutTree(r), isNotNull, reason: '$order');
     }
+  });
+
+  test('شجرة القص لا تتجاوز cutTreeMaxDepth (ودجت أندرويد تسقط بأكثر من ١٠ مستويات)', () {
+    // سحب وتكبير عشوائيان: كل حركة مقبولة شجرتها ضمن الحد، والمرفوضة لا تغيّر شيئاً.
+    final rnd = Random(7);
+    var rects = rectsOf(defaultLayout);
+    var accepted = 0;
+    for (var i = 0; i < 3000; i++) {
+      final id = rects.keys.elementAt(rnd.nextInt(rects.length));
+      final next = place(rects, id, GridRect(rnd.nextInt(6), rnd.nextInt(10), 1 + rnd.nextInt(6), 1 + rnd.nextInt(4)));
+      final tree = cutTree(next);
+      if (tree == null) continue;
+      expect(tree.depth, lessThanOrEqualTo(cutTreeMaxDepth));
+      rects = next;
+      accepted++;
+    }
+    expect(accepted, greaterThan(100));
+    expect(cutTree(rectsOf(defaultLayout))!.depth, lessThanOrEqualTo(cutTreeMaxDepth));
+  });
+
+  test('شجرة أعمق من الحد تُرفض', () {
+    // دوّامة متداخلة: كل عنصر يأخذ شريطاً ويترك الباقي للتالي، بالتناوب أفقياً ورأسياً.
+    final ids = [c, dw, hi, gr, qi, pt, de, se, ts];
+    final r = <WidgetElement, GridRect>{};
+    var x = 0, y = 0, w = 6, h = 10;
+    for (var i = 0; i < ids.length && w > 0 && h > 0; i++) {
+      if (i.isEven) {
+        r[ids[i]] = GridRect(x, y, w, 1);
+        y++;
+        h--;
+      } else {
+        r[ids[i]] = GridRect(x, y, 1, h);
+        x++;
+        w--;
+      }
+    }
+    expect(r.length, 9);
+    expect(cutTree(r), isNull);
+    // rectsOf لا يعطي شجرة مرفوضة أبداً: يرجع إلى الرصّ بالصفوف.
+    final layout = [for (final e in r.entries) TileLayout(e.key).copyWith(rect: () => e.value)];
+    expect(cutTree(rectsOf(layout)), isNotNull);
   });
 }
