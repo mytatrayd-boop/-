@@ -29,9 +29,10 @@ class OverlayMixer {
         return n;
       });
       if (!s.ready) continue;
-      if (s.vol != o.vol) {
-        s.vol = o.vol;
-        s.p.setVolume(o.vol.clamp(0.0, 1.0));
+      final g = o.gainAt((d - o.at).clamp(0.0, o.len)).clamp(0.0, 1.0); // مستوى الصوت مع التدرج
+      if ((s.vol - g).abs() > 0.02 || (g == 0) != (s.vol == 0)) {
+        s.vol = g;
+        s.p.setVolume(g);
       }
       final want = o.src0 + (d - o.at);
       if (playing && d >= o.at && d < o.at + o.len) {

@@ -11,11 +11,32 @@ const sr = 16000;
 /// (زمن العرض بعد القصّ)، بمستوى صوت vol من 0 إلى 1.
 class AudioLayer {
   double src0, src1, at, vol;
+  double fadeIn = 0, fadeOut = 0; // تدرج الدخول والخروج بالثواني
   AudioLayer(this.src0, this.src1, this.at, [this.vol = 1.0]);
   double get len => src1 - src0;
-  Map<String, dynamic> toJson() => {'a': src0, 'b': src1, 'at': at, 'v': vol};
+  Map<String, dynamic> toJson() => {'a': src0, 'b': src1, 'at': at, 'v': vol, 'fi': fadeIn, 'fo': fadeOut};
   factory AudioLayer.fromJson(Map<String, dynamic> j) => AudioLayer(
-      (j['a'] as num).toDouble(), (j['b'] as num).toDouble(), (j['at'] as num).toDouble(), (j['v'] as num?)?.toDouble() ?? 1.0);
+      (j['a'] as num).toDouble(), (j['b'] as num).toDouble(), (j['at'] as num).toDouble(), (j['v'] as num?)?.toDouble() ?? 1.0)
+    ..fadeIn = (j['fi'] as num?)?.toDouble() ?? 0
+    ..fadeOut = (j['fo'] as num?)?.toDouble() ?? 0;
+
+  /// مستوى الصوت عند ثانية x من بداية القطعة (مع التدرج).
+  double gainAt(double x) => vol * fadeGain(x, len - x, fadeIn, fadeOut);
+}
+
+/// خصائص قطعة في المسار الأول: مستوى الصوت والتدرج (تنتقل معها إن سُحبت إلى المسار الثاني).
+class ClipFx {
+  double vol, fin, fout;
+  ClipFx([this.vol = 1, this.fin = 0, this.fout = 0]);
+  bool get isDefault => vol == 1 && fin == 0 && fout == 0;
+}
+
+/// معامل التدرج: يعلو من 0 خلال fin ثانية من البداية، وينخفض إلى 0 خلال fout ثانية قبل النهاية.
+double fadeGain(double fromStart, double toEnd, double fin, double fout) {
+  var g = 1.0;
+  if (fin > 0) g = min(g, fromStart / fin);
+  if (fout > 0) g = min(g, toEnd / fout);
+  return g.clamp(0.0, 1.0);
 }
 
 class Segment {

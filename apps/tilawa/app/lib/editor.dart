@@ -6,10 +6,16 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'media.dart';
 import 'quran.dart';
 import 'sync.dart';
+
+Map<double, ClipFx> fxFromJson(List l) => {
+      for (final e in l)
+        (e[0] as num).toDouble(): ClipFx((e[1] as num).toDouble(), (e[2] as num).toDouble(), (e[3] as num).toDouble())
+    };
 
 class EditorModel extends ChangeNotifier {
   List<Segment> segs = [];
@@ -21,6 +27,7 @@ class EditorModel extends ChangeNotifier {
   Float32List peaks = Float32List(0); // أعلى قيمة لكل 10 ملي ثانية
   double pps = 60; // بكسل لكل ثانية
   List<AudioLayer> overlays = []; // قطع المسار الصوتي الثاني
+  Map<double, ClipFx> fx = {}; // خصائص قطع المسار الأول (مستوى الصوت والتدرج) بمفتاح بداية القطعة
   List<(double, double)> muted = []; // أجزاء من المسار الأول صامتة (نُقل صوتها إلى المسار الثاني) بوقت الملف
   AudioLayer? ovSel; // القطعة المحددة على المسار الثاني
   List<double> clipEdges = []; // بدايات المقاطع الصوتية (ما عدا الأول) لرسم حدودها على الخط الزمني
@@ -37,6 +44,7 @@ class EditorModel extends ChangeNotifier {
       splits = [];
       overlays = [];
       muted = [];
+      fx = {};
       ovSel = null;
       selected = null;
       audioSel = null;
@@ -85,6 +93,7 @@ class EditorModel extends ChangeNotifier {
       'p': splits,
       'o': [for (final o in overlays) o.toJson()],
       'm': [for (final (x, y) in muted) [x, y]],
+      'f': [for (final e in fx.entries) [e.key, e.value.vol, e.value.fin, e.value.fout]],
       if (ex != null) 'x': ex,
     });
   }
@@ -96,6 +105,7 @@ class EditorModel extends ChangeNotifier {
     splits = [for (final p in j['p'] as List) (p as num).toDouble()];
     if (j['o'] is List) overlays = [for (final o in j['o'] as List) AudioLayer.fromJson(o as Map<String, dynamic>)];
     if (j['m'] is List) muted = [for (final c in j['m'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())];
+    if (j['f'] is List) fx = fxFromJson(j['f'] as List);
     ovSel = null;
     selected = null;
     audioSel = null;
@@ -349,7 +359,10 @@ class EditorModel extends ChangeNotifier {
   /// ويصير مكانها في الأول فراغاً صامتاً.
   void liftToLane2(double a, double b, double at) {
     checkpoint();
-    final layer = AudioLayer(a, b, max(0.0, at));
+    final f = fx[a]; // خصائص القطعة تنتقل معها
+    final layer = AudioLayer(a, b, max(0.0, at), f?.vol ?? 1)
+      ..fadeIn = f?.fin ?? 0
+      ..fadeOut = f?.fout ?? 0;
     muted = [...muted, (a, b)];
     overlays = [...overlays, layer];
     audioSel = null;
@@ -362,8 +375,35 @@ class EditorModel extends ChangeNotifier {
   void returnToLane1(AudioLayer o) {
     checkpoint();
     overlays = [...overlays]..remove(o);
+    final f = ClipFx(o.vol, o.fadeIn, o.fadeOut);
+    if (f.isDefault) {
+      fx.remove(o.src0);
+    } else {
+      fx = {...fx, o.src0: f};
+    }
     muted = [for (final r in muted) if (!(r.$1 < o.src1 && r.$2 > o.src0)) r];
     ovSel = null;
+    notifyListeners();
+  }
+
+  /// مستوى صوت المسار الأول عند وقت الملف t: صفر في الأجزاء المنقولة، ومستوى القطعة وتدرجها في غيرها.
+  double lane1Gain(double t) {
+    if (isMuted(t)) return 0;
+    if (fx.isEmpty) return 1;
+    for (final (a, b) in audioClips) {
+      if (t >= a && t < b) {
+        final f = fx[a];
+        return f == null ? 1 : f.vol * fadeGain(t - a, b - t, f.fin, f.fout);
+      }
+    }
+    return 1;
+  }
+
+  /// خصائص قطعة المسار الأول (a: بدايتها).
+  ClipFx clipFx(double a) => fx[a] ?? ClipFx();
+  void setClipFx(double a, ClipFx f) {
+    fx = {...fx}..removeWhere((k, _) => k == a);
+    if (!f.isDefault) fx[a] = f;
     notifyListeners();
   }
 
@@ -380,8 +420,9 @@ class EditorModel extends ChangeNotifier {
     if (o == null || d <= o.at + 0.1 || d >= o.at + o.len - 0.1) return;
     checkpoint();
     final cut = o.src0 + (d - o.at);
-    final second = AudioLayer(cut, o.src1, d, o.vol);
+    final second = AudioLayer(cut, o.src1, d, o.vol)..fadeOut = o.fadeOut; // تدرج الخروج ينتقل للجزء الثاني
     o.src1 = cut;
+    o.fadeOut = 0;
     overlays = [...overlays, second];
     notifyListeners();
   }
@@ -391,7 +432,9 @@ class EditorModel extends ChangeNotifier {
     final o = ovSel;
     if (o == null) return;
     checkpoint();
-    final c = AudioLayer(o.src0, o.src1, o.at + o.len, o.vol);
+    final c = AudioLayer(o.src0, o.src1, o.at + o.len, o.vol)
+      ..fadeIn = o.fadeIn
+      ..fadeOut = o.fadeOut;
     overlays = [...overlays, c];
     ovSel = c;
     notifyListeners();
@@ -520,20 +563,12 @@ class _TimelineState extends State<Timeline> {
           final g = m.sel;
           if (d.pointerCount != 1) return;
           if (p.dy >= _lane2Top - 4) {
-            // المسار الثاني: طرفا القطعة المحددة للقص، أو القطعة نفسها للسحب
+            // المسار الثاني: سحب طرفي القطعة المحددة يقصّها (سحبها كاملة بالضغط المطوّل)
             final sel = m.ovSel;
             if (sel != null && (p.dx - (_w / 2 + (sel.at - m.dispPos) * m.pps)).abs() < 22) {
               _mode = 'ovL';
             } else if (sel != null && (p.dx - (_w / 2 + (sel.at + sel.len - m.dispPos) * m.pps)).abs() < 22) {
               _mode = 'ovR';
-            } else {
-              final o = _ovAt(p.dx);
-              if (o != null) {
-                m.ovSel = o;
-                m.selected = null;
-                m.audioSel = null;
-                _mode = 'ov';
-              }
             }
             final o = m.ovSel;
             if (o != null) {
@@ -541,10 +576,6 @@ class _TimelineState extends State<Timeline> {
               _s0 = o.src0;
               _b0 = o.src1;
             }
-          } else if (p.dy >= _waveTop && p.dy < _waveTop + _waveH) {
-            // المسار الأول: إن اتجه السحب للأسفل تُرفع القطعة إلى المسار الثاني، وإلا فهو تمرير عادي
-            final t = x2t(p.dx);
-            _liftClip = m.audioClips.where((c) => t >= c.$1 && t <= c.$2).firstOrNull;
           } else if (g != null && p.dy >= _segTop && p.dy < _segTop + _segH) {
             final xs = t2x(g.start), xe = t2x(g.end);
             if ((p.dx - xs).abs() < 20) {
@@ -567,23 +598,11 @@ class _TimelineState extends State<Timeline> {
           if (!_moved && (dx.abs() > 3 || dy.abs() > 3)) {
             _moved = true;
             widget.onScrub?.call();
-            // سحب قطعة المسار الأول للأسفل = رفعها إلى المسار الثاني
-            if (_liftClip != null && dy > 6 && dy.abs() > dx.abs()) _mode = 'lift';
-            if (_mode != 'scrub' && _mode != 'lift') m.checkpoint();
+            if (_mode != 'scrub') m.checkpoint();
           }
           if (!_moved) return;
           final o = m.ovSel;
           switch (_mode) {
-            case 'lift':
-              final (a, b) = _liftClip!;
-              m.ghost = (a, b, max(0.0, m.toDisp(a) + dt), p.dy >= _lane2Top - 24);
-              m.changed();
-              return;
-            case 'ov' when o != null:
-              o.at = max(0.0, _a0 + dt);
-              m.dropBack = p.dy < _lane2Top - 24; // رفعها للأعلى = إرجاعها للمسار الأول
-              m.changed();
-              return;
             case 'ovL' when o != null:
               // قص البداية: تتحرك البداية ويبقى باقي الصوت في مكانه
               final shift = dt.clamp(-min(_a0, _s0), (o.src1 - 0.2) - _s0);
@@ -611,22 +630,64 @@ class _TimelineState extends State<Timeline> {
           }
           m.changed();
         },
-        onScaleEnd: (_) {
+        // ضغطة مطوّلة على قطعة صوت (في أي مسار) تمسكها، ثم تُسحب وتُفلت كما في كاب كات
+        onLongPressStart: (d) {
+          final p = d.localPosition;
+          _x0 = p.dx;
+          _moved = false;
+          _liftClip = null;
+          _mode = '';
+          if (p.dy >= _lane2Top - 4) {
+            final o = _ovAt(p.dx);
+            if (o == null) return;
+            m.ovSel = o;
+            m.selected = null;
+            m.audioSel = null;
+            _a0 = o.at;
+            _mode = 'grab2';
+          } else if (p.dy >= _waveTop && p.dy < _waveTop + _waveH) {
+            final t = x2t(p.dx);
+            _liftClip = m.audioClips.where((c) => t >= c.$1 && t <= c.$2).firstOrNull;
+            final c = _liftClip;
+            if (c == null) return;
+            m.ghost = (c.$1, c.$2, m.toDisp(c.$1), false);
+            _mode = 'grab1';
+          } else {
+            return;
+          }
+          HapticFeedback.mediumImpact();
+          widget.onScrub?.call();
+          m.changed();
+        },
+        onLongPressMoveUpdate: (d) {
+          final p = d.localPosition, dt = (p.dx - _x0) / m.pps;
+          if (_mode == 'grab1') {
+            final (a, b) = _liftClip!;
+            m.ghost = (a, b, max(0.0, m.toDisp(a) + dt), p.dy >= _lane2Top - 24);
+            m.changed();
+          } else if (_mode == 'grab2' && m.ovSel != null) {
+            if (!_moved) {
+              _moved = true;
+              m.checkpoint();
+            }
+            m.ovSel!.at = max(0.0, _a0 + dt);
+            m.dropBack = p.dy < _lane2Top - 24; // رفعها فوق المسار الأول = إرجاعها إليه
+            m.changed();
+          }
+        },
+        onLongPressEnd: (_) {
           final o = m.ovSel;
-          if (_mode == 'lift') {
+          if (_mode == 'grab1') {
             final gh = m.ghost;
             m.ghost = null;
             if (gh != null && gh.$4) {
-              m.liftToLane2(gh.$1, gh.$2, gh.$3); // تسقط القطعة كاملة في المسار الثاني
+              m.liftToLane2(gh.$1, gh.$2, gh.$3); // تسقط القطعة كاملة بخصائصها في المسار الثاني
             } else {
               m.changed();
             }
-          } else if (_mode == 'ov' && o != null && m.dropBack) {
+          } else if (_mode == 'grab2' && o != null && m.dropBack) {
             m.dropBack = false;
             m.returnToLane1(o);
-          } else if (m.dropBack) {
-            m.dropBack = false;
-            m.changed();
           }
           _mode = '';
           _liftClip = null;
@@ -758,6 +819,19 @@ class _TimelinePainter extends CustomPainter {
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(l + 1, _lane2Top, 10, _lane2H), const Radius.circular(4)), h);
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(r - 11, _lane2Top, 10, _lane2H), const Radius.circular(4)), h);
       }
+    }
+    // التدرج: مثلث داكن عند بداية القطعة ونهايتها بطول مدته
+    void wedge(double l, double r, double top, double h, double fin, double fout) {
+      final p = Paint()..color = Colors.black.withValues(alpha: 0.45);
+      if (fin > 0) c.drawPath(Path()..moveTo(l, top)..lineTo(min(r, l + fin * m.pps), top)..lineTo(l, top + h)..close(), p);
+      if (fout > 0) c.drawPath(Path()..moveTo(r, top)..lineTo(max(l, r - fout * m.pps), top)..lineTo(r, top + h)..close(), p);
+    }
+    for (final (a, b) in m.audioClips) {
+      final f = m.fx[a];
+      if (f != null) wedge(dx(m.toDisp(a)), dx(m.toDisp(b)), _waveTop, _waveH, f.fin, f.fout);
+    }
+    for (final o in m.overlays) {
+      wedge(dx(o.at), dx(o.at + o.len), _lane2Top, _lane2H, o.fadeIn, o.fadeOut);
     }
     // القطعة التي تُسحب من المسار الأول: ظلّ يتبع الإصبع، يتلوّن حين يصير فوق المسار الثاني
     final gh = m.ghost;

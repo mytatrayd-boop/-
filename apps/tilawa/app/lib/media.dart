@@ -149,6 +149,7 @@ Future<String> renderVideo({
   required List<(double, double)> kept,
   List<AudioLayer> overlays = const [], // المسار الصوتي الثاني (يُمزج مع الأول)
   List<(double, double)> muted = const [], // أجزاء صامتة في الأول بوقت الملف
+  List<(double, double, ClipFx)> clipFx = const [], // خصائص قطع الأول: (من، إلى، مستوى وتدرج) بوقت الملف
   int height = 1920, // 1920 = 1080p، و1280 = 720p
   required void Function(double) onProgress,
 }) async {
@@ -207,9 +208,18 @@ Future<String> renderVideo({
   final mute = muted.isEmpty
       ? ''
       : "volume=0:enable='${[for (final (a, b) in muted) 'between(t,${a.toStringAsFixed(3)},${b.toStringAsFixed(3)})'].join('+')}',";
+  // مستوى صوت كل قطعة وتدرجها في المسار الأول (بأوقات الملف، قبل القص)
+  String f3(double x) => x.toStringAsFixed(3);
+  final gains = [
+    for (final (a, b, f) in clipFx) ...[
+      if (f.vol != 1) "volume=${f.vol.toStringAsFixed(2)}:enable='between(t,${f3(a)},${f3(b)})'",
+      if (f.fin > 0) "volume=eval=frame:volume='if(between(t,${f3(a)},${f3(a + f.fin)}),(t-${f3(a)})/${f3(f.fin)},1)'",
+      if (f.fout > 0) "volume=eval=frame:volume='if(between(t,${f3(b - f.fout)},${f3(b)}),(${f3(b)}-t)/${f3(f.fout)},1)'",
+    ]
+  ].map((x) => '$x,').join();
   final parts = [
     for (var k = 0; k < kept.length; k++)
-      '[$n:a]${mute}atrim=start=${kept[k].$1.toStringAsFixed(3)}:end=${kept[k].$2.toStringAsFixed(3)},asetpts=PTS-STARTPTS[a$k]'
+      '[$n:a]$mute${gains}atrim=start=${kept[k].$1.toStringAsFixed(3)}:end=${kept[k].$2.toStringAsFixed(3)},asetpts=PTS-STARTPTS[a$k]'
   ];
   chain.addAll(parts);
   chain.add('${[for (var k = 0; k < kept.length; k++) '[a$k]'].join()}concat=n=${kept.length}:v=0:a=1[aout]');
@@ -277,7 +287,11 @@ Future<String> renderVideo({
       final o = ovs[j];
       args.addAll(['-i', audio]);
       final ms = (o.at * 1000).round();
-      chain.add('[${nIn++}:a]atrim=start=${o.src0.toStringAsFixed(3)}:end=${o.src1.toStringAsFixed(3)},asetpts=PTS-STARTPTS,'
+      final fades = [
+        if (o.fadeIn > 0) 'afade=t=in:st=0:d=${o.fadeIn.toStringAsFixed(3)}',
+        if (o.fadeOut > 0) 'afade=t=out:st=${max(0.0, o.len - o.fadeOut).toStringAsFixed(3)}:d=${o.fadeOut.toStringAsFixed(3)}',
+      ].map((x) => '$x,').join();
+      chain.add('[${nIn++}:a]atrim=start=${o.src0.toStringAsFixed(3)}:end=${o.src1.toStringAsFixed(3)},asetpts=PTS-STARTPTS,$fades'
           'volume=${o.vol.clamp(0.0, 1.0).toStringAsFixed(2)},adelay=$ms:all=1[ov$j]');
       labels.add('[ov$j]');
     }

@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -89,7 +90,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   bool _dirty = false;
   Timer? _saver;
   OverlayMixer? mixer; // تشغيل المسار الصوتي الثاني مع الأول
-  bool _muteOn = false;
+  double _gain = 1;
   Stopwatch? _tailSw; // تشغيل ما بعد نهاية المسار الأول (المسار الثاني وحده)
   double _tailFrom = 0;
   bool get playing => player.playing || _tailSw != null;
@@ -192,10 +193,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       mixer?.update(m.overlays, m.dispPos, player.playing || _tailSw != null);
       if (!player.playing) return;
       final t = player.position.inMilliseconds / 1000;
-      final mute = m.isMuted(t); // الجزء الذي نُقل صوته للمسار الثاني صامت في الأول
-      if (mute != _muteOn) {
-        _muteOn = mute;
-        player.setVolume(mute ? 0 : 1);
+      // مستوى صوت المسار الأول: صامت فيما نُقل للثاني، ومع مستوى القطعة وتدرجها
+      final g = m.lane1Gain(t);
+      if ((g - _gain).abs() > 0.02 || (g == 0) != (_gain == 0)) {
+        _gain = g;
+        player.setVolume(g);
       }
       final skip = m.skipCut(t);
       if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
@@ -283,6 +285,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         'splits': m.splits,
         'overlays': [for (final o in m.overlays) o.toJson()],
         'muted': [for (final (a, b) in m.muted) [a, b]],
+        'fx': [for (final e in m.fx.entries) [e.key, e.value.vol, e.value.fin, e.value.fout]],
         'playhead': m.playhead,
         'look': look.toJson(),
         'bgs': bgJson,
@@ -375,6 +378,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       m.clipEdges = [for (final c in clips.skip(1)) c.start];
       m.overlays = [for (final o in (data['overlays'] as List? ?? const [])) AudioLayer.fromJson(o as Map<String, dynamic>)];
       m.muted = [for (final c in (data['muted'] as List? ?? const [])) ((c[0] as num).toDouble(), (c[1] as num).toDouble())];
+      m.fx = fxFromJson(data['fx'] as List? ?? const []);
       m.restore(
         [for (final g in data['segs'] as List) Segment.fromJson(g as Map<String, dynamic>)],
         [for (final c in data['cuts'] as List) ((c[0] as num).toDouble(), (c[1] as num).toDouble())],
@@ -829,6 +833,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         look: look,
         overlays: m.overlays,
         muted: m.muted,
+        clipFx: [for (final (a, b) in m.audioClips) if (m.fx[a] != null) (a, b, m.fx[a]!)],
         segSurahs: [for (final g in list) _sOf(g)],
         headerOf: _headerOf,
         kept: keptRanges(0, end, m.cuts),
@@ -1156,7 +1161,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
             items = [
               _tool(Icons.content_cut, 'تقسيم', m.splitOverlay),
               _tool(Icons.copy, 'تكرار', m.duplicateOverlay),
-              _tool(Icons.volume_up, 'مستوى الصوت', () => _sheet(_ovVolPanel)),
+              _tool(Icons.volume_up, 'مستوى الصوت', () => _clipSheet(_volPanel)),
+              _tool(Icons.signal_cellular_alt, 'التدرج', () => _clipSheet(_fadePanel)),
               _tool(Icons.vertical_align_top, 'إرجاع للمسار الأول', () => m.returnToLane1(m.ovSel!)),
               _tool(Icons.delete_outline, 'حذف', m.deleteOverlay),
             ];
@@ -1164,6 +1170,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
             back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
             items = [
               _tool(Icons.content_cut, 'تقسيم', m.splitAudio),
+              _tool(Icons.volume_up, 'مستوى الصوت', () => _clipSheet(_volPanel)),
+              _tool(Icons.signal_cellular_alt, 'التدرج', () => _clipSheet(_fadePanel)),
               _tool(Icons.delete_outline, 'حذف', m.deleteAudio),
               _tool(Icons.restore, 'استرجاع المحذوف', m.cuts.isEmpty ? null : m.restoreAudio),
             ];
@@ -1427,15 +1435,55 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         },
       );
 
-  Widget _ovVolPanel() {
-    final o = m.ovSel;
-    if (o == null) return const SizedBox();
+  /// لوحة خصائص قطعة الصوت المحددة (في المسار الأول أو الثاني)، وتعديلها تراجع واحد.
+  void _clipSheet(Widget Function() panel) {
+    m.checkpoint();
+    _sheet(panel);
+  }
+
+  /// قراءة/كتابة خصائص القطعة المحددة أياً كان مسارها: (مستوى، دخول، خروج، طول القطعة).
+  (double, double, double, double)? _selFx() {
+    final o = m.ovSel, s = m.audioSel;
+    if (o != null) return (o.vol, o.fadeIn, o.fadeOut, o.len);
+    if (s != null) {
+      final f = m.clipFx(s.$1);
+      return (f.vol, f.fin, f.fout, s.$2 - s.$1);
+    }
+    return null;
+  }
+
+  void _setSelFx({double? vol, double? fin, double? fout}) {
+    final o = m.ovSel, s = m.audioSel;
+    if (o != null) {
+      o.vol = vol ?? o.vol;
+      o.fadeIn = fin ?? o.fadeIn;
+      o.fadeOut = fout ?? o.fadeOut;
+      m.changed();
+    } else if (s != null) {
+      final f = m.clipFx(s.$1);
+      m.setClipFx(s.$1, ClipFx(vol ?? f.vol, fin ?? f.fin, fout ?? f.fout));
+    }
+  }
+
+  Widget _volPanel() {
+    final f = _selFx();
+    if (f == null) return const SizedBox();
     return _pad([
-      _slider('مستوى الصوت ${(o.vol * 100).round()}٪', o.vol, 0, 1, (x) {
-        o.vol = x;
-        m.changed();
-      }, div: 20),
-      const Text('اسحب القطعة أفقياً لتغيير موضعها، واسحب طرفيها لقصّها، وارفعها للأعلى لإرجاعها للمسار الأول.', style: TextStyle(fontSize: 12)),
+      _slider('مستوى الصوت ${(f.$1 * 100).round()}٪', f.$1, 0, 1, (x) => _setSelFx(vol: x), div: 20),
+      const Text('اضغط مطوّلاً على القطعة ثم اسحبها لنقلها بين المسارين، واسحب طرفي قطعة المسار الثاني لقصّها.',
+          style: TextStyle(fontSize: 12)),
+    ]);
+  }
+
+  Widget _fadePanel() {
+    final f = _selFx();
+    if (f == null) return const SizedBox();
+    final hi = max(0.1, min(5.0, f.$4 / 2)); // التدرج حتى نصف القطعة أو 5 ث
+    return _pad([
+      _slider('دخول تدريجي ${f.$2.toStringAsFixed(1)} ث', f.$2, 0, hi, (x) => _setSelFx(fin: x), div: 50),
+      _slider('خروج تدريجي ${f.$3.toStringAsFixed(1)} ث', f.$3, 0, hi, (x) => _setSelFx(fout: x), div: 50),
+      const Text('مع تداخل المسارين: خروج تدريجي لآخر الأول ودخول تدريجي لأول الثاني يجعلان الانتقال طبيعياً.',
+          style: TextStyle(fontSize: 12)),
     ]);
   }
 

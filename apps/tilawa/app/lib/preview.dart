@@ -154,7 +154,7 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
   late final OverlayMixer mixer = OverlayMixer(widget.audio);
   Stopwatch? tailSw; // بعد نهاية المسار الأول يكمل الثاني وحده
   double tail = 0;
-  bool _muteOn = false;
+  double _gain = 1;
   late final Ticker ticker = createTicker((_) => _tick());
   Composer get c => widget.composer;
   double t = 0;
@@ -208,10 +208,10 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
       }
     }
     mixer.update(c.m.overlays, (outTime(min(now, c.end), c.kept) ?? (now >= c.end ? c.outDuration : 0)) + tail, playing);
-    final mute = c.m.isMuted(now);
-    if (mute != _muteOn) {
-      _muteOn = mute;
-      player.setVolume(mute ? 0 : 1);
+    final g = c.m.lane1Gain(now);
+    if ((g - _gain).abs() > 0.02 || (g == 0) != (_gain == 0)) {
+      _gain = g;
+      player.setVolume(g);
     }
     final skip = c.m.skipCut(now);
     if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));

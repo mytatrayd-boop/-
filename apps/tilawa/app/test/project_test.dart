@@ -115,4 +115,27 @@ void main() {
     final l = AudioLayer.fromJson(m.overlays.first.toJson());
     expect((l.src0, l.at, l.vol), (5.0, 17.0, 1.0));
   });
+
+  test('التدرج ومستوى الصوت: يعملان في المسار الأول، وينتقلان مع القطعة بين المسارين', () {
+    expect(fadeGain(0.5, 10, 1, 0), 0.5);
+    expect(fadeGain(5, 0.25, 1, 1), 0.25);
+    expect(fadeGain(5, 5, 0, 0), 1);
+    final m = EditorModel()..setAudio(Float32List(sr * 20));
+    m.splits = [10.0];
+    m.setClipFx(10.0, ClipFx(0.8, 2, 1)); // القطعة الثانية (10..20)
+    expect(m.lane1Gain(5), 1.0);
+    expect(m.lane1Gain(11), closeTo(0.4, 1e-9)); // منتصف الدخول × 0.8
+    expect(m.lane1Gain(19.5), closeTo(0.4, 1e-9)); // منتصف الخروج × 0.8
+    m.liftToLane2(10, 20, 9); // تسقط بخصائصها
+    final o = m.overlays.single;
+    expect((o.vol, o.fadeIn, o.fadeOut), (0.8, 2.0, 1.0));
+    expect(o.gainAt(1), closeTo(0.4, 1e-9));
+    expect(m.lane1Gain(15), 0.0); // مكانها في الأول صامت
+    o.fadeIn = 0.5;
+    m.returnToLane1(o); // تعود بخصائصها المعدّلة
+    expect(m.clipFx(10.0).fin, 0.5);
+    expect(m.lane1Gain(15), closeTo(0.8, 1e-9));
+    m.undo();
+    expect(m.overlays.single.fadeIn, 0.5);
+  });
 }
