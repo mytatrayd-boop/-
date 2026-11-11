@@ -34,6 +34,25 @@ def invite_user(email: str):
     print("invitation sent by Apple: accept it from the email, then run again to join the group")
 
 
+def describe(group: dict, email: str):
+    """يطبع حالة البريد: مستخدم App Store Connect (أدواره ورؤيته للتطبيقات)، ومختبر (حالته ومجموعاته)."""
+    for u in api("GET", f"/users?filter[username]={email}&limit=5")["data"]:
+        a = u["attributes"]
+        print(f"user: roles={a.get('roles')} allAppsVisible={a.get('allAppsVisible')}")
+    members = api("GET", f"/betaGroups/{group['id']}/betaTesters?limit=200")["data"]
+    print(f"group '{group['attributes']['name']}' has {len(members)} tester(s); "
+          f"this email in it: {any((m['attributes'].get('email') or '').lower() == email.lower() for m in members)}")
+    for m in members:
+        a = m["attributes"]
+        mail = a.get("email") or ""
+        masked = mail[:2] + "***@" + mail.split("@")[-1] if "@" in mail else "?"
+        print(f"  member {masked} inviteType={a.get('inviteType')} state={a.get('state')}")
+    for t in api("GET", f"/betaTesters?filter[email]={email}&include=betaGroups,apps&limit=5").get("data", []):
+        a = t["attributes"]
+        print(f"tester record: inviteType={a.get('inviteType')} state={a.get('state')} "
+              f"groups={[g['id'] for g in (t['relationships'].get('betaGroups') or {}).get('data') or []]}")
+
+
 def add_tester(group: dict, email: str):
     found = api("GET", f"/betaTesters?filter[email]={email}&limit=5")["data"]
     if found:
@@ -98,6 +117,7 @@ def main(bundle_id: str, group_name: str | None, auto: bool = False, tester: str
     if not todo:
         print("nothing to add")
     if tester:
+        describe(group, tester)
         add_tester(group, tester)
     if auto:
         status, res = request("PATCH", f"/betaGroups/{group['id']}", {"data": {
