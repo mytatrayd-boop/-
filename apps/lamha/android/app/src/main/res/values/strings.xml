@@ -2,6 +2,7 @@
 <!-- نصوص ودجت أندرويد. العربية هي الافتراضية (التطبيق عربي فقط)، والإنجليزية في values-en. -->
 <resources>
     <string name="widget_name">لمحة</string>
+    <string name="diag_name">تشخيص لمحة</string>
     <string name="widget_description">الساعة والصلاة القادمة والقبلة والإيداع والموسم في لمحة</string>
     <string name="widget_setup">افتح لمحة لإعداد الودجت</string>
     <string name="widget_error">تعذّر عرض الودجت. افتح لمحة، وإن بقيت هذه الرسالة فصوّرها للمطوّر: %1$s</string>
