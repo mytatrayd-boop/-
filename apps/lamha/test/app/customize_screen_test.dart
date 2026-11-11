@@ -56,6 +56,12 @@ Future<void> closeSheet(WidgetTester tester) async {
 /// يفتح لوحة عنصر من القائمة.
 Future<void> select(WidgetTester tester, String id) async {
   await closeSheet(tester);
+  // القائمة تحت معاينة أكبر: قد يلزم تمريرها حتى يُبنى الصف.
+  await tester.scrollUntilVisible(
+    find.byKey(Key('chip-tap-$id')),
+    80,
+    scrollable: find.descendant(of: find.byKey(const Key('tile-list')), matching: find.byType(Scrollable)).first,
+  );
   await tapKey(tester, 'chip-tap-$id');
   expect(find.byKey(const Key('tile-panel')), findsOneWidget);
 }
@@ -90,7 +96,8 @@ void main() {
       final presets = tester.getRect(find.byKey(const Key('color-presets')));
       final list = tester.getRect(find.byKey(const Key('tile-list')));
       expect(presets.top, greaterThanOrEqualTo(preview.bottom));
-      expect(list.top, greaterThanOrEqualTo(presets.bottom));
+      // الألوان الجاهزة رأس القائمة، تتحرك معها.
+      expect(presets.top, greaterThanOrEqualTo(list.top));
       expect(
         tester.widget<ReorderableListView>(find.byKey(const Key('tile-list'))).scrollDirection,
         Axis.vertical,
@@ -413,7 +420,11 @@ void main() {
     expect(tileOf(bridge, 'prayerTimes')['rect'], [0, 0, 6, 2]);
     expect(tileOf(bridge, 'clock')['rect'], [0, 2, 4, 2]);
     expect(tester.getRect(tile('prayerTimes')).bottom, lessThan(tester.getRect(tile('clock')).top));
-    // تكبير البوصلة من مقبضها: أعرض بخلية (يساراً) وأطول بخليتين.
+    // تكبير البوصلة من مقبضها: الضغط يظهر مقابضها، ثم أعرض بخلية (يساراً) وأطول بخليتين.
+    await tapKey(tester, 'free-box-qibla');
+    await closeSheet(tester);
+    expect(find.byKey(const Key('free-handle-tr-qibla')), findsOneWidget);
+    expect(find.byKey(const Key('free-handle-prayerTimes')), findsNothing);
     await dragKey(tester, 'free-handle-qibla', Offset(-cell * 1.6, 2 * cell));
     final q = (tileOf(bridge, 'qibla')['rect'] as List).cast<int>();
     expect(q[3], 4, reason: 'أطول بخليتين');
@@ -421,10 +432,30 @@ void main() {
     expect(bridge.last['tree'], isNotNull);
   });
 
+  testWidgets('المحرر الحر: مقبض الزاوية العليا اليمنى يحرّك الضلع الأيمن، وملء الشاشة يفتح المحرر', (tester) async {
+    final bridge = await openCustomize(tester);
+    final cell = tester.getSize(find.byKey(const Key('free-box-hijri'))).height + 4;
+    // الهجري [0,2,4,1] على يمين الشبكة: مقبضه الأيمن العلوي يحرّك ضلعه الأيمن، فيضيق بخلية من يمينه.
+    await tapKey(tester, 'free-box-hijri');
+    await closeSheet(tester);
+    final before = (tileOf(bridge, 'hijri')['rect'] as List).cast<int>();
+    await dragKey(tester, 'free-handle-tr-hijri', Offset(-cell * 1.1, 0));
+    final after = (tileOf(bridge, 'hijri')['rect'] as List).cast<int>();
+    expect(after[0], before[0] + 1, reason: 'الضلع الأيمن تحرك يساراً');
+    expect(after[2], before[2] - 1, reason: 'أضيق بخلية');
+    // ملء الشاشة: المعاينة أكبر من التي في الشاشة.
+    final small = tester.getRect(find.byKey(const Key('customize-preview')));
+    await tapKey(tester, 'preview-fullscreen');
+    expect(find.byKey(const Key('fullscreen-preview')), findsOneWidget);
+    expect(tester.getRect(find.byKey(const Key('fullscreen-preview'))).height, greaterThan(small.height));
+  });
+
   testWidgets('ما يتجاوز أسفل الشبكة: علامة على صفه ورسالة في لوحته', (tester) async {
     await openCustomize(tester);
     final cell = tester.getSize(find.byKey(const Key('free-box-hijri'))).height + 4;
     // اليوم والطقس أطول بخليتين: يدفع ما تحته فيخرج آخر صف (الفصل والموسم).
+    await tapKey(tester, 'free-box-dayWeather');
+    await closeSheet(tester);
     await dragKey(tester, 'free-handle-dayWeather', Offset(0, 2 * cell));
     expect(find.byKey(const Key('chip-overflow-season')), findsOneWidget);
     expect(find.byKey(const Key('chip-overflow-deposit')), findsNothing);

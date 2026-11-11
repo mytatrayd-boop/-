@@ -313,7 +313,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tileHint =>
-      'اسحب أي مربع في المعاينة لتحريكه، ومقبض زاويته لتكبيره أو تصغيره، واضغطه لتعديل خطه وألوانه ومحتواه. العناصر تصعد تلقائياً لتملأ الفراغ.';
+      'اسحب أي مربع في المعاينة لتحريكه. اضغطه لفتح لوحة خطه وألوانه ومحتواه، وتظهر في زواياه الأربع مقابض لتكبيره أو تصغيره من أي جهة. زر «ملء الشاشة» للتعديل بدقة. العناصر تصعد تلقائياً لتملأ الفراغ.';
 
   @override
   String tileSpanName(String span) {
@@ -548,4 +548,7 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get freeLayoutRejected =>
       'لا يمكن هذا الترتيب في الودجت. جرّب موضعاً أو مقاساً آخر.';
+
+  @override
+  String get previewFullscreen => 'ملء الشاشة';
 }
