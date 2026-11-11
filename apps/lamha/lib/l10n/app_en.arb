@@ -112,5 +112,7 @@
   "tileNoContent": "No content options for this item",
   "colorPresetsLabel": "Colour presets",
   "colorPresetName": "{name, select, auto{Auto} gold{Gold} white{White} green{Green} blue{Blue} rose{Rose} dark{Dark} other{{name}}}",
-  "opacityNeedsBackground": "iPhone doesn't allow truly transparent widgets, so white shows through. To mimic transparency, take a screenshot of an empty home screen and choose it under \"Wallpaper screenshot\" below."
+  "opacityNeedsBackground": "iPhone doesn't allow truly transparent widgets, so white shows through. To mimic transparency, take a screenshot of an empty home screen and choose it under \"Wallpaper screenshot\" below.",
+  "backgroundRemove": "Remove wallpaper screenshot",
+  "backgroundRemoved": "Wallpaper screenshot removed"
 }

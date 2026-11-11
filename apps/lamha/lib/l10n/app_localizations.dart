@@ -775,6 +775,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'آيفون لا يسمح بودجت شفافة فعلاً، فيظهر اللون الأبيض خلفها. لمحاكاة الشفافية: خذ لقطة لشاشتك الرئيسية فارغة، ثم اختر «لقطة الخلفية» بالأسفل.'**
   String get opacityNeedsBackground;
+
+  /// إعدادات لمحة (آيفون)
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف لقطة الخلفية'**
+  String get backgroundRemove;
+
+  /// إعدادات لمحة (آيفون)
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت لقطة الخلفية، وعادت الودجت للون السمة'**
+  String get backgroundRemoved;
 }
 
 class _AppLocalizationsDelegate

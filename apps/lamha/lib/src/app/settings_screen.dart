@@ -184,6 +184,16 @@ class _Body extends ConsumerWidget {
               }
             },
           ),
+        if (defaultTargetPlatform == TargetPlatform.iOS && s.backgroundFile != null)
+          TextButton.icon(
+            key: const Key('background-remove'),
+            icon: const Icon(Icons.delete_outline),
+            label: Text(l.backgroundRemove),
+            onPressed: () async {
+              await c.clearBackground();
+              toast(l.backgroundRemoved);
+            },
+          ),
         const SizedBox(height: 16),
         Text(l.cityLabel, style: textTheme.titleMedium),
         Row(

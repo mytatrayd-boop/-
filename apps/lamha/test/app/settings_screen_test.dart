@@ -313,6 +313,24 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('آيفون: حذف لقطة الخلفية يعيد الودجت للون السمة، ويختفي زر الحذف', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final store = FakeBackgroundStore();
+    final bridge = await pumpApp(tester, background: store);
+    expect(find.byKey(const Key('background-remove')), findsNothing, reason: 'لا لقطة بعد');
+    await tester.tap(find.byKey(const Key('background-button')));
+    await tester.pumpAndSettle();
+    expect(bridge.last['background'], 'wallpaper.jpg');
+    final remove = find.byKey(const Key('background-remove'));
+    await tester.ensureVisible(remove);
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(bridge.last['background'], isNull);
+    expect(find.byKey(const Key('background-remove')), findsNothing);
+    expect(find.text('حُذفت لقطة الخلفية، وعادت الودجت للون السمة'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('آيفون: فشل حفظ اللقطة يعرض رسالة ولا يغيّر الجدول', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     final store = FakeBackgroundStore(null, StateError('no container'));

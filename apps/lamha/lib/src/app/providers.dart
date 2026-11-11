@@ -380,6 +380,12 @@ class SettingsController extends AsyncNotifier<AppState> {
     await _update(_s.copyWith(backgroundFile: name));
     return true;
   }
+
+  /// حذف لقطة الخلفية والعودة للون السمة وحده (الملف يبقى في الحاوية ويُستبدل عند اختيار لقطة جديدة).
+  Future<void> clearBackground() async {
+    _backgroundPath = null;
+    await _update(_s.copyWith(clearBackground: true));
+  }
 }
 
 final settingsControllerProvider =
