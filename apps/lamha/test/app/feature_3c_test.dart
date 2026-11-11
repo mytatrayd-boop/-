@@ -161,24 +161,32 @@ void main() {
     });
   });
 
-  testWidgets('كل نصوص المعاينة محاذاة يمين', (tester) async {
+  testWidgets('نصوص المعاينة محاذاة يمين، عدا اليوم والطقس فمتوسط في مربعه', (tester) async {
     await pumpApp(tester, weather: FakeWeather());
     final paragraphs = tester
         .renderObjectList<RenderParagraph>(find.descendant(
             of: find.byKey(const Key('preview')), matching: find.byType(RichText)))
         .toList();
     expect(paragraphs.length, greaterThan(20));
+    // اليوم والمدينة والحرارة: متوسطة (طلب المالك ١١/١١/٢٠٢٦).
+    final dayWeather = {
+      for (final k in const ['preview-day', 'preview-city', 'preview-temp'])
+        tester.renderObject<RenderParagraph>(find.descendant(of: find.byKey(Key(k)), matching: find.byType(RichText)).first),
+    };
     for (final p in paragraphs) {
+      if (dayWeather.contains(p)) {
+        expect(p.textAlign, TextAlign.center, reason: p.text.toPlainText());
+        continue;
+      }
       final right = p.textAlign == TextAlign.right ||
           (p.textAlign == TextAlign.start && p.textDirection == TextDirection.rtl);
       expect(right, isTrue, reason: p.text.toPlainText());
     }
-    // اليوم والحرارة على يمين مربعهما، والهجري على يمين كبسولته (بعد حشوتها).
-    final day = tester.getRect(find.byKey(const Key('preview-day')));
-    final temp = tester.getRect(find.byKey(const Key('preview-temp')));
+    // أسطر اليوم والمدينة والحرارة مركزها مركز مربعها.
     final box = tester.getRect(find.byKey(const Key('tile-dayWeather')));
-    expect(day.right, closeTo(box.right, 0.5));
-    expect(temp.right, closeTo(box.right, 0.5));
+    for (final k in const ['preview-day', 'preview-city', 'preview-temp']) {
+      expect(tester.getRect(find.byKey(Key(k))).center.dx, closeTo(box.center.dx, 0.5), reason: k);
+    }
     final hijri = tester.getRect(find.byKey(const Key('preview-hijri')));
     expect(hijri.right,
         closeTo(tester.getRect(find.byKey(const Key('tile-hijri'))).right - 12, 0.5));

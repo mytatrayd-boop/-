@@ -286,7 +286,7 @@ class _DayWeatherTile extends _Styled {
             Text(
               weekday,
               key: const Key('preview-day'),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.center,
               maxLines: fit.valueLines,
               style: dayStyle.copyWith(
                 fontSize: dayWeekdaySize * s * fit.valueScale,
@@ -296,7 +296,7 @@ class _DayWeatherTile extends _Styled {
               Text(
                 texts[i],
                 key: keys[i],
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: styles[i].copyWith(
