@@ -1,5 +1,5 @@
 // تشغيل المسار الثاني مع الأول: لكل قطعة صوت مشغّل خاص بها على نفس ملف الصوت،
-// يبدأ حين يدخل المؤشر نطاقها، ويتزامن مع زمن العرض (وتُراعى الأجزاء المحذوفة).
+// يبدأ حين يدخل المؤشر نطاقها، ويتزامن مع زمن العرض (حتى بعد نهاية المسار الأول).
 import 'package:just_audio/just_audio.dart';
 
 import 'sync.dart';
@@ -12,18 +12,16 @@ class _Slot {
 
 class OverlayMixer {
   final String path;
-  final double Function(double srcTime) toDisp; // وقت الملف ← وقت العرض
   final _slots = <AudioLayer, _Slot>{};
-  OverlayMixer(this.path, this.toDisp);
+  OverlayMixer(this.path);
 
-  /// يُنادى كل إطار: srcT وقت المسار الأول في الملف، وplaying هل التشغيل جارٍ.
-  void update(List<AudioLayer> layers, double srcT, bool playing) {
+  /// يُنادى كل إطار: d موضع المؤشر بزمن العرض، وplaying هل التشغيل جارٍ.
+  void update(List<AudioLayer> layers, double d, bool playing) {
     _slots.removeWhere((o, s) {
       if (layers.contains(o)) return false;
       s.p.dispose();
       return true;
     });
-    final d = toDisp(srcT);
     for (final o in layers) {
       final s = _slots.putIfAbsent(o, () {
         final n = _Slot();

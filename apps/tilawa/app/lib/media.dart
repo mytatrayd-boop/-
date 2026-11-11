@@ -156,7 +156,9 @@ Future<String> renderVideo({
   // 720p يُرسم بدقته مباشرة (الخلفية والتحسين والطبقات) بدل رسمه 1080p ثم تصغيره: أسرع بكثير
   final small = height < 1920;
   final ow = small ? 720 : 1080, oh = small ? 1280 : 1920, sc = ow / 1080;
-  final duration = kept.fold(0.0, (s, k) => s + k.$2 - k.$1);
+  final audioDur = kept.fold(0.0, (s, k) => s + k.$2 - k.$1);
+  // طول الفيديو = الأطول من المسار الأول والثاني (الصورة والفيديو يمتدان معه)
+  final duration = overlays.fold(audioDur, (e, o) => o.len > 0.05 ? max(e, o.at + o.len) : e);
   // كل مقطع يُنقل إلى وقت الفيديو؛ ما وقع في جزء محذوف يُقص على حدوده
   double clampOut(double t, bool isStart) {
     final o = outTime(t, kept);
@@ -166,7 +168,7 @@ Future<String> renderVideo({
       if (t < a) return acc;
       acc += b - a;
     }
-    return isStart ? duration : acc;
+    return isStart ? audioDur : acc;
   }
 
   final shifted = <(Segment, String, String, int)>[];
@@ -279,7 +281,7 @@ Future<String> renderVideo({
           'volume=${o.vol.clamp(0.0, 1.0).toStringAsFixed(2)},adelay=$ms:all=1[ov$j]');
       labels.add('[ov$j]');
     }
-    chain.add('[aout]${labels.join()}amix=inputs=${1 + ovs.length}:duration=first:normalize=0[amix]');
+    chain.add('[aout]${labels.join()}amix=inputs=${1 + ovs.length}:duration=longest:normalize=0[amix]');
     audioOut = 'amix';
   }
   final out = '${dir.path}/tilawa_${DateTime.now().millisecondsSinceEpoch}.mp4';

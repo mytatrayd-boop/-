@@ -151,7 +151,9 @@ class PreviewPage extends StatefulWidget {
 
 class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStateMixin {
   final player = AudioPlayer();
-  late final OverlayMixer mixer = OverlayMixer(widget.audio, c.m.toDisp);
+  late final OverlayMixer mixer = OverlayMixer(widget.audio);
+  Stopwatch? tailSw; // بعد نهاية المسار الأول يكمل الثاني وحده
+  double tail = 0;
   bool _muteOn = false;
   late final Ticker ticker = createTicker((_) => _tick());
   Composer get c => widget.composer;
@@ -168,14 +170,44 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
 
   Future<void> _play([double? from]) async {
     done = false;
+    tail = 0;
+    tailSw = null;
     await player.seek(Duration(milliseconds: ((from ?? c.kept.first.$1) * 1000).round()));
     player.play();
+  }
+
+  // الطول الكلي: الأطول من المسارين (الصورة والفيديو يمتدان معه)
+  double get total => max(c.outDuration, c.m.overlayEnd);
+  bool get playing => player.playing || (tailSw?.isRunning ?? false);
+  double get disp => (outTime(min(t, c.end), c.kept) ?? (t >= c.end ? c.outDuration : 0)) + tail;
+
+  void _toggle() {
+    if (done) {
+      _play();
+    } else if (playing) {
+      player.pause();
+      tailSw?.stop();
+    } else if (tailSw != null) {
+      tailSw!.start();
+    } else {
+      player.play();
+    }
+    setState(() {});
   }
 
   void _tick() {
     if (!mounted) return;
     final now = player.position.inMilliseconds / 1000;
-    mixer.update(c.m.overlays, now, player.playing);
+    final sw = tailSw;
+    if (sw != null) {
+      tail = sw.elapsedMilliseconds / 1000;
+      if (c.outDuration + tail >= total) {
+        tail = total - c.outDuration;
+        tailSw = null;
+        done = true;
+      }
+    }
+    mixer.update(c.m.overlays, (outTime(min(now, c.end), c.kept) ?? (now >= c.end ? c.outDuration : 0)) + tail, playing);
     final mute = c.m.isMuted(now);
     if (mute != _muteOn) {
       _muteOn = mute;
@@ -183,11 +215,16 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
     }
     final skip = c.m.skipCut(now);
     if (skip != null) player.seek(Duration(milliseconds: (skip * 1000).round()));
-    if (now >= c.end && !done) {
-      done = true;
+    if (now >= c.end && !done && tailSw == null && player.playing) {
       player.pause();
+      // المسار الثاني أطول: يكمل وحده والصورة ثابتة على آخر إطار
+      if (total > c.outDuration + 0.05) {
+        tailSw = Stopwatch()..start();
+      } else {
+        done = true;
+      }
     }
-    setState(() => t = now);
+    setState(() => t = min(now, c.end));
   }
 
   @override
@@ -217,11 +254,11 @@ class _PreviewPageState extends State<PreviewPage> with SingleTickerProviderStat
             padding: const EdgeInsets.all(12),
             child: Row(children: [
               IconButton.filled(
-                onPressed: () => done ? _play() : (player.playing ? player.pause() : player.play()),
-                icon: Icon(done ? Icons.replay : player.playing ? Icons.pause : Icons.play_arrow),
+                onPressed: _toggle,
+                icon: Icon(done ? Icons.replay : playing ? Icons.pause : Icons.play_arrow),
               ),
               const SizedBox(width: 12),
-              Text('${fmtTime(outTime(t, c.kept) ?? 0)} / ${fmtTime(c.outDuration)}',
+              Text('${fmtTime(disp)} / ${fmtTime(total)}',
                   textDirection: TextDirection.ltr, style: const TextStyle(color: Colors.white)),
             ]),
           ),

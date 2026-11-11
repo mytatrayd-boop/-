@@ -90,6 +90,20 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   Timer? _saver;
   OverlayMixer? mixer; // تشغيل المسار الصوتي الثاني مع الأول
   bool _muteOn = false;
+  Stopwatch? _tailSw; // تشغيل ما بعد نهاية المسار الأول (المسار الثاني وحده)
+  double _tailFrom = 0;
+  bool get playing => player.playing || _tailSw != null;
+
+  void _startTail(double from) {
+    _tailFrom = from;
+    _tailSw = Stopwatch()..start();
+    refresh();
+  }
+
+  void _stopTail() {
+    _tailSw = null;
+    refresh();
+  }
 
   // ── التراجع والإعادة لتعديلات الشكل والخلفيات (تعديلات المقاطع في EditorModel) ──
   bool _hist = false; // يُفعَّل بعد فتح المشروع، فلا تُسجَّل تغييرات التحميل
@@ -165,7 +179,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     _presetBg(0).then((b) => refresh(() => bgs.add(b)));
     // كل إطار أثناء التشغيل: المؤشر يتبع الصوت، ويقفز فوق الأجزاء المحذوفة
     createTicker((_) {
-      mixer?.update(m.overlays, player.position.inMilliseconds / 1000, player.playing);
+      // بعد نهاية المسار الأول يستمر الزمن (ساعة) ما دام المسار الثاني أطول
+      final tsw = _tailSw;
+      if (tsw != null) {
+        m.tail = _tailFrom + tsw.elapsedMilliseconds / 1000;
+        if (m.dispPos >= m.totalDisp) {
+          m.tail = m.totalDisp - m.dispDuration;
+          _stopTail();
+        }
+        m.changed();
+      }
+      mixer?.update(m.overlays, m.dispPos, player.playing || _tailSw != null);
       if (!player.playing) return;
       final t = player.position.inMilliseconds / 1000;
       final mute = m.isMuted(t); // الجزء الذي نُقل صوته للمسار الثاني صامت في الأول
@@ -178,6 +202,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       if (t >= m.duration - 0.05) {
         player.pause();
         if (m.tapIndex != null) m.tapStop(t);
+        if (m.totalDisp > m.dispDuration + 0.05) _startTail(0); // المسار الثاني أطول: يكمل وحده
       }
       m.playhead = t;
       m.changed();
@@ -343,7 +368,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       final a = await decode16k(path);
       await player.setFilePath(path);
       mixer?.dispose();
-      mixer = OverlayMixer(path, m.toDisp);
+      mixer = OverlayMixer(path);
       audioPath = path;
       audio16 = a;
       m.setAudio(a);
@@ -493,7 +518,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
       final full = clips.length == 1 ? one : await decode16k(path);
       await player.setFilePath(path);
       mixer?.dispose();
-      mixer = OverlayMixer(path, m.toDisp);
+      mixer = OverlayMixer(path);
       audioPath = path;
       audio16 = full;
       m.setAudio(full, keep: !first);
@@ -590,20 +615,27 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
   // ── التشغيل والمزامنة بالنقر ──
   Future<void> togglePlay() async {
     if (audioPath == null) return;
-    if (player.playing) {
+    if (playing) {
+      _stopTail();
       await player.pause();
     } else {
-      if (m.playhead >= m.duration - 0.1) m.seek(0);
+      if (m.dispPos >= m.totalDisp - 0.1) m.seek(0);
+      if (m.tail > 0) {
+        _startTail(m.tail); // المؤشر بعد نهاية المسار الأول
+        return;
+      }
       await player.seek(Duration(milliseconds: (m.playhead * 1000).round()));
       player.play();
     }
   }
 
   /// قفزة مباشرة إلى وقت معيّن (البداية أو النهاية)، ويتابع التشغيل من هناك إن كان جارياً.
-  Future<void> _jump(double t) async {
-    final at = t.clamp(0.0, m.duration);
-    m.seek(at);
-    await player.seek(Duration(milliseconds: (at * 1000).round()));
+  Future<void> _jump(double d) async {
+    final wasTail = _tailSw != null;
+    if (wasTail) _stopTail();
+    m.seekDisp(d);
+    await player.seek(Duration(milliseconds: (m.playhead * 1000).round()));
+    if (wasTail && m.tail > 0) _startTail(m.tail);
   }
 
   Future<void> toggleTap() async {
@@ -957,7 +989,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         _topBar(),
         Expanded(child: _previewArea()),
         _controls(),
-        Directionality(textDirection: TextDirection.ltr, child: Timeline(m, thumb: thumbAt, onScrub: player.pause)),
+        Directionality(textDirection: TextDirection.ltr, child: Timeline(m, thumb: thumbAt, onScrub: () {
+          player.pause();
+          if (_tailSw != null) _stopTail();
+        })),
         if (m.tapIndex != null)
           Padding(
             padding: const EdgeInsets.all(6),
@@ -1030,7 +1065,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
-                  child: Text('${fmtTime(m.toDisp(m.playhead))} / ${fmtTime(m.dispDuration)}',
+                  child: Text('${fmtTime(m.dispPos)} / ${fmtTime(m.totalDisp)}',
                       textDirection: TextDirection.ltr, style: const TextStyle(fontSize: 12, color: Colors.white)),
                 ),
               ),
@@ -1072,8 +1107,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
               _cb(Icons.redo, m.canRedo ? m.redo : null, 'إعادة'),
               const Spacer(),
               _cb(Icons.skip_previous, m.duration > 0 ? () => _jump(0) : null, 'إلى البداية'),
-              _cb(player.playing ? Icons.pause : Icons.play_arrow, togglePlay, player.playing ? 'إيقاف' : 'تشغيل', size: 32, width: 46),
-              _cb(Icons.skip_next, m.duration > 0 ? () => _jump(m.kept.isEmpty ? m.duration : m.kept.last.$2) : null, 'إلى النهاية'),
+              _cb(playing ? Icons.pause : Icons.play_arrow, togglePlay, playing ? 'إيقاف' : 'تشغيل', size: 32, width: 46),
+              _cb(Icons.skip_next, m.duration > 0 ? () => _jump(m.totalDisp) : null, 'إلى النهاية'),
               const Spacer(),
               _cb(Icons.fullscreen, _openFullscreen, 'ملء الشاشة'),
             ]),
@@ -1117,17 +1152,18 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
             ];
           } else if (m.ovSel != null) {
             back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
+            // أدوات المسار الثاني كالأول (القص بسحب طرفي القطعة)
             items = [
+              _tool(Icons.content_cut, 'تقسيم', m.splitOverlay),
+              _tool(Icons.copy, 'تكرار', m.duplicateOverlay),
               _tool(Icons.volume_up, 'مستوى الصوت', () => _sheet(_ovVolPanel)),
+              _tool(Icons.vertical_align_top, 'إرجاع للمسار الأول', () => m.returnToLane1(m.ovSel!)),
               _tool(Icons.delete_outline, 'حذف', m.deleteOverlay),
             ];
           } else if (m.audioSel != null) {
             back = IconButton(icon: const Icon(Icons.keyboard_double_arrow_down), onPressed: () => m.select(null));
             items = [
               _tool(Icons.content_cut, 'تقسيم', m.splitAudio),
-              _tool(Icons.vertical_align_bottom, 'نقل إلى مسار ثانٍ', () => m.toLane2(move: true)),
-              if (m.muted.isNotEmpty) _tool(Icons.volume_up, 'إعادة الصوت للأول', m.unmuteSelected),
-              _tool(Icons.content_copy, 'نسخ إلى مسار ثانٍ', () => m.toLane2(move: false)),
               _tool(Icons.delete_outline, 'حذف', m.deleteAudio),
               _tool(Icons.restore, 'استرجاع المحذوف', m.cuts.isEmpty ? null : m.restoreAudio),
             ];
@@ -1399,7 +1435,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
         o.vol = x;
         m.changed();
       }, div: 20),
-      const Text('اسحب القطعة أفقياً على المسار الثاني لتغيير موضعها. تُسمع مع المسار الأول معاً.', style: TextStyle(fontSize: 12)),
+      const Text('اسحب القطعة أفقياً لتغيير موضعها، واسحب طرفيها لقصّها، وارفعها للأعلى لإرجاعها للمسار الأول.', style: TextStyle(fontSize: 12)),
     ]);
   }
 

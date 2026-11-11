@@ -148,7 +148,27 @@ class EditorModel extends ChangeNotifier {
 
   void seek(double t) {
     playhead = t.clamp(0, duration);
+    tail = 0;
     notifyListeners();
+  }
+
+  // ── زمن العرض الكلي: الأطول من المسارين (الصورة والفيديو يمتدان معه) ──
+  double tail = 0; // ثوانٍ بعد نهاية المسار الأول (حين يكون المسار الثاني أطول)
+  double get overlayEnd => overlays.fold(0.0, (e, o) => max(e, o.at + o.len));
+  double get totalDisp => max(dispDuration, overlayEnd);
+  double get dispPos => toDisp(playhead) + tail;
+
+  /// يضع المؤشر عند وقت عرض d (قد يتجاوز نهاية المسار الأول إلى نهاية الثاني).
+  void seekDisp(double d, {bool notify = true}) {
+    final x = d.clamp(0.0, totalDisp), end = dispDuration;
+    if (x <= end) {
+      playhead = toSrc(x);
+      tail = 0;
+    } else {
+      playhead = toSrc(end);
+      tail = x - end;
+    }
+    if (notify) notifyListeners();
   }
 
   // ── وقت العرض: الأجزاء المحذوفة تُطوى فيُغلق مكانها ──
@@ -185,7 +205,13 @@ class EditorModel extends ChangeNotifier {
       }
       out.add((s, b));
     }
-    return out;
+    if (muted.isEmpty) return out;
+    // ما نُقل إلى المسار الثاني يصير فراغاً في الأول (لا يُرسم ولا يُحدَّد)
+    return [
+      for (final (a, b) in out)
+        for (final p in keptRanges(a, b, muted))
+          if (p.$2 - p.$1 > 0.02) p
+    ];
   }
 
   /// إن وقع t داخل جزء محذوف يرجع نهايته (للتشغيل الذي يقفز فوقه).
@@ -316,20 +342,28 @@ class EditorModel extends ChangeNotifier {
   }
 
   // ── المسار الصوتي الثاني ──
-  /// ينقل قطعة الصوت المحددة (أو ينسخها) إلى المسار الثاني في مكانها نفسه، فتُسمع مع الأول ويمكن سحبها أفقياً.
-  /// صوت فقط: لا يتغير نص الآيات ولا توقيتها. النقل يُسكت الجزء الأصلي في المسار الأول (دون إغلاق الفراغ)،
-  /// والنسخ يُبقي الأول كما هو.
-  void toLane2({required bool move}) {
-    final s = audioSel;
-    if (s == null) return;
-    final (a, b) = s;
+  (double, double, double, bool)? ghost; // قطعة تُسحب من الأول: (من، إلى، موضعها، فوق المسار الثاني؟)
+  bool dropBack = false; // قطعة من الثاني مرفوعة فوق الأول (ستعود إليه عند الإفلات)
+
+  /// تسقط قطعة المسار الأول كاملة في الثاني عند الموضع at: صوت فقط، فيبقى نص الآيات وتوقيتها،
+  /// ويصير مكانها في الأول فراغاً صامتاً.
+  void liftToLane2(double a, double b, double at) {
     checkpoint();
-    final layer = AudioLayer(a, b, toDisp(a)); // قبل القص: موضعها في زمن العرض
-    if (move) muted = [...muted, (a, b)];
+    final layer = AudioLayer(a, b, max(0.0, at));
+    muted = [...muted, (a, b)];
     overlays = [...overlays, layer];
     audioSel = null;
     selected = null;
     ovSel = layer;
+    notifyListeners();
+  }
+
+  /// يعيد قطعة المسار الثاني إلى مكانها الأصلي في الأول.
+  void returnToLane1(AudioLayer o) {
+    checkpoint();
+    overlays = [...overlays]..remove(o);
+    muted = [for (final r in muted) if (!(r.$1 < o.src1 && r.$2 > o.src0)) r];
+    ovSel = null;
     notifyListeners();
   }
 
@@ -340,12 +374,26 @@ class EditorModel extends ChangeNotifier {
     return false;
   }
 
-  /// يعيد الصوت الأصلي للمقطع المحدد (يلغي الإسكات الذي سبّبه نقله إلى المسار الثاني).
-  void unmuteSelected() {
-    final s = audioSel;
-    if (s == null) return;
+  /// يقسم قطعة المسار الثاني المحددة عند المؤشر.
+  void splitOverlay() {
+    final o = ovSel, d = dispPos;
+    if (o == null || d <= o.at + 0.1 || d >= o.at + o.len - 0.1) return;
     checkpoint();
-    muted = [for (final r in muted) if (!(r.$1 < s.$2 && r.$2 > s.$1)) r];
+    final cut = o.src0 + (d - o.at);
+    final second = AudioLayer(cut, o.src1, d, o.vol);
+    o.src1 = cut;
+    overlays = [...overlays, second];
+    notifyListeners();
+  }
+
+  /// يكرر قطعة المسار الثاني بعدها مباشرة.
+  void duplicateOverlay() {
+    final o = ovSel;
+    if (o == null) return;
+    checkpoint();
+    final c = AudioLayer(o.src0, o.src1, o.at + o.len, o.vol);
+    overlays = [...overlays, c];
+    ovSel = c;
     notifyListeners();
   }
 
@@ -420,13 +468,15 @@ class Timeline extends StatefulWidget {
 
 class _TimelineState extends State<Timeline> {
   String _mode = '';
-  double _x0 = 0, _ph0 = 0, _pps0 = 0, _a0 = 0, _b0 = 0, _w = 1;
+  double _x0 = 0, _y0 = 0, _ph0 = 0, _pps0 = 0, _a0 = 0, _b0 = 0, _s0 = 0, _w = 1;
   bool _moved = false;
+  (double, double)? _liftClip; // قطعة من المسار الأول تحت الإصبع (قد تُسحب للمسار الثاني)
 
   EditorModel get m => widget.m;
-  // المؤشر في منتصف العرض: x = w/2 + (disp(t) - disp(playhead)) * pps
-  double t2x(double t) => _w / 2 + (m.toDisp(t) - m.toDisp(m.playhead)) * m.pps;
-  double x2t(double x) => m.toSrc(m.toDisp(m.playhead) + (x - _w / 2) / m.pps);
+  // المؤشر في منتصف العرض: x = w/2 + (disp(t) - موضع المؤشر) * pps
+  double t2x(double t) => _w / 2 + (m.toDisp(t) - m.dispPos) * m.pps;
+  double x2d(double x) => m.dispPos + (x - _w / 2) / m.pps; // x ← وقت العرض
+  double x2t(double x) => m.toSrc(x2d(x));
 
   int? _segAt(double x) {
     final t = x2t(x);
@@ -434,6 +484,11 @@ class _TimelineState extends State<Timeline> {
       if (t >= m.segs[i].start && t <= m.segs[i].end) return i;
     }
     return null;
+  }
+
+  AudioLayer? _ovAt(double x) {
+    final d = x2d(x);
+    return m.overlays.where((o) => d >= o.at && d <= o.at + o.len).lastOrNull;
   }
 
   @override
@@ -444,7 +499,7 @@ class _TimelineState extends State<Timeline> {
         onTapUp: (d) {
           final p = d.localPosition;
           if (p.dy >= _lane2Top) {
-            m.selectOverlayAt(m.toDisp(m.playhead) + (p.dx - _w / 2) / m.pps);
+            m.selectOverlayAt(x2d(p.dx));
           } else if (p.dy >= _segTop && p.dy < _segTop + _segH) {
             m.select(_segAt(p.dx));
           } else if (p.dy >= _waveTop) {
@@ -456,23 +511,41 @@ class _TimelineState extends State<Timeline> {
         onScaleStart: (d) {
           final p = d.localFocalPoint;
           _x0 = p.dx;
-          _ph0 = m.toDisp(m.playhead);
+          _y0 = p.dy;
+          _ph0 = m.dispPos;
           _pps0 = m.pps;
           _moved = false;
           _mode = 'scrub';
+          _liftClip = null;
           final g = m.sel;
-          if (d.pointerCount == 1 && p.dy >= _lane2Top) {
-            // لمس قطعة على المسار الثاني: تُحدَّد ويمكن سحبها أفقياً
-            final at = m.toDisp(m.playhead) + (p.dx - _w / 2) / m.pps;
-            final o = m.overlays.where((o) => at >= o.at && at <= o.at + o.len).firstOrNull;
-            if (o != null) {
-              m.ovSel = o;
-              m.selected = null;
-              m.audioSel = null;
-              _mode = 'ov';
-              _a0 = o.at;
+          if (d.pointerCount != 1) return;
+          if (p.dy >= _lane2Top - 4) {
+            // المسار الثاني: طرفا القطعة المحددة للقص، أو القطعة نفسها للسحب
+            final sel = m.ovSel;
+            if (sel != null && (p.dx - (_w / 2 + (sel.at - m.dispPos) * m.pps)).abs() < 22) {
+              _mode = 'ovL';
+            } else if (sel != null && (p.dx - (_w / 2 + (sel.at + sel.len - m.dispPos) * m.pps)).abs() < 22) {
+              _mode = 'ovR';
+            } else {
+              final o = _ovAt(p.dx);
+              if (o != null) {
+                m.ovSel = o;
+                m.selected = null;
+                m.audioSel = null;
+                _mode = 'ov';
+              }
             }
-          } else if (d.pointerCount == 1 && g != null && p.dy >= _segTop && p.dy < _segTop + _segH) {
+            final o = m.ovSel;
+            if (o != null) {
+              _a0 = o.at;
+              _s0 = o.src0;
+              _b0 = o.src1;
+            }
+          } else if (p.dy >= _waveTop && p.dy < _waveTop + _waveH) {
+            // المسار الأول: إن اتجه السحب للأسفل تُرفع القطعة إلى المسار الثاني، وإلا فهو تمرير عادي
+            final t = x2t(p.dx);
+            _liftClip = m.audioClips.where((c) => t >= c.$1 && t <= c.$2).firstOrNull;
+          } else if (g != null && p.dy >= _segTop && p.dy < _segTop + _segH) {
             final xs = t2x(g.start), xe = t2x(g.end);
             if ((p.dx - xs).abs() < 20) {
               _mode = 'start';
@@ -489,22 +562,44 @@ class _TimelineState extends State<Timeline> {
             m.changed();
             return;
           }
-          final dx = d.localFocalPoint.dx - _x0, dt = dx / m.pps;
-          if (!_moved && dx.abs() > 3) {
+          final p = d.localFocalPoint;
+          final dx = p.dx - _x0, dy = p.dy - _y0, dt = dx / m.pps;
+          if (!_moved && (dx.abs() > 3 || dy.abs() > 3)) {
             _moved = true;
             widget.onScrub?.call();
-            if (_mode != 'scrub') m.checkpoint();
+            // سحب قطعة المسار الأول للأسفل = رفعها إلى المسار الثاني
+            if (_liftClip != null && dy > 6 && dy.abs() > dx.abs()) _mode = 'lift';
+            if (_mode != 'scrub' && _mode != 'lift') m.checkpoint();
           }
           if (!_moved) return;
-          if (_mode == 'ov' && m.ovSel != null) {
-            m.ovSel!.at = (_a0 + dt).clamp(0.0, max(0.0, m.dispDuration - 0.3));
-            m.changed();
-            return;
+          final o = m.ovSel;
+          switch (_mode) {
+            case 'lift':
+              final (a, b) = _liftClip!;
+              m.ghost = (a, b, max(0.0, m.toDisp(a) + dt), p.dy >= _lane2Top - 24);
+              m.changed();
+              return;
+            case 'ov' when o != null:
+              o.at = max(0.0, _a0 + dt);
+              m.dropBack = p.dy < _lane2Top - 24; // رفعها للأعلى = إرجاعها للمسار الأول
+              m.changed();
+              return;
+            case 'ovL' when o != null:
+              // قص البداية: تتحرك البداية ويبقى باقي الصوت في مكانه
+              final shift = dt.clamp(-min(_a0, _s0), (o.src1 - 0.2) - _s0);
+              o.at = _a0 + shift;
+              o.src0 = _s0 + shift;
+              m.changed();
+              return;
+            case 'ovR' when o != null:
+              o.src1 = (_b0 + dt).clamp(o.src0 + 0.2, m.duration);
+              m.changed();
+              return;
           }
           final g = m.sel, i = m.selected;
           if (_mode == 'scrub' || g == null || i == null) {
-            // سحب الخط الزمني يحرّك الوقت تحت المؤشر الثابت
-            m.playhead = m.toSrc((_ph0 - dt).clamp(0, m.dispDuration));
+            // سحب الخط الزمني يحرّك الوقت تحت المؤشر الثابت (حتى نهاية الأطول من المسارين)
+            m.seekDisp(_ph0 - dt, notify: false);
           } else {
             final lo = i > 0 ? m.segs[i - 1].end + 0.05 : 0.0;
             final hi = i + 1 < m.segs.length ? m.segs[i + 1].start - 0.05 : m.duration;
@@ -515,6 +610,26 @@ class _TimelineState extends State<Timeline> {
             }
           }
           m.changed();
+        },
+        onScaleEnd: (_) {
+          final o = m.ovSel;
+          if (_mode == 'lift') {
+            final gh = m.ghost;
+            m.ghost = null;
+            if (gh != null && gh.$4) {
+              m.liftToLane2(gh.$1, gh.$2, gh.$3); // تسقط القطعة كاملة في المسار الثاني
+            } else {
+              m.changed();
+            }
+          } else if (_mode == 'ov' && o != null && m.dropBack) {
+            m.dropBack = false;
+            m.returnToLane1(o);
+          } else if (m.dropBack) {
+            m.dropBack = false;
+            m.changed();
+          }
+          _mode = '';
+          _liftClip = null;
         },
         child: CustomPaint(size: Size(_w, tlHeight), painter: _TimelinePainter(this)),
       );
@@ -529,10 +644,10 @@ class _TimelinePainter extends CustomPainter {
   @override
   void paint(Canvas c, Size size) {
     final m = s.m, w = size.width;
-    final p0 = m.toDisp(m.playhead);
+    final p0 = m.dispPos;
     double dx(double d) => w / 2 + (d - p0) * m.pps; // وقت العرض ← x
     c.drawRect(Offset.zero & size, Paint()..color = const Color(0xFF161616));
-    final dd = m.dispDuration;
+    final dd = m.totalDisp; // الصورة والفيديو يمتدان إلى نهاية الأطول من المسارين
     // المسطرة بوقت العرض
     final step = m.pps > 120 ? 1 : m.pps > 40 ? 2 : m.pps > 15 ? 5 : 15;
     final label = TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.55));
@@ -615,13 +730,6 @@ class _TimelinePainter extends CustomPainter {
           ..color = Colors.white);
       }
     }
-    // الأجزاء الصامتة في المسار الأول (نُقل صوتها إلى الثاني)
-    for (final (a, b) in m.muted) {
-      final l = dx(m.toDisp(a)), r = dx(m.toDisp(b));
-      if (r < 0 || l > w || r - l < 1) continue;
-      c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(l + 1, _waveTop, r - 1, _waveTop + _waveH), const Radius.circular(5)),
-          Paint()..color = const Color(0xCC161616));
-    }
     // المسار الصوتي الثاني: قطع تتداخل زمنياً مع المسار الأول
     c.drawRect(Rect.fromLTWH(0, _lane2Top - 2, w, 1), Paint()..color = Colors.white10);
     for (final o in m.overlays) {
@@ -644,8 +752,21 @@ class _TimelinePainter extends CustomPainter {
         c.drawRRect(rect, Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
-          ..color = Colors.white);
+          ..color = m.dropBack ? const Color(0xFFE8B931) : Colors.white);
+        // مقبضا القص
+        final h = Paint()..color = Colors.white;
+        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(l + 1, _lane2Top, 10, _lane2H), const Radius.circular(4)), h);
+        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(r - 11, _lane2Top, 10, _lane2H), const Radius.circular(4)), h);
       }
+    }
+    // القطعة التي تُسحب من المسار الأول: ظلّ يتبع الإصبع، يتلوّن حين يصير فوق المسار الثاني
+    final gh = m.ghost;
+    if (gh != null) {
+      final (a, b, at, over) = gh;
+      final l = dx(at), r = dx(at + b - a);
+      final top = over ? _lane2Top : _waveTop + _waveH / 2;
+      c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(l + 1, top, r - 1, top + _lane2H), const Radius.circular(5)),
+          Paint()..color = (over ? const Color(0xFF3F5FB8) : Colors.white).withValues(alpha: 0.55));
     }
     // حدود المقاطع الصوتية المضافة
     for (final e in m.clipEdges) {

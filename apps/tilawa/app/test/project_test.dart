@@ -86,32 +86,33 @@ void main() {
     expect(state, 'بعد');
   });
 
-  test('نقل قطعة صوت إلى المسار الثاني: صوت فقط والنص والتوقيت كما هما', () {
+  test('سحب قطعة إلى المسار الثاني: تسقط كاملة، صوت فقط، والفيديو يمتد للأطول', () {
     final m = EditorModel()..setAudio(Float32List(sr * 20));
     m.segs = [Segment('أ', 1, 3), Segment('ب', 6, 8)];
-    m.audioSel = (5.0, 9.0);
-    m.toLane2(move: true);
-    expect(m.overlays.single.at, 5.0);
-    expect(m.overlays.single.len, 4.0);
-    expect(m.muted, [(5.0, 9.0)]); // الأصلي صامت
-    expect(m.cuts, isEmpty); // لا إغلاق للفراغ
+    m.liftToLane2(5.0, 9.0, 17.0); // أُسقطت عند الثانية 17
+    final o = m.overlays.single;
+    expect((o.src0, o.src1, o.at), (5.0, 9.0, 17.0));
+    expect(m.muted, [(5.0, 9.0)]); // مكانها في الأول فراغ صامت
+    expect(m.cuts, isEmpty);
     expect(m.segs.length, 2); // النص كما هو
-    expect(m.segs[1].start, 6);
-    expect(m.isMuted(6), true);
-    expect(m.isMuted(9.5), false);
+    expect(m.audioClips.any((c) => c.$1 < 9 && c.$2 > 5), false); // لا تظهر في الأول
+    expect(m.totalDisp, 21.0); // الأطول: 17 + 4
+    m.seekDisp(20.5);
+    expect((m.playhead, m.tail), (20.0, 0.5));
+    m.seekDisp(3);
+    expect((m.playhead, m.tail), (3.0, 0.0));
+    // أدوات المسار الثاني: تقسيم وتكرار وإرجاع
+    m.seekDisp(19);
+    m.splitOverlay();
+    expect(m.overlays.length, 2);
+    expect((m.overlays[0].src1, m.overlays[1].src0, m.overlays[1].at), (7.0, 7.0, 19.0));
+    m.duplicateOverlay();
+    expect(m.overlays.length, 3);
+    m.returnToLane1(m.overlays.first);
+    expect(m.muted, isEmpty);
     m.undo();
-    expect(m.overlays, isEmpty);
-    expect(m.muted, isEmpty);
-    m.audioSel = (5.0, 9.0);
-    m.toLane2(move: false); // النسخ يُبقي الأول مسموعاً
-    expect(m.muted, isEmpty);
-    expect(m.overlays.length, 1);
-    final l = AudioLayer.fromJson(m.overlays.single.toJson());
-    expect((l.src0, l.src1, l.at, l.vol), (5.0, 9.0, 5.0, 1.0));
-    m.audioSel = (5.0, 9.0);
-    m.toLane2(move: true);
-    m.audioSel = (5.0, 9.0);
-    m.unmuteSelected(); // إعادة الصوت للأول
-    expect(m.muted, isEmpty);
+    expect(m.muted, [(5.0, 9.0)]);
+    final l = AudioLayer.fromJson(m.overlays.first.toJson());
+    expect((l.src0, l.at, l.vol), (5.0, 17.0, 1.0));
   });
 }
