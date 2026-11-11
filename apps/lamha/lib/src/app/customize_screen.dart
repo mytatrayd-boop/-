@@ -23,13 +23,28 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
   /// العنصر المفتوحة لوحته (يُميَّز في المعاينة).
   WidgetElement? _open;
 
+  /// حول المعاينة: اللوحة السفلية تقف تحت حدّها فلا تحجب الودجت (طلب المالك ١١/١١/٢٠٢٦).
+  final _previewKey = GlobalKey();
+
+  /// ارتفاع محتوى اللوحة: ما تحت المعاينة ناقص مقبض اللوحة، بين ٢٢٠ و٤٤٠.
+  double _sheetHeight() {
+    final screen = MediaQuery.sizeOf(context).height;
+    final box = _previewKey.currentContext?.findRenderObject() as RenderBox?;
+    final bottom = box == null || !box.hasSize
+        ? screen * 0.5
+        : box.localToGlobal(Offset(0, box.size.height)).dy;
+    return (screen - bottom - kMinInteractiveDimension - 8).clamp(220.0, 440.0);
+  }
+
   Future<void> _edit(WidgetElement e) async {
     setState(() => _open = e);
+    final height = _sheetHeight();
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       barrierColor: Colors.black26,
-      builder: (_) => TileSheet(id: e),
+      builder: (_) => TileSheet(id: e, height: height),
     );
     if (mounted) setState(() => _open = null);
   }
@@ -72,6 +87,7 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
+          key: _previewKey,
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -318,9 +334,12 @@ class _PresetDot extends StatelessWidget {
 
 /// اللوحة السفلية لعنصر: اسمه ومفتاح إظهاره، ثم تبويبات الحجم والألوان والمحتوى.
 class TileSheet extends ConsumerWidget {
-  const TileSheet({super.key, required this.id});
+  const TileSheet({super.key, required this.id, this.height = 400});
 
   final WidgetElement id;
+
+  /// ارتفاع المحتوى (يحسبه [CustomizeScreen] ليبقى تحت المعاينة).
+  final double height;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -333,10 +352,6 @@ class TileSheet extends ConsumerWidget {
       for (final t in layout)
         if (t.visible) (id: t.id.name, span: t.span),
     ]);
-    final height = (MediaQuery.sizeOf(context).height * 0.5).clamp(
-      300.0,
-      440.0,
-    );
     return SizedBox(
       key: const Key('tile-panel'),
       height: height,

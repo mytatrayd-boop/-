@@ -178,6 +178,28 @@ void main() {
     expect(find.text('لا خيارات محتوى لهذا العنصر'), findsOneWidget);
   });
 
+  testWidgets('بمقاس آيفون: اللوحة تقف تحت المعاينة فلا تحجب أسفل الودجت', (tester) async {
+    await openCustomize(tester);
+    for (final size in const [Size(375, 667), Size(390, 844), Size(430, 932)]) {
+      tester.view.physicalSize = size * 2;
+      tester.view.devicePixelRatio = 2;
+      await tester.pumpAndSettle();
+      // من المعاينة نفسها: أعلى الودجت وأسفله.
+      for (final id in ['clock', 'season']) {
+        await tester.tap(tile(id));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('tile-panel')), findsOneWidget);
+        final preview = tester.getRect(find.byKey(const Key('customize-preview')));
+        final sheet = tester.getRect(find.ancestor(
+          of: find.byKey(const Key('tile-panel')),
+          matching: find.byType(BottomSheet),
+        ));
+        expect(sheet.top, greaterThanOrEqualTo(preview.bottom), reason: '$size $id');
+        await closeSheet(tester);
+      }
+    }
+  });
+
   testWidgets('مفتاح الإظهار في الصف يحفظ في الجدول، والمخفي باهت', (tester) async {
     final bridge = await openCustomize(tester);
     await tapKey(tester, 'tile-switch-prayerTimes');
