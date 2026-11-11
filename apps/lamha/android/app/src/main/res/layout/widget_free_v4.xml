@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- التخطيط الحر: جزء في عمود رأسي بوزن 4 (شجرة القص، free_layout.dart). مولّد. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/fslot"
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_weight="4" />

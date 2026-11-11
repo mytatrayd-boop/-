@@ -202,6 +202,9 @@ class CutNode {
     return const CutNode.empty();
   }
 
+  /// عدد المستويات (المربع والفراغ مستوى واحد).
+  int get depth => children.isEmpty ? 1 : 1 + children.map((c) => c.node.depth).reduce((a, b) => a > b ? a : b);
+
   /// العناصر الظاهرة في الشجرة.
   Set<WidgetElement> get tiles => tile != null ? {tile!} : {for (final c in children) ...c.node.tiles};
 
@@ -217,9 +220,18 @@ class CutNode {
             };
 }
 
-/// يقسم الصندوق [box] بقطع كاملة (أفقية ثم رأسية) حتى يبقى عنصر واحد أو فراغ في كل جزء.
-/// null إذا تعذر القطع (ترتيب دوّامي) ولا يُقبل.
-CutNode? cutTree(Map<WidgetElement, GridRect> rects, {GridRect box = const GridRect(0, 0, freeCols, freeRows)}) {
+/// أقصى عمق لشجرة القص (المربع مستوى). ودجت أندرويد تضيف مستوى addView لكل عمق، والنظام يرفض أكثر من
+/// ١٠ مستويات فيسقط التطبيق (1.1.0+10). يطابق FREE_MAX_DEPTH في LamhaLogic.kt.
+const cutTreeMaxDepth = 6;
+
+/// يقسم الشبكة بقطع كاملة (أفقية ثم رأسية) حتى يبقى عنصر واحد أو فراغ في كل جزء.
+/// null إذا تعذر القطع (ترتيب دوّامي) أو كانت الشجرة أعمق من [cutTreeMaxDepth]، ولا يُقبل.
+CutNode? cutTree(Map<WidgetElement, GridRect> rects) {
+  final tree = _cut(rects);
+  return tree == null || tree.depth > cutTreeMaxDepth ? null : tree;
+}
+
+CutNode? _cut(Map<WidgetElement, GridRect> rects, {GridRect box = const GridRect(0, 0, freeCols, freeRows)}) {
   // ما يتجاوز أسفل الشبكة لا يظهر ولا يدخل القسمة.
   rects = {for (final e in rects.entries) if (e.value.bottom <= freeRows) e.key: e.value};
   final inside = {
@@ -255,7 +267,7 @@ CutNode? cutTree(Map<WidgetElement, GridRect> rects, {GridRect box = const GridR
       final sub = vertical
           ? GridRect(box.x, edges[i], box.w, edges[i + 1] - edges[i])
           : GridRect(edges[i], box.y, edges[i + 1] - edges[i], box.h);
-      final node = cutTree(inside, box: sub);
+      final node = _cut(inside, box: sub);
       if (node == null) return null;
       parts.add((weight: edges[i + 1] - edges[i], node: node));
     }

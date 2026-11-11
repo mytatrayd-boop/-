@@ -44,6 +44,15 @@ object LamhaLogic {
     /// أقصى وزن لخانة (ارتفاع الشبكة)، ولكل وزن ملف خانة.
     const val FREE_ROWS = 10
 
+    /// أقصى عمق لشجرة القص (المربع مستوى). كل مستوى addView واحد، وفوقه الودجت ومحتوى المربع، والنظام
+    /// يرفض أكثر من ١٠ (LamhaParcelTest). يطابق cutTreeMaxDepth في Dart.
+    const val FREE_MAX_DEPTH = 6
+
+    fun treeDepth(n: CutTree): Int = when (n) {
+        is CutTree.Split -> 1 + (n.children.maxOfOrNull { treeDepth(it.second) } ?: 0)
+        else -> 1
+    }
+
     /// الترتيب الافتراضي (defaultLayout في Dart، الميزة ٦: تصميم المالك ٣). القديمة في آخره مخفية.
     val DEFAULT_LAYOUT = listOf(
         Tile("clock", span = 2, fontScale = 2f, showSub = false),
