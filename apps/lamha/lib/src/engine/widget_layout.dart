@@ -1,5 +1,9 @@
 import 'dart:math' as math;
 
+import 'free_layout.dart';
+
+export 'free_layout.dart';
+
 /// تخطيط الودجت (الميزة ٥، DECISIONS ١٥): كل عنصر مربع على شبكة عرضها [gridColumns] وحدات،
 /// يُرصّ بالترتيب من اليمين ويلتفّ إلى صف جديد، بحد [maxGridRows] صفوف.
 /// الخوارزمية نفسها في LamhaLogic.kt (packRows وrowHeights) مع اختبار بالحالات نفسها.
@@ -133,6 +137,7 @@ class TileLayout {
     this.primaryColor,
     this.secondaryColor,
     this.iconScale = 1.0,
+    this.rect,
   });
 
   factory TileLayout.fromJson(Map<String, dynamic> j) => TileLayout(
@@ -145,6 +150,7 @@ class TileLayout {
     primaryColor: TileColor.byName(j['primaryColor'] as String?),
     secondaryColor: TileColor.byName(j['secondaryColor'] as String?),
     iconScale: tileIconScale(j['iconScale']),
+    rect: j['rect'] == null ? null : GridRect.fromJson(j['rect']),
   );
 
   final WidgetElement id;
@@ -167,6 +173,9 @@ class TileLayout {
   /// معامل حجم أيقونة القبلة (٠٫٥–١٫٦)؛ لا أثر له في بقية المربعات.
   final double iconScale;
 
+  /// موضعه ومقاسه في التخطيط الحر (free_layout.dart)؛ null = يوضع في أول فراغ بمقاسه الافتراضي.
+  final GridRect? rect;
+
   TileLayout copyWith({
     bool? visible,
     int? span,
@@ -176,6 +185,7 @@ class TileLayout {
     TileColor? Function()? primaryColor,
     TileColor? Function()? secondaryColor,
     double? iconScale,
+    GridRect? Function()? rect,
   }) => TileLayout(
     id,
     visible: visible ?? this.visible,
@@ -188,6 +198,7 @@ class TileLayout {
         ? secondaryColor()
         : this.secondaryColor,
     iconScale: iconScale != null ? tileIconScale(iconScale) : this.iconScale,
+    rect: rect != null ? rect() : this.rect,
   );
 
   /// للإعدادات المحفوظة (اللونان بالأسماء).
@@ -201,6 +212,7 @@ class TileLayout {
     'primaryColor': primaryColor?.name,
     'secondaryColor': secondaryColor?.name,
     'iconScale': iconScale,
+    if (rect != null) 'rect': rect!.toJson(),
   };
 
   /// للجدول (قيم جاهزة): اللون ARGB أو null.
@@ -214,6 +226,7 @@ class TileLayout {
     'primaryColor': primaryColor?.argb,
     'secondaryColor': secondaryColor?.argb,
     'iconScale': iconScale,
+    if (rect != null) 'rect': rect!.toJson(),
   };
 
   @override
@@ -227,7 +240,8 @@ class TileLayout {
       other.showSub == showSub &&
       other.primaryColor == primaryColor &&
       other.secondaryColor == secondaryColor &&
-      other.iconScale == iconScale;
+      other.iconScale == iconScale &&
+      other.rect == rect;
 
   @override
   int get hashCode => Object.hash(
@@ -240,6 +254,7 @@ class TileLayout {
     primaryColor,
     secondaryColor,
     iconScale,
+    rect,
   );
 }
 

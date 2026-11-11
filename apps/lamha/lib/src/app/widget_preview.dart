@@ -48,16 +48,6 @@ const widestClockText = '١٢:٥٨';
 const headLineHeight = 1.3;
 const weekdayLineHeight = 1.2;
 
-/// خانات بلا صندوق: صفوفها بقدر محتواها، وصفوف المربعات تقتسم الباقي (LINE_TILES في
-/// LamhaWidgetReceiver.kt).
-const _lineTiles = {
-  'clock',
-  'dates',
-  'weather',
-  'dayWeather',
-  datesWeatherCell,
-};
-
 /// حشوة الودجت، والتباعد بين المربعات والصفوف.
 const widgetPadding = 14.0;
 const tileSpacing = 8.0;
@@ -81,6 +71,7 @@ typedef ScheduleTile = ({
   int? primary,
   int? secondary,
   double iconScale,
+  GridRect? rect,
 });
 
 /// تخطيط الجدول بترتيبه. جدول أقدم بلا `layout`: الترتيب الافتراضي والإظهار من `visible`.
@@ -101,6 +92,7 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
             primary: t['primaryColor'] as int?,
             secondary: t['secondaryColor'] as int?,
             iconScale: tileIconScale(t['iconScale']),
+            rect: t['rect'] is List ? GridRect.fromJson(t['rect']) : null,
           ),
     ];
   }
@@ -121,8 +113,20 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
         primary: null,
         secondary: null,
         iconScale: 1.0,
+        rect: null,
       ),
   ];
+}
+
+/// شجرة القص من الجدول (DECISIONS ٢٧)؛ جدول أقدم بلاها: تُحسب من التخطيط كما يحسبها الجدول.
+CutNode scheduleTree(Map<String, Object?> schedule, List<ScheduleTile> layout) {
+  final raw = schedule['tree'];
+  if (raw is Map) return CutNode.fromJson(raw);
+  final rects = rectsOf([
+    for (final t in layout)
+      TileLayout(t.id, visible: t.visible, rect: t.rect),
+  ]);
+  return cutTree(rects) ?? const CutNode.empty();
 }
 
 /// حجم خط يجعل نصاً عرضه [widthAtPreferred] بالحجم [preferred] يتسع في [maxWidth]، دون أن ينزل
@@ -194,6 +198,7 @@ class WidgetPreview extends StatelessWidget {
     this.systemColors,
     this.onTileTap,
     this.selected,
+    this.overlay,
   });
 
   final Map<String, Object?> schedule;
@@ -210,6 +215,9 @@ class WidgetPreview extends StatelessWidget {
 
   /// مربع يُبرز بإطار (المفتوحة إعداداته).
   final WidgetElement? selected;
+
+  /// طبقة فوق شبكة المربعات بمقاسها (محرر التخطيط الحر في شاشة «الودجت»).
+  final Widget Function(Size grid)? overlay;
 
   @override
   Widget build(BuildContext context) {
@@ -244,17 +252,12 @@ class WidgetPreview extends StatelessWidget {
 
     final layout = scheduleLayout(schedule);
     final byId = {for (final t in layout) t.id: t};
-    final rows = packRows(
-      stackCells([
-        for (final t in layout)
-          if (t.visible) (id: t.id.name, span: t.span),
-      ]),
-    );
-
-    final placed = placedElements([
+    final tree = scheduleTree(schedule, layout);
+    final placed = {for (final e in tree.tiles) e.name};
+    final rectOf = {
       for (final t in layout)
-        if (t.visible) (id: t.id.name, span: t.span),
-    ]);
+        if (t.rect != null) t.id: t.rect!,
+    };
 
     _Cell tileFor(WidgetElement e, int span) {
       final t = byId[e]!;
@@ -370,108 +373,23 @@ class WidgetPreview extends StatelessWidget {
       );
     }
 
-    Widget grid(BuildContext context, BoxConstraints c) {
-      // كل خانة مربع واحد، أو التاريخان وتحتهما المدينة والطقس (stackCells).
-      final tiles = [
-        for (final row in rows)
-          [
-            for (final cell in row)
-              [
-                for (final id in cellElements(cell.id))
-                  tileFor(WidgetElement.values.byName(id), cell.span),
-              ],
-          ],
-      ];
-      // ارتفاعا كل مربع بعرضه: عرض [span] في صف من [k] مربعات (كتوزيع Expanded).
-      double widthOf(int r, int i) =>
-          (c.maxWidth - tileSpacing * (rows[r].length - 1)) *
-          rows[r][i].span /
-          gridColumns;
-      final sizes = [
-        for (var r = 0; r < rows.length; r++)
-          [
-            for (var i = 0; i < rows[r].length; i++)
-              [
-                for (final t in tiles[r][i])
-                  t.base.heights(context, widthOf(r, i)),
-              ],
-          ],
-      ];
-      double sumOf(List<({double text, double pad})> h, bool text) =>
-          h.fold<double>(0, (a, x) => a + (text ? x.text : x.pad));
-      // مقاس المربعات بالحجم الأساسي (١) لا بحجم الخط المختار، فلا يتغير بتغيّره (الميزة ٥ب): كل
-      // صف بوزن أطول خانة فيه، وصفوف المربعات تقتسم الباقي، وصفوف الساعة والتاريخين والمدينة بقدر
-      // محتواها. ثم يلائم كل مربع نصه بحجمه المطلوب داخل مقاسه (fitTile).
-      // كل صف بأطول خانة فيه (نصها وحشوتها معاً).
-      final tallest = [
-        for (final r in sizes)
-          r
-              .map((h) => (text: sumOf(h, true), pad: sumOf(h, false)))
-              .reduce((a, b) => a.text + a.pad >= b.text + b.pad ? a : b),
-      ];
-      final fit = rowHeights(
-        [for (final t in tallest) t.text],
-        [for (final t in tallest) t.pad],
-        c.maxHeight,
-        tileSpacing,
-        flexible: [
-          for (final r in rows) r.any((cell) => !_lineTiles.contains(cell.id)),
-        ],
-      );
-      Widget cellWidget(int r, int i) {
-        final ids = cellElements(rows[r][i].id);
-        if (ids.length == 1) {
-          return _tap(
-            WidgetElement.values.byName(ids.first),
-            tiles[r][i].first,
-          );
-        }
-        // الكبسولتان تقتسمان الخانة بالتساوي.
-        if (rows[r][i].id == hijriGregorianCell) {
-          return Column(
-            children: [
-              for (var k = 0; k < ids.length; k++)
-                Expanded(
-                  child: _tap(
-                    WidgetElement.values.byName(ids[k]),
-                    tiles[r][i][k],
-                  ),
-                ),
-            ],
-          );
-        }
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (var k = 0; k < ids.length; k++)
-              SizedBox(
-                height: sizes[r][i][k].text * fit.scale + sizes[r][i][k].pad,
-                child: _tap(
-                  WidgetElement.values.byName(ids[k]),
-                  tiles[r][i][k],
-                ),
-              ),
-          ],
+    // التخطيط الحر: الشجرة نفسها التي ترسمها الودجتان، كل جزء بوزنه، وبين المربعات [tileSpacing]
+    // (نصفه حول كل مربع).
+    Widget node(CutNode n) {
+      final e = n.tile;
+      if (e != null) {
+        final span = spanOfWidth(rectOf[e]?.w ?? freeCols);
+        return Padding(
+          padding: const EdgeInsets.all(tileSpacing / 2),
+          child: _tap(e, tileFor(e, span)),
         );
       }
-
-      return Column(
+      if (n.children.isEmpty) return const SizedBox.shrink();
+      return Flex(
+        direction: n.vertical ? Axis.vertical : Axis.horizontal,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var r = 0; r < rows.length; r++) ...[
-            if (r > 0) const SizedBox(height: tileSpacing),
-            SizedBox(
-              height: fit.heights[r],
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var i = 0; i < rows[r].length; i++) ...[
-                    if (i > 0) const SizedBox(width: tileSpacing),
-                    Expanded(flex: rows[r][i].span, child: cellWidget(r, i)),
-                  ],
-                ],
-              ),
-            ),
-          ],
+          for (final ch in n.children) Expanded(flex: ch.weight, child: node(ch.node)),
         ],
       );
     }
@@ -483,10 +401,19 @@ class WidgetPreview extends StatelessWidget {
         color: colors.background.withValues(alpha: alpha),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(widgetPadding),
+        padding: const EdgeInsets.all(widgetPadding - tileSpacing / 2),
         child: DefaultTextStyle.merge(
           style: TextStyle(shadows: shadows),
-          child: LayoutBuilder(builder: grid),
+          child: overlay == null
+              ? node(tree)
+              : LayoutBuilder(
+                  builder: (context, c) => Stack(
+                    children: [
+                      Positioned.fill(child: node(tree)),
+                      Positioned.fill(child: overlay!(c.biggest)),
+                    ],
+                  ),
+                ),
         ),
       ),
     );

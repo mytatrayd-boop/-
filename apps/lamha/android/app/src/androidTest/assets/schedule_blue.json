@@ -38,7 +38,13 @@
       "showSub": false,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        0,
+        0,
+        4,
+        2
+      ]
     },
     {
       "id": "dayWeather",
@@ -49,7 +55,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        4,
+        0,
+        2,
+        2
+      ]
     },
     {
       "id": "hijri",
@@ -60,7 +72,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        0,
+        2,
+        4,
+        1
+      ]
     },
     {
       "id": "gregorian",
@@ -71,7 +89,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        0,
+        3,
+        4,
+        1
+      ]
     },
     {
       "id": "qibla",
@@ -82,7 +106,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        4,
+        2,
+        2,
+        2
+      ]
     },
     {
       "id": "prayerTimes",
@@ -93,7 +123,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        0,
+        4,
+        6,
+        2
+      ]
     },
     {
       "id": "deposit",
@@ -104,7 +140,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        0,
+        6,
+        6,
+        2
+      ]
     },
     {
       "id": "season",
@@ -115,7 +157,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        0,
+        8,
+        2,
+        2
+      ]
     },
     {
       "id": "tradSeason",
@@ -126,7 +174,13 @@
       "showSub": true,
       "primaryColor": null,
       "secondaryColor": null,
-      "iconScale": 1.0
+      "iconScale": 1.0,
+      "rect": [
+        2,
+        8,
+        4,
+        2
+      ]
     },
     {
       "id": "tradPoints",
@@ -173,6 +227,75 @@
       "iconScale": 1.0
     }
   ],
+  "grid": [
+    6,
+    10
+  ],
+  "tree": {
+    "dir": "v",
+    "children": [
+      {
+        "w": 2,
+        "dir": "h",
+        "children": [
+          {
+            "w": 4,
+            "tile": "clock"
+          },
+          {
+            "w": 2,
+            "tile": "dayWeather"
+          }
+        ]
+      },
+      {
+        "w": 2,
+        "dir": "h",
+        "children": [
+          {
+            "w": 4,
+            "dir": "v",
+            "children": [
+              {
+                "w": 1,
+                "tile": "hijri"
+              },
+              {
+                "w": 1,
+                "tile": "gregorian"
+              }
+            ]
+          },
+          {
+            "w": 2,
+            "tile": "qibla"
+          }
+        ]
+      },
+      {
+        "w": 2,
+        "tile": "prayerTimes"
+      },
+      {
+        "w": 2,
+        "tile": "deposit"
+      },
+      {
+        "w": 2,
+        "dir": "h",
+        "children": [
+          {
+            "w": 2,
+            "tile": "season"
+          },
+          {
+            "w": 4,
+            "tile": "tradSeason"
+          }
+        ]
+      }
+    ]
+  },
   "opacity": 80,
   "background": null,
   "theme": {

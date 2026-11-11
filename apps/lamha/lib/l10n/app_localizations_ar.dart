@@ -313,7 +313,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tileHint =>
-      'اضغط على عنصر في القائمة أو في المعاينة لتعديل حجمه وألوانه ومحتواه، واسحب المقبض لتغيير الترتيب.';
+      'اسحب أي مربع في المعاينة لتحريكه، ومقبض زاويته لتكبيره أو تصغيره، واضغطه لتعديل خطه وألوانه ومحتواه. العناصر تصعد تلقائياً لتملأ الفراغ.';
 
   @override
   String tileSpanName(String span) {
@@ -544,4 +544,8 @@ class AppLocalizationsAr extends AppLocalizations {
     });
     return '$_temp0';
   }
+
+  @override
+  String get freeLayoutRejected =>
+      'لا يمكن هذا الترتيب في الودجت. جرّب موضعاً أو مقاساً آخر.';
 }
