@@ -37,7 +37,7 @@ void main() {
     expect(find.textContaining('من الشمال'), findsOneWidget);
     expect(find.text('جارٍ قراءة البوصلة…'), findsOneWidget);
 
-    compass.controller.add((heading: 0, accuracy: 15));
+    compass.controller.add((heading: 0, accuracy: 15, magnetic: true));
     await tester.pump();
     expect(painter(tester).heading, 0);
     expect(painter(tester).qibla, closeTo(riyadhQibla, 0.01));
@@ -49,7 +49,7 @@ void main() {
     expect(find.byKey(const Key('qibla-kaaba')), findsOneWidget);
 
     // التنعيم يمر عبر الشمال (٠ → ٣٠٠ يمرّ بـ ٣١٥ لا بـ ٧٥؛ دوران كبير فثلاثة أرباعه).
-    compass.controller.add((heading: 300, accuracy: 15));
+    compass.controller.add((heading: 300, accuracy: 15, magnetic: true));
     await tester.pump();
     expect(painter(tester).heading, closeTo(315, 0.01));
   });
@@ -65,14 +65,14 @@ void main() {
     await pumpApp(tester, compass: compass, vibration: vibration);
     await openQibla(tester);
 
-    compass.controller.add((heading: riyadhQibla - 30, accuracy: 15));
+    compass.controller.add((heading: riyadhQibla - 30, accuracy: 15, magnetic: true));
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsNothing);
     expect(background(), QiblaScreen.background);
     expect(painter(tester).aligned, isFalse);
     expect(vibration.pulses, 0);
 
-    compass.controller.add((heading: riyadhQibla - 2, accuracy: 15));
+    compass.controller.add((heading: riyadhQibla - 2, accuracy: 15, magnetic: true));
     await tester.pump();
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsOneWidget);
@@ -82,13 +82,13 @@ void main() {
     expect(vibration.pulses, 1);
 
     // اهتزاز اليد داخل ٥° لا يكرر الاهتزاز ولا يطفئ الإشارة.
-    compass.controller.add((heading: riyadhQibla + 4, accuracy: 15));
+    compass.controller.add((heading: riyadhQibla + 4, accuracy: 15, magnetic: true));
     await tester.pump();
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsOneWidget);
     expect(vibration.pulses, 1);
 
-    compass.controller.add((heading: riyadhQibla + 7, accuracy: 15));
+    compass.controller.add((heading: riyadhQibla + 7, accuracy: 15, magnetic: true));
     await tester.pump();
     await tester.pump();
     expect(find.byKey(const Key('qibla-aligned')), findsNothing);
@@ -96,7 +96,7 @@ void main() {
     expect(find.text('أدر الجوال حتى تصل الكعبة للسهم بالأعلى'), findsOneWidget);
 
     // العودة مرة أخرى تهتز من جديد.
-    compass.controller.add((heading: riyadhQibla, accuracy: 15));
+    compass.controller.add((heading: riyadhQibla, accuracy: 15, magnetic: true));
     await tester.pump();
     await tester.pump();
     expect(vibration.pulses, 2);
@@ -107,11 +107,11 @@ void main() {
     final compass = FakeCompass();
     await pumpApp(tester, compass: compass);
     await openQibla(tester);
-    compass.controller.add((heading: 10, accuracy: 25));
+    compass.controller.add((heading: 10, accuracy: 25, magnetic: true));
     await tester.pump();
     expect(find.text('جيدة'), findsOneWidget);
     expect(find.byKey(const Key('compass-calibrate')), findsNothing);
-    compass.controller.add((heading: 10, accuracy: 45));
+    compass.controller.add((heading: 10, accuracy: 45, magnetic: true));
     await tester.pump();
     expect(find.text('ضعيفة'), findsOneWidget);
     expect(find.byKey(const Key('compass-calibrate')), findsOneWidget);
@@ -148,7 +148,7 @@ void main() {
     final compass = FakeCompass();
     await pumpApp(tester, compass: compass);
     await openQibla(tester);
-    compass.controller.add((heading: null, accuracy: null));
+    compass.controller.add((heading: null, accuracy: null, magnetic: true));
     await tester.pump();
     expect(find.byKey(const Key('compass-unavailable')), findsOneWidget);
   });
@@ -183,7 +183,7 @@ void main() {
     await pumpApp(tester, compass: compass, location: FakeLocation((latitude: 18.2164, longitude: 42.5053)));
     await openQibla(tester);
     await tester.pump();
-    compass.controller.add((heading: 0, accuracy: 15));
+    compass.controller.add((heading: 0, accuracy: 15, magnetic: true));
     await tester.pump();
     final abha = qiblaDegrees(18.2164, 42.5053);
     expect(painter(tester).qibla, closeTo(abha, 0.01));
@@ -207,7 +207,7 @@ void main() {
     await pumpApp(tester, compass: compass);
     await openQibla(tester);
     await tester.pump();
-    compass.controller.add((heading: 0, accuracy: 15));
+    compass.controller.add((heading: 0, accuracy: 15, magnetic: true));
     await tester.pump();
     expect(find.byKey(const Key('qibla-saved-location')), findsOneWidget);
   });

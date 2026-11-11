@@ -1,9 +1,68 @@
+import CoreLocation
 import Flutter
 import UIKit
 import WidgetKit
 
+/// اتجاه البوصلة لشاشة القبلة (بدل flutter_compass في آيفون): الشمال الحقيقي إن عُرف الموقع، وإلا
+/// المغناطيسي مع علامة [true] = false ليضيف Dart الانحراف. flutter_compass يرسل trueHeading وحده،
+/// وهو -1 ما لم تعمل خدمة الموقع، فيقف القرص؛ ويُسقط القراءات أثناء المعايرة.
+final class HeadingStream: NSObject, FlutterStreamHandler, CLLocationManagerDelegate {
+  private let manager = CLLocationManager()
+  private var sink: FlutterEventSink?
+
+  override init() {
+    super.init()
+    manager.delegate = self
+    manager.headingFilter = 1
+    manager.headingOrientation = .portrait
+    manager.desiredAccuracy = kCLLocationAccuracyKilometer
+  }
+
+  func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    guard CLLocationManager.headingAvailable() else {
+      return FlutterError(code: "no-heading", message: "Heading unavailable", details: nil)
+    }
+    sink = events
+    // الموقع يجعل trueHeading صالحاً (لا يطلب إذناً: يعمل فقط إن كان الإذن ممنوحاً).
+    switch manager.authorizationStatus {
+    case .authorizedWhenInUse, .authorizedAlways: manager.startUpdatingLocation()
+    default: break
+    }
+    manager.startUpdatingHeading()
+    return nil
+  }
+
+  func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    manager.stopUpdatingHeading()
+    manager.stopUpdatingLocation()
+    sink = nil
+    return nil
+  }
+
+  func locationManager(_ manager: CLLocationManager, didUpdateHeading h: CLHeading) {
+    let isTrue = h.trueHeading >= 0
+    sink?([
+      "heading": isTrue ? h.trueHeading : h.magneticHeading,
+      "true": isTrue,
+      "accuracy": h.headingAccuracy,
+    ])
+  }
+
+  func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    guard sink != nil else { return }
+    switch manager.authorizationStatus {
+    case .authorizedWhenInUse, .authorizedAlways: manager.startUpdatingLocation()
+    default: break
+    }
+  }
+
+  func locationManagerShouldDisplayHeadingCalibration(_ manager: CLLocationManager) -> Bool { true }
+}
+
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private let heading = HeadingStream()
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -13,6 +72,10 @@ import WidgetKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LamhaHeading") {
+      FlutterEventChannel(name: "sa.lamha/heading", binaryMessenger: registrar.messenger())
+        .setStreamHandler(heading)
+    }
     // مسار حاوية App Group لحفظ لقطة الخلفية حيث تقرؤها الودجت.
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LamhaAppGroup") {
       let channel = FlutterMethodChannel(

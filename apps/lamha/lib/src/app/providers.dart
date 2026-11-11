@@ -37,7 +37,9 @@ final placeGeocoderProvider =
     Provider<PlaceGeocoder>((ref) => GeocodingPlaceGeocoder());
 
 final compassSourceProvider =
-    Provider<CompassSource>((ref) => FlutterCompassSource());
+    Provider<CompassSource>((ref) => defaultTargetPlatform == TargetPlatform.iOS
+        ? IosHeadingSource()
+        : FlutterCompassSource());
 
 final declinationProvider =
     Provider<DeclinationSource>((ref) => AndroidDeclinationSource());
