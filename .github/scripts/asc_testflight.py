@@ -1,18 +1,37 @@
 #!/usr/bin/env python3
 """Add the newest processed build(s) of an app to its internal TestFlight group.
 
-  asc_testflight.py <bundle_id> [<group name>] [--auto] [--tester EMAIL]
+  asc_testflight.py <bundle_id> [<group name>] [--auto] [--tester EMAIL] [--invite]
 
 Prints the latest builds and their processing state, then adds the builds that are VALID
 (processed) and not yet in the internal group. With --auto the group also gets every future build
 automatically (hasAccessToAllBuilds). With --tester the email is added to the group (Apple emails the
-invitation); the internal group «داخلي» is created first if the app has none. Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID.
+invitation); the internal group «داخلي» is created first if the app has none. An internal tester must
+be an App Store Connect user: with --invite the email is first invited as a user (Developer role, all
+apps); the tester is added once the invitation is accepted (run again then). Env: ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID.
 """
 import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from ios_signing import api, request  # noqa: E402
+
+
+def invite_user(email: str):
+    users = api("GET", f"/users?filter[username]={email}&limit=5")["data"]
+    if users:
+        print("already an App Store Connect user")
+        return
+    pending = api("GET", f"/userInvitations?filter[email]={email}&limit=5")["data"]
+    if pending:
+        print(f"invitation already pending (expires {pending[0]['attributes'].get('expirationDate')})")
+        return
+    status, res = request("POST", "/userInvitations", {"data": {"type": "userInvitations", "attributes": {
+        "email": email, "firstName": "Lamha", "lastName": "Tester", "roles": ["DEVELOPER"],
+        "allAppsVisible": True, "provisioningAllowed": False}}})
+    if status >= 300:
+        sys.exit(f"::error::invite user -> {status}: {str(res)[:800]}")
+    print("invitation sent by Apple: accept it from the email, then run again to join the group")
 
 
 def add_tester(group: dict, email: str):
@@ -24,12 +43,19 @@ def add_tester(group: dict, email: str):
         status, res = request("POST", "/betaTesters", {"data": {
             "type": "betaTesters", "attributes": {"email": email},
             "relationships": {"betaGroups": {"data": [{"type": "betaGroups", "id": group["id"]}]}}}})
+    if status == 409:
+        print(f"::warning::Apple refused the tester (409): an internal tester must be an App Store Connect "
+              f"user who accepted the invitation. {str(res)[:300]}")
+        return
     if status >= 300:
         sys.exit(f"::error::add tester -> {status}: {str(res)[:800]}")
     print(f"tester added to group '{group['attributes']['name']}' (invitation sent by Apple)")
 
 
-def main(bundle_id: str, group_name: str | None, auto: bool = False, tester: str | None = None):
+def main(bundle_id: str, group_name: str | None, auto: bool = False, tester: str | None = None,
+         invite: bool = False):
+    if invite and tester:
+        invite_user(tester)
     apps = api("GET", f"/apps?filter[bundleId]={bundle_id}")["data"]
     if not apps:
         sys.exit(f"::error::No app with bundle id {bundle_id}")
@@ -88,7 +114,7 @@ if __name__ == "__main__":
         i = argv.index("--tester")
         tester = argv[i + 1] if i + 1 < len(argv) and argv[i + 1] else None
         del argv[i:i + 2]
-    args = [a for a in argv if a != "--auto"]
+    args = [a for a in argv if a not in ("--auto", "--invite")]
     if not 1 <= len(args) <= 2:
         sys.exit(__doc__)
-    main(args[0], args[1] if len(args) > 1 else None, "--auto" in argv, tester)
+    main(args[0], args[1] if len(args) > 1 else None, "--auto" in argv, tester, "--invite" in argv)

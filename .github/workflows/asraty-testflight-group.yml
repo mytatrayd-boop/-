@@ -14,6 +14,10 @@ on:
         description: "optional: add this email as an internal tester (Apple emails the invitation)"
         type: string
         default: ""
+      invite:
+        description: "first invite tester_email as an App Store Connect user (needed for internal testers)"
+        type: boolean
+        default: false
       auto_distribution:
         description: "Also turn on automatic distribution (every future build goes to the group)"
         type: boolean
@@ -36,5 +40,5 @@ jobs:
           printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
           export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
           case "${{ inputs.app }}" in lamha) BUNDLE=sa.lamha.lamha ;; *) BUNDLE=sa.asraty.app ;; esac
-          python3 -u .github/scripts/asc_testflight.py "$BUNDLE" ${{ inputs.auto_distribution && '--auto' || '' }} --tester "$TESTER"
+          python3 -u .github/scripts/asc_testflight.py "$BUNDLE" ${{ inputs.auto_distribution && '--auto' || '' }} ${{ inputs.invite && '--invite' || '' }} --tester "$TESTER"
           rm -f "$RUNNER_TEMP/AuthKey.p8"
