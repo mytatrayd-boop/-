@@ -40,6 +40,26 @@ void main() {
     expect(parseDigits('abc'), isNull);
   });
 
+  testWidgets('مهلة أداء الصلاة: الأيقونة تفتح الصلوات الخمس، والزيادة تُحفظ للجميع', (tester) async {
+    await _demoAdminPage(tester, 'مهلة أداء الصلاة');
+    for (final k in ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
+      expect(find.byKey(Key('grace-row-$k')), findsOneWidget);
+    }
+    expect(find.text('كل الأفراد'), findsWidgets);
+    final value = find.byKey(const Key('grace-value-fajr'));
+    expect(tester.widget<Text>(value).data, '30 د');
+    await tester.tap(find.byKey(const Key('grace-plus-fajr')));
+    await tester.tap(find.byKey(const Key('grace-plus-fajr')));
+    await tester.pump();
+    expect(tester.widget<Text>(value).data, '40 د');
+    await tester.ensureVisible(find.byKey(const Key('grace-save')));
+    await tester.tap(find.byKey(const Key('grace-save')));
+    await _settle(tester);
+    expect(find.text('حُفظت مهلة الصلاة ✓'), findsOneWidget);
+    expect(tester.widget<Text>(value).data, '40 د');
+    expect(find.byKey(const Key('grace-reset-fajr')), findsOneWidget);
+  });
+
   testWidgets('adding a task shows it in the list right away', (tester) async {
     await _demoAdminPage(tester, 'مهام أفراد الأسرة');
     await tester.enterText(find.widgetWithText(TextField, 'اسم المهمة، مثل: ترتيب الغرفة'), 'سقي الزرع');

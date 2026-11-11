@@ -85,16 +85,20 @@ class TaskItem {
 
 /// The running prayer for a member: open from its adhan until the next one.
 class PrayerSlot {
-  const PrayerSlot({required this.key, required this.start, required this.end, required this.dayKey});
+  const PrayerSlot({required this.key, required this.start, required this.end, required this.dayKey, this.graceMinutes});
   final String key; // fajr | dhuhr | asr | maghrib | isha
   final DateTime start, end;
   final String dayKey;
+
+  /// «مهلة أداء الصلاة» set by an admin for this member and prayer; null = the default rule.
+  final int? graceMinutes;
 
   /// Late once half an hour has passed (Isha: at 11 pm Riyadh time): it stays as a
   /// task until the next prayer, but its points are gone (functions/src/prayer.ts lateAfter).
   bool lateAt(DateTime now) => now.isAfter(lateFrom);
 
   DateTime get lateFrom {
+    if (graceMinutes != null) return start.add(Duration(minutes: graceMinutes!));
     final grace = start.add(const Duration(minutes: 30));
     if (key != 'isha') return grace;
     final r = start.toUtc().add(const Duration(hours: 3));
@@ -105,11 +109,23 @@ class PrayerSlot {
 
 /// Prayer reminders, set by the owner from their phone's location.
 class PrayerSettings {
-  const PrayerSettings({required this.enabled, required this.lat, required this.lng, required this.points});
+  const PrayerSettings({required this.enabled, required this.lat, required this.lng, required this.points, this.grace = const {}});
   final bool enabled;
   final double lat, lng;
   final int points;
+
+  /// «مهلة أداء الصلاة»: target ("all" or a member id) → prayer → minutes (functions/src/prayer.ts).
+  final Map<String, Map<String, int>> grace;
+
+  /// A member's grace for [key]: their own, else the family's, else null (the default rule).
+  int? graceFor(String personId, String key) => grace[personId]?[key] ?? grace['all']?[key];
+
+  PrayerSettings copyWith({bool? enabled, double? lat, double? lng, int? points, Map<String, Map<String, int>>? grace}) =>
+      PrayerSettings(enabled: enabled ?? this.enabled, lat: lat ?? this.lat, lng: lng ?? this.lng, points: points ?? this.points, grace: grace ?? this.grace);
 }
+
+/// Grace minutes the admin can pick (functions/src/prayer.ts GRACE_MIN/GRACE_MAX).
+const graceMin = 5, graceMax = 240, graceStep = 5;
 
 /// A prize: the member with the most points in [period] wins it at [awardAt].
 class Prize {

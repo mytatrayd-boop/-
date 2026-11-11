@@ -504,7 +504,28 @@ class DemoBackend extends Backend {
   @override
   Future<void> setPrayer({required double lat, required double lng, required int points, required bool enabled}) async {
     _need(null, true);
-    _prayer = PrayerSettings(enabled: enabled, lat: lat, lng: lng, points: points);
+    _prayer = PrayerSettings(enabled: enabled, lat: lat, lng: lng, points: points, grace: _prayer?.grace ?? const {});
+    _publish();
+  }
+
+  @override
+  Future<void> setPrayerGrace(String target, Map<String, int?> grace) async {
+    _need(Perm.tasks);
+    final p = _prayer;
+    if (p == null) return;
+    final all = {for (final e in p.grace.entries) e.key: {...e.value}};
+    for (final e in grace.entries) {
+      final v = e.value;
+      if (v != null && (v < graceMin || v > graceMax)) throw StateError('bad-number');
+      final row = all.putIfAbsent(target, () => {});
+      v == null ? row.remove(e.key) : row[e.key] = v;
+      if (target == 'all') {
+        for (final m in all.entries.where((x) => x.key != 'all')) {
+          m.value.remove(e.key);
+        }
+      }
+    }
+    _prayer = p.copyWith(grace: all);
     _publish();
   }
 

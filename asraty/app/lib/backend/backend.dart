@@ -96,6 +96,10 @@ abstract class Backend {
   // ---- prayer reminders
   Future<void> setPrayer({required double lat, required double lng, required int points, required bool enabled});
 
+  /// «مهلة أداء الصلاة»: minutes per prayer for [target] ("all" or a member id); null restores the default.
+  /// "all" also clears the members' own values for those prayers. Needs [Perm.tasks].
+  Future<void> setPrayerGrace(String target, Map<String, int?> grace);
+
   // ---- notices
   /// [minutes] > 0 makes a timed alert that ends after that many minutes.
   Future<void> sendAlert(String to, String body, {int minutes = 0});

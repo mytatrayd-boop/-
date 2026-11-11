@@ -3440,6 +3440,72 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'عدد التنبيهات المحفوظة: {n}'**
   String alertsCount(int n);
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'مهلة أداء الصلاة'**
+  String get graceTitle;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة بعد الأذان التي تُحتسب فيها نقاط كل صلاة. بعدها تبقى الصلاة مهمة بلا نقاط حتى الصلاة التالية.'**
+  String get graceSub;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'لمن؟'**
+  String get graceTarget;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الأفراد'**
+  String get graceAll;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'افتراضي'**
+  String get graceDefault;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'إنقاص'**
+  String get graceLess;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة'**
+  String get graceMore;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظت مهلة الصلاة ✓'**
+  String get graceSaved;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل «تذكير الصلاة» وحدّد موقع الأسرة أولاً.'**
+  String get graceNeedPrayer;
+
+  /// دقائق المهلة
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} د'**
+  String graceMinutes(int n);
+
+  /// وقت انتهاء النقاط
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي النقاط {time}'**
+  String graceEndsAt(String time);
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

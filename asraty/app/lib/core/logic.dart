@@ -129,7 +129,8 @@ extension SnapshotLogic on FamilySnapshot {
     final own = tasks.where((x) => x.personId == personId).toList();
     final p = prayer;
     if (p == null || !p.enabled || person(personId)?.role != Role.member) return own;
-    final slot = currentPrayer(p, now);
+    final base = currentPrayer(p, now);
+    final slot = PrayerSlot(key: base.key, start: base.start, end: base.end, dayKey: base.dayKey, graceMinutes: p.graceFor(personId, base.key));
     final legacy = own.where((x) => isManualPrayerTitle(x.title)).toList();
     return [
       TaskItem(id: prayerTaskId(slot.key, personId), title: 'صلاة ${prayerNames[slot.key]}', personId: personId, points: slot.lateAt(now) ? 0 : p.points, repeat: Period.daily, prayer: slot),

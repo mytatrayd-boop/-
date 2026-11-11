@@ -9,6 +9,7 @@ import '../l10n/app_localizations.dart';
 import 'common.dart';
 import 'competitions.dart';
 import 'honor.dart';
+import 'grace_page.dart';
 import 'prayer_page.dart';
 import 'prizes.dart';
 import 'providers.dart';
@@ -45,6 +46,8 @@ class AdminHome extends ConsumerWidget {
       _Tile('addMember', Icons.person_add_alt_1_outlined, t.tileAddMember, can(me, Perm.addMembers)),
       _Tile('addAdmin', Icons.admin_panel_settings_outlined, t.tileAddAdmin, owner),
       _Tile('prayer', Icons.mosque_outlined, t.prayerTitle, owner),
+      // «مهلة أداء الصلاة»: the owner and delegated admins who manage tasks, once prayers are on.
+      _Tile('grace', Icons.timer_outlined, t.graceTitle, can(me, Perm.tasks) && (d.prayer?.enabled ?? false)),
       _Tile('trip', Icons.location_on_outlined, t.tileTrip, can(me, Perm.trip)),
       _Tile('honor', Icons.emoji_events_outlined, t.tileHonor, true),
       _Tile('alerts', Icons.campaign_outlined, t.tileAlerts, owner),
@@ -141,6 +144,7 @@ class AdminPage extends ConsumerWidget {
       'comps' => CompsPage(c),
       'prizes' => PrizesPage(c),
       'prayer' => PrayerPage(c),
+      'grace' => GracePage(c),
       'trip' => TripPage(c),
       'honor' => HonorBoard(c),
       'inbox' => InboxPage(c),

@@ -262,6 +262,42 @@ void main() {
     expect(after.points, 0, reason: 'after 11 pm it is still listed but worth nothing');
   });
 
+  test('مهلة أداء الصلاة: لكل الأفراد ولفرد، والفرد يتقدم، و«الكل» يمسح قيم الأفراد', () async {
+    final b = DemoBackend(clock: () => clock);
+    final d0 = b.current.data!;
+    final aseel = d0.members.firstWhere((m) => m.name == 'أصيل');
+    final other = d0.members.firstWhere((m) => m.id != aseel.id);
+    final slot = d0.tasksOf(aseel.id, clock).first.prayer!;
+    int pointsAt(String id, int minutes) => b.current.data!.tasksOf(id, slot.start.add(Duration(minutes: minutes))).first.points;
+
+    await b.setPrayerGrace('all', {slot.key: 60});
+    expect(pointsAt(aseel.id, 45), 5, reason: 'ساعة للجميع');
+    expect(pointsAt(aseel.id, 61), 0);
+
+    await b.setPrayerGrace(aseel.id, {slot.key: 20});
+    expect(pointsAt(aseel.id, 25), 0, reason: 'مهلة أصيل ٢٠ دقيقة');
+    expect(pointsAt(other.id, 25), 5, reason: 'الباقون على مهلة الجميع');
+
+    await b.setPrayerGrace('all', {slot.key: 90});
+    expect(b.current.data!.prayer!.graceFor(aseel.id, slot.key), 90, reason: '«الكل» يمسح قيمة الفرد');
+
+    await b.setPrayerGrace('all', {slot.key: null});
+    expect(b.current.data!.prayer!.graceFor(aseel.id, slot.key), isNull);
+    expect(pointsAt(aseel.id, 31), 0, reason: 'عاد الافتراضي: نصف ساعة');
+
+    await login(b, 'aseel@demo.sa', Role.member);
+    await expectLater(b.setPrayerGrace('all', {slot.key: 60}),
+        throwsA(isA<AppError>().having((e) => e.code, 'code', 'no-permission')));
+  });
+
+  test('تغيير موقع الصلاة أو نقاطها لا يمسح المهلة', () async {
+    final b = DemoBackend(clock: () => clock);
+    final p = b.current.data!.prayer!;
+    await b.setPrayerGrace('all', {'fajr': 45});
+    await b.setPrayer(lat: p.lat, lng: p.lng, points: 7, enabled: true);
+    expect(b.current.data!.prayer!.grace['all']?['fajr'], 45);
+  });
+
   test('old hand-made prayer tasks are hidden from the member (and refused) but the admin sees them to delete', () async {
     final b = DemoBackend(clock: () => clock);
     final aseel = b.current.data!.members.firstWhere((m) => m.name == 'أصيل');
