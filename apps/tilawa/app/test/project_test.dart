@@ -108,8 +108,8 @@ void main() {
     expect((m.overlays[0].src1, m.overlays[1].src0, m.overlays[1].at), (7.0, 7.0, 19.0));
     m.duplicateOverlay();
     expect(m.overlays.length, 3);
-    m.returnToLane1(m.overlays.first);
-    expect(m.muted, isEmpty);
+    m.returnToLane1(m.overlays.first); // الجزء 5..7 فقط يعود للأول
+    expect(m.muted, [(7.0, 9.0)]); // 7..9 ما زال في الثاني فمكانه صامت
     m.undo();
     expect(m.muted, [(5.0, 9.0)]);
     final l = AudioLayer.fromJson(m.overlays.first.toJson());
