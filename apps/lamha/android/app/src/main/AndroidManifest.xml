@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:label="@string/widget_name"
-        android:name=".LamhaApplication"
+        android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:supportsRtl="true">
         <activity
@@ -39,19 +39,6 @@
             <meta-data
               android:name="flutter_deeplinking_enabled"
               android:value="false" />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
-        <!-- تشخيص مؤقت (LamhaCrashLog): أيقونة مستقلة تعرض سبب انهيار لمحة على الجهاز بلا تشغيل Flutter. -->
-        <activity
-            android:name=".DiagActivity"
-            android:exported="true"
-            android:label="@string/diag_name"
-            android:icon="@mipmap/ic_launcher"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.DeviceDefault.Light">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_name">Lamha</string>
-    <string name="diag_name">Lamha diagnostics</string>
     <string name="widget_description">Clock, next prayer, qibla, deposit and season at a glance</string>
     <string name="widget_setup">Open Lamha to set up the widget</string>
     <string name="tile_prayer">Next prayer</string>
