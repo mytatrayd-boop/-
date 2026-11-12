@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- أصوات الأذان يستعملها الإشعار بالاسم (RawResourceAndroidNotificationSound)، لا بمرجع في الكود، فيحذفها
+     مصغّر الموارد في نسخة الإصدار ما لم نُبقِها هنا (adhan_service.dart). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/adhan,@raw/takbeer" />

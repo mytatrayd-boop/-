@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../engine/adhan.dart';
 import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
@@ -300,6 +301,8 @@ class _Body extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 16),
+        _AdhanSection(adhan: s.adhan),
+        const SizedBox(height: 16),
         Text(l.dataLicense, style: textTheme.bodySmall),
       ],
     );
@@ -481,6 +484,108 @@ class _PlaceSearchState extends ConsumerState<_PlaceSearch> {
               await ref.read(settingsControllerProvider.notifier).setPlace(p);
             },
           ),
+      ],
+    );
+  }
+}
+
+/// الأذان عند كل صلاة (DECISIONS ٢٨): مفتاح عام، ومفتاح لكل صلاة، واختيار الصوت، وتجربته.
+class _AdhanSection extends ConsumerWidget {
+  const _AdhanSection({required this.adhan});
+
+  final AdhanSettings adhan;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final c = ref.read(settingsControllerProvider.notifier);
+    final textTheme = Theme.of(context).textTheme;
+    final ios = defaultTargetPlatform == TargetPlatform.iOS;
+    void toast(String m) => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(m)));
+
+    Future<void> change(AdhanSettings next) async {
+      final result = await c.setAdhan(next);
+      if (result == null) return;
+      if (!result.notifications) {
+        toast(l.adhanDenied);
+      } else if (!result.exactAlarms) {
+        toast(l.adhanExactMissing);
+      }
+    }
+
+    String soundName(AdhanSound s) => switch (s) {
+          AdhanSound.full => l.adhanSoundFull,
+          AdhanSound.takbeer => l.adhanSoundTakbeer,
+          AdhanSound.silent => l.adhanSoundSilent,
+        };
+    // آيفون: التكبيرتان أو الصمت فقط (حد ٣٠ ثانية).
+    final sounds = ios ? [AdhanSound.takbeer, AdhanSound.silent] : AdhanSound.values;
+    final selected = adhan.sound.forPlatform(ios: ios);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l.adhanSection, style: textTheme.titleMedium),
+        SwitchListTile(
+          key: const Key('adhan-enabled'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(l.adhanEnable),
+          subtitle: Text(l.adhanEnableHint),
+          value: adhan.enabled,
+          onChanged: (v) => change(adhan.copyWith(enabled: v)),
+        ),
+        if (adhan.enabled) ...[
+          for (final p in adhanPrayers)
+            SwitchListTile(
+              key: Key('adhan-${p.name}'),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(p.arabic),
+              value: adhan.prayers.contains(p),
+              onChanged: (v) {
+                final prayers = {...adhan.prayers};
+                if (v) {
+                  prayers.add(p);
+                } else {
+                  prayers.remove(p);
+                }
+                change(adhan.copyWith(prayers: prayers));
+              },
+            ),
+          const SizedBox(height: 8),
+          Text(l.adhanSoundLabel, style: textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final snd in sounds)
+                ChoiceChip(
+                  key: Key('adhan-sound-${snd.name}'),
+                  label: Text(soundName(snd)),
+                  selected: selected == snd,
+                  onSelected: (_) => change(adhan.copyWith(sound: snd)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: OutlinedButton.icon(
+              key: const Key('adhan-test'),
+              icon: const Icon(Icons.volume_up),
+              label: Text(l.adhanTest),
+              onPressed: c.testAdhan,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            ios ? l.adhanNoteIos : l.adhanNoteAndroid,
+            key: const Key('adhan-note'),
+            style: textTheme.bodySmall,
+          ),
+        ],
       ],
     );
   }

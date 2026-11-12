@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../engine/adhan.dart';
 import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
@@ -23,6 +24,7 @@ class LamhaSettings {
     this.lockNotification = false,
     this.fontScale = FontScale.fallback,
     this.digits = DigitStyle.fallback,
+    this.adhan = const AdhanSettings(),
   });
 
   factory LamhaSettings.defaults(City city, Set<String> depositIds) =>
@@ -64,6 +66,8 @@ class LamhaSettings {
         fontScale: FontScale.byName(j['fontScale'] as String?),
         // الميزة ٦؛ الإعدادات القديمة بلاه = عربية.
         digits: DigitStyle.byName(j['digits'] as String?),
+        // الأذان (DECISIONS ٢٨)؛ الإعدادات القديمة بلاه = مطفأ.
+        adhan: AdhanSettings.fromJson(j['adhan']),
       );
 
   static const prefsKey = 'settings';
@@ -92,6 +96,9 @@ class LamhaSettings {
 
   /// شكل الأرقام في الودجت والمعاينة وشاشة القبلة والإشعار.
   final DigitStyle digits;
+
+  /// الأذان عند كل صلاة (لا يدخل جدول الودجت؛ تجدوله الإشعارات المحلية).
+  final AdhanSettings adhan;
 
   /// [withBackground] = false في أندرويد، فيكون `background` في الجدول null.
   Settings toEngine({bool withBackground = true}) => Settings(
@@ -125,6 +132,7 @@ class LamhaSettings {
     bool? lockNotification,
     FontScale? fontScale,
     DigitStyle? digits,
+    AdhanSettings? adhan,
     bool clearBackground = false,
   }) =>
       LamhaSettings(
@@ -143,6 +151,7 @@ class LamhaSettings {
         lockNotification: lockNotification ?? this.lockNotification,
         fontScale: fontScale ?? this.fontScale,
         digits: digits ?? this.digits,
+        adhan: adhan ?? this.adhan,
       );
 
   Map<String, Object?> toJson() => {
@@ -160,6 +169,7 @@ class LamhaSettings {
         'lockNotification': lockNotification,
         'fontScale': fontScale.name,
         'digits': digits.name,
+        'adhan': adhan.toJson(),
       };
 
   String encode() => jsonEncode(toJson());

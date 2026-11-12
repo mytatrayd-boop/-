@@ -555,4 +555,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get previewFullscreen => 'Full screen';
+
+  @override
+  String get adhanSection => 'Adhan';
+
+  @override
+  String get adhanEnable => 'Adhan at each prayer';
+
+  @override
+  String get adhanEnableHint =>
+      'An audible alert when each prayer time starts, for your city';
+
+  @override
+  String get adhanSoundLabel => 'Sound';
+
+  @override
+  String get adhanSoundFull => 'Full adhan';
+
+  @override
+  String get adhanSoundTakbeer => 'Two takbeers';
+
+  @override
+  String get adhanSoundSilent => 'Silent';
+
+  @override
+  String get adhanTest => 'Test the sound';
+
+  @override
+  String get adhanNoteIos =>
+      'On iPhone the sound is two takbeers, because Apple limits notification sounds to 30 seconds. The next 12 days are scheduled and refreshed whenever you open Lamha.';
+
+  @override
+  String get adhanNoteAndroid =>
+      'The Stop button in the notification stops the sound. The next 12 days are scheduled and refreshed whenever you open Lamha.';
+
+  @override
+  String get adhanDenied =>
+      'Notification permission was not granted, so the adhan stays off.';
+
+  @override
+  String get adhanExactMissing =>
+      'The Alarms & reminders permission was not granted, so alerts may arrive a few minutes late.';
 }

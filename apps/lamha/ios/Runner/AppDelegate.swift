@@ -1,6 +1,7 @@
 import CoreLocation
 import Flutter
 import UIKit
+import UserNotifications
 import WidgetKit
 
 /// اتجاه البوصلة لشاشة القبلة (بدل flutter_compass في آيفون): الشمال الحقيقي إن عُرف الموقع، وإلا
@@ -67,6 +68,8 @@ final class HeadingStream: NSObject, FlutterStreamHandler, CLLocationManagerDele
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // الأذان (flutter_local_notifications): يلزم مفوّض مركز الإشعارات ليظهر التنبيه ويُسمع والتطبيق مفتوح.
+    UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
