@@ -829,6 +829,78 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ملء الشاشة'**
   String get previewFullscreen;
+
+  /// No description provided for @adhanSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأذان'**
+  String get adhanSection;
+
+  /// No description provided for @adhanEnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأذان عند كل صلاة'**
+  String get adhanEnable;
+
+  /// No description provided for @adhanEnableHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه صوتي عند دخول وقت الصلاة بحسب مدينتك'**
+  String get adhanEnableHint;
+
+  /// No description provided for @adhanSoundLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت'**
+  String get adhanSoundLabel;
+
+  /// No description provided for @adhanSoundFull.
+  ///
+  /// In ar, this message translates to:
+  /// **'أذان كامل'**
+  String get adhanSoundFull;
+
+  /// No description provided for @adhanSoundTakbeer.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكبيرتان'**
+  String get adhanSoundTakbeer;
+
+  /// No description provided for @adhanSoundSilent.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلا صوت'**
+  String get adhanSoundSilent;
+
+  /// No description provided for @adhanTest.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجربة الصوت'**
+  String get adhanTest;
+
+  /// No description provided for @adhanNoteIos.
+  ///
+  /// In ar, this message translates to:
+  /// **'في آيفون يكون الصوت تكبيرتين، لأن آبل تحدد صوت الإشعار بـ٣٠ ثانية. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  String get adhanNoteIos;
+
+  /// No description provided for @adhanNoteAndroid.
+  ///
+  /// In ar, this message translates to:
+  /// **'زر «إيقاف» في الإشعار يوقف الصوت. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  String get adhanNoteAndroid;
+
+  /// No description provided for @adhanDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُمنح إذن الإشعارات، فبقي الأذان مطفأً.'**
+  String get adhanDenied;
+
+  /// No description provided for @adhanExactMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُمنح إذن «المنبهات والتذكيرات»، فقد يتأخر التنبيه دقائق عن وقته.'**
+  String get adhanExactMissing;
 }
 
 class _AppLocalizationsDelegate

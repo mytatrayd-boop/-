@@ -121,5 +121,17 @@
   "cropSizeName": "{size, select, large{Large} medium{Medium} other{{size}}}",
   "cropSlotName": "{slot, select, top{Top} middle{Middle} bottom{Bottom} other{{slot}}}",
   "freeLayoutRejected": "That arrangement can't be drawn on the widget. Try another position or size.",
-  "previewFullscreen": "Full screen"
+  "previewFullscreen": "Full screen",
+  "adhanSection": "Adhan",
+  "adhanEnable": "Adhan at each prayer",
+  "adhanEnableHint": "An audible alert when each prayer time starts, for your city",
+  "adhanSoundLabel": "Sound",
+  "adhanSoundFull": "Full adhan",
+  "adhanSoundTakbeer": "Two takbeers",
+  "adhanSoundSilent": "Silent",
+  "adhanTest": "Test the sound",
+  "adhanNoteIos": "On iPhone the sound is two takbeers, because Apple limits notification sounds to 30 seconds. The next 12 days are scheduled and refreshed whenever you open Lamha.",
+  "adhanNoteAndroid": "The Stop button in the notification stops the sound. The next 12 days are scheduled and refreshed whenever you open Lamha.",
+  "adhanDenied": "Notification permission was not granted, so the adhan stays off.",
+  "adhanExactMissing": "The Alarms & reminders permission was not granted, so alerts may arrive a few minutes late."
 }

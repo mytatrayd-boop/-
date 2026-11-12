@@ -3,6 +3,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- لإعادة جدولة تحديثات الودجت بعد إعادة تشغيل الجهاز (DECISIONS ١٠). -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- الأذان (DECISIONS ٢٨): تنبيه في وقت الصلاة بالضبط؛ يمنحه المستخدم من «المنبهات والتذكيرات»، وبدونه
+         يقع التنبيه تقريبياً (adhan_service.dart). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <!-- الطقس من Open-Meteo (Dart وLamhaWeatherWorker). Flutter يضيفه في debug فقط (DECISIONS ١٣). -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- إشعار شاشة القفل الاختياري، أندرويد ١٣+ (DECISIONS ١٣). -->
@@ -70,6 +73,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/lamha_widget_info"/>
         </receiver>
+        <!-- الأذان: يعرض الإشعارات المجدولة، ويعيد جدولتها بعد إعادة التشغيل وتحديث التطبيق، ويعالج زر «إيقاف». -->
+        <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" android:exported="false"/>
+        <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+        <receiver android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" android:exported="false"/>
         <!-- منبهات تحديث الودجت (home_widget) وإعادتها بعد إعادة التشغيل أو تحديث التطبيق. -->
         <receiver
             android:name="es.antonborri.home_widget.HomeWidgetScheduledUpdateReceiver"

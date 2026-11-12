@@ -7,7 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lamha/main.dart';
 import 'dart:async';
 
+import 'package:lamha/src/app/adhan_service.dart';
 import 'package:lamha/src/app/cities.dart';
+import 'package:lamha/src/engine/adhan.dart';
 import 'package:lamha/src/app/places.dart';
 import 'package:lamha/src/app/providers.dart';
 import 'package:lamha/src/app/services.dart';
@@ -34,6 +36,34 @@ class FakeBridge implements WidgetBridge {
 
   @override
   Future<void> requestUpdate() async => updates++;
+}
+
+/// الأذان وهمي: يسجّل ما طُلب جدولته وما جُرّب، ولا يلمس إشعارات النظام.
+class FakeAdhanNotifier implements AdhanNotifier {
+  FakeAdhanNotifier({this.permission = const AdhanPermissionResult(notifications: true, exactAlarms: true)});
+
+  /// ما يعيده طلب الأذونات.
+  AdhanPermissionResult permission;
+
+  /// كل استدعاء لـ apply: التنبيهات والصوت والمدينة.
+  final applied = <({List<AdhanEvent> events, AdhanSound sound, String city})>[];
+  var permissionRequests = 0;
+  final tested = <AdhanSound>[];
+
+  List<AdhanEvent> get lastEvents => applied.last.events;
+
+  @override
+  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async =>
+      applied.add((events: events, sound: sound, city: city));
+
+  @override
+  Future<AdhanPermissionResult> requestPermissions() async {
+    permissionRequests++;
+    return permission;
+  }
+
+  @override
+  Future<void> test(AdhanSound sound) async => tested.add(sound);
 }
 
 class FakeDeclination implements DeclinationSource {
@@ -201,6 +231,7 @@ Future<FakeBridge> pumpApp(
   SystemColorsSource? systemColors,
   NotificationPermission? permission,
   Vibration? vibration,
+  AdhanNotifier? adhan,
   Map<String, Object> prefs = const {},
 }) async {
   tester.view.physicalSize = const Size(1000, 3200);
@@ -227,6 +258,7 @@ Future<FakeBridge> pumpApp(
           .overrideWithValue(permission ?? FakePermission()),
       vibrationProvider.overrideWithValue(vibration ?? FakeVibration()),
       declinationProvider.overrideWithValue(FakeDeclination()),
+      adhanNotifierProvider.overrideWithValue(adhan ?? FakeAdhanNotifier()),
     ],
     child: const LamhaApp(),
   ));

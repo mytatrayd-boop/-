@@ -551,4 +551,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get previewFullscreen => 'ملء الشاشة';
+
+  @override
+  String get adhanSection => 'الأذان';
+
+  @override
+  String get adhanEnable => 'الأذان عند كل صلاة';
+
+  @override
+  String get adhanEnableHint => 'تنبيه صوتي عند دخول وقت الصلاة بحسب مدينتك';
+
+  @override
+  String get adhanSoundLabel => 'الصوت';
+
+  @override
+  String get adhanSoundFull => 'أذان كامل';
+
+  @override
+  String get adhanSoundTakbeer => 'تكبيرتان';
+
+  @override
+  String get adhanSoundSilent => 'بلا صوت';
+
+  @override
+  String get adhanTest => 'تجربة الصوت';
+
+  @override
+  String get adhanNoteIos =>
+      'في آيفون يكون الصوت تكبيرتين، لأن آبل تحدد صوت الإشعار بـ٣٠ ثانية. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.';
+
+  @override
+  String get adhanNoteAndroid =>
+      'زر «إيقاف» في الإشعار يوقف الصوت. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.';
+
+  @override
+  String get adhanDenied => 'لم يُمنح إذن الإشعارات، فبقي الأذان مطفأً.';
+
+  @override
+  String get adhanExactMissing =>
+      'لم يُمنح إذن «المنبهات والتذكيرات»، فقد يتأخر التنبيه دقائق عن وقته.';
 }

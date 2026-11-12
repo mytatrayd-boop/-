@@ -20,6 +20,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications (الأذان، DECISIONS ٢٨) يحتاج desugaring لجدولة الإشعارات.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -85,6 +87,7 @@ flutter {
 dependencies {
     // جلب الطقس الدوري (LamhaWeatherWorker): نفس نسخة WorkManager في home_widget 0.10.0.
     implementation("androidx.work:work-runtime:2.11.2")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.16")
     testImplementation("androidx.test:core:1.6.1")

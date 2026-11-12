@@ -6,12 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../engine/adhan.dart';
 import '../engine/asset_loader.dart';
+import '../engine/prayer.dart';
 import '../engine/schedule.dart';
 import '../engine/arabic.dart';
 import '../engine/settings.dart';
 import '../engine/weather.dart';
 import '../engine/widget_theme.dart';
+import 'adhan_service.dart';
 import 'app_settings.dart';
 import 'cities.dart';
 import 'places.dart';
@@ -56,6 +59,15 @@ final vibrationProvider = Provider<Vibration>((ref) => DeviceVibration());
 
 final notificationPermissionProvider =
     Provider<NotificationPermission>((ref) => AndroidNotificationPermission());
+
+/// جدولة الأذان بالإشعارات المحلية؛ بلا منصة (ويب، سطح مكتب) أو قبل جاهزية التخزين: لا شيء.
+final adhanNotifierProvider = Provider<AdhanNotifier>((ref) {
+  final prefs = ref.watch(preferencesProvider).value;
+  final mobile = !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+  if (prefs == null || !mobile) return NoopAdhanNotifier();
+  return LocalAdhanNotifier(prefs);
+});
 
 /// مفتاح آخر قراءة طقس في shared_preferences.
 const weatherPrefsKey = 'weather';
@@ -188,6 +200,32 @@ class SettingsController extends AsyncNotifier<AppState> {
       // فشل الحفظ للودجت لا يوقف التطبيق.
       debugPrint('home_widget: $e');
     }
+    await _syncAdhan(s);
+  }
+
+  /// بصمة آخر جدولة للأذان: لا تُعاد الجدولة مع حفظ لا يمسّ الأذان (الشفافية مثلاً).
+  String? _adhanSignature;
+
+  /// يجدوِل تنبيهات الأذان القادمة من أوقات الصلاة والإعدادات (عند الفتح وبعد كل تغيير).
+  Future<void> _syncAdhan(AppState s) async {
+    try {
+      final a = s.settings.adhan;
+      final calc = PrayerCalculator(
+        latitude: s.settings.latitude,
+        longitude: s.settings.longitude,
+        timeZoneName: s.settings.timeZone,
+        method: s.settings.prayerMethod,
+        isRamadan: (d) => s.data.hijri.tryConvert(d)?.month == 9,
+      );
+      final events = planAdhan(calc, ref.read(clockProvider)(), a);
+      final signature = adhanSignature(events, a.sound, s.settings.cityName);
+      if (signature == _adhanSignature) return;
+      _adhanSignature = signature;
+      await ref.read(adhanNotifierProvider).apply(events, a.sound, s.settings.cityName);
+    } catch (e) {
+      // الأذان لا يوقف التطبيق.
+      debugPrint('adhan: $e');
+    }
   }
 
   Future<void> _update(LamhaSettings s, {bool commit = true}) async {
@@ -231,6 +269,22 @@ class SettingsController extends AsyncNotifier<AppState> {
   /// أثناء السحب [commit] = false (المعاينة فقط)، وعند الإفلات يُحفظ.
   Future<void> setOpacity(int value, {bool commit = true}) =>
       _updateLight(_s.copyWith(opacity: value.clamp(0, 100)), commit: commit);
+
+  /// يغيّر إعدادات الأذان. عند تفعيله أول مرة يطلب الأذونات؛ إن رُفض إذن الإشعارات يبقى مطفأً.
+  /// يعيد نتيجة طلب الأذونات (null إن لم يُطلب شيء) ليعرض التطبيق ما ينقص.
+  Future<AdhanPermissionResult?> setAdhan(AdhanSettings a) async {
+    AdhanPermissionResult? permissions;
+    var next = a;
+    if (a.enabled && !_s.adhan.enabled) {
+      permissions = await ref.read(adhanNotifierProvider).requestPermissions();
+      if (!permissions.notifications) next = a.copyWith(enabled: false);
+    }
+    await _updateLight(_s.copyWith(adhan: next));
+    return permissions;
+  }
+
+  /// تنبيه فوري بالصوت المختار.
+  Future<void> testAdhan() => ref.read(adhanNotifierProvider).test(_s.adhan.sound);
 
   Future<void> setCity(City c) async {
     await _update(_s.copyWith(
