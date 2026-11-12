@@ -594,7 +594,7 @@ class _TimelineState extends State<Timeline> {
             // طرفا القطعة الحرة المحددة: سحبهما يقصّها (سحبها كاملة بالضغط المطوّل)
             if ((p.dx - (_w / 2 + (sel.at - m.dispPos) * m.pps)).abs() < 22) {
               _mode = 'ovL';
-            } else if (sel != null && (p.dx - (_w / 2 + (sel.at + sel.len - m.dispPos) * m.pps)).abs() < 22) {
+            } else if ((p.dx - (_w / 2 + (sel.at + sel.len - m.dispPos) * m.pps)).abs() < 22) {
               _mode = 'ovR';
             }
             final o = m.ovSel;
