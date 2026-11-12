@@ -1163,7 +1163,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
               _tool(Icons.copy, 'تكرار', m.duplicateOverlay),
               _tool(Icons.volume_up, 'مستوى الصوت', () => _clipSheet(_volPanel)),
               _tool(Icons.signal_cellular_alt, 'التدرج', () => _clipSheet(_fadePanel)),
-              _tool(Icons.vertical_align_top, 'إرجاع للمسار الأول', () => m.returnToLane1(m.ovSel!)),
+              _tool(Icons.undo, 'إرجاع لمكانه الأصلي', () => m.returnToLane1(m.ovSel!)),
               _tool(Icons.delete_outline, 'حذف', m.deleteOverlay),
             ];
           } else if (m.audioSel != null) {
@@ -1470,7 +1470,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin, WidgetsBindi
     if (f == null) return const SizedBox();
     return _pad([
       _slider('مستوى الصوت ${(f.$1 * 100).round()}٪', f.$1, 0, 1, (x) => _setSelFx(vol: x), div: 20),
-      const Text('اضغط مطوّلاً على القطعة ثم اسحبها لنقلها بين المسارين، واسحب طرفي قطعة المسار الثاني لقصّها.',
+      const Text('اضغط مطوّلاً على قطعة ثم اسحبها: أفقياً لتقديمها أو تأخيرها، وعمودياً بين المسارين، وتبقى حيث تُفلتها. واسحب طرفي القطعة المحددة لقصّها.',
           style: TextStyle(fontSize: 12)),
     ]);
   }

@@ -89,7 +89,7 @@ void main() {
   test('سحب قطعة إلى المسار الثاني: تسقط كاملة، صوت فقط، والفيديو يمتد للأطول', () {
     final m = EditorModel()..setAudio(Float32List(sr * 20));
     m.segs = [Segment('أ', 1, 3), Segment('ب', 6, 8)];
-    m.liftToLane2(5.0, 9.0, 17.0); // أُسقطت عند الثانية 17
+    m.liftClip(5.0, 9.0, 17.0, 2); // أُسقطت عند الثانية 17
     final o = m.overlays.single;
     expect((o.src0, o.src1, o.at), (5.0, 9.0, 17.0));
     expect(m.muted, [(5.0, 9.0)]); // مكانها في الأول فراغ صامت
@@ -126,7 +126,7 @@ void main() {
     expect(m.lane1Gain(5), 1.0);
     expect(m.lane1Gain(11), closeTo(0.4, 1e-9)); // منتصف الدخول × 0.8
     expect(m.lane1Gain(19.5), closeTo(0.4, 1e-9)); // منتصف الخروج × 0.8
-    m.liftToLane2(10, 20, 9); // تسقط بخصائصها
+    m.liftClip(10, 20, 9, 2); // تسقط بخصائصها
     final o = m.overlays.single;
     expect((o.vol, o.fadeIn, o.fadeOut), (0.8, 2.0, 1.0));
     expect(o.gainAt(1), closeTo(0.4, 1e-9));
@@ -142,7 +142,7 @@ void main() {
   test('تقسيم قطعة المسار الثاني وإرجاع جزء منها لا يُعيد صوت المنطقة كلها', () {
     final m = EditorModel()..setAudio(Float32List(sr * 20));
     m.splits = [10.0];
-    m.liftToLane2(10, 20, 10); // القطعة 10..20 في الثاني، والمنطقة صامتة في الأول
+    m.liftClip(10, 20, 10, 2); // القطعة 10..20 في الثاني، والمنطقة صامتة في الأول
     m.seekDisp(15);
     m.splitOverlay(); // جزآن: 10..15 و15..20
     expect(m.overlays.length, 2);
@@ -157,5 +157,24 @@ void main() {
     expect(subtractRange([(0.0, 10.0)], 3, 5), [(0.0, 3.0), (5.0, 10.0)]);
     expect(subtractRange([(0.0, 10.0)], -1, 11), isEmpty);
     expect(subtractRange([(0.0, 2.0), (8.0, 10.0)], 3, 5), [(0.0, 2.0), (8.0, 10.0)]);
+  });
+
+  test('تحرير القطعة في المسار الأول: تبقى حيث تُفلت دون التصاق، وتُسمع مع الأصل', () {
+    final m = EditorModel()..setAudio(Float32List(sr * 20));
+    m.splits = [10.0];
+    m.liftClip(10, 20, 4.5, 1); // قطعة 10..20 تُؤخَّر/تُقدَّم إلى الثانية 4.5 في المسار الأول
+    final o = m.overlays.single;
+    expect((o.lane, o.at, o.src0, o.src1), (1, 4.5, 10.0, 20.0));
+    expect(m.muted, [(10.0, 20.0)]); // مكانها الأصلي فراغ صامت، لا إغلاق
+    expect(m.cuts, isEmpty);
+    expect(m.layerAt(6, 1), same(o)); // تُحدَّد من المسار الأول
+    expect(m.layerAt(6, 2), isNull);
+    o.lane = 2; // تنزل للمسار الثاني ثم ترتفع، وموضعها كما أُفلتت
+    o.lane = 1;
+    expect(o.at, 4.5);
+    expect(AudioLayer.fromJson(o.toJson()).lane, 1);
+    m.undo();
+    expect(m.overlays, isEmpty);
+    expect(m.muted, isEmpty);
   });
 }

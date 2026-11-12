@@ -12,13 +12,15 @@ const sr = 16000;
 class AudioLayer {
   double src0, src1, at, vol;
   double fadeIn = 0, fadeOut = 0; // تدرج الدخول والخروج بالثواني
+  int lane = 2; // المسار الذي تُرسم فيه (1 أو 2)؛ كلتاهما حرة الموضع وتُسمع معاً
   AudioLayer(this.src0, this.src1, this.at, [this.vol = 1.0]);
   double get len => src1 - src0;
-  Map<String, dynamic> toJson() => {'a': src0, 'b': src1, 'at': at, 'v': vol, 'fi': fadeIn, 'fo': fadeOut};
+  Map<String, dynamic> toJson() => {'a': src0, 'b': src1, 'at': at, 'v': vol, 'fi': fadeIn, 'fo': fadeOut, 'ln': lane};
   factory AudioLayer.fromJson(Map<String, dynamic> j) => AudioLayer(
       (j['a'] as num).toDouble(), (j['b'] as num).toDouble(), (j['at'] as num).toDouble(), (j['v'] as num?)?.toDouble() ?? 1.0)
     ..fadeIn = (j['fi'] as num?)?.toDouble() ?? 0
-    ..fadeOut = (j['fo'] as num?)?.toDouble() ?? 0;
+    ..fadeOut = (j['fo'] as num?)?.toDouble() ?? 0
+    ..lane = (j['ln'] as num?)?.toInt() ?? 2;
 
   /// مستوى الصوت عند ثانية x من بداية القطعة (مع التدرج).
   double gainAt(double x) => vol * fadeGain(x, len - x, fadeIn, fadeOut);
