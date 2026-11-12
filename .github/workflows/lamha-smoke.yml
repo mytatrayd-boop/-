@@ -47,7 +47,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: apps/lamha
-          script: bash ../../.github/scripts/lamha_smoke.sh build/app/outputs/flutter-apk/app-release.apk old.apk smoke
+          script: bash ../../.github/scripts/lamha_smoke.sh build/app/outputs/flutter-apk/app-release.apk old.apk smoke && timeout 420 bash -x ../../.github/scripts/lamha_adhan_smoke.sh smoke || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
