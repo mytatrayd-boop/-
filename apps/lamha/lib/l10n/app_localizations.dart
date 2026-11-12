@@ -650,6 +650,18 @@ abstract class AppLocalizations {
   /// **'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.'**
   String get prayerCountdownHint;
 
+  /// No description provided for @qiblaFloatLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'عائمة فوق المربعات (تكبير وتحريك حرّ)'**
+  String get qiblaFloatLabel;
+
+  /// No description provided for @qiblaFloatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب البوصلة في المعاينة وكبّرها من زواياها؛ لا تزاحم المربعات.'**
+  String get qiblaFloatHint;
+
   /// إعدادات لمحة
   ///
   /// In ar, this message translates to:

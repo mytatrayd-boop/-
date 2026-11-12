@@ -28,7 +28,22 @@ object LamhaLogic {
         val iconScale: Float = 1f,
         /// التخطيط الحر: [x, y, w, h] بخلايا الشبكة ٦×١٠ (free_layout.dart)؛ null لجدول أقدم.
         val rect: List<Int>? = null,
+        /// البوصلة الحرة (DECISIONS ٢٩): [x, y, s] كسور من الودجت (FloatRect في Dart)؛ null = مربع عادي.
+        val float: List<Double>? = null,
     )
+
+    /// مكان البوصلة الحرة داخل ودجت [w]×[h] (FloatRect.within في Dart): بعد الحافة اليمنى، وبعد العليا، والقطر.
+    data class FloatPlace(val right: Float, val top: Float, val side: Float)
+
+    fun floatPlace(f: List<Double>, w: Float, h: Float): FloatPlace {
+        val m = minOf(w, h)
+        val side = (f[2].coerceIn(0.12, 0.9) * m).toFloat().coerceIn(0f, m)
+        return FloatPlace(
+            (f[0] * w).toFloat().coerceIn(0f, maxOf(0f, w - side)),
+            (f[1] * h).toFloat().coerceIn(0f, maxOf(0f, h - side)),
+            side,
+        )
+    }
 
     /// شجرة القص من الجدول (`tree`، cutTree في Dart): الودجت ترسمها صفوفاً وأعمدة بالأوزان ولا تحسب.
     sealed class CutTree {

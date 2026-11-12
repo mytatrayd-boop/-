@@ -138,6 +138,7 @@ class TileLayout {
     this.secondaryColor,
     this.iconScale = 1.0,
     this.rect,
+    this.float,
   });
 
   factory TileLayout.fromJson(Map<String, dynamic> j) => TileLayout(
@@ -151,6 +152,7 @@ class TileLayout {
     secondaryColor: TileColor.byName(j['secondaryColor'] as String?),
     iconScale: tileIconScale(j['iconScale']),
     rect: j['rect'] == null ? null : GridRect.fromJson(j['rect']),
+    float: j['float'] == null ? null : FloatRect.fromJson(j['float']),
   );
 
   final WidgetElement id;
@@ -176,6 +178,11 @@ class TileLayout {
   /// موضعه ومقاسه في التخطيط الحر (free_layout.dart)؛ null = يوضع في أول فراغ بمقاسه الافتراضي.
   final GridRect? rect;
 
+  /// موضع ومقاس عائم فوق بقية المربعات خارج الرصّ (البوصلة الحرة، DECISIONS ٢٩)؛ null = مربع عادي.
+  final FloatRect? float;
+
+  bool get floating => float != null;
+
   TileLayout copyWith({
     bool? visible,
     int? span,
@@ -186,6 +193,7 @@ class TileLayout {
     TileColor? Function()? secondaryColor,
     double? iconScale,
     GridRect? Function()? rect,
+    FloatRect? Function()? float,
   }) => TileLayout(
     id,
     visible: visible ?? this.visible,
@@ -199,6 +207,7 @@ class TileLayout {
         : this.secondaryColor,
     iconScale: iconScale != null ? tileIconScale(iconScale) : this.iconScale,
     rect: rect != null ? rect() : this.rect,
+    float: float != null ? float() : this.float,
   );
 
   /// للإعدادات المحفوظة (اللونان بالأسماء).
@@ -213,6 +222,7 @@ class TileLayout {
     'secondaryColor': secondaryColor?.name,
     'iconScale': iconScale,
     if (rect != null) 'rect': rect!.toJson(),
+    if (float != null) 'float': float!.toJson(),
   };
 
   /// للجدول (قيم جاهزة): اللون ARGB أو null.
@@ -227,6 +237,7 @@ class TileLayout {
     'secondaryColor': secondaryColor?.argb,
     'iconScale': iconScale,
     if (rect != null) 'rect': rect!.toJson(),
+    if (float != null) 'float': float!.toJson(),
   };
 
   @override
@@ -241,7 +252,8 @@ class TileLayout {
       other.primaryColor == primaryColor &&
       other.secondaryColor == secondaryColor &&
       other.iconScale == iconScale &&
-      other.rect == rect;
+      other.rect == rect &&
+      other.float == float;
 
   @override
   int get hashCode => Object.hash(
@@ -255,6 +267,7 @@ class TileLayout {
     secondaryColor,
     iconScale,
     rect,
+    float,
   );
 }
 

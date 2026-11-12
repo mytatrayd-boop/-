@@ -145,4 +145,60 @@ void main() {
     final layout = [for (final e in r.entries) TileLayout(e.key).copyWith(rect: () => e.value)];
     expect(cutTree(rectsOf(layout)), isNotNull);
   });
+
+  group('البوصلة الحرة (DECISIONS ٢٩)', () {
+    final floating = [
+      for (final t in defaultLayout)
+        t.id == qi ? t.copyWith(float: () => const FloatRect(0.6, 0.1, 0.3)) : t,
+    ];
+
+    test('العائمة خارج الرصّ: لا مستطيل لها ولا مكان في الشجرة، وغيرها يملأ مكانها', () {
+      final r = rectsOf(floating);
+      expect(r.containsKey(qi), isFalse);
+      expect(cutTree(r)!.tiles, isNot(contains(qi)));
+      expect(r.keys, containsAll([c, dw, hi, gr, pt, de, se, ts]));
+      // لا فجوات: لا يتجاوز شيء أسفل الشبكة ولا يتداخل اثنان.
+      expect(overflowing(r), isEmpty);
+      final list = r.values.toList();
+      for (var i = 0; i < list.length; i++) {
+        for (var j = i + 1; j < list.length; j++) {
+          expect(list[i].overlaps(list[j]), isFalse);
+        }
+      }
+    });
+
+    test('إعادة الرصّ تبقي العائمة كما هي ولا تفقدها', () {
+      final out = reflow(floating);
+      expect(out.length, floating.length);
+      expect(out.firstWhere((t) => t.id == qi).float, const FloatRect(0.6, 0.1, 0.3));
+    });
+
+    test('FloatRect: JSON والموضع بالبكسل محصور في الودجت', () {
+      const f = FloatRect(0.6, 0.1, 0.3);
+      expect(FloatRect.fromJson(f.toJson()), f);
+      final p = f.within(300, 400);
+      expect(p.side, 90); // ٠٫٣ من أقصر ضلع (٣٠٠)
+      expect(p.right, 180);
+      expect(p.top, 40);
+      // خارج الحدود يُحصر: لا تخرج الدائرة من الودجت، والمقاس بين الحدين.
+      final out = const FloatRect(5, 5, 5).within(300, 400);
+      expect(out.side, 0.9 * 300);
+      expect(out.right, 300 - out.side);
+      expect(out.top, 400 - out.side);
+      expect(const FloatRect(0, 0, 0.01).within(300, 400).side, 0.12 * 300);
+      // الذهاب والعودة بالبكسل.
+      final back = FloatRect.fromPixels(180, 40, 90, 300, 400);
+      expect(back.x, closeTo(0.6, 1e-9));
+      expect(back.y, closeTo(0.1, 1e-9));
+      expect(back.s, closeTo(0.3, 1e-9));
+    });
+
+    test('TileLayout يحفظ float في الإعدادات والجدول وتعود قراءته', () {
+      final t = floating.firstWhere((t) => t.id == qi);
+      expect(t.floating, isTrue);
+      expect(TileLayout.fromJson((t.toJson()).cast<String, dynamic>()).float, t.float);
+      expect(t.toScheduleJson()['float'], [0.6, 0.1, 0.3]);
+      expect(defaultLayout.firstWhere((t) => t.id == qi).toScheduleJson().containsKey('float'), isFalse);
+    });
+  });
 }

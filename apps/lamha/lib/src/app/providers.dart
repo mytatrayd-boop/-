@@ -417,6 +417,28 @@ class SettingsController extends AsyncNotifier<AppState> {
   Future<void> setVisible(WidgetElement e, bool on) =>
       updateTile(e, (t) => t.copyWith(visible: on, rect: on ? () => null : null));
 
+  /// البوصلة الحرة (DECISIONS ٢٩): تعوم فوق المربعات بموضعها ومقاسها الحرّين خارج الرصّ؛ إطفاؤها يعيدها
+  /// مربعاً عادياً في أول فراغ.
+  Future<void> setQiblaFloating(bool on) {
+    final l = [
+      for (final t in _s.layout)
+        if (t.id == WidgetElement.qibla)
+          on
+              ? t.copyWith(float: () => t.float ?? const FloatRect(0.62, 0.08, 0.3), rect: () => null)
+              : t.copyWith(float: () => null, rect: () => null)
+        else
+          t,
+    ];
+    return _updateLight(_s.copyWith(layout: withRects(l, rectsOf(l))));
+  }
+
+  /// موضع البوصلة الحرة ومقاسها (يُحفظ عند الإفلات؛ [commit] false أثناء السحب).
+  Future<void> setQiblaFloat(FloatRect r, {bool commit = true}) => updateTile(
+        WidgetElement.qibla,
+        (t) => t.floating ? t.copyWith(float: () => r) : t,
+        commit: commit,
+      );
+
   /// حجم أيقونة القبلة (٠٫٥–١٫٦)؛ عرض الخانة يتبعه تلقائياً (qiblaSpanFor).
   Future<void> setQiblaIconScale(double v, {bool commit = true}) =>
       updateTile(WidgetElement.qibla, (t) => t.copyWith(iconScale: v),

@@ -72,6 +72,7 @@ typedef ScheduleTile = ({
   int? secondary,
   double iconScale,
   GridRect? rect,
+  FloatRect? float,
 });
 
 /// تخطيط الجدول بترتيبه. جدول أقدم بلا `layout`: الترتيب الافتراضي والإظهار من `visible`.
@@ -93,6 +94,7 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
             secondary: t['secondaryColor'] as int?,
             iconScale: tileIconScale(t['iconScale']),
             rect: t['rect'] is List ? GridRect.fromJson(t['rect']) : null,
+            float: t['float'] is List ? FloatRect.fromJson(t['float']) : null,
           ),
     ];
   }
@@ -114,6 +116,7 @@ List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
         secondary: null,
         iconScale: 1.0,
         rect: null,
+        float: null,
       ),
   ];
 }
@@ -124,7 +127,7 @@ CutNode scheduleTree(Map<String, Object?> schedule, List<ScheduleTile> layout) {
   if (raw is Map) return CutNode.fromJson(raw);
   final rects = rectsOf([
     for (final t in layout)
-      TileLayout(t.id, visible: t.visible, rect: t.rect),
+      TileLayout(t.id, visible: t.visible, rect: t.rect, float: t.float),
   ]);
   return cutTree(rects) ?? const CutNode.empty();
 }
@@ -199,6 +202,7 @@ class WidgetPreview extends StatelessWidget {
     this.onTileTap,
     this.selected,
     this.overlay,
+    this.floatOverlay,
   });
 
   final Map<String, Object?> schedule;
@@ -218,6 +222,9 @@ class WidgetPreview extends StatelessWidget {
 
   /// طبقة فوق شبكة المربعات بمقاسها (محرر التخطيط الحر في شاشة «الودجت»).
   final Widget Function(Size grid)? overlay;
+
+  /// طبقة فوق الودجت كلها بمقاسها الكامل (محرر البوصلة الحرة).
+  final Widget Function(Size widget)? floatOverlay;
 
   @override
   Widget build(BuildContext context) {
@@ -394,26 +401,72 @@ class WidgetPreview extends StatelessWidget {
       );
     }
 
+    final gridLayer = Padding(
+      padding: const EdgeInsets.all(widgetPadding - tileSpacing / 2),
+      child: DefaultTextStyle.merge(
+        style: TextStyle(shadows: shadows),
+        child: overlay == null
+            ? node(tree)
+            : LayoutBuilder(
+                builder: (context, c) => Stack(
+                  children: [
+                    Positioned.fill(child: node(tree)),
+                    Positioned.fill(child: overlay!(c.biggest)),
+                  ],
+                ),
+              ),
+      ),
+    );
+
+    // البوصلة الحرة (DECISIONS ٢٩): فوق المربعات كلها، بموضعها ومقاسها كنسب من الودجت كلها.
+    final floatTile = byId[WidgetElement.qibla];
+    final floatRect = floatTile != null && floatTile.visible ? floatTile.float : null;
+    Widget floatCompass(Size box) {
+      final f = floatRect!.within(box.width, box.height);
+      final dial = SizedBox.square(
+        key: const Key('preview-qibla-float'),
+        dimension: f.side,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CustomPaint(painter: QiblaTileDialPainter(qiblaDeg, faceAlpha: alpha)),
+            ),
+            Positioned(
+              left: (qiblaKaabaCenter(qiblaDeg).dx - qiblaKaabaSize / 2) * f.side,
+              top: (qiblaKaabaCenter(qiblaDeg).dy - qiblaKaabaSize / 2) * f.side,
+              width: f.side * qiblaKaabaSize,
+              height: f.side * qiblaKaabaSize,
+              child: Image.asset(kaabaAsset, filterQuality: FilterQuality.medium),
+            ),
+          ],
+        ),
+      );
+      return Positioned(
+        right: f.right,
+        top: f.top,
+        child: onTileTap == null
+            ? dial
+            : GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onTileTap!(WidgetElement.qibla),
+                child: dial,
+              ),
+      );
+    }
+
     final widgetBox = DecoratedBox(
       key: const Key('preview-background'),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
         color: colors.background.withValues(alpha: alpha),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(widgetPadding - tileSpacing / 2),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(shadows: shadows),
-          child: overlay == null
-              ? node(tree)
-              : LayoutBuilder(
-                  builder: (context, c) => Stack(
-                    children: [
-                      Positioned.fill(child: node(tree)),
-                      Positioned.fill(child: overlay!(c.biggest)),
-                    ],
-                  ),
-                ),
+      child: LayoutBuilder(
+        builder: (context, whole) => Stack(
+          children: [
+            Positioned.fill(child: gridLayer),
+            if (floatRect != null) floatCompass(whole.biggest),
+            if (floatOverlay != null) Positioned.fill(child: floatOverlay!(whole.biggest)),
+          ],
         ),
       ),
     );

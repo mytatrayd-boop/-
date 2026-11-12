@@ -158,6 +158,7 @@ object LamhaSchedule {
                 secondaryColor = if (t.isNull("secondaryColor")) null else t.getLong("secondaryColor").toInt(),
                 iconScale = t.optDouble("iconScale", 1.0).toFloat().coerceIn(0.5f, 1.6f),
                 rect = t.optJSONArray("rect")?.let { r -> (0 until r.length()).map { r.getInt(it) } },
+                float = t.optJSONArray("float")?.takeIf { it.length() >= 3 }?.let { f -> (0 until 3).map { f.getDouble(it) } },
             )
         }
     }
