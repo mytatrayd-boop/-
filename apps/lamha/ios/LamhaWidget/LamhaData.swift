@@ -49,6 +49,8 @@ struct LamhaTile {
     let showSub: Bool
     let primary: Color?
     let secondary: Color?
+    /// البوصلة الحرة (DECISIONS ٢٩): [x, y, s] كسور من الودجت (FloatRect في Dart)؛ nil = مربع عادي.
+    let float: [Double]?
 }
 
 /// شكل نافذة كما اختاره المستخدم في التطبيق: يُضرب به كل حجم نص، ويستبدل الألوان التلقائية.
@@ -242,7 +244,8 @@ func loadSnapshot() -> LamhaSnapshot? {
             showTitle: t["showTitle"] as? Bool ?? true,
             showSub: t["showSub"] as? Bool ?? true,
             primary: (t["primaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
-            secondary: (t["secondaryColor"] as? NSNumber).map { color($0, 0xFF000000) }
+            secondary: (t["secondaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
+            float: ((t["float"] as? [NSNumber])?.map { $0.doubleValue }).flatMap { $0.count >= 3 ? $0 : nil }
         )
     }
     // الشفافية من مفتاحها المنفصل في App Group أولاً (يكتبه التطبيق مع كل حفظ)، ثم من الجدول.

@@ -305,7 +305,7 @@ struct LamhaWidgetView: View {
                 case .systemMedium: medium(s, day)
                 case .accessoryRectangular: rectangular(s)
                 case .accessoryInline: inline(s)
-                default: large(s, day)
+                default: large(s, day).overlay(floatCompass(s))
                 }
             } else {
                 Text("افتح لمحة لإعداد الودجت")
@@ -317,6 +317,28 @@ struct LamhaWidgetView: View {
         .environment(\.layoutDirection, .rightToLeft)
         .environment(\.locale, Locale(identifier: "ar"))
         .widgetURL(appURL)
+    }
+
+    /// البوصلة الحرة (DECISIONS ٢٩): قرص فوق المربعات بموضعه ومقاسه من `float` (كسور من الودجت كلها، كالمعاينة
+    /// وأندرويد). الطبقة تمتد ١٤ نقطة خارج المحتوى لتطابق حاشية المعاينة، فيقاس الموضع من حافة الودجت.
+    @ViewBuilder
+    private func floatCompass(_ s: LamhaSnapshot) -> some View {
+        if let t = s.tiles.first(where: { $0.id == "qibla" }), t.visible, let f = t.float {
+            GeometryReader { g in
+                let w = g.size.width, h = g.size.height
+                let m = min(w, h)
+                let side = min(max(CGFloat(f[2]), 0.12), 0.9) * m
+                let right = min(max(CGFloat(f[0]) * w, 0), max(0, w - side))
+                let top = min(max(CGFloat(f[1]) * h, 0), max(0, h - side))
+                Link(destination: qiblaURL) {
+                    QiblaIcon(degrees: s.qiblaDegrees, dark: s.iconBackground, faceOpacity: s.opacity)
+                }
+                .frame(width: side, height: side)
+                // x من اليسار (position لا يتبع اتجاه اللغة)، والبعد من اليمين.
+                .position(x: w - right - side / 2, y: top + side / 2)
+            }
+            .padding(-14)
+        }
     }
 
     private func next(_ s: LamhaSnapshot) -> Prayer? { s.upcomingPrayers(from: entry.date).first }

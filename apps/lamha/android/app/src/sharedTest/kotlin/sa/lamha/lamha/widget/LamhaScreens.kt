@@ -54,6 +54,8 @@ object LamhaScreens {
         }
         // الأرقام الإنجليزية (الميزة ٦). ساعة TextClock تتبع لغة الجهاز (هنا عربي) لا الإعداد.
         for ((size, w, h) in SIZES) out += Triple("lamha_latin_$size.png", base("latin"), w to h)
+        // البوصلة الحرة (DECISIONS ٢٩): قرص فوق الشبكة بلا مكان في الشجرة.
+        for ((size, w, h) in SIZES) out += Triple("lamha_float_$size.png", base("float"), w to h)
         for ((size, w, h) in SIZES_4X4) out += Triple("lamha_4x4_${size}_black_1.0.png", base("black"), w to h)
         // شبكة الإيداعات (أكثر من ثلاثة، طلب المالك): الستة، وخمسة (صف ناقص)، والستة في ٤×٤.
         val six = base("six")

@@ -7,10 +7,60 @@
 /// كل تخطيط يُقبل في المحرر يجب أن يُقسَم هكذا (لا تداخل «دوّامي»)، وإلا تُرفض الحركة.
 library;
 
+import 'dart:math' as math;
+
 import 'widget_layout.dart';
 
 const freeCols = 6;
 const freeRows = 10;
+
+/// مكان عائم حر (البوصلة، DECISIONS ٢٩) خارج شبكة الرصّ: [x] بعد الحافة اليمنى من عرض الودجت، و[y] بعد
+/// الحافة العليا من ارتفاعه، و[s] قطر الدائرة نسبة لأقصر ضلعي الودجت. كلها كسور ٠–١، فيصحّ على كل مقاس.
+class FloatRect {
+  const FloatRect(this.x, this.y, this.s);
+
+  factory FloatRect.fromJson(Object? j) {
+    final l = (j as List).cast<num>();
+    return FloatRect(l[0].toDouble(), l[1].toDouble(), l[2].toDouble());
+  }
+
+  final double x, y, s;
+
+  static const minSide = 0.12;
+  static const maxSide = 0.9;
+
+  /// الموضع بالبكسل (أو أي وحدة) داخل ودجت [w]×[h]، محصوراً فلا تخرج الدائرة منه.
+  ({double right, double top, double side}) within(double w, double h) {
+    final side = (s.clamp(minSide, maxSide) * math.min(w, h)).clamp(0.0, math.min(w, h)).toDouble();
+    return (
+      right: (x * w).clamp(0.0, math.max(0.0, w - side)).toDouble(),
+      top: (y * h).clamp(0.0, math.max(0.0, h - side)).toDouble(),
+      side: side,
+    );
+  }
+
+  /// من موضع بالبكسل (يمين، أعلى، قطر) داخل ودجت [w]×[h]، بعد حصره.
+  factory FloatRect.fromPixels(double right, double top, double side, double w, double h) {
+    final m = math.min(w, h);
+    final s = (side / m).clamp(minSide, maxSide).toDouble();
+    final d = s * m;
+    return FloatRect(
+      (right.clamp(0.0, math.max(0.0, w - d)) / w).toDouble(),
+      (top.clamp(0.0, math.max(0.0, h - d)) / h).toDouble(),
+      s,
+    );
+  }
+
+  double _r(double v) => (v * 1000).round() / 1000;
+
+  List<double> toJson() => [_r(x), _r(y), _r(s)];
+
+  @override
+  bool operator ==(Object other) => other is FloatRect && other.x == x && other.y == y && other.s == s;
+
+  @override
+  int get hashCode => Object.hash(x, y, s);
+}
 
 /// مستطيل على الشبكة بالخلايا.
 class GridRect {
@@ -125,6 +175,8 @@ Map<WidgetElement, GridRect> place(Map<WidgetElement, GridRect> rects, WidgetEle
 
 /// مستطيلات العناصر الظاهرة: المحفوظة، وما ينقصه مستطيل يوضع في أول فراغ بمقاسه الافتراضي.
 Map<WidgetElement, GridRect> rectsOf(List<TileLayout> layout) {
+  // العائم (البوصلة الحرة، DECISIONS ٢٩) خارج الرصّ: لا يزاحم ولا يُزاحَم.
+  layout = [for (final t in layout) if (!t.floating) t];
   final out = <WidgetElement, GridRect>{};
   for (final t in layout.where((t) => t.visible && t.rect != null)) {
     out[t.id] = t.rect!.clamped();
@@ -283,6 +335,8 @@ int spanOfWidth(int w) => w <= 2 ? 1 : w <= 4 ? 2 : 3;
 
 /// إعادة الرصّ بترتيب [ordered] مع إبقاء مقاس كل عنصر (ترتيب القائمة في شاشة «الودجت»).
 List<TileLayout> reflow(List<TileLayout> ordered) {
+  final all = ordered;
+  ordered = [for (final t in all) if (!t.floating) t];
   final current = rectsOf(ordered);
   final cleared = [for (final t in ordered) t.copyWith(rect: () => null)];
   final placed = <WidgetElement, GridRect>{};
@@ -294,5 +348,6 @@ List<TileLayout> reflow(List<TileLayout> ordered) {
   if (cutTree(next) == null) {
     next = shelfPack([for (final t in cleared.where((t) => t.visible)) (id: t.id, size: (w: next[t.id]!.w, h: next[t.id]!.h))]);
   }
-  return withRects(cleared, next);
+  final done = {for (final t in withRects(cleared, next)) t.id: t};
+  return [for (final t in all) t.floating ? t : done[t.id]!];
 }

@@ -433,6 +433,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown under the clock in the widget. Off by default.';
 
   @override
+  String get qiblaFloatLabel => 'Floating above tiles (free move and resize)';
+
+  @override
+  String get qiblaFloatHint =>
+      'Drag the compass in the preview and resize it from its corners; it does not push the tiles.';
+
+  @override
   String get qiblaIconSizeLabel => 'Compass icon size';
 
   @override

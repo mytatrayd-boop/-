@@ -484,4 +484,18 @@ class LamhaLogicTest {
         assertEquals(listOf(3, 1), LamhaLogic.fitPoints(100f, 0f, 10f, listOf(4, 1)).second)
         assertEquals(listOf(2), LamhaLogic.fitPoints(25f, 0f, 10f, listOf(2, 2), 2f).second)
     }
+
+    @Test
+    fun floatPlaceCases() {
+        // الحالات نفسها في test/engine/free_layout_test.dart (FloatRect.within).
+        val p = LamhaLogic.floatPlace(listOf(0.6, 0.1, 0.3), 300f, 400f)
+        assertEquals(90f, p.side, 1e-4f)
+        assertEquals(180f, p.right, 1e-4f)
+        assertEquals(40f, p.top, 1e-4f)
+        val big = LamhaLogic.floatPlace(listOf(5.0, 5.0, 5.0), 300f, 400f)
+        assertEquals(270f, big.side, 1e-4f)
+        assertEquals(30f, big.right, 1e-4f)
+        assertEquals(130f, big.top, 1e-4f)
+        assertEquals(36f, LamhaLogic.floatPlace(listOf(0.0, 0.0, 0.01), 300f, 400f).side, 1e-4f)
+    }
 }

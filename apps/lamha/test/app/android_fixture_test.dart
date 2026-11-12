@@ -21,6 +21,7 @@ String fixture(
   WidgetTheme theme, {
   DigitStyle digits = DigitStyle.arabic,
   Set<String> deposits = const {'salary', 'housing_support', 'citizen_account'},
+  bool floatCompass = false,
 }) {
   // قرب أبها، حيث القبلة ٣٢٤° (كلقطة المالك؛ مركز أبها ٣٢٢°).
   const lat = 18.20, lon = 42.33;
@@ -34,6 +35,12 @@ String fixture(
       opacity: 80,
       theme: theme,
       digits: digits,
+      layout: floatCompass
+          ? [
+              for (final t in defaultLayout)
+                t.id == WidgetElement.qibla ? t.copyWith(float: () => const FloatRect(0.62, 0.08, 0.3)) : t,
+            ]
+          : null,
     ),
     loadEngineDataFromFiles(),
     days: 2,
@@ -60,6 +67,20 @@ void main() {
     expect(file.readAsStringSync(), json);
     final day = (jsonDecode(json)['days'] as List).first as Map;
     expect((day['deposits'] as List).length, 6);
+  });
+
+  // البوصلة الحرة (DECISIONS ٢٩): الأسود والبوصلة عائمة فوق المربعات بلا مكان في الشجرة.
+  test('جدول لقطات أندرويد (float) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_float.json');
+    final json = fixture(WidgetTheme.black, floatCompass: true);
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    final q = (root['layout'] as List).cast<Map>().firstWhere((t) => t['id'] == 'qibla');
+    expect(q['float'], [0.62, 0.08, 0.3]);
+    expect(jsonEncode(root['tree']), isNot(contains('qibla')));
   });
 
   // الأسود الافتراضي والذهبي والأزرق، ونسخة بالأرقام الإنجليزية (الميزة ٦).

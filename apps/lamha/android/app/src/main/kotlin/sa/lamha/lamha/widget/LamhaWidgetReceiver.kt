@@ -311,6 +311,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val rows = LamhaLogic.packRows(
                 LamhaLogic.stackCells(day.layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) }),
             )
+            applyFloatCompass(rv, context, ctx, day, byId, minWidth, maxHeight)
             val weather = LamhaLogic.newestWeather(
                 day.weather, LamhaSchedule.weatherOf(nativeWeather),
                 day.latitude, day.longitude,
@@ -908,6 +909,31 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 .toInt().coerceIn(48, QIBLA_DIAL_MAX_PX)
             rv.setImageViewBitmap(R.id.qibla_dial, drawQiblaDial(ctx, px, env.day.qiblaAngle, LamhaLogic.backgroundAlpha255(env.day.opacity)))
             return rv
+        }
+
+        /// البوصلة الحرة (DECISIONS ٢٩): قرص فوق الشبكة بموضعه ومقاسه من `float`. [widthDp]×[heightDp] مقاس الودجت
+        /// (بلا مقاس معلوم لا تُرسم). الحشوة بالبكسل تترك للصورة مكانها فقط فلا تحجب لمس المربعات حولها.
+        private fun applyFloatCompass(
+            rv: RemoteViews, context: Context, ctx: Context, day: LamhaDay, byId: Map<String, LamhaLogic.Tile>, widthDp: Int, rawHeightDp: Int,
+        ) {
+            val tile = byId["qibla"]
+            val f = tile?.float
+            if (tile == null || !tile.visible || f == null || widthDp <= 0) return
+            // ارتفاع مجهول (صفر): نسبة تقريبية من العرض كي تظهر ولا تُحذف.
+            val heightDp = if (rawHeightDp > 0) rawHeightDp else (widthDp * 1.3f).toInt()
+            val density = ctx.resources.displayMetrics.density
+            val place = LamhaLogic.floatPlace(f, widthDp * density, heightDp * density)
+            val w = (widthDp * density).toInt()
+            val left = (w - place.right - place.side).toInt().coerceAtLeast(0)
+            rv.setViewPadding(R.id.float_box, left, place.top.toInt(), place.right.toInt(), 0)
+            val px = place.side.toInt().coerceIn(48, QIBLA_DIAL_MAX_PX)
+            rv.setImageViewBitmap(R.id.float_dial, drawQiblaDial(ctx, px, day.qiblaAngle, LamhaLogic.backgroundAlpha255(day.opacity)))
+            rv.setContentDescription(R.id.float_dial, ctx.getString(R.string.tile_qibla))
+            rv.setOnClickPendingIntent(
+                R.id.float_dial,
+                HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, Uri.parse(QIBLA_URI)),
+            )
+            rv.setViewVisibility(R.id.float_box, View.VISIBLE)
         }
 
         /// قرص مربع القبلة بضلع [px] (صورة المالك، QiblaTileDialPainter في Dart): دائرة سوداء، وتدريج أبيض
