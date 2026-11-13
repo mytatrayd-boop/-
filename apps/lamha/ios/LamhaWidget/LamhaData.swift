@@ -147,7 +147,7 @@ struct LamhaSnapshot {
 
     /// حجم أيقونة القبلة (٠٫٥–١٫٦، ١ افتراضياً).
     var qiblaIconScale: Double {
-        min(max(tiles.first { $0.id == "qibla" }?.iconScale ?? 1, 0.5), 1.6)
+        min(max(tiles.first { $0.id == "qibla" }?.iconScale ?? 1, 0.5), 5)
     }
 
     /// الساعة بتوقيت المدينة: «١٠:٣٥» و«ص» أو «م» (كساعة أندرويد وDart).

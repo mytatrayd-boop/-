@@ -150,7 +150,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val QIBLA_ARROW_LENGTH = 0.24f
         private const val QIBLA_ARROW_HALF = 0.07f
         private const val QIBLA_STAR_LENGTH = 0.2f
-        private const val QIBLA_DIAL_MAX_PX = 360
+        private const val QIBLA_DIAL_MAX_PX = 512
         private const val QIBLA_ICON_DEFAULT_DP = 56f
         private const val POINT_SP = 10f
         private const val COLUMN_GAP_DP = 4f

@@ -189,6 +189,9 @@ class LamhaLogicTest {
         // الحالات نفسها في widget_layout_test.dart (مقاس أيقونة القبلة).
         assertEquals(83.3f, LamhaLogic.qiblaIconSize(98f, 1, 1f), 0.05f)
         assertEquals(41.65f, LamhaLogic.qiblaIconSize(98f, 1, 0.5f), 0.05f)
+        // أقصى الشريط (٥٠٠٪): الدائرة تملأ عرض خانتها (الحالات نفسها في widget_layout_test.dart).
+        assertEquals(204f, LamhaLogic.qiblaIconSize(204f, 2, 5f), 1e-4f)
+        assertEquals(98f, LamhaLogic.qiblaIconSize(98f, 1, 5f), 1e-4f)
         assertEquals(138.72f, LamhaLogic.qiblaIconSize(204f, 2, 1.6f), 0.05f)
         assertEquals(60f, LamhaLogic.qiblaIconSize(60f, 1, 1.6f), 1e-4f)
         assertEquals(36f, LamhaLogic.qiblaIconSize(0f, 1, 1f), 1e-4f)

@@ -293,7 +293,7 @@ void main() {
       expect(tileIconScale(null), 1.0);
       expect(tileIconScale('x'), 1.0);
       expect(tileIconScale(0.1), 0.5);
-      expect(tileIconScale(9), 1.6);
+      expect(tileIconScale(9), 5.0);
       expect(tileIconScale(0.87), closeTo(0.85, 1e-9));
       expect(tileIconScale(1.33), closeTo(1.35, 1e-9));
       expect(const TileLayout(WidgetElement.qibla).iconScale, 1.0);
@@ -325,6 +325,9 @@ void main() {
       // خانة وحدتين بعرض ٢٠٤: الأساس من الوحدة الواحدة (١٠٢) = ٨٦٫٧، ×١٫٦ = ١٣٨٫٧
       expect(qiblaIconSize(204, 2, 1.6), closeTo(138.72, 0.01));
       expect(qiblaIconSize(60, 1, 1.6), 60);
+      // أقصى الشريط (٥٠٠٪): الدائرة تملأ عرض خانتها بلا هوامش (الارتفاع يقصّها لاحقاً في الرسم).
+      expect(qiblaIconSize(204, 2, 5.0), 204);
+      expect(qiblaIconSize(98, 1, 5.0), 98);
       expect(qiblaIconSize(0, 1, 1.0), 36);
     });
   });
