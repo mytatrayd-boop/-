@@ -302,6 +302,10 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             rv.setOnClickPendingIntent(R.id.root, openAppIntent(context))
             rv.setInt(R.id.bg, "setColorFilter", background)
             rv.setInt(R.id.bg, "setImageAlpha", LamhaLogic.backgroundAlpha255(day.opacity))
+            // التحديث يُطبَّق على الودجت القائمة: ما أُضيف في التحديث السابق (المربعات العائمة) يُمسح أولاً، وإلا
+            // تراكمت نسخ مكررة فوق بعضها (لقطة المالك ١٣ نوفمبر).
+            rv.removeAllViews(R.id.float_layer)
+            applyFrame(rv, context, day, minWidth, maxHeight)
 
             // الميزة ٥: المربعات الظاهرة من layout تُرصّ في صفوف (packRows)، وارتفاع كل صف بوزن
             // أطول مربع فيه (rowHeights) بالحجم الأساسي، فلا يتغير مقاس المربع بحجم الخط (الميزة ٥ب).
@@ -912,6 +916,22 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             return rv
         }
 
+        /// إطار الخلفية الحر (DECISIONS ٣٠): الحشوة بالبكسل تترك للوحة الخلفية مكانها ومقاسها فقط. بلا `frame`
+        /// تملأ الودجت (حشوة صفر تمسح أي إطار سابق). لا شيء من العناصر يقرأ الإطار.
+        private fun applyFrame(rv: RemoteViews, context: Context, day: LamhaDay, widthDp: Int, rawHeightDp: Int) {
+            val f = day.frame
+            if (f == null || widthDp <= 0) {
+                rv.setViewPadding(R.id.bg_box, 0, 0, 0, 0)
+                return
+            }
+            val heightDp = if (rawHeightDp > 0) rawHeightDp else (widthDp * 1.3f).toInt()
+            val density = context.resources.displayMetrics.density
+            val p = LamhaLogic.floatPlace(f, widthDp.toFloat(), heightDp.toFloat())
+            val left = ((widthDp - p.right - p.width) * density).toInt().coerceAtLeast(0)
+            val bottom = ((heightDp - p.top - p.height) * density).toInt().coerceAtLeast(0)
+            rv.setViewPadding(R.id.bg_box, left, (p.top * density).toInt(), (p.right * density).toInt(), bottom)
+        }
+
         /// المربعات العائمة (DECISIONS ٢٩): كل مربع له `float` يُرسم بمقاسه الكامل فوق الشبكة (فوق الأصل root)
         /// في خانة `widget_float_slot` حشوتها (setViewPadding) تترك له مكانه ومقاسه فقط، فيبقى ما حوله قابلاً
         /// للضغط. المحتوى هو نفسه مربع الشبكة، بمقاس يُحسب من عرض الخانة وارتفاعها (كالورقة في شجرة القص).
@@ -943,7 +963,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 val left = ((widthDp - p.right - p.width) * density).toInt().coerceAtLeast(0)
                 val bottom = ((heightDp - p.top - p.height) * density).toInt().coerceAtLeast(0)
                 box.setViewPadding(R.id.float_box, left, (p.top * density).toInt(), (p.right * density).toInt(), bottom)
-                rv.addView(R.id.root, box)
+                rv.addView(R.id.float_layer, box)
             }
         }
 

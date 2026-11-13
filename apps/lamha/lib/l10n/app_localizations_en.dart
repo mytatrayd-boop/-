@@ -433,6 +433,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown under the clock in the widget. Off by default.';
 
   @override
+  String get frameEdit => 'Widget frame';
+
+  @override
+  String get frameDone => 'Done';
+
+  @override
+  String get frameReset => 'Reset frame';
+
+  @override
   String get tileFloatLabel => 'Float above tiles (free move and resize)';
 
   @override

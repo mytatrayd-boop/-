@@ -611,6 +611,29 @@ struct LamhaWidgetView: View {
     }
 }
 
+/// لوحة الخلفية (DECISIONS ٣٠): تملأ الودجت، أو تقع في إطارها الحر (كسور من الودجت كلها) دون أن يتأثر شيء من
+/// العناصر فوقها.
+@ViewBuilder
+func frameBackground(_ s: LamhaSnapshot?) -> some View {
+    let color = (s?.background ?? .black).opacity(s?.opacity ?? 1)
+    if let f = s?.frame {
+        GeometryReader { g in
+            let w = g.size.width
+            let h = g.size.height
+            let width = min(max(CGFloat(f[2]), 0.12), 1) * w
+            let height = min(max(CGFloat(f[3]), 0.06), 1) * h
+            let right = min(max(CGFloat(f[0]) * w, 0), max(0, w - width))
+            let top = min(max(CGFloat(f[1]) * h, 0), max(0, h - height))
+            color
+                .clipShape(RoundedRectangle(cornerRadius: 22))
+                .frame(width: width, height: height)
+                .position(x: w - right - width / 2, y: top + height / 2)
+        }
+    } else {
+        color
+    }
+}
+
 struct LamhaWidget: Widget {
     let kind = "LamhaWidget"
 
@@ -624,7 +647,7 @@ struct LamhaWidget: Widget {
                         if let img = s?.wallpaper {
                             Image(uiImage: img).resizable().scaledToFill()
                         }
-                        (s?.background ?? .black).opacity(s?.opacity ?? 1)
+                        frameBackground(s)
                     }
                 }
         }

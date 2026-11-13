@@ -113,6 +113,8 @@ struct LamhaSnapshot {
     let latinDigits: Bool
     /// التخطيط الحر؛ nil لجدول أقدم بلا شجرة (يُرسم بالكتل القديمة).
     let tree: CutTree?
+    /// إطار الخلفية الحر (DECISIONS ٣٠): [x, y, w, h] كسور من الودجت؛ nil = الخلفية تملأ الودجت.
+    let frame: [Double]?
     /// النوافذ بترتيبها في تخطيط التطبيق؛ فارغة لجدول أقدم بلا layout.
     let tiles: [LamhaTile]
 
@@ -315,6 +317,7 @@ func loadSnapshot() -> LamhaSnapshot? {
         fontScale: min(max((root["fontScale"] as? NSNumber)?.doubleValue ?? 1, 0.5), 3),
         latinDigits: (root["digits"] as? String) == "latin",
         tree: CutTree.parse(root["tree"]),
+        frame: parseFloat(root["frame"]),
         tiles: tiles
     )
 }

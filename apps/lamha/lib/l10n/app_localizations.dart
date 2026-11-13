@@ -650,6 +650,24 @@ abstract class AppLocalizations {
   /// **'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.'**
   String get prayerCountdownHint;
 
+  /// No description provided for @frameEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إطار الودجت'**
+  String get frameEdit;
+
+  /// No description provided for @frameDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get frameDone;
+
+  /// No description provided for @frameReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الإطار'**
+  String get frameReset;
+
   /// No description provided for @tileFloatLabel.
   ///
   /// In ar, this message translates to:

@@ -23,6 +23,9 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
   /// العنصر المفتوحة لوحته (يُميَّز في المعاينة).
   WidgetElement? _open;
 
+  /// وضع تحريك إطار الخلفية (DECISIONS ٣٠): يظهر محرر الإطار وحده، والعناصر لا تتأثر.
+  bool _framing = false;
+
   /// حول المعاينة: اللوحة السفلية تقف تحت حدّها فلا تحجب الودجت (طلب المالك ١١/١١/٢٠٢٦).
   final _previewKey = GlobalKey();
 
@@ -69,6 +72,14 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
             onTileTap: tap,
             selected: _open,
             floatOverlay: (box) {
+              if (_framing) {
+                return FrameEditor(
+                  box: box,
+                  frame: state.settings.frame ?? const FloatRect(0, 0, 1, 1),
+                  onChange: c.setFrame,
+                  onReset: state.settings.frame == null ? null : () => c.setFrame(null),
+                );
+              }
               final floats = {
                 for (final t in layout)
                   if (t.visible && t.float != null) t.id: t.float!,
@@ -82,7 +93,7 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
                 onChange: c.setFloat,
               );
             },
-            overlay: (grid) => FreeEditor(
+            overlay: (grid) => _framing ? const SizedBox.shrink() : FreeEditor(
               grid: grid,
               rects: rectsOf(layout),
               selected: _open,
@@ -140,6 +151,12 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
       appBar: AppBar(
         title: Text(l.customizeTitle),
         actions: [
+          IconButton(
+            key: const Key('frame-toggle'),
+            icon: Icon(_framing ? Icons.check : Icons.crop_free),
+            tooltip: _framing ? l.frameDone : l.frameEdit,
+            onPressed: state == null ? null : () => setState(() => _framing = !_framing),
+          ),
           TextButton.icon(
             key: const Key('reset-layout'),
             icon: const Icon(Icons.restart_alt),
@@ -921,6 +938,149 @@ class _FloatEditorState extends State<FloatEditor> {
                 ),
               );
             }),
+      ],
+    );
+  }
+}
+
+/// محرر إطار الخلفية (DECISIONS ٣٠): يحرّك لوحة الخلفية وحدها ويكبّرها ويصغّرها (السحب للتحريك، والمقابض
+/// الأربعة للمقاس، كل زاوية تحرك ضلعيها). العناصر الداخلية لا تتحرك ولا يتغير مقاسها. يحفظ عند الإفلات.
+class FrameEditor extends StatefulWidget {
+  const FrameEditor({super.key, required this.box, required this.frame, required this.onChange, this.onReset});
+
+  final Size box;
+  final FloatRect frame;
+  final Future<void> Function(FloatRect? r, {bool commit}) onChange;
+
+  /// يعيد الإطار ليملأ الودجت؛ null إن لم يكن محرّكاً.
+  final VoidCallback? onReset;
+
+  @override
+  State<FrameEditor> createState() => _FrameEditorState();
+}
+
+class _FrameEditorState extends State<FrameEditor> {
+  ({bool left, bool top})? _corner;
+  bool _dragging = false;
+  late ({double right, double top, double width, double height}) _start;
+  var _total = Offset.zero;
+
+  ({double right, double top, double width, double height}) get _px => widget.frame.within(widget.box.width, widget.box.height);
+
+  void _begin(({bool left, bool top})? corner) {
+    _start = _px;
+    _total = Offset.zero;
+    setState(() {
+      _dragging = true;
+      _corner = corner;
+    });
+  }
+
+  void _update(Offset d) {
+    _total += d;
+    final w = widget.box.width, h = widget.box.height;
+    var left = w - _start.right - _start.width;
+    var right = w - _start.right;
+    var top = _start.top;
+    var bottom = _start.top + _start.height;
+    final minW = 0.3 * w, minH = 0.2 * h;
+    final c = _corner;
+    if (c == null) {
+      left += _total.dx;
+      right += _total.dx;
+      top += _total.dy;
+      bottom += _total.dy;
+    } else {
+      if (c.left) {
+        left = (left + _total.dx).clamp(0.0, right - minW).toDouble();
+      } else {
+        right = (right + _total.dx).clamp(left + minW, w).toDouble();
+      }
+      if (c.top) {
+        top = (top + _total.dy).clamp(0.0, bottom - minH).toDouble();
+      } else {
+        bottom = (bottom + _total.dy).clamp(top + minH, h).toDouble();
+      }
+    }
+    widget.onChange(FloatRect.fromPixels(w - right, top, right - left, bottom - top, w, h), commit: false);
+  }
+
+  Future<void> _end() async {
+    setState(() => _dragging = false);
+    await widget.onChange(widget.frame);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final f = _px;
+    final leftEdge = widget.box.width - f.right - f.width;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          right: f.right,
+          top: f.top,
+          width: f.width,
+          height: f.height,
+          child: GestureDetector(
+            key: const Key('frame-box'),
+            behavior: HitTestBehavior.opaque,
+            onPanStart: (_) => _begin(null),
+            onPanUpdate: (d) => _update(d.delta),
+            onPanEnd: (_) => _end(),
+            onPanCancel: () => setState(() => _dragging = false),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: scheme.primary, width: _dragging ? 3 : 2),
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+        ),
+        for (final corner in const [
+          (left: true, top: false),
+          (left: false, top: false),
+          (left: true, top: true),
+          (left: false, top: true),
+        ])
+          Positioned(
+            // مركز المقبض داخل الزاوية بـ ١٠ فيبقى قابلاً للمس حين يملأ الإطار الودجت كلها.
+            left: (corner.left ? leftEdge + 10 : leftEdge + f.width - 10) - 22,
+            top: (corner.top ? f.top + 10 : f.top + f.height - 10) - 22,
+            width: 44,
+            height: 44,
+            child: GestureDetector(
+              key: Key('frame-handle-${corner.top ? 't' : 'b'}${corner.left ? 'l' : 'r'}'),
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (_) => _begin(corner),
+              onPanUpdate: (d) => _update(d.delta),
+              onPanEnd: (_) => _end(),
+              onPanCancel: () => setState(() => _dragging = false),
+              child: Center(
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: scheme.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (widget.onReset != null)
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: FilledButton.tonalIcon(
+              key: const Key('frame-reset'),
+              onPressed: widget.onReset,
+              icon: const Icon(Icons.fullscreen),
+              label: Text(AppLocalizations.of(context).frameReset),
+            ),
+          ),
       ],
     );
   }
