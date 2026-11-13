@@ -190,6 +190,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         /// هامش الخانة في التخطيط الحر: حشوة الورقة ٨dp وأمان ٤dp، لأن المحاكي يعطي الودجت أقل قليلاً من maxHeight.
         private const val FREE_FIT_SLACK_DP = 12f
 
+        /// المقاس المرجعي للوحة العناصر الثابتة (dp): مقاس المعاينة في التطبيق (previewWidgetSize) الذي يصمّم عليه
+        /// المالك، فيطابق ما يراه في شاشة «الودجت».
+        private const val CANVAS_WIDTH_DP = 338
+        private const val CANVAS_HEIGHT_DP = 440
+
         /// أدنى تصغير للعنوان والقيمة (tileMinFit)، ولسطور العمود الأيسر.
         private const val TILE_MIN_FIT = 0.7f
         private const val HEAD_MIN_FIT = 0.75f
@@ -306,6 +311,16 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             // تراكمت نسخ مكررة فوق بعضها (لقطة المالك ١٣ نوفمبر).
             rv.removeAllViews(R.id.float_layer)
             applyFrame(rv, context, day, minWidth, maxHeight)
+            // اللوحة الثابتة (اختيار المالك ١٣ نوفمبر): العناصر تُحسب وتُرسم على مقاس مرجعي ثابت متوسط في الودجت، فلا
+            // تتبع تكبير الودجت أو تصغيرها من الشاشة الرئيسية. أندرويد أقدم من ١٢ لا يضبط مقاس الخانة من الكود،
+            // فيبقى الاتباع القديم.
+            val fixedCanvas = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && minWidth > 0
+            val widthDp = if (fixedCanvas) CANVAS_WIDTH_DP else minWidth
+            val heightDp = if (fixedCanvas) CANVAS_HEIGHT_DP else maxHeight
+            if (fixedCanvas) {
+                rv.setViewLayoutWidth(R.id.canvas, CANVAS_WIDTH_DP.toFloat(), TypedValue.COMPLEX_UNIT_DIP)
+                rv.setViewLayoutHeight(R.id.canvas, CANVAS_HEIGHT_DP.toFloat(), TypedValue.COMPLEX_UNIT_DIP)
+            }
 
             // الميزة ٥: المربعات الظاهرة من layout تُرصّ في صفوف (packRows)، وارتفاع كل صف بوزن
             // أطول مربع فيه (rowHeights) بالحجم الأساسي، فلا يتغير مقاس المربع بحجم الخط (الميزة ٥ب).
@@ -328,15 +343,15 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             day.tree?.takeIf { LamhaLogic.treeDepth(it) <= LamhaLogic.FREE_MAX_DEPTH }?.let { tree ->
                 val leaves = mutableSetOf<String>().also { collectLeaves(tree, it) }
                 for (t in day.layout) if (t.visible && t.float != null) leaves.add(t.id)
-                val fenv = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, leaves, fresh)
-                val cellDp = if (maxHeight > 0) (maxHeight - 20f) / LamhaLogic.FREE_ROWS else 0f
+                val fenv = Env(context, ctx, day, accent, now, widthDp, sys, weatherText, leaves, fresh)
+                val cellDp = if (heightDp > 0) (heightDp - 20f) / LamhaLogic.FREE_ROWS else 0f
                 rv.removeAllViews(R.id.grid)
                 // الجذر جزء وحيد في grid (عمود رأسي) بوزن كامل فيملؤه، بلا غلاف يزيد التداخل.
                 rv.addView(R.id.grid, freeNode(fenv, tree, byId, cellDp, vertical = true, weight = LamhaLogic.FREE_ROWS))
-                addFloats(rv, fenv, minWidth, maxHeight)
+                addFloats(rv, fenv, widthDp, heightDp)
                 return rv
             }
-            val env = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, placed, fresh)
+            val env = Env(context, ctx, day, accent, now, widthDp, sys, weatherText, placed, fresh)
             fun scaleOf(id: String) = day.fontScale * (byId[id]?.fontScale ?: 1f)
             // الخانة المكدسة (التاريخان وتحتهما المدينة): مجموع ارتفاعيهما، وحشوة الخانة مرة.
             val parts = rows.map { r ->
@@ -354,9 +369,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val text = tallest.map { it.first }
             val pads = tallest.map { it.second }
             // أندرويد ١٢+ يضبط ارتفاع الصف (setViewLayoutHeight)، والأقدم صفوف متساوية.
-            val exact = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && maxHeight > 0
+            val exact = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && heightDp > 0
             val (_, heights) = LamhaLogic.rowHeights(
-                text, pads, if (maxHeight > 0) maxHeight - 20f else 0f, 0f, equal = !exact,
+                text, pads, if (heightDp > 0) heightDp - 20f else 0f, 0f, equal = !exact,
                 // صفوف المربعات تقتسم الباقي، وصفوف الساعة والتاريخين والمدينة بقدر محتواها.
                 flexible = rows.map { r -> r.any { it.id !in LINE_TILES } },
             )
@@ -375,7 +390,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                             else -> R.layout.widget_tile_full
                         },
                     )
-                    val inner = if (maxHeight > 0) heights[r] - 8f else 0f
+                    val inner = if (heightDp > 0) heights[r] - 8f else 0f
                     val ids = LamhaLogic.cellElements(cell.id)
                     if (ids.all { it in CAPSULES }) {
                         // كبسولتا التاريخين (أو واحدة) تقتسمان الخانة بالوزن (widget_tile_capsule).
