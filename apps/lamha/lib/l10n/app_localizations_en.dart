@@ -433,6 +433,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown under the clock in the widget. Off by default.';
 
   @override
+  String get appVersionLabel => 'Version';
+
+  @override
   String get frameEdit => 'Widget frame';
 
   @override

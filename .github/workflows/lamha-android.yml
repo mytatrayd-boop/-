@@ -28,7 +28,7 @@ jobs:
 
       # البناء أولاً: يولّد gradlew وlocal.properties (مستثناة من git) قبل اختبارات JUnit.
       - name: Build APK (debug-signed)
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+        run: flutter build apk --release --build-number=${{ github.run_number }} --dart-define=APP_BUILD=${{ github.run_number }}
 
       - name: Widget unit tests (JUnit)
         working-directory: apps/lamha/android

@@ -431,6 +431,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.';
 
   @override
+  String get appVersionLabel => 'النسخة';
+
+  @override
   String get frameEdit => 'إطار الودجت';
 
   @override

@@ -42,7 +42,7 @@ jobs:
 
       - name: Flutter build (no codesign, app + widget)
         # The iPhone app is paid: a monthly/yearly subscription (checked by the «أسرتي» server).
-        run: flutter build ios --release --no-codesign --dart-define=PAYWALL=${{ github.event_name != 'workflow_dispatch' || inputs.paywall }} --build-number=${{ github.run_number }}
+        run: flutter build ios --release --no-codesign --dart-define=PAYWALL=${{ github.event_name != 'workflow_dispatch' || inputs.paywall }} --build-number=${{ github.run_number }} --dart-define=APP_BUILD=${{ github.run_number }}
 
       - name: Widget extension is embedded
         run: |
