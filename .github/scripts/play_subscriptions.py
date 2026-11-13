@@ -87,6 +87,21 @@ def existing() -> dict:
     return {s["productId"]: s for s in res.get("subscriptions", [])}
 
 
+def add_trial(pid: str, plan: str, regions: list, rv: str):
+    offer = {
+        "packageName": PKG, "productId": pid, "basePlanId": plan, "offerId": "trial",
+        "phases": [{"duration": "P1W", "recurrenceCount": 1,
+                    "regionalConfigs": [{"regionCode": rc, "free": {}} for rc in regions],
+                    "otherRegionsConfig": {"free": {}}}],
+        "targeting": {"acquisitionRule": {"scope": {"thisSubscription": {}}}},
+        "regionalConfigs": [{"regionCode": rc, "newSubscriberAvailability": True} for rc in regions],
+        "otherRegionsConfig": {"otherRegionsNewSubscriberAvailability": True},
+    }
+    must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}/offers", offer, {"offerId": "trial", "regionsVersion.version": rv}), f"create trial {pid}")
+    must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}/offers/trial:activate"), f"activate trial {pid}")
+    print(f"[{pid}] 7-day free trial created and activated")
+
+
 def create(item: dict):
     pid = item["productId"]
     period, plan = PERIOD[item["period"]]
@@ -113,18 +128,21 @@ def create(item: dict):
     print(f"[{pid}] created with SAR {item['price']} in {len(regional)} regions")
     must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}:activate"), f"activate base plan {pid}")
     print(f"[{pid}] base plan '{plan}' activated")
-    offer = {
-        "packageName": PKG, "productId": pid, "basePlanId": plan, "offerId": "trial",
-        "phases": [{"duration": "P1W", "recurrenceCount": 1,
-                    "regionalConfigs": [{"regionCode": rc, "free": {}} for rc in regional],
-                    "otherRegionsConfig": {"free": {}}}],
-        "targeting": {"acquisitionRule": {"scope": {"specificSubscriptionInApp": pid}}},
-        "regionalConfigs": [{"regionCode": rc, "newSubscriberAvailability": True} for rc in regional],
-        "otherRegionsConfig": {"otherRegionsNewSubscriberAvailability": True},
-    }
-    must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}/offers", offer, {"offerId": "trial", "regionsVersion.version": rv}), f"create trial {pid}")
-    must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}/offers/trial:activate"), f"activate trial {pid}")
-    print(f"[{pid}] 7-day free trial created and activated")
+    add_trial(pid, plan, list(regional), rv)
+
+
+def fix_trial(sub: dict, item: dict):
+    """A product created by an earlier run that stopped before its free-trial offer: add the offer."""
+    pid = item["productId"]
+    period, plan = PERIOD[item["period"]]
+    status, res = call("GET", f"/subscriptions/{pid}/basePlans/{plan}/offers")
+    must(status, res, f"list offers {pid}")
+    if any(o.get("offerId") == "trial" for o in res.get("subscriptionOffers", [])):
+        return
+    bp = next(b for b in sub["basePlans"] if b["basePlanId"] == plan)
+    regions = [c["regionCode"] for c in bp.get("regionalConfigs", [])]
+    conv = must(*call("POST", "/pricing:convertRegionPrices", {"price": money(item["price"])}), f"convert prices {pid}")
+    add_trial(pid, plan, regions, (conv.get("regionVersion") or {}).get("version") or REGIONS_VERSION)
 
 
 def main(mode: str):
@@ -136,6 +154,8 @@ def main(mode: str):
     for item in spec["products"]:
         if item["productId"] in have:
             print(f"[{item['productId']}] already exists, skipped")
+            if mode == "apply":
+                fix_trial(have[item["productId"]], item)
         elif mode == "apply":
             create(item)
         else:
