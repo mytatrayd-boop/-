@@ -311,7 +311,6 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             val rows = LamhaLogic.packRows(
                 LamhaLogic.stackCells(day.layout.filter { it.visible }.map { LamhaLogic.Cell(it.id, it.span) }),
             )
-            applyFloatCompass(rv, context, ctx, day, byId, minWidth, maxHeight)
             val weather = LamhaLogic.newestWeather(
                 day.weather, LamhaSchedule.weatherOf(nativeWeather),
                 day.latitude, day.longitude,
@@ -324,11 +323,13 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             // شجرة أعمق من الحد (لا يكتبها التطبيق، cutTreeMaxDepth في Dart) تُرسم بالصفوف القديمة بدل أن يرفضها النظام.
             day.tree?.takeIf { LamhaLogic.treeDepth(it) <= LamhaLogic.FREE_MAX_DEPTH }?.let { tree ->
                 val leaves = mutableSetOf<String>().also { collectLeaves(tree, it) }
+                for (t in day.layout) if (t.visible && t.float != null) leaves.add(t.id)
                 val fenv = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, leaves, fresh)
                 val cellDp = if (maxHeight > 0) (maxHeight - 20f) / LamhaLogic.FREE_ROWS else 0f
                 rv.removeAllViews(R.id.grid)
                 // الجذر جزء وحيد في grid (عمود رأسي) بوزن كامل فيملؤه، بلا غلاف يزيد التداخل.
                 rv.addView(R.id.grid, freeNode(fenv, tree, byId, cellDp, vertical = true, weight = LamhaLogic.FREE_ROWS))
+                addFloats(rv, fenv, minWidth, maxHeight)
                 return rv
             }
             val env = Env(context, ctx, day, accent, now, minWidth, sys, weatherText, placed, fresh)
@@ -911,29 +912,39 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             return rv
         }
 
-        /// البوصلة الحرة (DECISIONS ٢٩): قرص فوق الشبكة بموضعه ومقاسه من `float`. [widthDp]×[heightDp] مقاس الودجت
-        /// (بلا مقاس معلوم لا تُرسم). الحشوة بالبكسل تترك للصورة مكانها فقط فلا تحجب لمس المربعات حولها.
-        private fun applyFloatCompass(
-            rv: RemoteViews, context: Context, ctx: Context, day: LamhaDay, byId: Map<String, LamhaLogic.Tile>, widthDp: Int, rawHeightDp: Int,
-        ) {
-            val tile = byId["qibla"]
-            val f = tile?.float
-            if (tile == null || !tile.visible || f == null || widthDp <= 0) return
+        /// المربعات العائمة (DECISIONS ٢٩): كل مربع له `float` يُرسم بمقاسه الكامل فوق الشبكة (فوق الأصل root)
+        /// في خانة `widget_float_slot` حشوتها (setViewPadding) تترك له مكانه ومقاسه فقط، فيبقى ما حوله قابلاً
+        /// للضغط. المحتوى هو نفسه مربع الشبكة، بمقاس يُحسب من عرض الخانة وارتفاعها (كالورقة في شجرة القص).
+        private fun addFloats(rv: RemoteViews, env: Env, widthDp: Int, rawHeightDp: Int) {
+            if (widthDp <= 0) return
             // ارتفاع مجهول (صفر): نسبة تقريبية من العرض كي تظهر ولا تُحذف.
             val heightDp = if (rawHeightDp > 0) rawHeightDp else (widthDp * 1.3f).toInt()
-            val density = ctx.resources.displayMetrics.density
-            val place = LamhaLogic.floatPlace(f, widthDp * density, heightDp * density)
-            val w = (widthDp * density).toInt()
-            val left = (w - place.right - place.side).toInt().coerceAtLeast(0)
-            rv.setViewPadding(R.id.float_box, left, place.top.toInt(), place.right.toInt(), 0)
-            val px = place.side.toInt().coerceIn(48, QIBLA_DIAL_MAX_PX)
-            rv.setImageViewBitmap(R.id.float_dial, drawQiblaDial(ctx, px, day.qiblaAngle, LamhaLogic.backgroundAlpha255(day.opacity)))
-            rv.setContentDescription(R.id.float_dial, ctx.getString(R.string.tile_qibla))
-            rv.setOnClickPendingIntent(
-                R.id.float_dial,
-                HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, Uri.parse(QIBLA_URI)),
-            )
-            rv.setViewVisibility(R.id.float_box, View.VISIBLE)
+            val density = env.ctx.resources.displayMetrics.density
+            val pkg = env.context.packageName
+            for (spec in env.day.layout) {
+                val f = spec.float ?: continue
+                if (!spec.visible) continue
+                val p = LamhaLogic.floatPlace(f, widthDp.toFloat(), heightDp.toFloat())
+                val span = LamhaLogic.spanOfWidth(Math.round(f[2].toFloat() * LamhaLogic.GRID_COLUMNS).coerceIn(1, LamhaLogic.GRID_COLUMNS))
+                // عرض الودجت الذي تعطي slotInnerDp له (بـ span) عرضَ هذه الخانة بالضبط.
+                val fitWidth = (p.width * LamhaLogic.GRID_COLUMNS / span + 20f).toInt()
+                val fe = Env(env.context, env.ctx, env.day, env.accent, env.now, fitWidth, env.sys, env.weatherText, env.placed, env.weather)
+                val inner = p.height - FREE_FIT_SLACK_DP
+                val fit = if (spec.id in CAPSULES) inner - 4f else inner
+                val content = tile(fe, spec, span, env.day.fontScale * spec.fontScale, fit)
+                val box = RemoteViews(pkg, R.layout.widget_float_slot)
+                if (spec.id in CAPSULES) {
+                    val stack = RemoteViews(pkg, R.layout.widget_tile_stack)
+                    stack.addView(R.id.stack, content)
+                    box.addView(R.id.float_slot, stack)
+                } else {
+                    box.addView(R.id.float_slot, content)
+                }
+                val left = ((widthDp - p.right - p.width) * density).toInt().coerceAtLeast(0)
+                val bottom = ((heightDp - p.top - p.height) * density).toInt().coerceAtLeast(0)
+                box.setViewPadding(R.id.float_box, left, (p.top * density).toInt(), (p.right * density).toInt(), bottom)
+                rv.addView(R.id.root, box)
+            }
         }
 
         /// قرص مربع القبلة بضلع [px] (صورة المالك، QiblaTileDialPainter في Dart): دائرة سوداء، وتدريج أبيض

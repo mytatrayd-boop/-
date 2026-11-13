@@ -260,7 +260,11 @@ class WidgetPreview extends StatelessWidget {
     final layout = scheduleLayout(schedule);
     final byId = {for (final t in layout) t.id: t};
     final tree = scheduleTree(schedule, layout);
-    final placed = {for (final e in tree.tiles) e.name};
+    final placed = {
+      for (final e in tree.tiles) e.name,
+      for (final t in layout)
+        if (t.visible && t.float != null) t.id.name,
+    };
     final rectOf = {
       for (final t in layout)
         if (t.rect != null) t.id: t.rect!,
@@ -418,39 +422,24 @@ class WidgetPreview extends StatelessWidget {
       ),
     );
 
-    // البوصلة الحرة (DECISIONS ٢٩): فوق المربعات كلها، بموضعها ومقاسها كنسب من الودجت كلها.
-    final floatTile = byId[WidgetElement.qibla];
-    final floatRect = floatTile != null && floatTile.visible ? floatTile.float : null;
-    Widget floatCompass(Size box) {
-      final f = floatRect!.within(box.width, box.height);
-      final dial = SizedBox.square(
-        key: const Key('preview-qibla-float'),
-        dimension: f.side,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CustomPaint(painter: QiblaTileDialPainter(qiblaDeg, faceAlpha: alpha)),
-            ),
-            Positioned(
-              left: (qiblaKaabaCenter(qiblaDeg).dx - qiblaKaabaSize / 2) * f.side,
-              top: (qiblaKaabaCenter(qiblaDeg).dy - qiblaKaabaSize / 2) * f.side,
-              width: f.side * qiblaKaabaSize,
-              height: f.side * qiblaKaabaSize,
-              child: Image.asset(kaabaAsset, filterQuality: FilterQuality.medium),
-            ),
-          ],
-        ),
-      );
+    // المربعات العائمة (DECISIONS ٢٩): فوق المربعات كلها، كل منها بموضعه ومقاسه كنسب من الودجت كلها،
+    // وبحشوة الخانة نفسها (tileSpacing / 2) كمربع الشبكة.
+    final floats = [
+      for (final t in layout)
+        if (t.visible && t.float != null) t,
+    ];
+    Widget floatTile(({WidgetElement id, FloatRect float}) f, Size box) {
+      final p = f.float.within(box.width, box.height);
+      final span = spanOfWidth((f.float.w * freeCols).round().clamp(1, freeCols));
       return Positioned(
-        right: f.right,
-        top: f.top,
-        child: onTileTap == null
-            ? dial
-            : GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onTileTap!(WidgetElement.qibla),
-                child: dial,
-              ),
+        right: p.right,
+        top: p.top,
+        width: p.width,
+        height: p.height,
+        child: Padding(
+          padding: const EdgeInsets.all(tileSpacing / 2),
+          child: _tap(f.id, tileFor(f.id, span)),
+        ),
       );
     }
 
@@ -464,7 +453,7 @@ class WidgetPreview extends StatelessWidget {
         builder: (context, whole) => Stack(
           children: [
             Positioned.fill(child: gridLayer),
-            if (floatRect != null) floatCompass(whole.biggest),
+            for (final t in floats) floatTile((id: t.id, float: t.float!), whole.biggest),
             if (floatOverlay != null) Positioned.fill(child: floatOverlay!(whole.biggest)),
           ],
         ),

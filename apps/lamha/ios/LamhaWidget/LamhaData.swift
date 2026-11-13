@@ -49,7 +49,8 @@ struct LamhaTile {
     let showSub: Bool
     let primary: Color?
     let secondary: Color?
-    /// البوصلة الحرة (DECISIONS ٢٩): [x, y, s] كسور من الودجت (FloatRect في Dart)؛ nil = مربع عادي.
+    /// المربع العائم (DECISIONS ٢٩): [x, y, w, h] كسور من الودجت (FloatRect في Dart): بعد الحافة اليمنى وبعد العليا
+    /// والعرض والارتفاع؛ nil = مربع عادي. الصيغة القديمة [x, y, s] (قرص البوصلة) تُقرأ بنسبة ٣٣٨×٤٤٠.
     let float: [Double]?
 }
 
@@ -224,6 +225,17 @@ private func loadWallpaper(_ name: String?, maxPixel: Int = 900) -> UIImage? {
     return UIImage(cgImage: cg)
 }
 
+/// `float` من الجدول (DECISIONS ٢٩): أربع قيم [x, y, w, h]، أو ثلاث من الصيغة القديمة [x, y, s] بنسبة ٣٣٨×٤٤٠.
+/// دالة مستقلة بأنواع صريحة: التعبير المضمَّن في الـinitializer أعيا مترجم Swift (انتهت مهلة فحص الأنواع).
+func parseFloat(_ raw: Any?) -> [Double]? {
+    guard let nums = raw as? [NSNumber] else { return nil }
+    var v: [Double] = []
+    for n in nums { v.append(n.doubleValue) }
+    if v.count >= 4 { return [v[0], v[1], v[2], v[3]] }
+    if v.count == 3 { return [v[0], v[1], v[2], v[2] * 338.0 / 440.0] }
+    return nil
+}
+
 func loadSnapshot() -> LamhaSnapshot? {
     guard let json = UserDefaults(suiteName: appGroupId)?.string(forKey: scheduleKey),
           let data = json.data(using: .utf8),
@@ -233,7 +245,7 @@ func loadSnapshot() -> LamhaSnapshot? {
     let theme = root["theme"] as? [String: Any] ?? [:]
     let qibla = root["qibla"] as? [String: Any] ?? [:]
     let weather = root["weather"] as? [String: Any]
-    let tiles: [LamhaTile] = (root["layout"] as? [[String: Any]] ?? []).compactMap { t in
+    let tiles: [LamhaTile] = (root["layout"] as? [[String: Any]] ?? []).compactMap { (t: [String: Any]) -> LamhaTile? in
         guard let id = t["id"] as? String else { return nil }
         return LamhaTile(
             id: id,
@@ -245,7 +257,7 @@ func loadSnapshot() -> LamhaSnapshot? {
             showSub: t["showSub"] as? Bool ?? true,
             primary: (t["primaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
             secondary: (t["secondaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
-            float: ((t["float"] as? [NSNumber])?.map { $0.doubleValue }).flatMap { $0.count >= 3 ? $0 : nil }
+            float: parseFloat(t["float"])
         )
     }
     // الشفافية من مفتاحها المنفصل في App Group أولاً (يكتبه التطبيق مع كل حفظ)، ثم من الجدول.

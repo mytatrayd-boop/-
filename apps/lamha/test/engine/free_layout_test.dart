@@ -146,17 +146,19 @@ void main() {
     expect(cutTree(rectsOf(layout)), isNotNull);
   });
 
-  group('البوصلة الحرة (DECISIONS ٢٩)', () {
+  group('المربعات العائمة (DECISIONS ٢٩)', () {
+    const f = FloatRect(0.6, 0.1, 0.3, 0.2);
     final floating = [
-      for (final t in defaultLayout)
-        t.id == qi ? t.copyWith(float: () => const FloatRect(0.6, 0.1, 0.3)) : t,
+      for (final t in defaultLayout) t.id == qi || t.id == pt ? t.copyWith(float: () => f) : t,
     ];
 
-    test('العائمة خارج الرصّ: لا مستطيل لها ولا مكان في الشجرة، وغيرها يملأ مكانها', () {
+    test('العائم خارج الرصّ: لا مستطيل له ولا مكان في الشجرة، وغيره يملأ مكانه', () {
       final r = rectsOf(floating);
       expect(r.containsKey(qi), isFalse);
+      expect(r.containsKey(pt), isFalse);
       expect(cutTree(r)!.tiles, isNot(contains(qi)));
-      expect(r.keys, containsAll([c, dw, hi, gr, pt, de, se, ts]));
+      expect(cutTree(r)!.tiles, isNot(contains(pt)));
+      expect(r.keys, containsAll([c, dw, hi, gr, de, se, ts]));
       // لا فجوات: لا يتجاوز شيء أسفل الشبكة ولا يتداخل اثنان.
       expect(overflowing(r), isEmpty);
       final list = r.values.toList();
@@ -167,37 +169,52 @@ void main() {
       }
     });
 
-    test('إعادة الرصّ تبقي العائمة كما هي ولا تفقدها', () {
+    test('كل المربعات عائمة: لا شجرة ولا رصّ، ولا يفشل شيء', () {
+      final all = [for (final t in defaultLayout) t.copyWith(float: () => f)];
+      expect(rectsOf(all), isEmpty);
+      expect(reflow(all).length, all.length);
+    });
+
+    test('إعادة الرصّ تبقي العائم كما هو ولا تفقده', () {
       final out = reflow(floating);
       expect(out.length, floating.length);
-      expect(out.firstWhere((t) => t.id == qi).float, const FloatRect(0.6, 0.1, 0.3));
+      expect(out.firstWhere((t) => t.id == qi).float, f);
+      expect(out.firstWhere((t) => t.id == pt).float, f);
     });
 
     test('FloatRect: JSON والموضع بالبكسل محصور في الودجت', () {
-      const f = FloatRect(0.6, 0.1, 0.3);
       expect(FloatRect.fromJson(f.toJson()), f);
       final p = f.within(300, 400);
-      expect(p.side, 90); // ٠٫٣ من أقصر ضلع (٣٠٠)
+      expect(p.width, 90);
+      expect(p.height, 80);
       expect(p.right, 180);
       expect(p.top, 40);
-      // خارج الحدود يُحصر: لا تخرج الدائرة من الودجت، والمقاس بين الحدين.
-      final out = const FloatRect(5, 5, 5).within(300, 400);
-      expect(out.side, 0.9 * 300);
-      expect(out.right, 300 - out.side);
-      expect(out.top, 400 - out.side);
-      expect(const FloatRect(0, 0, 0.01).within(300, 400).side, 0.12 * 300);
+      // خارج الحدود يُحصر: لا يخرج المربع من الودجت، والمقاس بين الحدين.
+      final out = const FloatRect(5, 5, 5, 5).within(300, 400);
+      expect(out.width, 300);
+      expect(out.height, 400);
+      expect(out.right, 0);
+      expect(out.top, 0);
+      final small = const FloatRect(0, 0, 0.01, 0.01).within(300, 400);
+      expect(small.width, 0.12 * 300);
+      expect(small.height, 0.06 * 400);
       // الذهاب والعودة بالبكسل.
-      final back = FloatRect.fromPixels(180, 40, 90, 300, 400);
+      final back = FloatRect.fromPixels(180, 40, 90, 80, 300, 400);
       expect(back.x, closeTo(0.6, 1e-9));
       expect(back.y, closeTo(0.1, 1e-9));
-      expect(back.s, closeTo(0.3, 1e-9));
+      expect(back.w, closeTo(0.3, 1e-9));
+      expect(back.h, closeTo(0.2, 1e-9));
+      // الصيغة القديمة (قرص البوصلة [x, y, s]) تُقرأ ولا تنكسر.
+      final old = FloatRect.fromJson([0.62, 0.08, 0.3]);
+      expect(old.w, 0.3);
+      expect(old.h, closeTo(0.3 * 338 / 440, 1e-9));
     });
 
     test('TileLayout يحفظ float في الإعدادات والجدول وتعود قراءته', () {
       final t = floating.firstWhere((t) => t.id == qi);
       expect(t.floating, isTrue);
       expect(TileLayout.fromJson((t.toJson()).cast<String, dynamic>()).float, t.float);
-      expect(t.toScheduleJson()['float'], [0.6, 0.1, 0.3]);
+      expect(t.toScheduleJson()['float'], [0.6, 0.1, 0.3, 0.2]);
       expect(defaultLayout.firstWhere((t) => t.id == qi).toScheduleJson().containsKey('float'), isFalse);
     });
   });

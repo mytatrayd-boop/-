@@ -417,14 +417,21 @@ class SettingsController extends AsyncNotifier<AppState> {
   Future<void> setVisible(WidgetElement e, bool on) =>
       updateTile(e, (t) => t.copyWith(visible: on, rect: on ? () => null : null));
 
-  /// البوصلة الحرة (DECISIONS ٢٩): تعوم فوق المربعات بموضعها ومقاسها الحرّين خارج الرصّ؛ إطفاؤها يعيدها
-  /// مربعاً عادياً في أول فراغ.
-  Future<void> setQiblaFloating(bool on) {
+  /// العوم الحر لأي مربع (DECISIONS ٢٩): يطفو فوق المربعات بموضعه ومقاسه الحرّين خارج الرصّ، ويبدأ من مكانه
+  /// ومقاسه الحاليين؛ إطفاؤه يعيده مربعاً عادياً في أول فراغ.
+  Future<void> setFloating(WidgetElement id, bool on) {
+    final current = rectsOf(_s.layout)[id];
     final l = [
       for (final t in _s.layout)
-        if (t.id == WidgetElement.qibla)
+        if (t.id == id)
           on
-              ? t.copyWith(float: () => t.float ?? const FloatRect(0.62, 0.08, 0.3), rect: () => null)
+              ? t.copyWith(
+                  float: () {
+                    if (t.float != null) return t.float;
+                    final r = current ?? firstFit(defaultSize(id), const []);
+                    return FloatRect(r.x / freeCols, r.y / freeRows, r.w / freeCols, r.h / freeRows);
+                  },
+                  rect: () => null)
               : t.copyWith(float: () => null, rect: () => null)
         else
           t,
@@ -432,9 +439,9 @@ class SettingsController extends AsyncNotifier<AppState> {
     return _updateLight(_s.copyWith(layout: withRects(l, rectsOf(l))));
   }
 
-  /// موضع البوصلة الحرة ومقاسها (يُحفظ عند الإفلات؛ [commit] false أثناء السحب).
-  Future<void> setQiblaFloat(FloatRect r, {bool commit = true}) => updateTile(
-        WidgetElement.qibla,
+  /// موضع المربع العائم ومقاسه (يُحفظ عند الإفلات؛ [commit] false أثناء السحب).
+  Future<void> setFloat(WidgetElement id, FloatRect r, {bool commit = true}) => updateTile(
+        id,
         (t) => t.floating ? t.copyWith(float: () => r) : t,
         commit: commit,
       );

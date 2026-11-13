@@ -38,7 +38,11 @@ String fixture(
       layout: floatCompass
           ? [
               for (final t in defaultLayout)
-                t.id == WidgetElement.qibla ? t.copyWith(float: () => const FloatRect(0.62, 0.08, 0.3)) : t,
+                t.id == WidgetElement.qibla
+                    ? t.copyWith(float: () => const FloatRect(0.62, 0.08, 0.3, 0.2))
+                    : t.id == WidgetElement.hijri
+                        ? t.copyWith(float: () => const FloatRect(0.05, 0.45, 0.6, 0.07))
+                        : t,
             ]
           : null,
     ),
@@ -79,8 +83,9 @@ void main() {
     expect(file.readAsStringSync(), json);
     final root = jsonDecode(json) as Map;
     final q = (root['layout'] as List).cast<Map>().firstWhere((t) => t['id'] == 'qibla');
-    expect(q['float'], [0.62, 0.08, 0.3]);
+    expect(q['float'], [0.62, 0.08, 0.3, 0.2]);
     expect(jsonEncode(root['tree']), isNot(contains('qibla')));
+    expect(jsonEncode(root['tree']), isNot(contains('hijri')));
   });
 
   // الأسود الافتراضي والذهبي والأزرق، ونسخة بالأرقام الإنجليزية (الميزة ٦).

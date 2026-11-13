@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -71,14 +69,17 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
             onTileTap: tap,
             selected: _open,
             floatOverlay: (box) {
-              final q = layout.where((t) => t.id == WidgetElement.qibla).firstOrNull;
-              if (q == null || !q.visible || q.float == null) return const SizedBox.shrink();
+              final floats = {
+                for (final t in layout)
+                  if (t.visible && t.float != null) t.id: t.float!,
+              };
+              if (floats.isEmpty) return const SizedBox.shrink();
               return FloatEditor(
                 box: box,
-                float: q.float!,
-                selected: _open == WidgetElement.qibla,
+                floats: floats,
+                selected: _open,
                 onTap: tap,
-                onChange: c.setQiblaFloat,
+                onChange: c.setFloat,
               );
             },
             overlay: (grid) => FreeEditor(
@@ -586,14 +587,15 @@ class TileSettings extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (size && id == WidgetElement.qibla)
-          toggle('qibla-float', l.qiblaFloatLabel, tile.floating, c.setQiblaFloating),
-        if (size && id == WidgetElement.qibla && tile.floating)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(l.qiblaFloatHint, textAlign: TextAlign.right, style: Theme.of(context).textTheme.bodySmall),
-          ),
-        if (size && id == WidgetElement.qibla && !tile.floating) ...[
+        if (size) ...[
+          toggle('float-toggle', l.tileFloatLabel, tile.floating, (v) => c.setFloating(id, v)),
+          if (tile.floating)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(l.tileFloatHint, textAlign: TextAlign.right, style: Theme.of(context).textTheme.bodySmall),
+            ),
+        ],
+        if (size && id == WidgetElement.qibla) ...[
           // أيقونة القبلة: شريط بدرجات دقيقة بدل صغير/وسط/عريض، والمعاينة فورية أثناء السحب،
           // والحفظ للودجت عند الإفلات. عرض الخانة يتبع الحجم تلقائياً (qiblaSpanFor).
           Padding(
@@ -760,13 +762,13 @@ class _ColorRow extends StatelessWidget {
 /// محرر التخطيط الحر فوق المعاينة (طلب المالك ١١/١١/٢٠٢٦): كل عنصر ظاهر صندوق على الشبكة؛ الضغط
 /// يفتح لوحته، والسحب يحرّكه، ومقبض الزاوية السفلى (يسار في RTL) يكبّره ويصغّره. يُثبَّت على
 /// الخلايا عند الإفلات، وما يتداخل ينزل ثم يصعد الجميع (placeTile).
-/// محرر البوصلة الحرة (DECISIONS ٢٩): سحب الدائرة يحرّكها، ومقابضها الأربعة تكبّرها وتصغّرها من الزاوية
-/// المقابلة (الحجم متناسب). فوق المربعات كلها، فلا تتأثر بالرصّ. يحفظ عند الإفلات.
+/// محرر المربعات العائمة (DECISIONS ٢٩): سحب المربع يحرّكه، ومقابضه الأربعة تغيّر مقاسه (كل زاوية تحرك
+/// ضلعيها فقط، فيكبر أو يصغر في أي اتجاه). فوق المربعات كلها، فلا يتأثر بالرصّ. يحفظ عند الإفلات.
 class FloatEditor extends StatefulWidget {
   const FloatEditor({
     super.key,
     required this.box,
-    required this.float,
+    required this.floats,
     required this.selected,
     required this.onTap,
     required this.onChange,
@@ -774,128 +776,151 @@ class FloatEditor extends StatefulWidget {
 
   /// مقاس الودجت كاملاً بالبكسل.
   final Size box;
-  final FloatRect float;
-  final bool selected;
+  final Map<WidgetElement, FloatRect> floats;
+  final WidgetElement? selected;
   final ValueChanged<WidgetElement> onTap;
-  final Future<void> Function(FloatRect r, {bool commit}) onChange;
+  final Future<void> Function(WidgetElement id, FloatRect r, {bool commit}) onChange;
 
   @override
   State<FloatEditor> createState() => _FloatEditorState();
 }
 
 class _FloatEditorState extends State<FloatEditor> {
-  bool _drag = false;
+  WidgetElement? _active;
 
-  /// المقابض تبقى ظاهرة بعد اللمس أو السحب (كالمربعات العادية).
-  bool _sel = false;
-  late ({double right, double top, double side}) _start;
+  /// المربع الذي تظهر مقابضه (آخر ما لُمس أو سُحب).
+  WidgetElement? _sel;
+
+  /// الزاوية المسحوبة، أو null للتحريك.
+  ({bool left, bool top})? _corner;
+  late ({double right, double top, double width, double height}) _start;
   var _total = Offset.zero;
 
-  ({double right, double top, double side}) get _now => widget.float.within(widget.box.width, widget.box.height);
+  ({double right, double top, double width, double height}) _px(WidgetElement id) =>
+      widget.floats[id]!.within(widget.box.width, widget.box.height);
 
-  void _begin() {
-    _start = _now;
+  void _begin(WidgetElement id, ({bool left, bool top})? corner) {
+    _start = _px(id);
     _total = Offset.zero;
     setState(() {
-      _drag = true;
-      _sel = true;
+      _active = id;
+      _sel = id;
+      _corner = corner;
     });
   }
 
-  /// التحريك: الإزاحة على الشاشة، واليمين يُعدّ من الحافة اليمنى فتُطرح إزاحة x.
-  void _move(Offset d) {
+  /// الإزاحة على الشاشة: اليمين يُعدّ من الحافة اليمنى فتُطرح إزاحة x. كل زاوية تحرك ضلعيها على الشاشة.
+  void _update(Offset d) {
+    final id = _active;
+    if (id == null) return;
     _total += d;
-    widget.onChange(
-      FloatRect.fromPixels(_start.right - _total.dx, _start.top + _total.dy, _start.side, widget.box.width, widget.box.height),
-      commit: false,
-    );
-  }
-
-  /// التكبير من زاوية: [left]/[top] مكان المقبض على الشاشة؛ الزاوية المقابلة ثابتة.
-  void _resize(Offset d, {required bool left, required bool top}) {
-    _total += d;
-    final gx = left ? -_total.dx : _total.dx;
-    final gy = top ? -_total.dy : _total.dy;
-    final g = (gx + gy) / 2;
-    final m = math.min(widget.box.width, widget.box.height);
-    final side = (_start.side + g).clamp(FloatRect.minSide * m, FloatRect.maxSide * m).toDouble();
-    final grow = side - _start.side;
-    // المقبض الأيسر يثبّت الحافة اليمنى (اليمين كما هو)، والأيمن يثبّت اليسرى فيتحرك اليمين.
-    final right = left ? _start.right : _start.right - grow;
-    final topPos = top ? _start.top - grow : _start.top;
-    widget.onChange(FloatRect.fromPixels(right, topPos, side, widget.box.width, widget.box.height), commit: false);
+    final w = widget.box.width, h = widget.box.height;
+    var left = w - _start.right - _start.width;
+    var right = w - _start.right;
+    var top = _start.top;
+    var bottom = _start.top + _start.height;
+    final minW = FloatRect.minW * w, minH = FloatRect.minH * h;
+    final c = _corner;
+    if (c == null) {
+      left += _total.dx;
+      right += _total.dx;
+      top += _total.dy;
+      bottom += _total.dy;
+    } else {
+      if (c.left) {
+        left = (left + _total.dx).clamp(0.0, right - minW).toDouble();
+      } else {
+        right = (right + _total.dx).clamp(left + minW, w).toDouble();
+      }
+      if (c.top) {
+        top = (top + _total.dy).clamp(0.0, bottom - minH).toDouble();
+      } else {
+        bottom = (bottom + _total.dy).clamp(top + minH, h).toDouble();
+      }
+    }
+    widget.onChange(id, FloatRect.fromPixels(w - right, top, right - left, bottom - top, w, h), commit: false);
   }
 
   Future<void> _end() async {
-    setState(() => _drag = false);
-    await widget.onChange(widget.float);
+    final id = _active;
+    setState(() => _active = null);
+    if (id != null && widget.floats[id] != null) await widget.onChange(id, widget.floats[id]!);
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final f = _now;
-    final active = widget.selected || _drag || _sel;
+    final sel = _sel ?? widget.selected;
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Positioned(
-          right: f.right,
-          top: f.top,
-          width: f.side,
-          height: f.side,
-          child: GestureDetector(
-            key: const Key('float-box-qibla'),
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              setState(() => _sel = true);
-              widget.onTap(WidgetElement.qibla);
-            },
-            onPanStart: (_) => _begin(),
-            onPanUpdate: (d) => _move(d.delta),
-            onPanEnd: (_) => _end(),
-            onPanCancel: () => setState(() => _drag = false),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: active ? scheme.primary : Colors.white38, width: active ? 2 : 1),
+        for (final id in widget.floats.keys)
+          Builder(builder: (context) {
+            final f = _px(id);
+            final active = id == sel || id == _active;
+            return Positioned(
+              right: f.right,
+              top: f.top,
+              width: f.width,
+              height: f.height,
+              child: GestureDetector(
+                key: Key('float-box-${id.name}'),
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  setState(() => _sel = id);
+                  widget.onTap(id);
+                },
+                onPanStart: (_) => _begin(id, null),
+                onPanUpdate: (d) => _update(d.delta),
+                onPanEnd: (_) => _end(),
+                onPanCancel: () => setState(() => _active = null),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: active ? scheme.primary : Colors.white38, width: active ? 2 : 1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
-        if (active)
+            );
+          }),
+        // مقابض المحدد فوق كل المربعات العائمة.
+        if (sel != null && widget.floats[sel] != null)
           for (final corner in const [
             (left: true, top: false),
             (left: false, top: false),
             (left: true, top: true),
             (left: false, top: true),
           ])
-            Positioned(
-              // مركز المقبض على زاوية الصندوق المحيط بالدائرة.
-              left: (widget.box.width - f.right - f.side) + (corner.left ? 0 : f.side) - 22,
-              top: f.top + (corner.top ? 0 : f.side) - 22,
-              width: 44,
-              height: 44,
-              child: GestureDetector(
-                key: Key('float-handle-${corner.top ? 't' : 'b'}${corner.left ? 'l' : 'r'}'),
-                behavior: HitTestBehavior.opaque,
-                onPanStart: (_) => _begin(),
-                onPanUpdate: (d) => _resize(d.delta, left: corner.left, top: corner.top),
-                onPanEnd: (_) => _end(),
-                onPanCancel: () => setState(() => _drag = false),
-                child: Center(
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: scheme.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
+            Builder(builder: (context) {
+              final f = _px(sel);
+              final leftEdge = widget.box.width - f.right - f.width;
+              return Positioned(
+                // مركز المقبض داخل الزاوية بـ ٨ فيبقى قابلاً للمس على حافة الودجت.
+                left: (corner.left ? leftEdge + 8 : leftEdge + f.width - 8) - 22,
+                top: (corner.top ? f.top + 8 : f.top + f.height - 8) - 22,
+                width: 44,
+                height: 44,
+                child: GestureDetector(
+                  key: Key('float-handle-${corner.top ? 't' : 'b'}${corner.left ? 'l' : 'r'}-${sel.name}'),
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (_) => _begin(sel, corner),
+                  onPanUpdate: (d) => _update(d.delta),
+                  onPanEnd: (_) => _end(),
+                  onPanCancel: () => setState(() => _active = null),
+                  child: Center(
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: scheme.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
       ],
     );
   }
