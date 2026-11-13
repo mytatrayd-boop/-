@@ -167,10 +167,30 @@ class LocalAdhanNotifier implements AdhanNotifier {
     }
   }
 
+  /// هل الإشعارات مسموحة؟ يطلب الإذن إن لم يكن ممنوحاً (النظام يتجاهل الطلب إن رُفض نهائياً).
+  Future<bool> _notificationsAllowed() async {
+    if (_ios) {
+      final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      final current = await ios?.checkPermissions();
+      if (current?.isEnabled ?? false) return true;
+      return await ios?.requestPermissions(alert: true, sound: true) ?? false;
+    }
+    final android =
+        _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (await android?.areNotificationsEnabled() ?? true) return true;
+    return await android?.requestNotificationsPermission() ?? false;
+  }
+
   @override
   Future<void> test(AdhanSound sound) async {
     try {
       await _init();
+      // بلا إذن الإشعارات يهمل النظام الإشعار بصمت (أندرويد ١٣+ وآيفون)، فيبدو الزر «لا يستجيب». الإذن
+      // كان يُطلب فقط عند تحويل مفتاح الأذان من مطفأ إلى مفعّل، فنتحقق منه ونطلبه هنا ونعرض السبب إن رُفض.
+      if (!await _notificationsAllowed()) {
+        await _fail('التجربة', 'الإشعارات مغلقة للتطبيق، فعّلها من إعدادات الجهاز ثم أعد التجربة');
+        return;
+      }
       await _plugin.show(
         id: 1,
         title: 'تجربة الأذان',
