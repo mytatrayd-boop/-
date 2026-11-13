@@ -225,6 +225,17 @@ private func loadWallpaper(_ name: String?, maxPixel: Int = 900) -> UIImage? {
     return UIImage(cgImage: cg)
 }
 
+/// `float` من الجدول (DECISIONS ٢٩): أربع قيم [x, y, w, h]، أو ثلاث من الصيغة القديمة [x, y, s] بنسبة ٣٣٨×٤٤٠.
+/// دالة مستقلة بأنواع صريحة: التعبير المضمَّن في الـinitializer أعيا مترجم Swift (انتهت مهلة فحص الأنواع).
+func parseFloat(_ raw: Any?) -> [Double]? {
+    guard let nums = raw as? [NSNumber] else { return nil }
+    var v: [Double] = []
+    for n in nums { v.append(n.doubleValue) }
+    if v.count >= 4 { return [v[0], v[1], v[2], v[3]] }
+    if v.count == 3 { return [v[0], v[1], v[2], v[2] * 338.0 / 440.0] }
+    return nil
+}
+
 func loadSnapshot() -> LamhaSnapshot? {
     guard let json = UserDefaults(suiteName: appGroupId)?.string(forKey: scheduleKey),
           let data = json.data(using: .utf8),
@@ -234,7 +245,7 @@ func loadSnapshot() -> LamhaSnapshot? {
     let theme = root["theme"] as? [String: Any] ?? [:]
     let qibla = root["qibla"] as? [String: Any] ?? [:]
     let weather = root["weather"] as? [String: Any]
-    let tiles: [LamhaTile] = (root["layout"] as? [[String: Any]] ?? []).compactMap { t in
+    let tiles: [LamhaTile] = (root["layout"] as? [[String: Any]] ?? []).compactMap { (t: [String: Any]) -> LamhaTile? in
         guard let id = t["id"] as? String else { return nil }
         return LamhaTile(
             id: id,
@@ -246,9 +257,7 @@ func loadSnapshot() -> LamhaSnapshot? {
             showSub: t["showSub"] as? Bool ?? true,
             primary: (t["primaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
             secondary: (t["secondaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
-            float: ((t["float"] as? [NSNumber])?.map { $0.doubleValue }).flatMap { v in
-                v.count >= 4 ? Array(v.prefix(4)) : (v.count == 3 ? [v[0], v[1], v[2], v[2] * 338 / 440] : nil)
-            }
+            float: parseFloat(t["float"])
         )
     }
     // الشفافية من مفتاحها المنفصل في App Group أولاً (يكتبه التطبيق مع كل حفظ)، ثم من الجدول.
