@@ -443,6 +443,8 @@ void main() {
       expect(jsonEncode(bridge.last['tree']), isNot(contains(id)));
       expect(find.byKey(Key('tile-$id')), findsOneWidget);
     }
+    // المربع العائم لا يُحذَّر له بـ«لا يتسع في الودجت» (ليس في الشبكة أصلاً).
+    expect(find.byKey(const Key('overflow-qibla')), findsNothing);
     // سحب البوصلة بإصبع يحرّكها دون أن يتحرك أي مربع آخر في الرصّ.
     final before = {for (final t in layoutOf(bridge)) t['id'] as String: jsonEncode(t['rect'])};
     final f0 = (tileOf(bridge, 'qibla')['float'] as List).cast<num>();

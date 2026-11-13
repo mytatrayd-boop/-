@@ -210,6 +210,17 @@ void main() {
       expect(old.h, closeTo(0.3 * 338 / 440, 1e-9));
     });
 
+    test('عرض المربع العائم بوحدات العرض: بعرض الودجت كله ٣ (لا ٢)، وتطابق Kotlin', () {
+      // الحالات نفسها في LamhaLogicTest.floatSpanCases (خطأ أندرويد: كسر × ٣ بدل × ٦ فتظهر الإيداعات اثنين فقط).
+      expect(floatSpan(1.0), 3);
+      expect(floatSpan(0.84), 3);
+      expect(floatSpan(0.5), 2);
+      expect(floatSpan(0.67), 2);
+      expect(floatSpan(0.33), 1);
+      expect(floatSpan(0.12), 1);
+      expect(maxDeposits(floatSpan(1.0)), 6);
+    });
+
     test('TileLayout يحفظ float في الإعدادات والجدول وتعود قراءته', () {
       final t = floating.firstWhere((t) => t.id == qi);
       expect(t.floating, isTrue);

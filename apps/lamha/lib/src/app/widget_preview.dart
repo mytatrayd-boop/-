@@ -430,7 +430,7 @@ class WidgetPreview extends StatelessWidget {
     ];
     Widget floatTile(({WidgetElement id, FloatRect float}) f, Size box) {
       final p = f.float.within(box.width, box.height);
-      final span = spanOfWidth((f.float.w * freeCols).round().clamp(1, freeCols));
+      final span = floatSpan(f.float.w);
       return Positioned(
         right: p.right,
         top: p.top,

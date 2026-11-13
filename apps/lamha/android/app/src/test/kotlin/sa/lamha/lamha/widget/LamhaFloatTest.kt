@@ -52,4 +52,25 @@ class LamhaFloatTest {
         assertEquals(gridA.paddingTop, gridB.paddingTop)
         assertEquals(gridA.childCount, gridB.childCount)
     }
+
+    private fun texts(v: android.view.View, out: MutableList<String>) {
+        if (v.visibility != android.view.View.VISIBLE) return
+        if (v is android.widget.TextView && v.text.isNotEmpty()) out += v.text.toString()
+        if (v is ViewGroup) for (i in 0 until v.childCount) texts(v.getChildAt(i), out)
+    }
+
+    /// بلاغ المالك ١٣ نوفمبر: مربع الإيداعات العائم بعرض الودجت كله لا يعرض إلا اثنين، لأن عرضه كان يُحسب بوحدات ٣
+    /// بدل ٦ خلايا فيخرج بعرض ٢ (حتى إيداعين). هنا ستة إيداعات في مربع عائم بالعرض الكامل تظهر كلها.
+    @Test
+    fun fullWidthFloatingDepositsShowAllSix() {
+        val ctx = LamhaScreens.arabicRtl(ApplicationProvider.getApplicationContext())
+        val schedule = File("src/androidTest/assets/schedule_floatdep.json").readText()
+        val labels = org.json.JSONObject(schedule).getJSONArray("days").getJSONObject(0).getJSONArray("deposits")
+            .let { a -> (0 until a.length()).map { a.getJSONObject(it).getString("label") } }
+        assertEquals(6, labels.size)
+        val view = LamhaWidgetReceiver.buildViews(ctx, schedule, 338, 440, LamhaScreens.NOW_MILLIS).apply(ctx, FrameLayout(ctx))
+        val shown = ArrayList<String>()
+        texts(view.findViewById<ViewGroup>(R.id.float_layer), shown)
+        for (l in labels) assertEquals("الإيداع «$l» لم يظهر في المربع العائم: $shown", true, shown.any { it.contains(l) })
+    }
 }
