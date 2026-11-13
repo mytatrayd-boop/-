@@ -91,6 +91,8 @@ def create(item: dict):
     pid = item["productId"]
     period, plan = PERIOD[item["period"]]
     conv = must(*call("POST", "/pricing:convertRegionPrices", {"price": money(item["price"])}), f"convert prices {pid}")
+    # Use the regions version Google converted with (the prices must match the version they are created under).
+    rv = (conv.get("regionVersion") or {}).get("version") or REGIONS_VERSION
     regional = {rc: v["price"] for rc, v in conv.get("convertedRegionPrices", {}).items()}
     regional["SA"] = money(item["price"])
     other = conv["convertedOtherRegionsPrice"]
@@ -107,7 +109,7 @@ def create(item: dict):
             "otherRegionsConfig": {"usdPrice": other["usdPrice"], "eurPrice": other["eurPrice"], "newSubscriberAvailability": True},
         }],
     }
-    must(*call("POST", "/subscriptions", body, {"productId": pid, "regionsVersion.version": REGIONS_VERSION}), f"create {pid}")
+    must(*call("POST", "/subscriptions", body, {"productId": pid, "regionsVersion.version": rv}), f"create {pid}")
     print(f"[{pid}] created with SAR {item['price']} in {len(regional)} regions")
     must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}:activate"), f"activate base plan {pid}")
     print(f"[{pid}] base plan '{plan}' activated")
@@ -120,7 +122,7 @@ def create(item: dict):
         "regionalConfigs": [{"regionCode": rc, "newSubscriberAvailability": True} for rc in regional],
         "otherRegionsConfig": {"otherRegionsNewSubscriberAvailability": True},
     }
-    must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}/offers", offer, {"offerId": "trial", "regionsVersion.version": REGIONS_VERSION}), f"create trial {pid}")
+    must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}/offers", offer, {"offerId": "trial", "regionsVersion.version": rv}), f"create trial {pid}")
     must(*call("POST", f"/subscriptions/{pid}/basePlans/{plan}/offers/trial:activate"), f"activate trial {pid}")
     print(f"[{pid}] 7-day free trial created and activated")
 
