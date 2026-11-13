@@ -500,6 +500,9 @@
   "@prayerCountdownHint": {
     "description": "إعدادات لمحة"
   },
+  "frameEdit": "إطار الودجت",
+  "frameDone": "تم",
+  "frameReset": "إعادة الإطار",
   "tileFloatLabel": "عائم فوق المربعات (تحريك وتكبير حرّ)",
   "tileFloatHint": "اسحبه في المعاينة وغيّر مقاسه من زواياه؛ لا يزاحم المربعات ولا تزاحمه.",
   "qiblaIconSizeLabel": "حجم أيقونة البوصلة",

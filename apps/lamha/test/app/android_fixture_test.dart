@@ -22,6 +22,7 @@ String fixture(
   DigitStyle digits = DigitStyle.arabic,
   Set<String> deposits = const {'salary', 'housing_support', 'citizen_account'},
   bool floatCompass = false,
+  FloatRect? frame,
 }) {
   // قرب أبها، حيث القبلة ٣٢٤° (كلقطة المالك؛ مركز أبها ٣٢٢°).
   const lat = 18.20, lon = 42.33;
@@ -35,6 +36,7 @@ String fixture(
       opacity: 80,
       theme: theme,
       digits: digits,
+      frame: frame,
       layout: floatCompass
           ? [
               for (final t in defaultLayout)
@@ -86,6 +88,23 @@ void main() {
     expect(q['float'], [0.62, 0.08, 0.3, 0.2]);
     expect(jsonEncode(root['tree']), isNot(contains('qibla')));
     expect(jsonEncode(root['tree']), isNot(contains('hijri')));
+  });
+
+  // إطار الخلفية الحر (DECISIONS ٣٠): الأسود والخلفية صغيرة وفي الوسط، والعناصر في مواضعها كما هي.
+  test('جدول لقطات أندرويد (frame) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_frame.json');
+    final json = fixture(WidgetTheme.black, frame: const FloatRect(0.1, 0.2, 0.8, 0.6));
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    expect(root['frame'], [0.1, 0.2, 0.8, 0.6]);
+    // العناصر لا تتأثر بالإطار: المستطيلات والشجرة نفسها كما بلا إطار.
+    final plain = jsonDecode(fixture(WidgetTheme.black)) as Map;
+    expect(root['layout'], plain['layout']);
+    expect(root['tree'], plain['tree']);
+    expect(plain.containsKey('frame'), isFalse);
   });
 
   // الأسود الافتراضي والذهبي والأزرق، ونسخة بالأرقام الإنجليزية (الميزة ٦).

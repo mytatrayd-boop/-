@@ -51,6 +51,8 @@ data class LamhaDay(
     val tradPoints: List<String> = emptyList(),
     /// التخطيط الحر؛ null لجدول أقدم (يُرسم بالصفوف القديمة).
     val tree: LamhaLogic.CutTree? = null,
+    /// إطار الخلفية الحر (DECISIONS ٣٠): [x, y, w, h] كسور من الودجت؛ null = الخلفية تملأ الودجت.
+    val frame: List<Double>? = null,
 )
 
 /// [remaining] «باقي ٨ أيام»، و[after] «بعد ٨ أيام» للإشعار، و[days] «١٤ يوماً» لأعمدة الإيداعات.
@@ -259,6 +261,7 @@ object LamhaSchedule {
             tradAfter = trad.optString("afterText", ""),
             tradPoints = trad.optJSONArray("points")?.let { a -> (0 until a.length()).map { a.getString(it) } } ?: emptyList(),
             tree = treeOf(root.optJSONObject("tree")),
+            frame = LamhaLogic.floatOf(root.optJSONArray("frame")),
         )
     }
 }

@@ -242,11 +242,10 @@ class SettingsController extends AsyncNotifier<AppState> {
     final cur = state.requireValue;
     final layout = normalizeLayout(s.layout);
     final fixed = s.copyWith(layout: layout);
-    state = AsyncData(AppState(
-      settings: fixed,
-      schedule: {
+    final schedule = <String, Object?>{
         ...cur.schedule,
         'opacity': fixed.opacity,
+        if (fixed.frame != null) 'frame': fixed.frame!.toJson(),
         // كما يبنيها buildSchedule: المستطيلات الفعلية والشجرة.
         'layout': [for (final t in withRects(layout, rectsOf(layout))) t.toScheduleJson()],
         'grid': [freeCols, freeRows],
@@ -255,7 +254,12 @@ class SettingsController extends AsyncNotifier<AppState> {
           for (final e in WidgetElement.values)
             e.name: layout.any((t) => t.id == e && t.visible),
         },
-      },
+    };
+    // إطار الخلفية المُعاد للكامل لا يبقى في الجدول من التحديث السابق.
+    if (fixed.frame == null) schedule.remove('frame');
+    state = AsyncData(AppState(
+      settings: fixed,
+      schedule: schedule,
       cities: cur.cities,
       data: cur.data,
       backgroundPath: cur.backgroundPath,
@@ -269,6 +273,13 @@ class SettingsController extends AsyncNotifier<AppState> {
   /// أثناء السحب [commit] = false (المعاينة فقط)، وعند الإفلات يُحفظ.
   Future<void> setOpacity(int value, {bool commit = true}) =>
       _updateLight(_s.copyWith(opacity: value.clamp(0, 100)), commit: commit);
+
+  /// إطار الخلفية الحر (DECISIONS ٣٠): [r] مكان لوحة الخلفية ومقاسها؛ null يعيدها لتملأ الودجت. العناصر
+  /// الداخلية لا تتأثر. أثناء السحب [commit] = false.
+  Future<void> setFrame(FloatRect? r, {bool commit = true}) => _updateLight(
+        r == null ? _s.copyWith(clearFrame: true) : _s.copyWith(frame: r),
+        commit: commit,
+      );
 
   /// يغيّر إعدادات الأذان. عند تفعيله أول مرة يطلب الأذونات؛ إن رُفض إذن الإشعارات يبقى مطفأً.
   /// يعيد نتيجة طلب الأذونات (null إن لم يُطلب شيء) ليعرض التطبيق ما ينقص.

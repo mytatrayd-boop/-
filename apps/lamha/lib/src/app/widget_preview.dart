@@ -443,21 +443,33 @@ class WidgetPreview extends StatelessWidget {
       );
     }
 
-    final widgetBox = DecoratedBox(
+    // إطار الخلفية الحر (DECISIONS ٣٠): لوحة الخلفية وحدها تتحرك وتتغير في المنطقة، والعناصر فوقها تبقى
+    // بمواضعها ومقاساتها كما هي (تُحسب من الودجت كلها لا من الإطار).
+    final frameRaw = schedule['frame'];
+    final frame = frameRaw is List ? FloatRect.fromJson(frameRaw) : null;
+    final backPanel = DecoratedBox(
       key: const Key('preview-background'),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
         color: colors.background.withValues(alpha: alpha),
       ),
-      child: LayoutBuilder(
-        builder: (context, whole) => Stack(
+    );
+    final widgetBox = LayoutBuilder(
+      builder: (context, whole) {
+        final f = frame?.within(whole.maxWidth, whole.maxHeight);
+        return Stack(
+          key: const Key('preview-widget'),
           children: [
+            if (f == null)
+              Positioned.fill(child: backPanel)
+            else
+              Positioned(right: f.right, top: f.top, width: f.width, height: f.height, child: backPanel),
             Positioned.fill(child: gridLayer),
             for (final t in floats) floatTile((id: t.id, float: t.float!), whole.biggest),
             if (floatOverlay != null) Positioned.fill(child: floatOverlay!(whole.biggest)),
           ],
-        ),
-      ),
+        );
+      },
     );
 
     final bg = backgroundPath;

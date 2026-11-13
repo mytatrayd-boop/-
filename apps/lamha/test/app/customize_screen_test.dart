@@ -87,7 +87,7 @@ void main() {
       final bg = tester.getSize(
         find.descendant(
           of: find.byKey(const Key('customize-preview')),
-          matching: find.byKey(const Key('preview-background')),
+          matching: find.byKey(const Key('preview-widget')),
         ),
       );
       expect(bg.width, closeTo(338, 0.5));
@@ -478,6 +478,37 @@ void main() {
     expect(tileOf(bridge, 'qibla').containsKey('float'), isFalse);
     expect(jsonEncode(bridge.last['tree']), contains('qibla'));
     expect(jsonEncode(bridge.last['tree']), isNot(contains('hijri')));
+  });
+
+  testWidgets('إطار الخلفية: يتحرك ويتغير مقاسه وحده دون أن يتأثر موضع أي عنصر أو مقاسه، وإعادته تملأ الودجت', (tester) async {
+    final bridge = await openCustomize(tester);
+    final tilesBefore = {for (final t in layoutOf(bridge)) t['id'] as String: jsonEncode(t)};
+    final treeBefore = jsonEncode(bridge.last['tree']);
+    expect(bridge.last.containsKey('frame'), isFalse);
+    final clockBefore = tester.getRect(tile('clock'));
+    final panelBefore = tester.getSize(find.byKey(const Key('preview-background')));
+    await tapKey(tester, 'frame-toggle');
+    // مقبض الزاوية السفلية اليمنى للداخل يصغّر الإطار.
+    await dragKey(tester, 'frame-handle-br', const Offset(-60, -80));
+    await dragKey(tester, 'frame-box', const Offset(20, 30));
+    final frame = (bridge.last['frame'] as List).cast<num>();
+    expect(frame.length, 4);
+    expect(frame[2], lessThan(1));
+    expect(frame[3], lessThan(1));
+    // الخلفية صغرت، والعناصر في مواضعها ومقاساتها بالبكسل والجدول كما كانت.
+    final panelAfter = tester.getSize(find.byKey(const Key('preview-background')));
+    expect(panelAfter.width, lessThan(panelBefore.width));
+    expect(panelAfter.height, lessThan(panelBefore.height));
+    expect(tester.getRect(tile('clock')), clockBefore);
+    expect(jsonEncode(bridge.last['tree']), treeBefore);
+    for (final t in layoutOf(bridge)) {
+      expect(jsonEncode(t), tilesBefore[t['id']], reason: '${t['id']}');
+    }
+    // الإعادة تملأ الودجت وتمحو المفتاح من الجدول.
+    await tapKey(tester, 'frame-reset');
+    expect(bridge.last.containsKey('frame'), isFalse);
+    await tapKey(tester, 'frame-toggle');
+    expect(find.byKey(const Key('frame-box')), findsNothing);
   });
 
   testWidgets('المحرر الحر: مقبض الزاوية العليا اليمنى يحرّك الضلع الأيمن، وملء الشاشة يفتح المحرر', (tester) async {

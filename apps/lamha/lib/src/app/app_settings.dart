@@ -25,6 +25,7 @@ class LamhaSettings {
     this.fontScale = FontScale.fallback,
     this.digits = DigitStyle.fallback,
     this.adhan = const AdhanSettings(),
+    this.frame,
   });
 
   factory LamhaSettings.defaults(City city, Set<String> depositIds) =>
@@ -55,6 +56,7 @@ class LamhaSettings {
             : layoutFromVisible(
                 (j['visible'] as List? ?? const []).cast<String>()),
         opacity: j['opacity'] as int,
+        frame: j['frame'] is List ? FloatRect.fromJson(j['frame']) : null,
         backgroundFile: j['backgroundFile'] as String?,
         // مفتاحان جديدان (الميزة ٣ج)؛ الإعدادات القديمة بلاهما.
         // من حفظ قبل السمات رأى الذهبي، والجديد الأسود (الميزة ٦).
@@ -100,6 +102,9 @@ class LamhaSettings {
   /// الأذان عند كل صلاة (لا يدخل جدول الودجت؛ تجدوله الإشعارات المحلية).
   final AdhanSettings adhan;
 
+  /// إطار الخلفية الحر (DECISIONS ٣٠)؛ null = الخلفية تملأ الودجت.
+  final FloatRect? frame;
+
   /// [withBackground] = false في أندرويد، فيكون `background` في الجدول null.
   Settings toEngine({bool withBackground = true}) => Settings(
         latitude: latitude,
@@ -115,6 +120,7 @@ class LamhaSettings {
         lockNotification: lockNotification,
         fontScale: fontScale,
         digits: digits,
+        frame: frame,
       );
 
   LamhaSettings copyWith({
@@ -133,7 +139,9 @@ class LamhaSettings {
     FontScale? fontScale,
     DigitStyle? digits,
     AdhanSettings? adhan,
+    FloatRect? frame,
     bool clearBackground = false,
+    bool clearFrame = false,
   }) =>
       LamhaSettings(
         cityId: cityId ?? this.cityId,
@@ -152,6 +160,7 @@ class LamhaSettings {
         fontScale: fontScale ?? this.fontScale,
         digits: digits ?? this.digits,
         adhan: adhan ?? this.adhan,
+        frame: clearFrame ? null : frame ?? this.frame,
       );
 
   Map<String, Object?> toJson() => {
@@ -170,6 +179,7 @@ class LamhaSettings {
         'fontScale': fontScale.name,
         'digits': digits.name,
         'adhan': adhan.toJson(),
+        if (frame != null) 'frame': frame!.toJson(),
       };
 
   String encode() => jsonEncode(toJson());

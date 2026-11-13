@@ -21,6 +21,7 @@ class Settings {
     this.lockNotification = false,
     this.fontScale = FontScale.fallback,
     this.digits = DigitStyle.fallback,
+    this.frame,
   })  : deposits = Set.unmodifiable(deposits),
         layout = normalizeLayout(layout ?? defaultLayout) {
     if (deposits.isEmpty) {
@@ -62,6 +63,10 @@ class Settings {
 
   /// شفافية خلفية الودجت 0–100.
   final int opacity;
+
+  /// إطار الخلفية الحر (DECISIONS ٣٠): مكان لوحة الخلفية ومقاسها داخل منطقة الودجت كنسب منها، دون أن يتحرك
+  /// أي عنصر داخلي أو يتغير مقاسه؛ null = الخلفية تملأ الودجت كلها.
+  final FloatRect? frame;
 
   /// اسم ملف لقطة الخلفية داخل حاوية App Group (آيفون)، أو null.
   final String? background;

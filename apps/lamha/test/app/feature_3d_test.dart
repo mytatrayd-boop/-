@@ -82,7 +82,7 @@ void main() {
       expect(clock, greaterThan(sizeOf(tester, const Key('preview-day')) * 2));
       final cell = tester.getRect(
         find.descendant(
-          of: find.byKey(const Key('preview-background')),
+          of: find.byKey(const Key('preview-widget')),
           matching: find.byKey(const Key('tile-clock')),
         ),
       );

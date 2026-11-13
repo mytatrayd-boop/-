@@ -128,6 +128,8 @@ Map<String, Object?> buildSchedule(
     'grid': [freeCols, freeRows],
     'tree': (cutTree(freeRects) ?? const CutNode.empty()).toJson(),
     'opacity': s.opacity,
+    // إطار الخلفية الحر (DECISIONS ٣٠): لا يظهر المفتاح إلا إذا حُرّك الإطار.
+    if (s.frame != null) 'frame': s.frame!.toJson(),
     // اسم ملف اللقطة نسبياً داخل حاوية group.sa.lamha.shared؛ null بلا صورة أو في أندرويد.
     'background': s.background,
     'theme': themeScheduleJson(s.theme),

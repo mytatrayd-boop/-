@@ -431,6 +431,15 @@ class AppLocalizationsAr extends AppLocalizations {
       'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.';
 
   @override
+  String get frameEdit => 'إطار الودجت';
+
+  @override
+  String get frameDone => 'تم';
+
+  @override
+  String get frameReset => 'إعادة الإطار';
+
+  @override
   String get tileFloatLabel => 'عائم فوق المربعات (تحريك وتكبير حرّ)';
 
   @override
