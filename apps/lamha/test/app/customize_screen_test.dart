@@ -432,6 +432,36 @@ void main() {
     expect(bridge.last['tree'], isNotNull);
   });
 
+  testWidgets('فصل «اليوم والطقس»: اليوم في مربع، والموقع والحرارة في مربع، في مكانه نفسه', (tester) async {
+    final bridge = await openCustomize(tester);
+    final before = (tileOf(bridge, 'dayWeather')['rect'] as List).cast<int>();
+    await tapKey(tester, 'free-box-dayWeather');
+    await tapKey(tester, 'split-day-weather');
+    await closeSheet(tester);
+    final day = tileOf(bridge, 'weekday');
+    final place = tileOf(bridge, 'cityTemp');
+    expect(tileOf(bridge, 'dayWeather')['visible'], isFalse);
+    expect(day['visible'], isTrue);
+    expect(place['visible'], isTrue);
+    // النصفان في مستطيل الأصل: اليوم فوق، والموقع والحرارة تحته، بعرضه نفسه.
+    final d = (day['rect'] as List).cast<int>();
+    final c = (place['rect'] as List).cast<int>();
+    expect([d[0], d[1], d[2]], [before[0], before[1], before[2]]);
+    expect([c[0], c[2]], [before[0], before[2]]);
+    expect(c[1], d[1] + d[3]);
+    expect(d[3] + c[3], before[3]);
+    final tree = jsonEncode(bridge.last['tree']);
+    expect(tree, contains('weekday'));
+    expect(tree, contains('cityTemp'));
+    expect(tree, isNot(contains('dayWeather')));
+    // المعاينة: اليوم وحده في مربعه، والمدينة والحرارة في الآخر.
+    expect(find.descendant(of: tile('weekday'), matching: find.byKey(const Key('preview-day'))), findsOneWidget);
+    expect(find.descendant(of: tile('weekday'), matching: find.byKey(const Key('preview-city'))), findsNothing);
+    expect(find.descendant(of: tile('cityTemp'), matching: find.byKey(const Key('preview-city'))), findsOneWidget);
+    expect(find.descendant(of: tile('cityTemp'), matching: find.byKey(const Key('preview-temp'))), findsOneWidget);
+    expect(find.descendant(of: tile('cityTemp'), matching: find.byKey(const Key('preview-day'))), findsNothing);
+  });
+
   testWidgets('المربعات العائمة: أي مربع يعوم خارج الرصّ، وسحبه وتغيير مقاسه يحفظان، وإطفاؤه يعيده', (tester) async {
     final bridge = await openCustomize(tester);
     for (final id in ['qibla', 'hijri']) {
@@ -592,6 +622,8 @@ void main() {
           'dates': false,
           'weather': false,
           'prayer': false,
+          'weekday': false,
+          'cityTemp': false,
         },
       );
       expect(tile('dayWeather'), findsNothing);

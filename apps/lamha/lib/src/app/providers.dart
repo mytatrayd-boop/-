@@ -457,6 +457,58 @@ class SettingsController extends AsyncNotifier<AppState> {
     return _updateLight(_s.copyWith(layout: withRects(l, rectsOf(l))));
   }
 
+  /// فصل «اليوم والطقس» (طلب المالك ١٣ نوفمبر) إلى مربعين مستقلين: «اليوم» في النصف الأعلى و«الموقع والحرارة» في
+  /// الأسفل، في مكان المربع الأصلي نفسه (رصّ أو عائماً) وبألوانه وحجم خطه؛ ويُخفى الأصلي. لا يفعل شيئاً إن كانا
+  /// ظاهرين من قبل.
+  Future<void> splitDayWeather() async {
+    final all = _s.layout;
+    final src = all.firstWhere((t) => t.id == WidgetElement.dayWeather);
+    TileLayout style(TileLayout t) => t.copyWith(
+          visible: true,
+          fontScale: src.fontScale,
+          primaryColor: () => src.primaryColor,
+          secondaryColor: () => src.secondaryColor,
+        );
+    final rect = rectsOf(all)[WidgetElement.dayWeather];
+    final fl = src.float;
+    var l = [
+      for (final t in all)
+        if (t.id == WidgetElement.dayWeather)
+          t.copyWith(visible: false)
+        else if (t.id == WidgetElement.weekday || t.id == WidgetElement.cityTemp)
+          style(t)
+        else
+          t,
+    ];
+    if (fl != null) {
+      // عائم: النصفان عائمان بمقاسه نفسه موزعين رأسياً.
+      final half = fl.h / 2;
+      l = [
+        for (final t in l)
+          if (t.id == WidgetElement.weekday)
+            t.copyWith(float: () => FloatRect(fl.x, fl.y, fl.w, half), rect: () => null)
+          else if (t.id == WidgetElement.cityTemp)
+            t.copyWith(float: () => FloatRect(fl.x, fl.y + half, fl.w, half), rect: () => null)
+          else
+            t,
+      ];
+      return _updateLight(_s.copyWith(layout: withRects(l, rectsOf(l))));
+    }
+    // مرصوص: نصفان في مستطيله (ارتفاع الأعلى ≥ ١) ثم تُدفع المتداخلات فتصعد.
+    final r = rect ?? firstFit(defaultSize(WidgetElement.dayWeather), const []);
+    final h1 = (r.h ~/ 2).clamp(1, r.h);
+    final h2 = (r.h - h1).clamp(1, r.h);
+    var cur = rectsOf([for (final t in l) if (t.id != WidgetElement.weekday && t.id != WidgetElement.cityTemp) t]);
+    cur = place(cur, WidgetElement.weekday, GridRect(r.x, r.y, r.w, h1));
+    cur = place(cur, WidgetElement.cityTemp, GridRect(r.x, r.y + h1, r.w, h2));
+    if (cutTree(cur) == null) {
+      // تعذّر تقسيمها صفوفاً وأعمدة: رصّ بالصفوف فيبقى الودجت صالحاً.
+      l = reflow(l);
+      return _updateLight(_s.copyWith(layout: l));
+    }
+    await _updateLight(_s.copyWith(layout: withRects(l, cur)));
+  }
+
   /// موضع المربع العائم ومقاسه (يُحفظ عند الإفلات؛ [commit] false أثناء السحب).
   Future<void> setFloat(WidgetElement id, FloatRect r, {bool commit = true}) => updateTile(
         id,

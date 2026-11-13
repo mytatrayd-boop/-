@@ -342,6 +342,17 @@ class WidgetPreview extends StatelessWidget {
               ? ltrIsolated(l.weatherUnknown)
               : temperatureText(reading.temp, digits),
         ),
+        WidgetElement.weekday || WidgetElement.cityTemp => _DayWeatherTile(
+          weekday: day['weekday'] as String,
+          city: l.cityIcon(
+            city['name'] as String,
+            reading == null ? '' : weatherCondition(reading.code).emoji,
+          ).trim(),
+          temp: reading == null
+              ? ltrIsolated(l.weatherUnknown)
+              : temperatureText(reading.temp, digits),
+          part: e == WidgetElement.weekday ? _DayPart.day : _DayPart.place,
+        ),
         WidgetElement.hijri => _CapsuleTile(
           kind: e,
           text: l.hijriDateText((day['hijri'] as Map)['text'] as String),

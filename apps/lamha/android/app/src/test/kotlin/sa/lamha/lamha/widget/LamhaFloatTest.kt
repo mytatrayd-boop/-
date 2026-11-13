@@ -73,4 +73,18 @@ class LamhaFloatTest {
         texts(view.findViewById<ViewGroup>(R.id.float_layer), shown)
         for (l in labels) assertEquals("الإيداع «$l» لم يظهر في المربع العائم: $shown", true, shown.any { it.contains(l) })
     }
+
+    /// طلب المالك ١٣ نوفمبر: اليوم في مربع، والموقع والحرارة في مربع مستقل. المربعان في الشجرة (لا عائمان)، فيظهر اليوم
+    /// «الاثنين» في ورقة، و«أبها» والحرارة في ورقة أخرى، ولا يتكرر شيء منهما.
+    @Test
+    fun splitDayAndPlaceShowInSeparateTiles() {
+        val ctx = LamhaScreens.arabicRtl(ApplicationProvider.getApplicationContext())
+        val schedule = File("src/androidTest/assets/schedule_split.json").readText()
+        val view = LamhaWidgetReceiver.buildViews(ctx, schedule, 338, 440, LamhaScreens.NOW_MILLIS).apply(ctx, FrameLayout(ctx))
+        val shown = ArrayList<String>()
+        texts(view.findViewById<ViewGroup>(R.id.grid), shown)
+        assertEquals("اليوم يظهر مرة واحدة: $shown", 1, shown.count { it == "الإثنين" })
+        assertEquals("الموقع يظهر مرة واحدة: $shown", 1, shown.count { it.contains("أبها") })
+        assertEquals("الحرارة تظهر مرة واحدة: $shown", 1, shown.count { it.contains("٢٦°") })
+    }
 }

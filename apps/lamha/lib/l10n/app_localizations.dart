@@ -185,7 +185,7 @@ abstract class AppLocalizations {
   /// اسم عنصر الودجت بمعرّفه
   ///
   /// In ar, this message translates to:
-  /// **'{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} other{{element}}}'**
+  /// **'{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} weekday{اليوم} cityTemp{الموقع والحرارة} other{{element}}}'**
   String elementName(String element);
 
   /// عند محاولة إلغاء آخر إيداع
@@ -661,6 +661,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'النسخة'**
   String get appVersionLabel;
+
+  /// No description provided for @splitDayWeather.
+  ///
+  /// In ar, this message translates to:
+  /// **'فصل اليوم عن الموقع والحرارة (مربعان مستقلان)'**
+  String get splitDayWeather;
 
   /// No description provided for @frameEdit.
   ///
