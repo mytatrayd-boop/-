@@ -61,6 +61,9 @@ final notificationPermissionProvider =
     Provider<NotificationPermission>((ref) => AndroidNotificationPermission());
 
 /// جدولة الأذان بالإشعارات المحلية؛ بلا منصة (ويب، سطح مكتب) أو قبل جاهزية التخزين: لا شيء.
+/// آخر خطأ في جدولة الأذان أو تجربته (يُعرض في الإعدادات)؛ يُبطَل بعد كل جدولة أو تجربة.
+final adhanErrorProvider = FutureProvider.autoDispose<String?>((ref) => ref.watch(adhanNotifierProvider).lastError());
+
 final adhanNotifierProvider = Provider<AdhanNotifier>((ref) {
   final prefs = ref.watch(preferencesProvider).value;
   final mobile = !kIsWeb &&
@@ -222,6 +225,7 @@ class SettingsController extends AsyncNotifier<AppState> {
       if (signature == _adhanSignature) return;
       _adhanSignature = signature;
       await ref.read(adhanNotifierProvider).apply(events, a.sound, s.settings.cityName);
+      ref.invalidate(adhanErrorProvider);
     } catch (e) {
       // الأذان لا يوقف التطبيق.
       debugPrint('adhan: $e');
@@ -295,7 +299,10 @@ class SettingsController extends AsyncNotifier<AppState> {
   }
 
   /// تنبيه فوري بالصوت المختار.
-  Future<void> testAdhan() => ref.read(adhanNotifierProvider).test(_s.adhan.sound);
+  Future<void> testAdhan() async {
+    await ref.read(adhanNotifierProvider).test(_s.adhan.sound);
+    ref.invalidate(adhanErrorProvider);
+  }
 
   Future<void> setCity(City c) async {
     await _update(_s.copyWith(

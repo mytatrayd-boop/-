@@ -594,6 +594,16 @@ class _AdhanSection extends ConsumerWidget {
             key: const Key('adhan-note'),
             style: textTheme.bodySmall,
           ),
+          // فشل الجدولة أو التجربة يظهر هنا بنصه فلا يبقى الأذان «لا يعمل» دون سبب.
+          if (ref.watch(adhanErrorProvider).value case final err? when err.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '${l.adhanErrorLabel}: $err',
+                key: const Key('adhan-error'),
+                style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
         ],
       ],
     );

@@ -500,6 +500,7 @@
   "@prayerCountdownHint": {
     "description": "إعدادات لمحة"
   },
+  "adhanErrorLabel": "تعذّر تنفيذ الأذان",
   "appVersionLabel": "النسخة",
   "frameEdit": "إطار الودجت",
   "frameDone": "تم",

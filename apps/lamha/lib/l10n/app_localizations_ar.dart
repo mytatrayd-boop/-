@@ -431,6 +431,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.';
 
   @override
+  String get adhanErrorLabel => 'تعذّر تنفيذ الأذان';
+
+  @override
   String get appVersionLabel => 'النسخة';
 
   @override

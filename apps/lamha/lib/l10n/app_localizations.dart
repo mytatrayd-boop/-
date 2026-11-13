@@ -650,6 +650,12 @@ abstract class AppLocalizations {
   /// **'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.'**
   String get prayerCountdownHint;
 
+  /// No description provided for @adhanErrorLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تنفيذ الأذان'**
+  String get adhanErrorLabel;
+
   /// No description provided for @appVersionLabel.
   ///
   /// In ar, this message translates to:

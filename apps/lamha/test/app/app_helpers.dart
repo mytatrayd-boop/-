@@ -50,11 +50,17 @@ class FakeAdhanNotifier implements AdhanNotifier {
   var permissionRequests = 0;
   final tested = <AdhanSound>[];
 
+  /// ما يعيده lastError.
+  String? error;
+
   List<AdhanEvent> get lastEvents => applied.last.events;
 
   @override
   Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async =>
       applied.add((events: events, sound: sound, city: city));
+
+  @override
+  Future<String?> lastError() async => error;
 
   @override
   Future<AdhanPermissionResult> requestPermissions() async {
