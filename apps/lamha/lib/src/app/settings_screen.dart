@@ -8,6 +8,7 @@ import '../engine/arabic.dart';
 import '../engine/prayer.dart';
 import '../engine/settings.dart';
 import '../engine/widget_theme.dart';
+import 'app_version.dart';
 import 'crop_screen.dart';
 import 'customize_screen.dart';
 import 'places.dart';
@@ -304,6 +305,14 @@ class _Body extends ConsumerWidget {
         _AdhanSection(adhan: s.adhan),
         const SizedBox(height: 16),
         Text(l.dataLicense, style: textTheme.bodySmall),
+        const SizedBox(height: 8),
+        // رقم النسخة (للتأكد من وصول التحديث): الاسم ورقم البناء كما في Google Play وTestFlight.
+        Text(
+          '${l.appVersionLabel}: ${appVersionText()}',
+          key: const Key('app-version'),
+          textAlign: TextAlign.center,
+          style: textTheme.bodySmall,
+        ),
       ],
     );
   }

@@ -500,6 +500,7 @@
   "@prayerCountdownHint": {
     "description": "إعدادات لمحة"
   },
+  "appVersionLabel": "النسخة",
   "frameEdit": "إطار الودجت",
   "frameDone": "تم",
   "frameReset": "إعادة الإطار",
