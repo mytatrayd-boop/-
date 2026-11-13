@@ -505,4 +505,15 @@ class LamhaLogicTest {
         assertEquals(36f, small.width, 1e-4f)
         assertEquals(24f, small.height, 1e-4f)
     }
+
+    @Test
+    fun floatSpanCases() {
+        // مربع عائم بعرض الودجت كله = عرض ٣ (ستة إيداعات)، لا ٢ (اثنان فقط): الحالات نفسها في free_layout_test.dart.
+        assertEquals(3, LamhaLogic.floatSpan(1.0))
+        assertEquals(3, LamhaLogic.floatSpan(0.84))
+        assertEquals(2, LamhaLogic.floatSpan(0.5))
+        assertEquals(2, LamhaLogic.floatSpan(0.67))
+        assertEquals(1, LamhaLogic.floatSpan(0.33))
+        assertEquals(1, LamhaLogic.floatSpan(0.12))
+    }
 }

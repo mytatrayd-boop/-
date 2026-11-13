@@ -176,9 +176,12 @@ class _CustomizeScreenState extends ConsumerState<CustomizeScreen> {
     final c = ref.read(settingsControllerProvider.notifier);
     final layout = state.settings.layout;
     // ما لا يتسع في الشبكة (أسفلها) لا يظهر في الودجت.
+    // المربع العائم خارج الشبكة فلا «يتجاوز» أسفلها: لا تحذير له.
     final placed = {
       for (final e in rectsOf(layout).entries)
         if (e.value.bottom <= freeRows) e.key.name,
+      for (final t in layout)
+        if (t.floating) t.id.name,
     };
     // المعاينة بعرض الشاشة وحولها خلفية ١٦، وتصغر لتأخذ ٥٥٪ من ارتفاع الشاشة حداً أقصى (كانت ٤٠٪ فصغرت
     // جداً على آيفون الصغير، ملاحظة المالك ١١/١١/٢٠٢٦). زر «ملء الشاشة» يفتحها بكامل الشاشة للتعديل.
@@ -454,9 +457,12 @@ class TileSheet extends ConsumerWidget {
     final layout = state.settings.layout;
     final tile = layout.firstWhere((t) => t.id == id);
     // ما لا يتسع في الشبكة (أسفلها) لا يظهر في الودجت.
+    // المربع العائم خارج الشبكة فلا «يتجاوز» أسفلها: لا تحذير له.
     final placed = {
       for (final e in rectsOf(layout).entries)
         if (e.value.bottom <= freeRows) e.key.name,
+      for (final t in layout)
+        if (t.floating) t.id.name,
     };
     return SizedBox(
       key: const Key('tile-panel'),

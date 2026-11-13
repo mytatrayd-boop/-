@@ -960,7 +960,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 val f = spec.float ?: continue
                 if (!spec.visible) continue
                 val p = LamhaLogic.floatPlace(f, widthDp.toFloat(), heightDp.toFloat())
-                val span = LamhaLogic.spanOfWidth(Math.round(f[2].toFloat() * LamhaLogic.GRID_COLUMNS).coerceIn(1, LamhaLogic.GRID_COLUMNS))
+                val span = LamhaLogic.floatSpan(f[2])
                 // عرض الودجت الذي تعطي slotInnerDp له (بـ span) عرضَ هذه الخانة بالضبط.
                 val fitWidth = (p.width * LamhaLogic.GRID_COLUMNS / span + 20f).toInt()
                 val fe = Env(env.context, env.ctx, env.day, env.accent, env.now, fitWidth, env.sys, env.weatherText, env.placed, env.weather)

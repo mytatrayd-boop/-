@@ -66,6 +66,14 @@ object LamhaLogic {
     fun spanOfWidth(w: Int): Int = if (w <= 2) 1 else if (w <= 4) 2 else 3
 
     /// أقصى وزن لخانة (ارتفاع الشبكة)، ولكل وزن ملف خانة.
+    /// أعمدة شبكة التخطيط الحر (freeCols في Dart): ٦ خلايا، غير وحدات العرض GRID_COLUMNS (٣).
+    const val FREE_COLS = 6
+
+    /// عرض المربع العائم بوحدات العرض ١–٣ (spanOfWidth في Dart على خلايا الشبكة الحرة): [w] كسر عرضه من الودجت.
+    /// خطأ سابق: كان يُضرب الكسر في ٣ (وحدات العرض) لا ٦ (الخلايا)، فمربع بعرض الودجت كله يخرج بعرض ٢ لا ٣، وتظهر
+    /// الإيداعات اثنين فقط.
+    fun floatSpan(w: Double): Int = spanOfWidth(Math.round(w * FREE_COLS).toInt().coerceIn(1, FREE_COLS))
+
     const val FREE_ROWS = 10
 
     /// أقصى عمق لشجرة القص (المربع مستوى). كل مستوى addView واحد، وفوقه الودجت ومحتوى المربع، والنظام

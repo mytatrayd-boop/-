@@ -22,6 +22,7 @@ String fixture(
   DigitStyle digits = DigitStyle.arabic,
   Set<String> deposits = const {'salary', 'housing_support', 'citizen_account'},
   bool floatCompass = false,
+  FloatRect? floatDeposits,
   FloatRect? frame,
 }) {
   // قرب أبها، حيث القبلة ٣٢٤° (كلقطة المالك؛ مركز أبها ٣٢٢°).
@@ -37,7 +38,12 @@ String fixture(
       theme: theme,
       digits: digits,
       frame: frame,
-      layout: floatCompass
+      layout: floatDeposits != null
+          ? [
+              for (final t in defaultLayout)
+                t.id == WidgetElement.deposit ? t.copyWith(float: () => floatDeposits) : t,
+            ]
+          : floatCompass
           ? [
               for (final t in defaultLayout)
                 t.id == WidgetElement.qibla
@@ -89,6 +95,22 @@ void main() {
     expect(q['iconScale'], 5.0, reason: 'أقصى الشريط: الدائرة تملأ مربعها');
     expect(jsonEncode(root['tree']), isNot(contains('qibla')));
     expect(jsonEncode(root['tree']), isNot(contains('hijri')));
+  });
+
+  // الإيداعات عائمة بعرض الودجت كله (بلاغ المالك ١٣ نوفمبر: لا يظهر منها إلا اثنان): ستة إيداعات.
+  test('جدول لقطات أندرويد (floatdep) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_floatdep.json');
+    final json = fixture(WidgetTheme.black,
+        deposits: loadEngineDataFromFiles().deposits.ids,
+        floatDeposits: const FloatRect(0, 0.62, 1.0, 0.24));
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    final d = (root['layout'] as List).cast<Map>().firstWhere((t) => t['id'] == 'deposit');
+    expect(d['float'], [0.0, 0.62, 1.0, 0.24]);
+    expect(jsonEncode(root['tree']), isNot(contains('deposit')));
   });
 
   // إطار الخلفية الحر (DECISIONS ٣٠): الأسود والخلفية صغيرة وفي الوسط، والعناصر في مواضعها كما هي.

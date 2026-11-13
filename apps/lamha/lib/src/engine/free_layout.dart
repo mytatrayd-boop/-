@@ -338,6 +338,9 @@ CutNode? _cut(Map<WidgetElement, GridRect> rects, {GridRect box = const GridRect
 /// عرض المستطيل بوحدات التخطيط القديم (١ صغير، ٢ متوسط، ٣ عريض) لمحتوى يتغير بالعرض (عدد الإيداعات).
 int spanOfWidth(int w) => w <= 2 ? 1 : w <= 4 ? 2 : 3;
 
+/// عرض المربع العائم بوحدات العرض ١–٣ من كسر عرضه [w] من الودجت (مطابقة لـ floatSpan في LamhaLogic.kt).
+int floatSpan(double w) => spanOfWidth((w * freeCols).round().clamp(1, freeCols));
+
 /// إعادة الرصّ بترتيب [ordered] مع إبقاء مقاس كل عنصر (ترتيب القائمة في شاشة «الودجت»).
 List<TileLayout> reflow(List<TileLayout> ordered) {
   final all = ordered;
