@@ -26,16 +26,26 @@
             android:importantForAccessibility="no" />
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/grid"
+    <!-- لوحة العناصر الثابتة (DECISIONS ٣٠، اختيار المالك ١٣ نوفمبر): الشبكة والمربعات العائمة في لوحة بمقاس ثابت
+         (setViewLayoutWidth/Height من الكود، أندرويد ١٢+) متوسطة في الودجت. تكبير الودجت أو تصغيرها من
+         الشاشة الرئيسية يغيّر الخلفية وحدها؛ العناصر لا تكبر ولا تصغر، ويُقصّ ما يخرج عن الإطار. -->
+    <FrameLayout
+        android:id="@+id/canvas"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="10dp" />
+        android:layout_gravity="center">
 
-    <!-- المربعات العائمة (DECISIONS ٢٩): تُمسح وتُضاف في كل تحديث، فلا تتراكم نسخ قديمة فوق بعضها. -->
-    <FrameLayout
-        android:id="@+id/float_layer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        <LinearLayout
+            android:id="@+id/grid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="10dp" />
+
+        <!-- المربعات العائمة (DECISIONS ٢٩): تُمسح وتُضاف في كل تحديث، فلا تتراكم نسخ قديمة فوق بعضها. -->
+        <FrameLayout
+            android:id="@+id/float_layer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
 </FrameLayout>
