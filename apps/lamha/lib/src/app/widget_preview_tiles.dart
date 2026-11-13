@@ -187,11 +187,15 @@ Widget _centered(Widget child) => ClipRect(
 
 /// اليوم والطقس (بلا صندوق): اليوم كبير عريض، ثم «📍 المدينة ☀️» باللون الفرعي، ثم الحرارة كبيرة.
 /// إن ضاق الارتفاع يُخفى سطر المدينة أولاً ثم الحرارة.
+/// ما يعرضه مربع اليوم والطقس.
+enum _DayPart { all, day, place }
+
 class _DayWeatherTile extends _Styled {
   const _DayWeatherTile({
     required this.weekday,
     required this.city,
     required this.temp,
+    this.part = _DayPart.all,
     _Look look = _defaultLook,
   }) : super(look);
 
@@ -199,13 +203,22 @@ class _DayWeatherTile extends _Styled {
   final String city;
   final String temp;
 
+  /// ما يعرضه: الثلاثة معاً (اليوم والطقس)، أو اليوم وحده، أو الموقع والحرارة وحدهما (طلب المالك ١٣ نوفمبر).
+  final _DayPart part;
+
   @override
   _DayWeatherTile withLook(_Look look) =>
-      _DayWeatherTile(weekday: weekday, city: city, temp: temp, look: look);
+      _DayWeatherTile(weekday: weekday, city: city, temp: temp, part: part, look: look);
 
   /// مقاسه بأسطره الثلاثة (المدينة بحجمها الأدنى).
   @override
-  ({double text, double pad}) heights(BuildContext context, double width) => (
+  ({double text, double pad}) heights(BuildContext context, double width) => switch (part) {
+    _DayPart.day => (text: dayWeekdaySize * dayLineHeight * s, pad: 0),
+    _DayPart.place => (text: (dayCityMinSize * headLineHeight + dayTempSize * tempLineHeight) * s, pad: 0),
+    _DayPart.all => _allHeights(),
+  };
+
+  ({double text, double pad}) _allHeights() => (
     text:
         (dayWeekdaySize * dayLineHeight +
             (look.showSub
@@ -215,9 +228,47 @@ class _DayWeatherTile extends _Styled {
     pad: 0,
   );
 
+  /// الموقع والحرارة وحدهما: المدينة تصغر حتى ١٣ ثم «…»، وإن لم يتسع الارتفاع يصغر السطران معاً (حتى ٦٠٪).
+  Widget _placeOnly(BuildContext context, BoxConstraints c) {
+    final cityStyle = TextStyle(fontSize: dayCitySize * s, height: headLineHeight, color: secondary);
+    final tempStyle = TextStyle(fontSize: dayTempSize * s, fontWeight: FontWeight.w700, height: tempLineHeight, color: secondary);
+    final avail = c.maxWidth - fitMargin;
+    final cityWidth = _measure(context, city, cityStyle);
+    final cityK = cityWidth > avail ? math.max(dayCityMinSize / dayCitySize, avail / cityWidth) : 1.0;
+    final tempWidth = _measure(context, temp, tempStyle);
+    final tempK = tempWidth > avail ? math.max(0.6, avail / tempWidth) : 1.0;
+    final natural = dayCitySize * s * cityK * headLineHeight + dayTempSize * s * tempK * tempLineHeight;
+    final k = c.maxHeight > 0 && natural > c.maxHeight ? math.max(0.6, c.maxHeight / natural) : 1.0;
+    return _centered(
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            city,
+            key: const Key('preview-city'),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: cityStyle.copyWith(fontSize: dayCitySize * s * cityK * k),
+          ),
+          Text(
+            temp,
+            key: const Key('preview-temp'),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: tempStyle.copyWith(fontSize: dayTempSize * s * tempK * k),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
+      if (part == _DayPart.place) return _placeOnly(context, c);
       final dayStyle = TextStyle(
         fontSize: dayWeekdaySize * s,
         fontWeight: FontWeight.w700,
@@ -260,7 +311,7 @@ class _DayWeatherTile extends _Styled {
         valueWords: words.words,
         valueSpace: words.space,
         subs: [
-          if (look.showSub) ...[
+          if (look.showSub && part == _DayPart.all) ...[
             (
               height: dayCitySize * s * cityK2 * headLineHeight,
               maxLines: 1,

@@ -24,6 +24,10 @@ enum WidgetElement {
   gregorian,
   prayerTimes,
   tradPoints,
+
+  /// فصل مربع «اليوم والطقس» (طلب المالك ١٣ نوفمبر): اليوم وحده، والموقع والحرارة وحدهما، كل في مربعه.
+  weekday,
+  cityTemp,
 }
 
 /// حجم الخط العام (شاشة الإعدادات): معامل يُضرب به كل حجم نص.
@@ -291,6 +295,8 @@ const defaultLayout = <TileLayout>[
   TileLayout(WidgetElement.dates, visible: false, span: 2),
   TileLayout(WidgetElement.weather, visible: false, span: 2),
   TileLayout(WidgetElement.prayer, visible: false),
+  TileLayout(WidgetElement.weekday, visible: false),
+  TileLayout(WidgetElement.cityTemp, visible: false),
 ];
 
 /// الترتيب الافتراضي للميزة ٦ قبل ملاحظة المالك (٢٩/١٠/٢٠٢٦: «الاكتفاء بأيقونة الفصول وأيقونة
@@ -366,6 +372,7 @@ List<TileLayout> layoutFromVisible(Iterable<String> visible) {
     WidgetElement.dayWeather => v.contains('weather'),
     WidgetElement.prayerTimes => v.contains('prayer'),
     WidgetElement.tradPoints => false,
+    WidgetElement.weekday || WidgetElement.cityTemp => false,
     WidgetElement.dates || WidgetElement.weather || WidgetElement.prayer =>
       false,
     _ => v.contains(t.id.name),

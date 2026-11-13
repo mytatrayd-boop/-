@@ -31,7 +31,7 @@ void main() {
       );
       expect(
         [for (final t in defaultLayout) if (!t.visible) t.id],
-        [WidgetElement.tradPoints, WidgetElement.dates, WidgetElement.weather, WidgetElement.prayer],
+        [WidgetElement.tradPoints, WidgetElement.dates, WidgetElement.weather, WidgetElement.prayer, WidgetElement.weekday, WidgetElement.cityTemp],
       );
       expect(defaultLayout.first,
           const TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false));
@@ -217,6 +217,8 @@ void main() {
         WidgetElement.gregorian,
         WidgetElement.prayerTimes,
         WidgetElement.tradPoints,
+        WidgetElement.weekday,
+        WidgetElement.cityTemp,
       ]);
       expect(m.skip(custom.length).every((t) => !t.visible), isTrue);
       // تغيير واحد (لون أو إخفاء) = مخصص.
@@ -250,6 +252,8 @@ void main() {
         'dates': false,
         'weather': false,
         'prayer': false,
+        'weekday': false,
+        'cityTemp': false,
       });
       expect(l.map((t) => t.span), defaultLayout.map((t) => t.span));
       expect(layoutFromVisible(const []).where((t) => t.visible).map((t) => t.id),

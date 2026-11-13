@@ -22,6 +22,7 @@ String fixture(
   DigitStyle digits = DigitStyle.arabic,
   Set<String> deposits = const {'salary', 'housing_support', 'citizen_account'},
   bool floatCompass = false,
+  bool splitDay = false,
   FloatRect? floatDeposits,
   FloatRect? frame,
 }) {
@@ -38,7 +39,19 @@ String fixture(
       theme: theme,
       digits: digits,
       frame: frame,
-      layout: floatDeposits != null
+      layout: splitDay
+          ? [
+              for (final t in defaultLayout)
+                if (t.id == WidgetElement.dayWeather)
+                  t.copyWith(visible: false)
+                else if (t.id == WidgetElement.weekday)
+                  t.copyWith(visible: true, rect: () => const GridRect(4, 0, 2, 1))
+                else if (t.id == WidgetElement.cityTemp)
+                  t.copyWith(visible: true, rect: () => const GridRect(4, 1, 2, 1))
+                else
+                  t,
+            ]
+          : floatDeposits != null
           ? [
               for (final t in defaultLayout)
                 t.id == WidgetElement.deposit ? t.copyWith(float: () => floatDeposits) : t,
@@ -95,6 +108,21 @@ void main() {
     expect(q['iconScale'], 5.0, reason: 'أقصى الشريط: الدائرة تملأ مربعها');
     expect(jsonEncode(root['tree']), isNot(contains('qibla')));
     expect(jsonEncode(root['tree']), isNot(contains('hijri')));
+  });
+
+  // اليوم في مربع والموقع والحرارة في مربع (طلب المالك ١٣ نوفمبر).
+  test('جدول لقطات أندرويد (split) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_split.json');
+    final json = fixture(WidgetTheme.black, splitDay: true);
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    final tree = jsonEncode(root['tree']);
+    expect(tree, contains('weekday'));
+    expect(tree, contains('cityTemp'));
+    expect(tree, isNot(contains('dayWeather')));
   });
 
   // الإيداعات عائمة بعرض الودجت كله (بلاغ المالك ١٣ نوفمبر: لا يظهر منها إلا اثنان): ستة إيداعات.

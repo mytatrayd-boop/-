@@ -571,6 +571,8 @@ class TileSettings extends ConsumerWidget {
     WidgetElement.dates,
     WidgetElement.weather,
     WidgetElement.dayWeather,
+    WidgetElement.weekday,
+    WidgetElement.cityTemp,
     WidgetElement.hijri,
     WidgetElement.gregorian,
     WidgetElement.prayerTimes,
@@ -579,6 +581,8 @@ class TileSettings extends ConsumerWidget {
 
   static bool hasSub(WidgetElement e) => !const {
     WidgetElement.weather,
+    WidgetElement.weekday,
+    WidgetElement.cityTemp,
     WidgetElement.qibla,
     WidgetElement.hijri,
     WidgetElement.gregorian,
@@ -610,6 +614,19 @@ class TileSettings extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (size && id == WidgetElement.dayWeather)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                key: const Key('split-day-weather'),
+                icon: const Icon(Icons.call_split),
+                label: Text(l.splitDayWeather),
+                onPressed: () => c.splitDayWeather(),
+              ),
+            ),
+          ),
         if (size) ...[
           toggle('float-toggle', l.tileFloatLabel, tile.floating, (v) => c.setFloating(id, v)),
           if (tile.floating)

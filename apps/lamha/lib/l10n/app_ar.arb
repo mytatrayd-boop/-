@@ -66,7 +66,7 @@
       }
     }
   },
-  "elementName": "{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} other{{element}}}",
+  "elementName": "{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} weekday{اليوم} cityTemp{الموقع والحرارة} other{{element}}}",
   "@elementName": {
     "description": "اسم عنصر الودجت بمعرّفه",
     "placeholders": {
@@ -502,6 +502,7 @@
   },
   "adhanErrorLabel": "تعذّر تنفيذ الأذان",
   "appVersionLabel": "النسخة",
+  "splitDayWeather": "فصل اليوم عن الموقع والحرارة (مربعان مستقلان)",
   "frameEdit": "إطار الودجت",
   "frameDone": "تم",
   "frameReset": "إعادة الإطار",

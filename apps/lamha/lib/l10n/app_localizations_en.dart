@@ -87,6 +87,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'gregorian': 'Gregorian date',
       'prayerTimes': 'Prayer times',
       'tradPoints': 'Season notes',
+      'weekday': 'Day',
+      'cityTemp': 'Location and temperature',
       'other': '$element',
     });
     return '$_temp0';
@@ -437,6 +439,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appVersionLabel => 'Version';
+
+  @override
+  String get splitDayWeather =>
+      'Split day from location and temperature (two tiles)';
 
   @override
   String get frameEdit => 'Widget frame';

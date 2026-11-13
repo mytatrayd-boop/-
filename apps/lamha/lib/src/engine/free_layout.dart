@@ -119,6 +119,7 @@ class GridRect {
 ({int w, int h}) defaultSize(WidgetElement e) => switch (e) {
       WidgetElement.clock => (w: 4, h: 2),
       WidgetElement.dayWeather => (w: 2, h: 2),
+      WidgetElement.weekday || WidgetElement.cityTemp => (w: 2, h: 1),
       WidgetElement.hijri || WidgetElement.gregorian => (w: 4, h: 1),
       WidgetElement.qibla => (w: 2, h: 2),
       WidgetElement.prayerTimes || WidgetElement.deposit || WidgetElement.tradPoints => (w: 6, h: 2),

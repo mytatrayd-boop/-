@@ -481,7 +481,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         }
 
         /// خانات بلا صندوق: صفوفها بقدر محتواها (rowHeights: flexible، _lineTiles في المعاينة).
-        private val LINE_TILES = setOf("clock", "dates", "weather", "dayWeather", LamhaLogic.DATES_WEATHER)
+        private val LINE_TILES = setOf("clock", "dates", "weather", "dayWeather", "weekday", "cityTemp", LamhaLogic.DATES_WEATHER)
 
         /// كبسولتا التاريخين (الميزة ٦).
         private val CAPSULES = setOf("hijri", "gregorian")
@@ -514,6 +514,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 // الميزة ٦: المقاس بالأسطر الأساسية (كـ heights في widget_preview_tiles.dart)، والباقي إن اتسع.
                 "dayWeather" -> tightDp(env.ctx, DAY_WEEKDAY_SP * scale, true) +
                     (if (showSub) tightDp(env.ctx, DAY_CITY_MIN_SP * scale, false) + tightDp(env.ctx, DAY_TEMP_SP * scale, true) else 0f) to 8f
+                "weekday" -> tightDp(env.ctx, DAY_WEEKDAY_SP * scale, true) to 8f
+                "cityTemp" -> tightDp(env.ctx, DAY_CITY_MIN_SP * scale, false) + tightDp(env.ctx, DAY_TEMP_SP * scale, true) to 8f
                 "hijri", "gregorian" -> tightDp(env.ctx, CAPSULE_SP * scale, true) to 8f + 6f
                 // الأيقونة بأكبر ما تسمح به الخانة (طلب المالك).
                 "qibla" -> (if (showTitle) lineDp(env.ctx, QIBLA_TITLE_SP * scale, true) + lineDp(env.ctx, QIBLA_SUB_SP * scale, false) else 0f) to
@@ -692,6 +694,9 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     color(this, R.id.weather, primary)
                 }
                 "dayWeather" -> dayWeatherTile(env, tile, scale, avail, innerHeightDp)
+                // فصل اليوم عن الموقع والحرارة (طلب المالك ١٣ نوفمبر): كل جزء في مربعه من التخطيط نفسه.
+                "weekday" -> dayWeatherTile(env, tile, scale, avail, innerHeightDp, DAY_PART_DAY)
+                "cityTemp" -> dayWeatherTile(env, tile, scale, avail, innerHeightDp, DAY_PART_PLACE)
                 "hijri", "gregorian" -> capsuleTile(env, tile, scale, if (inner > 0f) inner - 24f - FIT_MARGIN_DP else 0f, innerHeightDp - 2f)
                 "qibla" -> qiblaTile(env, tile, scale, inner, innerHeightDp)
                 "deposit" -> depositsTile(env, tile, span, scale, inner, innerHeightDp)
@@ -816,7 +821,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// اليوم والطقس (الميزة ٦، _DayWeatherTile): اليوم، ثم «📍 المدينة ☀️» باللون الفرعي (يصغر حتى ١٣ ثم
         /// «…»، ولا يُخفى)، ثم الحرارة بحجم اليوم تقريباً. إن ضاق الارتفاع تُخفى الحرارة (fitTile).
-        private fun dayWeatherTile(env: Env, spec: LamhaLogic.Tile, scale: Float, avail: Float, innerHeightDp: Float): RemoteViews {
+        private const val DAY_PART_ALL = 0
+        private const val DAY_PART_DAY = 1
+        private const val DAY_PART_PLACE = 2
+
+        private fun dayWeatherTile(env: Env, spec: LamhaLogic.Tile, scale: Float, avail: Float, innerHeightDp: Float, part: Int = DAY_PART_ALL): RemoteViews {
             val ctx = env.ctx
             val day = env.day
             val rv = RemoteViews(env.context.packageName, R.layout.widget_tile_dayweather)
@@ -833,9 +842,27 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 citySp = minOf(citySp, DAY_CITY_MIN_SP * scale)
             }
             val (words, space) = wordsDp(ctx, day.weekday, weekdaySp, true)
+            if (part == DAY_PART_PLACE) {
+                // الموقع والحرارة وحدهما (DayWeatherTile._placeOnly في Dart): المدينة بحجمها بعد الملاءمة، والحرارة
+                // تصغر إن لم تتسع عرضاً، وإن لم يتسع الارتفاع يصغر السطران معاً حتى ٦٠٪.
+                val tempW = textWidthDp(ctx, temp, tempSp, true)
+                val tempK = if (avail > 0f && tempW > avail) maxOf(0.6f, avail / tempW) else 1f
+                val natural = tightDp(ctx, citySp, false) + tightDp(ctx, tempSp * tempK, true)
+                val k = if (innerHeightDp > 0f && natural > innerHeightDp) maxOf(0.6f, innerHeightDp / natural) else 1f
+                rv.setViewVisibility(R.id.day_weekday, View.GONE)
+                rv.setTextViewText(R.id.day_city, city)
+                rv.setTextViewTextSize(R.id.day_city, TypedValue.COMPLEX_UNIT_SP, citySp * k)
+                rv.setTextViewText(R.id.day_temp, temp)
+                rv.setTextViewTextSize(R.id.day_temp, TypedValue.COMPLEX_UNIT_SP, tempSp * tempK * k)
+                spec.secondaryColor?.let {
+                    rv.setTextColor(R.id.day_city, it)
+                    rv.setTextColor(R.id.day_temp, it)
+                }
+                return rv
+            }
             val fit = LamhaLogic.fitTile(
                 innerHeightDp, avail, 0f, tightDp(ctx, weekdaySp, true), words, space,
-                subs = if (spec.showSub) {
+                subs = if (spec.showSub && part == DAY_PART_ALL) {
                     listOf(
                         LamhaLogic.SubLine(tightDp(ctx, citySp, false), 1, 0f),
                         LamhaLogic.SubLine(tightDp(ctx, tempSp, true), 1, textWidthDp(ctx, temp, tempSp, true)),

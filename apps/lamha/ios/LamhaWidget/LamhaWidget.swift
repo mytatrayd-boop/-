@@ -450,6 +450,21 @@ struct LamhaWidgetView: View {
             NextPrayerView(prayer: next(s), accent: s.accent, style: s.style(["prayer"]))
         case "dayWeather", "weather":
             header(s, day, centered: true)
+        case "weekday":
+            // اليوم وحده في مربعه (طلب المالك ١٣ نوفمبر: فصله عن الموقع والحرارة).
+            let st = s.style(["weekday"])
+            Text(day.weekday).font(.system(size: st.size(20), weight: .bold)).foregroundStyle(st.main(textColor))
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        case "cityTemp":
+            // الموقع والحرارة وحدهما في مربعهما.
+            let st = s.style(["cityTemp"])
+            Text("📍 " + s.city + (s.weather.map { " " + $0 } ?? ""))
+                .font(.system(size: st.size(15), weight: .semibold)).foregroundStyle(st.main(textColor))
+                .lineLimit(2).minimumScaleFactor(0.6)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case "hijri", "gregorian":
             let st = s.style([id])
             Text(id == "hijri" ? day.hijri : day.gregorian)

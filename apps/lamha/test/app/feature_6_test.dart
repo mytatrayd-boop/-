@@ -40,7 +40,7 @@ void main() {
       final layout = (bridge.last['layout'] as List).cast<Map>();
       expect(layout.take(8).map((t) => t['id']), custom.map((t) => t.id.name));
       expect(layout.skip(8).map((t) => t['id']),
-          ['dayWeather', 'hijri', 'gregorian', 'prayerTimes', 'tradPoints']);
+          ['dayWeather', 'hijri', 'gregorian', 'prayerTimes', 'tradPoints', 'weekday', 'cityTemp']);
       expect(layout.skip(8).every((t) => t['visible'] == false), isTrue);
       expect(find.byKey(const Key('tile-prayer')), findsOneWidget);
       expect(find.byKey(const Key('tile-prayerTimes')), findsNothing);

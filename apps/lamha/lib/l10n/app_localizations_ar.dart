@@ -87,6 +87,8 @@ class AppLocalizationsAr extends AppLocalizations {
       'gregorian': 'التاريخ الميلادي',
       'prayerTimes': 'مواقيت الصلاة',
       'tradPoints': 'وصف الموسم',
+      'weekday': 'اليوم',
+      'cityTemp': 'الموقع والحرارة',
       'other': '$element',
     });
     return '$_temp0';
@@ -435,6 +437,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get appVersionLabel => 'النسخة';
+
+  @override
+  String get splitDayWeather => 'فصل اليوم عن الموقع والحرارة (مربعان مستقلان)';
 
   @override
   String get frameEdit => 'إطار الودجت';
