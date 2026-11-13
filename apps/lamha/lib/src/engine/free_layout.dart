@@ -14,52 +14,57 @@ import 'widget_layout.dart';
 const freeCols = 6;
 const freeRows = 10;
 
-/// مكان عائم حر (البوصلة، DECISIONS ٢٩) خارج شبكة الرصّ: [x] بعد الحافة اليمنى من عرض الودجت، و[y] بعد
-/// الحافة العليا من ارتفاعه، و[s] قطر الدائرة نسبة لأقصر ضلعي الودجت. كلها كسور ٠–١، فيصحّ على كل مقاس.
+/// مكان عائم حر لأي مربع (DECISIONS ٢٩) خارج شبكة الرصّ، فوق بقية المربعات: [x] بعد الحافة اليمنى من عرض
+/// الودجت، و[y] بعد الحافة العليا من ارتفاعه، و[w] و[h] عرضه وارتفاعه نسبةً للودجت. كلها كسور ٠–١،
+/// فتصحّ على كل مقاس (ودجت أندرويد بأي حجم، وآيفون، والمعاينة).
 class FloatRect {
-  const FloatRect(this.x, this.y, this.s);
+  const FloatRect(this.x, this.y, this.w, this.h);
 
   factory FloatRect.fromJson(Object? j) {
     final l = (j as List).cast<num>();
-    return FloatRect(l[0].toDouble(), l[1].toDouble(), l[2].toDouble());
+    // قديم (قرص البوصلة فقط): [x, y, s] قطراً من أقصر الضلعين، يُقرَّب بنسبة المعاينة ٣٣٨×٤٤٠.
+    if (l.length == 3) return FloatRect(l[0].toDouble(), l[1].toDouble(), l[2].toDouble(), l[2].toDouble() * 338 / 440);
+    return FloatRect(l[0].toDouble(), l[1].toDouble(), l[2].toDouble(), l[3].toDouble());
   }
 
-  final double x, y, s;
+  final double x, y, w, h;
 
-  static const minSide = 0.12;
-  static const maxSide = 0.9;
+  static const minW = 0.12;
+  static const minH = 0.06;
 
-  /// الموضع بالبكسل (أو أي وحدة) داخل ودجت [w]×[h]، محصوراً فلا تخرج الدائرة منه.
-  ({double right, double top, double side}) within(double w, double h) {
-    final side = (s.clamp(minSide, maxSide) * math.min(w, h)).clamp(0.0, math.min(w, h)).toDouble();
+  /// الموضع والمقاس بالبكسل (أو أي وحدة) داخل ودجت [boxW]×[boxH]، محصوراً فلا يخرج منه.
+  ({double right, double top, double width, double height}) within(double boxW, double boxH) {
+    final width = (w.clamp(minW, 1.0) * boxW).toDouble();
+    final height = (h.clamp(minH, 1.0) * boxH).toDouble();
     return (
-      right: (x * w).clamp(0.0, math.max(0.0, w - side)).toDouble(),
-      top: (y * h).clamp(0.0, math.max(0.0, h - side)).toDouble(),
-      side: side,
+      right: (x * boxW).clamp(0.0, math.max(0.0, boxW - width)).toDouble(),
+      top: (y * boxH).clamp(0.0, math.max(0.0, boxH - height)).toDouble(),
+      width: width,
+      height: height,
     );
   }
 
-  /// من موضع بالبكسل (يمين، أعلى، قطر) داخل ودجت [w]×[h]، بعد حصره.
-  factory FloatRect.fromPixels(double right, double top, double side, double w, double h) {
-    final m = math.min(w, h);
-    final s = (side / m).clamp(minSide, maxSide).toDouble();
-    final d = s * m;
+  /// من موضع ومقاس بالبكسل داخل ودجت [boxW]×[boxH]، بعد الحصر.
+  factory FloatRect.fromPixels(double right, double top, double width, double height, double boxW, double boxH) {
+    final w = (width / boxW).clamp(minW, 1.0).toDouble();
+    final h = (height / boxH).clamp(minH, 1.0).toDouble();
     return FloatRect(
-      (right.clamp(0.0, math.max(0.0, w - d)) / w).toDouble(),
-      (top.clamp(0.0, math.max(0.0, h - d)) / h).toDouble(),
-      s,
+      (right.clamp(0.0, math.max(0.0, boxW - w * boxW)) / boxW).toDouble(),
+      (top.clamp(0.0, math.max(0.0, boxH - h * boxH)) / boxH).toDouble(),
+      w,
+      h,
     );
   }
 
   double _r(double v) => (v * 1000).round() / 1000;
 
-  List<double> toJson() => [_r(x), _r(y), _r(s)];
+  List<double> toJson() => [_r(x), _r(y), _r(w), _r(h)];
 
   @override
-  bool operator ==(Object other) => other is FloatRect && other.x == x && other.y == y && other.s == s;
+  bool operator ==(Object other) => other is FloatRect && other.x == x && other.y == y && other.w == w && other.h == h;
 
   @override
-  int get hashCode => Object.hash(x, y, s);
+  int get hashCode => Object.hash(x, y, w, h);
 }
 
 /// مستطيل على الشبكة بالخلايا.

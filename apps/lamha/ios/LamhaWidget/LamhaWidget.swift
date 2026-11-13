@@ -305,7 +305,7 @@ struct LamhaWidgetView: View {
                 case .systemMedium: medium(s, day)
                 case .accessoryRectangular: rectangular(s)
                 case .accessoryInline: inline(s)
-                default: large(s, day).overlay(floatCompass(s))
+                default: large(s, day).overlay(floatTiles(s, day))
                 }
             } else {
                 Text("افتح لمحة لإعداد الودجت")
@@ -319,23 +319,28 @@ struct LamhaWidgetView: View {
         .widgetURL(appURL)
     }
 
-    /// البوصلة الحرة (DECISIONS ٢٩): قرص فوق المربعات بموضعه ومقاسه من `float` (كسور من الودجت كلها، كالمعاينة
-    /// وأندرويد). الطبقة تمتد ١٤ نقطة خارج المحتوى لتطابق حاشية المعاينة، فيقاس الموضع من حافة الودجت.
+    /// المربعات العائمة (DECISIONS ٢٩): كل مربع له `float` فوق المربعات بموضعه ومقاسه (كسور من الودجت كلها،
+    /// كالمعاينة وأندرويد)، بحشوة الخانة نفسها (٤). الطبقة تمتد ١٤ نقطة خارج المحتوى لتطابق حاشية المعاينة،
+    /// فيقاس الموضع من حافة الودجت.
     @ViewBuilder
-    private func floatCompass(_ s: LamhaSnapshot) -> some View {
-        if let t = s.tiles.first(where: { $0.id == "qibla" }), t.visible, let f = t.float {
+    private func floatTiles(_ s: LamhaSnapshot, _ day: LamhaDay) -> some View {
+        let floats = s.tiles.filter { $0.visible && $0.float != nil }
+        if !floats.isEmpty {
             GeometryReader { g in
                 let w = g.size.width, h = g.size.height
-                let m = min(w, h)
-                let side = min(max(CGFloat(f[2]), 0.12), 0.9) * m
-                let right = min(max(CGFloat(f[0]) * w, 0), max(0, w - side))
-                let top = min(max(CGFloat(f[1]) * h, 0), max(0, h - side))
-                Link(destination: qiblaURL) {
-                    QiblaIcon(degrees: s.qiblaDegrees, dark: s.iconBackground, faceOpacity: s.opacity)
+                ForEach(Array(floats.enumerated()), id: \.offset) { _, t in
+                    let f = t.float!
+                    let width = min(max(CGFloat(f[2]), 0.12), 1) * w
+                    let height = min(max(CGFloat(f[3]), 0.06), 1) * h
+                    let right = min(max(CGFloat(f[0]) * w, 0), max(0, w - width))
+                    let top = min(max(CGFloat(f[1]) * h, 0), max(0, h - height))
+                    tile(t.id, s, day)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(4)
+                        .frame(width: width, height: height)
+                        // x من اليسار (position لا يتبع اتجاه اللغة)، والبعد من اليمين.
+                        .position(x: w - right - width / 2, y: top + height / 2)
                 }
-                .frame(width: side, height: side)
-                // x من اليسار (position لا يتبع اتجاه اللغة)، والبعد من اليمين.
-                .position(x: w - right - side / 2, y: top + side / 2)
             }
             .padding(-14)
         }

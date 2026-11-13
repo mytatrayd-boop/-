@@ -500,8 +500,8 @@
   "@prayerCountdownHint": {
     "description": "إعدادات لمحة"
   },
-  "qiblaFloatLabel": "عائمة فوق المربعات (تكبير وتحريك حرّ)",
-  "qiblaFloatHint": "اسحب البوصلة في المعاينة وكبّرها من زواياها؛ لا تزاحم المربعات.",
+  "tileFloatLabel": "عائم فوق المربعات (تحريك وتكبير حرّ)",
+  "tileFloatHint": "اسحبه في المعاينة وغيّر مقاسه من زواياه؛ لا يزاحم المربعات ولا تزاحمه.",
   "qiblaIconSizeLabel": "حجم أيقونة البوصلة",
   "@qiblaIconSizeLabel": {
     "description": "إعدادات لمحة"

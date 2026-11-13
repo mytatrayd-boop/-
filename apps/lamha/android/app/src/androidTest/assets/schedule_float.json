@@ -73,11 +73,11 @@
       "primaryColor": null,
       "secondaryColor": null,
       "iconScale": 1.0,
-      "rect": [
-        0,
-        2,
-        4,
-        1
+      "float": [
+        0.05,
+        0.45,
+        0.6,
+        0.07
       ]
     },
     {
@@ -92,7 +92,7 @@
       "iconScale": 1.0,
       "rect": [
         0,
-        3,
+        2,
         4,
         1
       ]
@@ -110,7 +110,8 @@
       "float": [
         0.62,
         0.08,
-        0.3
+        0.3,
+        0.2
       ]
     },
     {
@@ -125,7 +126,7 @@
       "iconScale": 1.0,
       "rect": [
         0,
-        4,
+        3,
         6,
         2
       ]
@@ -142,7 +143,7 @@
       "iconScale": 1.0,
       "rect": [
         0,
-        6,
+        5,
         6,
         2
       ]
@@ -158,8 +159,8 @@
       "secondaryColor": null,
       "iconScale": 1.0,
       "rect": [
-        4,
-        2,
+        0,
+        7,
         2,
         2
       ]
@@ -175,8 +176,8 @@
       "secondaryColor": null,
       "iconScale": 1.0,
       "rect": [
-        0,
-        8,
+        2,
+        7,
         4,
         2
       ]
@@ -248,26 +249,16 @@
         ]
       },
       {
-        "w": 2,
+        "w": 1,
         "dir": "h",
         "children": [
           {
             "w": 4,
-            "dir": "v",
-            "children": [
-              {
-                "w": 1,
-                "tile": "hijri"
-              },
-              {
-                "w": 1,
-                "tile": "gregorian"
-              }
-            ]
+            "tile": "gregorian"
           },
           {
             "w": 2,
-            "tile": "season"
+            "empty": true
           }
         ]
       },
@@ -284,14 +275,18 @@
         "dir": "h",
         "children": [
           {
-            "w": 4,
-            "tile": "tradSeason"
+            "w": 2,
+            "tile": "season"
           },
           {
-            "w": 2,
-            "empty": true
+            "w": 4,
+            "tile": "tradSeason"
           }
         ]
+      },
+      {
+        "w": 1,
+        "empty": true
       }
     ]
   },

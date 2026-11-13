@@ -432,45 +432,52 @@ void main() {
     expect(bridge.last['tree'], isNotNull);
   });
 
-  testWidgets('البوصلة الحرة: مفتاح اللوحة يعوّمها خارج الرصّ، وسحبها وتكبيرها يحفظان، وإطفاؤه يعيدها', (tester) async {
+  testWidgets('المربعات العائمة: أي مربع يعوم خارج الرصّ، وسحبه وتغيير مقاسه يحفظان، وإطفاؤه يعيده', (tester) async {
     final bridge = await openCustomize(tester);
-    await tapKey(tester, 'free-box-qibla');
-    await tapKey(tester, 'qibla-float');
-    await closeSheet(tester);
-    // خرجت من الشجرة وصارت عائمة في الجدول.
-    final float = (tileOf(bridge, 'qibla')['float'] as List).cast<num>();
-    expect(float.length, 3);
-    expect(jsonEncode(bridge.last['tree']), isNot(contains('qibla')));
-    expect(find.byKey(const Key('preview-qibla-float')), findsOneWidget);
-    // سحبها بإصبع يحرّكها دون أن يتحرك أي مربع آخر.
-    final before = Map.of({for (final t in layoutOf(bridge)) t['id'] as String: jsonEncode(t['rect'])});
-    final r0 = tester.getRect(find.byKey(const Key('preview-qibla-float')));
-    await tester.tap(find.byKey(const Key('float-box-qibla')));
-    await tester.pumpAndSettle();
-    await closeSheet(tester);
-    await dragKey(tester, 'float-box-qibla', const Offset(-30, 60));
-    final r1 = tester.getRect(find.byKey(const Key('preview-qibla-float')));
-    expect(r1.center.dy, greaterThan(r0.center.dy));
-    expect(r1.center.dx, lessThan(r0.center.dx));
-    expect(r1.width, closeTo(r0.width, 0.5));
-    final moved = (tileOf(bridge, 'qibla')['float'] as List).cast<num>();
-    expect(moved[2], float[2]);
-    expect(moved[1], greaterThan(float[1]));
-    for (final t in layoutOf(bridge)) {
-      if (t['id'] != 'qibla') expect(jsonEncode(t['rect']), before[t['id']]);
+    for (final id in ['qibla', 'hijri']) {
+      await tapKey(tester, 'free-box-$id');
+      await tapKey(tester, 'float-toggle');
+      await closeSheet(tester);
+      final float = (tileOf(bridge, id)['float'] as List).cast<num>();
+      expect(float.length, 4, reason: id);
+      expect(jsonEncode(bridge.last['tree']), isNot(contains(id)));
+      expect(find.byKey(Key('tile-$id')), findsOneWidget);
     }
-    // مقبض الزاوية السفلية اليمنى يكبّرها من زاويتها العليا اليسرى.
-    await dragKey(tester, 'float-handle-br', const Offset(30, 30));
-    final r2 = tester.getRect(find.byKey(const Key('preview-qibla-float')));
-    expect(r2.width, greaterThan(r1.width + 10));
-    expect((tileOf(bridge, 'qibla')['float'] as List)[2], greaterThan(moved[2]));
+    // سحب البوصلة بإصبع يحرّكها دون أن يتحرك أي مربع آخر في الرصّ.
+    final before = {for (final t in layoutOf(bridge)) t['id'] as String: jsonEncode(t['rect'])};
+    final f0 = (tileOf(bridge, 'qibla')['float'] as List).cast<num>();
+    final r0 = tester.getRect(find.byKey(const Key('float-box-qibla')));
+    await dragKey(tester, 'float-box-qibla', const Offset(30, 60));
+    final r1 = tester.getRect(find.byKey(const Key('float-box-qibla')));
+    expect(r1.center.dy, greaterThan(r0.center.dy));
+    expect(r1.center.dx, greaterThan(r0.center.dx));
+    expect(r1.size.width, closeTo(r0.size.width, 0.5));
+    final f1 = (tileOf(bridge, 'qibla')['float'] as List).cast<num>();
+    expect(f1[2], f0[2]);
+    expect(f1[3], f0[3]);
+    expect(f1[1], greaterThan(f0[1]));
+    for (final t in layoutOf(bridge)) {
+      if (t['id'] != 'qibla' && t['id'] != 'hijri') expect(jsonEncode(t['rect']), before[t['id']], reason: '${t['id']}');
+    }
+    // مقبض الزاوية السفلية اليمنى يغيّر العرض والارتفاع معاً (يثبّت الزاوية العليا اليسرى).
+    await dragKey(tester, 'float-handle-br-qibla', const Offset(30, 40));
+    final f2 = (tileOf(bridge, 'qibla')['float'] as List).cast<num>();
+    expect(f2[2], greaterThan(f1[2]));
+    expect(f2[3], greaterThan(f1[3]));
+    // مقبض الزاوية العليا اليسرى لا يغيّر الحافة اليمنى ولا السفلى.
+    final r2 = tester.getRect(find.byKey(const Key('float-box-qibla')));
+    await dragKey(tester, 'float-handle-tl-qibla', const Offset(-20, -20));
+    final r3 = tester.getRect(find.byKey(const Key('float-box-qibla')));
+    expect(r3.right, closeTo(r2.right, 1));
+    expect(r3.bottom, closeTo(r2.bottom, 1));
+    expect(r3.width, greaterThan(r2.width));
     // إطفاء العوم يعيدها مربعاً في الشجرة.
     await tapKey(tester, 'float-box-qibla');
-    await tapKey(tester, 'qibla-float');
+    await tapKey(tester, 'float-toggle');
     await closeSheet(tester);
     expect(tileOf(bridge, 'qibla').containsKey('float'), isFalse);
     expect(jsonEncode(bridge.last['tree']), contains('qibla'));
-    expect(find.byKey(const Key('preview-qibla-float')), findsNothing);
+    expect(jsonEncode(bridge.last['tree']), isNot(contains('hijri')));
   });
 
   testWidgets('المحرر الحر: مقبض الزاوية العليا اليمنى يحرّك الضلع الأيمن، وملء الشاشة يفتح المحرر', (tester) async {

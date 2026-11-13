@@ -431,11 +431,11 @@ class AppLocalizationsAr extends AppLocalizations {
       'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.';
 
   @override
-  String get qiblaFloatLabel => 'عائمة فوق المربعات (تكبير وتحريك حرّ)';
+  String get tileFloatLabel => 'عائم فوق المربعات (تحريك وتكبير حرّ)';
 
   @override
-  String get qiblaFloatHint =>
-      'اسحب البوصلة في المعاينة وكبّرها من زواياها؛ لا تزاحم المربعات.';
+  String get tileFloatHint =>
+      'اسحبه في المعاينة وغيّر مقاسه من زواياه؛ لا يزاحم المربعات ولا تزاحمه.';
 
   @override
   String get qiblaIconSizeLabel => 'حجم أيقونة البوصلة';

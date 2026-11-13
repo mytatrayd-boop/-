@@ -49,7 +49,8 @@ struct LamhaTile {
     let showSub: Bool
     let primary: Color?
     let secondary: Color?
-    /// البوصلة الحرة (DECISIONS ٢٩): [x, y, s] كسور من الودجت (FloatRect في Dart)؛ nil = مربع عادي.
+    /// المربع العائم (DECISIONS ٢٩): [x, y, w, h] كسور من الودجت (FloatRect في Dart): بعد الحافة اليمنى وبعد العليا
+    /// والعرض والارتفاع؛ nil = مربع عادي. الصيغة القديمة [x, y, s] (قرص البوصلة) تُقرأ بنسبة ٣٣٨×٤٤٠.
     let float: [Double]?
 }
 
@@ -245,7 +246,9 @@ func loadSnapshot() -> LamhaSnapshot? {
             showSub: t["showSub"] as? Bool ?? true,
             primary: (t["primaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
             secondary: (t["secondaryColor"] as? NSNumber).map { color($0, 0xFF000000) },
-            float: ((t["float"] as? [NSNumber])?.map { $0.doubleValue }).flatMap { $0.count >= 3 ? $0 : nil }
+            float: ((t["float"] as? [NSNumber])?.map { $0.doubleValue }).flatMap { v in
+                v.count >= 4 ? Array(v.prefix(4)) : (v.count == 3 ? [v[0], v[1], v[2], v[2] * 338 / 440] : nil)
+            }
         )
     }
     // الشفافية من مفتاحها المنفصل في App Group أولاً (يكتبه التطبيق مع كل حفظ)، ثم من الجدول.
