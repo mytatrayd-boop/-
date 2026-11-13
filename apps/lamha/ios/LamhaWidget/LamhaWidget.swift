@@ -465,7 +465,9 @@ struct LamhaWidgetView: View {
                 let st = s.style(["qibla"])
                 // الأيقونة تملأ مربعها (بحجمها المختار ٠٫٥–١٫٦ من ٦٢٪ من أصغر بُعديه) وتحتها الزاوية والاتجاه.
                 let text: CGFloat = st.showTitle ? 30 : 0
-                let side = max(min(g.size.width, g.size.height - text) * CGFloat(0.62 * s.qiblaIconScale), 20)
+                let room = min(g.size.width, g.size.height - text)
+                // الشريط حتى ٥٠٠٪: ما فوق المربع يُقصّ إلى المربع نفسه (الدائرة تصل حوافه بلا هوامش).
+                let side = max(min(room, room * CGFloat(0.62 * s.qiblaIconScale)), 20)
                 qibla(s, width: min(side, g.size.width))
                     .frame(width: g.size.width, height: g.size.height)
             }

@@ -433,6 +433,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown under the clock in the widget. Off by default.';
 
   @override
+  String get adhanErrorLabel => 'Adhan problem';
+
+  @override
   String get appVersionLabel => 'Version';
 
   @override

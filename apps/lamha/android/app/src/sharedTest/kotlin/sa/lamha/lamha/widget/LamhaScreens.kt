@@ -65,6 +65,15 @@ object LamhaScreens {
             val days = getJSONArray("days")
             for (i in 0 until days.length()) days.getJSONObject(i).getJSONArray("deposits").remove(5)
         }.toString()
+        // أربعة إيداعات (شبكة ٢×٢، حالة المالك ١٣ نوفمبر: ظهر عمود واحد فقط في الودجت).
+        val four = JSONObject(six).apply {
+            val days = getJSONArray("days")
+            for (i in 0 until days.length()) {
+                val d = days.getJSONObject(i).getJSONArray("deposits")
+                while (d.length() > 4) d.remove(d.length() - 1)
+            }
+        }.toString()
+        for ((size, w, h) in SIZES) out += Triple("lamha_deposits4_$size.png", four, w to h)
         for ((size, w, h) in SIZES) {
             out += Triple("lamha_deposits6_$size.png", six, w to h)
             out += Triple("lamha_deposits5_$size.png", five, w to h)

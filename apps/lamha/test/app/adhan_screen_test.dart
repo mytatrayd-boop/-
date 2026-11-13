@@ -49,6 +49,18 @@ void main() {
     expect(bridge.last.containsKey('adhan'), isFalse);
   });
 
+  testWidgets('فشل الجدولة أو التجربة يظهر نصه في الإعدادات ولا يبقى صامتاً', (tester) async {
+    final adhan = FakeAdhanNotifier()..error = 'الجدولة: Missing type parameter';
+    await pumpApp(tester, adhan: adhan);
+    await tapKey(tester, 'adhan-enabled');
+    await tester.ensureVisible(find.byKey(const Key('adhan-error')));
+    expect(find.textContaining('Missing type parameter'), findsOneWidget);
+    // بعد نجاح التجربة (لا خطأ مخزّن) يختفي.
+    adhan.error = null;
+    await tapKey(tester, 'adhan-test');
+    expect(find.byKey(const Key('adhan-error')), findsNothing);
+  });
+
   testWidgets('رفض إذن الإشعارات يبقيه مطفأً برسالة ولا يجدوِل', (tester) async {
     final adhan = FakeAdhanNotifier(
         permission: const AdhanPermissionResult(notifications: false, exactAlarms: false));

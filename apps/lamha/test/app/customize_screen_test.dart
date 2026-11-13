@@ -264,7 +264,7 @@ void main() {
     // أيقونة القبلة بشريط حجم لا بـ«صغير/وسط/عريض».
     expect(find.byKey(const Key('span-qibla')), findsNothing);
     final iconSlider = tester.widget<Slider>(find.byKey(const Key('qibla-icon-size')));
-    expect((iconSlider.min, iconSlider.max, iconSlider.divisions, iconSlider.value), (0.5, 1.6, 22, 1.0));
+    expect((iconSlider.min, iconSlider.max, iconSlider.divisions, iconSlider.value), (0.5, 5.0, 90, 1.0));
     Finder icon() => find.descendant(of: tile('qibla'), matching: find.byKey(const Key('preview-qibla-icon')));
     final before = tester.getSize(icon()).width;
     final sliderBox = find.byKey(const Key('qibla-icon-size'));
@@ -279,7 +279,7 @@ void main() {
     expect(bridge.saved.length, saves, reason: 'لا حفظ أثناء السحب');
     await g.up();
     await tester.pumpAndSettle();
-    expect(tileOf(bridge, 'qibla')['iconScale'], 1.6);
+    expect(tileOf(bridge, 'qibla')['iconScale'], 5.0);
     await tester.tapAt(Offset(c.dx + w / 2 - 2, c.dy));
     await tester.pumpAndSettle();
     expect(tileOf(bridge, 'qibla')['iconScale'], 0.5);

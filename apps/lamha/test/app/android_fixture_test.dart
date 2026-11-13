@@ -41,7 +41,7 @@ String fixture(
           ? [
               for (final t in defaultLayout)
                 t.id == WidgetElement.qibla
-                    ? t.copyWith(float: () => const FloatRect(0.62, 0.08, 0.3, 0.2))
+                    ? t.copyWith(float: () => const FloatRect(0.04, 0.1, 0.52, 0.3), iconScale: 5.0)
                     : t.id == WidgetElement.hijri
                         ? t.copyWith(float: () => const FloatRect(0.05, 0.45, 0.6, 0.07))
                         : t,
@@ -85,7 +85,8 @@ void main() {
     expect(file.readAsStringSync(), json);
     final root = jsonDecode(json) as Map;
     final q = (root['layout'] as List).cast<Map>().firstWhere((t) => t['id'] == 'qibla');
-    expect(q['float'], [0.62, 0.08, 0.3, 0.2]);
+    expect(q['float'], [0.04, 0.1, 0.52, 0.3]);
+    expect(q['iconScale'], 5.0, reason: 'أقصى الشريط: الدائرة تملأ مربعها');
     expect(jsonEncode(root['tree']), isNot(contains('qibla')));
     expect(jsonEncode(root['tree']), isNot(contains('hijri')));
   });

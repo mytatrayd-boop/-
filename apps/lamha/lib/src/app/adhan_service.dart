@@ -27,7 +27,13 @@ abstract class AdhanNotifier {
 
   /// تنبيه فوري بالصوت المختار لتجربته.
   Future<void> test(AdhanSound sound);
+
+  /// آخر خطأ في الجدولة أو التجربة (يُعرض في الإعدادات فلا يبقى الفشل صامتاً)، أو null إن نجح آخر ما جُرّب.
+  Future<String?> lastError();
 }
+
+/// مفتاح آخر خطأ في shared_preferences.
+const adhanErrorKey = 'adhanLastError';
 
 /// مفاتيح الصوت في الأصول الأصلية: أندرويد `res/raw/adhan.mp3` و`takbeer.mp3`، وآيفون `Runner/takbeer.wav`
 /// (آبل تقبل aiff وwav وcaf فقط، وبحد ٣٠ ثانية).
@@ -46,6 +52,15 @@ class LocalAdhanNotifier implements AdhanNotifier {
   var _ready = false;
 
   bool get _ios => defaultTargetPlatform == TargetPlatform.iOS;
+
+  Future<void> _fail(String where, Object e) async {
+    debugPrint('adhan $where: $e');
+    final msg = '$where: ${e.toString().split('\n').first}';
+    await _prefs.setString(adhanErrorKey, msg.length > 200 ? msg.substring(0, 200) : msg);
+  }
+
+  @override
+  Future<String?> lastError() async => _prefs.getString(adhanErrorKey);
 
   Future<void> _init() async {
     if (_ready) return;
@@ -114,7 +129,7 @@ class LocalAdhanNotifier implements AdhanNotifier {
       }
       return AdhanPermissionResult(notifications: notifications, exactAlarms: exact);
     } catch (e) {
-      debugPrint('adhan permissions: $e');
+      await _fail('الأذونات', e);
       return const AdhanPermissionResult(notifications: false, exactAlarms: false);
     }
   }
@@ -145,9 +160,10 @@ class LocalAdhanNotifier implements AdhanNotifier {
         );
       }
       await _prefs.setBool(adhanActiveKey, true);
+      await _prefs.remove(adhanErrorKey);
     } catch (e) {
-      // فشل الجدولة لا يوقف التطبيق.
-      debugPrint('adhan schedule: $e');
+      // فشل الجدولة لا يوقف التطبيق، لكن يُحفظ ويُعرض في الإعدادات.
+      await _fail('الجدولة', e);
     }
   }
 
@@ -161,8 +177,9 @@ class LocalAdhanNotifier implements AdhanNotifier {
         body: 'هكذا يصلك التنبيه عند دخول وقت الصلاة',
         notificationDetails: _details(sound),
       );
+      await _prefs.remove(adhanErrorKey);
     } catch (e) {
-      debugPrint('adhan test: $e');
+      await _fail('التجربة', e);
     }
   }
 }
@@ -178,4 +195,7 @@ class NoopAdhanNotifier implements AdhanNotifier {
 
   @override
   Future<void> test(AdhanSound sound) async {}
+
+  @override
+  Future<String?> lastError() async => null;
 }

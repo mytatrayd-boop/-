@@ -158,7 +158,7 @@ object LamhaSchedule {
                 showSub = t.optBoolean("showSub", true),
                 primaryColor = if (t.isNull("primaryColor")) null else t.getLong("primaryColor").toInt(),
                 secondaryColor = if (t.isNull("secondaryColor")) null else t.getLong("secondaryColor").toInt(),
-                iconScale = t.optDouble("iconScale", 1.0).toFloat().coerceIn(0.5f, 1.6f),
+                iconScale = t.optDouble("iconScale", 1.0).toFloat().coerceIn(0.5f, 5f),
                 rect = t.optJSONArray("rect")?.let { r -> (0 until r.length()).map { r.getInt(it) } },
                 float = LamhaLogic.floatOf(t.optJSONArray("float")),
             )

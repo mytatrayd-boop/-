@@ -67,6 +67,8 @@ android {
 
     buildTypes {
         release {
+            // قواعد R8 لمكتبة الإشعارات (الأذان): proguard-rules.pro.
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // مفتاح الرفع في lamha-play.yml؛ وبدونه توقيع debug (APK التجربة في lamha-android.yml، لا المتجر).
             signingConfig = if (signingValue("storeFile", "ANDROID_KEYSTORE_PATH") != null)
                 signingConfigs.getByName("release") else signingConfigs.getByName("debug")
