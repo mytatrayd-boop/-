@@ -16,10 +16,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTitle => 'Home';
 
   @override
-  String get homeEmpty =>
-      'Your trip will start here. The home screen is under construction.';
-
-  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -114,5 +110,62 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String permIllustration(String name) {
     return 'Illustration for the $name permission';
+  }
+
+  @override
+  String get mapLocating => 'Finding your location...';
+
+  @override
+  String get mapRecenter => 'Recenter';
+
+  @override
+  String get startTrip => 'Start trip';
+
+  @override
+  String get stopTrip => 'Stop trip';
+
+  @override
+  String get mute => 'Mute audio';
+
+  @override
+  String get unmute => 'Unmute';
+
+  @override
+  String get audioOn => 'Audio on';
+
+  @override
+  String get audioMuted => 'Audio muted';
+
+  @override
+  String get audioMutedChip => 'Muted';
+
+  @override
+  String get qualityTitle => 'Video quality';
+
+  @override
+  String get gpsGood => 'GPS good';
+
+  @override
+  String get gpsWeak => 'Weak GPS signal';
+
+  @override
+  String get gpsSearching => 'Finding location';
+
+  @override
+  String get offlineBanner => 'No internet: the map will not update';
+
+  @override
+  String get cameraOpening => 'Getting the camera ready...';
+
+  @override
+  String get cameraError =>
+      'Could not open the camera. Close other apps that use it.';
+
+  @override
+  String get homeOpenPermissions => 'Open permissions';
+
+  @override
+  String hudDistanceKm(String km) {
+    return '$km km';
   }
 }

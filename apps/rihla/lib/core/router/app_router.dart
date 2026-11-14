@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/home_screen.dart';
+import '../../features/onboarding_permissions/permissions_controller.dart';
 import '../../features/onboarding_permissions/permissions_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/not_found_screen.dart';
@@ -29,8 +30,15 @@ GoRouter buildRouter({String initialLocation = AppRoutes.home}) => GoRouter(
   errorBuilder: (_, _) => const NotFoundScreen(),
 );
 
+/// مسار الإقلاع: /permissions إن نقصت الكاميرا أو الموقع الدقيق، وإلا الرئيسية.
+/// (الميكروفون اختياري فلا يمنع.) يُستدعى في main بعد فحص الأذونات.
+String initialLocationFor(PermissionsState p) =>
+    p.canStartRecording ? AppRoutes.home : AppRoutes.permissions;
+
+final initialLocationProvider = Provider<String>((_) => AppRoutes.home);
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final r = buildRouter();
+  final r = buildRouter(initialLocation: ref.read(initialLocationProvider));
   ref.onDispose(r.dispose);
   return r;
 });

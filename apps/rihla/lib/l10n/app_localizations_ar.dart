@@ -16,9 +16,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeTitle => 'الرئيسية';
 
   @override
-  String get homeEmpty => 'هنا ستبدأ رحلتك. الشاشة الرئيسية قيد البناء.';
-
-  @override
   String get settingsTitle => 'الإعدادات';
 
   @override
@@ -111,5 +108,62 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String permIllustration(String name) {
     return 'رسم توضيحي لإذن $name';
+  }
+
+  @override
+  String get mapLocating => 'جارٍ تحديد موقعك...';
+
+  @override
+  String get mapRecenter => 'إعادة التمركز';
+
+  @override
+  String get startTrip => 'بدء الرحلة';
+
+  @override
+  String get stopTrip => 'إيقاف الرحلة';
+
+  @override
+  String get mute => 'كتم الصوت';
+
+  @override
+  String get unmute => 'إلغاء الكتم';
+
+  @override
+  String get audioOn => 'الصوت مفعّل';
+
+  @override
+  String get audioMuted => 'الصوت مكتوم';
+
+  @override
+  String get audioMutedChip => 'مكتوم';
+
+  @override
+  String get qualityTitle => 'جودة الفيديو';
+
+  @override
+  String get gpsGood => 'GPS جيد';
+
+  @override
+  String get gpsWeak => 'إشارة GPS ضعيفة';
+
+  @override
+  String get gpsSearching => 'جارٍ تحديد الموقع';
+
+  @override
+  String get offlineBanner => 'لا يوجد إنترنت: الخريطة لن تتحدث';
+
+  @override
+  String get cameraOpening => 'الكاميرا قيد التجهيز...';
+
+  @override
+  String get cameraError =>
+      'تعذّر فتح الكاميرا. أغلق التطبيقات الأخرى المستخدمة لها.';
+
+  @override
+  String get homeOpenPermissions => 'فتح الأذونات';
+
+  @override
+  String hudDistanceKm(String km) {
+    return '$km كم';
   }
 }

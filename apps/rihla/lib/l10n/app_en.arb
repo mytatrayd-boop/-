@@ -2,7 +2,6 @@
   "@@locale": "en",
   "appName": "Rihla",
   "homeTitle": "Home",
-  "homeEmpty": "Your trip will start here. The home screen is under construction.",
   "settingsTitle": "Settings",
   "settingsEmpty": "Settings are under construction.",
   "openSettings": "Open settings",
@@ -45,6 +44,31 @@
   "@permIllustration": {
     "placeholders": {
       "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapLocating": "Finding your location...",
+  "mapRecenter": "Recenter",
+  "startTrip": "Start trip",
+  "stopTrip": "Stop trip",
+  "mute": "Mute audio",
+  "unmute": "Unmute",
+  "audioOn": "Audio on",
+  "audioMuted": "Audio muted",
+  "audioMutedChip": "Muted",
+  "qualityTitle": "Video quality",
+  "gpsGood": "GPS good",
+  "gpsWeak": "Weak GPS signal",
+  "gpsSearching": "Finding location",
+  "offlineBanner": "No internet: the map will not update",
+  "cameraOpening": "Getting the camera ready...",
+  "cameraError": "Could not open the camera. Close other apps that use it.",
+  "homeOpenPermissions": "Open permissions",
+  "hudDistanceKm": "{km} km",
+  "@hudDistanceKm": {
+    "placeholders": {
+      "km": {
         "type": "String"
       }
     }

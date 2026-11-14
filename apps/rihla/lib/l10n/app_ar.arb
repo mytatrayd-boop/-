@@ -2,7 +2,6 @@
   "@@locale": "ar",
   "appName": "رحلة",
   "homeTitle": "الرئيسية",
-  "homeEmpty": "هنا ستبدأ رحلتك. الشاشة الرئيسية قيد البناء.",
   "settingsTitle": "الإعدادات",
   "settingsEmpty": "الإعدادات قيد البناء.",
   "openSettings": "فتح الإعدادات",
@@ -45,6 +44,31 @@
   "@permIllustration": {
     "placeholders": {
       "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapLocating": "جارٍ تحديد موقعك...",
+  "mapRecenter": "إعادة التمركز",
+  "startTrip": "بدء الرحلة",
+  "stopTrip": "إيقاف الرحلة",
+  "mute": "كتم الصوت",
+  "unmute": "إلغاء الكتم",
+  "audioOn": "الصوت مفعّل",
+  "audioMuted": "الصوت مكتوم",
+  "audioMutedChip": "مكتوم",
+  "qualityTitle": "جودة الفيديو",
+  "gpsGood": "GPS جيد",
+  "gpsWeak": "إشارة GPS ضعيفة",
+  "gpsSearching": "جارٍ تحديد الموقع",
+  "offlineBanner": "لا يوجد إنترنت: الخريطة لن تتحدث",
+  "cameraOpening": "الكاميرا قيد التجهيز...",
+  "cameraError": "تعذّر فتح الكاميرا. أغلق التطبيقات الأخرى المستخدمة لها.",
+  "homeOpenPermissions": "فتح الأذونات",
+  "hudDistanceKm": "{km} كم",
+  "@hudDistanceKm": {
+    "placeholders": {
+      "km": {
         "type": "String"
       }
     }

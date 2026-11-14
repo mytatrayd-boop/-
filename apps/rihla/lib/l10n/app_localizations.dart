@@ -110,12 +110,6 @@ abstract class AppLocalizations {
   /// **'الرئيسية'**
   String get homeTitle;
 
-  /// No description provided for @homeEmpty.
-  ///
-  /// In ar, this message translates to:
-  /// **'هنا ستبدأ رحلتك. الشاشة الرئيسية قيد البناء.'**
-  String get homeEmpty;
-
   /// No description provided for @settingsTitle.
   ///
   /// In ar, this message translates to:
@@ -289,6 +283,114 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'رسم توضيحي لإذن {name}'**
   String permIllustration(String name);
+
+  /// No description provided for @mapLocating.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحديد موقعك...'**
+  String get mapLocating;
+
+  /// No description provided for @mapRecenter.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة التمركز'**
+  String get mapRecenter;
+
+  /// No description provided for @startTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء الرحلة'**
+  String get startTrip;
+
+  /// No description provided for @stopTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف الرحلة'**
+  String get stopTrip;
+
+  /// No description provided for @mute.
+  ///
+  /// In ar, this message translates to:
+  /// **'كتم الصوت'**
+  String get mute;
+
+  /// No description provided for @unmute.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الكتم'**
+  String get unmute;
+
+  /// No description provided for @audioOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت مفعّل'**
+  String get audioOn;
+
+  /// No description provided for @audioMuted.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت مكتوم'**
+  String get audioMuted;
+
+  /// No description provided for @audioMutedChip.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتوم'**
+  String get audioMutedChip;
+
+  /// No description provided for @qualityTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'جودة الفيديو'**
+  String get qualityTitle;
+
+  /// No description provided for @gpsGood.
+  ///
+  /// In ar, this message translates to:
+  /// **'GPS جيد'**
+  String get gpsGood;
+
+  /// No description provided for @gpsWeak.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشارة GPS ضعيفة'**
+  String get gpsWeak;
+
+  /// No description provided for @gpsSearching.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحديد الموقع'**
+  String get gpsSearching;
+
+  /// No description provided for @offlineBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد إنترنت: الخريطة لن تتحدث'**
+  String get offlineBanner;
+
+  /// No description provided for @cameraOpening.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكاميرا قيد التجهيز...'**
+  String get cameraOpening;
+
+  /// No description provided for @cameraError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح الكاميرا. أغلق التطبيقات الأخرى المستخدمة لها.'**
+  String get cameraError;
+
+  /// No description provided for @homeOpenPermissions.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الأذونات'**
+  String get homeOpenPermissions;
+
+  /// No description provided for @hudDistanceKm.
+  ///
+  /// In ar, this message translates to:
+  /// **'{km} كم'**
+  String hudDistanceKm(String km);
 }
 
 class _AppLocalizationsDelegate

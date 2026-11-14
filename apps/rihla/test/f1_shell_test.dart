@@ -6,6 +6,9 @@ import 'package:rihla/core/locale/locale_provider.dart';
 import 'package:rihla/core/router/app_router.dart';
 import 'package:rihla/core/theme/app_theme.dart';
 import 'package:rihla/l10n/app_localizations_ar.dart';
+
+import 'helpers/fakes.dart';
+
 import 'package:rihla/l10n/app_localizations_en.dart';
 
 Future<void> pump(
@@ -19,7 +22,10 @@ Future<void> pump(
   addTearDown(t.view.reset);
   await t.pumpWidget(
     ProviderScope(
-      overrides: [localeProvider.overrideWith(() => _Fixed(locale))],
+      overrides: [
+        ...HomeFakes().overrides,
+        localeProvider.overrideWith(() => _Fixed(locale)),
+      ],
       child: MediaQuery(
         data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
         child: const RihlaApp(),
@@ -35,10 +41,9 @@ void main() {
 
   testWidgets('عربي: RTL ونصوص الترجمة، بلا overflow', (t) async {
     await pump(t, const Locale('ar'));
-    expect(find.text(ar.homeTitle), findsOneWidget);
-    expect(find.text(ar.homeEmpty), findsOneWidget);
+    expect(find.bySemanticsLabel(ar.startTrip), findsOneWidget);
     expect(
-      Directionality.of(t.element(find.text(ar.homeEmpty))),
+      Directionality.of(t.element(find.text(ar.audioOn))),
       TextDirection.rtl,
     );
     expect(t.takeException(), isNull);
@@ -46,9 +51,9 @@ void main() {
 
   testWidgets('إنجليزي: LTR ونصوص الترجمة، بلا overflow', (t) async {
     await pump(t, const Locale('en'));
-    expect(find.text(en.homeTitle), findsOneWidget);
+    expect(find.bySemanticsLabel(en.startTrip), findsOneWidget);
     expect(
-      Directionality.of(t.element(find.text(en.homeEmpty))),
+      Directionality.of(t.element(find.text(en.audioOn))),
       TextDirection.ltr,
     );
     expect(t.takeException(), isNull);
@@ -64,7 +69,7 @@ void main() {
       expect(t.takeException(), isNull);
       await t.tap(find.byType(BackButton));
       await t.pumpAndSettle();
-      expect(find.text(s.homeEmpty), findsOneWidget);
+      expect(find.byKey(const ValueKey('mute-button')), findsOneWidget);
       expect(t.takeException(), isNull);
     });
   }
@@ -77,7 +82,7 @@ void main() {
     expect(find.text(ar.notFoundTitle), findsOneWidget);
     await t.tap(find.text(ar.backToHome));
     await t.pumpAndSettle();
-    expect(find.text(ar.homeEmpty), findsOneWidget);
+    expect(find.byKey(const ValueKey('mute-button')), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 

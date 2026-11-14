@@ -1,5 +1,33 @@
 # STATUS — رحلة
 
+## F5 الشاشة الرئيسية المقسومة + إصلاحات F4 (2026-11-14): منجز على المضيف، لا جهاز
+
+### التحقق فعلاً (Linux، Flutter 3.50.0)
+- `flutter pub get` نجح مع flutter_map 7.x وvector_map_tiles 8.0.0 وlatlong2 وgeolocator 14 وwakelock_plus وconnectivity_plus؛ `flutter analyze`: بلا ملاحظات (قبل وبعد الكود). هذا إثبات تحليل وتجميع فقط.
+- `flutter test`: 88 ناجحاً (66 سابقة، اختبارات الرئيسية تغيّرت لاختفاء placeholder homeEmpty، + 22 جديداً). نسخة نظيفة من `git ls-files -co --exclude-standard` في scratchpad: pub get وanalyze وtest (88) نجحت؛ git check-ignore لا يتجاهل المجلدات الجديدة. check_no_secrets: OK.
+
+### إصلاحات F4
+- AndroidManifest: أُضيف ACCESS_COARSE_LOCATION بجانب FINE (وأُضيف INTERNET وACCESS_NETWORK_STATE لأن F5 يحتاجهما في بناء release، وsensorLandscape). Info.plist (آيفون) أفقي فقط.
+- PermissionHandlerService: اكتشاف الموقع التقريبي عبر geolocator getLocationAccuracy (reduced يعني approximateOnly؛ unknown أو فشل الاستعلام يُعاملان دقيقاً). المنطق مختبَر بحقن دوال القراءة (6 اختبارات)؛ الاستدعاء الأصلي الحقيقي لم يُجرَّب على جهاز.
+- **iOS عند أول بناء على macOS (لم يُنشأ الآن):** لا ios/Podfile في المستودع (يُولَّد). عند أول `flutter build ios`/pod install يجب إضافة في post_install: GCC_PREPROCESSOR_DEFINITIONS بـ`PERMISSION_CAMERA=1` و`PERMISSION_LOCATION=1` و`PERMISSION_MICROPHONE=1` (permission_handler)، وإلا تُعطَّل الأذونات. وقد يلزم تفعيل macros/Swift Package حسب إصدارات الحزم (تحقق عند البناء). مكتوب هنا فقط (F0ب).
+- ربط /permissions بالإقلاع: أُنجز ضمن F5 (انظر أدناه)، لا داعي لتأجيله.
+
+### F5 المنجز
+- lib/features/home: HomeScreen (Row باتجاه LTR ثابت: خريطة يسار، كاميرا يمين، Expanded 1:1 = 50/50 لا ينعكس مع اللغة؛ مختبَر بالعربية والإنجليزية)، HomeController (Riverpod): GPS، الكاميرا، الشبكة، بدء/إيقاف، كتم، جودة 720/1080 (ورقة سفلية، معطلة أثناء التسجيل)، مؤقت ومسافة (core/geo) ومسار حي. شريط علوي HUD (مؤقت، مسافة، حالة GPS، مكتوم، إعدادات قبل البدء). أحجام: بدء/إيقاف 88، كتم وجودة 64، مسافات 16 (مختبَرة). رسالة سبب تعطيل البدء، "تعذّر فتح الكاميرا" + إعادة المحاولة، شريحة GPS ضعيف (البدء ممكن)، شريط "لا إنترنت". الشاشة تبقى مضاءة أثناء التسجيل (wakelock). أفقي فقط (SystemChrome + manifest + plist).
+- RecordingMap (features/home/widgets): flutter_map + طبقة بلاطات OpenFreeMap (vector_map_tiles، نمط liberty) داخل RepaintBoundary بمفتاح قابل للتمرير (للالتقاط في F0ب/F6)، مسار كهرماني 6dp بحد داكن، نقطة موقعي بسهم الاتجاه، تتبع تلقائي وزر إعادة التمركز (يعود بعد 8ث)، الإسناد `OpenFreeMap © OpenMapTiles Data from OpenStreetMap` + `© OpenStreetMap contributors` مرسوم داخل الـRepaintBoundary أسفل اليمين (مختبَر: داخل الحدود، غير مقصوص، يلتصق بالحافة). نص الإسناد حرفي وليس في ARB عمداً (نص قانوني لا يُترجم).
+- واجهات مجردة ونسخ مزيّفة: LocationSource (Geolocator/Fake)، CameraPreviewSource (Native/Fake)، MapTilesSource (OpenFreeMap/Fake)، NetworkStatusSource (connectivity_plus/Fake)، ScreenAwake (wakelock_plus/Fake). كل الاختبارات بالمزيّفة.
+- الإقلاع: main يفحص الأذونات ويختار `initialLocationFor` (/permissions إن نقصت الكاميرا أو الموقع الدقيق؛ الميكروفون اختياري)؛ والرئيسية تُعيد الفحص عند الفتح والعودة من الإعدادات. بدون الكاميرا والموقع الدقيق لا يُشترك بـGPS ولا تُفتح الكاميرا ولا يبدأ شيء.
+
+### لم يُنجز / تحفظات (مهم)
+- **تعارض يحتاج قرار المعماري:** ARCHITECTURE 4.1 وDualCompositor (F0أ) يضعان الكاميرا يسار الفيديو والخريطة يمين، بينما DESIGN 7.2 وطلب F5 يضعان الكاميرا يمين والخريطة يسار "ليطابق الفيديو". نُفِّذت الشاشة حسب DESIGN/الطلب ولم يُعدَّل المُركِّب. يجب توحيد أحدهما قبل F6.
+- **الكاميرا الحقيقية غير موجودة:** NativeCameraPreviewSource تفشل دائماً بـCameraOpenException عمداً (الإضافة الأصلية غير مبنية، D12). على جهاز حقيقي ستظهر "تعذّر فتح الكاميرا" ولن يمكن البدء حتى F0ب/F6. المعاينة مختبَرة بالمزيّفة فقط.
+- **العرض الحقيقي للخريطة لم يُختبر:** الاختبارات تستخدم FakeMapTiles (بلا شبكة). لم يُعرض OpenFreeMap فعلاً ولا الأسماء العربية ولا toImage. توافق vector_map_tiles 8.0.0 مثبت بالتحليل والتجميع فقط، وقد يفشل وقت التشغيل (الاحتياطي: خلفية سادة عند فشل قراءة النمط، ثم احتياطيا ب/ج في ARCHITECTURE 4.2).
+- User-Agent الذي يعرّف التطبيق لطلبات البلاطات (شرط OpenFreeMap) غير مضبوط: StyleReader لا يتيح رؤوساً، ومسار البلاطات يحتاج httpHeaders مخصصاً؛ يُضاف قبل الإطلاق/F0ب. ذاكرة البلاطات على القرص مضبوطة قصيرة (ساعة، 20MB) ولا استخدام دون اتصال ولا prefetch.
+- العدّ التنازلي 3-2-1 وحوار تأكيد الإيقاف والاهتزاز ولوحة تقدير المساحة والخصوصية الأولى: خارج F5 (F6/F8). "بدء" الآن جلسة واجهة فقط: بلا ترميز ولا حفظ في DB (المؤقت عدّاد ثوانٍ يُستبدل بساعة التسجيل في F6). مؤشر المساحة في HUD غير موجود.
+- مرجع GPS الضعيف: دقة > 50م (ثابت weakGpsAccuracyM). نقاط دقتها أسوأ لا تدخل المسار الحي (تحديث الموقع يستمر).
+- الأذونات لا تُراقَب لحظياً أثناء التسجيل (فحص عند الفتح/الاستئناف فقط).
+- لم يُشغَّل شيء على محاكي أو جهاز؛ الاختبارات ويدجت على Linux (800x360 و640x300 بخط 130%).
+
 ## F4 الأذونات (2026-11-14): منجز على المضيف، الطلب الفعلي لم يُختبر
 
 ### المنجز
