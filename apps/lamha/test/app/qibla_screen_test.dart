@@ -211,4 +211,24 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('qibla-saved-location')), findsOneWidget);
   });
+
+  testWidgets('تحرّك الموقع أثناء فتح الشاشة: القبلة تتحدّث دون إعادة فتحها', (tester) async {
+    final compass = FakeCompass();
+    final updates = FakeLocationUpdates();
+    await pumpApp(
+      tester,
+      compass: compass,
+      location: FakeLocation((latitude: 24.6877, longitude: 46.7219)),
+      locationUpdates: updates,
+    );
+    await openQibla(tester);
+    compass.controller.add((heading: 0, accuracy: 15, magnetic: true));
+    await tester.pump();
+    expect(painter(tester).qibla, closeTo(qiblaDegrees(24.6877, 46.7219), 0.01));
+
+    updates.controller.add((latitude: 18.54, longitude: 42.05));
+    await tester.pump();
+    await tester.pump();
+    expect(painter(tester).qibla, closeTo(qiblaDegrees(18.54, 42.05), 0.01));
+  });
 }

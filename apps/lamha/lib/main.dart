@@ -24,9 +24,10 @@ class LamhaApp extends ConsumerStatefulWidget {
   ConsumerState<LamhaApp> createState() => _LamhaAppState();
 }
 
-class _LamhaAppState extends ConsumerState<LamhaApp> {
+class _LamhaAppState extends ConsumerState<LamhaApp> with WidgetsBindingObserver {
   final _navigator = GlobalKey<NavigatorState>();
   StreamSubscription<Uri?>? _clicks;
+  var _locating = false;
 
   @override
   void initState() {
@@ -34,12 +35,39 @@ class _LamhaAppState extends ConsumerState<LamhaApp> {
     final launch = ref.read(widgetLaunchProvider);
     launch.initial().then(_open);
     _clicks = launch.clicks.listen(_open);
+    // تحديث الموقع تلقائياً عند الفتح وكل عودة للتطبيق (إن كان إذن الموقع ممنوحاً مسبقاً).
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLocation());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _clicks?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshLocation();
+  }
+
+  /// تحديث صامت للموقع (SettingsController.refreshMyLocation): لا يطلب إذناً ولا يظهر شيئاً للمستخدم.
+  Future<void> _refreshLocation() async {
+    if (_locating || !mounted) return;
+    final navContext = _navigator.currentContext;
+    if (navContext == null) return;
+    _locating = true;
+    try {
+      final l = AppLocalizations.of(navContext);
+      await ref.read(settingsControllerProvider.future);
+      if (!mounted) return;
+      await ref.read(settingsControllerProvider.notifier).refreshMyLocation(nearLabel: l.nearCity);
+    } catch (e) {
+      debugPrint('auto location: $e');
+    } finally {
+      _locating = false;
+    }
   }
 
   void _open(Uri? uri) {

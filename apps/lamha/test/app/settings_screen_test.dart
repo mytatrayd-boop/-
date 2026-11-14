@@ -204,9 +204,11 @@ void main() {
   });
 
   testWidgets('الإعدادات تحفظ المكان المختار وتعيده عند الفتح', (tester) async {
+    // بلا موقع عند الفتح (التحديث التلقائي لا يغيّر شيئاً) ثم يتوفر حين يضغط «موقعي».
+    final loc = _MovingLocation(null);
     final bridge = await pumpApp(tester,
-        location: FakeLocation((latitude: 18.3, longitude: 42.6)),
-        geocoder: FakeGeocoder(name: 'خميس مشيط'));
+        location: loc, geocoder: FakeGeocoder(name: 'خميس مشيط'));
+    loc.pos = (latitude: 18.3, longitude: 42.6);
     await tester.tap(find.byKey(const Key('my-location')));
     await tester.pumpAndSettle();
     final prefs = await SharedPreferences.getInstance();
@@ -515,6 +517,78 @@ void main() {
     expect(withLam('الشتاء'), 'للشتاء');
     expect(withLam('سهيل'), 'لسهيل');
   });
+
+  group('تحديث الموقع تلقائياً عند الفتح والعودة', () {
+    /// ينقل التطبيق إلى الخلفية ثم يرجعه (Flutter يشترط المرور بالحالات الوسيطة).
+    Future<void> resume(WidgetTester tester) async {
+      for (final st in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(st);
+      }
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('عند فتح التطبيق: المكان يتبع الموقع الحالي دون أي ضغط', (tester) async {
+      final bridge = await pumpApp(tester,
+          location: FakeLocation((latitude: 18.3, longitude: 42.6)),
+          geocoder: FakeGeocoder(name: 'خميس مشيط'));
+      await tester.pumpAndSettle();
+      final city = bridge.last['city'] as Map;
+      expect(city['latitude'], 18.3);
+      expect(city['longitude'], 42.6);
+      expect(city['name'], 'خميس مشيط');
+    });
+
+    testWidgets('عند العودة للتطبيق: يتبع المكان الجديد، وحركة أقل من ٣ كم لا تغيّره', (tester) async {
+      final loc = _MovingLocation(null);
+      final bridge = await pumpApp(tester,
+          location: loc, geocoder: FakeGeocoder(name: 'خميس مشيط'));
+      final startLat = (bridge.last['city'] as Map)['latitude'];
+      expect(startLat, isNot(18.3));
+
+      loc.pos = (latitude: 18.3, longitude: 42.6);
+      await resume(tester);
+      expect((bridge.last['city'] as Map)['latitude'], 18.3);
+
+      final updates = bridge.updates;
+      loc.pos = (latitude: 18.305, longitude: 42.605); // ≈ ٠٫٧ كم
+      await resume(tester);
+      expect((bridge.last['city'] as Map)['latitude'], 18.3);
+      expect(bridge.updates, updates);
+
+      loc.pos = (latitude: 18.2164, longitude: 42.5053); // أبها ≈ ١٣ كم
+      await resume(tester);
+      expect((bridge.last['city'] as Map)['latitude'], 18.2164);
+    });
+
+    testWidgets('بلا إذن ممنوح مسبقاً: لا يغيّر المكان ولا يطلب شيئاً', (tester) async {
+      final bridge = await pumpApp(tester,
+          location: _MovingLocation((latitude: 18.3, longitude: 42.6)),
+          locationUpdates: FakeLocationUpdates(isGranted: false),
+          geocoder: FakeGeocoder(name: 'خميس مشيط'));
+      await tester.pumpAndSettle();
+      final startLat = (bridge.last['city'] as Map)['latitude'];
+      expect(startLat, isNot(18.3));
+      await resume(tester);
+      expect((bridge.last['city'] as Map)['latitude'], startLat);
+    });
+  });
+}
+
+/// موقع وهمي يتغيّر: [pos] يُبدَّل بين القراءات.
+class _MovingLocation implements LocationService {
+  _MovingLocation(this.pos);
+
+  ({double latitude, double longitude})? pos;
+
+  @override
+  Future<({double latitude, double longitude})?> currentPosition() async => pos;
 }
 
 class _ThrowingLocation implements LocationService {

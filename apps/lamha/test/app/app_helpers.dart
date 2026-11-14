@@ -87,6 +87,22 @@ class FakeLocation implements LocationService {
       result;
 }
 
+/// تتبّع موقع وهمي: [controller] يرسل المواضع الجديدة.
+class FakeLocationUpdates implements LocationUpdates {
+  FakeLocationUpdates({this.isGranted = true});
+
+  /// هل الإذن ممنوح مسبقاً (للتحديث الصامت).
+  bool isGranted;
+  final controller =
+      StreamController<({double latitude, double longitude})>.broadcast();
+
+  @override
+  Stream<({double latitude, double longitude})> updates() => controller.stream;
+
+  @override
+  Future<bool> granted() async => isGranted;
+}
+
 /// حاوية App Group وهمية: [picked] صورة المعرض (لقطة ٧٥٠×١٣٣٤ افتراضياً)، وتحفظ ولا تلمس القرص.
 class FakeBackgroundStore implements BackgroundStore {
   FakeBackgroundStore([this.picked = const _DefaultShot(), this.error]);
@@ -229,6 +245,7 @@ Future<FakeBridge> pumpApp(
   WidgetTester tester, {
   FakeBridge? bridge,
   LocationService? location,
+  LocationUpdates? locationUpdates,
   BackgroundStore? background,
   PlaceGeocoder? geocoder,
   CompassSource? compass,
@@ -252,6 +269,8 @@ Future<FakeBridge> pumpApp(
       clockProvider.overrideWithValue(() => testNow),
       widgetBridgeProvider.overrideWithValue(b),
       locationServiceProvider.overrideWithValue(location ?? FakeLocation(null)),
+      locationUpdatesProvider
+          .overrideWithValue(locationUpdates ?? FakeLocationUpdates()),
       backgroundStoreProvider
           .overrideWithValue(background ?? FakeBackgroundStore()),
       placeGeocoderProvider.overrideWithValue(geocoder ?? FakeGeocoder()),
