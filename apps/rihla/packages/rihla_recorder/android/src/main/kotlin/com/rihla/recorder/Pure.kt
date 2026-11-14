@@ -135,6 +135,32 @@ object CameraOrientation {
     fun textureMatrix(stMatrix: FloatArray, rotation: Int): FloatArray = LayoutMath.mul(stMatrix, LayoutMath.rotateAboutCenter(rotation))
 }
 
+/**
+ * محاكاة نقية للمظلل: نقطة خرج مطبّعة (nx,ny) في [0,1] داخل منطقة الرسم -> إحداثيات uv في مخزن الكاميرا.
+ * مطابقة لـVERTEX في GlRenderer: p = mix(crop, nx/ny) ثم uv = (stMatrix * R(rotation)) * p.
+ */
+object SamplePath {
+    fun uv(stMatrix: FloatArray, rotation: Int, crop: CropUv, nx: Float, ny: Float): Pair<Float, Float> {
+        val px = crop.u0 + (crop.u1 - crop.u0) * nx
+        val py = crop.v0 + (crop.v1 - crop.v0) * ny
+        return LayoutMath.transform(CameraOrientation.textureMatrix(stMatrix, rotation), px, py)
+    }
+}
+
+/** سطر تشخيص (logcat، TAG rihla) لقيم الدوران والأبعاد. */
+object OrientationLog {
+    const val TAG = "rihla"
+    fun line(
+        event: String, sensor: Int?, displayRot: Int?, cameraX: Int?, computed: Int?,
+        srcW: Int, srcH: Int, dstW: Int, dstH: Int,
+    ): String {
+        val (dw, dh) = CameraOrientation.displayedSize(srcW, srcH, computed ?: 0)
+        return "orientation[$event] sensorRotation=$sensor displayRotation=$displayRot " +
+            "cameraXRotationDegrees=$cameraX computedRotation=$computed src=${srcW}x$srcH " +
+            "displayed=${dw}x$dh target=${dstW}x$dstH"
+    }
+}
+
 object ClockMath {
     /**
      * طابع إطار الكاميرا بالميكروثانية بساعة التسجيل. إن كان طابع SurfaceTexture بمقياس

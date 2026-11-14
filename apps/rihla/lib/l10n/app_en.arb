@@ -136,12 +136,12 @@
   "shareVideoMissing": "The video is not on this phone",
   "shareRouteTitle": "Send my route on the map",
   "shareRouteDesc": "A Google Maps link or a GPX file",
-  "shareLinkTitle": "Google Maps link",
+  "shareLinkTitle": "Google Maps link (opens in Google Maps)",
   "shareLinkNote": "The route is approximate: reduced to a few points. The GPX file has the full route.",
   "shareLinkShare": "Share the link",
   "shareLinkOpen": "Open in Google Maps",
   "shareGpxTitle": "GPX file",
-  "shareGpxDesc": "Accurate and complete, opens in route apps",
+  "shareGpxDesc": "For route apps like Strava, OsmAnd and Google Earth; Google Maps cannot open it",
   "shareGpxShare": "Share the file",
   "shareNoRoute": "There is no route to share",
   "shareFailed": "Sharing failed",
@@ -153,5 +153,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "shareLocationOnly": "The trip has too little movement; your location will be sent instead of the route"
 }

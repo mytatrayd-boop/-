@@ -221,3 +221,8 @@
 ## إصلاحات المراجعة (2026-11-14): لم تُجرَّب على جهاز
 - ShareService.shareGeneratedFile: لا يحذف GPX فور عودة share (قد يصل مرفقاً فارغاً في واتساب/أندرويد). يُكتب في temp/rihla_share وتُحذف الملفات الأقدم من يوم قبل الكتابة التالية (purgeStaleShareFiles، اختبار وحدة).
 - RihlaRecorderPlugin.currentRotation يمرر backFacing من cameraInfo.lensFacing (CameraOrientation.isBackFacing، اختبار وحدة). الربط الفعلي ما زال DEFAULT_BACK_CAMERA فقط.
+
+## الاسم والأيقونة (2026-11-14)
+- الاسم: android:label=@string/app_name (values/values-ar «رحلة»، values-en «Rihla»)؛ iOS CFBundleDisplayName وCFBundleName «رحلة». عنوان MaterialApp يأتي أصلاً من l10n appName فلا تعديل في lib. applicationId/bundle id بلا تغيير.
+- الأيقونة: شاشة مقسومة (عدسة | مسار ودبوس) على حبر #0E1316. tool/make_icon.py (Pillow) يولّد assets/icon/icon.png وpreview.png، وmipmap-* (قديمة + foreground + monochrome) وmipmap-anydpi-v26/ic_launcher.xml، وAppIcon.appiconset (RGB بلا ألفا).
+- تحقق على نسخة نظيفة (git ls-files -co): analyze بلا ملاحظات؛ build apk --debug ناجح؛ aapt2: label «رحلة» (en: Rihla) والأيقونة تكيفية. flutter test: 153 ناجحاً و4 فاشلة، ناتجة من تعديلات lib/test الجارية لمبرمج آخر (maps_url بـ6 خانات عشرية مقابل 5 متوقعة؛ إسناد RecordingMap)، لا علاقة لها بالأيقونة. لم يُفحص على جهاز/آيفون.

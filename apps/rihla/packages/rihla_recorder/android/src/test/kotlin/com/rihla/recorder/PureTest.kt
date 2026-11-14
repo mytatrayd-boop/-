@@ -281,4 +281,58 @@ class PureTest {
         assertEquals(0, CameraOrientation.resolve(90, 1, null))
         assertEquals(180, CameraOrientation.resolve(90, 3, null))
     }
+
+    // ---- هندسة المظلل: الأفق يبقى أفقياً والنسبة لا تتشوه ----
+
+    private val stIdentity = floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f)
+    private val stFlipY = floatArrayOf(1f, 0f, 0f, 0f, 0f, -1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 1f)
+    private val stTrimmed = floatArrayOf(0.995f, 0f, 0f, 0f, 0f, -0.995f, 0f, 0f, 0f, 0f, 1f, 0f, 0.0025f, 0.9975f, 0f, 1f)
+
+    /** يتحقق: محورا الخرج يقابلان محورين متعامدين في مخزن البكسلات، على زاوية مضاعف 90 (+-0.5)، وبمقياس متساوٍ. */
+    private fun assertNoTiltNoStretch(st: FloatArray, rot: Int, srcW: Int, srcH: Int, outW: Int, outH: Int, tag: String) {
+        val (dw, dh) = CameraOrientation.displayedSize(srcW, srcH, rot)
+        val crop = LayoutMath.coverCrop(dw, dh, outW, outH)
+        fun px(nx: Float, ny: Float): Pair<Double, Double> {
+            val (u, v) = SamplePath.uv(st, rot, crop, nx, ny)
+            return Pair(u * srcW.toDouble(), v * srcH.toDouble())
+        }
+        val o = px(0f, 0f); val ex = px(1f, 0f); val ey = px(0f, 1f)
+        val xv = Pair(ex.first - o.first, ex.second - o.second)
+        val yv = Pair(ey.first - o.first, ey.second - o.second)
+        fun angle(v: Pair<Double, Double>) = Math.toDegrees(Math.atan2(v.second, v.first))
+        fun offAxis(a: Double): Double { val m = ((a % 90) + 90) % 90; return minOf(m, 90 - m) }
+        assertTrue("$tag x tilt ${angle(xv)}", offAxis(angle(xv)) <= 0.5)
+        assertTrue("$tag y tilt ${angle(yv)}", offAxis(angle(yv)) <= 0.5)
+        assertEquals("$tag perpendicular", 0.0, xv.first * yv.first + xv.second * yv.second, 1e-3 * Math.hypot(xv.first, xv.second) * Math.hypot(yv.first, yv.second))
+        val sx = Math.hypot(xv.first, xv.second) / outW
+        val sy = Math.hypot(yv.first, yv.second) / outH
+        // st trim لا يغيّر النسبة؛ المقياس px-مخزن/px-خرج متساوٍ على المحورين (التشوه = 1).
+        assertEquals("$tag aspect distortion", 1.0, sx / sy, 0.002)
+    }
+
+    @Test fun shaderPathKeepsHorizonLevelAndAspect() {
+        val sources = listOf(Pair(1280, 720), Pair(1920, 1080), Pair(1600, 1200), Pair(640, 480))
+        val outs = listOf(Pair(640, 720), Pair(960, 1080), Pair(640, 360))
+        var n = 0
+        for (st in listOf(stIdentity, stFlipY, stTrimmed)) for ((sw, sh) in sources) for (sensor in listOf(0, 90, 180, 270))
+            for (disp in 0..3) for ((ow, oh) in outs) {
+                val rot = CameraOrientation.resolve(sensor, disp, null)
+                assertNoTiltNoStretch(st, rot, sw, sh, ow, oh, "st=${st[5]} src=${sw}x$sh sensor=$sensor disp=$disp out=${ow}x$oh")
+                n++
+            }
+        assertEquals(576, n)
+    }
+
+    @Test fun previewFullFrameKeepsAspect() {
+        for (rot in listOf(0, 90, 180, 270)) {
+            val (dw, dh) = CameraOrientation.displayedSize(1280, 720, rot)
+            assertNoTiltNoStretch(stFlipY, rot, 1280, 720, dw, dh, "preview rot=$rot")
+        }
+    }
+
+    @Test fun orientationLogLine() {
+        val l = OrientationLog.line("recordStart", 90, 1, 0, 0, 1280, 720, 1280, 720)
+        assertTrue(l.contains("sensorRotation=90") && l.contains("displayRotation=1") && l.contains("computedRotation=0"))
+        assertTrue(l.contains("src=1280x720") && l.contains("displayed=1280x720") && l.contains("target=1280x720"))
+    }
 }

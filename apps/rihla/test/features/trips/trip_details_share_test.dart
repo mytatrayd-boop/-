@@ -202,6 +202,32 @@ void main() {
       await disposeApp(t);
     });
 
+    testWidgets('رحلة بنقطة واحدة: رابط موقع ورسالة واضحة (ar/en)', (t) async {
+      final f = HomeFakes(share: FakeShareService(existing: {_video}));
+      final id = await seedTrip(t, f.repo, points: 1, videoPath: _video);
+      await pumpApp(t, f, initial: AppRoutes.tripFor(id));
+      await settle(t);
+      await openShare(t);
+      await t.tap(find.byKey(const ValueKey('share-route')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const ValueKey('share-location-only')), findsOneWidget);
+      expect(find.text(ar.shareLocationOnly), findsOneWidget);
+      expect(find.text(ar.shareLinkTitle), findsOneWidget);
+      await t.tap(find.byKey(const ValueKey('share-link-share')));
+      await t.pumpAndSettle();
+      final url = RegExp(r'https://\S+')
+          .firstMatch(f.share.texts.single)!
+          .group(0)!;
+      expect(url, startsWith('https://www.google.com/maps/search/'));
+      expect(url, isNot(contains('/dir/')));
+      expect(find.text(ar.shareLocationOnly), findsWidgets);
+      expect(en.shareLocationOnly, isNot(ar.shareLocationOnly));
+      expect(en.shareLinkTitle, contains('opens in Google Maps'));
+      expect(en.shareGpxDesc, contains('Google Maps cannot open it'));
+      expect(ar.shareGpxDesc, contains('لا تفتحه خرائط جوجل'));
+      await disposeApp(t);
+    });
+
     testWidgets('فتح خرائط جوجل يفشل: رسالة', (t) async {
       final share = FakeShareService(existing: {_video})..openUrlResult = false;
       await open(t, share: share);

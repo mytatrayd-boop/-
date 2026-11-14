@@ -351,7 +351,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareRouteDesc => 'A Google Maps link or a GPX file';
 
   @override
-  String get shareLinkTitle => 'Google Maps link';
+  String get shareLinkTitle => 'Google Maps link (opens in Google Maps)';
 
   @override
   String get shareLinkNote =>
@@ -367,7 +367,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareGpxTitle => 'GPX file';
 
   @override
-  String get shareGpxDesc => 'Accurate and complete, opens in route apps';
+  String get shareGpxDesc =>
+      'For route apps like Strava, OsmAnd and Google Earth; Google Maps cannot open it';
 
   @override
   String get shareGpxShare => 'Share the file';
@@ -385,4 +386,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String shareLinkMessage(String url) {
     return 'My route on the map: $url';
   }
+
+  @override
+  String get shareLocationOnly =>
+      'The trip has too little movement; your location will be sent instead of the route';
 }

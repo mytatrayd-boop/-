@@ -17,6 +17,8 @@ import 'package:rihla/l10n/app_localizations.dart';
 import 'package:rihla/l10n/app_localizations_ar.dart';
 import 'package:rihla/l10n/app_localizations_en.dart';
 
+import 'package:rihla/features/home/map_frame_capturer.dart';
+
 import '../../helpers/fakes.dart';
 
 final ar = AppLocalizationsAr();
@@ -130,8 +132,14 @@ void main() {
     final mapRect = t.getRect(find.byKey(key));
     expect(mapRect.contains(box.topLeft), isTrue);
     expect(mapRect.contains(box.bottomRight - const Offset(1, 1)), isTrue);
-    expect(box.right, mapRect.right);
-    expect(box.bottom, mapRect.bottom);
+    // بعد القص المركزي إلى 8:9 يبقى الإسناد داخل منطقة القص (عبر الحافة اليمنى
+    // للمنطقة المقصوصة لا حافة الشاشة) وفوق قاعها بهامش.
+    final crop = coverCropRectOf(
+      mapRect.size,
+      videoMapAspect,
+    ).shift(mapRect.topLeft);
+    expect(box.right, closeTo(crop.right - attributionMargin, 0.5));
+    expect(box.bottom, closeTo(crop.bottom - attributionMargin, 0.5));
   });
 
   testWidgets('لا بدء بدون موقع: الزر لا يفعل شيئاً ويظهر السبب', (t) async {

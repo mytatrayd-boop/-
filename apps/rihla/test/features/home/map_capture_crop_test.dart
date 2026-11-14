@@ -1,7 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rihla/l10n/app_localizations.dart';
+import 'package:rihla/data/map/map_tiles.dart' show FakeMapTiles;
 import 'package:rihla/features/home/map_frame_capturer.dart';
+import 'package:rihla/features/home/widgets/recording_map.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 
 /// ملاحظة 5: لوحة الخريطة في الفيديو 640x720 (8:9)؛ الإطار يغطيها بلا أشرطة.
@@ -48,5 +52,70 @@ void main() {
       final out = cropToAspect(src, q.mapWidth, q.height);
       expect(out.width / out.height, closeTo(q.mapWidth / q.height, 0.01));
     }
+  });
+
+  test('مستطيل الإسناد داخل الإطار المقصوص بالكامل بهامش (لأحجام شاشات)', () {
+    const aspect = 640 / 720;
+    for (final size in const [
+      Size(400, 360),
+      Size(800, 360),
+      Size(1000, 400),
+      Size(360, 800),
+      Size(300, 300),
+    ]) {
+      final crop = coverCropRectOf(size, aspect);
+      // موضع الإسناد كما في RecordingMap.
+      const aw = 215.0, ah = 40.0;
+      final attr = Rect.fromLTWH(
+        crop.right - attributionMargin - aw,
+        crop.bottom - attributionMargin - ah,
+        aw,
+        ah,
+      );
+      expect(crop.width / crop.height, closeTo(aspect, 1e-9));
+      expect(attr.left, greaterThanOrEqualTo(crop.left + attributionMargin));
+      expect(attr.right, lessThanOrEqualTo(crop.right - attributionMargin));
+      expect(attr.top, greaterThanOrEqualTo(crop.top));
+      expect(attr.bottom, lessThanOrEqualTo(crop.bottom - attributionMargin));
+    }
+  });
+
+  testWidgets('RecordingMap: الإسناد المرسوم داخل منطقة القص فعلاً', (t) async {
+    const size = Size(800, 360);
+    final key = GlobalKey();
+    await t.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('ar'),
+        home: Align(
+          alignment: Alignment.topLeft,
+          child: Center(
+            child: SizedBox.fromSize(
+              size: size,
+              child: RecordingMap(
+                boundaryKey: key,
+                tiles: const FakeMapTiles(),
+                fix: null,
+                track: const [],
+                interactive: false,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final crop = coverCropRectOf(size, videoMapAspect);
+    final origin = t.getTopLeft(find.byKey(key));
+    final r = t.getRect(find.byKey(const ValueKey('map-attribution')));
+    final local = r.shift(-origin);
+    expect(local.right, lessThanOrEqualTo(crop.right - attributionMargin + .5));
+    expect(local.left, greaterThanOrEqualTo(crop.left));
+    expect(
+      local.bottom,
+      lessThanOrEqualTo(crop.bottom - attributionMargin + .5),
+    );
+    expect(crop.width, lessThan(size.width)); // فعلاً مقصوص
   });
 }

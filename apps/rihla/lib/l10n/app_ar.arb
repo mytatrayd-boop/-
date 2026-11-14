@@ -136,12 +136,12 @@
   "shareVideoMissing": "الفيديو غير موجود على الجوال",
   "shareRouteTitle": "إرسال مساري على الخريطة",
   "shareRouteDesc": "رابط لخرائط جوجل أو ملف GPX",
-  "shareLinkTitle": "رابط خرائط جوجل",
+  "shareLinkTitle": "رابط خرائط جوجل (يُفتح في خرائط جوجل)",
   "shareLinkNote": "المسار تقريبي: اختُصر إلى نقاط قليلة. ملف GPX يحوي المسار كاملاً.",
   "shareLinkShare": "مشاركة الرابط",
   "shareLinkOpen": "فتح في خرائط جوجل",
   "shareGpxTitle": "ملف GPX",
-  "shareGpxDesc": "دقيق وكامل، يُفتح في تطبيقات المسارات",
+  "shareGpxDesc": "لتطبيقات المسارات مثل Strava وOsmAnd وGoogle Earth؛ لا تفتحه خرائط جوجل",
   "shareGpxShare": "مشاركة الملف",
   "shareNoRoute": "لا يوجد مسار لمشاركته",
   "shareFailed": "تعذّرت المشاركة",
@@ -153,5 +153,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "shareLocationOnly": "الرحلة بلا حركة كافية؛ سيُرسل موقعك بدل المسار"
 }

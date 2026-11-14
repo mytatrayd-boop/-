@@ -128,13 +128,48 @@ void main() {
     });
     test('single point is a search url', () {
       final u = buildGoogleMapsUrl([p(24.7136, 46.6753)])!;
-      expect(u, contains('/search/?api=1&query=24.71360%2C46.67530'));
+      expect(u, contains('/search/?api=1&query=24.713600%2C46.675300'));
+    });
+    test('zero points: no link', () {
+      expect(buildMapsLink([]), isNull);
+    });
+    test('one point: location link of that point, 6 decimals', () {
+      final l = buildMapsLink([p(18.51841, 42.06458)])!;
+      expect(l.kind, MapsLinkKind.location);
+      expect(l.url, contains('/maps/search/?api=1&query='));
+      expect(l.url, contains('18.518410%2C42.064580'));
+      expect(l.url, isNot(contains('/dir/')));
+    });
+    test('identical start and end (owner screenshot): location, no dir', () {
+      final a = p(18.51841, 42.06458);
+      final l = buildMapsLink([a, p(18.51841, 42.06458), a])!;
+      expect(l.kind, MapsLinkKind.location);
+      expect(l.url, isNot(contains('origin=')));
+    });
+    test('start-end under 50 m: location of last point', () {
+      // 0.0002 deg lat ~ 22 m
+      final l = buildMapsLink([p(10, 20), p(10.0001, 20), p(10.0002, 20)])!;
+      expect(l.kind, MapsLinkKind.location);
+      expect(l.url, contains('10.000200%2C20.000000'));
+    });
+    test('start-end just over 50 m: directions with 6-decimal coords', () {
+      // 0.00050 deg ~ 55.6 m
+      final l = buildMapsLink([p(10, 20), p(10.0005, 20)])!;
+      expect(l.kind, MapsLinkKind.route);
+      expect(l.url, contains('origin=10.000000%2C20.000000'));
+      expect(l.url, contains('destination=10.000500%2C20.000000'));
+    });
+    test('long route: directions', () {
+      final path = [for (var i = 0; i < 50; i++) p(24 + i * 0.01, 46)];
+      final l = buildMapsLink(path)!;
+      expect(l.kind, MapsLinkKind.route);
+      expect(l.url, contains('/dir/'));
     });
     test('two points: no waypoints', () {
       final u = buildGoogleMapsUrl([p(1, 2), p(3, 4)])!;
       expect(u, isNot(contains('waypoints')));
-      expect(Uri.parse(u).queryParameters['origin'], '1.00000,2.00000');
-      expect(Uri.parse(u).queryParameters['destination'], '3.00000,4.00000');
+      expect(Uri.parse(u).queryParameters['origin'], '1.000000,2.000000');
+      expect(Uri.parse(u).queryParameters['destination'], '3.000000,4.000000');
     });
     test('default 3 mid points, pipe and comma are encoded', () {
       final path = [
@@ -160,10 +195,10 @@ void main() {
     });
     test('negative and antimeridian coordinates', () {
       final u = buildGoogleMapsUrl([p(-33.8, 179.99), p(-33.9, -179.99)])!;
-      expect(Uri.parse(u).queryParameters['origin'], '-33.80000,179.99000');
+      expect(Uri.parse(u).queryParameters['origin'], '-33.800000,179.990000');
       expect(
         Uri.parse(u).queryParameters['destination'],
-        '-33.90000,-179.99000',
+        '-33.900000,-179.990000',
       );
     });
     test('respects maxLength by dropping waypoints, else null', () {

@@ -731,7 +731,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareLinkTitle.
   ///
   /// In ar, this message translates to:
-  /// **'رابط خرائط جوجل'**
+  /// **'رابط خرائط جوجل (يُفتح في خرائط جوجل)'**
   String get shareLinkTitle;
 
   /// No description provided for @shareLinkNote.
@@ -761,7 +761,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareGpxDesc.
   ///
   /// In ar, this message translates to:
-  /// **'دقيق وكامل، يُفتح في تطبيقات المسارات'**
+  /// **'لتطبيقات المسارات مثل Strava وOsmAnd وGoogle Earth؛ لا تفتحه خرائط جوجل'**
   String get shareGpxDesc;
 
   /// No description provided for @shareGpxShare.
@@ -793,6 +793,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'مساري على الخريطة: {url}'**
   String shareLinkMessage(String url);
+
+  /// No description provided for @shareLocationOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلة بلا حركة كافية؛ سيُرسل موقعك بدل المسار'**
+  String get shareLocationOnly;
 }
 
 class _AppLocalizationsDelegate

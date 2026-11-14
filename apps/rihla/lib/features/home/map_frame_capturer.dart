@@ -24,6 +24,16 @@ const mapFrameInterval = Duration(milliseconds: 500);
   return (x: (srcW - w) ~/ 2, y: (srcH - h) ~/ 2, w: w, h: h);
 }
 
+/// نفس [coverCropRect] لكن بوحدات الويدجت (double) لمستطيل بحجم [size] ونسبة
+/// [aspect] = عرض/ارتفاع الهدف؛ يُستعمل لوضع الإسناد داخل المنطقة التي تبقى
+/// بعد القص (D15: الإسناد كاملاً في الفيديو دائماً).
+Rect coverCropRectOf(Size size, double aspect) {
+  final wide = size.width / size.height > aspect;
+  final w = wide ? size.height * aspect : size.width;
+  final h = wide ? size.height : size.width / aspect;
+  return Rect.fromLTWH((size.width - w) / 2, (size.height - h) / 2, w, h);
+}
+
 /// يقص [f] إلى المنطقة المركزية بنسبة الهدف.
 RgbaFrame cropToAspect(RgbaFrame f, int targetW, int targetH) {
   final r = coverCropRect(f.width, f.height, targetW, targetH);

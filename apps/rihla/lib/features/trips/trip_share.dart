@@ -4,7 +4,16 @@ import '../../core/geo/maps_url.dart';
 import '../../data/share/share_service.dart';
 
 /// نتيجة محاولة مشاركة/فتح: ok أو سبب الفشل (لتحدد الواجهة الرسالة).
-enum ShareOutcome { ok, noRoute, noVideo, failed, openFailed }
+enum ShareOutcome {
+  ok,
+  noRoute,
+  noVideo,
+  failed,
+  openFailed,
+
+  /// نجحت لكن أُرسل موقع (آخر نقطة) بدل المسار لقلة الحركة.
+  okLocationOnly,
+}
 
 /// منطق المشاركة (F10) خلف [ShareService]: لا واجهة ولا أصلي هنا.
 class TripSharer {
@@ -13,6 +22,11 @@ class TripSharer {
 
   /// رابط خرائط جوجل (تقريبي) أو null إن لم يوجد مسار صالح.
   String? mapsUrl(List<GeoPoint> points) => buildGoogleMapsUrl(points);
+
+  ShareOutcome _okFor(List<GeoPoint> points) =>
+      buildMapsLink(points)?.kind == MapsLinkKind.location
+      ? ShareOutcome.okLocationOnly
+      : ShareOutcome.ok;
 
   /// يشارك الفيديو (ملف videoPath) عبر قائمة النظام.
   Future<ShareOutcome> shareVideo(String? path) async {
@@ -36,7 +50,7 @@ class TripSharer {
     if (url == null) return ShareOutcome.noRoute;
     try {
       await _svc.shareText(message(url));
-      return ShareOutcome.ok;
+      return _okFor(points);
     } on ShareException {
       return ShareOutcome.failed;
     }
@@ -46,7 +60,7 @@ class TripSharer {
   Future<ShareOutcome> openInMaps(List<GeoPoint> points) async {
     final url = mapsUrl(points);
     if (url == null) return ShareOutcome.noRoute;
-    return await _svc.openUrl(url) ? ShareOutcome.ok : ShareOutcome.openFailed;
+    return await _svc.openUrl(url) ? _okFor(points) : ShareOutcome.openFailed;
   }
 
   /// يولّد GPX كاملاً ويشاركه كملف.

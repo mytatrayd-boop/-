@@ -271,12 +271,14 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
                         // المعاينة بأبعاد الصورة بعد الدوران كي لا تتمدد.
                         val (w, h) = CameraOrientation.displayedSize(camSize.width, camSize.height, rot)
                         main.post { producer?.setSize(w, h) }
+                        logOrientation("rotationChanged")
                     }
                     r.setRotation(currentRotation() ?: 0)
                     val (pw, ph) = CameraOrientation.displayedSize(size.width, size.height, currentRotation() ?: 0)
                     producer?.setSize(pw, ph)
                     req.setTransformationInfoListener(ContextCompat.getMainExecutor(ctx)) { info ->
                         cameraXRotation = info.rotationDegrees
+                    logOrientation("cameraXTransform")
                         currentRotation()?.let { r.setRotation(it) }
                     }
                     val surface: Surface = r.cameraSurface()!!
@@ -355,6 +357,22 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
     private fun applyRotation() {
         preview?.targetRotation = displayRotation()
         currentRotation()?.let { renderer?.setRotation(it) }
+        logOrientation("displayChanged")
+    }
+
+    /** تشخيص خفيف لجهاز المالك: adb logcat -s rihla */
+    private fun logOrientation(event: String) {
+        runCatching {
+            val info = boundCamera?.cameraInfo
+            val disp = if (activity != null) displayRotation() else null
+            Log.i(
+                OrientationLog.TAG,
+                OrientationLog.line(
+                    event, info?.sensorRotationDegrees, disp, cameraXRotation, currentRotation(),
+                    camSize.width, camSize.height, quality.width, quality.height,
+                ),
+            )
+        }
     }
 
     @Volatile private var cameraXRotation: Int? = null
@@ -397,6 +415,7 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
                 )
                 // نعيّنها قبل start: onFatal المبكر يمر عبر finishRecording (يُنفَّذ بعد انتهاء start على worker نفسه).
                 session = s
+                logOrientation("recordStart")
                 try {
                     s.start()
                 } catch (t: Throwable) {

@@ -344,7 +344,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shareRouteDesc => 'رابط لخرائط جوجل أو ملف GPX';
 
   @override
-  String get shareLinkTitle => 'رابط خرائط جوجل';
+  String get shareLinkTitle => 'رابط خرائط جوجل (يُفتح في خرائط جوجل)';
 
   @override
   String get shareLinkNote =>
@@ -360,7 +360,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shareGpxTitle => 'ملف GPX';
 
   @override
-  String get shareGpxDesc => 'دقيق وكامل، يُفتح في تطبيقات المسارات';
+  String get shareGpxDesc =>
+      'لتطبيقات المسارات مثل Strava وOsmAnd وGoogle Earth؛ لا تفتحه خرائط جوجل';
 
   @override
   String get shareGpxShare => 'مشاركة الملف';
@@ -378,4 +379,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String shareLinkMessage(String url) {
     return 'مساري على الخريطة: $url';
   }
+
+  @override
+  String get shareLocationOnly =>
+      'الرحلة بلا حركة كافية؛ سيُرسل موقعك بدل المسار';
 }

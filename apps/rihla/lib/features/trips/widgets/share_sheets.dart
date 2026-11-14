@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/geo/geo_point.dart';
+import '../../../core/geo/maps_url.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/share/share_service.dart';
 import '../../../l10n/app_localizations.dart';
@@ -13,6 +14,7 @@ final tripSharerProvider = Provider<TripSharer>(
 
 String shareOutcomeMessage(AppLocalizations l, ShareOutcome o) => switch (o) {
   ShareOutcome.ok => '',
+  ShareOutcome.okLocationOnly => l.shareLocationOnly,
   ShareOutcome.noRoute => l.shareNoRoute,
   ShareOutcome.noVideo => l.shareVideoMissing,
   ShareOutcome.failed => l.shareFailed,
@@ -232,6 +234,8 @@ class _RouteShareSheetState extends ConsumerState<_RouteShareSheet> {
     final l = AppLocalizations.of(context);
     final th = Theme.of(context).textTheme;
     final hasRoute = widget.points.where((p) => p.isValid).isNotEmpty;
+    final locationOnly =
+        buildMapsLink(widget.points)?.kind == MapsLinkKind.location;
     final name =
         'rihla-${widget.startedAt.toUtc().toIso8601String().substring(0, 10)}';
     return SafeArea(
@@ -250,7 +254,15 @@ class _RouteShareSheetState extends ConsumerState<_RouteShareSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(l.shareLinkTitle, style: th.titleMedium),
-                    Text(l.shareLinkNote, style: th.bodySmall),
+                    Text(
+                      locationOnly ? l.shareLocationOnly : l.shareLinkNote,
+                      key: locationOnly
+                          ? const ValueKey('share-location-only')
+                          : null,
+                      style: th.bodySmall?.copyWith(
+                        color: locationOnly ? AppColors.warning : null,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 56,

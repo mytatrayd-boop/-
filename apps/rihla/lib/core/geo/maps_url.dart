@@ -1,3 +1,4 @@
+import 'distance.dart';
 import 'geo_point.dart';
 import 'simplify.dart';
 
@@ -10,8 +11,45 @@ const String defaultTravelMode = 'driving';
 /// عدد نقاط المنتصف الافتراضي (D6).
 const int defaultMidWaypoints = 3;
 
+/// أقل مسافة (م) بين البداية والنهاية لبناء رابط اتجاهات؛ دونها تفشل خرائط
+/// جوجل بـ«يتعذّر العثور على طريق» فيُستعمل رابط موقع (FEEDBACK 6).
+const double minDirectionsMeters = 50;
+
+/// 6 خانات عشرية (~11 سم).
 String _coord(GeoPoint p) =>
-    '${p.lat.toStringAsFixed(5)},${p.lng.toStringAsFixed(5)}';
+    '${p.lat.toStringAsFixed(6)},${p.lng.toStringAsFixed(6)}';
+
+/// نوع رابط خرائط جوجل المبني.
+enum MapsLinkKind { route, location }
+
+class MapsLink {
+  const MapsLink(this.url, this.kind);
+  final String url;
+  final MapsLinkKind kind;
+}
+
+/// يبني الرابط المناسب: اتجاهات للمسار ذي الحركة الكافية، وإلا رابط موقع
+/// لآخر نقطة. null: لا نقاط/نقطة غير صالحة/الرابط أطول من الحد.
+MapsLink? buildMapsLink(
+  List<GeoPoint> points, {
+  int midWaypoints = defaultMidWaypoints,
+  int maxLength = defaultMaxUrlLength,
+  String travelMode = defaultTravelMode,
+  double minMeters = minDirectionsMeters,
+}) {
+  if (points.isEmpty || points.any((p) => !p.isValid)) return null;
+  const base = 'https://www.google.com/maps';
+  final moved =
+      points.length >= 2 &&
+      haversineMeters(points.first, points.last) >= minMeters;
+  if (!moved) {
+    final u =
+        '$base/search/?api=1&query=${Uri.encodeComponent(_coord(points.last))}';
+    return u.length <= maxLength ? MapsLink(u, MapsLinkKind.location) : null;
+  }
+  final url = _directions(points, base, midWaypoints, maxLength, travelMode);
+  return url == null ? null : MapsLink(url, MapsLinkKind.route);
+}
 
 /// رابط اتجاهات خرائط جوجل (Maps URLs) بنقاط قليلة. null لمسار فارغ
 /// أو إن وُجدت نقطة غير صالحة. نقطة واحدة تعطي رابط بحث/موقع.
@@ -22,14 +60,20 @@ String? buildGoogleMapsUrl(
   int midWaypoints = defaultMidWaypoints,
   int maxLength = defaultMaxUrlLength,
   String travelMode = defaultTravelMode,
-}) {
-  if (points.isEmpty || points.any((p) => !p.isValid)) return null;
-  const base = 'https://www.google.com/maps';
-  if (points.length == 1) {
-    final u =
-        '$base/search/?api=1&query=${Uri.encodeComponent(_coord(points.first))}';
-    return u.length <= maxLength ? u : null;
-  }
+}) => buildMapsLink(
+  points,
+  midWaypoints: midWaypoints,
+  maxLength: maxLength,
+  travelMode: travelMode,
+)?.url;
+
+String? _directions(
+  List<GeoPoint> points,
+  String base,
+  int midWaypoints,
+  int maxLength,
+  String travelMode,
+) {
   for (var mid = midWaypoints < 0 ? 0 : midWaypoints; mid >= 0; mid--) {
     final s = simplifyToCount(points, mid + 2);
     final origin = _coord(s.first);

@@ -10,12 +10,19 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/location/location_source.dart';
 import '../../../data/map/map_tiles.dart';
 import '../../../l10n/app_localizations.dart';
+import '../map_frame_capturer.dart';
 
 /// نص الإسناد الحرفي الذي تشترطه OpenFreeMap وODbL (D15). حرفي عمداً وليس في
 /// ARB: نص قانوني لا يُترجم.
 const mapAttributionLine1 =
     'OpenFreeMap © OpenMapTiles Data from OpenStreetMap';
 const mapAttributionLine2 = '© OpenStreetMap contributors';
+
+/// نسبة لوحة الخريطة في الفيديو (640x720).
+const double videoMapAspect = 640 / 720;
+
+/// هامش الإسناد عن حافة الإطار المقصوص (dp).
+const double attributionMargin = 4;
 
 /// خريطة التسجيل: ويدجت Flutter خالص (لا platform view) داخل RepaintBoundary
 /// فيمكن التقاطها بـtoImage مع الإسناد في كل إطار (ARCHITECTURE 4.1).
@@ -29,6 +36,7 @@ class RecordingMap extends StatefulWidget {
     required this.interactive,
     this.boundaryKey,
     this.followZoom = 16,
+    this.videoAspect = videoMapAspect,
     this.recenterDelay = const Duration(seconds: 8),
   });
 
@@ -42,6 +50,10 @@ class RecordingMap extends StatefulWidget {
   /// مفتاح RepaintBoundary لمصدر الالتقاط (F0ب/F6).
   final GlobalKey? boundaryKey;
   final double followZoom;
+
+  /// نسبة (عرض/ارتفاع) لوحة الخريطة في الفيديو؛ يُوضع الإسناد داخل المنطقة
+  /// المتبقية بعد القص المركزي إليها.
+  final double videoAspect;
   final Duration recenterDelay;
 
   @override
@@ -159,7 +171,27 @@ class _RecordingMapState extends State<RecordingMap> {
             ),
           // الإسناد داخل الـRepaintBoundary (أسفل يمين اللوحة، تباين عالٍ).
           // الاتجاه ثابت LTR لأن النص إنجليزي والتخطيط لا ينعكس.
-          const Positioned(right: 0, bottom: 0, child: MapAttribution()),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (_, c) {
+                final r = coverCropRectOf(
+                  Size(c.maxWidth, c.maxHeight),
+                  widget.videoAspect,
+                );
+                return Stack(
+                  children: [
+                    Positioned(
+                      right: c.maxWidth - r.right + attributionMargin,
+                      bottom: c.maxHeight - r.bottom + attributionMargin,
+                      child: MapAttribution(
+                        maxWidth: r.width - 2 * attributionMargin,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
           if (!_following)
             Positioned(
               left: 8,
@@ -182,13 +214,17 @@ class _RecordingMapState extends State<RecordingMap> {
 }
 
 class MapAttribution extends StatelessWidget {
-  const MapAttribution({super.key});
+  const MapAttribution({super.key, this.maxWidth});
+
+  /// أقصى عرض؛ النص يلتف على سطرين+ ليبقى كاملاً داخل الإطار المقصوص.
+  final double? maxWidth;
 
   @override
   Widget build(BuildContext context) => Directionality(
     textDirection: TextDirection.ltr,
     child: Container(
       key: const ValueKey('map-attribution'),
+      constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
       color: const Color(0xB3000000),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       child: const Column(
