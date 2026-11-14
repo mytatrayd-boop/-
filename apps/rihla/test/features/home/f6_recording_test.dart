@@ -312,7 +312,7 @@ void f6FixTests() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('فشل completeTrip: لا saving عالق، ملخص بفيديو محفوظ المسار', (t) async {
+  testWidgets('فشل completeTrip: لا saving عالق، والاحتياط يحفظ مسار الفيديو', (t) async {
     final f = HomeFakes(repoBuilder: (db) => _FailingCompleteRepo(db));
     final c = await pumpHome(t, f);
     await fixAndStart(t, f);
@@ -320,7 +320,8 @@ void f6FixTests() {
     await confirmStop(t);
     expect(c.read(homeProvider).saving, isFalse);
     expect(find.text(ar.summarySaved), findsOneWidget);
-    expect(find.text(ar.summaryDbError), findsOneWidget);
+    // الاحتياط (interruptTrip بالمسار) نجح: لا رسالة خطأ قاعدة، الفيديو محفوظ المسار.
+    expect(find.text(ar.summaryInterruptedOther), findsOneWidget);
     final rows = await trips(t, f);
     expect(rows.single.status, TripStatus.interrupted);
     expect(rows.single.videoPath, '/fake/rihla_1.mp4');

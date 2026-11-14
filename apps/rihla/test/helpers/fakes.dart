@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_initializing_formals
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -57,7 +58,6 @@ class HomeFakes {
   final FakeScreenAwake awake;
   final FakeRihlaRecorder recorder;
   final FakeVideoGalleryService gallery;
-  // ignore: prefer_initializing_formals
   final TripRepository Function(AppDatabase)? _repoBuilder;
   final AppDatabase db;
   late final TripRepository repo = (_repoBuilder ?? TripRepository.new)(db);
