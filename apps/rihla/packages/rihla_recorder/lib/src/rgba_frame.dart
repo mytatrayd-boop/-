@@ -5,10 +5,12 @@ class RgbaFrame {
   RgbaFrame(this.width, this.height, this.rgba, {this.timestamp = Duration.zero})
       : assert(rgba.length == width * height * 4);
 
-  RgbaFrame.filled(int width, int height, int r, int g, int b,
-      {Duration timestamp = Duration.zero})
-      : this(width, height, Uint8List(width * height * 4), timestamp: timestamp) {
-    fillRect(0, 0, width, height, r, g, b);
+  factory RgbaFrame.filled(int width, int height, int r, int g, int b,
+      {Duration timestamp = Duration.zero}) {
+    final f = RgbaFrame(width, height, Uint8List(width * height * 4),
+        timestamp: timestamp);
+    f.fillRect(0, 0, width, height, r, g, b);
+    return f;
   }
 
   final int width;

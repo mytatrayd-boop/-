@@ -13,3 +13,7 @@ ios/Flutter/Secrets.xcconfig
 .dart_tool/
 .idea/
 *.iml
+.dart_tool/
+.idea/
+build/
+.flutter-plugins-dependencies

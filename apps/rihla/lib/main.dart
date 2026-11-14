@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// هيكل أدنى (F0أ). الواجهة الحقيقية في F1/F5؛ لا نصوص هنا عمداً.
