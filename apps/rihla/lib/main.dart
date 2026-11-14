@@ -1,15 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// هيكل أدنى (F0أ). الواجهة الحقيقية في F1/F5؛ لا نصوص هنا عمداً.
+import 'app.dart';
+
 void main() {
-  runApp(const RihlaApp());
-}
-
-class RihlaApp extends StatelessWidget {
-  const RihlaApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(home: Scaffold(body: SizedBox.expand()));
-  }
+  runApp(const ProviderScope(child: RihlaApp()));
 }

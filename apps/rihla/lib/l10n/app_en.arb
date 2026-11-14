@@ -1,0 +1,12 @@
+{
+  "@@locale": "en",
+  "appName": "Rihla",
+  "homeTitle": "Home",
+  "homeEmpty": "Your trip will start here. The home screen is under construction.",
+  "settingsTitle": "Settings",
+  "settingsEmpty": "Settings are under construction.",
+  "openSettings": "Open settings",
+  "backToHome": "Back to home",
+  "notFoundTitle": "Page not found",
+  "notFoundBody": "We could not find this page. Go back to the home screen and try again."
+}
