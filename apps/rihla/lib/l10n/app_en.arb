@@ -72,5 +72,34 @@
         "type": "String"
       }
     }
-  }
+  },
+  "countdownCancelHint": "Tap to cancel",
+  "countdownLabel": "Countdown {n}",
+  "@countdownLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "stopConfirmTitle": "End the trip?",
+  "stopConfirmBody": "Recording continues until you confirm.",
+  "stopConfirmEnd": "End and save",
+  "stopConfirmContinue": "Keep recording",
+  "savingTrip": "Saving...",
+  "savingDoNotClose": "Do not close the app",
+  "startFailed": "Could not start recording. Try again.",
+  "summarySaved": "Your trip is saved",
+  "summaryDuration": "Duration",
+  "summaryDistance": "Distance",
+  "summaryVideoSaved": "The video is saved on your phone",
+  "summaryVideoFailed": "The route is saved but the video could not be saved",
+  "summaryInterruptedBackground": "The trip stopped because the app left the screen. What was recorded is saved.",
+  "summaryInterruptedCamera": "The trip stopped because of a camera error. What was recorded is saved.",
+  "summaryInterruptedWrite": "The trip stopped because of a write error. What was recorded is saved.",
+  "summaryInterruptedStorage": "The trip stopped because storage is low. What was recorded is saved.",
+  "summaryInterruptedOther": "The trip stopped unexpectedly. What was recorded is saved.",
+  "summaryNewTrip": "New trip",
+  "summaryViewTrip": "View trip",
+  "summaryLoadError": "Could not open the trip"
 }

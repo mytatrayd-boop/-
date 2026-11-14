@@ -166,4 +166,77 @@ class AppLocalizationsAr extends AppLocalizations {
   String hudDistanceKm(String km) {
     return '$km كم';
   }
+
+  @override
+  String get countdownCancelHint => 'المس الشاشة للإلغاء';
+
+  @override
+  String countdownLabel(int n) {
+    return 'العدّ التنازلي $n';
+  }
+
+  @override
+  String get stopConfirmTitle => 'إنهاء الرحلة؟';
+
+  @override
+  String get stopConfirmBody => 'التسجيل مستمر حتى تؤكد.';
+
+  @override
+  String get stopConfirmEnd => 'إنهاء وحفظ';
+
+  @override
+  String get stopConfirmContinue => 'متابعة التسجيل';
+
+  @override
+  String get savingTrip => 'جارٍ الحفظ...';
+
+  @override
+  String get savingDoNotClose => 'لا تغلق التطبيق';
+
+  @override
+  String get startFailed => 'تعذّر بدء التسجيل. حاول مرة أخرى.';
+
+  @override
+  String get summarySaved => 'تم حفظ رحلتك';
+
+  @override
+  String get summaryDuration => 'المدة';
+
+  @override
+  String get summaryDistance => 'المسافة';
+
+  @override
+  String get summaryVideoSaved => 'حُفظ الفيديو على الجوال';
+
+  @override
+  String get summaryVideoFailed => 'حُفظ المسار لكن تعذّر حفظ الفيديو';
+
+  @override
+  String get summaryInterruptedBackground =>
+      'أُوقفت الرحلة لأن التطبيق خرج من الواجهة. حُفظ ما صُوِّر.';
+
+  @override
+  String get summaryInterruptedCamera =>
+      'أُوقفت الرحلة بسبب خطأ في الكاميرا. حُفظ ما صُوِّر.';
+
+  @override
+  String get summaryInterruptedWrite =>
+      'أُوقفت الرحلة بسبب خطأ في الكتابة. حُفظ ما صُوِّر.';
+
+  @override
+  String get summaryInterruptedStorage =>
+      'أُوقفت الرحلة لقلة المساحة. حُفظ ما صُوِّر.';
+
+  @override
+  String get summaryInterruptedOther =>
+      'أُوقفت الرحلة بشكل غير متوقع. حُفظ ما صُوِّر.';
+
+  @override
+  String get summaryNewTrip => 'رحلة جديدة';
+
+  @override
+  String get summaryViewTrip => 'عرض الرحلة';
+
+  @override
+  String get summaryLoadError => 'تعذّر فتح الرحلة';
 }

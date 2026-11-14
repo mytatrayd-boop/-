@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 
@@ -10,6 +11,7 @@ import '../../data/location/location_source.dart';
 import '../../data/map/map_tiles.dart';
 import '../../data/network/network_status_source.dart';
 import '../../data/platform/screen_awake.dart';
+import '../../data/repositories/trip_repository.dart';
 import '../../data/permissions/permission_service.dart';
 import '../onboarding_permissions/permissions_controller.dart';
 
@@ -43,6 +45,19 @@ enum VideoQuality { p720, p1080 }
 
 enum StartBlocker { permissions, cameraOpening, cameraError, waitingGps }
 
+/// رسالة عابرة تعرضها الشاشة مرة واحدة.
+enum HomeNotice { startFailed }
+
+/// رحلة انتهت للتو (بإيقاف أو انقطاع): تنقل الشاشة إلى الملخص مرة واحدة.
+class FinishedTrip {
+  const FinishedTrip(this.tripId, {this.interruptReason});
+  final String tripId;
+  final InterruptReason? interruptReason;
+}
+
+/// عدّ تنازلي قبل البدء (DESIGN 7.2).
+const countdownSeconds = 3;
+
 /// دقة أسوأ من هذا = "إشارة GPS ضعيفة" (يمكن البدء مع تنبيه).
 const weakGpsAccuracyM = 50.0;
 
@@ -57,6 +72,11 @@ class HomeState {
     this.muted = false,
     this.quality = VideoQuality.p720,
     this.online = true,
+    this.countdown,
+    this.saving = false,
+    this.tripId,
+    this.notice,
+    this.finished,
   });
 
   final CameraStatus camera;
@@ -70,6 +90,17 @@ class HomeState {
   final bool muted;
   final VideoQuality quality;
   final bool online;
+
+  /// 3-2-1 قبل البدء؛ null خارج العدّ.
+  final int? countdown;
+
+  /// جارٍ إيقاف التسجيل وحفظه.
+  final bool saving;
+  final String? tripId;
+  final HomeNotice? notice;
+  final FinishedTrip? finished;
+
+  bool get busy => countdown != null || saving;
 
   bool get weakGps =>
       fix != null &&
@@ -85,6 +116,14 @@ class HomeState {
     bool? muted,
     VideoQuality? quality,
     bool? online,
+    int? countdown,
+    bool clearCountdown = false,
+    bool? saving,
+    String? tripId,
+    HomeNotice? notice,
+    bool clearNotice = false,
+    FinishedTrip? finished,
+    bool clearFinished = false,
   }) => HomeState(
     camera: camera ?? this.camera,
     fix: fix ?? this.fix,
@@ -95,15 +134,24 @@ class HomeState {
     muted: muted ?? this.muted,
     quality: quality ?? this.quality,
     online: online ?? this.online,
+    countdown: clearCountdown ? null : (countdown ?? this.countdown),
+    saving: saving ?? this.saving,
+    tripId: tripId ?? this.tripId,
+    notice: clearNotice ? null : (notice ?? this.notice),
+    finished: clearFinished ? null : (finished ?? this.finished),
   );
 }
 
 class HomeController extends Notifier<HomeState> {
   StreamSubscription<LocationFix>? _locSub;
   StreamSubscription<bool>? _netSub;
+  StreamSubscription<RecorderEvent>? _recSub;
   Timer? _timer;
+  Timer? _countTimer;
   bool _disposed = false;
   bool _cameraWanted = false;
+  Future<void> _writes = Future.value();
+  GeoPoint? _lastPoint;
 
   @override
   HomeState build() {
@@ -115,7 +163,9 @@ class HomeController extends Notifier<HomeState> {
       _disposed = true;
       _locSub?.cancel();
       _netSub?.cancel();
+      _recSub?.cancel();
       _timer?.cancel();
+      _countTimer?.cancel();
       if (_cameraWanted) camera.close();
       awake.disable();
     });
@@ -125,6 +175,7 @@ class HomeController extends Notifier<HomeState> {
       if (_disposed) return;
       _sync(ref.read(permissionsProvider));
       _watchNetwork();
+      _recSub = ref.read(recorderProvider).events.listen(_onRecorderEvent);
     });
     return const HomeState();
   }
@@ -141,7 +192,7 @@ class HomeController extends Notifier<HomeState> {
     };
   }
 
-  bool get canStart => !state.recording && blocker == null;
+  bool get canStart => !state.recording && !state.busy && blocker == null;
 
   void _sync(PermissionsState p) {
     final locOk = p.canStartRecording;
@@ -183,50 +234,196 @@ class HomeController extends Notifier<HomeState> {
   void _onFix(LocationFix f) {
     if (_disposed) return;
     final p = GeoPoint(f.lat, f.lng, time: f.time);
-    if (state.recording && p.isValid && !state.weakFor(f)) {
-      final t = [...state.track, p];
-      state = state.copyWith(fix: f, track: t, distanceM: pathLengthMeters(t));
+    final id = state.tripId;
+    if (state.recording && !state.saving && id != null && p.isValid && !state.weakFor(f)) {
+      final prev = _lastPoint;
+      _lastPoint = p;
+      state = state.copyWith(
+        fix: f,
+        track: [...state.track, p],
+        distanceM: state.distanceM + (prev == null ? 0 : haversineMeters(prev, p)),
+      );
+      _persist(id, f);
     } else {
       state = state.copyWith(fix: f);
     }
   }
 
-  /// بدء جلسة (F5: واجهة فقط؛ لا ترميز ولا حفظ). يُرفض بلا كاميرا وموقع.
+  /// حفظ النقطة في القاعدة بالتسلسل. فشل الحفظ لا يوقف التسجيل.
+  void _persist(String tripId, LocationFix f) {
+    final repo = ref.read(tripRepositoryProvider);
+    _writes = _writes.then((_) async {
+      try {
+        await repo.addPoints(tripId, [
+          TrackSample(
+            lat: f.lat,
+            lng: f.lng,
+            ts: f.time.toUtc(),
+            accuracyM: f.accuracyM,
+            speedMps: f.speedMps,
+          ),
+        ]);
+      } catch (_) {}
+    });
+  }
+
+  /// يبدأ العدّ التنازلي 3-2-1 ثم التسجيل. يُرفض بلا كاميرا وموقع.
   Future<void> start() async {
     if (!canStart) return;
-    final f = state.fix!;
+    state = state.copyWith(countdown: countdownSeconds, clearNotice: true);
+    _countTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_disposed) return;
+      final n = (state.countdown ?? 0) - 1;
+      if (n <= 0) {
+        t.cancel();
+        _countTimer = null;
+        _begin();
+      } else {
+        state = state.copyWith(countdown: n);
+      }
+    });
+  }
+
+  /// لمسة أثناء العدّ تلغيه.
+  void cancelCountdown() {
+    if (state.countdown == null) return;
+    _countTimer?.cancel();
+    _countTimer = null;
+    state = state.copyWith(clearCountdown: true);
+  }
+
+  Future<void> _begin() async {
+    final f = state.fix;
+    if (f == null) return cancelCountdown();
+    final rec = ref.read(recorderProvider);
+    final repo = ref.read(tripRepositoryProvider);
+    final q = state.quality;
+    try {
+      await rec.start(RecordingConfig(
+        quality: q == VideoQuality.p1080 ? RecorderQuality.p1080 : RecorderQuality.p720,
+        muted: state.muted,
+      ));
+    } on RecorderException {
+      if (!_disposed) {
+        state = state.copyWith(clearCountdown: true, notice: HomeNotice.startFailed);
+      }
+      return;
+    }
+    String id;
+    try {
+      id = await repo.startTrip(quality: q == VideoQuality.p1080 ? 1080 : 720);
+    } catch (_) {
+      try {
+        await rec.stop();
+      } catch (_) {}
+      if (!_disposed) {
+        state = state.copyWith(clearCountdown: true, notice: HomeNotice.startFailed);
+      }
+      return;
+    }
+    if (_disposed) return;
+    final first = GeoPoint(f.lat, f.lng, time: f.time);
+    _lastPoint = first;
     state = HomeState(
       camera: state.camera,
-      fix: f,
+      fix: state.fix,
       recording: true,
-      track: [GeoPoint(f.lat, f.lng, time: f.time)],
+      tripId: id,
+      track: [first],
       muted: state.muted,
-      quality: state.quality,
+      quality: q,
       online: state.online,
     );
+    _persist(id, state.fix!);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_disposed) return;
-      // عدّ ثوانٍ لواجهة F5 فقط؛ في F6 يُؤخذ الزمن من ساعة التسجيل.
+      // عدّ ثوانٍ؛ المدة الرسمية للرحلة من نتيجة المُسجِّل/القاعدة عند الإيقاف.
       state = state.copyWith(
         elapsed: state.elapsed + const Duration(seconds: 1),
       );
     });
+    try {
+      HapticFeedback.lightImpact();
+    } catch (_) {}
     await ref.read(screenAwakeProvider).enable();
   }
 
+  /// إطار خريطة من الشاشة (~2/ث). أخطاء الدفع لا توقف التسجيل.
+  Future<void> pushMapFrame(RgbaFrame frame) async {
+    if (!state.recording || state.saving) return;
+    try {
+      await ref.read(recorderProvider).pushMapFrame(frame);
+    } catch (_) {}
+  }
+
+  /// يوقف ويحفظ (بعد تأكيد المستخدم في الشاشة).
   Future<void> stop() async {
-    if (!state.recording) return;
+    final id = state.tripId;
+    if (!state.recording || state.saving || id == null) return;
     _timer?.cancel();
     _timer = null;
-    state = state.copyWith(recording: false);
+    state = state.copyWith(saving: true);
+    final repo = ref.read(tripRepositoryProvider);
+    await _writes;
+    FinishedTrip done;
+    try {
+      final res = await ref.read(recorderProvider).stop();
+      await repo.completeTrip(id, videoPath: res.path);
+      done = FinishedTrip(id);
+    } catch (_) {
+      // المسار محفوظ دائماً؛ الفيديو لم يُحفظ.
+      await repo.interruptTrip(id);
+      done = FinishedTrip(id);
+    }
+    await _finish(done);
+  }
+
+  void _onRecorderEvent(RecorderEvent e) {
+    if (e is RecordingInterrupted) _onInterrupted(e);
+  }
+
+  /// انقطاع أصلي: المُسجِّل حفظ ما صُوِّر؛ نحفظ المسار والملف ونبلغ المستخدم.
+  Future<void> _onInterrupted(RecordingInterrupted e) async {
+    final id = state.tripId;
+    if (!state.recording || state.saving || id == null) return;
+    _timer?.cancel();
+    _timer = null;
+    state = state.copyWith(saving: true);
+    await _writes;
+    await ref
+        .read(tripRepositoryProvider)
+        .interruptTrip(id, videoPath: e.result.path);
+    await _finish(FinishedTrip(id, interruptReason: e.reason));
+  }
+
+  Future<void> _finish(FinishedTrip done) async {
+    _lastPoint = null;
+    if (_disposed) return;
+    state = HomeState(
+      camera: state.camera,
+      fix: state.fix,
+      muted: state.muted,
+      quality: state.quality,
+      online: state.online,
+      finished: done,
+    );
     await ref.read(screenAwakeProvider).disable();
   }
 
-  void toggleMute() => state = state.copyWith(muted: !state.muted);
+  void consumeFinished() => state = state.copyWith(clearFinished: true);
+  void clearNotice() => state = state.copyWith(clearNotice: true);
+
+  void toggleMute() {
+    final m = !state.muted;
+    state = state.copyWith(muted: m);
+    if (state.recording) {
+      ref.read(recorderProvider).setMuted(m).catchError((_) {});
+    }
+  }
 
   /// الجودة تُغيَّر قبل البدء فقط.
   void setQuality(VideoQuality q) {
-    if (state.recording) return;
+    if (state.recording || state.busy) return;
     state = state.copyWith(quality: q);
   }
 }

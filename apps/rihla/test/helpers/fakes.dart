@@ -1,4 +1,8 @@
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:rihla/data/db/app_database.dart';
+import 'package:rihla/data/repositories/trip_repository.dart';
+import 'package:rihla_recorder/rihla_recorder.dart';
 import 'package:rihla/data/camera/fake_camera_preview_source.dart';
 import 'package:rihla/data/location/fake_location_source.dart';
 import 'package:rihla/data/map/map_tiles.dart';
@@ -17,6 +21,7 @@ class HomeFakes {
     FakeLocationSource? location,
     FakeNetworkStatusSource? network,
     FakeScreenAwake? awake,
+    FakeRihlaRecorder? recorder,
   }) : permissions =
            permissions ??
            FakePermissionService(
@@ -29,13 +34,18 @@ class HomeFakes {
        camera = camera ?? FakeCameraPreviewSource(),
        location = location ?? FakeLocationSource(),
        network = network ?? FakeNetworkStatusSource(),
-       awake = awake ?? FakeScreenAwake();
+       awake = awake ?? FakeScreenAwake(),
+       recorder = recorder ?? FakeRihlaRecorder(),
+       db = AppDatabase(NativeDatabase.memory());
 
   final FakePermissionService permissions;
   final FakeCameraPreviewSource camera;
   final FakeLocationSource location;
   final FakeNetworkStatusSource network;
   final FakeScreenAwake awake;
+  final FakeRihlaRecorder recorder;
+  final AppDatabase db;
+  late final TripRepository repo = TripRepository(db);
 
   List<Override> get overrides => [
     permissionServiceProvider.overrideWithValue(permissions),
@@ -43,6 +53,8 @@ class HomeFakes {
     locationSourceProvider.overrideWithValue(location),
     networkStatusSourceProvider.overrideWithValue(network),
     screenAwakeProvider.overrideWithValue(awake),
+    recorderProvider.overrideWithValue(recorder),
+    tripRepositoryProvider.overrideWithValue(repo),
     mapTilesProvider.overrideWithValue(const FakeMapTiles()),
   ];
 }

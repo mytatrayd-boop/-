@@ -391,6 +391,138 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{km} كم'**
   String hudDistanceKm(String km);
+
+  /// No description provided for @countdownCancelHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'المس الشاشة للإلغاء'**
+  String get countdownCancelHint;
+
+  /// No description provided for @countdownLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'العدّ التنازلي {n}'**
+  String countdownLabel(int n);
+
+  /// No description provided for @stopConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء الرحلة؟'**
+  String get stopConfirmTitle;
+
+  /// No description provided for @stopConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسجيل مستمر حتى تؤكد.'**
+  String get stopConfirmBody;
+
+  /// No description provided for @stopConfirmEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء وحفظ'**
+  String get stopConfirmEnd;
+
+  /// No description provided for @stopConfirmContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة التسجيل'**
+  String get stopConfirmContinue;
+
+  /// No description provided for @savingTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الحفظ...'**
+  String get savingTrip;
+
+  /// No description provided for @savingDoNotClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تغلق التطبيق'**
+  String get savingDoNotClose;
+
+  /// No description provided for @startFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر بدء التسجيل. حاول مرة أخرى.'**
+  String get startFailed;
+
+  /// No description provided for @summarySaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ رحلتك'**
+  String get summarySaved;
+
+  /// No description provided for @summaryDuration.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة'**
+  String get summaryDuration;
+
+  /// No description provided for @summaryDistance.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسافة'**
+  String get summaryDistance;
+
+  /// No description provided for @summaryVideoSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظ الفيديو على الجوال'**
+  String get summaryVideoSaved;
+
+  /// No description provided for @summaryVideoFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظ المسار لكن تعذّر حفظ الفيديو'**
+  String get summaryVideoFailed;
+
+  /// No description provided for @summaryInterruptedBackground.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُوقفت الرحلة لأن التطبيق خرج من الواجهة. حُفظ ما صُوِّر.'**
+  String get summaryInterruptedBackground;
+
+  /// No description provided for @summaryInterruptedCamera.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُوقفت الرحلة بسبب خطأ في الكاميرا. حُفظ ما صُوِّر.'**
+  String get summaryInterruptedCamera;
+
+  /// No description provided for @summaryInterruptedWrite.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُوقفت الرحلة بسبب خطأ في الكتابة. حُفظ ما صُوِّر.'**
+  String get summaryInterruptedWrite;
+
+  /// No description provided for @summaryInterruptedStorage.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُوقفت الرحلة لقلة المساحة. حُفظ ما صُوِّر.'**
+  String get summaryInterruptedStorage;
+
+  /// No description provided for @summaryInterruptedOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُوقفت الرحلة بشكل غير متوقع. حُفظ ما صُوِّر.'**
+  String get summaryInterruptedOther;
+
+  /// No description provided for @summaryNewTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة جديدة'**
+  String get summaryNewTrip;
+
+  /// No description provided for @summaryViewTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الرحلة'**
+  String get summaryViewTrip;
+
+  /// No description provided for @summaryLoadError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح الرحلة'**
+  String get summaryLoadError;
 }
 
 class _AppLocalizationsDelegate

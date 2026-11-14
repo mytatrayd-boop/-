@@ -17,7 +17,8 @@ Future<void> main() async {
   ]);
   final db = await openAppDatabase();
   // رحلات بقيت recording بسبب إغلاق مفاجئ تُعلَّم interrupted.
-  await TripRepository(db).markInterruptedTrips();
+  final repo = TripRepository(db);
+  await repo.markInterruptedTrips();
 
   // فحص الأذونات عند الإقلاع: النقص يحوّل إلى /permissions.
   final probe = ProviderContainer();
@@ -27,7 +28,10 @@ Future<void> main() async {
   runApp(
     UncontrolledProviderScope(
       container: ProviderContainer(
-        overrides: [initialLocationProvider.overrideWithValue(start)],
+        overrides: [
+          initialLocationProvider.overrideWithValue(start),
+          tripRepositoryProvider.overrideWithValue(repo),
+        ],
       ),
       child: const RihlaApp(),
     ),

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/geo/geo.dart';
 import '../db/app_database.dart';
@@ -24,6 +25,11 @@ class TrackSample {
   final double? accuracyM;
   final double? speedMps;
 }
+
+/// يُستبدل في main (قاعدة القرص) وفي الاختبارات (قاعدة الذاكرة).
+final tripRepositoryProvider = Provider<TripRepository>(
+  (_) => throw UnimplementedError('tripRepositoryProvider must be overridden'),
+);
 
 class TripRepository {
   TripRepository(this._db);
@@ -174,6 +180,29 @@ class TripRepository {
         videoAssetId: Value(videoAssetId),
         videoPath: Value(videoPath),
         status: const Value(TripStatus.completed),
+      ),
+    );
+    _forget(tripId);
+  }
+
+  /// ينهي الرحلة بانقطاع أو فشل حفظ الفيديو: تُحفظ النقاط والمسافة والمدة،
+  /// ومسار الفيديو إن وُجد (ما صُوِّر قبل الانقطاع).
+  Future<void> interruptTrip(
+    String tripId, {
+    DateTime? endedAt,
+    String? videoPath,
+  }) async {
+    final trip = await getTrip(tripId);
+    if (trip == null) return;
+    final pts = await getPoints(tripId);
+    final end = endedAt ?? DateTime.now().toUtc();
+    await (_db.update(_db.trips)..where((t) => t.id.equals(tripId))).write(
+      TripsCompanion(
+        endedAt: Value(end),
+        durationSec: Value(max(0, end.difference(trip.startedAt).inSeconds)),
+        distanceM: Value(pathLengthMeters(pts)),
+        videoPath: Value(videoPath),
+        status: const Value(TripStatus.interrupted),
       ),
     );
     _forget(tripId);

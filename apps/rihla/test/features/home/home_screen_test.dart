@@ -59,6 +59,10 @@ Future<void> fixAndStart(WidgetTester t, HomeFakes f) async {
   await t.pump(); // يُعاد البناء
   await t.tap(find.byKey(_start));
   await t.pump();
+  // العدّ التنازلي 3-2-1 ثم البدء.
+  await t.pump(const Duration(seconds: 3));
+  await t.pump();
+  await t.pump();
 }
 
 void main() {
@@ -213,10 +217,12 @@ void main() {
     expect(c.read(homeProvider).track.length, 3);
 
     await t.tap(find.byKey(_stop));
-    await t.pump();
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('stop-confirm')));
+    await t.pumpAndSettle();
     expect(c.read(homeProvider).recording, isFalse);
     expect(f.awake.enabled, isFalse);
-    expect(find.byKey(_start), findsOneWidget);
+    expect(find.byKey(const ValueKey('summary-new-trip')), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 

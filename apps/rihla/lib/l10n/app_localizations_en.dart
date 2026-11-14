@@ -168,4 +168,78 @@ class AppLocalizationsEn extends AppLocalizations {
   String hudDistanceKm(String km) {
     return '$km km';
   }
+
+  @override
+  String get countdownCancelHint => 'Tap to cancel';
+
+  @override
+  String countdownLabel(int n) {
+    return 'Countdown $n';
+  }
+
+  @override
+  String get stopConfirmTitle => 'End the trip?';
+
+  @override
+  String get stopConfirmBody => 'Recording continues until you confirm.';
+
+  @override
+  String get stopConfirmEnd => 'End and save';
+
+  @override
+  String get stopConfirmContinue => 'Keep recording';
+
+  @override
+  String get savingTrip => 'Saving...';
+
+  @override
+  String get savingDoNotClose => 'Do not close the app';
+
+  @override
+  String get startFailed => 'Could not start recording. Try again.';
+
+  @override
+  String get summarySaved => 'Your trip is saved';
+
+  @override
+  String get summaryDuration => 'Duration';
+
+  @override
+  String get summaryDistance => 'Distance';
+
+  @override
+  String get summaryVideoSaved => 'The video is saved on your phone';
+
+  @override
+  String get summaryVideoFailed =>
+      'The route is saved but the video could not be saved';
+
+  @override
+  String get summaryInterruptedBackground =>
+      'The trip stopped because the app left the screen. What was recorded is saved.';
+
+  @override
+  String get summaryInterruptedCamera =>
+      'The trip stopped because of a camera error. What was recorded is saved.';
+
+  @override
+  String get summaryInterruptedWrite =>
+      'The trip stopped because of a write error. What was recorded is saved.';
+
+  @override
+  String get summaryInterruptedStorage =>
+      'The trip stopped because storage is low. What was recorded is saved.';
+
+  @override
+  String get summaryInterruptedOther =>
+      'The trip stopped unexpectedly. What was recorded is saved.';
+
+  @override
+  String get summaryNewTrip => 'New trip';
+
+  @override
+  String get summaryViewTrip => 'View trip';
+
+  @override
+  String get summaryLoadError => 'Could not open the trip';
 }

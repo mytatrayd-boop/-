@@ -6,12 +6,16 @@ import '../../features/onboarding_permissions/permissions_controller.dart';
 import '../../features/onboarding_permissions/permissions_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/not_found_screen.dart';
+import '../../features/summary/summary_screen.dart';
 
 class AppRoutes {
   const AppRoutes._();
   static const home = '/';
   static const settings = '/settings';
   static const permissions = '/permissions';
+  static const summary = '/summary';
+  static String summaryFor(String id, {String? reason}) =>
+      '$summary/$id${reason == null ? '' : '?reason=$reason'}';
 }
 
 GoRouter buildRouter({String initialLocation = AppRoutes.home}) => GoRouter(
@@ -21,6 +25,13 @@ GoRouter buildRouter({String initialLocation = AppRoutes.home}) => GoRouter(
     GoRoute(
       path: AppRoutes.settings,
       builder: (_, _) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '${AppRoutes.summary}/:id',
+      builder: (_, st) => SummaryScreen(
+        tripId: st.pathParameters['id']!,
+        reason: st.uri.queryParameters['reason'],
+      ),
     ),
     GoRoute(
       path: AppRoutes.permissions,
