@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../engine/adhan.dart';
 import '../engine/asset_loader.dart';
 import '../engine/prayer.dart';
+import '../engine/qibla.dart';
 import '../engine/schedule.dart';
 import '../engine/arabic.dart';
 import '../engine/settings.dart';
@@ -384,6 +385,12 @@ class SettingsController extends AsyncNotifier<AppState> {
       return LocationResult.failed;
     }
     if (p == null) return LocationResult.denied;
+    return _applyPosition(p, nearLabel);
+  }
+
+  /// يضع [p] مكاناً من «موقعي»: الاسم من geocoding، وإن تعذّر فأقرب مدينة بـ[nearLabel].
+  Future<LocationResult> _applyPosition(({double latitude, double longitude}) p,
+      String Function(String city) nearLabel) async {
     String? name;
     try {
       name = await ref.read(placeGeocoderProvider).placeName(p.latitude, p.longitude);
@@ -397,6 +404,27 @@ class SettingsController extends AsyncNotifier<AppState> {
       id: gpsPlaceId,
     );
     return name == null ? LocationResult.nearest : LocationResult.named;
+  }
+
+  /// أقل مسافة (كم) يتحرّكها المستخدم ليُحدَّث مكانه تلقائياً، فلا تُعاد الحسابات لاهتزاز تقدير الموقع.
+  static const autoLocationMinKm = 3.0;
+
+  /// تحديث صامت للموقع عند فتح التطبيق وكل عودة إليه. فقط إن كان المكان الحالي من «موقعي» (gpsPlaceId)،
+  /// فلا يُلغى مكان اختاره المستخدم بنفسه من القائمة أو البحث. ولا يطلب إذناً أبداً: إن لم يكن ممنوحاً
+  /// مسبقاً (أو خدمة الموقع مطفأة أو تعذّرت القراءة) يبقى المكان كما هو. يعيد true إن تغيّر المكان.
+  Future<bool> refreshMyLocation({required String Function(String city) nearLabel}) async {
+    if (!state.hasValue || _s.cityId != gpsPlaceId) return false;
+    try {
+      if (!await ref.read(locationUpdatesProvider).granted()) return false;
+      final p = await ref.read(locationServiceProvider).currentPosition();
+      if (p == null || !ref.mounted || !state.hasValue) return false;
+      if (distanceKm(_s.latitude, _s.longitude, p.latitude, p.longitude) < autoLocationMinKm) return false;
+      await _applyPosition(p, nearLabel);
+      return true;
+    } catch (e) {
+      debugPrint('auto location: $e');
+      return false;
+    }
   }
 
   /// البحث عن مدينة أو محافظة؛ يرمي عند فشل الاتصال.

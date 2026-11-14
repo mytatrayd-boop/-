@@ -89,11 +89,18 @@ class FakeLocation implements LocationService {
 
 /// تتبّع موقع وهمي: [controller] يرسل المواضع الجديدة.
 class FakeLocationUpdates implements LocationUpdates {
+  FakeLocationUpdates({this.isGranted = true});
+
+  /// هل الإذن ممنوح مسبقاً (للتحديث الصامت).
+  bool isGranted;
   final controller =
       StreamController<({double latitude, double longitude})>.broadcast();
 
   @override
   Stream<({double latitude, double longitude})> updates() => controller.stream;
+
+  @override
+  Future<bool> granted() async => isGranted;
 }
 
 /// حاوية App Group وهمية: [picked] صورة المعرض (لقطة ٧٥٠×١٣٣٤ افتراضياً)، وتحفظ ولا تلمس القرص.

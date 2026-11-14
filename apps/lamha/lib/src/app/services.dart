@@ -117,6 +117,9 @@ class GeolocatorLocationService implements LocationService {
 /// فلا تنكسر الاختبارات التي تنفّذه.
 abstract class LocationUpdates {
   Stream<({double latitude, double longitude})> updates();
+
+  /// هل الموقع مفعّل والإذن ممنوح مسبقاً؟ لا يطلب إذناً ولا يعرض نافذة (للتحديث الصامت عند الفتح).
+  Future<bool> granted();
 }
 
 class GeolocatorLocationUpdates implements LocationUpdates {
@@ -128,6 +131,13 @@ class GeolocatorLocationUpdates implements LocationUpdates {
           distanceFilter: 200,
         ),
       ).map((p) => (latitude: p.latitude, longitude: p.longitude));
+
+  @override
+  Future<bool> granted() async {
+    if (!await Geolocator.isLocationServiceEnabled()) return false;
+    final perm = await Geolocator.checkPermission();
+    return perm == LocationPermission.whileInUse || perm == LocationPermission.always;
+  }
 }
 
 /// اختيار لقطة الخلفية (آيفون) وحفظها في حاوية App Group [appGroupId]
