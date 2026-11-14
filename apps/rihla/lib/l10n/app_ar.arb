@@ -154,5 +154,31 @@
       }
     }
   },
-  "shareLocationOnly": "الرحلة بلا حركة كافية؛ سيُرسل موقعك بدل المسار"
+  "shareLocationOnly": "الرحلة بلا حركة كافية؛ سيُرسل موقعك بدل المسار",
+  "settingsCameraRotation": "تدوير الكاميرا",
+  "settingsCameraRotationHint": "إذا ظهرت الصورة مدارة أو مقلوبة، اختر الزاوية التي تعتدل عندها. تُطبَّق على المعاينة والفيديو معاً وتُحفظ.",
+  "rotationDegreesLabel": "{deg}°",
+  "@rotationDegreesLabel": {
+    "placeholders": {
+      "deg": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraRotationTest": "اختبار الكاميرا",
+  "cameraRotationTestHint": "وجّه الهاتف نحو الأفق وغيّر الزاوية حتى تعتدل الصورة (السماء للأعلى).",
+  "cameraRotationDone": "تم",
+  "cameraRotationOpenFailed": "تعذّر فتح الكاميرا",
+  "cameraDiagTitle": "تشخيص الكاميرا",
+  "cameraDiagHint": "افتح اختبار الكاميرا ثم انسخ هذه القيم وأرسلها لنا.",
+  "cameraDiagSensor": "دوران الحساس (sensorRotation)",
+  "cameraDiagDisplay": "دوران الشاشة (displayRotation)",
+  "cameraDiagCameraX": "دوران CameraX (rotationDegrees)",
+  "cameraDiagComputed": "الدوران المحسوب",
+  "cameraDiagOffset": "الإزاحة",
+  "cameraDiagFinal": "الدوران النهائي",
+  "cameraDiagUnavailable": "غير متاح",
+  "cameraDiagRefresh": "تحديث",
+  "cameraDiagCopy": "نسخ القيم",
+  "cameraDiagCopied": "تم النسخ"
 }

@@ -335,4 +335,40 @@ class PureTest {
         assertTrue(l.contains("sensorRotation=90") && l.contains("displayRotation=1") && l.contains("computedRotation=0"))
         assertTrue(l.contains("src=1280x720") && l.contains("displayed=1280x720") && l.contains("target=1280x720"))
     }
+
+    @Test fun rotationOffsetPureFunction() {
+        assertEquals(270, CameraOrientation.DEFAULT_OFFSET)
+        for (base in listOf(0, 90, 180, 270)) {
+            assertEquals(base, CameraOrientation.applyOffset(base, 0))
+            assertEquals((base + 90) % 360, CameraOrientation.applyOffset(base, 90))
+            assertEquals((base + 180) % 360, CameraOrientation.applyOffset(base, 180))
+            assertEquals((base + 270) % 360, CameraOrientation.applyOffset(base, 270))
+        }
+        // الحالة المرصودة: الحساب ينتج +90 خطأ فالإزاحة الافتراضية 270 تعيدها إلى 0.
+        assertEquals(0, CameraOrientation.applyOffset(90, CameraOrientation.DEFAULT_OFFSET))
+        // تطبيع: سالب/كبير/غير مضاعف.
+        assertEquals(270, CameraOrientation.normalizeOffset(-90))
+        assertEquals(90, CameraOrientation.normalizeOffset(450))
+        assertEquals(90, CameraOrientation.normalizeOffset(100))
+        assertEquals(0, CameraOrientation.normalizeOffset(360))
+    }
+
+    @Test fun offsetSwapsDisplayedSizeAndMatrix() {
+        val st = floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f)
+        for (off in listOf(0, 90, 180, 270)) {
+            val r = CameraOrientation.applyOffset(0, off)
+            val (w, h) = CameraOrientation.displayedSize(1280, 720, r)
+            assertEquals(if (off == 90 || off == 270) 720 else 1280, w)
+            assertEquals(if (off == 90 || off == 270) 1280 else 720, h)
+            assertEquals(
+                LayoutMath.transform(CameraOrientation.textureMatrix(st, r), 0.3f, 0.6f),
+                SamplePath.uv(st, r, CropUv(0f, 1f, 0f, 1f), 0.3f, 0.6f),
+            )
+        }
+    }
+
+    @Test fun orientationLogIncludesOffset() {
+        val l = OrientationLog.line("x", 90, 1, 0, 0, 1280, 720, 1280, 720, 270)
+        assertTrue(l.contains("offset=270") && l.contains("displayed=720x1280"))
+    }
 }

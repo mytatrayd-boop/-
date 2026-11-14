@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rihla/core/geo/geo.dart';
 import 'package:xml/xml.dart';
@@ -117,6 +119,63 @@ void main() {
     test('long path does not overflow the stack', () {
       final big = [for (var i = 0; i < 20000; i++) p(i * 1e-5, (i % 7) * 1e-5)];
       expect(simplifyToCount(big, 5).length, 5);
+    });
+  });
+
+  group('maps link: movement judged by farthest point and path length', () {
+    // حلقة ~1 كم نصف قطرها: بداية = نهاية
+    List<GeoPoint> loop(int n, double r) => [
+      for (var i = 0; i <= n; i++)
+        p(
+          10 + r * math.sin(2 * math.pi * i / n),
+          20 + r * (1 - math.cos(2 * math.pi * i / n)),
+        ),
+    ];
+    test('circular long trip (start == end): directions with waypoints', () {
+      final path = loop(40, 0.005);
+      expect(haversineMeters(path.first, path.last), lessThan(1));
+      final l = buildMapsLink(path)!;
+      expect(l.kind, MapsLinkKind.route);
+      final q = Uri.parse(l.url).queryParameters;
+      expect(q['origin'], q['destination']);
+      expect(q['waypoints']!.split('|').length, 3);
+      expect(q['api'], '1');
+      expect(q['travelmode'], 'driving');
+      expect(l.url.length, lessThanOrEqualTo(2048));
+      expect(l.url, startsWith('https://www.google.com/maps/dir/?api=1&'));
+    });
+    test('circular at any url budget: never origin==destination bare', () {
+      final path = loop(40, 0.005);
+      var sawBare = false;
+      for (var max = 120; max <= 400; max += 10) {
+        final l = buildMapsLink(path, maxLength: max);
+        if (l == null) continue;
+        final q = Uri.parse(l.url).queryParameters;
+        if (q['waypoints'] == null) {
+          sawBare = true;
+          expect(q['origin'], isNot(q['destination']));
+        }
+      }
+      expect(sawBare, isTrue);
+    });
+    test('short wander (< 50 m from start, short path): location', () {
+      final path = [p(10, 20), p(10.0001, 20), p(10, 20.0001), p(10, 20)];
+      expect(hasMovement(path), isFalse);
+      expect(buildMapsLink(path)!.kind, MapsLinkKind.location);
+    });
+    test('identical points: location', () {
+      final path = [for (var i = 0; i < 5; i++) p(10, 20)];
+      expect(buildMapsLink(path)!.kind, MapsLinkKind.location);
+    });
+    test('long straight: route', () {
+      expect(
+        buildMapsLink([p(10, 20), p(10.01, 20)])!.kind,
+        MapsLinkKind.route,
+      );
+    });
+    test('invalid point: no link (share sheet uses same rule)', () {
+      expect(buildMapsLink([p(10, 20), p(95, 20)]), isNull);
+      expect(hasMovement([p(10, 20), p(95, 20)]), isFalse);
     });
   });
 

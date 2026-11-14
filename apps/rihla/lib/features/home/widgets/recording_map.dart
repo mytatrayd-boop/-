@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/geo/bearing.dart';
 import '../../../core/geo/geo_point.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/location/location_source.dart';
@@ -65,6 +66,27 @@ class _RecordingMapState extends State<RecordingMap> {
   bool _ready = false;
   bool _following = true;
   Timer? _recenterTimer;
+  final _bearing = BearingTracker();
+
+  /// دوران الخريطة الحالي (درجات، heading-up: -اتجاه السير).
+  double _rotation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _feedBearing();
+  }
+
+  void _feedBearing() {
+    final f = widget.fix;
+    if (f == null) return;
+    _bearing.update(
+      f.lat,
+      f.lng,
+      headingDeg: f.headingDeg,
+      speedMps: f.speedMps,
+    );
+  }
 
   @override
   void dispose() {
@@ -79,13 +101,36 @@ class _RecordingMapState extends State<RecordingMap> {
   @override
   void didUpdateWidget(RecordingMap old) {
     super.didUpdateWidget(old);
-    if (_following && widget.fix != old.fix) _moveToFix();
+    if (widget.fix != old.fix) {
+      _feedBearing();
+      if (_following) _moveToFix();
+    }
   }
 
+  /// heading-up: تدور الخريطة بـ-اتجاه السير فيكون اتجاهه للأعلى، ويُزاح مركز
+  /// الكاميرا أمام العلامة فتقع العلامة في الثلث السفلي من المنطقة المرئية في
+  /// الفيديو (FEEDBACK 10).
   void _moveToFix() {
     final p = _pos;
     if (p == null || !_ready) return;
-    _controller.move(p, widget.followZoom);
+    final b = _bearing.bearing ?? 0;
+    final size = _controller.camera.nonRotatedSize;
+    var center = p;
+    if (size.x > 0 && size.y > 0 && size.x.isFinite) {
+      final crop = coverCropRectOf(Size(size.x, size.y), widget.videoAspect);
+      final markerY = crop.top + markerTopFraction * crop.height;
+      final ahead = markerY - size.y / 2;
+      final c = shiftAheadPixels(
+        p.latitude,
+        p.longitude,
+        b,
+        ahead,
+        widget.followZoom,
+      );
+      center = LatLng(c.lat, c.lng);
+    }
+    _rotation = -b;
+    _controller.moveAndRotate(center, widget.followZoom, _rotation);
   }
 
   void _onMoved(bool hasGesture) {
@@ -154,8 +199,11 @@ class _RecordingMapState extends State<RecordingMap> {
                       point: pos,
                       width: 36,
                       height: 36,
+                      rotate: true, // يعاكس دوران الخريطة: السهم للأعلى
                       child: _MyLocationMarker(
-                        headingDeg: widget.fix!.headingDeg,
+                        // أثناء التتبع يتجه للأعلى؛ بعد التحريك اليدوي يبيّن
+                        // اتجاه السير نسبةً للخريطة.
+                        headingDeg: (_bearing.bearing ?? 0) + _rotation,
                       ),
                     ),
                   ],
@@ -258,8 +306,8 @@ class MapAttribution extends StatelessWidget {
 }
 
 class _MyLocationMarker extends StatelessWidget {
-  const _MyLocationMarker({this.headingDeg});
-  final double? headingDeg;
+  const _MyLocationMarker({required this.headingDeg});
+  final double headingDeg;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -268,12 +316,10 @@ class _MyLocationMarker extends StatelessWidget {
       shape: BoxShape.circle,
       border: Border.all(color: AppColors.ink, width: 3),
     ),
-    child: headingDeg == null
-        ? null
-        : Transform.rotate(
-            angle: headingDeg! * math.pi / 180,
-            child: const Icon(Icons.navigation, size: 20, color: AppColors.ink),
-          ),
+    child: Transform.rotate(
+      angle: headingDeg * math.pi / 180,
+      child: const Icon(Icons.navigation, size: 20, color: AppColors.ink),
+    ),
   );
 }
 

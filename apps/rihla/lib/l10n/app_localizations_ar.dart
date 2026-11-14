@@ -383,4 +383,66 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get shareLocationOnly =>
       'الرحلة بلا حركة كافية؛ سيُرسل موقعك بدل المسار';
+
+  @override
+  String get settingsCameraRotation => 'تدوير الكاميرا';
+
+  @override
+  String get settingsCameraRotationHint =>
+      'إذا ظهرت الصورة مدارة أو مقلوبة، اختر الزاوية التي تعتدل عندها. تُطبَّق على المعاينة والفيديو معاً وتُحفظ.';
+
+  @override
+  String rotationDegreesLabel(int deg) {
+    return '$deg°';
+  }
+
+  @override
+  String get cameraRotationTest => 'اختبار الكاميرا';
+
+  @override
+  String get cameraRotationTestHint =>
+      'وجّه الهاتف نحو الأفق وغيّر الزاوية حتى تعتدل الصورة (السماء للأعلى).';
+
+  @override
+  String get cameraRotationDone => 'تم';
+
+  @override
+  String get cameraRotationOpenFailed => 'تعذّر فتح الكاميرا';
+
+  @override
+  String get cameraDiagTitle => 'تشخيص الكاميرا';
+
+  @override
+  String get cameraDiagHint =>
+      'افتح اختبار الكاميرا ثم انسخ هذه القيم وأرسلها لنا.';
+
+  @override
+  String get cameraDiagSensor => 'دوران الحساس (sensorRotation)';
+
+  @override
+  String get cameraDiagDisplay => 'دوران الشاشة (displayRotation)';
+
+  @override
+  String get cameraDiagCameraX => 'دوران CameraX (rotationDegrees)';
+
+  @override
+  String get cameraDiagComputed => 'الدوران المحسوب';
+
+  @override
+  String get cameraDiagOffset => 'الإزاحة';
+
+  @override
+  String get cameraDiagFinal => 'الدوران النهائي';
+
+  @override
+  String get cameraDiagUnavailable => 'غير متاح';
+
+  @override
+  String get cameraDiagRefresh => 'تحديث';
+
+  @override
+  String get cameraDiagCopy => 'نسخ القيم';
+
+  @override
+  String get cameraDiagCopied => 'تم النسخ';
 }

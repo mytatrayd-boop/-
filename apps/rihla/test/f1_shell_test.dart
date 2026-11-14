@@ -66,7 +66,7 @@ void main() {
       final s = loc == 'ar' ? ar : en;
       await t.tap(find.byTooltip(s.settingsTitle));
       await t.pumpAndSettle();
-      expect(find.text(s.settingsEmpty), findsOneWidget);
+      expect(find.text(s.settingsCameraRotation), findsOneWidget);
       expect(t.takeException(), isNull);
       await t.tap(find.byType(BackButton));
       await t.pumpAndSettle();

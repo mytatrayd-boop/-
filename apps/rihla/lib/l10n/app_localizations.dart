@@ -799,6 +799,120 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الرحلة بلا حركة كافية؛ سيُرسل موقعك بدل المسار'**
   String get shareLocationOnly;
+
+  /// No description provided for @settingsCameraRotation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تدوير الكاميرا'**
+  String get settingsCameraRotation;
+
+  /// No description provided for @settingsCameraRotationHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'إذا ظهرت الصورة مدارة أو مقلوبة، اختر الزاوية التي تعتدل عندها. تُطبَّق على المعاينة والفيديو معاً وتُحفظ.'**
+  String get settingsCameraRotationHint;
+
+  /// No description provided for @rotationDegreesLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'{deg}°'**
+  String rotationDegreesLabel(int deg);
+
+  /// No description provided for @cameraRotationTest.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبار الكاميرا'**
+  String get cameraRotationTest;
+
+  /// No description provided for @cameraRotationTestHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجّه الهاتف نحو الأفق وغيّر الزاوية حتى تعتدل الصورة (السماء للأعلى).'**
+  String get cameraRotationTestHint;
+
+  /// No description provided for @cameraRotationDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get cameraRotationDone;
+
+  /// No description provided for @cameraRotationOpenFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح الكاميرا'**
+  String get cameraRotationOpenFailed;
+
+  /// No description provided for @cameraDiagTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشخيص الكاميرا'**
+  String get cameraDiagTitle;
+
+  /// No description provided for @cameraDiagHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح اختبار الكاميرا ثم انسخ هذه القيم وأرسلها لنا.'**
+  String get cameraDiagHint;
+
+  /// No description provided for @cameraDiagSensor.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوران الحساس (sensorRotation)'**
+  String get cameraDiagSensor;
+
+  /// No description provided for @cameraDiagDisplay.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوران الشاشة (displayRotation)'**
+  String get cameraDiagDisplay;
+
+  /// No description provided for @cameraDiagCameraX.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوران CameraX (rotationDegrees)'**
+  String get cameraDiagCameraX;
+
+  /// No description provided for @cameraDiagComputed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدوران المحسوب'**
+  String get cameraDiagComputed;
+
+  /// No description provided for @cameraDiagOffset.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإزاحة'**
+  String get cameraDiagOffset;
+
+  /// No description provided for @cameraDiagFinal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدوران النهائي'**
+  String get cameraDiagFinal;
+
+  /// No description provided for @cameraDiagUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متاح'**
+  String get cameraDiagUnavailable;
+
+  /// No description provided for @cameraDiagRefresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث'**
+  String get cameraDiagRefresh;
+
+  /// No description provided for @cameraDiagCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ القيم'**
+  String get cameraDiagCopy;
+
+  /// No description provided for @cameraDiagCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم النسخ'**
+  String get cameraDiagCopied;
 }
 
 class _AppLocalizationsDelegate

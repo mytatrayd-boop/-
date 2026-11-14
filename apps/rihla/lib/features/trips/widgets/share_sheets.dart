@@ -233,7 +233,7 @@ class _RouteShareSheetState extends ConsumerState<_RouteShareSheet> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final th = Theme.of(context).textTheme;
-    final hasRoute = widget.points.where((p) => p.isValid).isNotEmpty;
+    final hasRoute = buildMapsLink(widget.points) != null;
     final locationOnly =
         buildMapsLink(widget.points)?.kind == MapsLinkKind.location;
     final name =

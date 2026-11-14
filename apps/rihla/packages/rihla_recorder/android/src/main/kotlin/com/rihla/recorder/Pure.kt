@@ -122,6 +122,15 @@ object CameraOrientation {
         return ((Math.round(raw / 90.0).toInt() * 90) % 360 + 360) % 360
     }
 
+    /** الإزاحة الافتراضية (مؤقتة، DECISIONS): 270 = عكس عقارب الساعة 90، تصحح ما رُصد على جهاز المالك. */
+    const val DEFAULT_OFFSET = 270
+
+    /** يقرّب الإزاحة لمضاعف 90 ضمن 0..270 (أي قيمة غير صالحة تعطي 0). */
+    fun normalizeOffset(deg: Int): Int = ((Math.round(deg / 90.0).toInt() * 90) % 360 + 360) % 360
+
+    /** الدوران النهائي = الحساب الأساسي + إزاحة المستخدم (مع عقارب الساعة)، مطبَّعاً. */
+    fun applyOffset(base: Int, offset: Int): Int = ((base + normalizeOffset(offset)) % 360 + 360) % 360
+
     /** قيمة CameraSelector.LENS_FACING_FRONT (0)؛ غير المعروف يُعامل خلفياً (الافتراضي في التطبيق). */
     const val LENS_FACING_FRONT = 0
     fun isBackFacing(lensFacing: Int?): Boolean = lensFacing != LENS_FACING_FRONT
@@ -152,11 +161,11 @@ object OrientationLog {
     const val TAG = "rihla"
     fun line(
         event: String, sensor: Int?, displayRot: Int?, cameraX: Int?, computed: Int?,
-        srcW: Int, srcH: Int, dstW: Int, dstH: Int,
+        srcW: Int, srcH: Int, dstW: Int, dstH: Int, offset: Int = 0,
     ): String {
-        val (dw, dh) = CameraOrientation.displayedSize(srcW, srcH, computed ?: 0)
+        val (dw, dh) = CameraOrientation.displayedSize(srcW, srcH, CameraOrientation.applyOffset(computed ?: 0, offset))
         return "orientation[$event] sensorRotation=$sensor displayRotation=$displayRot " +
-            "cameraXRotationDegrees=$cameraX computedRotation=$computed src=${srcW}x$srcH " +
+            "cameraXRotationDegrees=$cameraX computedRotation=$computed offset=$offset src=${srcW}x$srcH " +
             "displayed=${dw}x$dh target=${dstW}x$dstH"
     }
 }

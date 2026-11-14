@@ -390,4 +390,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get shareLocationOnly =>
       'The trip has too little movement; your location will be sent instead of the route';
+
+  @override
+  String get settingsCameraRotation => 'Camera rotation';
+
+  @override
+  String get settingsCameraRotationHint =>
+      'If the picture looks rotated or upside down, pick the angle that makes it level. It applies to both the preview and the video, and is saved.';
+
+  @override
+  String rotationDegreesLabel(int deg) {
+    return '$deg°';
+  }
+
+  @override
+  String get cameraRotationTest => 'Test camera';
+
+  @override
+  String get cameraRotationTestHint =>
+      'Point the phone at the horizon and change the angle until the picture is upright (sky on top).';
+
+  @override
+  String get cameraRotationDone => 'Done';
+
+  @override
+  String get cameraRotationOpenFailed => 'Could not open the camera';
+
+  @override
+  String get cameraDiagTitle => 'Camera diagnostics';
+
+  @override
+  String get cameraDiagHint =>
+      'Open the camera test, then copy these values and send them to us.';
+
+  @override
+  String get cameraDiagSensor => 'Sensor rotation (sensorRotation)';
+
+  @override
+  String get cameraDiagDisplay => 'Display rotation (displayRotation)';
+
+  @override
+  String get cameraDiagCameraX => 'CameraX rotation (rotationDegrees)';
+
+  @override
+  String get cameraDiagComputed => 'Computed rotation';
+
+  @override
+  String get cameraDiagOffset => 'Offset';
+
+  @override
+  String get cameraDiagFinal => 'Final rotation';
+
+  @override
+  String get cameraDiagUnavailable => 'Not available';
+
+  @override
+  String get cameraDiagRefresh => 'Refresh';
+
+  @override
+  String get cameraDiagCopy => 'Copy values';
+
+  @override
+  String get cameraDiagCopied => 'Copied';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rihla/data/camera/camera_preview_source.dart';
+import 'package:rihla/data/settings/camera_rotation_store.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 
 void main() {
@@ -8,7 +9,11 @@ void main() {
     t,
   ) async {
     final rec = FakeRihlaRecorder();
-    final src = NativeCameraPreviewSource(rec, quality: RecorderQuality.p1080);
+    final src = NativeCameraPreviewSource(
+      rec,
+      quality: RecorderQuality.p1080,
+      rotationStore: MemoryCameraRotationStore(),
+    );
     await src.open();
     expect(rec.cameraOpen, isTrue);
     expect(rec.openedQuality, RecorderQuality.p1080);
@@ -35,18 +40,27 @@ void main() {
       openFailure: const RecorderException('camera_unavailable', 'busy'),
     );
     expect(
-      NativeCameraPreviewSource(rec).open(),
+      NativeCameraPreviewSource(
+        rec,
+        rotationStore: MemoryCameraRotationStore(),
+      ).open(),
       throwsA(isA<CameraOpenException>()),
     );
   });
 
   test('بدون إضافة أصلية (Linux) يفشل open بصدق', () async {
-    final src = NativeCameraPreviewSource(MethodChannelRihlaRecorder());
+    final src = NativeCameraPreviewSource(
+      MethodChannelRihlaRecorder(),
+      rotationStore: MemoryCameraRotationStore(),
+    );
     expect(src.open(), throwsA(isA<CameraOpenException>()));
   });
 
   testWidgets('قبل open لا شيء يُعرض', (t) async {
-    final src = NativeCameraPreviewSource(FakeRihlaRecorder());
+    final src = NativeCameraPreviewSource(
+      FakeRihlaRecorder(),
+      rotationStore: MemoryCameraRotationStore(),
+    );
     await t.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,

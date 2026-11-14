@@ -48,6 +48,51 @@ class StorageInfo {
   Duration get remaining => Duration(seconds: bytesPerSecond == 0 ? 0 : freeBytes ~/ bytesPerSecond);
 }
 
+/// قيم تشخيص الدوران من الجانب الأصلي (تظهر في الإعدادات بلا adb). null = غير متاحة بعد.
+class OrientationInfo {
+  const OrientationInfo({
+    this.sensorRotation,
+    this.displayRotation,
+    this.rotationDegrees,
+    this.computedRotation,
+    this.offset = defaultRotationOffset,
+    this.finalRotation,
+    this.cameraOpen = false,
+  });
+
+  /// إزاحة «تدوير الكاميرا» الافتراضية (مع عقارب الساعة): 270 = عكس عقارب الساعة 90 (قرار مؤقت، DECISIONS).
+  static const defaultRotationOffset = 270;
+
+  final int? sensorRotation;
+  final int? displayRotation;
+  final int? rotationDegrees;
+  final int? computedRotation;
+  final int offset;
+  final int? finalRotation;
+
+  /// هل الكاميرا مفتوحة الآن (قد تكون شاشة التسجيل تحتها).
+  final bool cameraOpen;
+
+  factory OrientationInfo.fromMap(Map<Object?, Object?> m) {
+    int? n(String k) => (m[k] as num?)?.toInt();
+    return OrientationInfo(
+      sensorRotation: n('sensorRotation'),
+      displayRotation: n('displayRotation'),
+      rotationDegrees: n('rotationDegrees'),
+      computedRotation: n('computedRotation'),
+      offset: n('offset') ?? defaultRotationOffset,
+      finalRotation: n('finalRotation'),
+      cameraOpen: m['cameraOpen'] as bool? ?? false,
+    );
+  }
+
+  /// نص قابل للنسخ.
+  String toText() =>
+      'sensorRotation=$sensorRotation displayRotation=$displayRotation '
+      'rotationDegrees=$rotationDegrees computedRotation=$computedRotation '
+      'offset=$offset finalRotation=$finalRotation';
+}
+
 class RecordingConfig {
   const RecordingConfig({
     this.quality = RecorderQuality.p720,
@@ -55,8 +100,12 @@ class RecordingConfig {
     this.segmentSeconds = 60,
     this.warnFreeBytes = 1 << 30,
     this.stopFreeBytes = 300 << 20,
+    this.rotationOffset,
   });
   final RecorderQuality quality;
+
+  /// إزاحة تدوير الكاميرا (0/90/180/270) تُمرَّر عند start؛ null = تبقى القيمة المضبوطة سابقاً.
+  final int? rotationOffset;
   final bool muted;
 
   /// طول مقطع الحماية (يُغلق كل مقطع بسليم فلا يضيع ما قبله إن قُتلت العملية).
@@ -115,6 +164,13 @@ class LowStorageWarning extends RecorderEvent {
   final int freeBytes;
 }
 
+/// أبعاد المعاينة المعروضة تغيّرت (دوران 90/270 يبدّل العرض والارتفاع).
+class PreviewSizeChanged extends RecorderEvent {
+  const PreviewSizeChanged(this.width, this.height);
+  final int width;
+  final int height;
+}
+
 class CameraFailed extends RecorderEvent {
   const CameraFailed(this.reason);
   final String? reason;
@@ -131,6 +187,12 @@ abstract class RihlaRecorder {
   /// يفتح الكاميرا الخلفية ويعيد نسيج المعاينة. يرمي [RecorderException].
   Future<CameraInfo> openCamera({RecorderQuality quality = RecorderQuality.p720});
   Future<void> closeCamera();
+
+  /// يضبط إزاحة «تدوير الكاميرا» (مع عقارب الساعة، مضاعفات 90) فوق الحساب، للمعاينة والفيديو معاً.
+  Future<void> setRotationOffset(int degrees);
+
+  /// قيم تشخيص الدوران (sensor/display/rotationDegrees/المحسوب/الإزاحة).
+  Future<OrientationInfo> getOrientationInfo();
 
   /// يبدأ التسجيل (الكاميرا مفتوحة). يعيد هل الميكروفون متاح.
   Future<bool> start(RecordingConfig config);
@@ -192,8 +254,18 @@ class MethodChannelRihlaRecorder implements RihlaRecorder {
       'segmentSeconds': c.segmentSeconds,
       'warnFreeBytes': c.warnFreeBytes,
       'stopFreeBytes': c.stopFreeBytes,
+      if (c.rotationOffset != null) 'rotationOffset': c.rotationOffset,
     });
     return r?['micAvailable'] as bool? ?? false;
+  }
+
+  @override
+  Future<void> setRotationOffset(int degrees) => _call<void>('setRotationOffset', {'degrees': degrees});
+
+  @override
+  Future<OrientationInfo> getOrientationInfo() async {
+    final r = await _call<Map<Object?, Object?>>('getOrientationInfo');
+    return r == null ? const OrientationInfo() : OrientationInfo.fromMap(r);
   }
 
   @override
@@ -256,6 +328,8 @@ class MethodChannelRihlaRecorder implements RihlaRecorder {
         return StorageUpdate((raw['freeBytes']! as num).toInt());
       case 'lowStorageWarning':
         return LowStorageWarning((raw['freeBytes']! as num).toInt());
+      case 'previewSize':
+        return PreviewSizeChanged((raw['width']! as num).toInt(), (raw['height']! as num).toInt());
       case 'cameraError':
         return CameraFailed(raw['reason'] as String?);
       case 'error':
@@ -276,6 +350,8 @@ class FakeRihlaRecorder implements RihlaRecorder {
   bool muted = false;
   RecorderQuality? openedQuality;
   RecordingConfig? lastConfig;
+  int rotationOffset = OrientationInfo.defaultRotationOffset;
+  final List<int> rotationOffsetCalls = [];
   final List<RgbaFrame> mapFrames = [];
   final _events = StreamController<RecorderEvent>.broadcast();
   int _n = 0;
@@ -298,9 +374,27 @@ class FakeRihlaRecorder implements RihlaRecorder {
     if (recording) throw const RecorderException('already_recording');
     recording = true;
     lastConfig = config;
+    if (config.rotationOffset != null) rotationOffset = config.rotationOffset!;
     muted = config.muted;
     return true;
   }
+
+  @override
+  Future<void> setRotationOffset(int degrees) async {
+    rotationOffset = degrees;
+    rotationOffsetCalls.add(degrees);
+  }
+
+  @override
+  Future<OrientationInfo> getOrientationInfo() async => OrientationInfo(
+    sensorRotation: 90,
+    displayRotation: 90,
+    rotationDegrees: 0,
+    computedRotation: 0,
+    offset: rotationOffset,
+    finalRotation: rotationOffset % 360,
+    cameraOpen: cameraOpen,
+  );
 
   @override
   Future<RecordingResult> stop() async {

@@ -150,6 +150,13 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
         when (call.method) {
             "openCamera" -> openCamera(QualityProfile.fromKey(call.argument("quality")), result)
             "closeCamera" -> closeCamera(result)
+            "setRotationOffset" -> {
+                rotationOffset = CameraOrientation.normalizeOffset(call.argument<Number>("degrees")?.toInt() ?: CameraOrientation.DEFAULT_OFFSET)
+                currentRotation()?.let { renderer?.setRotation(it) }
+                logOrientation("offsetChanged")
+                result.success(null)
+            }
+            "getOrientationInfo" -> result.success(orientationInfo())
             "start" -> startRecording(call, result)
             "stop" -> stopRequested(result)
             "setMuted" -> { session?.muted = call.argument<Boolean>("muted") == true; result.success(null) }
@@ -188,8 +195,10 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
             try {
                 ensureRenderer()
                 val size = bindAndAwait()
+                // الأبعاد المعروضة (بعد الدوران) كي لا تتمدد المعاينة؛ التغيرات اللاحقة عبر حدث previewSize.
+                val (dw, dh) = CameraOrientation.displayedSize(size.width, size.height, currentRotation() ?: 0)
                 main.post {
-                    result.success(mapOf("textureId" to producer!!.id(), "width" to size.width, "height" to size.height))
+                    result.success(mapOf("textureId" to producer!!.id(), "width" to dw, "height" to dh))
                 }
             } catch (t: Throwable) {
                 Log.e(TAG, "openCamera failed", t)
@@ -271,6 +280,7 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
                         // المعاينة بأبعاد الصورة بعد الدوران كي لا تتمدد.
                         val (w, h) = CameraOrientation.displayedSize(camSize.width, camSize.height, rot)
                         main.post { producer?.setSize(w, h) }
+                        emit(mapOf("type" to "previewSize", "width" to w, "height" to h))
                         logOrientation("rotationChanged")
                     }
                     r.setRotation(currentRotation() ?: 0)
@@ -368,8 +378,8 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
             Log.i(
                 OrientationLog.TAG,
                 OrientationLog.line(
-                    event, info?.sensorRotationDegrees, disp, cameraXRotation, currentRotation(),
-                    camSize.width, camSize.height, quality.width, quality.height,
+                    event, info?.sensorRotationDegrees, disp, cameraXRotation, baseRotation(),
+                    camSize.width, camSize.height, quality.width, quality.height, rotationOffset,
                 ),
             )
         }
@@ -377,12 +387,36 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
 
     @Volatile private var cameraXRotation: Int? = null
 
+    /** إزاحة «تدوير الكاميرا» من الإعدادات (مع عقارب الساعة)، تُطبَّق فوق الحساب للمعاينة والفيديو معاً. */
+    @Volatile private var rotationOffset = CameraOrientation.DEFAULT_OFFSET
+
+    private fun baseRotation(): Int? {
+        val sensor = boundCamera?.cameraInfo?.sensorRotationDegrees
+        val disp = if (activity != null) displayRotation() else null
+        val back = CameraOrientation.isBackFacing(boundCamera?.cameraInfo?.lensFacing)
+        return CameraOrientation.resolve(sensor, disp, cameraXRotation, back)
+    }
+
+    /** تشخيص يظهر للمستخدم في الإعدادات (بلا adb). القيم null حين تغيب الكاميرا/النشاط. */
+    private fun orientationInfo(): Map<String, Any?> {
+        val base = if (boundCamera != null) baseRotation() else null
+        return mapOf(
+            "sensorRotation" to boundCamera?.cameraInfo?.sensorRotationDegrees,
+            "displayRotation" to if (activity != null) CameraOrientation.displayDegrees(displayRotation()) else null,
+            "rotationDegrees" to cameraXRotation,
+            "computedRotation" to base,
+            "offset" to rotationOffset,
+            "cameraOpen" to cameraWanted,
+            "finalRotation" to base?.let { CameraOrientation.applyOffset(it, rotationOffset) },
+        )
+    }
+
     /** الدوران الحالي: الحساس + اتجاه الشاشة الفعلي (الأول)، وإلا rotationDegrees من CameraX. */
     private fun currentRotation(): Int? {
         val sensor = boundCamera?.cameraInfo?.sensorRotationDegrees
         val disp = if (activity != null) displayRotation() else null
         val back = CameraOrientation.isBackFacing(boundCamera?.cameraInfo?.lensFacing)
-        return CameraOrientation.resolve(sensor, disp, cameraXRotation, back)
+        return CameraOrientation.applyOffset(CameraOrientation.resolve(sensor, disp, cameraXRotation, back), rotationOffset)
     }
 
     // ---- التسجيل ----
@@ -393,6 +427,10 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
         if (r == null || !cameraWanted) return result.error("camera_not_open", null, null)
         if (session != null) return result.error("already_recording", null, null)
         val q = QualityProfile.fromKey(call.argument("quality"))
+        call.argument<Number>("rotationOffset")?.let {
+            rotationOffset = CameraOrientation.normalizeOffset(it.toInt())
+            currentRotation()?.let { rot -> r.setRotation(rot) }
+        }
         val muted = call.argument<Boolean>("muted") == true
         val segSec = (call.argument<Int>("segmentSeconds") ?: 60).coerceIn(5, 600)
         warnBytes = call.argument<Number>("warnFreeBytes")?.toLong() ?: warnBytes

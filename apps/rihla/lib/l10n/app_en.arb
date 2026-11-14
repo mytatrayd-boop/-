@@ -154,5 +154,31 @@
       }
     }
   },
-  "shareLocationOnly": "The trip has too little movement; your location will be sent instead of the route"
+  "shareLocationOnly": "The trip has too little movement; your location will be sent instead of the route",
+  "settingsCameraRotation": "Camera rotation",
+  "settingsCameraRotationHint": "If the picture looks rotated or upside down, pick the angle that makes it level. It applies to both the preview and the video, and is saved.",
+  "rotationDegreesLabel": "{deg}°",
+  "@rotationDegreesLabel": {
+    "placeholders": {
+      "deg": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraRotationTest": "Test camera",
+  "cameraRotationTestHint": "Point the phone at the horizon and change the angle until the picture is upright (sky on top).",
+  "cameraRotationDone": "Done",
+  "cameraRotationOpenFailed": "Could not open the camera",
+  "cameraDiagTitle": "Camera diagnostics",
+  "cameraDiagHint": "Open the camera test, then copy these values and send them to us.",
+  "cameraDiagSensor": "Sensor rotation (sensorRotation)",
+  "cameraDiagDisplay": "Display rotation (displayRotation)",
+  "cameraDiagCameraX": "CameraX rotation (rotationDegrees)",
+  "cameraDiagComputed": "Computed rotation",
+  "cameraDiagOffset": "Offset",
+  "cameraDiagFinal": "Final rotation",
+  "cameraDiagUnavailable": "Not available",
+  "cameraDiagRefresh": "Refresh",
+  "cameraDiagCopy": "Copy values",
+  "cameraDiagCopied": "Copied"
 }
