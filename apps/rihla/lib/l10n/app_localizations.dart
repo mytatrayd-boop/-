@@ -151,6 +151,144 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لم نجد هذه الصفحة. ارجع إلى الشاشة الرئيسية وأعد المحاولة.'**
   String get notFoundBody;
+
+  /// No description provided for @permTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأذونات'**
+  String get permTitle;
+
+  /// No description provided for @permStepOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخطوة {n} من {total}'**
+  String permStepOf(int n, int total);
+
+  /// No description provided for @permCameraTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكاميرا'**
+  String get permCameraTitle;
+
+  /// No description provided for @permCameraReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'لتصوير طريقك.'**
+  String get permCameraReason;
+
+  /// No description provided for @permLocationTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع'**
+  String get permLocationTitle;
+
+  /// No description provided for @permLocationReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'لرسم مسارك على الخريطة وحسابه.'**
+  String get permLocationReason;
+
+  /// No description provided for @permMicTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميكروفون'**
+  String get permMicTitle;
+
+  /// No description provided for @permMicReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'لتسجيل صوت الرحلة (اختياري ويمكنك كتمه).'**
+  String get permMicReason;
+
+  /// No description provided for @permPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل شيء يبقى على جوالك. لا حسابات ولا رفع.'**
+  String get permPrivacy;
+
+  /// No description provided for @permAllow.
+  ///
+  /// In ar, this message translates to:
+  /// **'السماح'**
+  String get permAllow;
+
+  /// No description provided for @permNotNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس الآن'**
+  String get permNotNow;
+
+  /// No description provided for @permGranted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم السماح'**
+  String get permGranted;
+
+  /// No description provided for @permCameraDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'لن تعمل الرحلة بدون الكاميرا.'**
+  String get permCameraDenied;
+
+  /// No description provided for @permLocationDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'لن يُرسم المسار بدون الموقع، ولن تعمل الرحلة.'**
+  String get permLocationDenied;
+
+  /// No description provided for @permMicDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُسجَّل الفيديو بلا صوت.'**
+  String get permMicDenied;
+
+  /// No description provided for @permPermanentHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن طلب الإذن من التطبيق مرة أخرى. فعّله من إعدادات الجوال.'**
+  String get permPermanentHint;
+
+  /// No description provided for @permLocationApproximate.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع التقريبي لا يكفي. المسار يحتاج الدقة الكاملة؛ فعّل الموقع الدقيق من إعدادات الجوال.'**
+  String get permLocationApproximate;
+
+  /// No description provided for @permOpenPhoneSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح إعدادات الجوال'**
+  String get permOpenPhoneSettings;
+
+  /// No description provided for @permRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get permRetry;
+
+  /// No description provided for @permContinueNoAudio.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة بلا صوت'**
+  String get permContinueNoAudio;
+
+  /// No description provided for @permAudioUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت غير متاح'**
+  String get permAudioUnavailable;
+
+  /// No description provided for @permStartBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'امنح الكاميرا والموقع لبدء الرحلة.'**
+  String get permStartBlocked;
+
+  /// No description provided for @permIllustration.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسم توضيحي لإذن {name}'**
+  String permIllustration(String name);
 }
 
 class _AppLocalizationsDelegate

@@ -8,5 +8,45 @@
   "openSettings": "فتح الإعدادات",
   "backToHome": "رجوع إلى الرئيسية",
   "notFoundTitle": "الصفحة غير موجودة",
-  "notFoundBody": "لم نجد هذه الصفحة. ارجع إلى الشاشة الرئيسية وأعد المحاولة."
+  "notFoundBody": "لم نجد هذه الصفحة. ارجع إلى الشاشة الرئيسية وأعد المحاولة.",
+  "permTitle": "الأذونات",
+  "permStepOf": "الخطوة {n} من {total}",
+  "@permStepOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "permCameraTitle": "الكاميرا",
+  "permCameraReason": "لتصوير طريقك.",
+  "permLocationTitle": "الموقع",
+  "permLocationReason": "لرسم مسارك على الخريطة وحسابه.",
+  "permMicTitle": "الميكروفون",
+  "permMicReason": "لتسجيل صوت الرحلة (اختياري ويمكنك كتمه).",
+  "permPrivacy": "كل شيء يبقى على جوالك. لا حسابات ولا رفع.",
+  "permAllow": "السماح",
+  "permNotNow": "ليس الآن",
+  "permGranted": "تم السماح",
+  "permCameraDenied": "لن تعمل الرحلة بدون الكاميرا.",
+  "permLocationDenied": "لن يُرسم المسار بدون الموقع، ولن تعمل الرحلة.",
+  "permMicDenied": "سيُسجَّل الفيديو بلا صوت.",
+  "permPermanentHint": "لا يمكن طلب الإذن من التطبيق مرة أخرى. فعّله من إعدادات الجوال.",
+  "permLocationApproximate": "الموقع التقريبي لا يكفي. المسار يحتاج الدقة الكاملة؛ فعّل الموقع الدقيق من إعدادات الجوال.",
+  "permOpenPhoneSettings": "فتح إعدادات الجوال",
+  "permRetry": "إعادة المحاولة",
+  "permContinueNoAudio": "متابعة بلا صوت",
+  "permAudioUnavailable": "الصوت غير متاح",
+  "permStartBlocked": "امنح الكاميرا والموقع لبدء الرحلة.",
+  "permIllustration": "رسم توضيحي لإذن {name}",
+  "@permIllustration": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

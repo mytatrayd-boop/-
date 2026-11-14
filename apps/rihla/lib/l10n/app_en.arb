@@ -8,5 +8,45 @@
   "openSettings": "Open settings",
   "backToHome": "Back to home",
   "notFoundTitle": "Page not found",
-  "notFoundBody": "We could not find this page. Go back to the home screen and try again."
+  "notFoundBody": "We could not find this page. Go back to the home screen and try again.",
+  "permTitle": "Permissions",
+  "permStepOf": "Step {n} of {total}",
+  "@permStepOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "permCameraTitle": "Camera",
+  "permCameraReason": "To film your road.",
+  "permLocationTitle": "Location",
+  "permLocationReason": "To draw and measure your route on the map.",
+  "permMicTitle": "Microphone",
+  "permMicReason": "To record the trip's sound (optional, and you can mute it).",
+  "permPrivacy": "Everything stays on your phone. No accounts, no uploads.",
+  "permAllow": "Allow",
+  "permNotNow": "Not now",
+  "permGranted": "Allowed",
+  "permCameraDenied": "The trip will not work without the camera.",
+  "permLocationDenied": "The route cannot be drawn without location, so the trip will not work.",
+  "permMicDenied": "The video will be recorded without sound.",
+  "permPermanentHint": "The app can no longer ask for this permission. Enable it in your phone settings.",
+  "permLocationApproximate": "Approximate location is not enough. The route needs precise location; turn it on in your phone settings.",
+  "permOpenPhoneSettings": "Open phone settings",
+  "permRetry": "Try again",
+  "permContinueNoAudio": "Continue without sound",
+  "permAudioUnavailable": "Audio unavailable",
+  "permStartBlocked": "Allow camera and location to start a trip.",
+  "permIllustration": "Illustration for the {name} permission",
+  "@permIllustration": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

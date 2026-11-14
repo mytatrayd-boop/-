@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- F4: أذونات التصوير والمسار والصوت فقط. لا موقع خلفي ولا تخزين. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="rihla"
         android:name="${applicationName}"

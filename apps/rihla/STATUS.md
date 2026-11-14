@@ -1,5 +1,20 @@
 # STATUS — رحلة
 
+## F4 الأذونات (2026-11-14): منجز على المضيف، الطلب الفعلي لم يُختبر
+
+### المنجز
+- واجهة PermissionService (lib/data/permissions) + PermissionHandlerService (permission_handler ^13.0.2، حزمة مذكورة في ARCHITECTURE 2) + FakePermissionService للاختبار.
+- lib/features/onboarding_permissions: PermissionsController (Riverpod) وPermissionsScreen: 3 خطوات (كاميرا، موقع، ميكروفون) بشرح قبل الطلب، حالات: ممنوح، مرفوض (إعادة محاولة + فتح الإعدادات)، رفض دائم (الإعدادات فقط)، موقع تقريبي (إعدادات)، ميكروفون مرفوض (شريحة "الصوت غير متاح" ومتابعة بلا صوت)، إعادة الفحص عند العودة من الإعدادات. canStartRecording = كاميرا + موقع دقيق. تخطيط أفقي بعمودين. مسار /permissions. نصوص عربي/إنجليزي في ARB. AndroidManifest (CAMERA، RECORD_AUDIO، ACCESS_FINE_LOCATION) وInfo.plist (3 نصوص ثنائية اللغة في نص واحد).
+- `flutter analyze`: بلا ملاحظات. `flutter test`: 66 ناجحاً (13 جديداً في test/features/onboarding_permissions). نسخة نظيفة من الملفات المتتبَّعة (git ls-files -co) نجح فيها pub get وanalyze وtest. git check-ignore لا يُرجع شيئاً للمجلدات الجديدة.
+
+### لم يُختبر / تحفظات
+- نافذة طلب النظام الحقيقية، فتح إعدادات الجوال، وقراءة الحالات الحقيقية: لم تُجرَّب على جهاز (الاختبارات بالنسخة المزيّفة فقط).
+- "الموقع التقريبي فقط": الواجهة تدعمه، لكن PermissionHandlerService لا يكشفه بعد (يحتاج geolocator/استعلاماً أصلياً)؛ لا يُعتمد عليه قبل F5.
+- iOS: permission_handler يتطلب ماكرو PERMISSION_CAMERA/LOCATION/MICROPHONE=1 في ios/Podfile وإلا يُعطَّل الإذن؛ لا Podfile في المستودع (يُولَّد على macOS) فيُضاف عند أول بناء iOS (F0ب).
+- نصوص iOS الثنائية في Info.plist نص واحد (عربي / إنجليزي)، لا InfoPlist.strings مترجمة لكل لغة (تحتاج تسجيلاً في Xcode).
+- لم تُربط الشاشة بالتدفق: الرئيسية لا تحوّل إلى /permissions ولا تعطّل البدء بعد (زر البدء في F5)؛ provider جاهز (permissionsProvider.canStartRecording). لا عرض إذن مرفوض لاحقاً بعد الإعداد الأول بعد.
+- INTERNET غير مضاف للـmanifest الرئيسي (خارج النطاق، ARCHITECTURE 8).
+
 ## تنظيف D15 + F3 (2026-11-14): منجز (على المضيف)
 
 ### تنظيف بقايا مفتاح جوجل

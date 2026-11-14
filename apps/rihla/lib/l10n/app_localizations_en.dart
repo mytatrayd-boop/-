@@ -37,4 +37,82 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notFoundBody =>
       'We could not find this page. Go back to the home screen and try again.';
+
+  @override
+  String get permTitle => 'Permissions';
+
+  @override
+  String permStepOf(int n, int total) {
+    return 'Step $n of $total';
+  }
+
+  @override
+  String get permCameraTitle => 'Camera';
+
+  @override
+  String get permCameraReason => 'To film your road.';
+
+  @override
+  String get permLocationTitle => 'Location';
+
+  @override
+  String get permLocationReason => 'To draw and measure your route on the map.';
+
+  @override
+  String get permMicTitle => 'Microphone';
+
+  @override
+  String get permMicReason =>
+      'To record the trip\'s sound (optional, and you can mute it).';
+
+  @override
+  String get permPrivacy =>
+      'Everything stays on your phone. No accounts, no uploads.';
+
+  @override
+  String get permAllow => 'Allow';
+
+  @override
+  String get permNotNow => 'Not now';
+
+  @override
+  String get permGranted => 'Allowed';
+
+  @override
+  String get permCameraDenied => 'The trip will not work without the camera.';
+
+  @override
+  String get permLocationDenied =>
+      'The route cannot be drawn without location, so the trip will not work.';
+
+  @override
+  String get permMicDenied => 'The video will be recorded without sound.';
+
+  @override
+  String get permPermanentHint =>
+      'The app can no longer ask for this permission. Enable it in your phone settings.';
+
+  @override
+  String get permLocationApproximate =>
+      'Approximate location is not enough. The route needs precise location; turn it on in your phone settings.';
+
+  @override
+  String get permOpenPhoneSettings => 'Open phone settings';
+
+  @override
+  String get permRetry => 'Try again';
+
+  @override
+  String get permContinueNoAudio => 'Continue without sound';
+
+  @override
+  String get permAudioUnavailable => 'Audio unavailable';
+
+  @override
+  String get permStartBlocked => 'Allow camera and location to start a trip.';
+
+  @override
+  String permIllustration(String name) {
+    return 'Illustration for the $name permission';
+  }
 }
