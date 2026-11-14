@@ -40,7 +40,8 @@ List<double> _importance(List<GeoPoint> pts) {
     var maxD = -1.0;
     var idx = -1;
     for (var i = s + 1; i < e; i++) {
-      final d = _perpMeters(pts[i], pts[s], pts[e]);
+      var d = _perpMeters(pts[i], pts[s], pts[e]);
+      if (d.isNaN) d = 0; // نقطة غير صالحة: أقل أهمية بدل كسر الخوارزمية
       if (d > maxD) {
         maxD = d;
         idx = i;

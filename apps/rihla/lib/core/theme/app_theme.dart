@@ -38,7 +38,13 @@ class AppTheme {
   static const fontFamily = 'IBMPlexSansArabic';
 
   static TextStyle _s(double size, FontWeight w, double h, Color c) =>
-      TextStyle(fontFamily: fontFamily, fontSize: size, fontWeight: w, height: h, color: c);
+      TextStyle(
+        fontFamily: fontFamily,
+        fontSize: size,
+        fontWeight: w,
+        height: h,
+        color: c,
+      );
 
   static ThemeData dark() {
     const p = AppColors.textPrimary;
@@ -73,8 +79,9 @@ class AppTheme {
           backgroundColor: AppColors.amber,
           foregroundColor: AppColors.ink,
           minimumSize: const Size(48, 56),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: _s(18, FontWeight.w600, 1.2, AppColors.ink),
         ),
       ),

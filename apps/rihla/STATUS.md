@@ -1,5 +1,11 @@
 # STATUS — رحلة
 
+## تغيير المزوّد D15 (2026-11-14): توثيق فقط، لا كود
+- حُدِّثت ARCHITECTURE وDECISIONS (D15 يلغي D9/D4) وSPEC وCLAUDE وDESIGN و.env.example. F0ب لم تعد تحتاج مفتاحاً ولا فوترة (أجهزة فقط).
+- لم يُشغَّل شيء: توافق flutter_map ^7 + vector_map_tiles مع Flutter 3.50 غير مُتحقَّق، ومعدل toImage والأسماء العربية غير مقاسين.
+- كود قائم صار قديماً ويُنظَّف في مهمة لاحقة: lib/core/config/env.dart (hasMapsKey)، tool/gen_secrets.sh، android/secrets.properties، ios/Flutter/Secrets.xcconfig (غير متتبَّعان)، وأي إشارة لـGoogleSnapshotSource/google_maps_flutter في packages/rihla_recorder؛ وإبقاء check_no_secrets.sh حارساً عاماً. الاختبارات الحالية قد تحتاج تعديلاً.
+- بانتظار المالك: موافقته على مراسلة info@openfreemap.org للتأكيد قبل الإطلاق (لم تُرسل).
+
 ## F2 + إصلاحات F1 (2026-11-14): منجز (على المضيف)
 
 ### تحقق فعلاً

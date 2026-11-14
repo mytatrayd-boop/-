@@ -4,6 +4,9 @@ import 'simplify.dart';
 /// الحد الافتراضي لطول الرابط (D6).
 const int defaultMaxUrlLength = 2048;
 
+/// وسيلة التنقل الافتراضية في الرابط (D6).
+const String defaultTravelMode = 'driving';
+
 /// عدد نقاط المنتصف الافتراضي (D6).
 const int defaultMidWaypoints = 3;
 
@@ -18,6 +21,7 @@ String? buildGoogleMapsUrl(
   List<GeoPoint> points, {
   int midWaypoints = defaultMidWaypoints,
   int maxLength = defaultMaxUrlLength,
+  String travelMode = defaultTravelMode,
 }) {
   if (points.isEmpty || points.any((p) => !p.isValid)) return null;
   const base = 'https://www.google.com/maps';
@@ -35,6 +39,7 @@ String? buildGoogleMapsUrl(
       ..write('&origin=${Uri.encodeComponent(origin)}')
       ..write('&destination=${Uri.encodeComponent(dest)}');
     if (wp.isNotEmpty) sb.write('&waypoints=${Uri.encodeComponent(wp)}');
+    sb.write('&travelmode=${Uri.encodeComponent(travelMode)}');
     final url = sb.toString();
     if (url.length <= maxLength) return url;
   }

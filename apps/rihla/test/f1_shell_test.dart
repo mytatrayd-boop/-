@@ -8,18 +8,24 @@ import 'package:rihla/core/theme/app_theme.dart';
 import 'package:rihla/l10n/app_localizations_ar.dart';
 import 'package:rihla/l10n/app_localizations_en.dart';
 
-Future<void> pump(WidgetTester t, Locale locale,
-    {Size size = const Size(800, 360), double scale = 1.0}) async {
+Future<void> pump(
+  WidgetTester t,
+  Locale locale, {
+  Size size = const Size(800, 360),
+  double scale = 1.0,
+}) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
-  await t.pumpWidget(ProviderScope(
-    overrides: [localeProvider.overrideWith(() => _Fixed(locale))],
-    child: MediaQuery(
-      data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
-      child: const RihlaApp(),
+  await t.pumpWidget(
+    ProviderScope(
+      overrides: [localeProvider.overrideWith(() => _Fixed(locale))],
+      child: MediaQuery(
+        data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
+        child: const RihlaApp(),
+      ),
     ),
-  ));
+  );
   await t.pumpAndSettle();
 }
 
@@ -31,16 +37,20 @@ void main() {
     await pump(t, const Locale('ar'));
     expect(find.text(ar.homeTitle), findsOneWidget);
     expect(find.text(ar.homeEmpty), findsOneWidget);
-    expect(Directionality.of(t.element(find.text(ar.homeEmpty))),
-        TextDirection.rtl);
+    expect(
+      Directionality.of(t.element(find.text(ar.homeEmpty))),
+      TextDirection.rtl,
+    );
     expect(t.takeException(), isNull);
   });
 
   testWidgets('إنجليزي: LTR ونصوص الترجمة، بلا overflow', (t) async {
     await pump(t, const Locale('en'));
     expect(find.text(en.homeTitle), findsOneWidget);
-    expect(Directionality.of(t.element(find.text(en.homeEmpty))),
-        TextDirection.ltr);
+    expect(
+      Directionality.of(t.element(find.text(en.homeEmpty))),
+      TextDirection.ltr,
+    );
     expect(t.takeException(), isNull);
   });
 

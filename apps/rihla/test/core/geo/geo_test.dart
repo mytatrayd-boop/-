@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rihla/core/geo/geo.dart';
+import 'package:xml/xml.dart';
 
 GeoPoint p(double a, double b, {DateTime? t}) => GeoPoint(a, b, time: t);
 
@@ -83,6 +84,36 @@ void main() {
       ];
       expect(simplifyDouglasPeucker(line, 1), [line.first, line.last]);
     });
+    test('NaN points do not throw', () {
+      final path = [p(0, 0), p(double.nan, 0.001), p(0, 0.002), p(0, 0.003)];
+      expect(() => simplifyDouglasPeucker(path, 5), returnsNormally);
+      expect(() => simplifyToCount(path, 3), returnsNormally);
+      final allNan = [
+        p(double.nan, double.nan),
+        p(double.nan, double.nan),
+        p(double.nan, double.nan),
+      ];
+      expect(() => simplifyDouglasPeucker(allNan, 5), returnsNormally);
+      expect(simplifyToCount(path, 3).first, path.first);
+      expect(simplifyToCount(path, 3).last, path.last);
+    });
+    test('out-of-range coordinates do not throw and keep endpoints', () {
+      final path = [p(0, 0), p(95, 200), p(0, 0.002), p(-100, -500), p(0, 1)];
+      final s = simplifyDouglasPeucker(path, 5);
+      expect(s.first, path.first);
+      expect(s.last, path.last);
+      final c = simplifyToCount(path, 3);
+      expect(c.length, 3);
+      expect(c.first, path.first);
+      expect(c.last, path.last);
+    });
+    test('identical points collapse to endpoints', () {
+      final same = [for (var i = 0; i < 10; i++) p(5, 5)];
+      expect(simplifyDouglasPeucker(same, 1), [same.first, same.last]);
+      expect(simplifyToCount(same, 4).length, 4);
+      final loop = [p(1, 1), p(1.01, 1.01), p(1.02, 1.0), p(1, 1)];
+      expect(simplifyDouglasPeucker(loop, 10).length, greaterThan(2));
+    });
     test('long path does not overflow the stack', () {
       final big = [for (var i = 0; i < 20000; i++) p(i * 1e-5, (i % 7) * 1e-5)];
       expect(simplifyToCount(big, 5).length, 5);
@@ -117,6 +148,16 @@ void main() {
       final wp = Uri.parse(u).queryParameters['waypoints']!.split('|');
       expect(wp.length, 3);
     });
+    test('travelmode defaults to driving and is overridable', () {
+      final u = buildGoogleMapsUrl([p(1, 2), p(3, 4)])!;
+      expect(Uri.parse(u).queryParameters['travelmode'], 'driving');
+      final w = buildGoogleMapsUrl([p(1, 2), p(3, 4)], travelMode: 'walking')!;
+      expect(Uri.parse(w).queryParameters['travelmode'], 'walking');
+      final path = [for (var i = 0; i < 50; i++) p(i * 0.1, i * 0.1)];
+      final m = buildGoogleMapsUrl(path)!;
+      expect(Uri.parse(m).queryParameters['travelmode'], 'driving');
+      expect(m.length, lessThanOrEqualTo(2048));
+    });
     test('negative and antimeridian coordinates', () {
       final u = buildGoogleMapsUrl([p(-33.8, 179.99), p(-33.9, -179.99)])!;
       expect(Uri.parse(u).queryParameters['origin'], '-33.80000,179.99000');
@@ -140,33 +181,69 @@ void main() {
     });
   });
 
-  group('gpx', () {
-    test('empty path is valid gpx without trkpt', () {
-      final g = buildGpx([]);
-      expect(g, startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
-      expect(g, contains('<trkseg>'));
-      expect(g, isNot(contains('<trkpt')));
-      expect(g.trimRight(), endsWith('</gpx>'));
+  group('gpx (real XML parser)', () {
+    XmlDocument parse(String g) => XmlDocument.parse(g);
+    Iterable<XmlElement> trkpts(XmlDocument d) => d.findAllElements('trkpt');
+
+    test('empty path parses, has trkseg and no trkpt', () {
+      final d = parse(buildGpx([]));
+      expect(d.rootElement.name.local, 'gpx');
+      expect(d.rootElement.getAttribute('version'), '1.1');
+      expect(d.findAllElements('trkseg').length, 1);
+      expect(trkpts(d), isEmpty);
     });
-    test('points with time and elevation', () {
-      final t = DateTime.utc(2026, 11, 14, 8, 30, 5);
-      final g = buildGpx([GeoPoint(24.5, -46.25, time: t, elevation: 612.5)]);
-      expect(g, contains('<trkpt lat="24.5" lon="-46.25">'));
-      expect(g, contains('<ele>612.5</ele>'));
-      expect(g, contains('<time>2026-11-14T08:30:05.000Z</time>'));
+    test('50 points with ele and time round-trip', () {
+      final t0 = DateTime.utc(2026, 11, 14, 8);
+      final pts = [
+        for (var i = 0; i < 50; i++)
+          GeoPoint(
+            24 + i * 0.001,
+            -46.25 + i * 0.002,
+            time: t0.add(Duration(seconds: i)),
+            elevation: 600 + i * 0.5,
+          ),
+      ];
+      final d = parse(buildGpx(pts, time: t0));
+      final list = trkpts(d).toList();
+      expect(list.length, 50);
+      for (var i = 0; i < 50; i++) {
+        final e = list[i];
+        expect(double.parse(e.getAttribute('lat')!), closeTo(pts[i].lat, 1e-6));
+        expect(double.parse(e.getAttribute('lon')!), closeTo(pts[i].lng, 1e-6));
+        expect(
+          double.parse(e.getElement('ele')!.innerText),
+          closeTo(pts[i].elevation!, 1e-6),
+        );
+        expect(DateTime.parse(e.getElement('time')!.innerText), pts[i].time);
+      }
+      expect(DateTime.parse(d.findAllElements('time').first.innerText), t0);
     });
     test('non-UTC time converted to UTC; invalid points skipped', () {
-      final g = buildGpx([p(100, 0), p(1, 2)]);
-      expect('<trkpt'.allMatches(g).length, 1);
+      final local = DateTime.parse('2026-11-14T10:00:00+03:00');
+      final d = parse(buildGpx([p(100, 0), GeoPoint(1, 2, time: local)]));
+      final list = trkpts(d).toList();
+      expect(list.length, 1);
+      expect(list.single.getElement('time')!.innerText, endsWith('Z'));
+      expect(
+        DateTime.parse(list.single.getElement('time')!.innerText),
+        DateTime.utc(2026, 11, 14, 7),
+      );
     });
-    test('name with Arabic and XML special chars is escaped', () {
-      final g = buildGpx([], name: 'رحلة <A&B> "x"\u0001');
-      expect(g, contains('<name>رحلة &lt;A&amp;B&gt; &quot;x&quot;</name>'));
+    test('Arabic name with <&"\' round-trips exactly', () {
+      const name = 'رحلة <A&B> "x" \'y\'';
+      final d = parse(buildGpx([], name: name));
+      expect(d.findAllElements('name').single.innerText, name);
+    });
+    test('control characters are stripped and document still parses', () {
+      final g = buildGpx([], name: 'a\u0000b\u0001c\u0008d\u000Be\u001Ff');
+      final d = parse(g);
+      expect(d.findAllElements('name').single.innerText, 'abcdef');
     });
     test('antimeridian points kept as given', () {
-      final g = buildGpx([p(0, 179.999999), p(0, -179.999999)]);
-      expect(g, contains('lon="179.999999"'));
-      expect(g, contains('lon="-179.999999"'));
+      final list = trkpts(
+        parse(buildGpx([p(0, 179.999999), p(0, -179.999999)])),
+      ).map((e) => double.parse(e.getAttribute('lon')!)).toList();
+      expect(list, [179.999999, -179.999999]);
     });
   });
 }
