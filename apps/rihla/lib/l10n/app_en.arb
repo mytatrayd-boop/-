@@ -128,7 +128,7 @@
   "cancel": "Cancel",
   "tripDeleted": "Trip deleted",
   "tripDeleteFailed": "Could not delete the trip",
-  "tripNoRoute": "This trip has no route points",
+  "tripNoRoute": "No route (weak GPS signal)",
   "shareTitle": "Share trip",
   "shareVideoTitle": "Send the video",
   "shareVideoDesc": "One video with the picture and the route",

@@ -326,7 +326,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDeleteFailed => 'Could not delete the trip';
 
   @override
-  String get tripNoRoute => 'This trip has no route points';
+  String get tripNoRoute => 'No route (weak GPS signal)';
 
   @override
   String get shareTitle => 'Share trip';

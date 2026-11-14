@@ -66,6 +66,21 @@ void main() {
     await disposeApp(t);
   });
 
+  testWidgets('رحلة بلا نقاط تظهر في «رحلاتي»', (t) async {
+    final f = HomeFakes();
+    final id = await seedTrip(t, f.repo, points: 0);
+    await pumpApp(t, f);
+    expect(
+      [
+        for (final w in t.widgetList<TripCard>(find.byType(TripCard)))
+          w.trip.id,
+      ],
+      [id],
+    );
+    expect(t.takeException(), isNull);
+    await disposeApp(t);
+  });
+
   testWidgets('خطأ تحميل: رسالة وزر إعادة المحاولة', (t) async {
     late _Flaky repo;
     final f = HomeFakes(repoBuilder: (db) => repo = _Flaky(db));

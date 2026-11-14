@@ -128,7 +128,7 @@
   "cancel": "إلغاء",
   "tripDeleted": "تم حذف الرحلة",
   "tripDeleteFailed": "تعذّر حذف الرحلة",
-  "tripNoRoute": "لا توجد نقاط مسار لهذه الرحلة",
+  "tripNoRoute": "لا مسار (إشارة GPS ضعيفة)",
   "shareTitle": "مشاركة الرحلة",
   "shareVideoTitle": "إرسال الفيديو",
   "shareVideoDesc": "فيديو واحد يجمع الصورة والمسار",

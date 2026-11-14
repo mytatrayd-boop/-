@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripNoRoute.
   ///
   /// In ar, this message translates to:
-  /// **'لا توجد نقاط مسار لهذه الرحلة'**
+  /// **'لا مسار (إشارة GPS ضعيفة)'**
   String get tripNoRoute;
 
   /// No description provided for @shareTitle.

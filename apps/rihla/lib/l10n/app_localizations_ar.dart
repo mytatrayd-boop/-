@@ -320,7 +320,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDeleteFailed => 'تعذّر حذف الرحلة';
 
   @override
-  String get tripNoRoute => 'لا توجد نقاط مسار لهذه الرحلة';
+  String get tripNoRoute => 'لا مسار (إشارة GPS ضعيفة)';
 
   @override
   String get shareTitle => 'مشاركة الرحلة';

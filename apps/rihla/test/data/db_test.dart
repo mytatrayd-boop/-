@@ -55,14 +55,67 @@ void main() {
     final id = await repo.startTrip(startedAt: t0);
     final n = await repo.addPoints(id, [
       s(0, 24.0, 46.0, acc: 5),
-      s(1, 24.0001, 46.0, acc: 80), // دقة سيئة
+      s(1, 24.0001, 46.0, acc: 120), // دقة سيئة
       s(2, double.nan, 46.0),
       s(3, 95, 46.0), // خارج النطاق
       s(4, 30.0, 50.0), // قفزة مئات الكم في ثانيتين
-      s(5, 24.0002, 46.0, acc: 50), // الحد مقبول
+      s(5, 24.0002, 46.0, acc: 100), // الحد مقبول
     ]);
     expect(n, 2);
     expect((await repo.getPoints(id)).length, 2);
+  });
+
+  test('accuracy 80m accepted now (limit 100m)', () async {
+    final id = await repo.startTrip(startedAt: t0);
+    expect(await repo.addPoints(id, [s(0, 24.0, 46.0, acc: 80)]), 1);
+  });
+
+  test(
+    'best-effort: all rejected by accuracy -> most accurate saved',
+    () async {
+      final id = await repo.startTrip(startedAt: t0);
+      expect(
+        await repo.addPoints(id, [
+          s(0, 24.0, 46.0, acc: 300),
+          s(5, 24.0001, 46.0, acc: 150),
+          s(10, 24.0002, 46.0, acc: 200),
+        ]),
+        0,
+      );
+      await repo.completeTrip(id, endedAt: t0.add(const Duration(seconds: 20)));
+      final rows = await repo.getPointRows(id);
+      expect(rows.length, 1);
+      expect(rows.single.lat, 24.0001);
+      expect(rows.single.seq, 0);
+    },
+  );
+
+  test('best-effort not saved when a point was accepted', () async {
+    final id = await repo.startTrip(startedAt: t0);
+    await repo.addPoints(id, [s(0, 24.0, 46.0, acc: 150)]);
+    await repo.addPoints(id, [s(5, 24.001, 46.0, acc: 10)]);
+    await repo.interruptTrip(id, endedAt: t0.add(const Duration(seconds: 20)));
+    expect((await repo.getPointRows(id)).length, 1);
+  });
+
+  test(
+    'best-effort also on markInterruptedTrips; invalid still dropped',
+    () async {
+      final id = await repo.startTrip(startedAt: t0);
+      await repo.addPoints(id, [
+        s(0, double.nan, 46.0, acc: 150),
+        s(1, 24.0, 46.0, acc: 150),
+      ]);
+      await repo.markInterruptedTrips();
+      expect((await repo.getPointRows(id)).length, 1);
+    },
+  );
+
+  test('trip with no location at all has no points, no crash', () async {
+    final id = await repo.startTrip(startedAt: t0);
+    await repo.completeTrip(id, endedAt: t0.add(const Duration(seconds: 5)));
+    expect(await repo.getPointRows(id), isEmpty);
+    expect((await repo.getTrip(id))!.distanceM, 0);
   });
 
   test('seq continues after a new repository instance (app restart)', () async {

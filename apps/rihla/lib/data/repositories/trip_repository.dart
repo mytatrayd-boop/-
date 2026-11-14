@@ -7,7 +7,7 @@ import '../../core/geo/geo.dart';
 import '../db/app_database.dart';
 
 /// حدود تصفية النقاط (ARCHITECTURE 5).
-const double maxAccuracyM = 50;
+const double maxAccuracyM = 100;
 const double maxSpeedMps = 100; // قفزة أسرع من هذا غير منطقية
 
 class TrackSample {
@@ -66,7 +66,7 @@ class TripRepository {
   final Map<String, TrackSample?> _last = {};
   final Map<String, int> _next = {};
 
-  /// يضيف نقاطاً بعد التصفية (دقة > 50م، إحداثيات غير صالحة، قفزات غير منطقية).
+  /// يضيف نقاطاً بعد التصفية (دقة > 100م، إحداثيات غير صالحة، قفزات غير منطقية).
   /// يعيد عدد النقاط المحفوظة فعلاً.
   /// آمنة للتزامن: الاستدعاءات لنفس الرحلة تُنفَّذ بالتسلسل.
   Future<int> addPoints(String tripId, List<TrackSample> samples) {
@@ -81,6 +81,43 @@ class TripRepository {
   }
 
   final Map<String, Future<void>> _locks = {};
+
+  /// أدق نقطة رُفضت بسبب الدقة فقط (مرجع «أفضل جهد»).
+  final Map<String, TrackSample> _bestEffort = {};
+
+  /// عند انتهاء الرحلة: إن لم تُحفظ أي نقطة تُحفظ أفضل نقطة مرفوضة (إن وُجدت).
+  Future<void> _flushBestEffort(String tripId) {
+    final prev = _locks[tripId] ?? Future<void>.value();
+    final run = prev.then((_) async {
+      final b = _bestEffort[tripId];
+      if (b == null) return;
+      final n =
+          await (_db.selectOnly(_db.trackPoints)
+                ..addColumns([_db.trackPoints.seq])
+                ..where(_db.trackPoints.tripId.equals(tripId))
+                ..limit(1))
+              .get();
+      if (n.isEmpty) {
+        await _db
+            .into(_db.trackPoints)
+            .insert(
+              TrackPointsCompanion.insert(
+                tripId: tripId,
+                seq: 0,
+                lat: b.lat,
+                lng: b.lng,
+                ts: b.ts,
+                accuracyM: Value(b.accuracyM),
+                speedMps: Value(b.speedMps),
+              ),
+            );
+      }
+      _bestEffort.remove(tripId);
+    });
+    _locks[tripId] = run.then<void>((_) {}, onError: (_) {});
+    return run;
+  }
+
   final Map<String, TrackSample?> _rejected = {};
   final Map<String, int> _rejectedCount = {};
 
@@ -106,7 +143,12 @@ class TripRepository {
     for (final s in samples) {
       final p = GeoPoint(s.lat, s.lng);
       if (!p.isValid) continue;
-      if (s.accuracyM != null && s.accuracyM! > maxAccuracyM) continue;
+      if (s.accuracyM != null && s.accuracyM! > maxAccuracyM) {
+        // أفضل جهد: نحتفظ بالأدق بين المرفوضات لتُحفظ إن لم تُقبل أي نقطة.
+        final b = _bestEffort[tripId];
+        if (b == null || s.accuracyM! < b.accuracyM!) _bestEffort[tripId] = s;
+        continue;
+      }
       if (last != null) {
         final dt = s.ts.difference(last.ts).inMilliseconds / 1000;
         final d = haversineMeters(GeoPoint(last.lat, last.lng), p);
@@ -170,6 +212,7 @@ class TripRepository {
   }) async {
     final trip = await getTrip(tripId);
     if (trip == null) return;
+    await _flushBestEffort(tripId);
     final pts = await getPoints(tripId);
     final end = endedAt ?? DateTime.now().toUtc();
     await (_db.update(_db.trips)..where((t) => t.id.equals(tripId))).write(
@@ -210,6 +253,7 @@ class TripRepository {
   }) async {
     final trip = await getTrip(tripId);
     if (trip == null) return;
+    await _flushBestEffort(tripId);
     final pts = await getPoints(tripId);
     final end = endedAt ?? DateTime.now().toUtc();
     await (_db.update(_db.trips)..where((t) => t.id.equals(tripId))).write(
@@ -227,13 +271,17 @@ class TripRepository {
   /// كل رحلة status=recording تُعلَّم interrupted (عند فتح التطبيق). تعيد عددها.
   /// تضبط endedAt (آخر نقطة أو وقت البدء) وdurationSec وdistanceM.
   Future<int> markInterruptedTrips() async {
+    final trips = await (_db.select(
+      _db.trips,
+    )..where((t) => t.status.equalsValue(TripStatus.recording))).get();
+    for (final t in trips) {
+      await _flushBestEffort(t.id);
+    }
     _last.clear();
     _next.clear();
     _rejected.clear();
     _rejectedCount.clear();
-    final trips = await (_db.select(
-      _db.trips,
-    )..where((t) => t.status.equalsValue(TripStatus.recording))).get();
+    _bestEffort.clear();
     for (final t in trips) {
       final rows = await _rows(t.id);
       var end = t.startedAt;
@@ -286,5 +334,6 @@ class TripRepository {
     _next.remove(id);
     _rejected.remove(id);
     _rejectedCount.remove(id);
+    _bestEffort.remove(id);
   }
 }

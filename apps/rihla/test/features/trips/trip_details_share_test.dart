@@ -78,6 +78,18 @@ void main() {
     await disposeApp(t);
   });
 
+  testWidgets('رحلة بلا نقاط: تفاصيلها تعرض «لا مسار» بلا انهيار', (t) async {
+    final f = HomeFakes();
+    final id = await seedTrip(t, f.repo, points: 0);
+    await pumpApp(t, f, initial: AppRoutes.tripFor(id));
+    await settle(t);
+    expect(find.byKey(const ValueKey('trip-no-route')), findsOneWidget);
+    expect(find.text(ar.tripNoRoute), findsOneWidget);
+    expect(ar.tripNoRoute, 'لا مسار (إشارة GPS ضعيفة)');
+    expect(t.takeException(), isNull);
+    await disposeApp(t);
+  });
+
   testWidgets('حذف: إلغاء يُبقي الرحلة، وتأكيد يحذفها ويعود لـ«رحلاتي»', (
     t,
   ) async {

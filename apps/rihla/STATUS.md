@@ -213,3 +213,7 @@
 - recoverPending: عداد محاولات في recover_attempts داخل مجلد الجلسة؛ بعد 3 محاولات فاشلة يُحذف المجلد.
 - onDetachedFromEngine: RejectedExecutionException مُعالَج.
 - مهلة stop: أسوأ حالة أصلية ~ 3+5+5 ث انضمام + دمج؛ لا مهلة في Dart للحزمة (_call بلا timeout) ولا في lib الجذر (بُحث ولم يوجد timeout)، فلا تعديل.
+
+## تعديل تصفية الدقة (2026-11-14، D18)
+- TripRepository.addPoints: الحد 100م + أفضل جهد (تُحفظ أدق نقطة مرفوضة إن لم تُقبل أي نقطة، عند completeTrip/interruptTrip/markInterruptedTrips). نص «لا مسار (إشارة GPS ضعيفة)» (ar/en). اختبارات: 5 للمستودع، 2 للواجهة (قائمة وتفاصيل بلا نقاط).
+- analyze بلا ملاحظات؛ flutter test: 146 ناجحاً. الأمر على جهاز لم يُجرَّب.
