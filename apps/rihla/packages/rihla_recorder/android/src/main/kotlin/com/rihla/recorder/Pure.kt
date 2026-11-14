@@ -96,6 +96,41 @@ object LayoutMath {
         Pair(m[0] * x + m[4] * y + m[12], m[1] * x + m[5] * y + m[13])
 }
 
+/**
+ * اختيار دوران صورة الكاميرا (دالة نقية). المحتوى في المخزن باتجاه الحساس؛ الدوران = درجات
+ * مع عقارب الساعة لازمة كي تظهر الصورة معتدلة على الشاشة بالاتجاه الحالي (نفس معادلة CameraX).
+ * [surfaceRotation] قيم Surface.ROTATION_0..3 (0..3). لم يُتحقق منها على جهاز.
+ */
+object CameraOrientation {
+    fun displayDegrees(surfaceRotation: Int): Int = ((surfaceRotation % 4) + 4) % 4 * 90
+
+    /** خلفية: sensor - display. أمامية (معكوسة): sensor + display. */
+    fun relativeRotation(sensorDegrees: Int, surfaceRotation: Int, backFacing: Boolean = true): Int {
+        val d = displayDegrees(surfaceRotation)
+        val r = if (backFacing) sensorDegrees - d else sensorDegrees + d
+        return ((r % 360) + 360) % 360
+    }
+
+    /**
+     * المصدر الأول: الحساس + اتجاه الشاشة الفعلي (يتبع landscape المعكوس فوراً). عند غيابهما
+     * نرجع إلى rotationDegrees من CameraX، وإلا 0. القيمة تُقرَّب لمضاعف 90.
+     */
+    fun resolve(sensorDegrees: Int?, surfaceRotation: Int?, cameraXDegrees: Int?, backFacing: Boolean = true): Int {
+        val raw = if (sensorDegrees != null && surfaceRotation != null) {
+            relativeRotation(sensorDegrees, surfaceRotation, backFacing)
+        } else cameraXDegrees ?: 0
+        return ((Math.round(raw / 90.0).toInt() * 90) % 360 + 360) % 360
+    }
+
+    fun isQuarterTurn(rotation: Int) = rotation == 90 || rotation == 270
+
+    /** أبعاد الصورة بعد الدوران. */
+    fun displayedSize(w: Int, h: Int, rotation: Int): Pair<Int, Int> = if (isQuarterTurn(rotation)) Pair(h, w) else Pair(w, h)
+
+    /** مصفوفة العينة النهائية: مصفوفة SurfaceTexture ثم الدوران (تُطبَّق الدوران أولاً على إحداثيات العرض). */
+    fun textureMatrix(stMatrix: FloatArray, rotation: Int): FloatArray = LayoutMath.mul(stMatrix, LayoutMath.rotateAboutCenter(rotation))
+}
+
 object ClockMath {
     /**
      * طابع إطار الكاميرا بالميكروثانية بساعة التسجيل. إن كان طابع SurfaceTexture بمقياس

@@ -58,8 +58,7 @@ class GallerySaveController extends Notifier<GallerySaveStatus> {
   }
 }
 
-final gallerySaveProvider = NotifierProvider.family<
-  GallerySaveController,
-  GallerySaveStatus,
-  String
->(GallerySaveController.new);
+final gallerySaveProvider =
+    NotifierProvider.family<GallerySaveController, GallerySaveStatus, String>(
+      GallerySaveController.new,
+    );

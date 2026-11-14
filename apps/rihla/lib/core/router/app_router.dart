@@ -7,10 +7,19 @@ import '../../features/onboarding_permissions/permissions_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/not_found_screen.dart';
 import '../../features/summary/summary_screen.dart';
+import '../../features/trips/trip_details_screen.dart';
+import '../../features/trips/trips_screen.dart';
 
 class AppRoutes {
   const AppRoutes._();
+
+  /// «رحلاتي»: الشاشة الأولى (طولية).
   static const home = '/';
+
+  /// شاشة التسجيل (أفقية).
+  static const record = '/record';
+  static const trip = '/trip';
+  static String tripFor(String id) => '$trip/$id';
   static const settings = '/settings';
   static const permissions = '/permissions';
   static const summary = '/summary';
@@ -21,7 +30,12 @@ class AppRoutes {
 GoRouter buildRouter({String initialLocation = AppRoutes.home}) => GoRouter(
   initialLocation: initialLocation,
   routes: [
-    GoRoute(path: AppRoutes.home, builder: (_, _) => const HomeScreen()),
+    GoRoute(path: AppRoutes.home, builder: (_, _) => const TripsScreen()),
+    GoRoute(path: AppRoutes.record, builder: (_, _) => const HomeScreen()),
+    GoRoute(
+      path: '${AppRoutes.trip}/:id',
+      builder: (_, st) => TripDetailsScreen(tripId: st.pathParameters['id']!),
+    ),
     GoRoute(
       path: AppRoutes.settings,
       builder: (_, _) => const SettingsScreen(),
@@ -41,7 +55,7 @@ GoRouter buildRouter({String initialLocation = AppRoutes.home}) => GoRouter(
   errorBuilder: (_, _) => const NotFoundScreen(),
 );
 
-/// مسار الإقلاع: /permissions إن نقصت الكاميرا أو الموقع الدقيق، وإلا الرئيسية.
+/// مسار الإقلاع: /permissions إن نقصت الكاميرا أو الموقع الدقيق، وإلا «رحلاتي».
 /// (الميكروفون اختياري فلا يمنع.) يُستدعى في main بعد فحص الأذونات.
 String initialLocationFor(PermissionsState p) =>
     p.canStartRecording ? AppRoutes.home : AppRoutes.permissions;

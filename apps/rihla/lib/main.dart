@@ -10,10 +10,9 @@ import 'features/onboarding_permissions/permissions_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // أفقي فقط (يمين/يسار).
+  // طولي افتراضياً؛ شاشة التسجيل وحدها تفرض الأفقي عند الدخول وتعيده عند الخروج.
   await SystemChrome.setPreferredOrientations(const [
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
+    DeviceOrientation.portraitUp,
   ]);
   final db = await openAppDatabase();
   // رحلات بقيت recording بسبب إغلاق مفاجئ تُعلَّم interrupted.

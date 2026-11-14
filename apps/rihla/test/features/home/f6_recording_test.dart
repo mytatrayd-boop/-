@@ -166,7 +166,10 @@ void main() {
     final rows = await trips(t, f);
     expect(rows.single.status, TripStatus.interrupted);
     expect(rows.single.videoPath, '/fake/rihla_1.mp4');
-    expect((await t.runAsync(() => f.repo.getPoints(rows.single.id)))!.length, 3);
+    expect(
+      (await t.runAsync(() => f.repo.getPoints(rows.single.id)))!.length,
+      3,
+    );
     expect(c.read(homeProvider).recording, isFalse);
     expect(f.awake.enabled, isFalse);
   });
@@ -197,7 +200,10 @@ void main() {
     final rows = await trips(t, f);
     expect(rows.single.status, TripStatus.interrupted);
     expect(rows.single.videoPath, isNull);
-    expect((await t.runAsync(() => f.repo.getPoints(rows.single.id)))!.length, 3);
+    expect(
+      (await t.runAsync(() => f.repo.getPoints(rows.single.id)))!.length,
+      3,
+    );
   });
 
   f6FixTests();
@@ -233,21 +239,28 @@ class _SlowStart extends FakeRihlaRecorder {
 
 class _ThrowingStart extends FakeRihlaRecorder {
   @override
-  Future<bool> start(RecordingConfig config) async => throw StateError('plugin');
+  Future<bool> start(RecordingConfig config) async =>
+      throw StateError('plugin');
 }
 
 class _FailingCompleteRepo extends TripRepository {
   _FailingCompleteRepo(super.db, {this.failInterruptToo = false});
   final bool failInterruptToo;
   @override
-  Future<void> completeTrip(String tripId,
-          {DateTime? endedAt, String? videoAssetId, String? videoPath}) =>
-      throw StateError('db');
+  Future<void> completeTrip(
+    String tripId, {
+    DateTime? endedAt,
+    String? videoAssetId,
+    String? videoPath,
+  }) => throw StateError('db');
   @override
-  Future<void> interruptTrip(String tripId, {DateTime? endedAt, String? videoPath}) =>
-      failInterruptToo
-          ? throw StateError('db2')
-          : super.interruptTrip(tripId, endedAt: endedAt, videoPath: videoPath);
+  Future<void> interruptTrip(
+    String tripId, {
+    DateTime? endedAt,
+    String? videoPath,
+  }) => failInterruptToo
+      ? throw StateError('db2')
+      : super.interruptTrip(tripId, endedAt: endedAt, videoPath: videoPath);
 }
 
 Future<void> confirmStop(WidgetTester t) async {
@@ -261,27 +274,30 @@ Future<void> confirmStop(WidgetTester t) async {
 void f6FixTests() {
   final ar = AppLocalizationsAr();
 
-  testWidgets('إلغاء العدّ أثناء await recorder.start يوقف المُسجِّل ولا رحلة', (t) async {
-    final rec = _SlowStart()..cameraOpen = true;
-    final f = HomeFakes(recorder: rec);
-    final c = await pumpHome(t, f);
-    f.location.pushAt(24.7, 46.6);
-    await t.pump();
-    await t.pump();
-    await t.tap(find.byKey(_start));
-    await t.pump();
-    await t.pump(const Duration(seconds: 3)); // _begin عالق في start
-    expect(rec.recording, isTrue);
-    await t.tap(find.byKey(const ValueKey('countdown-overlay')));
-    await t.pump();
-    rec.gate.complete();
-    await settleDb(t);
-    expect(rec.recording, isFalse);
-    expect(rec.stopCalls, 1);
-    expect(c.read(homeProvider).recording, isFalse);
-    expect(c.read(homeProvider).countdown, isNull);
-    expect(await trips(t, f), isEmpty);
-  });
+  testWidgets(
+    'إلغاء العدّ أثناء await recorder.start يوقف المُسجِّل ولا رحلة',
+    (t) async {
+      final rec = _SlowStart()..cameraOpen = true;
+      final f = HomeFakes(recorder: rec);
+      final c = await pumpHome(t, f);
+      f.location.pushAt(24.7, 46.6);
+      await t.pump();
+      await t.pump();
+      await t.tap(find.byKey(_start));
+      await t.pump();
+      await t.pump(const Duration(seconds: 3)); // _begin عالق في start
+      expect(rec.recording, isTrue);
+      await t.tap(find.byKey(const ValueKey('countdown-overlay')));
+      await t.pump();
+      rec.gate.complete();
+      await settleDb(t);
+      expect(rec.recording, isFalse);
+      expect(rec.stopCalls, 1);
+      expect(c.read(homeProvider).recording, isFalse);
+      expect(c.read(homeProvider).countdown, isNull);
+      expect(await trips(t, f), isEmpty);
+    },
+  );
 
   testWidgets('dispose بعد نجاح start يوقف المُسجِّل', (t) async {
     final rec = _SlowStart()..cameraOpen = true;
@@ -296,12 +312,16 @@ void f6FixTests() {
     expect(rec.recording, isTrue);
     await t.pumpWidget(const SizedBox()); // يُفكّ ProviderScope
     rec.gate.complete();
-    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
     expect(rec.recording, isFalse);
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('استثناء غير RecorderException من start: رسالة فشل لا انهيار', (t) async {
+  testWidgets('استثناء غير RecorderException من start: رسالة فشل لا انهيار', (
+    t,
+  ) async {
     final f = HomeFakes(recorder: _ThrowingStart()..cameraOpen = true);
     final c = await pumpHome(t, f);
     await fixAndStart(t, f);
@@ -312,7 +332,9 @@ void f6FixTests() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('فشل completeTrip: لا saving عالق، والاحتياط يحفظ مسار الفيديو', (t) async {
+  testWidgets('فشل completeTrip: لا saving عالق، والاحتياط يحفظ مسار الفيديو', (
+    t,
+  ) async {
     final f = HomeFakes(repoBuilder: (db) => _FailingCompleteRepo(db));
     final c = await pumpHome(t, f);
     await fixAndStart(t, f);
@@ -328,7 +350,9 @@ void f6FixTests() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('فشل completeTrip وinterruptTrip معاً: ينتقل للملخص برسالة خطأ', (t) async {
+  testWidgets('فشل completeTrip وinterruptTrip معاً: ينتقل للملخص برسالة خطأ', (
+    t,
+  ) async {
     final f = HomeFakes(
       repoBuilder: (db) => _FailingCompleteRepo(db, failInterruptToo: true),
     );

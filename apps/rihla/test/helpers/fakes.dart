@@ -13,6 +13,8 @@ import 'package:rihla/data/network/fake_network_status_source.dart';
 import 'package:rihla/data/permissions/fake_permission_service.dart';
 import 'package:rihla/data/permissions/permission_service.dart';
 import 'package:rihla/data/platform/screen_awake.dart';
+import 'package:rihla/data/platform/screen_orientation.dart';
+import 'package:rihla/data/share/share_service.dart';
 import 'package:rihla/features/home/home_controller.dart';
 import 'package:rihla/features/onboarding_permissions/permissions_controller.dart';
 
@@ -32,6 +34,8 @@ class HomeFakes {
     FakeScreenAwake? awake,
     FakeRihlaRecorder? recorder,
     FakeVideoGalleryService? gallery,
+    FakeShareService? share,
+    FakeScreenOrientation? orientation,
     TripRepository Function(AppDatabase)? repoBuilder,
   }) : permissions =
            permissions ??
@@ -48,8 +52,12 @@ class HomeFakes {
        awake = awake ?? FakeScreenAwake(),
        recorder = recorder ?? (FakeRihlaRecorder()..cameraOpen = true),
        gallery = gallery ?? FakeVideoGalleryService(),
+       share = share ?? FakeShareService(),
+       orientation = orientation ?? FakeScreenOrientation(),
        _repoBuilder = repoBuilder,
-       db = _quiet() ? AppDatabase(NativeDatabase.memory()) : throw StateError('x');
+       db = _quiet()
+           ? AppDatabase(NativeDatabase.memory())
+           : throw StateError('x');
 
   final FakePermissionService permissions;
   final FakeCameraPreviewSource camera;
@@ -58,6 +66,8 @@ class HomeFakes {
   final FakeScreenAwake awake;
   final FakeRihlaRecorder recorder;
   final FakeVideoGalleryService gallery;
+  final FakeShareService share;
+  final FakeScreenOrientation orientation;
   final TripRepository Function(AppDatabase)? _repoBuilder;
   final AppDatabase db;
   late final TripRepository repo = (_repoBuilder ?? TripRepository.new)(db);
@@ -71,6 +81,8 @@ class HomeFakes {
     recorderProvider.overrideWithValue(recorder),
     tripRepositoryProvider.overrideWithValue(repo),
     videoGalleryProvider.overrideWithValue(gallery),
+    shareServiceProvider.overrideWithValue(share),
+    screenOrientationProvider.overrideWithValue(orientation),
     mapTilesProvider.overrideWithValue(const FakeMapTiles()),
   ];
 }

@@ -41,7 +41,9 @@ void main() {
   });
 
   test('الفشل لا يضع العلامة، وإعادة المحاولة تضعها', () async {
-    final f = HomeFakes(gallery: FakeVideoGalleryService(failures: 1, assetId: null));
+    final f = HomeFakes(
+      gallery: FakeVideoGalleryService(failures: 1, assetId: null),
+    );
     final id = await withTrip(f);
     final c = await open(f, id);
     expect(c.read(gallerySaveProvider(id)), GallerySaveStatus.failed);

@@ -54,6 +54,9 @@ dependencies:
   wakelock_plus: ^1.8.2
   connectivity_plus: ^7.3.2
   gal: ^3.0.0
+  share_plus: ^13.3.1
+  open_filex: ^5.0.0
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

@@ -24,6 +24,7 @@ Future<void> pump(
     ProviderScope(
       overrides: [
         ...HomeFakes().overrides,
+        initialLocationProvider.overrideWithValue(AppRoutes.record),
         localeProvider.overrideWith(() => _Fixed(locale)),
       ],
       child: MediaQuery(
@@ -82,8 +83,12 @@ void main() {
     expect(find.text(ar.notFoundTitle), findsOneWidget);
     await t.tap(find.text(ar.backToHome));
     await t.pumpAndSettle();
-    expect(find.byKey(const ValueKey('mute-button')), findsOneWidget);
+    // الصفحة الأولى هي «رحلاتي».
+    expect(find.text(ar.tripsTitle), findsOneWidget);
     expect(t.takeException(), isNull);
+    // drift يجدول مؤقتاً عند إلغاء استعلام الرحلات: نفكّ الشجرة ونترك المؤقت ينتهي.
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(milliseconds: 10));
   });
 
   testWidgets('الثيم داكن حسب DESIGN', (t) async {

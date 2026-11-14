@@ -232,17 +232,19 @@ void main() {
     expect(trip.videoAssetId, 'a1');
   });
 
-  test('ترحيل حقيقي v1 -> v2: تبقى البيانات وتُضاف galleryDone=false', () async {
-    final dir = await Directory.systemTemp.createTemp('rihla_mig');
-    final file = File('${dir.path}/v1.sqlite');
-    addTearDown(() => dir.delete(recursive: true));
+  test(
+    'ترحيل حقيقي v1 -> v2: تبقى البيانات وتُضاف galleryDone=false',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('rihla_mig');
+      final file = File('${dir.path}/v1.sqlite');
+      addTearDown(() => dir.delete(recursive: true));
 
-    // قاعدة بمخطط v1 الفعلي (قبل galleryDone) وuser_version=1 وبيانات فعلية.
-    final v1 = NativeDatabase(
-      file,
-      setup: (raw) {
-        if (raw.select('PRAGMA user_version').first.values.first == 0) {
-          raw.execute('''
+      // قاعدة بمخطط v1 الفعلي (قبل galleryDone) وuser_version=1 وبيانات فعلية.
+      final v1 = NativeDatabase(
+        file,
+        setup: (raw) {
+          if (raw.select('PRAGMA user_version').first.values.first == 0) {
+            raw.execute('''
 CREATE TABLE trips (
   id TEXT NOT NULL, started_at INTEGER NOT NULL, ended_at INTEGER NULL,
   duration_sec INTEGER NOT NULL DEFAULT 0, distance_m REAL NOT NULL DEFAULT 0,
@@ -261,24 +263,27 @@ INSERT INTO track_points (trip_id, seq, lat, lng, ts)
   VALUES ('old', 0, 24.0, 46.0, 1767261600);
 PRAGMA user_version = 1;
 ''');
-        }
-      },
-    );
-    final old = AppDatabase(v1);
-    final migrated = await old.select(old.trips).get();
-    expect(migrated.single.id, 'old');
-    expect(migrated.single.videoPath, '/v/old.mp4');
-    expect(migrated.single.galleryDone, isFalse);
-    expect((await old.select(old.trackPoints).get()).length, 1);
-    final ver = await old.customSelect('PRAGMA user_version').getSingle();
-    expect(ver.data.values.first, 2);
-    await old.close();
+          }
+        },
+      );
+      final old = AppDatabase(v1);
+      final migrated = await old.select(old.trips).get();
+      expect(migrated.single.id, 'old');
+      expect(migrated.single.videoPath, '/v/old.mp4');
+      expect(migrated.single.galleryDone, isFalse);
+      expect((await old.select(old.trackPoints).get()).length, 1);
+      final ver = await old.customSelect('PRAGMA user_version').getSingle();
+      expect(ver.data.values.first, 2);
+      await old.close();
 
-    // إعادة الفتح: لا ترحيل ثانٍ، والكتابة تعمل على العمود الجديد.
-    final again = AppDatabase(NativeDatabase(file));
-    await TripRepository(again).markGallerySaved('old');
-    expect((await TripRepository(again).getTrip('old'))!.galleryDone, isTrue);
-    await again.customSelect('SELECT ?', variables: [Variable.withInt(1)]).get();
-    await again.close();
-  });
+      // إعادة الفتح: لا ترحيل ثانٍ، والكتابة تعمل على العمود الجديد.
+      final again = AppDatabase(NativeDatabase(file));
+      await TripRepository(again).markGallerySaved('old');
+      expect((await TripRepository(again).getTrip('old'))!.galleryDone, isTrue);
+      await again
+          .customSelect('SELECT ?', variables: [Variable.withInt(1)])
+          .get();
+      await again.close();
+    },
+  );
 }

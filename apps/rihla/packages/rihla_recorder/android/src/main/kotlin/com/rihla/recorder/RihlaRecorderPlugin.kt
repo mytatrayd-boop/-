@@ -265,9 +265,19 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
                     val size = req.resolution
                     camSize = size
                     r.setCameraBufferSize(size.width, size.height)
-                    producer?.setSize(size.width, size.height)
+                    cameraXRotation = null
+                    r.rotationSource = { currentRotation() }
+                    r.onRotationChanged = { rot ->
+                        // المعاينة بأبعاد الصورة بعد الدوران كي لا تتمدد.
+                        val (w, h) = CameraOrientation.displayedSize(camSize.width, camSize.height, rot)
+                        main.post { producer?.setSize(w, h) }
+                    }
+                    r.setRotation(currentRotation() ?: 0)
+                    val (pw, ph) = CameraOrientation.displayedSize(size.width, size.height, currentRotation() ?: 0)
+                    producer?.setSize(pw, ph)
                     req.setTransformationInfoListener(ContextCompat.getMainExecutor(ctx)) { info ->
-                        r.setRotation(info.rotationDegrees)
+                        cameraXRotation = info.rotationDegrees
+                        currentRotation()?.let { r.setRotation(it) }
                     }
                     val surface: Surface = r.cameraSurface()!!
                     req.provideSurface(surface, ContextCompat.getMainExecutor(ctx)) { }
@@ -342,7 +352,19 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
         return if (android.os.Build.VERSION.SDK_INT >= 30) a.display?.rotation ?: Surface.ROTATION_90
         else a.windowManager.defaultDisplay.rotation
     }
-    private fun applyRotation() { preview?.targetRotation = displayRotation() }
+    private fun applyRotation() {
+        preview?.targetRotation = displayRotation()
+        currentRotation()?.let { renderer?.setRotation(it) }
+    }
+
+    @Volatile private var cameraXRotation: Int? = null
+
+    /** الدوران الحالي: الحساس + اتجاه الشاشة الفعلي (الأول)، وإلا rotationDegrees من CameraX. */
+    private fun currentRotation(): Int? {
+        val sensor = boundCamera?.cameraInfo?.sensorRotationDegrees
+        val disp = if (activity != null) displayRotation() else null
+        return CameraOrientation.resolve(sensor, disp, cameraXRotation)
+    }
 
     // ---- التسجيل ----
 

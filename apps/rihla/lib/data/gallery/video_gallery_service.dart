@@ -33,7 +33,10 @@ class GalVideoGalleryService implements VideoGalleryService {
       // فيظهر الفيديو في "الأحدث". أندرويد: مجلد Movies/Rihla بلا إذن إضافي.
       final album = Platform.isAndroid ? galleryAlbumName : null;
       if (!await Gal.hasPermission() && !await Gal.requestPermission()) {
-        throw const GallerySaveException('permission_denied', permissionDenied: true);
+        throw const GallerySaveException(
+          'permission_denied',
+          permissionDenied: true,
+        );
       }
       await Gal.putVideo(path, album: album);
       return null;

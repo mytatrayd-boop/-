@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rihla/app.dart';
+import 'package:rihla/core/router/app_router.dart';
 import 'package:rihla/core/locale/locale_provider.dart';
 import 'package:rihla/data/camera/fake_camera_preview_source.dart';
 import 'package:rihla/data/map/map_tiles.dart';
@@ -44,6 +45,7 @@ Future<ProviderContainer> pumpHome(
     ProviderScope(
       overrides: [
         ...f.overrides,
+        initialLocationProvider.overrideWithValue(AppRoutes.record),
         localeProvider.overrideWith(() => _Fixed(locale)),
       ],
       child: const RihlaApp(),
@@ -66,7 +68,9 @@ Future<void> fixAndStart(WidgetTester t, HomeFakes f) async {
 
 /// قاعدة drift تعمل بـIO حقيقي خارج الساعة المزيّفة: ننتظرها فعلاً ثم نرسم.
 Future<void> settleDb(WidgetTester t) async {
-  await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
+  await t.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 500)),
+  );
   await t.pump();
   await t.pump();
 }
@@ -306,6 +310,7 @@ void main() {
         ProviderScope(
           overrides: [
             ...f.overrides,
+            initialLocationProvider.overrideWithValue(AppRoutes.record),
             localeProvider.overrideWith(() => _Fixed(Locale(loc))),
           ],
           child: MediaQuery(

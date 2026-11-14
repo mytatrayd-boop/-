@@ -95,7 +95,18 @@ class GlRenderer {
         handler.post { cameraSt?.setDefaultBufferSize(w, h) }
     }
 
-    fun setRotation(deg: Int) { rotationDeg = ((deg % 360) + 360) % 360 }
+    /** يُستدعى عند تغيّر الدوران (من أي خيط). */
+    @Volatile var onRotationChanged: ((Int) -> Unit)? = null
+
+    /** يقرأ اتجاه الشاشة/الحساس الحاليين؛ يُستطلع على خيط GL كل بضعة إطارات فيتبع landscape المعكوس. */
+    @Volatile var rotationSource: (() -> Int?)? = null
+
+    fun setRotation(deg: Int) {
+        val d = ((deg % 360) + 360) % 360
+        if (d == rotationDeg) return
+        rotationDeg = d
+        onRotationChanged?.invoke(d)
+    }
 
     fun setMapFrame(w: Int, h: Int, rgba: ByteArray) {
         if (w <= 0 || h <= 0 || rgba.size != w * h * 4) return
@@ -241,10 +252,9 @@ class GlRenderer {
         val tsNs = st.timestamp
         val now = SystemClock.elapsedRealtimeNanos()
         uploadMap()
-        val texMat = LayoutMath.mul(stMatrix, LayoutMath.rotateAboutCenter(rotationDeg))
-        val quarterTurn = rotationDeg == 90 || rotationDeg == 270
-        val dispW = if (quarterTurn) camH else camW
-        val dispH = if (quarterTurn) camW else camH
+        if (framesRendered.get() % 10 == 0) rotationSource?.invoke()?.let { setRotation(it) }
+        val texMat = CameraOrientation.textureMatrix(stMatrix, rotationDeg)
+        val (dispW, dispH) = CameraOrientation.displayedSize(camW, camH, rotationDeg)
         try {
             if (previewSurface != EGL14.EGL_NO_SURFACE) drawPreview(texMat)
             if (encSurface != EGL14.EGL_NO_SURFACE) drawEncoder(texMat, dispW, dispH, ClockMath.cameraPtsUs(tsNs, now, startNs))

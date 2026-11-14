@@ -46,7 +46,13 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
     final c = ref.read(permissionsProvider.notifier);
 
     ref.listen(permissionsProvider.select((s) => s.done), (_, done) {
-      if (done && context.mounted) context.go(AppRoutes.home);
+      if (!done || !context.mounted) return;
+      // مفتوحة من شاشة التسجيل: العودة إليها؛ وإلا (الإقلاع) إلى «رحلاتي».
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(AppRoutes.home);
+      }
     });
 
     final p = st.currentPermission;

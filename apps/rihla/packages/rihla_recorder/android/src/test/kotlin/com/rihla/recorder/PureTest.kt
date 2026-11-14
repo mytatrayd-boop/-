@@ -215,4 +215,62 @@ class PureTest {
         assertEquals("rec_1_1", RecoverPolicy.uniqueName("rec_1", setOf("rec_1")))
         assertEquals("rec_1_2", RecoverPolicy.uniqueName("rec_1", setOf("rec_1", "rec_1_1")))
     }
+
+    // سطح: ROTATION_0=0، 90=1، 180=2، 270=3. الحساس الخلفي المعتاد 90 (وأحياناً 270).
+    @Test fun cameraRotationAllSensorAndDisplayCombos() {
+        // sensor 90 خلفية: portrait=90، landscape(ROTATION_90)=0، مقلوب(180)=270، landscape معكوس(ROTATION_270)=180.
+        assertEquals(90, CameraOrientation.relativeRotation(90, 0))
+        assertEquals(0, CameraOrientation.relativeRotation(90, 1))
+        assertEquals(270, CameraOrientation.relativeRotation(90, 2))
+        assertEquals(180, CameraOrientation.relativeRotation(90, 3))
+        // sensor 270.
+        assertEquals(270, CameraOrientation.relativeRotation(270, 0))
+        assertEquals(180, CameraOrientation.relativeRotation(270, 1))
+        assertEquals(90, CameraOrientation.relativeRotation(270, 2))
+        assertEquals(0, CameraOrientation.relativeRotation(270, 3))
+        // sensor 0 و180.
+        assertEquals(0, CameraOrientation.relativeRotation(0, 0))
+        assertEquals(270, CameraOrientation.relativeRotation(0, 1))
+        assertEquals(180, CameraOrientation.relativeRotation(180, 0))
+        assertEquals(90, CameraOrientation.relativeRotation(180, 1))
+        // أمامية (معكوسة): sensor + display.
+        assertEquals(270, CameraOrientation.relativeRotation(270, 0, backFacing = false))
+        assertEquals(0, CameraOrientation.relativeRotation(270, 1, backFacing = false))
+        assertEquals(90, CameraOrientation.relativeRotation(270, 2, backFacing = false))
+        assertEquals(180, CameraOrientation.relativeRotation(270, 3, backFacing = false))
+    }
+
+    @Test fun cameraRotationResolve() {
+        // الحساس والشاشة يتقدمان على قيمة CameraX.
+        assertEquals(0, CameraOrientation.resolve(90, 1, 90))
+        assertEquals(180, CameraOrientation.resolve(90, 3, 0))
+        // بلا بيانات: CameraX، وإلا 0.
+        assertEquals(270, CameraOrientation.resolve(null, 1, 270))
+        assertEquals(0, CameraOrientation.resolve(null, null, null))
+        assertEquals(90, CameraOrientation.resolve(null, null, 89))
+    }
+
+    @Test fun displayedSizeSwapsOnQuarterTurns() {
+        assertEquals(Pair(1280, 720), CameraOrientation.displayedSize(1280, 720, 0))
+        assertEquals(Pair(720, 1280), CameraOrientation.displayedSize(1280, 720, 90))
+        assertEquals(Pair(1280, 720), CameraOrientation.displayedSize(1280, 720, 180))
+        assertEquals(Pair(720, 1280), CameraOrientation.displayedSize(1280, 720, 270))
+    }
+
+    @Test fun textureMatrixRotatesClockwiseForEachAngle() {
+        val id = floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f)
+        // أعلى منتصف الشاشة (0.5,1) يجب أن يقرأ من: 0: أعلى المخزن، 90: يساره، 180: أسفله، 270: يمينه.
+        val expect = mapOf(0 to Pair(0.5f, 1f), 90 to Pair(0f, 0.5f), 180 to Pair(0.5f, 0f), 270 to Pair(1f, 0.5f))
+        for ((deg, e) in expect) {
+            val (x, y) = LayoutMath.transform(CameraOrientation.textureMatrix(id, deg), 0.5f, 1f)
+            assertEquals("deg $deg x", e.first, x, 1e-5f)
+            assertEquals("deg $deg y", e.second, y, 1e-5f)
+        }
+    }
+
+    @Test fun landscapeAndReverseLandscapeEndToEndBackCamera() {
+        // sensor 90: landscape عادي بلا دوران؛ landscape معكوس 180 (مقلوب) فتخرج معتدلة.
+        assertEquals(0, CameraOrientation.resolve(90, 1, null))
+        assertEquals(180, CameraOrientation.resolve(90, 3, null))
+    }
 }

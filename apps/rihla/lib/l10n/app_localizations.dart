@@ -547,6 +547,252 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'انتهت الرحلة لكن تعذّر حفظ بعض تفاصيلها'**
   String get summaryDbError;
+
+  /// No description provided for @tripsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلاتي'**
+  String get tripsTitle;
+
+  /// No description provided for @tripsNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة جديدة'**
+  String get tripsNew;
+
+  /// No description provided for @tripsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلات بعد'**
+  String get tripsEmpty;
+
+  /// No description provided for @tripsEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ رحلتك الأولى لتظهر هنا.'**
+  String get tripsEmptyHint;
+
+  /// No description provided for @tripsLoadError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل الرحلات'**
+  String get tripsLoadError;
+
+  /// No description provided for @retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get retry;
+
+  /// No description provided for @tripStatusCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة'**
+  String get tripStatusCompleted;
+
+  /// No description provided for @tripStatusInterrupted.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُوقفت تلقائياً'**
+  String get tripStatusInterrupted;
+
+  /// No description provided for @tripStatusRecording.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مكتملة'**
+  String get tripStatusRecording;
+
+  /// No description provided for @tripNoVideoChip.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفيديو غير متوفر'**
+  String get tripNoVideoChip;
+
+  /// No description provided for @tripDetailsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الرحلة'**
+  String get tripDetailsTitle;
+
+  /// No description provided for @tripDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get tripDate;
+
+  /// No description provided for @tripPlayVideo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيل الفيديو'**
+  String get tripPlayVideo;
+
+  /// No description provided for @tripVideoMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفيديو غير موجود على الجوال'**
+  String get tripVideoMissing;
+
+  /// No description provided for @tripPlayFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح الفيديو'**
+  String get tripPlayFailed;
+
+  /// No description provided for @tripShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة'**
+  String get tripShare;
+
+  /// No description provided for @tripDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get tripDelete;
+
+  /// No description provided for @tripDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الرحلة؟'**
+  String get tripDeleteTitle;
+
+  /// No description provided for @tripDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُحذف المسار من التطبيق. يبقى الفيديو في ألبوم الجوال.'**
+  String get tripDeleteBody;
+
+  /// No description provided for @cancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cancel;
+
+  /// No description provided for @tripDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف الرحلة'**
+  String get tripDeleted;
+
+  /// No description provided for @tripDeleteFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حذف الرحلة'**
+  String get tripDeleteFailed;
+
+  /// No description provided for @tripNoRoute.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نقاط مسار لهذه الرحلة'**
+  String get tripNoRoute;
+
+  /// No description provided for @shareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة الرحلة'**
+  String get shareTitle;
+
+  /// No description provided for @shareVideoTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال الفيديو'**
+  String get shareVideoTitle;
+
+  /// No description provided for @shareVideoDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيديو واحد يجمع الصورة والمسار'**
+  String get shareVideoDesc;
+
+  /// No description provided for @shareVideoWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'قد يضغط واتساب الفيديو الكبير فتقل جودته.'**
+  String get shareVideoWarning;
+
+  /// No description provided for @shareVideoMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفيديو غير موجود على الجوال'**
+  String get shareVideoMissing;
+
+  /// No description provided for @shareRouteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال مساري على الخريطة'**
+  String get shareRouteTitle;
+
+  /// No description provided for @shareRouteDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'رابط لخرائط جوجل أو ملف GPX'**
+  String get shareRouteDesc;
+
+  /// No description provided for @shareLinkTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رابط خرائط جوجل'**
+  String get shareLinkTitle;
+
+  /// No description provided for @shareLinkNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسار تقريبي: اختُصر إلى نقاط قليلة. ملف GPX يحوي المسار كاملاً.'**
+  String get shareLinkNote;
+
+  /// No description provided for @shareLinkShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة الرابط'**
+  String get shareLinkShare;
+
+  /// No description provided for @shareLinkOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح في خرائط جوجل'**
+  String get shareLinkOpen;
+
+  /// No description provided for @shareGpxTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف GPX'**
+  String get shareGpxTitle;
+
+  /// No description provided for @shareGpxDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'دقيق وكامل، يُفتح في تطبيقات المسارات'**
+  String get shareGpxDesc;
+
+  /// No description provided for @shareGpxShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة الملف'**
+  String get shareGpxShare;
+
+  /// No description provided for @shareNoRoute.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد مسار لمشاركته'**
+  String get shareNoRoute;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت المشاركة'**
+  String get shareFailed;
+
+  /// No description provided for @openMapsFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح خرائط جوجل'**
+  String get openMapsFailed;
+
+  /// No description provided for @shareLinkMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساري على الخريطة: {url}'**
+  String shareLinkMessage(String url);
 }
 
 class _AppLocalizationsDelegate

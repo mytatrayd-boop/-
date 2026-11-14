@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 
 import '../../core/router/app_router.dart';
+import '../../data/platform/screen_orientation.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding_permissions/permissions_controller.dart';
 import 'home_controller.dart';
@@ -30,10 +31,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Timer? _frameTimer;
   bool _grabbing = false;
   bool _dialogOpen = false;
+  late final ScreenOrientation _orientation;
 
   @override
   void initState() {
     super.initState();
+    // شاشة التسجيل أفقية فقط؛ تُعاد للطولي عند الخروج (dispose).
+    _orientation = ref.read(screenOrientationProvider);
+    _orientation.landscape().catchError((_) {});
     WidgetsBinding.instance.addObserver(this);
     // الأذونات قد تتغير من إعدادات الجوال أو من الشاشة السابقة.
     Future.microtask(() => ref.read(permissionsProvider.notifier).refresh());
@@ -42,6 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void dispose() {
     _frameTimer?.cancel();
+    _orientation.portrait().catchError((_) {});
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -71,7 +77,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       final q = st.quality == VideoQuality.p1080
           ? RecorderQuality.p1080
           : RecorderQuality.p720;
-      final frame = await captureMapFrame(_mapBoundaryKey, q.mapWidth);
+      final frame = await captureMapFrame(
+        _mapBoundaryKey,
+        q.mapWidth,
+        q.height,
+      );
       if (frame != null && mounted) {
         await ref.read(homeProvider.notifier).pushMapFrame(frame);
       }
@@ -124,7 +134,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (_dialogOpen) Navigator.of(context, rootNavigator: true).pop();
       ref.read(homeProvider.notifier).consumeFinished();
       context.go(
-        AppRoutes.summaryFor(fin.tripId, reason: fin.dbError ? 'dbError' : fin.interruptReason?.name),
+        AppRoutes.summaryFor(
+          fin.tripId,
+          reason: fin.dbError ? 'dbError' : fin.interruptReason?.name,
+        ),
       );
     }
     if (next.notice == HomeNotice.startFailed && prev?.notice != next.notice) {
@@ -232,9 +245,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     color: const Color(0x99000000),
                     child: Center(
                       child: Semantics(
-                        label: AppLocalizations.of(
-                          context,
-                        ).countdownLabel(st.countdown!),
+                        label: AppLocalizations.of(context)
+                            .countdownLabel(st.countdown!),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [

@@ -4,7 +4,9 @@ import 'package:rihla/data/camera/camera_preview_source.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 
 void main() {
-  testWidgets('open يفتح الكاميرا ويعرض Texture بحجم المصدر مقصوصاً cover', (t) async {
+  testWidgets('open يفتح الكاميرا ويعرض Texture بحجم المصدر مقصوصاً cover', (
+    t,
+  ) async {
     final rec = FakeRihlaRecorder();
     final src = NativeCameraPreviewSource(rec, quality: RecorderQuality.p1080);
     await src.open();
@@ -13,7 +15,11 @@ void main() {
     await t.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
-        child: SizedBox(width: 400, height: 360, child: Builder(builder: src.buildPreview)),
+        child: SizedBox(
+          width: 400,
+          height: 360,
+          child: Builder(builder: src.buildPreview),
+        ),
       ),
     );
     final tex = t.widget<Texture>(find.byType(Texture));
@@ -25,8 +31,13 @@ void main() {
   });
 
   test('فشل الأصلي يتحول إلى CameraOpenException', () async {
-    final rec = FakeRihlaRecorder(openFailure: const RecorderException('camera_unavailable', 'busy'));
-    expect(NativeCameraPreviewSource(rec).open(), throwsA(isA<CameraOpenException>()));
+    final rec = FakeRihlaRecorder(
+      openFailure: const RecorderException('camera_unavailable', 'busy'),
+    );
+    expect(
+      NativeCameraPreviewSource(rec).open(),
+      throwsA(isA<CameraOpenException>()),
+    );
   });
 
   test('بدون إضافة أصلية (Linux) يفشل open بصدق', () async {
@@ -36,7 +47,12 @@ void main() {
 
   testWidgets('قبل open لا شيء يُعرض', (t) async {
     final src = NativeCameraPreviewSource(FakeRihlaRecorder());
-    await t.pumpWidget(Directionality(textDirection: TextDirection.ltr, child: Builder(builder: src.buildPreview)));
+    await t.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Builder(builder: src.buildPreview),
+      ),
+    );
     expect(find.byType(Texture), findsNothing);
   });
 }

@@ -251,4 +251,131 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get summaryDbError => 'انتهت الرحلة لكن تعذّر حفظ بعض تفاصيلها';
+
+  @override
+  String get tripsTitle => 'رحلاتي';
+
+  @override
+  String get tripsNew => 'رحلة جديدة';
+
+  @override
+  String get tripsEmpty => 'لا توجد رحلات بعد';
+
+  @override
+  String get tripsEmptyHint => 'ابدأ رحلتك الأولى لتظهر هنا.';
+
+  @override
+  String get tripsLoadError => 'تعذّر تحميل الرحلات';
+
+  @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
+  String get tripStatusCompleted => 'مكتملة';
+
+  @override
+  String get tripStatusInterrupted => 'أُوقفت تلقائياً';
+
+  @override
+  String get tripStatusRecording => 'غير مكتملة';
+
+  @override
+  String get tripNoVideoChip => 'الفيديو غير متوفر';
+
+  @override
+  String get tripDetailsTitle => 'تفاصيل الرحلة';
+
+  @override
+  String get tripDate => 'التاريخ';
+
+  @override
+  String get tripPlayVideo => 'تشغيل الفيديو';
+
+  @override
+  String get tripVideoMissing => 'الفيديو غير موجود على الجوال';
+
+  @override
+  String get tripPlayFailed => 'تعذّر فتح الفيديو';
+
+  @override
+  String get tripShare => 'مشاركة';
+
+  @override
+  String get tripDelete => 'حذف';
+
+  @override
+  String get tripDeleteTitle => 'حذف الرحلة؟';
+
+  @override
+  String get tripDeleteBody =>
+      'سيُحذف المسار من التطبيق. يبقى الفيديو في ألبوم الجوال.';
+
+  @override
+  String get cancel => 'إلغاء';
+
+  @override
+  String get tripDeleted => 'تم حذف الرحلة';
+
+  @override
+  String get tripDeleteFailed => 'تعذّر حذف الرحلة';
+
+  @override
+  String get tripNoRoute => 'لا توجد نقاط مسار لهذه الرحلة';
+
+  @override
+  String get shareTitle => 'مشاركة الرحلة';
+
+  @override
+  String get shareVideoTitle => 'إرسال الفيديو';
+
+  @override
+  String get shareVideoDesc => 'فيديو واحد يجمع الصورة والمسار';
+
+  @override
+  String get shareVideoWarning => 'قد يضغط واتساب الفيديو الكبير فتقل جودته.';
+
+  @override
+  String get shareVideoMissing => 'الفيديو غير موجود على الجوال';
+
+  @override
+  String get shareRouteTitle => 'إرسال مساري على الخريطة';
+
+  @override
+  String get shareRouteDesc => 'رابط لخرائط جوجل أو ملف GPX';
+
+  @override
+  String get shareLinkTitle => 'رابط خرائط جوجل';
+
+  @override
+  String get shareLinkNote =>
+      'المسار تقريبي: اختُصر إلى نقاط قليلة. ملف GPX يحوي المسار كاملاً.';
+
+  @override
+  String get shareLinkShare => 'مشاركة الرابط';
+
+  @override
+  String get shareLinkOpen => 'فتح في خرائط جوجل';
+
+  @override
+  String get shareGpxTitle => 'ملف GPX';
+
+  @override
+  String get shareGpxDesc => 'دقيق وكامل، يُفتح في تطبيقات المسارات';
+
+  @override
+  String get shareGpxShare => 'مشاركة الملف';
+
+  @override
+  String get shareNoRoute => 'لا يوجد مسار لمشاركته';
+
+  @override
+  String get shareFailed => 'تعذّرت المشاركة';
+
+  @override
+  String get openMapsFailed => 'تعذّر فتح خرائط جوجل';
+
+  @override
+  String shareLinkMessage(String url) {
+    return 'مساري على الخريطة: $url';
+  }
 }

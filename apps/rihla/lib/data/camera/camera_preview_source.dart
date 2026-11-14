@@ -37,7 +37,9 @@ class NativeCameraPreviewSource implements CameraPreviewSource {
       _info = await _recorder.openCamera(quality: quality);
     } on RecorderException catch (e) {
       _info = null;
-      throw CameraOpenException('${e.code}${e.message == null ? '' : ': ${e.message}'}');
+      throw CameraOpenException(
+        '${e.code}${e.message == null ? '' : ': ${e.message}'}',
+      );
     }
   }
 

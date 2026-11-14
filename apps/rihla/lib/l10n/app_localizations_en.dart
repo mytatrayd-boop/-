@@ -256,4 +256,133 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get summaryDbError =>
       'The trip ended but some of its details could not be saved';
+
+  @override
+  String get tripsTitle => 'My trips';
+
+  @override
+  String get tripsNew => 'New trip';
+
+  @override
+  String get tripsEmpty => 'No trips yet';
+
+  @override
+  String get tripsEmptyHint =>
+      'Start your first trip and it will show up here.';
+
+  @override
+  String get tripsLoadError => 'Could not load trips';
+
+  @override
+  String get retry => 'Try again';
+
+  @override
+  String get tripStatusCompleted => 'Completed';
+
+  @override
+  String get tripStatusInterrupted => 'Stopped automatically';
+
+  @override
+  String get tripStatusRecording => 'Unfinished';
+
+  @override
+  String get tripNoVideoChip => 'Video unavailable';
+
+  @override
+  String get tripDetailsTitle => 'Trip details';
+
+  @override
+  String get tripDate => 'Date';
+
+  @override
+  String get tripPlayVideo => 'Play video';
+
+  @override
+  String get tripVideoMissing => 'The video is not on this phone';
+
+  @override
+  String get tripPlayFailed => 'Could not open the video';
+
+  @override
+  String get tripShare => 'Share';
+
+  @override
+  String get tripDelete => 'Delete';
+
+  @override
+  String get tripDeleteTitle => 'Delete this trip?';
+
+  @override
+  String get tripDeleteBody =>
+      'The route will be removed from the app. The video stays in your phone\'s gallery.';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get tripDeleted => 'Trip deleted';
+
+  @override
+  String get tripDeleteFailed => 'Could not delete the trip';
+
+  @override
+  String get tripNoRoute => 'This trip has no route points';
+
+  @override
+  String get shareTitle => 'Share trip';
+
+  @override
+  String get shareVideoTitle => 'Send the video';
+
+  @override
+  String get shareVideoDesc => 'One video with the picture and the route';
+
+  @override
+  String get shareVideoWarning =>
+      'WhatsApp may compress large videos and lower their quality.';
+
+  @override
+  String get shareVideoMissing => 'The video is not on this phone';
+
+  @override
+  String get shareRouteTitle => 'Send my route on the map';
+
+  @override
+  String get shareRouteDesc => 'A Google Maps link or a GPX file';
+
+  @override
+  String get shareLinkTitle => 'Google Maps link';
+
+  @override
+  String get shareLinkNote =>
+      'The route is approximate: reduced to a few points. The GPX file has the full route.';
+
+  @override
+  String get shareLinkShare => 'Share the link';
+
+  @override
+  String get shareLinkOpen => 'Open in Google Maps';
+
+  @override
+  String get shareGpxTitle => 'GPX file';
+
+  @override
+  String get shareGpxDesc => 'Accurate and complete, opens in route apps';
+
+  @override
+  String get shareGpxShare => 'Share the file';
+
+  @override
+  String get shareNoRoute => 'There is no route to share';
+
+  @override
+  String get shareFailed => 'Sharing failed';
+
+  @override
+  String get openMapsFailed => 'Could not open Google Maps';
+
+  @override
+  String shareLinkMessage(String url) {
+    return 'My route on the map: $url';
+  }
 }

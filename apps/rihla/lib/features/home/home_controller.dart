@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 
 import '../../core/geo/distance.dart';
+import '../../core/log.dart';
 import '../../core/geo/geo_point.dart';
 import '../../data/camera/camera_preview_source.dart';
 import '../../data/location/location_source.dart';
@@ -22,6 +23,7 @@ const _granted = AppPermissionStatus.granted;
 final locationSourceProvider = Provider<LocationSource>(
   (_) => const GeolocatorLocationSource(),
 );
+
 /// المُسجِّل الأصلي (كاميرا + ترميز). يُستبدل بـFakeRihlaRecorder في الاختبارات.
 final recorderProvider = Provider<RihlaRecorder>(
   (_) => MethodChannelRihlaRecorder(),
@@ -157,6 +159,8 @@ class HomeController extends Notifier<HomeState> {
   bool _cameraWanted = false;
   Future<void> _writes = Future.value();
   GeoPoint? _lastPoint;
+  int _fixesSeen = 0;
+  int _pointsSaved = 0;
 
   @override
   HomeState build() {
@@ -240,13 +244,18 @@ class HomeController extends Notifier<HomeState> {
     if (_disposed) return;
     final p = GeoPoint(f.lat, f.lng, time: f.time);
     final id = state.tripId;
-    if (state.recording && !state.saving && id != null && p.isValid && !state.weakFor(f)) {
+    if (state.recording &&
+        !state.saving &&
+        id != null &&
+        p.isValid &&
+        !state.weakFor(f)) {
       final prev = _lastPoint;
       _lastPoint = p;
       state = state.copyWith(
         fix: f,
         track: [...state.track, p],
-        distanceM: state.distanceM + (prev == null ? 0 : haversineMeters(prev, p)),
+        distanceM:
+            state.distanceM + (prev == null ? 0 : haversineMeters(prev, p)),
       );
       _persist(id, f);
     } else {
@@ -259,7 +268,7 @@ class HomeController extends Notifier<HomeState> {
     final repo = ref.read(tripRepositoryProvider);
     _writes = _writes.then((_) async {
       try {
-        await repo.addPoints(tripId, [
+        final saved = await repo.addPoints(tripId, [
           TrackSample(
             lat: f.lat,
             lng: f.lng,
@@ -268,7 +277,17 @@ class HomeController extends Notifier<HomeState> {
             speedMps: f.speedMps,
           ),
         ]);
-      } catch (_) {}
+        _fixesSeen++;
+        _pointsSaved += saved;
+        if (saved == 0) {
+          rlog('point rejected by filter (accuracy=${f.accuracyM})');
+        }
+        if (_fixesSeen == 1 || _fixesSeen % 20 == 0) {
+          rlog('trip $tripId: fixes=$_fixesSeen saved=$_pointsSaved');
+        }
+      } catch (e) {
+        rlog('addPoints failed: $e');
+      }
     });
   }
 
@@ -332,15 +351,22 @@ class HomeController extends Notifier<HomeState> {
   ) async {
     void failed() {
       if (!_disposed) {
-        state = state.copyWith(clearCountdown: true, notice: HomeNotice.startFailed);
+        state = state.copyWith(
+          clearCountdown: true,
+          notice: HomeNotice.startFailed,
+        );
       }
     }
 
     try {
-      await rec.start(RecordingConfig(
-        quality: q == VideoQuality.p1080 ? RecorderQuality.p1080 : RecorderQuality.p720,
-        muted: state.muted,
-      ));
+      await rec.start(
+        RecordingConfig(
+          quality: q == VideoQuality.p1080
+              ? RecorderQuality.p1080
+              : RecorderQuality.p720,
+          muted: state.muted,
+        ),
+      );
     } catch (_) {
       // أي استثناء (لا RecorderException فقط) يعني فشل البدء.
       failed();
@@ -355,7 +381,8 @@ class HomeController extends Notifier<HomeState> {
     String id;
     try {
       id = await repo.startTrip(quality: q == VideoQuality.p1080 ? 1080 : 720);
-    } catch (_) {
+    } catch (e) {
+      rlog('startTrip failed: $e');
       await _stopQuietly(rec);
       failed();
       return;
@@ -370,6 +397,9 @@ class HomeController extends Notifier<HomeState> {
     }
     final first = GeoPoint(f.lat, f.lng, time: f.time);
     _lastPoint = first;
+    _fixesSeen = 0;
+    _pointsSaved = 0;
+    rlog('trip started id=$id');
     state = HomeState(
       camera: state.camera,
       fix: state.fix,
@@ -425,10 +455,12 @@ class HomeController extends Notifier<HomeState> {
     try {
       if (path != null) {
         await repo.completeTrip(id, videoPath: path);
+        rlog('trip $id completed: points saved=$_pointsSaved');
       } else {
         await repo.interruptTrip(id);
       }
-    } catch (_) {
+    } catch (e) {
+      rlog('complete/interrupt failed: $e');
       dbError = true;
       try {
         await repo.interruptTrip(id, videoPath: path);
@@ -503,6 +535,7 @@ extension on HomeState {
       f.accuracyM == null || f.accuracyM! > weakGpsAccuracyM;
 }
 
-final homeProvider = NotifierProvider<HomeController, HomeState>(
+/// يُتلف عند مغادرة شاشة التسجيل: تُغلق الكاميرا ويتوقف GPS (لا تبقى في الخلفية).
+final homeProvider = NotifierProvider.autoDispose<HomeController, HomeState>(
   HomeController.new,
 );
