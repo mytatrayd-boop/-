@@ -14,6 +14,9 @@ class Trips extends Table {
   RealColumn get distanceM => real().withDefault(const Constant(0))();
   TextColumn get videoAssetId => text().nullable()();
   TextColumn get videoPath => text().nullable()();
+
+  /// true بعد حفظ الفيديو في ألبوم الجوال (gal لا يعيد معرّفاً، فلا يُعتمد على videoAssetId).
+  BoolColumn get galleryDone => boolean().withDefault(const Constant(false))();
   IntColumn get quality => integer().withDefault(const Constant(720))();
   TextColumn get status => textEnum<TripStatus>()();
   TextColumn get title => text().nullable()();
@@ -45,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// رفع الرقم عند أي تغيير في الجداول وإضافة خطوة في [onUpgrade].
-  static const int version = 1;
+  static const int version = 2;
 
   @override
   int get schemaVersion => version;
@@ -54,8 +57,10 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      // لا ترحيلات بعد: الإصدار 1 هو الأول. كل إصدار جديد يضيف
-      // `if (from < N) { ... }` هنا ويُختبر في test/data/db_test.dart.
+      // كل إصدار جديد يضيف `if (from < N) { ... }` هنا ويُختبر في test/data/db_test.dart.
+      if (from < 2) {
+        await m.addColumn(trips, trips.galleryDone);
+      }
     },
     beforeOpen: (details) async {
       // SQLite يعطّل المفاتيح الأجنبية افتراضياً؛ مطلوب لـON DELETE CASCADE.

@@ -7,7 +7,7 @@ import '../../data/repositories/trip_repository.dart';
 enum GallerySaveStatus { none, saving, saved, failed }
 
 /// يحفظ فيديو الرحلة في الألبوم مرة عند فتح الملخص، ويسمح بإعادة المحاولة.
-/// غير autoDispose عمداً: العودة للملخص في الجلسة نفسها لا تكرر الحفظ.
+/// العلامة galleryDone في قاعدة البيانات تمنع التكرار حتى بعد إعادة تشغيل التطبيق.
 class GallerySaveController extends Notifier<GallerySaveStatus> {
   GallerySaveController(this.tripId);
   final String tripId;
@@ -36,13 +36,16 @@ class GallerySaveController extends Notifier<GallerySaveStatus> {
         set(GallerySaveStatus.none);
         return;
       }
-      if (trip!.videoAssetId != null) {
+      if (trip!.galleryDone || trip.videoAssetId != null) {
         set(GallerySaveStatus.saved);
         return;
       }
       try {
         final id = await gallery.saveVideo(path);
-        if (id != null) await repo.setVideoAssetId(tripId, id);
+        // الحفظ نجح فعلاً: فشل تسجيل العلامة لا يقلبه إلى فشل (يُكرَّر فقط عند الجلسة التالية).
+        try {
+          await repo.markGallerySaved(tripId, assetId: id);
+        } catch (_) {}
         set(GallerySaveStatus.saved);
       } catch (_) {
         set(GallerySaveStatus.failed);

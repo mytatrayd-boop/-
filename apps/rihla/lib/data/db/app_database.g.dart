@@ -85,6 +85,21 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, TripRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _galleryDoneMeta = const VerificationMeta(
+    'galleryDone',
+  );
+  @override
+  late final GeneratedColumn<bool> galleryDone = GeneratedColumn<bool>(
+    'gallery_done',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("gallery_done" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _qualityMeta = const VerificationMeta(
     'quality',
   );
@@ -124,6 +139,7 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, TripRow> {
     distanceM,
     videoAssetId,
     videoPath,
+    galleryDone,
     quality,
     status,
     title,
@@ -189,6 +205,15 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, TripRow> {
         videoPath.isAcceptableOrUnknown(data['video_path']!, _videoPathMeta),
       );
     }
+    if (data.containsKey('gallery_done')) {
+      context.handle(
+        _galleryDoneMeta,
+        galleryDone.isAcceptableOrUnknown(
+          data['gallery_done']!,
+          _galleryDoneMeta,
+        ),
+      );
+    }
     if (data.containsKey('quality')) {
       context.handle(
         _qualityMeta,
@@ -238,6 +263,10 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, TripRow> {
         DriftSqlType.string,
         data['${effectivePrefix}video_path'],
       ),
+      galleryDone: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}gallery_done'],
+      )!,
       quality: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}quality'],
@@ -272,6 +301,9 @@ class TripRow extends DataClass implements Insertable<TripRow> {
   final double distanceM;
   final String? videoAssetId;
   final String? videoPath;
+
+  /// true بعد حفظ الفيديو في ألبوم الجوال (gal لا يعيد معرّفاً، فلا يُعتمد على videoAssetId).
+  final bool galleryDone;
   final int quality;
   final TripStatus status;
   final String? title;
@@ -283,6 +315,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
     required this.distanceM,
     this.videoAssetId,
     this.videoPath,
+    required this.galleryDone,
     required this.quality,
     required this.status,
     this.title,
@@ -303,6 +336,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
     if (!nullToAbsent || videoPath != null) {
       map['video_path'] = Variable<String>(videoPath);
     }
+    map['gallery_done'] = Variable<bool>(galleryDone);
     map['quality'] = Variable<int>(quality);
     {
       map['status'] = Variable<String>(
@@ -330,6 +364,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
       videoPath: videoPath == null && nullToAbsent
           ? const Value.absent()
           : Value(videoPath),
+      galleryDone: Value(galleryDone),
       quality: Value(quality),
       status: Value(status),
       title: title == null && nullToAbsent
@@ -351,6 +386,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
       distanceM: serializer.fromJson<double>(json['distanceM']),
       videoAssetId: serializer.fromJson<String?>(json['videoAssetId']),
       videoPath: serializer.fromJson<String?>(json['videoPath']),
+      galleryDone: serializer.fromJson<bool>(json['galleryDone']),
       quality: serializer.fromJson<int>(json['quality']),
       status: $TripsTable.$converterstatus.fromJson(
         serializer.fromJson<String>(json['status']),
@@ -369,6 +405,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
       'distanceM': serializer.toJson<double>(distanceM),
       'videoAssetId': serializer.toJson<String?>(videoAssetId),
       'videoPath': serializer.toJson<String?>(videoPath),
+      'galleryDone': serializer.toJson<bool>(galleryDone),
       'quality': serializer.toJson<int>(quality),
       'status': serializer.toJson<String>(
         $TripsTable.$converterstatus.toJson(status),
@@ -385,6 +422,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
     double? distanceM,
     Value<String?> videoAssetId = const Value.absent(),
     Value<String?> videoPath = const Value.absent(),
+    bool? galleryDone,
     int? quality,
     TripStatus? status,
     Value<String?> title = const Value.absent(),
@@ -396,6 +434,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
     distanceM: distanceM ?? this.distanceM,
     videoAssetId: videoAssetId.present ? videoAssetId.value : this.videoAssetId,
     videoPath: videoPath.present ? videoPath.value : this.videoPath,
+    galleryDone: galleryDone ?? this.galleryDone,
     quality: quality ?? this.quality,
     status: status ?? this.status,
     title: title.present ? title.value : this.title,
@@ -413,6 +452,9 @@ class TripRow extends DataClass implements Insertable<TripRow> {
           ? data.videoAssetId.value
           : this.videoAssetId,
       videoPath: data.videoPath.present ? data.videoPath.value : this.videoPath,
+      galleryDone: data.galleryDone.present
+          ? data.galleryDone.value
+          : this.galleryDone,
       quality: data.quality.present ? data.quality.value : this.quality,
       status: data.status.present ? data.status.value : this.status,
       title: data.title.present ? data.title.value : this.title,
@@ -429,6 +471,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
           ..write('distanceM: $distanceM, ')
           ..write('videoAssetId: $videoAssetId, ')
           ..write('videoPath: $videoPath, ')
+          ..write('galleryDone: $galleryDone, ')
           ..write('quality: $quality, ')
           ..write('status: $status, ')
           ..write('title: $title')
@@ -445,6 +488,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
     distanceM,
     videoAssetId,
     videoPath,
+    galleryDone,
     quality,
     status,
     title,
@@ -460,6 +504,7 @@ class TripRow extends DataClass implements Insertable<TripRow> {
           other.distanceM == this.distanceM &&
           other.videoAssetId == this.videoAssetId &&
           other.videoPath == this.videoPath &&
+          other.galleryDone == this.galleryDone &&
           other.quality == this.quality &&
           other.status == this.status &&
           other.title == this.title);
@@ -473,6 +518,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
   final Value<double> distanceM;
   final Value<String?> videoAssetId;
   final Value<String?> videoPath;
+  final Value<bool> galleryDone;
   final Value<int> quality;
   final Value<TripStatus> status;
   final Value<String?> title;
@@ -485,6 +531,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
     this.distanceM = const Value.absent(),
     this.videoAssetId = const Value.absent(),
     this.videoPath = const Value.absent(),
+    this.galleryDone = const Value.absent(),
     this.quality = const Value.absent(),
     this.status = const Value.absent(),
     this.title = const Value.absent(),
@@ -498,6 +545,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
     this.distanceM = const Value.absent(),
     this.videoAssetId = const Value.absent(),
     this.videoPath = const Value.absent(),
+    this.galleryDone = const Value.absent(),
     this.quality = const Value.absent(),
     required TripStatus status,
     this.title = const Value.absent(),
@@ -513,6 +561,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
     Expression<double>? distanceM,
     Expression<String>? videoAssetId,
     Expression<String>? videoPath,
+    Expression<bool>? galleryDone,
     Expression<int>? quality,
     Expression<String>? status,
     Expression<String>? title,
@@ -526,6 +575,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
       if (distanceM != null) 'distance_m': distanceM,
       if (videoAssetId != null) 'video_asset_id': videoAssetId,
       if (videoPath != null) 'video_path': videoPath,
+      if (galleryDone != null) 'gallery_done': galleryDone,
       if (quality != null) 'quality': quality,
       if (status != null) 'status': status,
       if (title != null) 'title': title,
@@ -541,6 +591,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
     Value<double>? distanceM,
     Value<String?>? videoAssetId,
     Value<String?>? videoPath,
+    Value<bool>? galleryDone,
     Value<int>? quality,
     Value<TripStatus>? status,
     Value<String?>? title,
@@ -554,6 +605,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
       distanceM: distanceM ?? this.distanceM,
       videoAssetId: videoAssetId ?? this.videoAssetId,
       videoPath: videoPath ?? this.videoPath,
+      galleryDone: galleryDone ?? this.galleryDone,
       quality: quality ?? this.quality,
       status: status ?? this.status,
       title: title ?? this.title,
@@ -585,6 +637,9 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
     if (videoPath.present) {
       map['video_path'] = Variable<String>(videoPath.value);
     }
+    if (galleryDone.present) {
+      map['gallery_done'] = Variable<bool>(galleryDone.value);
+    }
     if (quality.present) {
       map['quality'] = Variable<int>(quality.value);
     }
@@ -612,6 +667,7 @@ class TripsCompanion extends UpdateCompanion<TripRow> {
           ..write('distanceM: $distanceM, ')
           ..write('videoAssetId: $videoAssetId, ')
           ..write('videoPath: $videoPath, ')
+          ..write('galleryDone: $galleryDone, ')
           ..write('quality: $quality, ')
           ..write('status: $status, ')
           ..write('title: $title, ')
@@ -1145,6 +1201,7 @@ typedef $$TripsTableCreateCompanionBuilder = TripsCompanion Function({
   Value<double> distanceM,
   Value<String?> videoAssetId,
   Value<String?> videoPath,
+  Value<bool> galleryDone,
   Value<int> quality,
   required TripStatus status,
   Value<String?> title,
@@ -1158,6 +1215,7 @@ typedef $$TripsTableUpdateCompanionBuilder = TripsCompanion Function({
   Value<double> distanceM,
   Value<String?> videoAssetId,
   Value<String?> videoPath,
+  Value<bool> galleryDone,
   Value<int> quality,
   Value<TripStatus> status,
   Value<String?> title,
@@ -1227,6 +1285,11 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<String> get videoPath => $composableBuilder(
     column: $table.videoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get galleryDone => $composableBuilder(
+    column: $table.galleryDone,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1316,6 +1379,11 @@ class $$TripsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get galleryDone => $composableBuilder(
+    column: $table.galleryDone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get quality => $composableBuilder(
     column: $table.quality,
     builder: (column) => ColumnOrderings(column),
@@ -1365,6 +1433,11 @@ class $$TripsTableAnnotationComposer
 
   GeneratedColumn<String> get videoPath =>
       $composableBuilder(column: $table.videoPath, builder: (column) => column);
+
+  GeneratedColumn<bool> get galleryDone => $composableBuilder(
+    column: $table.galleryDone,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get quality =>
       $composableBuilder(column: $table.quality, builder: (column) => column);
@@ -1436,6 +1509,7 @@ class $$TripsTableTableManager
                 Value<double> distanceM = const Value.absent(),
                 Value<String?> videoAssetId = const Value.absent(),
                 Value<String?> videoPath = const Value.absent(),
+                Value<bool> galleryDone = const Value.absent(),
                 Value<int> quality = const Value.absent(),
                 Value<TripStatus> status = const Value.absent(),
                 Value<String?> title = const Value.absent(),
@@ -1448,6 +1522,7 @@ class $$TripsTableTableManager
                 distanceM: distanceM,
                 videoAssetId: videoAssetId,
                 videoPath: videoPath,
+                galleryDone: galleryDone,
                 quality: quality,
                 status: status,
                 title: title,
@@ -1462,6 +1537,7 @@ class $$TripsTableTableManager
                 Value<double> distanceM = const Value.absent(),
                 Value<String?> videoAssetId = const Value.absent(),
                 Value<String?> videoPath = const Value.absent(),
+                Value<bool> galleryDone = const Value.absent(),
                 Value<int> quality = const Value.absent(),
                 required TripStatus status,
                 Value<String?> title = const Value.absent(),
@@ -1474,6 +1550,7 @@ class $$TripsTableTableManager
                 distanceM: distanceM,
                 videoAssetId: videoAssetId,
                 videoPath: videoPath,
+                galleryDone: galleryDone,
                 quality: quality,
                 status: status,
                 title: title,

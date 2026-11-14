@@ -24,7 +24,7 @@ object SegmentConcat {
     fun concat(dir: File, entries: List<SegmentEntry>, out: File): Result {
         val total = entries.sumOf { File(dir, it.name).length() }
         if (!StorageMath.canMerge(dir.usableSpace, total)) {
-            throw IllegalStateException("low_storage_for_merge: segments kept in ${dir.path}")
+            throw LowStorageException("low_storage_for_merge: segments kept in ${dir.path}")
         }
         val part = File(out.path + ".part")
         part.delete()
@@ -71,6 +71,9 @@ object SegmentConcat {
                     val vi = trackOf(ev, "video/")
                     val ai = trackOf(ea, "audio/")
                     if (vi < 0) { skipped++; continue }
+                    // لا يمكن التراجع عن عينات كُتبت في الـmuxer؛ فنقرأ المقطع كاملاً قراءة جافة أولاً
+                    // كي لا يدخل الناتج جزء من مقطع تالف.
+                    if (!readsFully(f)) { Log.w(TAG, "segment ${e.name} unreadable; skipped"); skipped++; continue }
                     ev.selectTrack(vi)
                     if (ai >= 0) ea.selectTrack(ai)
                     var vAlive = true
@@ -119,6 +122,29 @@ object SegmentConcat {
         } finally {
             muxer?.runCatching { release() }
             if (!ok) part.delete()
+        }
+    }
+
+    /** يقرأ كل عينات المقطع بلا كتابة؛ false عند أي فشل قراءة. */
+    private fun readsFully(f: File): Boolean {
+        val ex = MediaExtractor()
+        return try {
+            ex.setDataSource(f.path)
+            for (i in 0 until ex.trackCount) ex.selectTrack(i)
+            val b = ByteBuffer.allocate(4 * 1024 * 1024)
+            var n = 0
+            while (true) {
+                b.clear()
+                val size = ex.readSampleData(b, 0)
+                if (size < 0) break
+                n++
+                if (!ex.advance()) break
+            }
+            n > 0
+        } catch (t: Throwable) {
+            false
+        } finally {
+            ex.release()
         }
     }
 

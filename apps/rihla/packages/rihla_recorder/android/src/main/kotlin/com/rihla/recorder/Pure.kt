@@ -258,3 +258,47 @@ class AudioPtsTracker(private val sampleRate: Int, private val thresholdUs: Long
 
     val anchor: Long get() = max(anchorUs, 0L)
 }
+
+/** نقص مساحة (لا يُحتسب محاولة استرداد فاشلة). */
+class LowStorageException(message: String) : IllegalStateException(message)
+
+/**
+ * سياسة استرداد مجلدات الجلسات المنقطعة. قاعدة ثابتة: لا يُحذف أي مجلد فيه ملفات وسائط أبداً؛
+ * يُحذف المجلد الفارغ من الوسائط فقط، وما عداه يُدمج أو يُنقل إلى recovery_failed.
+ */
+object RecoverPolicy {
+    const val MAX_ATTEMPTS = 3
+    const val FAILED_DIR = "recovery_failed"
+
+    enum class Action { DELETE_EMPTY, QUARANTINE, RECOVER }
+
+    /** [validSegments] مقاطع السجل الموجودة وغير الفارغة؛ [hasAnyMedia] أي ملف mp4 غير فارغ في المجلد. */
+    fun plan(validSegments: Int, hasAnyMedia: Boolean, attempts: Int): Action = when {
+        validSegments <= 0 -> if (hasAnyMedia) Action.QUARANTINE else Action.DELETE_EMPTY
+        attempts >= MAX_ATTEMPTS -> Action.QUARANTINE
+        else -> Action.RECOVER
+    }
+
+    fun isStorageFailure(t: Throwable?): Boolean {
+        var c = t
+        var depth = 0
+        while (c != null && depth++ < 8) {
+            if (c is LowStorageException) return true
+            val m = c.message?.lowercase()
+            if (m != null && (m.contains("low_storage") || m.contains("no space left") || m.contains("enospc"))) return true
+            c = c.cause
+        }
+        return false
+    }
+
+    /** عدد المحاولات بعد فشل: أخطاء المساحة لا تُحتسب. */
+    fun attemptsAfterFailure(previous: Int, t: Throwable?): Int = if (isStorageFailure(t)) previous else previous + 1
+
+    /** اسم وجهة فريد داخل recovery_failed. */
+    fun uniqueName(base: String, existing: Set<String>): String {
+        if (base !in existing) return base
+        var i = 1
+        while ("${base}_$i" in existing) i++
+        return "${base}_$i"
+    }
+}

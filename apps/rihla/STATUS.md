@@ -1,5 +1,14 @@
 # STATUS — رحلة
 
+## إصلاحات المدير: galleryDone + سلامة الاسترداد (2026-11-14): مبني ومختبر على المضيف، لا جهاز
+
+- schema v2: عمود `trips.galleryDone` (bool، افتراضي false) + `onUpgrade` (`addColumn`). `TripRepository.markGallerySaved(id, {assetId})`؛ `GallerySaveController` يحفظ العلامة عند النجاح (حتى بلا معرّف من gal) ولا يعيد الحفظ إن كانت true (حتى بعد إعادة تشغيل التطبيق). `videoAssetId` اختياري. فشل كتابة العلامة بعد حفظ ناجح لا يُظهر فشلاً (قد يتكرر الحفظ في جلسة لاحقة: خطر ضئيل معروف).
+- اختبار ترحيل حقيقي v1->v2 (test/data/db_test.dart): ملف SQLite بمخطط v1 الفعلي وuser_version=1 وبيانات، يُفتح بـAppDatabase الجديد؛ البيانات باقية وgalleryDone=false وuser_version=2. + اختبارات الريبو والمتحكم (gallery_done_test.dart: بلا معرّف، عدم التكرار، فشل ثم إعادة).
+- Kotlin recoverPending: `RecoverPolicy` في Pure.kt. لا حذف لأي مجلد فيه mp4؛ يُحذف المجلد الخالي من الوسائط تماماً فقط. بعد 3 محاولات فاشلة (أو وسائط بلا سجل صالح) يُنقل المجلد إلى `rihla/recovery_failed/` ويُرسل حدث `recoveryFailed` (path, moved) لـDart (Dart يتجاهله حالياً: لا واجهة له؛ أنقله إن فشل النقل يبقى في مكانه). أخطاء المساحة (`LowStorageException`، ENOSPC، low_storage) لا تُحتسب محاولة. `RecordingSession.recover` لم يعد يحذف شيئاً عند غياب المقاطع.
+- منخفضة: حُذف durationUs/firstBaseUs/lastPtsUs الميتة من SegmentWriter. SegmentConcat يقرأ كل مقطع قراءة جافة قبل كتابته (readsFully) فلا يدخل الناتج جزء من مقطع تالف؛ ثمنه قراءة إضافية للقرص عند الدمج. غير مجرَّب على ملفات mp4 حقيقية (لا جهاز).
+- تحقق على نسخة نظيفة من `git ls-files -co --exclude-standard`: analyze بلا ملاحظات؛ flutter test 113 (+ 15 في الحزمة)؛ gradlew :rihla_recorder:testDebugUnitTest 20 ناجحاً (4 جديدة لسياسة الاسترداد)؛ build apk --debug نجح.
+- لم يُجرَّب: أي شيء أصلي على جهاز (الاسترداد/النقل الفعلي، الدمج).
+
 ## F6 (ربط الشاشة بالمُسجِّل، Dart فقط) (2026-11-14): مكتمل بالمزيّفات، لم يُجرَّب على جهاز
 
 ### المنجز

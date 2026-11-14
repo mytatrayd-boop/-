@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rihla/data/db/app_database.dart';
@@ -214,5 +217,68 @@ void main() {
     // الرحلة لا تقفز آلاف الكيلومترات
     await repo.completeTrip(id, endedAt: t0.add(const Duration(minutes: 1)));
     expect((await repo.getTrip(id))!.distanceM, lessThan(100));
+  });
+
+  test('markGallerySaved: galleryDone بلا معرّف، والمعرّف اختياري', () async {
+    final id = await repo.startTrip(startedAt: t0, quality: 720);
+    expect((await repo.getTrip(id))!.galleryDone, isFalse);
+    await repo.markGallerySaved(id);
+    var trip = (await repo.getTrip(id))!;
+    expect(trip.galleryDone, isTrue);
+    expect(trip.videoAssetId, isNull);
+    await repo.markGallerySaved(id, assetId: 'a1');
+    trip = (await repo.getTrip(id))!;
+    expect(trip.galleryDone, isTrue);
+    expect(trip.videoAssetId, 'a1');
+  });
+
+  test('ترحيل حقيقي v1 -> v2: تبقى البيانات وتُضاف galleryDone=false', () async {
+    final dir = await Directory.systemTemp.createTemp('rihla_mig');
+    final file = File('${dir.path}/v1.sqlite');
+    addTearDown(() => dir.delete(recursive: true));
+
+    // قاعدة بمخطط v1 الفعلي (قبل galleryDone) وuser_version=1 وبيانات فعلية.
+    final v1 = NativeDatabase(
+      file,
+      setup: (raw) {
+        if (raw.select('PRAGMA user_version').first.values.first == 0) {
+          raw.execute('''
+CREATE TABLE trips (
+  id TEXT NOT NULL, started_at INTEGER NOT NULL, ended_at INTEGER NULL,
+  duration_sec INTEGER NOT NULL DEFAULT 0, distance_m REAL NOT NULL DEFAULT 0,
+  video_asset_id TEXT NULL, video_path TEXT NULL,
+  quality INTEGER NOT NULL DEFAULT 720, status TEXT NOT NULL, title TEXT NULL,
+  PRIMARY KEY (id));
+CREATE TABLE track_points (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id TEXT NOT NULL
+    REFERENCES trips (id) ON DELETE CASCADE,
+  seq INTEGER NOT NULL, lat REAL NOT NULL, lng REAL NOT NULL,
+  ts INTEGER NOT NULL, accuracy_m REAL NULL, speed_mps REAL NULL);
+CREATE UNIQUE INDEX track_points_trip_seq ON track_points (trip_id, seq);
+INSERT INTO trips (id, started_at, duration_sec, video_path, status)
+  VALUES ('old', 1767261600, 90, '/v/old.mp4', 'completed');
+INSERT INTO track_points (trip_id, seq, lat, lng, ts)
+  VALUES ('old', 0, 24.0, 46.0, 1767261600);
+PRAGMA user_version = 1;
+''');
+        }
+      },
+    );
+    final old = AppDatabase(v1);
+    final migrated = await old.select(old.trips).get();
+    expect(migrated.single.id, 'old');
+    expect(migrated.single.videoPath, '/v/old.mp4');
+    expect(migrated.single.galleryDone, isFalse);
+    expect((await old.select(old.trackPoints).get()).length, 1);
+    final ver = await old.customSelect('PRAGMA user_version').getSingle();
+    expect(ver.data.values.first, 2);
+    await old.close();
+
+    // إعادة الفتح: لا ترحيل ثانٍ، والكتابة تعمل على العمود الجديد.
+    final again = AppDatabase(NativeDatabase(file));
+    await TripRepository(again).markGallerySaved('old');
+    expect((await TripRepository(again).getTrip('old'))!.galleryDone, isTrue);
+    await again.customSelect('SELECT ?', variables: [Variable.withInt(1)]).get();
+    await again.close();
   });
 }

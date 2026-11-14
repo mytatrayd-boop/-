@@ -28,8 +28,6 @@ class SegmentWriter(
     private var aTrack = -1
     private var index = 0
     private var currentName = ""
-    private var firstBaseUs = -1L
-    private var lastPtsUs = 0L
     private var failed = false
     private var closed = false
 
@@ -38,8 +36,6 @@ class SegmentWriter(
         private set
     val entries = ArrayList<SegmentEntry>()
     private val manifest = File(dir, MANIFEST)
-
-    val durationUs: Long get() = synchronized(lock) { if (firstBaseUs < 0) 0 else lastPtsUs - firstBaseUs }
 
     fun setVideoFormat(f: MediaFormat) = synchronized(lock) { videoFormat = f; drainLocked(emptyList()) }
     fun setAudioFormat(f: MediaFormat) = synchronized(lock) { audioFormat = f; drainLocked(emptyList()) }
@@ -93,7 +89,6 @@ class SegmentWriter(
         val info = MediaCodec.BufferInfo()
         info.set(0, s.data.size, timeline.relativePts(s.ptsUs), s.flags)
         m.writeSampleData(if (s.isVideo) vTrack else aTrack, ByteBuffer.wrap(s.data), info)
-        lastPtsUs = maxOf(lastPtsUs, s.ptsUs)
     }
 
     private fun openSegment() {

@@ -294,7 +294,7 @@ class RecordingSession(
         fun recover(workDir: File, finalFile: File): RecordingResult? {
             val m = File(workDir, SegmentWriter.MANIFEST)
             val entries = if (m.exists()) SegmentManifest.parse(m.readText()).filter { File(workDir, it.name).exists() } else emptyList()
-            if (entries.isEmpty()) { workDir.deleteRecursively(); return null }
+            if (entries.isEmpty()) return null // لا حذف هنا: القرار للمستدعي (RecoverPolicy).
             val r = SegmentConcat.concat(workDir, entries, finalFile)
             workDir.deleteRecursively()
             return RecordingResult(finalFile.path, r.durationUs / 1000, finalFile.length(), r.usedSegments, r.skippedSegments, false)

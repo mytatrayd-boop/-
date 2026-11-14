@@ -178,4 +178,41 @@ class PureTest {
         assertTrue(StorageMath.canMerge(5000L shl 20, 500L shl 20))
         assertFalse(StorageMath.canMerge(100L shl 20, 500L shl 20))
     }
+
+    @Test fun recoverNeverDeletesFolderWithMedia() {
+        // مقاطع صالحة وتجاوز المحاولات: نقل لا حذف.
+        assertEquals(RecoverPolicy.Action.QUARANTINE, RecoverPolicy.plan(2, true, 3))
+        assertEquals(RecoverPolicy.Action.QUARANTINE, RecoverPolicy.plan(2, true, 99))
+        // وسائط بلا مقاطع صالحة في السجل: نقل.
+        assertEquals(RecoverPolicy.Action.QUARANTINE, RecoverPolicy.plan(0, true, 0))
+        // فارغ تماماً فقط يُحذف.
+        assertEquals(RecoverPolicy.Action.DELETE_EMPTY, RecoverPolicy.plan(0, false, 0))
+        assertEquals(RecoverPolicy.Action.RECOVER, RecoverPolicy.plan(1, true, 2))
+    }
+
+    @Test fun storageFailuresDoNotCountAsAttempts() {
+        assertEquals(1, RecoverPolicy.attemptsAfterFailure(1, LowStorageException("low_storage_for_merge")))
+        assertEquals(1, RecoverPolicy.attemptsAfterFailure(1, RuntimeException("x", java.io.IOException("No space left on device"))))
+        assertEquals(2, RecoverPolicy.attemptsAfterFailure(1, IllegalStateException("no usable segments")))
+        assertEquals(1, RecoverPolicy.attemptsAfterFailure(0, IllegalStateException("no usable segments")))
+        assertTrue(RecoverPolicy.isStorageFailure(IllegalStateException("low_storage_for_merge: kept")))
+        assertFalse(RecoverPolicy.isStorageFailure(null))
+    }
+
+    @Test fun repeatedStorageFailuresNeverReachQuarantine() {
+        var attempts = 0
+        repeat(10) {
+            assertEquals(RecoverPolicy.Action.RECOVER, RecoverPolicy.plan(3, true, attempts))
+            attempts = RecoverPolicy.attemptsAfterFailure(attempts, LowStorageException("low_storage"))
+        }
+        // أخطاء أخرى ثلاثاً ثم نقل.
+        repeat(3) { attempts = RecoverPolicy.attemptsAfterFailure(attempts, RuntimeException("bad")) }
+        assertEquals(RecoverPolicy.Action.QUARANTINE, RecoverPolicy.plan(3, true, attempts))
+    }
+
+    @Test fun quarantineNamesAreUnique() {
+        assertEquals("rec_1", RecoverPolicy.uniqueName("rec_1", emptySet()))
+        assertEquals("rec_1_1", RecoverPolicy.uniqueName("rec_1", setOf("rec_1")))
+        assertEquals("rec_1_2", RecoverPolicy.uniqueName("rec_1", setOf("rec_1", "rec_1_1")))
+    }
 }

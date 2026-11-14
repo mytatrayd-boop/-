@@ -191,6 +191,16 @@ class TripRepository {
         TripsCompanion(videoAssetId: Value(assetId)),
       );
 
+  /// يسجّل أن الفيديو حُفظ في الألبوم (galleryDone) فلا يتكرر الحفظ؛
+  /// [assetId] اختياري لأن gal لا يعيد معرّفاً.
+  Future<void> markGallerySaved(String tripId, {String? assetId}) =>
+      (_db.update(_db.trips)..where((t) => t.id.equals(tripId))).write(
+        TripsCompanion(
+          galleryDone: const Value(true),
+          videoAssetId: assetId == null ? const Value.absent() : Value(assetId),
+        ),
+      );
+
   /// ينهي الرحلة بانقطاع أو فشل حفظ الفيديو: تُحفظ النقاط والمسافة والمدة،
   /// ومسار الفيديو إن وُجد (ما صُوِّر قبل الانقطاع).
   Future<void> interruptTrip(

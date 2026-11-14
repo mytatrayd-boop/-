@@ -444,17 +444,38 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
         root.listFiles { f -> f.isDirectory && f.name.startsWith("rec_") }?.forEach { dir ->
             val final = File(root, "rihla_${dir.name.removePrefix("rec_")}.mp4")
             val counter = File(dir, "recover_attempts")
-            val attempts = (runCatching { counter.readText().trim().toInt() }.getOrDefault(0)) + 1
-            if (attempts > MAX_RECOVER_ATTEMPTS) {
-                Log.w(TAG, "recover ${dir.name} abandoned after ${attempts - 1} attempts")
-                dir.deleteRecursively()
-                return@forEach
+            val attempts = runCatching { counter.readText().trim().toInt() }.getOrDefault(0)
+            val manifest = File(dir, SegmentWriter.MANIFEST)
+            val valid = if (manifest.exists()) {
+                SegmentManifest.parse(manifest.readText()).count { File(dir, it.name).let { f -> f.exists() && f.length() > 0 } }
+            } else 0
+            val hasMedia = dir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") && f.length() > 0 }?.isNotEmpty() == true
+            when (RecoverPolicy.plan(valid, hasMedia, attempts)) {
+                RecoverPolicy.Action.DELETE_EMPTY -> dir.deleteRecursively() // فارغ من الوسائط تماماً.
+                RecoverPolicy.Action.QUARANTINE -> quarantine(root, dir, "attempts=$attempts valid=$valid")
+                RecoverPolicy.Action.RECOVER -> {
+                    val res = runCatching { RecordingSession.recover(dir, final) }
+                    res.onFailure {
+                        Log.w(TAG, "recover ${dir.name} failed", it)
+                        // أخطاء المساحة لا تُحتسب؛ المجلد يبقى كاملاً للمحاولة لاحقاً.
+                        val next = RecoverPolicy.attemptsAfterFailure(attempts, it)
+                        if (next != attempts) runCatching { counter.writeText(next.toString()) }
+                    }
+                    res.getOrNull()?.let { out.add(it.toMap()) }
+                }
             }
-            runCatching { counter.writeText(attempts.toString()) }
-            runCatching { RecordingSession.recover(dir, final) }.onFailure { Log.w(TAG, "recover ${dir.name} failed", it) }
-                .getOrNull()?.let { out.add(it.toMap()) }
         }
         return out
+    }
+
+    /** ينقل المجلد (لا يحذفه) إلى recovery_failed ويبلّغ Dart؛ إن فشل النقل يبقى في مكانه. */
+    private fun quarantine(root: File, dir: File, why: String) {
+        val failedRoot = File(root, RecoverPolicy.FAILED_DIR).also { it.mkdirs() }
+        val name = RecoverPolicy.uniqueName(dir.name, failedRoot.list()?.toSet() ?: emptySet())
+        val target = File(failedRoot, name)
+        val moved = dir.renameTo(target)
+        Log.w(TAG, "recover ${dir.name} quarantined ($why) moved=$moved")
+        emit(mapOf("type" to "recoveryFailed", "path" to (if (moved) target.path else dir.path), "moved" to moved))
     }
 
     // ---- أدوات ----
@@ -486,6 +507,5 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
 
     companion object {
         private const val TAG = "RihlaRecorder"
-        private const val MAX_RECOVER_ATTEMPTS = 3
     }
 }
