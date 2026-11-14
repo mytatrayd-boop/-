@@ -30,6 +30,8 @@
 	<string>تستخدم رحلة الكاميرا لتصوير طريقك. / Rihla uses the camera to film your road.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>تستخدم رحلة موقعك لرسم مسارك على الخريطة وحسابه أثناء الرحلة. / Rihla uses your location to draw and measure your route during the trip.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>تحفظ رحلة فيديو الرحلة في ألبوم صورك. / Rihla saves your trip video to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>تستخدم رحلة الميكروفون لتسجيل صوت الرحلة (اختياري ويمكنك كتمه). / Rihla uses the microphone to record the trip's sound (optional, you can mute it).</string>
 	<key>UIApplicationSceneManifest</key>

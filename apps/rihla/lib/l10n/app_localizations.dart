@@ -464,12 +464,6 @@ abstract class AppLocalizations {
   /// **'المسافة'**
   String get summaryDistance;
 
-  /// No description provided for @summaryVideoSaved.
-  ///
-  /// In ar, this message translates to:
-  /// **'حُفظ الفيديو على الجوال'**
-  String get summaryVideoSaved;
-
   /// No description provided for @summaryVideoFailed.
   ///
   /// In ar, this message translates to:
@@ -523,6 +517,36 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر فتح الرحلة'**
   String get summaryLoadError;
+
+  /// No description provided for @summaryGallerySaving.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ حفظ الفيديو في ألبوم الجوال…'**
+  String get summaryGallerySaving;
+
+  /// No description provided for @summaryGallerySaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ الفيديو في ألبوم الجوال'**
+  String get summaryGallerySaved;
+
+  /// No description provided for @summaryGalleryFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ الفيديو في ألبوم الجوال'**
+  String get summaryGalleryFailed;
+
+  /// No description provided for @summaryGalleryRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get summaryGalleryRetry;
+
+  /// No description provided for @summaryDbError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت الرحلة لكن تعذّر حفظ بعض تفاصيلها'**
+  String get summaryDbError;
 }
 
 class _AppLocalizationsDelegate

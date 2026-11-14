@@ -92,7 +92,6 @@
   "summarySaved": "تم حفظ رحلتك",
   "summaryDuration": "المدة",
   "summaryDistance": "المسافة",
-  "summaryVideoSaved": "حُفظ الفيديو على الجوال",
   "summaryVideoFailed": "حُفظ المسار لكن تعذّر حفظ الفيديو",
   "summaryInterruptedBackground": "أُوقفت الرحلة لأن التطبيق خرج من الواجهة. حُفظ ما صُوِّر.",
   "summaryInterruptedCamera": "أُوقفت الرحلة بسبب خطأ في الكاميرا. حُفظ ما صُوِّر.",
@@ -101,5 +100,10 @@
   "summaryInterruptedOther": "أُوقفت الرحلة بشكل غير متوقع. حُفظ ما صُوِّر.",
   "summaryNewTrip": "رحلة جديدة",
   "summaryViewTrip": "عرض الرحلة",
-  "summaryLoadError": "تعذّر فتح الرحلة"
+  "summaryLoadError": "تعذّر فتح الرحلة",
+  "summaryGallerySaving": "جارٍ حفظ الفيديو في ألبوم الجوال…",
+  "summaryGallerySaved": "تم حفظ الفيديو في ألبوم الجوال",
+  "summaryGalleryFailed": "تعذّر حفظ الفيديو في ألبوم الجوال",
+  "summaryGalleryRetry": "إعادة المحاولة",
+  "summaryDbError": "انتهت الرحلة لكن تعذّر حفظ بعض تفاصيلها"
 }

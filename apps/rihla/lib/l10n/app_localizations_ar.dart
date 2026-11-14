@@ -206,9 +206,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get summaryDistance => 'المسافة';
 
   @override
-  String get summaryVideoSaved => 'حُفظ الفيديو على الجوال';
-
-  @override
   String get summaryVideoFailed => 'حُفظ المسار لكن تعذّر حفظ الفيديو';
 
   @override
@@ -239,4 +236,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get summaryLoadError => 'تعذّر فتح الرحلة';
+
+  @override
+  String get summaryGallerySaving => 'جارٍ حفظ الفيديو في ألبوم الجوال…';
+
+  @override
+  String get summaryGallerySaved => 'تم حفظ الفيديو في ألبوم الجوال';
+
+  @override
+  String get summaryGalleryFailed => 'تعذّر حفظ الفيديو في ألبوم الجوال';
+
+  @override
+  String get summaryGalleryRetry => 'إعادة المحاولة';
+
+  @override
+  String get summaryDbError => 'انتهت الرحلة لكن تعذّر حفظ بعض تفاصيلها';
 }

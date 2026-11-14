@@ -124,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (_dialogOpen) Navigator.of(context, rootNavigator: true).pop();
       ref.read(homeProvider.notifier).consumeFinished();
       context.go(
-        AppRoutes.summaryFor(fin.tripId, reason: fin.interruptReason?.name),
+        AppRoutes.summaryFor(fin.tripId, reason: fin.dbError ? 'dbError' : fin.interruptReason?.name),
       );
     }
     if (next.notice == HomeNotice.startFailed && prev?.notice != next.notice) {

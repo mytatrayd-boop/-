@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repositories/trip_repository.dart';
 import '../../l10n/app_localizations.dart';
+import 'gallery_save_controller.dart';
 import '../home/home_controller.dart';
 import '../home/widgets/controls.dart';
 import '../home/widgets/recording_map.dart';
@@ -40,6 +41,7 @@ class SummaryScreen extends ConsumerWidget {
     'cameraError' => l.summaryInterruptedCamera,
     'writeError' => l.summaryInterruptedWrite,
     'lowStorage' => l.summaryInterruptedStorage,
+    'dbError' => l.summaryDbError,
     _ => l.summaryInterruptedOther,
   };
 
@@ -56,12 +58,14 @@ class SummaryScreen extends ConsumerWidget {
             if (d == null) return _Failure(text: l.summaryLoadError);
             final t = d.trip;
             final interrupted = t.status == TripStatus.interrupted;
-            final String note = t.videoPath == null
-                ? l.summaryVideoFailed
-                : interrupted
+            final gallery = ref.watch(gallerySaveProvider(tripId));
+            final String? note = t.videoPath == null
+                ? (reason == 'dbError' ? _interruptText(l) : l.summaryVideoFailed)
+                : (interrupted || reason == 'dbError')
                 ? _interruptText(l)
-                : l.summaryVideoSaved;
-            final warn = t.videoPath == null || interrupted;
+                : null;
+            final galleryFailed = gallery == GallerySaveStatus.failed;
+            final warn = t.videoPath == null || interrupted || galleryFailed;
             final th = Theme.of(context).textTheme;
             return Row(
               textDirection: TextDirection.ltr,
@@ -103,13 +107,56 @@ class SummaryScreen extends ConsumerWidget {
                             style: th.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            note,
-                            key: const ValueKey('summary-note'),
-                            style: th.bodyMedium?.copyWith(
-                              color: warn ? AppColors.warning : null,
+                          if (note != null)
+                            Text(
+                              note,
+                              key: const ValueKey('summary-note'),
+                              style: th.bodyMedium?.copyWith(
+                                color: AppColors.warning,
+                              ),
                             ),
-                          ),
+                          if (gallery != GallerySaveStatus.none) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                if (gallery == GallerySaveStatus.saving)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                if (gallery == GallerySaveStatus.saving)
+                                  const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    switch (gallery) {
+                                      GallerySaveStatus.saved => l.summaryGallerySaved,
+                                      GallerySaveStatus.failed => l.summaryGalleryFailed,
+                                      _ => l.summaryGallerySaving,
+                                    },
+                                    key: const ValueKey('summary-gallery'),
+                                    style: th.bodyMedium?.copyWith(
+                                      color: galleryFailed ? AppColors.warning : null,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (galleryFailed)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(top: 8),
+                                child: SizedBox(
+                                  height: 48,
+                                  child: OutlinedButton(
+                                    key: const ValueKey('summary-gallery-retry'),
+                                    onPressed: () => ref
+                                        .read(gallerySaveProvider(tripId).notifier)
+                                        .retry(),
+                                    child: Text(l.summaryGalleryRetry),
+                                  ),
+                                ),
+                              ),
+                          ],
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,

@@ -53,6 +53,7 @@ dependencies:
   geolocator: ^14.0.1
   wakelock_plus: ^1.8.2
   connectivity_plus: ^7.3.2
+  gal: ^3.0.0
 
 dev_dependencies:
   flutter_test:

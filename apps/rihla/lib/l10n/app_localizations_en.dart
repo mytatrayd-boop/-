@@ -208,9 +208,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryDistance => 'Distance';
 
   @override
-  String get summaryVideoSaved => 'The video is saved on your phone';
-
-  @override
   String get summaryVideoFailed =>
       'The route is saved but the video could not be saved';
 
@@ -242,4 +239,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summaryLoadError => 'Could not open the trip';
+
+  @override
+  String get summaryGallerySaving => 'Saving the video to your photo album…';
+
+  @override
+  String get summaryGallerySaved => 'The video is saved in your photo album';
+
+  @override
+  String get summaryGalleryFailed =>
+      'Could not save the video to your photo album';
+
+  @override
+  String get summaryGalleryRetry => 'Try again';
+
+  @override
+  String get summaryDbError =>
+      'The trip ended but some of its details could not be saved';
 }

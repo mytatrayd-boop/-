@@ -92,7 +92,6 @@
   "summarySaved": "Your trip is saved",
   "summaryDuration": "Duration",
   "summaryDistance": "Distance",
-  "summaryVideoSaved": "The video is saved on your phone",
   "summaryVideoFailed": "The route is saved but the video could not be saved",
   "summaryInterruptedBackground": "The trip stopped because the app left the screen. What was recorded is saved.",
   "summaryInterruptedCamera": "The trip stopped because of a camera error. What was recorded is saved.",
@@ -101,5 +100,10 @@
   "summaryInterruptedOther": "The trip stopped unexpectedly. What was recorded is saved.",
   "summaryNewTrip": "New trip",
   "summaryViewTrip": "View trip",
-  "summaryLoadError": "Could not open the trip"
+  "summaryLoadError": "Could not open the trip",
+  "summaryGallerySaving": "Saving the video to your photo album…",
+  "summaryGallerySaved": "The video is saved in your photo album",
+  "summaryGalleryFailed": "Could not save the video to your photo album",
+  "summaryGalleryRetry": "Try again",
+  "summaryDbError": "The trip ended but some of its details could not be saved"
 }

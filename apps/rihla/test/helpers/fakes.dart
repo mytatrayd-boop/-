@@ -5,6 +5,7 @@ import 'package:rihla/data/db/app_database.dart';
 import 'package:rihla/data/repositories/trip_repository.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 import 'package:rihla/data/camera/fake_camera_preview_source.dart';
+import 'package:rihla/data/gallery/video_gallery_service.dart';
 import 'package:rihla/data/location/fake_location_source.dart';
 import 'package:rihla/data/map/map_tiles.dart';
 import 'package:rihla/data/network/fake_network_status_source.dart';
@@ -29,6 +30,8 @@ class HomeFakes {
     FakeNetworkStatusSource? network,
     FakeScreenAwake? awake,
     FakeRihlaRecorder? recorder,
+    FakeVideoGalleryService? gallery,
+    TripRepository Function(AppDatabase)? repoBuilder,
   }) : permissions =
            permissions ??
            FakePermissionService(
@@ -43,6 +46,8 @@ class HomeFakes {
        network = network ?? FakeNetworkStatusSource(),
        awake = awake ?? FakeScreenAwake(),
        recorder = recorder ?? (FakeRihlaRecorder()..cameraOpen = true),
+       gallery = gallery ?? FakeVideoGalleryService(),
+       _repoBuilder = repoBuilder,
        db = _quiet() ? AppDatabase(NativeDatabase.memory()) : throw StateError('x');
 
   final FakePermissionService permissions;
@@ -51,8 +56,11 @@ class HomeFakes {
   final FakeNetworkStatusSource network;
   final FakeScreenAwake awake;
   final FakeRihlaRecorder recorder;
+  final FakeVideoGalleryService gallery;
+  // ignore: prefer_initializing_formals
+  final TripRepository Function(AppDatabase)? _repoBuilder;
   final AppDatabase db;
-  late final TripRepository repo = TripRepository(db);
+  late final TripRepository repo = (_repoBuilder ?? TripRepository.new)(db);
 
   List<Override> get overrides => [
     permissionServiceProvider.overrideWithValue(permissions),
@@ -62,6 +70,7 @@ class HomeFakes {
     screenAwakeProvider.overrideWithValue(awake),
     recorderProvider.overrideWithValue(recorder),
     tripRepositoryProvider.overrideWithValue(repo),
+    videoGalleryProvider.overrideWithValue(gallery),
     mapTilesProvider.overrideWithValue(const FakeMapTiles()),
   ];
 }

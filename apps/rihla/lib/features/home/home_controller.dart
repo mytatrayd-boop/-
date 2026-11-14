@@ -50,9 +50,12 @@ enum HomeNotice { startFailed }
 
 /// رحلة انتهت للتو (بإيقاف أو انقطاع): تنقل الشاشة إلى الملخص مرة واحدة.
 class FinishedTrip {
-  const FinishedTrip(this.tripId, {this.interruptReason});
+  const FinishedTrip(this.tripId, {this.interruptReason, this.dbError = false});
   final String tripId;
   final InterruptReason? interruptReason;
+
+  /// تعذّر تحديث سجل الرحلة في القاعدة عند الإنهاء.
+  final bool dbError;
 }
 
 /// عدّ تنازلي قبل البدء (DESIGN 7.2).
@@ -149,6 +152,8 @@ class HomeController extends Notifier<HomeState> {
   Timer? _timer;
   Timer? _countTimer;
   bool _disposed = false;
+  bool _beginCancelled = false;
+  bool _beginning = false;
   bool _cameraWanted = false;
   Future<void> _writes = Future.value();
   GeoPoint? _lastPoint;
@@ -289,39 +294,80 @@ class HomeController extends Notifier<HomeState> {
     if (state.countdown == null) return;
     _countTimer?.cancel();
     _countTimer = null;
+    // لمسة أثناء انتظار recorder.start: تُفحص العلامة بعد await.
+    if (_beginning) _beginCancelled = true;
     state = state.copyWith(clearCountdown: true);
   }
 
   Future<void> _begin() async {
     final f = state.fix;
     if (f == null) return cancelCountdown();
+    // كل الاعتماديات تُلتقط قبل أي await (ref.read بعد dispose يرمي).
     final rec = ref.read(recorderProvider);
     final repo = ref.read(tripRepositoryProvider);
+    final awake = ref.read(screenAwakeProvider);
     final q = state.quality;
+    _beginning = true;
+    _beginCancelled = false;
+    try {
+      await _beginInner(f, rec, repo, awake, q);
+    } finally {
+      _beginning = false;
+      _beginCancelled = false;
+    }
+  }
+
+  Future<void> _stopQuietly(RihlaRecorder rec) async {
+    try {
+      await rec.stop();
+    } catch (_) {}
+  }
+
+  Future<void> _beginInner(
+    LocationFix f,
+    RihlaRecorder rec,
+    TripRepository repo,
+    ScreenAwake awake,
+    VideoQuality q,
+  ) async {
+    void failed() {
+      if (!_disposed) {
+        state = state.copyWith(clearCountdown: true, notice: HomeNotice.startFailed);
+      }
+    }
+
     try {
       await rec.start(RecordingConfig(
         quality: q == VideoQuality.p1080 ? RecorderQuality.p1080 : RecorderQuality.p720,
         muted: state.muted,
       ));
-    } on RecorderException {
-      if (!_disposed) {
-        state = state.copyWith(clearCountdown: true, notice: HomeNotice.startFailed);
-      }
+    } catch (_) {
+      // أي استثناء (لا RecorderException فقط) يعني فشل البدء.
+      failed();
+      return;
+    }
+    if (_beginCancelled || _disposed) {
+      // أُلغي العدّ أو أُغلقت الشاشة أثناء البدء: لا يبقى مُسجِّل شغّال.
+      await _stopQuietly(rec);
+      if (!_disposed) state = state.copyWith(clearCountdown: true);
       return;
     }
     String id;
     try {
       id = await repo.startTrip(quality: q == VideoQuality.p1080 ? 1080 : 720);
     } catch (_) {
-      try {
-        await rec.stop();
-      } catch (_) {}
-      if (!_disposed) {
-        state = state.copyWith(clearCountdown: true, notice: HomeNotice.startFailed);
-      }
+      await _stopQuietly(rec);
+      failed();
       return;
     }
-    if (_disposed) return;
+    if (_beginCancelled || _disposed) {
+      await _stopQuietly(rec);
+      try {
+        await repo.interruptTrip(id);
+      } catch (_) {}
+      if (!_disposed) state = state.copyWith(clearCountdown: true);
+      return;
+    }
     final first = GeoPoint(f.lat, f.lng, time: f.time);
     _lastPoint = first;
     state = HomeState(
@@ -345,7 +391,9 @@ class HomeController extends Notifier<HomeState> {
     try {
       HapticFeedback.lightImpact();
     } catch (_) {}
-    await ref.read(screenAwakeProvider).enable();
+    try {
+      await awake.enable();
+    } catch (_) {}
   }
 
   /// إطار خريطة من الشاشة (~2/ث). أخطاء الدفع لا توقف التسجيل.
@@ -356,7 +404,7 @@ class HomeController extends Notifier<HomeState> {
     } catch (_) {}
   }
 
-  /// يوقف ويحفظ (بعد تأكيد المستخدم في الشاشة).
+  /// يوقف ويحفظ (بعد تأكيد المستخدم في الشاشة). لا يبقى saving=true مهما فشل.
   Future<void> stop() async {
     final id = state.tripId;
     if (!state.recording || state.saving || id == null) return;
@@ -364,18 +412,30 @@ class HomeController extends Notifier<HomeState> {
     _timer = null;
     state = state.copyWith(saving: true);
     final repo = ref.read(tripRepositoryProvider);
+    final rec = ref.read(recorderProvider);
+    final awake = ref.read(screenAwakeProvider);
     await _writes;
-    FinishedTrip done;
+    String? path;
     try {
-      final res = await ref.read(recorderProvider).stop();
-      await repo.completeTrip(id, videoPath: res.path);
-      done = FinishedTrip(id);
+      path = (await rec.stop()).path;
     } catch (_) {
-      // المسار محفوظ دائماً؛ الفيديو لم يُحفظ.
-      await repo.interruptTrip(id);
-      done = FinishedTrip(id);
+      path = null; // المسار محفوظ دائماً؛ الفيديو لم يُحفظ.
     }
-    await _finish(done);
+    var dbError = false;
+    try {
+      if (path != null) {
+        await repo.completeTrip(id, videoPath: path);
+      } else {
+        await repo.interruptTrip(id);
+      }
+    } catch (_) {
+      dbError = true;
+      try {
+        await repo.interruptTrip(id, videoPath: path);
+        dbError = false; // الاحتياط نجح.
+      } catch (_) {}
+    }
+    await _finish(FinishedTrip(id, dbError: dbError), awake);
   }
 
   void _onRecorderEvent(RecorderEvent e) {
@@ -385,19 +445,30 @@ class HomeController extends Notifier<HomeState> {
   /// انقطاع أصلي: المُسجِّل حفظ ما صُوِّر؛ نحفظ المسار والملف ونبلغ المستخدم.
   Future<void> _onInterrupted(RecordingInterrupted e) async {
     final id = state.tripId;
-    if (!state.recording || state.saving || id == null) return;
+    if (_disposed || !state.recording || state.saving || id == null) return;
     _timer?.cancel();
     _timer = null;
     state = state.copyWith(saving: true);
+    final repo = ref.read(tripRepositoryProvider);
+    final awake = ref.read(screenAwakeProvider);
     await _writes;
-    await ref
-        .read(tripRepositoryProvider)
-        .interruptTrip(id, videoPath: e.result.path);
-    await _finish(FinishedTrip(id, interruptReason: e.reason));
+    var dbError = false;
+    try {
+      await repo.interruptTrip(id, videoPath: e.result.path);
+    } catch (_) {
+      dbError = true;
+    }
+    await _finish(
+      FinishedTrip(id, interruptReason: e.reason, dbError: dbError),
+      awake,
+    );
   }
 
-  Future<void> _finish(FinishedTrip done) async {
+  Future<void> _finish(FinishedTrip done, ScreenAwake awake) async {
     _lastPoint = null;
+    try {
+      await awake.disable();
+    } catch (_) {}
     if (_disposed) return;
     state = HomeState(
       camera: state.camera,
@@ -407,7 +478,6 @@ class HomeController extends Notifier<HomeState> {
       online: state.online,
       finished: done,
     );
-    await ref.read(screenAwakeProvider).disable();
   }
 
   void consumeFinished() => state = state.copyWith(clearFinished: true);

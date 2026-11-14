@@ -185,6 +185,12 @@ class TripRepository {
     _forget(tripId);
   }
 
+  /// يخزّن معرّف الفيديو في المعرض بعد حفظه.
+  Future<void> setVideoAssetId(String tripId, String assetId) =>
+      (_db.update(_db.trips)..where((t) => t.id.equals(tripId))).write(
+        TripsCompanion(videoAssetId: Value(assetId)),
+      );
+
   /// ينهي الرحلة بانقطاع أو فشل حفظ الفيديو: تُحفظ النقاط والمسافة والمدة،
   /// ومسار الفيديو إن وُجد (ما صُوِّر قبل الانقطاع).
   Future<void> interruptTrip(
