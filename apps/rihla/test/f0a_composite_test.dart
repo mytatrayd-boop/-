@@ -35,12 +35,12 @@ void main() {
     final cam = const SyntheticCameraSource();
     final src = FakeMapFrameSource();
 
-    test('output is 16:9 with camera left and map right', () {
+    test('output is 16:9 with map left and camera right', () {
       final c = DualCompositor();
       final out = c.compose(cam.frame(7), map: src.frame(3));
       expect(out.width * 9, out.height * 16);
-      final camV = camCode.decode((b) => out.pixel(b * 40 + 20, 24).$1);
-      final mapV = mapCode.decode((b) => out.pixel(640 + b * 40 + 20, 24).$1);
+      final camV = camCode.decode((b) => out.pixel(640 + b * 40 + 20, 24).$1);
+      final mapV = mapCode.decode((b) => out.pixel(b * 40 + 20, 24).$1);
       expect(camV, 7);
       expect(mapV, 3);
     });
@@ -50,7 +50,7 @@ void main() {
       c.compose(cam.frame(0), map: src.frame(1));
       final out = c.compose(cam.frame(1));
       expect(c.mapRepeats, 1);
-      expect(mapCode.decode((b) => out.pixel(640 + b * 40 + 20, 24).$1), 1);
+      expect(mapCode.decode((b) => out.pixel(b * 40 + 20, 24).$1), 1);
     });
 
     test('attribution marker stays visible (not cropped or covered)', () {
@@ -59,7 +59,7 @@ void main() {
       final y = src.attributionY + FakeMapFrameSource.attributionH ~/ 2;
       for (final dx in [0, FakeMapFrameSource.attributionW - 1]) {
         expect(
-          out.pixel(640 + FakeMapFrameSource.attributionX + dx, y),
+          out.pixel(FakeMapFrameSource.attributionX + dx, y),
           FakeMapFrameSource.attributionColor,
         );
       }
@@ -69,10 +69,10 @@ void main() {
       final c = DualCompositor();
       final wide = RgbaFrame.filled(1000, 500, 255, 0, 255);
       final out = c.compose(cam.frame(0), map: wide);
-      // يمسّ الحافتين الأفقيتين للنصف الأيمن، ومحاط بخلفية في الأعلى والأسفل.
-      expect(out.pixel(640, 360), (255, 0, 255));
-      expect(out.pixel(1279, 360), (255, 0, 255));
-      expect(out.pixel(900, 5), isNot((255, 0, 255)));
+      // يمسّ الحافتين الأفقيتين للنصف الأيسر، ومحاط بخلفية في الأعلى والأسفل.
+      expect(out.pixel(0, 360), (255, 0, 255));
+      expect(out.pixel(639, 360), (255, 0, 255));
+      expect(out.pixel(300, 5), isNot((255, 0, 255)));
     });
   });
 
@@ -140,7 +140,7 @@ void main() {
       expect(duration, closeTo(3.0, 0.1));
       expect(double.parse(a['duration'] as String), closeTo(3.0, 0.1));
 
-      // عدّاد الكاميرا (يسار) وعدّاد الخريطة (يمين) من الصورة المفكوكة.
+      // عدّاد الكاميرا (يمين) وعدّاد الخريطة (يسار) من الصورة المفكوكة.
       Uint8List rows(int x) => Uint8List.fromList(
         Process.runSync('ffmpeg', [
               '-v',
@@ -155,7 +155,7 @@ void main() {
             ], stdoutEncoding: null).stdout
             as List<int>,
       );
-      final camRows = rows(0), mapRows = rows(640);
+      final camRows = rows(640), mapRows = rows(0);
       expect(camRows.length, 640 * 90);
       final camIdx = [
         for (var f = 0; f < 90; f++)

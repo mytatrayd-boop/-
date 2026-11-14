@@ -13,10 +13,10 @@ void main() {
   group('DualCompositor', () {
     const cam = SyntheticCameraSource();
 
-    test('output is 16:9 with camera frame code on the left', () {
+    test('output is 16:9 with camera frame code on the right', () {
       final out = DualCompositor().compose(cam.frame(7));
       expect(out.width * 9, out.height * 16);
-      expect(code.decode((b) => out.pixel(b * 40 + 20, 24).$1), 7);
+      expect(code.decode((b) => out.pixel(640 + b * 40 + 20, 24).$1), 7);
     });
 
     test('repeats last map frame; letterboxes without cropping', () {
@@ -25,9 +25,9 @@ void main() {
       c.compose(cam.frame(0), map: wide);
       final out = c.compose(cam.frame(1));
       expect(c.mapRepeats, 1);
-      expect(out.pixel(640, 360), (255, 0, 255));
-      expect(out.pixel(1279, 360), (255, 0, 255));
-      expect(out.pixel(900, 5), isNot((255, 0, 255)));
+      expect(out.pixel(0, 360), (255, 0, 255));
+      expect(out.pixel(639, 360), (255, 0, 255));
+      expect(out.pixel(300, 5), isNot((255, 0, 255)));
     });
   });
 

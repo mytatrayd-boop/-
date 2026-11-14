@@ -6,13 +6,13 @@ import 'rgba_frame.dart';
 /// الخريطة تُحجَّم بنمط "contain" دون أي قص كي يبقى شعار جوجل والإسناد ظاهرين.
 /// إن لم يصل إطار خريطة جديد يُكرَّر آخر إطار.
 class DualCompositor {
-  DualCompositor({this.width = 1280, this.height = 720, this.mapOnRight = true})
+  DualCompositor({this.width = 1280, this.height = 720, this.mapOnRight = false})
       : assert(width.isEven && height.isEven);
 
   final int width;
   final int height;
 
-  /// الافتراضي حسب ARCHITECTURE: كاميرا يسار وخريطة يمين.
+  /// الافتراضي حسب D16: الفيديو يطابق الشاشة (خريطة يسار، كاميرا يمين).
   final bool mapOnRight;
 
   RgbaFrame? _lastMap;

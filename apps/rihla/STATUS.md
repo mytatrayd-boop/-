@@ -1,5 +1,11 @@
 # STATUS — رحلة
 
+## D16 + أول بناء APK (2026-11-14)
+- D16: الفيديو يطابق الشاشة (خريطة يسار، كاميرا يمين). `DualCompositor.mapOnRight` افتراضيه false؛ حُدّث الاختباران وARCHITECTURE (7، 62، 64، F0أ). مخاطرة الإسناد (قرب منتصف الفيديو، يجب ألا تغطيه الكاميرا) موثّقة في D16 وتُفحص بصرياً في F0ب.
+- Android SDK في scratchpad فقط (cmdline-tools، platform-tools، platforms 35/36/37.0، build-tools 35.0.0؛ CMake 3.22.1 نزّله gradle)، التراخيص قُبلت بموافقة المالك المسبقة، ANDROID_HOME لجلسة الأوامر فقط. JDK 21 موجود.
+- `flutter build apk --debug`: المحاولة 1 فشلت (checkDebugAarMetadata): permission_handler_android يتطلب compileSdk 37 فأكثر والمشروع على 36 (flutter.compileSdkVersion). عُدّل android/app/build.gradle.kts إلى `compileSdk = 37` فنجح البناء: build/app/outputs/flutter-apk/app-debug.apk، 178,036,714 بايت (~170 MiB، debug). تنبيه: مضيفا dl.google.com وrepo.maven.apache.org أسقطا بعض الاتصالات (ws_closed_mid_exchange) أثناء المحاولة الأولى لكن gradle أعاد المحاولة ونجح. لم يُشغَّل على جهاز.
+- analyze: بلا ملاحظات. test: 88 ناجحاً في الجذر + 4 في rihla_recorder.
+
 ## F5 الشاشة الرئيسية المقسومة + إصلاحات F4 (2026-11-14): منجز على المضيف، لا جهاز
 
 ### التحقق فعلاً (Linux، Flutter 3.50.0)
