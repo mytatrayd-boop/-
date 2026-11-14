@@ -1,0 +1,39 @@
+name: Rihla — Android test APK
+
+# يبني APK تجريبياً لـ «رحلة» (موقّع بمفتاح debug الافتراضي، ليس للمتجر). لا أسرار ولا رفع لأي متجر.
+on:
+  push:
+    paths: ['apps/rihla/**', '.github/workflows/rihla-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/rihla
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      # compileSdk 37: نقبل التراخيص ونثبّت منصة 37 مسبقاً (إن لم تتوفر بهذا الاسم يتولى Gradle تنزيلها).
+      - name: Prepare Android SDK (platform 37)
+        run: |
+          SDKM="${ANDROID_HOME:-$ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-37" || "$SDKM" "platforms;android-37.0" || echo "sdkmanager: سيُنزّلها Gradle تلقائياً"
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Build APK
+        run: flutter build apk --release --build-number=${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rihla-apk
+          path: apps/rihla/build/app/outputs/flutter-apk/app-release.apk
