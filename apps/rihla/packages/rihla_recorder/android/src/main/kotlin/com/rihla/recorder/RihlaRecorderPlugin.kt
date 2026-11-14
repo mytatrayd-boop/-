@@ -363,7 +363,8 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
     private fun currentRotation(): Int? {
         val sensor = boundCamera?.cameraInfo?.sensorRotationDegrees
         val disp = if (activity != null) displayRotation() else null
-        return CameraOrientation.resolve(sensor, disp, cameraXRotation)
+        val back = CameraOrientation.isBackFacing(boundCamera?.cameraInfo?.lensFacing)
+        return CameraOrientation.resolve(sensor, disp, cameraXRotation, back)
     }
 
     // ---- التسجيل ----

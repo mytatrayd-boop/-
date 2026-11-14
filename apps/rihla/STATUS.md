@@ -217,3 +217,7 @@
 ## تعديل تصفية الدقة (2026-11-14، D18)
 - TripRepository.addPoints: الحد 100م + أفضل جهد (تُحفظ أدق نقطة مرفوضة إن لم تُقبل أي نقطة، عند completeTrip/interruptTrip/markInterruptedTrips). نص «لا مسار (إشارة GPS ضعيفة)» (ar/en). اختبارات: 5 للمستودع، 2 للواجهة (قائمة وتفاصيل بلا نقاط).
 - analyze بلا ملاحظات؛ flutter test: 146 ناجحاً. الأمر على جهاز لم يُجرَّب.
+
+## إصلاحات المراجعة (2026-11-14): لم تُجرَّب على جهاز
+- ShareService.shareGeneratedFile: لا يحذف GPX فور عودة share (قد يصل مرفقاً فارغاً في واتساب/أندرويد). يُكتب في temp/rihla_share وتُحذف الملفات الأقدم من يوم قبل الكتابة التالية (purgeStaleShareFiles، اختبار وحدة).
+- RihlaRecorderPlugin.currentRotation يمرر backFacing من cameraInfo.lensFacing (CameraOrientation.isBackFacing، اختبار وحدة). الربط الفعلي ما زال DEFAULT_BACK_CAMERA فقط.

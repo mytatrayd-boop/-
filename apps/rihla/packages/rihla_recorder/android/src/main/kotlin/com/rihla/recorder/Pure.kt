@@ -122,6 +122,10 @@ object CameraOrientation {
         return ((Math.round(raw / 90.0).toInt() * 90) % 360 + 360) % 360
     }
 
+    /** قيمة CameraSelector.LENS_FACING_FRONT (0)؛ غير المعروف يُعامل خلفياً (الافتراضي في التطبيق). */
+    const val LENS_FACING_FRONT = 0
+    fun isBackFacing(lensFacing: Int?): Boolean = lensFacing != LENS_FACING_FRONT
+
     fun isQuarterTurn(rotation: Int) = rotation == 90 || rotation == 270
 
     /** أبعاد الصورة بعد الدوران. */

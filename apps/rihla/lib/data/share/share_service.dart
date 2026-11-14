@@ -23,7 +23,8 @@ abstract class ShareService {
   /// ملف موجود (الفيديو) عبر قائمة المشاركة.
   Future<void> shareFile(String path, {String? mimeType});
 
-  /// يكتب [content] في ملف مؤقت باسم [fileName] ويشاركه ثم يحذف المؤقت.
+  /// يكتب [content] في ملف مؤقت باسم [fileName] ويشاركه. لا يحذفه فور العودة (التطبيق المستلم قد يقرؤه لاحقاً)؛
+  /// الملفات المؤقتة الأقدم من يوم تُحذف قبل الكتابة التالية.
   Future<void> shareGeneratedFile(
     String content,
     String fileName, {
@@ -39,6 +40,31 @@ abstract class ShareService {
 
   /// هل الملف موجود على الجوال.
   Future<bool> fileExists(String path);
+}
+
+/// مجلد الملفات المؤقتة المولّدة للمشاركة (داخل المجلد المؤقت).
+const shareTempDirName = 'rihla_share';
+
+/// يحذف الملفات في [dir] الأقدم من [maxAge] (افتراضياً يوم). يتجاهل أي خطأ. يعيد عدد المحذوف.
+Future<int> purgeStaleShareFiles(
+  Directory dir, {
+  Duration maxAge = const Duration(days: 1),
+  DateTime? now,
+}) async {
+  var n = 0;
+  try {
+    final limit = (now ?? DateTime.now()).subtract(maxAge);
+    await for (final e in dir.list()) {
+      if (e is! File) continue;
+      try {
+        if ((await e.lastModified()).isBefore(limit)) {
+          await e.delete();
+          n++;
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+  return n;
 }
 
 class SystemShareService implements ShareService {
@@ -70,20 +96,18 @@ class SystemShareService implements ShareService {
     String fileName, {
     String? mimeType,
   }) async {
-    File? f;
     try {
-      final dir = await getTemporaryDirectory();
-      f = File(p.join(dir.path, fileName));
+      final base = await getTemporaryDirectory();
+      final dir = Directory(p.join(base.path, shareTempDirName));
+      await dir.create(recursive: true);
+      await purgeStaleShareFiles(dir);
+      final f = File(p.join(dir.path, fileName));
       await f.writeAsString(content, flush: true);
       await SharePlus.instance.share(
         ShareParams(files: [XFile(f.path, mimeType: mimeType)]),
       );
     } catch (e) {
       throw ShareException(e.toString());
-    } finally {
-      try {
-        await f?.delete();
-      } catch (_) {}
     }
   }
 

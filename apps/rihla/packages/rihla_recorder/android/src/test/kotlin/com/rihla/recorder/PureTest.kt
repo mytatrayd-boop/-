@@ -240,6 +240,14 @@ class PureTest {
         assertEquals(180, CameraOrientation.relativeRotation(270, 3, backFacing = false))
     }
 
+    @Test
+    fun lensFacingMapsToBackFacing() {
+        assertEquals(false, CameraOrientation.isBackFacing(0))
+        assertEquals(true, CameraOrientation.isBackFacing(1))
+        assertEquals(true, CameraOrientation.isBackFacing(null))
+        assertEquals(0, CameraOrientation.resolve(270, 1, null, CameraOrientation.isBackFacing(0)))
+    }
+
     @Test fun cameraRotationResolve() {
         // الحساس والشاشة يتقدمان على قيمة CameraX.
         assertEquals(0, CameraOrientation.resolve(90, 1, 90))
