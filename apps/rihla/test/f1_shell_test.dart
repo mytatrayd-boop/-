@@ -14,7 +14,7 @@ Future<void> pump(WidgetTester t, Locale locale,
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
   await t.pumpWidget(ProviderScope(
-    overrides: [localeProvider.overrideWith((ref) => locale)],
+    overrides: [localeProvider.overrideWith(() => _Fixed(locale))],
     child: MediaQuery(
       data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
       child: const RihlaApp(),
@@ -52,7 +52,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text(s.settingsEmpty), findsOneWidget);
       expect(t.takeException(), isNull);
-      await t.pageBack();
+      await t.tap(find.byType(BackButton));
       await t.pumpAndSettle();
       expect(find.text(s.homeEmpty), findsOneWidget);
       expect(t.takeException(), isNull);
@@ -80,4 +80,11 @@ void main() {
     final app = t.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.dark);
   });
+}
+
+class _Fixed extends LocaleNotifier {
+  _Fixed(this.l);
+  final Locale l;
+  @override
+  Locale? build() => l;
 }

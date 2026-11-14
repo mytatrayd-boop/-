@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_ui/material_ui.dart';
 
 import '../../features/home/home_screen.dart';
 import '../../features/settings/settings_screen.dart';
@@ -17,14 +16,14 @@ GoRouter buildRouter({String initialLocation = AppRoutes.home}) => GoRouter(
       routes: [
         GoRoute(
           path: AppRoutes.home,
-          builder: (_, __) => const HomeScreen(),
+          builder: (_, _) => const HomeScreen(),
         ),
         GoRoute(
           path: AppRoutes.settings,
-          builder: (_, __) => const SettingsScreen(),
+          builder: (_, _) => const SettingsScreen(),
         ),
       ],
-      errorBuilder: (_, __) => const NotFoundScreen(),
+      errorBuilder: (_, _) => const NotFoundScreen(),
     );
 
 final routerProvider = Provider<GoRouter>((ref) {
