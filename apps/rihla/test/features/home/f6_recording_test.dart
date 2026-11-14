@@ -137,7 +137,8 @@ void main() {
     expect(f.recorder.mapFrames, isNotEmpty);
     final fr = f.recorder.mapFrames.first;
     expect(fr.width, RecorderQuality.p720.mapWidth);
-    expect(fr.height, greaterThan(0));
+    // بنسبة لوحة الخريطة في الفيديو (640x720) فلا أشرطة سوداء.
+    expect(fr.width / fr.height, closeTo(640 / 720, 0.02));
     expect(fr.rgba.length, fr.width * fr.height * 4);
     // لا إطارات بعد الإيقاف.
     final before = f.recorder.mapFrames.length;
