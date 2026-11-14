@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -199,6 +200,32 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets('خروج مبكر أثناء open: تُغلق الكاميرا بعد اكتماله', (t) async {
+    final rec = FakeRihlaRecorder();
+    t.view.devicePixelRatio = 1;
+    t.view.physicalSize = const Size(1600, 2400);
+    addTearDown(t.view.resetDevicePixelRatio);
+    addTearDown(t.view.resetPhysicalSize);
+    final cam = _SlowCamera();
+    await pumpSettings(t, rec: rec, store: MemoryCameraRotationStore(), camera: cam);
+    await t.ensureVisible(find.byKey(const ValueKey('camera-test-button')));
+    await t.tap(find.byKey(const ValueKey('camera-test-button')));
+    for (var i = 0; i < 5; i++) {
+      await t.pump(const Duration(milliseconds: 200));
+    }
+    expect(cam.openCalls, 1);
+    await t.tap(find.byKey(const ValueKey('camera-test-done')));
+    for (var i = 0; i < 5; i++) {
+      await t.pump(const Duration(milliseconds: 200));
+    }
+    expect(find.byKey(const ValueKey('camera-test-done')), findsNothing);
+    cam.gate.complete();
+    await t.pumpAndSettle();
+    expect(cam.isOpen, isFalse);
+    expect(cam.closeCalls, greaterThan(0));
+    expect(t.takeException(), isNull);
+  });
+
   test('ARB: نصوص الإعداد والتشخيص بالعربية والإنجليزية بالمفاتيح نفسها', () {
     Map<String, dynamic> load(String l) =>
         jsonDecode(File('lib/l10n/app_$l.arb').readAsStringSync()) as Map<String, dynamic>;
@@ -218,4 +245,14 @@ void main() {
     expect(ar['settingsCameraRotation'], isNot(en['settingsCameraRotation']));
     expect(ar['cameraDiagTitle'], isNot(en['cameraDiagTitle']));
   });
+}
+
+class _SlowCamera extends FakeCameraPreviewSource {
+  final gate = Completer<void>();
+  @override
+  Future<void> open() async {
+    openCalls++;
+    await gate.future;
+    isOpen = true;
+  }
 }

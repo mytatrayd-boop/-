@@ -258,3 +258,7 @@
 - الاسم: android:label=@string/app_name (values/values-ar «رحلة»، values-en «Rihla»)؛ iOS CFBundleDisplayName وCFBundleName «رحلة». عنوان MaterialApp يأتي أصلاً من l10n appName فلا تعديل في lib. applicationId/bundle id بلا تغيير.
 - الأيقونة: شاشة مقسومة (عدسة | مسار ودبوس) على حبر #0E1316. tool/make_icon.py (Pillow) يولّد assets/icon/icon.png وpreview.png، وmipmap-* (قديمة + foreground + monochrome) وmipmap-anydpi-v26/ic_launcher.xml، وAppIcon.appiconset (RGB بلا ألفا).
 - تحقق على نسخة نظيفة (git ls-files -co): analyze بلا ملاحظات؛ build apk --debug ناجح؛ aapt2: label «رحلة» (en: Rihla) والأيقونة تكيفية. flutter test: 153 ناجحاً و4 فاشلة، ناتجة من تعديلات lib/test الجارية لمبرمج آخر (maps_url بـ6 خانات عشرية مقابل 5 متوقعة؛ إسناد RecordingMap)، لا علاقة لها بالأيقونة. لم يُفحص على جهاز/آيفون.
+
+## إصلاحات المراجعة (2026-11-14، جولة 2): لم تُجرَّب على جهاز
+- camera_rotation_test_page: الخروج قبل انتهاء getOrientationInfo لا يفعل شيئاً؛ dispose يغلق الكاميرا حتى لو لم يكتمل open، ويُغلقها _start ثانية عند اكتمال open بعد الخروج (إن لم تكن مفتوحة أصلاً). اختبار ويدجت بكاميرا بطيئة.
+- maps_url.hasMovement: طول المسار صار «مصفّى» (لا يُحتسب انتقال أقل من 5م عن آخر نقطة مرجعية) فلا يراكم اهتزاز GPS الساكن؛ أبقي أقصى بُعد >=50م أو طول مصفّى >=200م. صُحّح تعليق _directions (أبعد نقطة). اختبارا اهتزاز ساكن ورحلة دائرية.

@@ -163,6 +163,26 @@ void main() {
       expect(hasMovement(path), isFalse);
       expect(buildMapsLink(path)!.kind, MapsLinkKind.location);
     });
+    test('stationary GPS jitter (100 pts, ~2 m): no movement', () {
+      final path = [
+        for (var i = 0; i < 100; i++)
+          p(10 + (i.isEven ? 0.000018 : 0), 20 + (i % 4 < 2 ? 0 : 0.000018)),
+      ];
+      expect(pathLengthMeters(path), greaterThan(200));
+      expect(hasMovement(path), isFalse);
+      expect(buildMapsLink(path)!.kind, MapsLinkKind.location);
+    });
+    test('real round trip (start ~ end, ~300 m loop): route', () {
+      final path = [
+        p(10, 20),
+        p(10.001, 20),
+        p(10.001, 20.001),
+        p(10, 20.001),
+        p(10, 20),
+      ];
+      expect(hasMovement(path), isTrue);
+      expect(buildMapsLink(path)!.kind, MapsLinkKind.route);
+    });
     test('identical points: location', () {
       final path = [for (var i = 0; i < 5; i++) p(10, 20)];
       expect(buildMapsLink(path)!.kind, MapsLinkKind.location);

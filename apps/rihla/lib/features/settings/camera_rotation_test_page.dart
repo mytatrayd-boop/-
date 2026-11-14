@@ -26,6 +26,9 @@ class _State extends ConsumerState<CameraRotationTestPage> {
   bool _wasOpen = false;
   bool _opened = false;
   bool _failed = false;
+  // هل بدأنا تغيير الاتجاه/فتح الكاميرا (فيلزم تنظيفهما عند الخروج المبكر)؟
+  bool _touched = false;
+  bool _openCalled = false;
 
   @override
   void initState() {
@@ -39,10 +42,18 @@ class _State extends ConsumerState<CameraRotationTestPage> {
     } on RecorderException {
       _wasOpen = false;
     }
+    // خرج المستخدم قبل أن نفعل شيئاً: لا شيء لتنظيفه.
+    if (!mounted) return;
+    _touched = true;
     if (!_wasOpen) _orientation.landscape().catchError((_) {});
     try {
+      _openCalled = true;
       await _camera.open();
-      if (!mounted) return;
+      if (!mounted) {
+        // انتهى open بعد الخروج: dispose قد سبقه، فنغلق هنا.
+        if (!_wasOpen) _camera.close();
+        return;
+      }
       setState(() => _opened = true);
       await _info.refresh();
     } on CameraOpenException {
@@ -52,8 +63,9 @@ class _State extends ConsumerState<CameraRotationTestPage> {
 
   @override
   void dispose() {
-    if (!_wasOpen) {
-      _camera.close();
+    if (_touched && !_wasOpen) {
+      // يغلق حتى لو لم يكتمل open بعد (يُغلق ثانية عند اكتماله).
+      if (_openCalled) _camera.close();
       _orientation.portrait().catchError((_) {});
     }
     super.dispose();

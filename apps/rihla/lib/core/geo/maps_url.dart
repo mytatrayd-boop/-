@@ -41,7 +41,26 @@ bool hasMovement(
     final d = haversineMeters(points.first, p);
     if (d > maxFromStart) maxFromStart = d;
   }
-  return maxFromStart >= minMeters || pathLengthMeters(points) >= 4 * minMeters;
+  return maxFromStart >= minMeters ||
+      _filteredPathLength(points) >= 4 * minMeters;
+}
+
+/// أدنى قفزة (م) تُحسب في طول المسار المصفّى؛ ما دونها اهتزاز GPS.
+const double _jitterMeters = 5;
+
+/// طول مسار مصفّى: لا يُحتسب انتقال إلا إذا ابتعدت النقطة عن آخر نقطة
+/// مرجعية بـ[_jitterMeters] فأكثر، فلا يتراكم اهتزاز الجهاز الساكن.
+double _filteredPathLength(List<GeoPoint> points) {
+  var total = 0.0;
+  var anchor = points.first;
+  for (final p in points.skip(1)) {
+    final d = haversineMeters(anchor, p);
+    if (d >= _jitterMeters) {
+      total += d;
+      anchor = p;
+    }
+  }
+  return total;
 }
 
 /// يبني الرابط المناسب: اتجاهات للمسار ذي الحركة الكافية، وإلا رابط موقع
@@ -90,7 +109,7 @@ String? _directions(
   for (var mid = midWaypoints < 0 ? 0 : midWaypoints; mid >= 0; mid--) {
     var s = simplifyToCount(points, mid + 2);
     // رحلة دائرية: origin==destination تقبلها خرائط جوجل مع waypoints، لكن
-    // عند الشك (بلا منتصف) نجعل النهاية نقطة قبل الأخيرة فلا يتطابقان.
+    // عند الشك (بلا منتصف) نجعل النهاية أبعد نقطة عن البداية فلا يتطابقان.
     if (s.length >= 2 && _coord(s.first) == _coord(s.last)) {
       if (s.length == 2) {
         s = [points.first, _farthestFrom(points, points.first)];
