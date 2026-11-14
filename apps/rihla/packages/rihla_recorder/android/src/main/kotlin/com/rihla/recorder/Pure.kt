@@ -1,0 +1,202 @@
+package com.rihla.recorder
+
+import java.util.PriorityQueue
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sin
+
+/** جودة التسجيل. المعدلات من ARCHITECTURE 9 (720p ~4Mbps، 1080p ~8Mbps). */
+enum class QualityProfile(val key: String, val width: Int, val height: Int, val videoBitrate: Int) {
+    P720("p720", 1280, 720, 4_000_000),
+    P1080("p1080", 1920, 1080, 8_000_000);
+
+    val mapWidth: Int get() = width / 2
+    val bytesPerSecond: Long get() = (videoBitrate + AUDIO_BITRATE) / 8L
+    fun bytesFor(seconds: Long): Long = bytesPerSecond * seconds
+
+    companion object {
+        const val AUDIO_BITRATE = 96_000
+        const val AUDIO_SAMPLE_RATE = 44_100
+        const val FPS = 30
+        fun fromKey(key: String?): QualityProfile = entries.firstOrNull { it.key == key } ?: P720
+    }
+}
+
+object StorageMath {
+    fun isBelow(freeBytes: Long, thresholdBytes: Long) = freeBytes < thresholdBytes
+
+    /** الدمج يحتاج مساحة بحجم الناتج؛ إن لم تتسع تُحذف المقاطع تدريجياً أثناء الدمج. */
+    fun deleteSegmentsProgressively(freeBytes: Long, totalSegmentBytes: Long): Boolean =
+        freeBytes < totalSegmentBytes + totalSegmentBytes / 10 + 32L * 1024 * 1024
+}
+
+data class RectI(val x: Int, val y: Int, val w: Int, val h: Int)
+data class CropUv(val u0: Float, val v0: Float, val u1: Float, val v1: Float)
+
+object LayoutMath {
+    /** مستطيل "احتواء" بلا قص داخل المنطقة، مركزياً. */
+    fun containRect(srcW: Int, srcH: Int, dstX: Int, dstY: Int, dstW: Int, dstH: Int): RectI {
+        if (srcW <= 0 || srcH <= 0) return RectI(dstX, dstY, dstW, dstH)
+        val scale = min(dstW.toDouble() / srcW, dstH.toDouble() / srcH)
+        val w = (srcW * scale).toInt().coerceIn(1, dstW)
+        val h = (srcH * scale).toInt().coerceIn(1, dstH)
+        return RectI(dstX + (dstW - w) / 2, dstY + (dstH - h) / 2, w, h)
+    }
+
+    /** قص مركزي ("تغطية") في فضاء uv [0,1] لمصدر على منطقة بنسبة مختلفة. */
+    fun coverCrop(srcW: Int, srcH: Int, dstW: Int, dstH: Int): CropUv {
+        if (srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) return CropUv(0f, 0f, 1f, 1f)
+        val srcA = srcW.toDouble() / srcH
+        val dstA = dstW.toDouble() / dstH
+        return if (srcA > dstA) {
+            val f = (dstA / srcA).toFloat()
+            CropUv((1 - f) / 2, 0f, (1 + f) / 2, 1f)
+        } else {
+            val f = (srcA / dstA).toFloat()
+            CropUv(0f, (1 - f) / 2, 1f, (1 + f) / 2)
+        }
+    }
+
+    /** y بأصل أعلى-يسار إلى أصل أسفل-يسار (GL). */
+    fun glY(topY: Int, h: Int, totalH: Int) = totalH - topY - h
+
+    /** ضرب مصفوفتين 4x4 بترتيب أعمدة (كـandroid.opengl.Matrix.multiplyMM): r = a * b. */
+    fun mul(a: FloatArray, b: FloatArray): FloatArray {
+        val r = FloatArray(16)
+        for (c in 0 until 4) for (row in 0 until 4) {
+            var s = 0f
+            for (k in 0 until 4) s += a[k * 4 + row] * b[c * 4 + k]
+            r[c * 4 + row] = s
+        }
+        return r
+    }
+
+    /** دوران حول مركز uv (0.5,0.5) بالدرجات حول المحور z، ترتيب أعمدة. */
+    fun rotateAboutCenter(degrees: Int): FloatArray {
+        val rad = Math.toRadians(degrees.toDouble())
+        val c = cos(rad).toFloat()
+        val s = sin(rad).toFloat()
+        // T(0.5) * R * T(-0.5)
+        val tx = 0.5f - 0.5f * c + 0.5f * s
+        val ty = 0.5f - 0.5f * s - 0.5f * c
+        return floatArrayOf(
+            c, s, 0f, 0f,
+            -s, c, 0f, 0f,
+            0f, 0f, 1f, 0f,
+            tx, ty, 0f, 1f,
+        )
+    }
+
+    fun transform(m: FloatArray, x: Float, y: Float): Pair<Float, Float> =
+        Pair(m[0] * x + m[4] * y + m[12], m[1] * x + m[5] * y + m[13])
+}
+
+object ClockMath {
+    /**
+     * طابع إطار الكاميرا بالميكروثانية بساعة التسجيل. إن كان طابع SurfaceTexture بمقياس
+     * الوقت الحقيقي (قريباً من الآن بثانية) نستعمله، وإلا (ساعة مستشعر) نستعمل لحظة الرسم.
+     */
+    fun cameraPtsUs(surfaceTsNs: Long, nowBoottimeNs: Long, startNs: Long): Long {
+        val chosen = if (surfaceTsNs > 0 && abs(surfaceTsNs - nowBoottimeNs) < 1_000_000_000L) surfaceTsNs else nowBoottimeNs
+        return (chosen - startNs) / 1000
+    }
+
+    /** مرساة الصوت: وقت أول قطعة منقوصاً منه مدتها، لا أقل من صفر. */
+    fun audioAnchorUs(nowUs: Long, firstChunkFrames: Int, sampleRate: Int): Long =
+        max(0L, nowUs - framesToUs(firstChunkFrames.toLong(), sampleRate))
+
+    fun framesToUs(frames: Long, sampleRate: Int): Long = frames * 1_000_000L / sampleRate
+    fun audioPtsUs(anchorUs: Long, framesBefore: Long, sampleRate: Int) = anchorUs + framesToUs(framesBefore, sampleRate)
+}
+
+object PcmUtil {
+    /** كتم: يصفّر البايتات (صمت، فتبقى المدة نفسها). */
+    fun silence(buf: ByteArray, len: Int = buf.size) {
+        java.util.Arrays.fill(buf, 0, len, 0.toByte())
+    }
+}
+
+class EncodedSample(val isVideo: Boolean, val ptsUs: Long, val flags: Int, val data: ByteArray) {
+    val isKeyFrame: Boolean get() = (flags and KEY_FRAME_FLAG) != 0
+
+    companion object {
+        const val KEY_FRAME_FLAG = 1 // MediaCodec.BUFFER_FLAG_KEY_FRAME
+    }
+}
+
+/**
+ * يرتّب عينات الفيديو والصوت بالزمن. لا تُفرَج عينة قبل أن يتجاوز المساران زمنها
+ * (العلامة المائية = أصغر آخر زمن للمسارين) كي لا يسبق الصوتُ الفيديو في الملف.
+ */
+class SampleInterleaver(private val maxQueued: Int = 600) {
+    private val queue = PriorityQueue<EncodedSample>(
+        compareBy<EncodedSample>({ it.ptsUs }, { if (it.isVideo) 0 else 1 }),
+    )
+    private var lastVideo = Long.MIN_VALUE
+    private var lastAudio = Long.MIN_VALUE
+    private var videoDone = false
+    private var audioDone = false
+
+    val queued: Int get() = queue.size
+
+    fun add(s: EncodedSample): List<EncodedSample> {
+        if (s.isVideo) lastVideo = max(lastVideo, s.ptsUs) else lastAudio = max(lastAudio, s.ptsUs)
+        queue.add(s)
+        return release()
+    }
+
+    fun finishVideo(): List<EncodedSample> { videoDone = true; return release() }
+    fun finishAudio(): List<EncodedSample> { audioDone = true; return release() }
+
+    fun flushAll(): List<EncodedSample> {
+        val out = ArrayList<EncodedSample>(queue.size)
+        while (queue.isNotEmpty()) out.add(queue.poll()!!)
+        return out
+    }
+
+    private fun release(): List<EncodedSample> {
+        val wm = min(if (videoDone) Long.MAX_VALUE else lastVideo, if (audioDone) Long.MAX_VALUE else lastAudio)
+        val out = ArrayList<EncodedSample>()
+        while (queue.isNotEmpty() && (queue.peek()!!.ptsUs <= wm || queue.size > maxQueued)) out.add(queue.poll()!!)
+        return out
+    }
+}
+
+/** متى يبدأ مقطع جديد: عند أول إطار مفتاحي، ثم عند أول مفتاحي بعد مرور المدة. */
+class SegmentPolicy(private val segmentUs: Long) {
+    enum class Decision { DROP, WRITE, START_SEGMENT, ROTATE_SEGMENT }
+
+    var segStartUs: Long = -1
+        private set
+    val started: Boolean get() = segStartUs >= 0
+
+    fun decide(isVideo: Boolean, isKeyFrame: Boolean, ptsUs: Long): Decision {
+        if (!started) {
+            if (isVideo && isKeyFrame) {
+                segStartUs = ptsUs
+                return Decision.START_SEGMENT
+            }
+            return Decision.DROP
+        }
+        if (isVideo && isKeyFrame && ptsUs - segStartUs >= segmentUs) {
+            segStartUs = ptsUs
+            return Decision.ROTATE_SEGMENT
+        }
+        return Decision.WRITE
+    }
+}
+
+data class SegmentEntry(val name: String, val offsetUs: Long)
+
+/** سجل المقاطع المغلقة (سطر لكل مقطع) لاسترداد رحلة انقطعت بقتل العملية. */
+object SegmentManifest {
+    fun line(e: SegmentEntry) = "${e.name}\t${e.offsetUs}"
+
+    fun parse(text: String): List<SegmentEntry> = text.lineSequence().mapNotNull { l ->
+        val p = l.split('\t')
+        val off = p.getOrNull(1)?.toLongOrNull()
+        if (p.size == 2 && p[0].isNotBlank() && off != null) SegmentEntry(p[0], off) else null
+    }.toList()
+}

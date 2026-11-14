@@ -1,0 +1,57 @@
+plugins {
+    id 'com.android.library'
+}
+
+// AGP 9 يتضمن Kotlin مدمجاً (android.builtInKotlin)؛ نطبّق KGP فقط على AGP الأقدم.
+def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
+if (agpMajor < 9) {
+    project.pluginManager.apply('org.jetbrains.kotlin.android')
+}
+
+// بعض إعدادات المشروع (builtInKotlin=false) تطبّق KGP؛ نوحّد JVM 17 مع Java.
+pluginManager.withPlugin('org.jetbrains.kotlin.android') {
+    extensions.configure('kotlin') { k ->
+        k.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+group 'com.rihla.recorder'
+version '1.0-SNAPSHOT'
+
+android {
+    namespace 'com.rihla.recorder'
+    compileSdk = flutter.compileSdkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+        test.java.srcDirs += 'src/test/kotlin'
+    }
+
+    defaultConfig {
+        minSdkVersion flutter.minSdkVersion
+    }
+
+    testOptions {
+        unitTests.all {
+            testLogging {
+                events 'passed', 'skipped', 'failed'
+            }
+        }
+    }
+}
+
+dependencies {
+    def camerax = '1.4.2'
+    implementation "androidx.camera:camera-core:$camerax"
+    implementation "androidx.camera:camera-camera2:$camerax"
+    implementation "androidx.camera:camera-lifecycle:$camerax"
+    implementation 'androidx.lifecycle:lifecycle-runtime:2.8.7'
+
+    // اختبارات الوحدة للمنطق الصافي فقط (لا MediaCodec/كاميرا على JVM).
+    testImplementation 'junit:junit:4.13.2'
+}

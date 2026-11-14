@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rihla_recorder/rihla_recorder.dart';
 
 import '../../core/geo/distance.dart';
 import '../../core/geo/geo_point.dart';
@@ -19,8 +20,12 @@ const _granted = AppPermissionStatus.granted;
 final locationSourceProvider = Provider<LocationSource>(
   (_) => const GeolocatorLocationSource(),
 );
+/// المُسجِّل الأصلي (كاميرا + ترميز). يُستبدل بـFakeRihlaRecorder في الاختبارات.
+final recorderProvider = Provider<RihlaRecorder>(
+  (_) => MethodChannelRihlaRecorder(),
+);
 final cameraPreviewSourceProvider = Provider<CameraPreviewSource>(
-  (_) => const NativeCameraPreviewSource(),
+  (ref) => NativeCameraPreviewSource(ref.watch(recorderProvider)),
 );
 final networkStatusSourceProvider = Provider<NetworkStatusSource>(
   (_) => const ConnectivityNetworkStatusSource(),

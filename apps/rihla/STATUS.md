@@ -1,5 +1,28 @@
 # STATUS — رحلة
 
+## F0ب (أندرويد الأصلي، كود فقط) (2026-11-14): مبني ومُجمَّع، لم يُجرَّب على جهاز
+
+### المنجز
+- packages/rihla_recorder/android (Kotlin، CameraX 1.4.2 + MediaCodec + AudioRecord): `GlRenderer` (EGL/GLES2 على خيط واحد: نسيج الكاميرا OES ونسيج الخريطة RGBA؛ يرسم لسطح معاينة Flutter ولسطح المرمِّز لوحة 16:9: خريطة يسار "احتواء" وكاميرا يمين "قص مركزي" حسب D16)، `RecordingSession` (H.264 بمعدل 4/8Mbps، AAC 96kbps أحادي 44.1k، ساعة واحدة elapsedRealtime للصوت والفيديو، كتم = أصفار بالمدة نفسها، بلا ميكروفون = صمت مُسيَّر بالساعة)، `SegmentWriter` (مقاطع mp4 كل 60ث تبدأ بإطار مفتاحي، يُغلق كل مقطع بسليم ويُسجَّل في segments.txt)، `SegmentConcat` (دمج بلا إعادة ترميز بإزاحة الزمن؛ يحذف المقاطع تدريجياً إن ضاقت المساحة)، `RihlaRecorderPlugin` (قنوات `rihla_recorder` و`rihla_recorder/events`، Texture عبر SurfaceProducer، دقة 720/1080، تقدير الحجم والمساحة الحرة، فحص مساحة كل 5ث: تنبيه <1GB وإيقاف وحفظ <300MB، استرداد جلسات قُتلت عبر recoverPending).
+- الانقطاع: ON_PAUSE للنشاط أو خطأ كاميرا أو فشل كتابة أو قلة مساحة يوقف التسجيل ويدمج ويحفظ ويرسل حدث `interrupted` مع الملف؛ ON_STOP يحرّر الكاميرا وON_START يعيد ربطها بنفس النسيج.
+- Dart: `RihlaRecorder` (واجهة) + `MethodChannelRihlaRecorder` + `FakeRihlaRecorder` في packages/rihla_recorder/lib/src/recorder.dart. `NativeCameraPreviewSource` صار يستعمل المُسجِّل (Texture بـcover) بدل الـstub؛ `recorderProvider` في home_controller. الشاشة لا تزال "جلسة واجهة" ولم يُوصَّل start/stop/pushMapFrame بها (F6).
+
+### تحقق فعلاً
+- `flutter build apk --debug`: نجح (الإضافة مسجَّلة في GeneratedPluginRegistrant والـdex). نسخة نظيفة من `git ls-files -co --exclude-standard` في scratchpad: pub get وanalyze (بلا ملاحظات) وtest (92) وbuild apk وgradle test نجحت؛ .gitignore لا يتجاهل ملفات الإضافة.
+- `flutter analyze` بلا ملاحظات؛ `flutter test`: 92 في الجذر (88 + 4 جديدة)، و15 في الحزمة (4 + 11 جديدة بقناة وهمية: المعاملات، الأخطاء، الأحداث، التقدير، المزيّف).
+- Kotlin وحدة (`cd android && ./gradlew :rihla_recorder:testDebugUnitTest`): 10 ناجحة، للمنطق الصافي فقط: المنحنى الزمني/الساعة، الترتيب والعلامة المائية، سياسة المقاطع، سجل المقاطع، تخطيط القص/الاحتواء والمصفوفات، التقدير.
+
+### لم يُختبر (لا جهاز ولا محاكي هنا): لا يُقال إنه يعمل
+- فتح الكاميرا فعلاً، المعاينة (SurfaceProducer مع EGL)، اتجاه الصورة وقيمة rotationDegrees (طُبِّق 0/180 فقط للأفقي؛ 90/270 تقدير غير مجرَّب)، قص الكاميرا في الفيديو.
+- ترميز H.264 على سطح EGL (مستوى/Profile على 1080p، EGL_RECORDABLE)، AAC، تزامن الصوت (<100ms غير مقيس)، الميكروفون والكتم.
+- كتابة المقاطع ودمجها (MediaMuxer/MediaExtractor، الإزاحات، فتح الناتج في المعرض)، الاسترداد بعد القتل، الانقطاع (قفل، زر الرئيسية، مكالمة)، مراقبة المساحة، معدل الإطارات والحرارة.
+- تمرير pushMapFrame بمعدل 2/ث (نسخ 1.8MB عبر القناة) وظهور الإسناد في الفيديو.
+- iOS: غير منفَّذ (مهمة منفصلة؛ القناة والواجهة جاهزتان).
+
+### قرارات تحتاج المعماري
+- D17 (DECISIONS): مقاطع + دمج بلا ترميز بدل movie fragments (MediaMuxer لا يدعم fragmented mp4). الثمن: وقت دمج عند الإيقاف (يتناسب مع الحجم) وفقدان حتى ~60ث إن قُتلت العملية وليس انقطاعاً عادياً. البديل: media3 FragmentedMp4Muxer (اعتماد جديد).
+- مكالمة واردة بلا تغيّر دورة النشاط (إشعار علوي) لا تُكتشف؛ ربط AudioFocus/AudioRecordingCallback غير منفَّذ (يُوقف موسيقى المستخدم أو يحتاج صلاحية).
+
 ## D16 + أول بناء APK (2026-11-14)
 - D16: الفيديو يطابق الشاشة (خريطة يسار، كاميرا يمين). `DualCompositor.mapOnRight` افتراضيه false؛ حُدّث الاختباران وARCHITECTURE (7، 62، 64، F0أ). مخاطرة الإسناد (قرب منتصف الفيديو، يجب ألا تغطيه الكاميرا) موثّقة في D16 وتُفحص بصرياً في F0ب.
 - Android SDK في scratchpad فقط (cmdline-tools، platform-tools، platforms 35/36/37.0، build-tools 35.0.0؛ CMake 3.22.1 نزّله gradle)، التراخيص قُبلت بموافقة المالك المسبقة، ANDROID_HOME لجلسة الأوامر فقط. JDK 21 موجود.
