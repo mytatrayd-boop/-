@@ -33,6 +33,9 @@ final widgetBridgeProvider = Provider<WidgetBridge>((ref) => HomeWidgetBridge())
 final locationServiceProvider =
     Provider<LocationService>((ref) => GeolocatorLocationService());
 
+final locationUpdatesProvider =
+    Provider<LocationUpdates>((ref) => GeolocatorLocationUpdates());
+
 final backgroundStoreProvider =
     Provider<BackgroundStore>((ref) => AppGroupBackgroundStore());
 
@@ -42,7 +45,7 @@ final placeGeocoderProvider =
 final compassSourceProvider =
     Provider<CompassSource>((ref) => defaultTargetPlatform == TargetPlatform.iOS
         ? IosHeadingSource()
-        : FlutterCompassSource());
+        : AndroidCompassSource());
 
 final declinationProvider =
     Provider<DeclinationSource>((ref) => AndroidDeclinationSource());

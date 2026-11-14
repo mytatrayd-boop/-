@@ -112,6 +112,24 @@ class GeolocatorLocationService implements LocationService {
   }
 }
 
+/// تتبّع الموقع أثناء فتح شاشة القبلة (يُحدّث القبلة والانحراف إن تحرك المستخدم أو تحسّن التحديد).
+/// لا يطلب إذناً: يُشترك فيه بعد أن منح المستخدم الإذن في القراءة الأولى. مفصول عن [LocationService]
+/// فلا تنكسر الاختبارات التي تنفّذه.
+abstract class LocationUpdates {
+  Stream<({double latitude, double longitude})> updates();
+}
+
+class GeolocatorLocationUpdates implements LocationUpdates {
+  @override
+  Stream<({double latitude, double longitude})> updates() => Geolocator.getPositionStream(
+        // الإذن التقريبي (٢ كم تقريباً) يكفي: خطأ ٢ كم يغيّر اتجاه القبلة أقل من ٠٫٣° على مسافة ٤٠٠ كم.
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          distanceFilter: 200,
+        ),
+      ).map((p) => (latitude: p.latitude, longitude: p.longitude));
+}
+
 /// اختيار لقطة الخلفية (آيفون) وحفظها في حاوية App Group [appGroupId]
 /// لتقرأها الودجت من حاويتها. القص على مقاس الودجت في ميزة لاحقة.
 abstract class BackgroundStore {
@@ -202,6 +220,33 @@ class FlutterCompassSource implements CompassSource {
   @override
   Stream<CompassReading>? readings() => FlutterCompass.events
       ?.map((e) => (heading: e.heading, accuracy: e.accuracy, magnetic: true));
+}
+
+/// أندرويد: قناة sa.lamha/compass في MainActivity (CompassStream): حساس «متجه الدوران» (دمج المغناطيس
+/// والتسارع والجيروسكوب) مع تعويض ميل الجهاز، وهو أدق وأسرع استجابة من flutter_compass. إن لم يتوفر
+/// الحساس في الجهاز (خطأ unavailable) رجع إلى flutter_compass. الاتجاه مغناطيسي فيُضاف له الانحراف.
+class AndroidCompassSource implements CompassSource {
+  static const _channel = EventChannel('sa.lamha/compass');
+
+  @override
+  Stream<CompassReading>? readings() => _stream();
+
+  Stream<CompassReading> _stream() async* {
+    try {
+      await for (final e in _channel.receiveBroadcastStream()) {
+        final m = e as Map;
+        yield (
+          heading: (m['heading'] as num?)?.toDouble(),
+          accuracy: (m['accuracy'] as num?)?.toDouble(),
+          magnetic: true,
+        );
+      }
+    } on PlatformException catch (e) {
+      if (e.code != 'unavailable') rethrow;
+      final fallback = FlutterCompassSource().readings();
+      if (fallback != null) yield* fallback;
+    }
+  }
 }
 
 /// آيفون: قناة sa.lamha/heading في AppDelegate (HeadingStream). الشمال الحقيقي إن عُرف الموقع،

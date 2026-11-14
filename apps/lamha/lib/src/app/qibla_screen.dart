@@ -56,6 +56,7 @@ enum _Where { locating, live, saved }
 
 class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   StreamSubscription<CompassReading>? _sub;
+  StreamSubscription<({double latitude, double longitude})>? _posSub;
   Timer? _timeout;
   var _sensor = _Sensor.waiting;
   CompassReading? _last;
@@ -69,6 +70,10 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
 
   /// الانحراف المغناطيسي عند الموقع (أندرويد)، يُضاف لقراءة الحساس.
   double _declination = 0;
+
+  /// الموقع الذي حُسب عنده [_declination]؛ يُعاد الحساب إن ابتعد المستخدم عنه أكثر من [_declinationRefreshKm].
+  ({double latitude, double longitude})? _declinationAt;
+  static const _declinationRefreshKm = 20.0;
 
   @override
   void initState() {
@@ -113,10 +118,34 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
       });
     }
     final at = _pos;
-    if (at != null) {
-      final d = await ref.read(declinationProvider).at(at.latitude, at.longitude);
-      if (mounted) setState(() => _declination = d);
+    if (at != null) await _refreshDeclination(at);
+    // تتبّع مستمر بعد القراءة الأولى (فقط إن مُنح الإذن): يحدّث القبلة والانحراف إن تحرك المستخدم أو
+    // تحسّن التحديد، فلا يبقى على أول قراءة (تقريبية أو قديمة) طوال فتح الشاشة.
+    if (p != null && mounted) {
+      _posSub = ref.read(locationUpdatesProvider).updates().listen(
+        (n) {
+          if (!mounted) return;
+          setState(() {
+            _where = _Where.live;
+            _pos = n;
+          });
+          _refreshDeclination(n);
+        },
+        onError: (Object e) => debugPrint('qibla position stream: $e'),
+      );
     }
+  }
+
+  /// يحسب الانحراف المغناطيسي عند [at] إن لم يُحسب بعد أو ابتعد الموقع عن موضع الحساب السابق.
+  Future<void> _refreshDeclination(({double latitude, double longitude}) at) async {
+    final prev = _declinationAt;
+    if (prev != null &&
+        distanceKm(prev.latitude, prev.longitude, at.latitude, at.longitude) < _declinationRefreshKm) {
+      return;
+    }
+    _declinationAt = at;
+    final d = await ref.read(declinationProvider).at(at.latitude, at.longitude);
+    if (mounted) setState(() => _declination = d);
   }
 
   /// القبلة من الموقع الحالي إن عُرف، وإلا من الجدول (المدينة المحفوظة).
@@ -155,6 +184,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   void dispose() {
     _timeout?.cancel();
     _sub?.cancel();
+    _posSub?.cancel();
     super.dispose();
   }
 

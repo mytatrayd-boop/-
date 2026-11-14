@@ -9,6 +9,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import sa.lamha.lamha.widget.LamhaWeatherWorker
 
@@ -21,6 +22,9 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         // جلب الطقس الدوري يعمل حتى بلا ودجت على الشاشة (لإشعار شاشة القفل).
         LamhaWeatherWorker.ensureScheduled(this)
+        // اتجاه البوصلة الحي لشاشة القبلة (متجه الدوران مع تعويض الميل).
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, COMPASS_CHANNEL)
+            .setStreamHandler(CompassStream(this))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "systemColors" -> result.success(systemColors())
@@ -90,6 +94,7 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val CHANNEL = "sa.lamha/android"
+        private const val COMPASS_CHANNEL = "sa.lamha/compass"
         private const val REQUEST_NOTIFICATIONS = 4127
 
         /// نبضة التطابق مع القبلة: خفيفة وقصيرة.

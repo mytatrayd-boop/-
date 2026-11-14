@@ -45,4 +45,11 @@ void main() {
     expect(distanceToKaabaKm(kaabaLatitude, kaabaLongitude), closeTo(0, 1e-6));
     expect(qiblaDegrees(18.54, 42.05), closeTo(324.4, 0.3));
   });
+
+  test('distanceKm: متماثلة وصفر لنقطة واحدة، والرياض–محايل ≈ ٨٣٧ كم', () {
+    expect(distanceKm(24.6877, 46.7219, 24.6877, 46.7219), closeTo(0, 1e-9));
+    expect(distanceKm(24.6877, 46.7219, 18.54, 42.05),
+        closeTo(distanceKm(18.54, 42.05, 24.6877, 46.7219), 1e-9));
+    expect(distanceKm(24.6877, 46.7219, 18.54, 42.05), closeTo(837, 10));
+  });
 }
