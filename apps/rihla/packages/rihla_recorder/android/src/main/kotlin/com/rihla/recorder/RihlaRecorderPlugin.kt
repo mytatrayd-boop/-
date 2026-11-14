@@ -110,8 +110,13 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
     override fun onDetachedFromEngine(b: FlutterPlugin.FlutterPluginBinding) {
         methods?.setMethodCallHandler(null)
         events?.setStreamHandler(null)
-        worker.execute {
-            runCatching { session?.let { stopSession(it) } }
+        try {
+            worker.execute {
+                runCatching { session?.let { stopSession(it) } }
+                main.post { releaseCamera() }
+            }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.w(TAG, "worker already shut down", e)
             main.post { releaseCamera() }
         }
         worker.shutdown() // المهام المصفوفة أعلاه تُنفَّذ ثم يُغلق الخيط.
@@ -189,7 +194,7 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
             } catch (t: Throwable) {
                 Log.e(TAG, "openCamera failed", t)
                 cameraWanted = false
-                main.post { unbindCamera(); result.error("camera_unavailable", t.message, null) }
+                main.post { releaseCamera(); result.error("camera_unavailable", t.message, null) }
             }
         }
     }
@@ -438,6 +443,14 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
         if (session != null) return out // لا نلمس مجلد جلسة حيّة.
         root.listFiles { f -> f.isDirectory && f.name.startsWith("rec_") }?.forEach { dir ->
             val final = File(root, "rihla_${dir.name.removePrefix("rec_")}.mp4")
+            val counter = File(dir, "recover_attempts")
+            val attempts = (runCatching { counter.readText().trim().toInt() }.getOrDefault(0)) + 1
+            if (attempts > MAX_RECOVER_ATTEMPTS) {
+                Log.w(TAG, "recover ${dir.name} abandoned after ${attempts - 1} attempts")
+                dir.deleteRecursively()
+                return@forEach
+            }
+            runCatching { counter.writeText(attempts.toString()) }
             runCatching { RecordingSession.recover(dir, final) }.onFailure { Log.w(TAG, "recover ${dir.name} failed", it) }
                 .getOrNull()?.let { out.add(it.toMap()) }
         }
@@ -473,5 +486,6 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
 
     companion object {
         private const val TAG = "RihlaRecorder"
+        private const val MAX_RECOVER_ATTEMPTS = 3
     }
 }

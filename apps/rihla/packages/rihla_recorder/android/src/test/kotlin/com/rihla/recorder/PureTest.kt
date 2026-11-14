@@ -109,6 +109,24 @@ class PureTest {
         assertEquals(1_000_100L, p.segStartUs)
     }
 
+    @Test fun timelineOffsetsIncreasingForLongRecording() {
+        val t = SegmentTimeline(1_000_000)
+        val offsets = ArrayList<Long>()
+        var open = false
+        var key = 5_000_000L
+        for (pts in 5_000_000L..9_500_000L step 100_000L) {
+            val isKey = (pts - key) % 1_000_000L == 0L
+            when (t.decide(true, isKey, pts)) {
+                SegmentPolicy.Decision.START_SEGMENT -> { t.markOpened(); open = true }
+                SegmentPolicy.Decision.ROTATE_SEGMENT -> { offsets.add(t.currentOffsetUs()); t.markOpened() }
+                else -> {}
+            }
+        }
+        offsets.add(t.currentOffsetUs())
+        assertTrue(open)
+        assertEquals(listOf(0L, 1_000_000L, 2_000_000L, 3_000_000L, 4_000_000L), offsets)
+    }
+
     @Test fun manifestRoundtripIgnoresTornLine() {
         val e = listOf(SegmentEntry("seg_0000.mp4", 0), SegmentEntry("seg_0001.mp4", 60_000_033))
         val text = e.joinToString("\n") { SegmentManifest.line(it) } + "\nseg_0002.mp"

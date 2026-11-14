@@ -168,3 +168,11 @@
 - stop(): مهل join تنتهي بقطع الخيوط؛ أخطاء الكاميرا القابلة للتعافي (CAMERA_IN_USE...) لا توقف التسجيل. انجراف الصوت: AudioRecord.getTimestamp + AudioPtsTracker (مزامنة عند انحراف >40ms).
 - توصية (غير منفذة، القناة لم تتغير): تقليل حجم إطار الخريطة عبر pushMapFrame (نصف الدقة أو ضغط) لخفض نسخ RGBA الكبيرة عبر القناة.
 - تحقق: gradlew :rihla_recorder:testDebugUnitTest ناجح (14 اختباراً)، flutter analyze/test (الحزمة 15 والجذر 99) وbuild apk --debug ناجحة. المنطق الصرف فقط مُختبر؛ الكاميرا والترميز والدمج بلا اختبار حتى جهاز.
+
+## Kotlin: إصلاحات المراجعة (محاولة 3، 2026-11-14): لم يُجرَّب على جهاز
+- SegmentWriter: إزاحة المقطع المغلق تُحسب من بداية المقطع المفتوح (SegmentTimeline.curStartUs يُضبط في markOpened) لا من حالة السياسة بعد قرار ROTATE؛ اختبار وحدة لتسجيل أطول من segmentSeconds (إزاحات تزايدية).
+- SegmentConcat: استُبدل Files.move (API 26) بـrenameTo مع حذف الهدف ثم نسخ+حذف عند الفشل (minSdk 24).
+- openCamera: فشل بعد ensureRenderer يستدعي releaseCamera (المُصيِّر وSurfaceProducer وخيط GL).
+- recoverPending: عداد محاولات في recover_attempts داخل مجلد الجلسة؛ بعد 3 محاولات فاشلة يُحذف المجلد.
+- onDetachedFromEngine: RejectedExecutionException مُعالَج.
+- مهلة stop: أسوأ حالة أصلية ~ 3+5+5 ث انضمام + دمج؛ لا مهلة في Dart للحزمة (_call بلا timeout) ولا في lib الجذر (بُحث ولم يوجد timeout)، فلا تعديل.

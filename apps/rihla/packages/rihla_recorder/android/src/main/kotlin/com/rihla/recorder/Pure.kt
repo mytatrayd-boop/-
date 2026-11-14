@@ -198,6 +198,27 @@ class SegmentPolicy(private val segmentUs: Long) {
     }
 }
 
+/** يحفظ بداية المقطع المفتوح حالياً (لا تتغير عند قرار ROTATE حتى يُستدعى [markOpened]) فتكون إزاحة المقطع المغلق صحيحة. */
+class SegmentTimeline(segmentUs: Long) {
+    private val policy = SegmentPolicy(segmentUs)
+    private var firstBaseUs = -1L
+    var curStartUs = -1L
+        private set
+
+    fun decide(isVideo: Boolean, isKeyFrame: Boolean, ptsUs: Long) = policy.decide(isVideo, isKeyFrame, ptsUs)
+
+    /** بعد إغلاق المقطع السابق: المقطع الجديد بدأ عند بداية السياسة. */
+    fun markOpened() {
+        curStartUs = policy.segStartUs
+        if (firstBaseUs < 0) firstBaseUs = curStartUs
+    }
+
+    /** إزاحة المقطع المفتوح حالياً عن أول مقطع. */
+    fun currentOffsetUs(): Long = curStartUs - firstBaseUs
+
+    fun relativePts(ptsUs: Long): Long = maxOf(0L, ptsUs - curStartUs)
+}
+
 data class SegmentEntry(val name: String, val offsetUs: Long)
 
 /** سجل المقاطع المغلقة (سطر لكل مقطع) لاسترداد رحلة انقطعت بقتل العملية. */

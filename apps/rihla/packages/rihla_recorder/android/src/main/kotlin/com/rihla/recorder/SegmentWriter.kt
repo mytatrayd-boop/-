@@ -18,7 +18,7 @@ class SegmentWriter(
     private val onFatal: (Throwable) -> Unit,
     private val onSegmentLost: () -> Unit = {},
 ) {
-    private val policy = SegmentPolicy(segmentSeconds * 1_000_000L)
+    private val timeline = SegmentTimeline(segmentSeconds * 1_000_000L)
     private val interleaver = SampleInterleaver()
     private val lock = Any()
     private var videoFormat: MediaFormat? = null
@@ -78,10 +78,9 @@ class SegmentWriter(
     }
 
     private fun write(s: EncodedSample) {
-        when (policy.decide(s.isVideo, s.isKeyFrame, s.ptsUs)) {
+        when (timeline.decide(s.isVideo, s.isKeyFrame, s.ptsUs)) {
             SegmentPolicy.Decision.DROP -> return
             SegmentPolicy.Decision.START_SEGMENT -> {
-                if (firstBaseUs < 0) firstBaseUs = s.ptsUs
                 openSegment()
             }
             SegmentPolicy.Decision.ROTATE_SEGMENT -> {
@@ -92,13 +91,14 @@ class SegmentWriter(
         }
         val m = muxer ?: return
         val info = MediaCodec.BufferInfo()
-        info.set(0, s.data.size, maxOf(0L, s.ptsUs - policy.segStartUs), s.flags)
+        info.set(0, s.data.size, timeline.relativePts(s.ptsUs), s.flags)
         m.writeSampleData(if (s.isVideo) vTrack else aTrack, ByteBuffer.wrap(s.data), info)
         lastPtsUs = maxOf(lastPtsUs, s.ptsUs)
     }
 
     private fun openSegment() {
         currentName = "seg_%04d.mp4".format(index++)
+        timeline.markOpened()
         val m = MediaMuxer(File(dir, currentName).path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
         vTrack = m.addTrack(videoFormat!!)
         aTrack = m.addTrack(audioFormat!!)
@@ -120,7 +120,7 @@ class SegmentWriter(
             return
         }
         m.release()
-        val e = SegmentEntry(currentName, policy.segStartUs - firstBaseUs)
+        val e = SegmentEntry(currentName, timeline.currentOffsetUs())
         entries.add(e)
         manifest.appendText(SegmentManifest.line(e) + "\n")
     }

@@ -7,8 +7,6 @@ import android.media.MediaMuxer
 import android.util.Log
 import java.io.File
 import java.nio.ByteBuffer
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 /**
  * يدمج مقاطع mp4 بلا إعادة ترميز (remux) مع إزاحة الزمن لكل مقطع.
@@ -111,7 +109,11 @@ object SegmentConcat {
             m.stop()
             muxer = null
             m.release()
-            Files.move(part.toPath(), out.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            if (out.exists()) out.delete()
+            if (!part.renameTo(out)) {
+                part.copyTo(out, overwrite = true)
+                part.delete()
+            }
             ok = true
             return Result(lastPts, used, skipped)
         } finally {
