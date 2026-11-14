@@ -35,13 +35,16 @@ class AppTheme {
     onSurfaceVariant: AppColors.textSecondary,
   );
 
+  static const fontFamily = 'IBMPlexSansArabic';
+
   static TextStyle _s(double size, FontWeight w, double h, Color c) =>
-      TextStyle(fontSize: size, fontWeight: w, height: h, color: c);
+      TextStyle(fontFamily: fontFamily, fontSize: size, fontWeight: w, height: h, color: c);
 
   static ThemeData dark() {
     const p = AppColors.textPrimary;
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: _scheme,
       scaffoldBackgroundColor: AppColors.ink,
       canvasColor: AppColors.ink,

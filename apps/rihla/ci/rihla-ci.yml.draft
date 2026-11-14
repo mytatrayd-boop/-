@@ -1,0 +1,23 @@
+# مسودة للعرض على المالك فقط. لا تُنقل إلى .github/workflows قبل موافقته.
+# عند اعتمادها: راجع D13 (توليد l10n بدل تتبعه).
+name: rihla-ci
+on:
+  pull_request:
+    paths: ['apps/rihla/**']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/rihla
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter analyze
+      - run: flutter test
+      - run: bash tool/check_no_secrets.sh
