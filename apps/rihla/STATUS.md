@@ -36,6 +36,14 @@
 - اختبارات وحدة جديدة (PureTest): كل توليفة حساس 0/90/180/270 × اتجاه الشاشة 0..3، أمامية، الاحتياط، تبديل الأبعاد، واتجاه الدوران لكل زاوية عبر textureMatrix. نسخة نظيفة: analyze بلا ملاحظات، flutter test 113 ناجحاً، gradle testDebugUnitTest ناجح، build apk --debug نجح.
 - المطلوب: تسجيل قصير على الجوال بالاتجاهين (landscape وlandscape المعكوس) والتأكد من اعتدال الأفق في المعاينة والفيديو.
 
+## معايرة «تدوير الكاميرا» (Kotlin + إعدادات) (2026-11-14): مبني ومختبر على المضيف؛ لم يُصحَّح بعد (التحقق بعين المالك)
+
+- السبب غير معروف (قد يكون displayRotation أو ROTATION_90/270 أو getTransformMatrix)؛ لذا إزاحة يدوية مع تشخيص، لا إصلاح مُثبَت. FEEDBACK 3 البند 9 يبقى مفتوحاً حتى يراه المالك.
+- Kotlin: `CameraOrientation.applyOffset/normalizeOffset/DEFAULT_OFFSET=270` (Pure.kt). الدوران النهائي = الحساب الحالي + الإزاحة (مع عقارب الساعة) للمعاينة والفيديو معاً عبر `currentRotation()`؛ تبديل أبعاد نسيج المعاينة عند 90/270 كما قبل. قناة: `setRotationOffset(degrees)` و`getOrientationInfo` (sensorRotation, displayRotation, rotationDegrees, computedRotation, offset, finalRotation, cameraOpen)، و`start` يقبل `rotationOffset`، وحدث `previewSize` عند تغير الأبعاد المعروضة (Dart يبدّل أبعاد Texture به)، ونتيجة openCamera صارت بالأبعاد المعروضة. سجل logcat فيه offset.
+- Dart: إعداد محفوظ في shared_preferences (مفتاح camera_rotation_offset، الافتراضي 270)؛ `NativeCameraPreviewSource.open` يمرّر المحفوظ قبل الفتح (فيصل شاشة التسجيل دون لمس home). الإعدادات: أزرار 0/90/180/270، زر «اختبار الكاميرا» (معاينة حية أفقية تغلق الكاميرا عند الخروج إلا إن كانت مفتوحة أصلاً)، قسم «تشخيص الكاميرا» مع تحديث ونسخ. النصوص ثنائية اللغة في ARB.
+- اختبارات: Kotlin 32 ناجحاً (إزاحة لكل زاوية، تبديل الأبعاد، سطر السجل)؛ نسخة نظيفة: flutter analyze بلا ملاحظات، flutter test 189 ناجحاً، build apk --debug نجح. ملاحظة للاختبارات: `NativeCameraPreviewSource` في testWidgets يلزمه `rotationStore: MemoryCameraRotationStore()` (shared_preferences الحقيقي يعلّق).
+- المطلوب من المالك: تسجيل قصير؛ إن لم تعتدل الصورة اختر الزاوية الصحيحة من الإعدادات (اختبار الكاميرا) وأرسل قيم «تشخيص الكاميرا» لنعرف السبب.
+
 ## تدقيق ميلان 25° (Kotlin) (2026-11-14): تدقيق رياضي + اختبارات + سجلات؛ لا إصلاح لخلل لأنه لم يوجد، ولا جهاز
 
 - التحليل: مسار المظلل = uv = stMatrix * R(rot حول المركز) * mix(crop, nx,ny). القص (coverCrop) يُحسب بأبعاد ما بعد الدوران (displayedSize تبدّل عند 90/270) ويُطبَّق قبل الدوران في فضاء uv المطبَّع؛ والدوران بمضاعفات 90 هو تبديل/قلب محاور فقط (لا shear)، وstMatrix مقياس/إزاحة/قلب y. فكل التركيبات مصفوفات متعامدة المحاور: لا يمكن إنتاج زاوية غير مضاعف 90. resolve يقرّب لمضاعف 90. الاحتمال الوحيد لتشوه (لا ميلان): تطابق camW/camH مع مخزن الكاميرا الحقيقي (يأتي من SurfaceRequest.resolution) أو قص cropRect للكاميرا غير مطبَّق.

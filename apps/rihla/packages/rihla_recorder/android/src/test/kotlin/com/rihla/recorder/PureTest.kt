@@ -362,7 +362,7 @@ class PureTest {
             assertEquals(if (off == 90 || off == 270) 1280 else 720, h)
             assertEquals(
                 LayoutMath.transform(CameraOrientation.textureMatrix(st, r), 0.3f, 0.6f),
-                SamplePath.uv(st, r, CropUv(0f, 1f, 0f, 1f), 0.3f, 0.6f),
+                SamplePath.uv(st, r, CropUv(0f, 0f, 1f, 1f), 0.3f, 0.6f),
             )
         }
     }
