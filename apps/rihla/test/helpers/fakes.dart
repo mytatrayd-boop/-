@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:rihla/data/db/app_database.dart';
@@ -14,6 +15,12 @@ import 'package:rihla/features/home/home_controller.dart';
 import 'package:rihla/features/onboarding_permissions/permissions_controller.dart';
 
 /// كل اعتمادات الجهاز مزيّفة: لا كاميرا ولا GPS ولا شبكة ولا بلاطات.
+/// يُستدعى مرة لإسكات تحذير drift عند إنشاء قاعدة ذاكرة لكل اختبار.
+bool _quiet() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  return true;
+}
+
 class HomeFakes {
   HomeFakes({
     FakePermissionService? permissions,
@@ -35,8 +42,8 @@ class HomeFakes {
        location = location ?? FakeLocationSource(),
        network = network ?? FakeNetworkStatusSource(),
        awake = awake ?? FakeScreenAwake(),
-       recorder = recorder ?? FakeRihlaRecorder(),
-       db = AppDatabase(NativeDatabase.memory());
+       recorder = recorder ?? (FakeRihlaRecorder()..cameraOpen = true),
+       db = _quiet() ? AppDatabase(NativeDatabase.memory()) : throw StateError('x');
 
   final FakePermissionService permissions;
   final FakeCameraPreviewSource camera;

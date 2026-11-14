@@ -30,6 +30,9 @@ object StorageMath {
     /** الدمج يحتاج مساحة بحجم الناتج؛ إن لم تتسع تُحذف المقاطع تدريجياً أثناء الدمج. */
     fun deleteSegmentsProgressively(freeBytes: Long, totalSegmentBytes: Long): Boolean =
         freeBytes < totalSegmentBytes + totalSegmentBytes / 10 + 32L * 1024 * 1024
+
+    /** الدمج لا يحذف المصادر قبل نجاحه: إن لم تتسع المساحة يُرفض الدمج وتبقى المقاطع للاسترداد لاحقاً. */
+    fun canMerge(freeBytes: Long, totalSegmentBytes: Long): Boolean = !deleteSegmentsProgressively(freeBytes, totalSegmentBytes)
 }
 
 data class RectI(val x: Int, val y: Int, val w: Int, val h: Int)
@@ -106,6 +109,13 @@ object ClockMath {
     /** مرساة الصوت: وقت أول قطعة منقوصاً منه مدتها، لا أقل من صفر. */
     fun audioAnchorUs(nowUs: Long, firstChunkFrames: Int, sampleRate: Int): Long =
         max(0L, nowUs - framesToUs(firstChunkFrames.toLong(), sampleRate))
+
+    /**
+     * زمن بداية القطعة الحالية بساعة التسجيل من AudioRecord.getTimestamp (BOOTTIME):
+     * اللقطة (framePosition عند nanoTime) + فرق الإطارات حتى بداية القطعة.
+     */
+    fun chunkStartUs(tsNanoTime: Long, tsFramePos: Long, startNs: Long, framesBefore: Long, sampleRate: Int): Long =
+        (tsNanoTime - startNs) / 1000 + framesToUs(framesBefore - tsFramePos, sampleRate)
 
     fun framesToUs(frames: Long, sampleRate: Int): Long = frames * 1_000_000L / sampleRate
     fun audioPtsUs(anchorUs: Long, framesBefore: Long, sampleRate: Int) = anchorUs + framesToUs(framesBefore, sampleRate)
@@ -199,4 +209,31 @@ object SegmentManifest {
         val off = p.getOrNull(1)?.toLongOrNull()
         if (p.size == 2 && p[0].isNotBlank() && off != null) SegmentEntry(p[0], off) else null
     }.toList()
+}
+
+/**
+ * أزمنة قطع الصوت مع إعادة مزامنة دورية بدل مرساة وحيدة: إن انحرف الزمن المتوقع (من عدد الإطارات)
+ * عن الزمن المرجعي (من AudioRecord.getTimestamp) أكثر من [thresholdUs] تُزاح المرساة. الناتج تزايدي دائماً.
+ */
+class AudioPtsTracker(private val sampleRate: Int, private val thresholdUs: Long = 40_000) {
+    private var anchorUs = -1L
+    private var lastPts = -1L
+    var resyncs = 0
+        private set
+
+    /** [referenceUs] زمن بداية القطعة الحقيقي إن عُرف، وإلا null (لا مزامنة بعد المرساة الأولى). */
+    fun next(framesBefore: Long, referenceUs: Long?): Long {
+        if (anchorUs < 0) {
+            anchorUs = max(0L, (referenceUs ?: 0L) - ClockMath.framesToUs(framesBefore, sampleRate))
+        } else if (referenceUs != null) {
+            val drift = referenceUs - (anchorUs + ClockMath.framesToUs(framesBefore, sampleRate))
+            if (abs(drift) > thresholdUs) { anchorUs += drift; resyncs++ }
+        }
+        var pts = anchorUs + ClockMath.framesToUs(framesBefore, sampleRate)
+        if (pts <= lastPts) pts = lastPts + 1
+        lastPts = pts
+        return pts
+    }
+
+    val anchor: Long get() = max(anchorUs, 0L)
 }

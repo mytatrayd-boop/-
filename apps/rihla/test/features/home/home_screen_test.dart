@@ -61,6 +61,12 @@ Future<void> fixAndStart(WidgetTester t, HomeFakes f) async {
   await t.pump();
   // العدّ التنازلي 3-2-1 ثم البدء.
   await t.pump(const Duration(seconds: 3));
+  await settleDb(t);
+}
+
+/// قاعدة drift تعمل بـIO حقيقي خارج الساعة المزيّفة: ننتظرها فعلاً ثم نرسم.
+Future<void> settleDb(WidgetTester t) async {
+  await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
   await t.pump();
   await t.pump();
 }
@@ -219,6 +225,7 @@ void main() {
     await t.tap(find.byKey(_stop));
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey('stop-confirm')));
+    await settleDb(t);
     await t.pumpAndSettle();
     expect(c.read(homeProvider).recording, isFalse);
     expect(f.awake.enabled, isFalse);

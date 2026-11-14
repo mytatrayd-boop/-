@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit
  */
 class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
     private val main = Handler(Looper.getMainLooper())
-    private val worker = Executors.newSingleThreadExecutor { Thread(it, "rihla-ctl") }
+    private val worker = Executors.newSingleThreadExecutor { Thread(it, "rihla-ctl").also { t -> t.isDaemon = true } }
 
     private var appContext: Context? = null
     private var textures: TextureRegistry? = null
@@ -114,6 +114,7 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
             runCatching { session?.let { stopSession(it) } }
             main.post { releaseCamera() }
         }
+        worker.shutdown() // المهام المصفوفة أعلاه تُنفَّذ ثم يُغلق الخيط.
         appContext = null
     }
 
@@ -143,7 +144,7 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "openCamera" -> openCamera(QualityProfile.fromKey(call.argument("quality")), result)
-            "closeCamera" -> { cameraWanted = false; unbindCamera(); result.success(null) }
+            "closeCamera" -> closeCamera(result)
             "start" -> startRecording(call, result)
             "stop" -> stopRequested(result)
             "setMuted" -> { session?.muted = call.argument<Boolean>("muted") == true; result.success(null) }
@@ -196,20 +197,41 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
     private fun ensureRenderer() {
         if (renderer != null) return
         val r = GlRenderer()
-        renderer = r
-        val surfaceFuture = r.start()
-        val latch = CompletableFuture<Unit>()
-        main.post {
-            try {
-                val p = textures!!.createSurfaceProducer()
-                p.setSize(1280, 720)
-                producer = p
-                r.setPreviewSurface(p.surface)
-                latch.complete(Unit)
-            } catch (t: Throwable) { latch.completeExceptionally(t) }
+        var p: TextureRegistry.SurfaceProducer? = null
+        try {
+            val surfaceFuture = r.start()
+            val latch = CompletableFuture<TextureRegistry.SurfaceProducer>()
+            main.post {
+                try {
+                    val sp = textures!!.createSurfaceProducer()
+                    p = sp
+                    sp.setSize(1280, 720)
+                    // السطح قد يُعاد إنشاؤه (setSize، العودة من الخلفية): نعيد ربطه بالمُصيِّر.
+                    sp.setCallback(object : TextureRegistry.SurfaceProducer.Callback {
+                        override fun onSurfaceAvailable() {
+                            runCatching { r.setPreviewSurface(sp.surface).get(2, TimeUnit.SECONDS) }
+                        }
+                        override fun onSurfaceCleanup() {
+                            runCatching { r.setPreviewSurface(null).get(2, TimeUnit.SECONDS) }
+                        }
+                    })
+                    r.setPreviewSurface(sp.surface)
+                    latch.complete(sp)
+                } catch (t: Throwable) { latch.completeExceptionally(t) }
+            }
+            surfaceFuture.get(5, TimeUnit.SECONDS)
+            val sp = latch.get(5, TimeUnit.SECONDS)
+            producer = sp
+            renderer = r // بعد نجاح كل شيء فقط.
+        } catch (t: Throwable) {
+            val leaked = p
+            main.post {
+                runCatching { leaked?.setCallback(null) }
+                runCatching { leaked?.release() }
+            }
+            r.release()
+            throw t
         }
-        surfaceFuture.get(5, TimeUnit.SECONDS)
-        latch.get(5, TimeUnit.SECONDS)
     }
 
     private fun bindAndAwait(): Size {
@@ -262,8 +284,9 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
     private val cameraStateObserver = Observer<androidx.camera.core.CameraState> { st ->
         val err = st.error
         if (err != null) {
-            Log.w(TAG, "camera error code=${err.code}")
-            onCameraFailure("camera_error_${err.code}")
+            Log.w(TAG, "camera error code=${err.code} type=${err.type}")
+            // CAMERA_IN_USE وغيرها من الأخطاء القابلة للتعافي: CameraX يعيد المحاولة؛ لا نوقف التسجيل.
+            if (err.type == androidx.camera.core.CameraState.ErrorType.CRITICAL) onCameraFailure("camera_error_${err.code}")
         }
     }
 
@@ -279,13 +302,33 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
         camLifecycle.registry.currentState = Lifecycle.State.CREATED
     }
 
+    /** على الخيط الرئيسي: يحرر المُصيِّر (وخيط GL) وسطح المعاينة. */
     private fun releaseCamera() {
         cameraWanted = false
         unbindCamera()
-        renderer?.release()
+        val r = renderer
+        val p = producer
         renderer = null
-        producer?.release()
         producer = null
+        runCatching { p?.setCallback(null) }
+        runCatching { r?.setPreviewSurface(null)?.get(2, TimeUnit.SECONDS) } // قبل تحرير السطح
+        r?.release()
+        runCatching { p?.release() }
+    }
+
+    private fun closeCamera(result: MethodChannel.Result) {
+        cameraWanted = false
+        unbindCamera()
+        worker.execute {
+            // إن بقي تسجيل نشط نحفظه ونبلّغ Dart قبل تفكيك المُصيِّر.
+            session?.let { s ->
+                runCatching {
+                    val res = stopSession(s)
+                    emit(mapOf("type" to "interrupted", "reason" to "cameraClosed", "result" to res.toMap()))
+                }
+            }
+            main.post { releaseCamera(); result.success(null) }
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -321,9 +364,17 @@ class RihlaRecorderPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCa
                 val mic = ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
                 val s = RecordingSession(
                     r, q, File(root, "rec_$stamp"), File(root, "rihla_$stamp.mp4"), segSec, mic, muted,
-                ) { t -> Log.e(TAG, "fatal", t); finishRecording("writeError") }
-                s.start()
+                    onFatalCb = { t -> Log.e(TAG, "fatal", t); finishRecording("writeError") },
+                    onSegmentLost = { emit(mapOf("type" to "segmentLost")) },
+                )
+                // نعيّنها قبل start: onFatal المبكر يمر عبر finishRecording (يُنفَّذ بعد انتهاء start على worker نفسه).
                 session = s
+                try {
+                    s.start()
+                } catch (t: Throwable) {
+                    if (session === s) session = null
+                    throw t
+                }
                 warned = false
                 main.post { scheduleStorageCheck() }
                 main.post { result.success(mapOf("micAvailable" to mic)) }

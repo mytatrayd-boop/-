@@ -140,3 +140,11 @@
 - markInterruptedTrips: تضبط endedAt (آخر نقطة أو البدء) وdurationSec وdistanceM. addPoints: تسلسل لكل رحلة (سلسلة Futures). مرجع الجودة: بعد 3 قفزات متسقة تُعاد التثبيت، وتُحذف النقطة الأولى إن كانت الوحيدة (الشاذة). 3 اختبارات جديدة.
 - main: يفتح القاعدة على القرص (lib/data/db/open_database.dart) ويستدعي markInterruptedTrips عند الإقلاع. لم يُشغَّل على جهاز؛ مسار createInBackground/path_provider غير مختبر فعلاً (الاختبارات بذاكرة فقط). المستودع لم يُربط بـProvider بعد (ينتظر واجهة F4).
 - ملاحظة: drift يعيد DateTime محلية لا UTC (نفس اللحظة).
+
+## Kotlin: إصلاحات المراجعة (محاولة 2، 2026-11-14): لم يُجرَّب على جهاز
+- RecordingSession.start: تنظيف كامل عند أي فشل (مرمِّزات، خيوط، سطح الإدخال، مجلد العمل)؛ الخيوط تُقطع بـaborted ولا تُغلق المرمِّزات وخيط حيّ. الـplugin يعيّن session قبل start ويصفّرها عند الفشل، فـonFatal المبكر يمر عبر finishRecording.
+- ensureRenderer: renderer لا يُعيَّن إلا بعد نجاح كل شيء، وإلا يُحرَّر المُصيِّر والمنتج. closeCamera يفكك المُصيِّر وSurfaceProducer وخيط GL (ويحفظ تسجيلاً نشطاً). onDetachedFromEngine يغلق executor (daemon + shutdown). أُضيف SurfaceProducer.Callback لإعادة setPreviewSurface.
+- SegmentConcat: ملف ".part" يُحذف عند الفشل ويُعاد تسميته عند النجاح؛ لا حذف تدريجي للمصادر (إن لم تتسع المساحة يُرفض الدمج وتبقى المقاطع لـrecoverPending)؛ صوت أول مقطع الغائب يُعالَج بفحص مسبق. SegmentWriter: فشل muxer.stop يحذف المقطع ويُحسب في skippedSegments ويُرسل حدث segmentLost (يتجاهله Dart حالياً).
+- stop(): مهل join تنتهي بقطع الخيوط؛ أخطاء الكاميرا القابلة للتعافي (CAMERA_IN_USE...) لا توقف التسجيل. انجراف الصوت: AudioRecord.getTimestamp + AudioPtsTracker (مزامنة عند انحراف >40ms).
+- توصية (غير منفذة، القناة لم تتغير): تقليل حجم إطار الخريطة عبر pushMapFrame (نصف الدقة أو ضغط) لخفض نسخ RGBA الكبيرة عبر القناة.
+- تحقق: gradlew :rihla_recorder:testDebugUnitTest ناجح (14 اختباراً)، flutter analyze/test (الحزمة 15 والجذر 99) وbuild apk --debug ناجحة. المنطق الصرف فقط مُختبر؛ الكاميرا والترميز والدمج بلا اختبار حتى جهاز.

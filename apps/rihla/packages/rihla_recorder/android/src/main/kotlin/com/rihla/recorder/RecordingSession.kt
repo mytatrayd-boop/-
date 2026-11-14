@@ -1,15 +1,18 @@
 package com.rihla.recorder
 
 import android.media.AudioFormat
+import android.media.AudioTimestamp
 import android.media.AudioRecord
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import java.io.File
 import java.nio.ByteBuffer
+import java.util.concurrent.TimeUnit
 
 class RecordingResult(
     val path: String,
@@ -32,10 +35,17 @@ class RecordingSession(
     segmentSeconds: Int,
     private val micAllowed: Boolean,
     @Volatile var muted: Boolean,
-    private val onFatal: (Throwable) -> Unit,
+    onFatalCb: (Throwable) -> Unit,
+    onSegmentLost: () -> Unit = {},
 ) {
     private val startNs = SystemClock.elapsedRealtimeNanos()
-    private val writer = SegmentWriter(workDir, segmentSeconds, onFatal)
+
+    /** أثناء التنظيف/الإيقاف لا نبلّغ أخطاء الخيوط التي نغلقها بأنفسنا. */
+    @Volatile private var closing = false
+    @Volatile private var aborted = false
+    private val onFatal: (Throwable) -> Unit = { t -> if (!closing) onFatalCb(t) }
+    private val writer = SegmentWriter(workDir, segmentSeconds, onFatal, onSegmentLost)
+    private var inputSurface: android.view.Surface? = null
     private var video: MediaCodec? = null
     private var audio: MediaCodec? = null
     private var videoThread: Thread? = null
@@ -45,7 +55,18 @@ class RecordingSession(
     @Volatile var micActive = false
         private set
 
+    /** عند أي فشل: تنظيف كامل (مرمِّزات، خيوط، سطح، مجلد العمل) ثم إعادة رمي الخطأ. */
     fun start() {
+        try {
+            startInternal()
+        } catch (t: Throwable) {
+            Log.e(TAG, "start failed; cleaning up", t)
+            teardown()
+            throw t
+        }
+    }
+
+    private fun startInternal() {
         workDir.mkdirs()
         val vf = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, profile.width, profile.height).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
@@ -55,10 +76,11 @@ class RecordingSession(
             setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)
         }
         val v = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
-        v.configure(vf, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-        val inputSurface = v.createInputSurface()
-        v.start()
         video = v
+        v.configure(vf, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+        val surface = v.createInputSurface()
+        inputSurface = surface
+        v.start()
 
         val af = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, QualityProfile.AUDIO_SAMPLE_RATE, 1).apply {
             setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
@@ -66,15 +88,49 @@ class RecordingSession(
             setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16 * 1024)
         }
         val a = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC)
+        audio = a
         a.configure(af, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         a.start()
-        audio = a
 
         videoThread = Thread({ drain(v, true) }, "rihla-vdrain").also { it.start() }
         audioDrainThread = Thread({ drain(a, false) }, "rihla-adrain").also { it.start() }
         audioFeedThread = Thread({ feedAudio(a) }, "rihla-afeed").also { it.start() }
         // آخر خطوة: بعدها يبدأ وصول الإطارات للمرمِّز.
-        renderer.setEncoderSurface(inputSurface, profile.width, profile.height, startNs).get()
+        renderer.setEncoderSurface(surface, profile.width, profile.height, startNs).get(5, TimeUnit.SECONDS)
+    }
+
+    /** يوقف الخيوط ويحرر المرمِّزات والسطح. آمن للاستدعاء أكثر من مرة. يعيد true إن ماتت كل الخيوط. */
+    private fun teardown(): Boolean {
+        closing = true
+        stopRequested = true
+        runCatching { renderer.setEncoderSurface(null, 0, 0, 0).get(3, TimeUnit.SECONDS) }
+        runCatching { video?.signalEndOfInputStream() }
+        val threads = listOfNotNull(audioFeedThread, videoThread, audioDrainThread)
+        threads.forEach { it.join(2000) }
+        if (threads.any { it.isAlive }) {
+            aborted = true
+            threads.forEach { if (it.isAlive) it.interrupt() }
+            threads.forEach { it.join(2000) }
+        }
+        val allDead = threads.none { it.isAlive }
+        if (allDead) {
+            runCatching { writer.close() }
+            releaseCodecs()
+            runCatching { workDir.deleteRecursively() }
+        } else {
+            // لا نغلق المرمِّزات والخيوط ما زالت تستعملها (انهيار native)؛ نسجّل ونترك.
+            Log.e(TAG, "threads still alive after abort; codecs left for process cleanup")
+        }
+        return allDead
+    }
+
+    private fun releaseCodecs() {
+        runCatching { video?.stop() }
+        runCatching { video?.release() }
+        runCatching { audio?.stop() }
+        runCatching { audio?.release() }
+        runCatching { inputSurface?.release() }
+        video = null; audio = null; inputSurface = null
     }
 
     private fun drain(codec: MediaCodec, isVideo: Boolean) {
@@ -82,6 +138,7 @@ class RecordingSession(
         var lastPts = -1L
         try {
             while (true) {
+                if (aborted) break
                 val i = codec.dequeueOutputBuffer(info, 10_000)
                 when {
                     i == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED ->
@@ -134,7 +191,8 @@ class RecordingSession(
         }
         micActive = record != null
         var framesDone = 0L
-        var anchorUs = -1L
+        val tracker = AudioPtsTracker(rate)
+        val ts = AudioTimestamp()
         try {
             while (!stopRequested) {
                 var bytes = chunk.size
@@ -151,11 +209,15 @@ class RecordingSession(
                 }
                 val nowUs = (SystemClock.elapsedRealtimeNanos() - startNs) / 1000
                 val frames = bytes / 2
-                if (anchorUs < 0) anchorUs = ClockMath.audioAnchorUs(nowUs, frames, rate)
-                val pts = ClockMath.audioPtsUs(anchorUs, framesDone, rate)
+                // مرجع الزمن: طابع العتاد (يُعاد قياسه دورياً فلا انجراف)؛ بدونه المرساة الأولى فقط.
+                val hwRef = if (record != null && Build.VERSION.SDK_INT >= 24 &&
+                    record.getTimestamp(ts, AudioTimestamp.TIMEBASE_BOOTTIME) == AudioRecord.SUCCESS
+                ) ClockMath.chunkStartUs(ts.nanoTime, ts.framePosition, startNs, framesDone, rate) else null
+                val ref = hwRef ?: if (framesDone == 0L) ClockMath.audioAnchorUs(nowUs, frames, rate) else null
+                val pts = tracker.next(framesDone, ref)
                 if (record == null) {
                     // لا ميكروفون: صمت مُسيَّر بالساعة كي تبقى المدة مطابقة للفيديو.
-                    val dueUs = ClockMath.audioPtsUs(anchorUs, framesDone + frames, rate)
+                    val dueUs = pts + ClockMath.framesToUs(frames.toLong(), rate)
                     val waitMs = (dueUs - nowUs) / 1000
                     if (waitMs > 0) Thread.sleep(waitMs)
                     PcmUtil.silence(chunk, bytes)
@@ -171,7 +233,7 @@ class RecordingSession(
         } finally {
             record?.runCatching { stop(); release() }
             runCatching {
-                val pts = ClockMath.audioPtsUs(maxOf(anchorUs, 0), framesDone, rate)
+                val pts = tracker.anchor + ClockMath.framesToUs(framesDone, rate)
                 queueInput(codec, chunk, 0, pts, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
             }
         }
@@ -188,23 +250,32 @@ class RecordingSession(
                 codec.queueInputBuffer(i, 0, len, ptsUs, flags)
                 return
             }
-            if (++tries > 300) throw IllegalStateException("audio encoder input stalled")
+            if (aborted || ++tries > 300) throw IllegalStateException("audio encoder input stalled")
         }
     }
 
-    /** يوقف ويدمج المقاطع في [finalFile]. آمن للاستدعاء مرة واحدة. */
+    /**
+     * يوقف ويدمج المقاطع في [finalFile]. آمن للاستدعاء مرة واحدة. إن لم تنتهِ الخيوط في المهلة
+     * نقطعها (aborted) وننتظر؛ ولا نغلق المرمِّزات والخيوط حيّة.
+     */
     fun stop(): RecordingResult {
+        closing = true
         stopRequested = true
-        runCatching { renderer.setEncoderSurface(null, 0, 0, 0).get() }
+        runCatching { renderer.setEncoderSurface(null, 0, 0, 0).get(3, TimeUnit.SECONDS) }
         runCatching { video?.signalEndOfInputStream() }
         audioFeedThread?.join(3000)
         videoThread?.join(5000)
         audioDrainThread?.join(5000)
+        val threads = listOfNotNull(audioFeedThread, videoThread, audioDrainThread)
+        if (threads.any { it.isAlive }) {
+            Log.w(TAG, "threads did not finish in time; aborting")
+            aborted = true
+            threads.forEach { if (it.isAlive) it.interrupt() }
+            threads.forEach { it.join(3000) }
+        }
         val entries = writer.close()
-        runCatching { video?.stop() }
-        runCatching { video?.release() }
-        runCatching { audio?.stop() }
-        runCatching { audio?.release() }
+        if (threads.none { it.isAlive }) releaseCodecs()
+        else Log.e(TAG, "threads still alive; codecs not released to avoid native crash")
         return finalize(entries)
     }
 
@@ -212,7 +283,7 @@ class RecordingSession(
         val r = SegmentConcat.concat(workDir, entries, finalFile)
         workDir.deleteRecursively()
         return RecordingResult(
-            finalFile.path, r.durationUs / 1000, finalFile.length(), r.usedSegments, r.skippedSegments, micActive,
+            finalFile.path, r.durationUs / 1000, finalFile.length(), r.usedSegments, r.skippedSegments + writer.lostSegments, micActive,
         )
     }
 

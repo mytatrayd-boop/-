@@ -114,4 +114,50 @@ class PureTest {
         val text = e.joinToString("\n") { SegmentManifest.line(it) } + "\nseg_0002.mp"
         assertEquals(e, SegmentManifest.parse(text))
     }
+
+    @Test fun audioTrackerNoDriftWhenClockAgrees() {
+        val t = AudioPtsTracker(44100)
+        val first = t.next(0, 100_000)
+        assertEquals(100_000L, first)
+        // مرجع يطابق العدّ: لا مزامنة.
+        val p = t.next(44100, 100_000 + 1_000_000)
+        assertEquals(1_100_000L, p)
+        assertEquals(0, t.resyncs)
+    }
+
+    @Test fun audioTrackerResyncsOnDriftAndStaysMonotonic() {
+        val t = AudioPtsTracker(44100, thresholdUs = 40_000)
+        t.next(0, 0)
+        // انحراف 20ms تحت العتبة: يُتجاهل.
+        assertEquals(1_000_000L, t.next(44100, 1_020_000))
+        assertEquals(0, t.resyncs)
+        // انحراف 200ms (الساعة الحقيقية أبطأ من عدّ الإطارات): تُزاح المرساة.
+        val p = t.next(88200, 1_800_000)
+        assertEquals(1_800_000L, p)
+        assertEquals(1, t.resyncs)
+        // انحراف سالب كبير يعيد الزمن للخلف: نضمن تزايداً صارماً.
+        val q = t.next(88200 + 1024, 1_000_000)
+        assertTrue(q > p)
+    }
+
+    @Test fun audioTrackerWithoutReferenceKeepsAnchor() {
+        val t = AudioPtsTracker(44100)
+        t.next(0, 500_000)
+        assertEquals(500_000L + 23_219L, t.next(1024, null))
+        assertEquals(500_000L, t.anchor)
+    }
+
+    @Test fun chunkStartFromHardwareTimestamp() {
+        val start = 5_000_000_000L
+        // الإطار 44100 التُقط عند start+2s؛ قطعة تبدأ عند الإطار 45124 => +1024 إطاراً.
+        val us = ClockMath.chunkStartUs(start + 2_000_000_000L, 44100, start, 45124, 44100)
+        assertEquals(2_000_000L + 23_219L, us)
+        // طابع لاحق من القطعة (الإطارات قبله): فرق سالب.
+        assertEquals(1_976_781L, ClockMath.chunkStartUs(start + 2_000_000_000L, 45124, start, 44100, 44100))
+    }
+
+    @Test fun mergeNeverNeedsDeletingSources() {
+        assertTrue(StorageMath.canMerge(5000L shl 20, 500L shl 20))
+        assertFalse(StorageMath.canMerge(100L shl 20, 500L shl 20))
+    }
 }

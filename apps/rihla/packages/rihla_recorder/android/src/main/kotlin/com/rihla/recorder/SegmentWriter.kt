@@ -16,6 +16,7 @@ class SegmentWriter(
     private val dir: File,
     segmentSeconds: Int,
     private val onFatal: (Throwable) -> Unit,
+    private val onSegmentLost: () -> Unit = {},
 ) {
     private val policy = SegmentPolicy(segmentSeconds * 1_000_000L)
     private val interleaver = SampleInterleaver()
@@ -30,6 +31,11 @@ class SegmentWriter(
     private var firstBaseUs = -1L
     private var lastPtsUs = 0L
     private var failed = false
+    private var closed = false
+
+    /** مقاطع فشل إغلاقها (muxer.stop) فلم تُسجَّل ولن تُدمج؛ تُحسب ضمن skippedSegments وتُبلَّغ لـDart. */
+    @Volatile var lostSegments = 0
+        private set
     val entries = ArrayList<SegmentEntry>()
     private val manifest = File(dir, MANIFEST)
 
@@ -46,12 +52,14 @@ class SegmentWriter(
     fun close(): List<SegmentEntry> = synchronized(lock) {
         drainLocked(interleaver.flushAll())
         closeSegmentLocked()
+        closed = true
         entries.toList()
     }
 
     private val pending = ArrayDeque<EncodedSample>()
 
     private fun drainLocked(ready: List<EncodedSample>) {
+        if (closed) return
         pending.addAll(ready)
         // لا كتابة قبل معرفة صيغتي المسارين (تأتيان قبل أول عينة عادة).
         if (failed || videoFormat == null || audioFormat == null) return
@@ -106,6 +114,9 @@ class SegmentWriter(
         } catch (e: Throwable) {
             Log.w(TAG, "muxer.stop failed for $currentName", e)
             m.runCatching { release() }
+            runCatching { File(dir, currentName).delete() }
+            lostSegments++
+            runCatching { onSegmentLost() }
             return
         }
         m.release()
