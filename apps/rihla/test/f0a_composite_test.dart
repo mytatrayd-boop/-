@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rihla/core/config/env.dart';
 import 'package:rihla/data/map/fake_map_frame_source.dart';
 import 'package:rihla_recorder/rihla_recorder.dart';
 
@@ -12,8 +11,7 @@ const mapCode = FakeMapFrameSource.code;
 
 void main() {
   group('FakeMapFrameSource', () {
-    test('works without key or network, deterministic', () async {
-      expect(Env.hasMapsKey, isFalse);
+    test('works without network, deterministic', () async {
       final a = await FakeMapFrameSource(count: 4).frames().toList();
       final b = await FakeMapFrameSource(count: 4).frames().toList();
       expect(a.length, 4);

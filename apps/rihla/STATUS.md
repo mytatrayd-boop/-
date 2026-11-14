@@ -1,5 +1,20 @@
 # STATUS — رحلة
 
+## تنظيف D15 + F3 (2026-11-14): منجز (على المضيف)
+
+### تنظيف بقايا مفتاح جوجل
+- حُذف lib/core/config/env.dart وtool/gen_secrets.sh؛ حُذف اختبار Env من test/f0a_composite_test.dart؛ حُذف android/secrets.properties وios/Flutter/Secrets.xcconfig (غير متتبَّعين، فارغا القيمة) وسطراهما من .gitignore. check_no_secrets.sh صار حارساً عاماً (AIza، AKIA، مفاتيح خاصة) بلا اعتماد على .env. لا CI فعلي (المسودة فقط، لا إشارات للمفتاح فيها). بقيت إشارات تاريخية في DECISIONS/ARCHITECTURE عمداً.
+
+### F3 (قاعدة البيانات المحلية)
+- drift + sqlite3_flutter_libs + path_provider + path (حزم). lib/data/db/app_database.dart (Trips، TrackPoints، فهرس فريد (tripId, seq)، FK مع CASCADE، PRAGMA foreign_keys، schemaVersion=1 مع onCreate/onUpgrade) وlib/data/repositories/trip_repository.dart (startTrip، addPoints بتصفية دقة>50م/إحداثيات غير صالحة/سرعة>100م/ث، completeTrip بالمسافة والمدة، markInterruptedTrips، getTrip/getPoints، watchTrips، deleteTrip). الملف المولَّد app_database.g.dart متتبَّع (انظر D13).
+- `flutter analyze`: بلا ملاحظات. `flutter test`: 49 ناجحاً (9 جديدة في test/data/db_test.dart على قاعدة في الذاكرة).
+
+### لم يُنجز / تحفظات
+- التفضيلات (shared_preferences) ضمن صف F3 في ARCHITECTURE لم تُنفَّذ (لم تُحمَّل الحزمة؛ لا حاجة لها بعد).
+- لا ترحيل فعلي بعد: الإصدار 1 فقط؛ الاختبار يتحقق من فتح قاعدة v1 قائمة فقط. أول تغيير جدول يضيف خطوة ترحيل واختبارها.
+- ملف قاعدة البيانات على القرص (path_provider) لم يُوصَّل ولم يُجرَّب؛ الاختبارات في الذاكرة على sqlite المضيف. لم يُجرَّب على أندرويد/iOS. استدعاء markInterruptedTrips عند الإقلاع غير موصول بعد (F5/F6).
+- ARCHITECTURE يذكر domain/trip.dart؛ استُخدمت صفوف drift (TripRow/TrackPointRow) مباشرة ولم تُنشأ طبقة domain.
+
 ## تغيير المزوّد D15 (2026-11-14): توثيق فقط، لا كود
 - حُدِّثت ARCHITECTURE وDECISIONS (D15 يلغي D9/D4) وSPEC وCLAUDE وDESIGN و.env.example. F0ب لم تعد تحتاج مفتاحاً ولا فوترة (أجهزة فقط).
 - لم يُشغَّل شيء: توافق flutter_map ^7 + vector_map_tiles مع Flutter 3.50 غير مُتحقَّق، ومعدل toImage والأسماء العربية غير مقاسين.
