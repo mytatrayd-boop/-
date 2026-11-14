@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
+        with: { distribution: temurin, java-version: 21 }
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
       # compileSdk 37: نقبل التراخيص ونثبّت منصة 37 مسبقاً (إن لم تتوفر بهذا الاسم يتولى Gradle تنزيلها).
