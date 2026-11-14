@@ -20,6 +20,14 @@
 - اختبارات وحدة جديدة (PureTest): كل توليفة حساس 0/90/180/270 × اتجاه الشاشة 0..3، أمامية، الاحتياط، تبديل الأبعاد، واتجاه الدوران لكل زاوية عبر textureMatrix. نسخة نظيفة: analyze بلا ملاحظات، flutter test 113 ناجحاً، gradle testDebugUnitTest ناجح، build apk --debug نجح.
 - المطلوب: تسجيل قصير على الجوال بالاتجاهين (landscape وlandscape المعكوس) والتأكد من اعتدال الأفق في المعاينة والفيديو.
 
+## تدقيق ميلان 25° (Kotlin) (2026-11-14): تدقيق رياضي + اختبارات + سجلات؛ لا إصلاح لخلل لأنه لم يوجد، ولا جهاز
+
+- التحليل: مسار المظلل = uv = stMatrix * R(rot حول المركز) * mix(crop, nx,ny). القص (coverCrop) يُحسب بأبعاد ما بعد الدوران (displayedSize تبدّل عند 90/270) ويُطبَّق قبل الدوران في فضاء uv المطبَّع؛ والدوران بمضاعفات 90 هو تبديل/قلب محاور فقط (لا shear)، وstMatrix مقياس/إزاحة/قلب y. فكل التركيبات مصفوفات متعامدة المحاور: لا يمكن إنتاج زاوية غير مضاعف 90. resolve يقرّب لمضاعف 90. الاحتمال الوحيد لتشوه (لا ميلان): تطابق camW/camH مع مخزن الكاميرا الحقيقي (يأتي من SurfaceRequest.resolution) أو قص cropRect للكاميرا غير مطبَّق.
+- Pure.kt: `SamplePath.uv` (محاكاة نقية للمظلل) و`OrientationLog.line`. PureTest: shaderPathKeepsHorizonLevelAndAspect (576 توليفة: 3 مصفوفات st × 4 مصادر 16:9/4:3 × حساس 0..270 × شاشة 0..3 × 3 لوحات 8:9/16:9: محاور الخرج على مضاعف 90 +-0.5° ومتعامدة ومقياس متساوٍ +-0.2%)، previewFullFrameKeepsAspect، orientationLogLine.
+- سجلات logcat (TAG `rihla`: `adb logcat -s rihla`) عند recordStart وrotationChanged وdisplayChanged وcameraXTransform: sensorRotation، displayRotation، cameraXRotationDegrees، computedRotation، src/displayed/target.
+- تحقق: gradle testDebugUnitTest ناجح؛ نسخة نظيفة: analyze بلا ملاحظات، build apk --debug نجح؛ flutter test: 153 ناجح و4 فاشلة في lib/test (geo_test: تنسيق 5 مقابل 6 منازل في رابط الخرائط؛ home_screen_test/map_capture_crop_test: الإسناد؛ f6 الكتم) لمبرمج Dart ولم ألمسها.
+- المطلوب: تسجيل على الجوال ثم إرسال سطور logcat الأربعة؛ لم يُصحَّح شيء قبل عين المالك.
+
 ## إصلاحات المدير: galleryDone + سلامة الاسترداد (2026-11-14): مبني ومختبر على المضيف، لا جهاز
 
 - schema v2: عمود `trips.galleryDone` (bool، افتراضي false) + `onUpgrade` (`addColumn`). `TripRepository.markGallerySaved(id, {assetId})`؛ `GallerySaveController` يحفظ العلامة عند النجاح (حتى بلا معرّف من gal) ولا يعيد الحفظ إن كانت true (حتى بعد إعادة تشغيل التطبيق). `videoAssetId` اختياري. فشل كتابة العلامة بعد حفظ ناجح لا يُظهر فشلاً (قد يتكرر الحفظ في جلسة لاحقة: خطر ضئيل معروف).

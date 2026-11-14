@@ -85,7 +85,10 @@ void main() {
     final key = GlobalKey();
     await t.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          ...GlobalMaterialLocalizations.delegates,
+        ],
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('ar'),
         home: Align(
