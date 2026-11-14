@@ -6,3 +6,5 @@
 key.properties
 google-services.json
 GoogleService-Info.plist
+android/secrets.properties
+ios/Flutter/Secrets.xcconfig

@@ -6,7 +6,7 @@
 تطبيق أفقي يقسم الشاشة: كاميرا + خريطة مسار. ينتج فيديو 16:9 مزدوجاً يُحفظ في معرض الجوال، ويحفظ المسار محلياً للمشاركة برابط خرائط جوجل (نقاط قليلة) وملف GPX. مجاني، بلا حساب ولا رفع. عربي RTL أولاً ثم إنجليزي.
 
 ## التقنية
-Flutter (iOS + Android)، Riverpod، go_router، drift (SQLite)، flutter_map (خريطة OSM عبر MapTiler داخل الفيديو)، geolocator، gal، share_plus. إضافة أصلية محلية في packages/rihla_recorder (Kotlin/Swift) للكاميرا والدمج والترميز. بلا Firebase. التفاصيل: ARCHITECTURE.md، القرارات: DECISIONS.md، المتطلبات: SPEC.md.
+Flutter (iOS + Android)، Riverpod، go_router، drift (SQLite)، google_maps_flutter (خريطة جوجل في الشاشة وداخل الفيديو عبر takeSnapshot، قرار المالك D9)، geolocator، gal، share_plus. إضافة أصلية محلية في packages/rihla_recorder (Kotlin/Swift) للكاميرا والدمج والترميز. بلا Firebase. التفاصيل: ARCHITECTURE.md، القرارات: DECISIONS.md، المتطلبات: SPEC.md.
 
 ## الأوامر
 ```
@@ -16,17 +16,21 @@ flutter gen-l10n
 flutter analyze
 flutter test
 flutter test integration_test -d <device>                  # جهاز حقيقي
+bash tool/gen_secrets.sh                                   # يولّد ملفات المفتاح غير المتتبَّعة من .env
 flutter run --dart-define-from-file=.env                   # .env بيد المالك
+bash tool/check_no_secrets.sh                              # قبل أي commit
 ```
 
 ## القواعد
-- لا مفاتيح في الكود. .env مستثنى من git؛ المرجع .env.example (قيم فارغة). لا تطلب من المالك لصق المفتاح في المحادثة.
+- لا مفاتيح في الكود ولا في ملفات المنصات المتتبَّعة. GOOGLE_MAPS_API_KEY في .env (مستثنى من git) ويُحقن وقت البناء؛ المرجع .env.example (قيم فارغة). لا تطلب من المالك لصق المفتاح في المحادثة. التطبيق يجب أن يعمل ويُختبر بلا مفتاح.
+- كل ما يخص الخريطة والكاميرا خلف واجهة (MapFrameSource، RecordingMap) ولها نسخة مزيّفة للاختبار.
+- شعار جوجل والإسناد يبقيان ظاهرين دائماً (شاشة وفيديو): لا قص ولا تغطية.
+- البناء ميزة بميزة حسب ARCHITECTURE القسم 12، وF0 أولاً.
 - كل نص واجهة في ARB (ar أولاً ثم en)؛ لا نصوص ثابتة. استخدم EdgeInsetsDirectional وAlignmentDirectional لدعم RTL.
-- أقل بيانات ممكنة: لا تحليلات ولا Crashlytics ولا إرسال شبكي غير بلاطات الخريطة.
+- أقل بيانات ممكنة: لا تحليلات ولا Crashlytics ولا شبكة غير SDK الخريطة.
 - الأفقي فقط (يمين/يسار). الشاشة مضاءة أثناء التسجيل.
 - خوارزميات الجغرافيا (تبسيط، GPX، رابط، مسافة) دوال نقية في core/geo مع اختبارات وحدة.
 - features لا تستدعي القنوات الأصلية مباشرة؛ فقط عبر data/platform.
-- خريطة جوجل لا تُسجَّل داخل الفيديو (D3). لا تستخدم tile.openstreetmap.org مباشرة.
-- بوابة قبول: لا يُبنى ما بعد نموذج الدمج قبل نجاحه على آيفون وأندرويد حقيقيين (ARCHITECTURE قسم 4).
+- بوابة قبول: لا يُبنى ما بعد نموذج الدمج قبل نجاحه على آيفون وأندرويد حقيقيين (ARCHITECTURE 4.3).
 - القرارات المهمة تُسجَّل في DECISIONS.md؛ الحالة في STATUS.md.
 - لا commit/push/دمج إلا وفق قواعد المالك العامة.
