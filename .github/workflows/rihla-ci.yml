@@ -1,7 +1,9 @@
-# مسودة للعرض على المالك فقط. لا تُنقل إلى .github/workflows قبل موافقته.
-# عند اعتمادها: راجع D13 (توليد l10n بدل تتبعه).
+# اعتمده المالك (إذن مسبق). ملفات l10n تبقى متتبَّعة (D13)؛ gen-l10n هنا للتحقق فقط.
 name: rihla-ci
 on:
+  workflow_dispatch:
+  push:
+    paths: ['apps/rihla/**', '.github/workflows/rihla-ci.yml']
   pull_request:
     paths: ['apps/rihla/**']
 jobs:
@@ -12,6 +14,7 @@ jobs:
         working-directory: apps/rihla
     steps:
       - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
