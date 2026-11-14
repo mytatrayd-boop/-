@@ -15,3 +15,6 @@ GoogleService-Info.plist
 .idea/
 build/
 .flutter-plugins-dependencies
+
+# الجذر يتجاهل data/ في أي مستوى؛ هنا مجلدات كود
+!data/

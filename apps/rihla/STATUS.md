@@ -61,3 +61,10 @@
 
 ### فحص بيئة
 - تنزيل Android command-line tools من dl.google.com ممكن (HTTP 200، zip سليم 153MB). لم تُقبل التراخيص ولم يُثبَّت شيء.
+
+## F3 إصلاحات المراجعة (2026-11-14، محاولة 2)
+
+- .gitignore: سطر `data/` كان في .gitignore جذر المستودع (السطر 5) لا في apps/rihla. أُضيف `!data/` في apps/rihla/.gitignore؛ `git check-ignore` لا يُرجع شيئاً لملفات lib/data وtest/data، وتظهر `??` في git status. clone نظيف (git ls-files) نجح فيه pub get وanalyze (بلا ملاحظات) وtest (52 ناجحاً). ملاحظة: سطر الجذر نفسه لم يُعدَّل (خارج النطاق).
+- markInterruptedTrips: تضبط endedAt (آخر نقطة أو البدء) وdurationSec وdistanceM. addPoints: تسلسل لكل رحلة (سلسلة Futures). مرجع الجودة: بعد 3 قفزات متسقة تُعاد التثبيت، وتُحذف النقطة الأولى إن كانت الوحيدة (الشاذة). 3 اختبارات جديدة.
+- main: يفتح القاعدة على القرص (lib/data/db/open_database.dart) ويستدعي markInterruptedTrips عند الإقلاع. لم يُشغَّل على جهاز؛ مسار createInBackground/path_provider غير مختبر فعلاً (الاختبارات بذاكرة فقط). المستودع لم يُربط بـProvider بعد (ينتظر واجهة F4).
+- ملاحظة: drift يعيد DateTime محلية لا UTC (نفس اللحظة).
