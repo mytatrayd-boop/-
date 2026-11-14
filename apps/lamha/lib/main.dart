@@ -35,7 +35,7 @@ class _LamhaAppState extends ConsumerState<LamhaApp> with WidgetsBindingObserver
     final launch = ref.read(widgetLaunchProvider);
     launch.initial().then(_open);
     _clicks = launch.clicks.listen(_open);
-    // تحديث الموقع تلقائياً عند الفتح وكل عودة للتطبيق (لمن اختار «موقعي» وأذن بالموقع مسبقاً).
+    // تحديث الموقع تلقائياً عند الفتح وكل عودة للتطبيق (إن كان إذن الموقع ممنوحاً مسبقاً).
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLocation());
   }
@@ -52,7 +52,7 @@ class _LamhaAppState extends ConsumerState<LamhaApp> with WidgetsBindingObserver
     if (state == AppLifecycleState.resumed) _refreshLocation();
   }
 
-  /// تحديث صامت لموقع «موقعي» (SettingsController.refreshMyLocation): لا يطلب إذناً ولا يظهر شيئاً للمستخدم.
+  /// تحديث صامت للموقع (SettingsController.refreshMyLocation): لا يطلب إذناً ولا يظهر شيئاً للمستخدم.
   Future<void> _refreshLocation() async {
     if (_locating || !mounted) return;
     final navContext = _navigator.currentContext;

@@ -409,11 +409,11 @@ class SettingsController extends AsyncNotifier<AppState> {
   /// أقل مسافة (كم) يتحرّكها المستخدم ليُحدَّث مكانه تلقائياً، فلا تُعاد الحسابات لاهتزاز تقدير الموقع.
   static const autoLocationMinKm = 3.0;
 
-  /// تحديث صامت للموقع عند فتح التطبيق وكل عودة إليه. فقط إن كان المكان الحالي من «موقعي» (gpsPlaceId)،
-  /// فلا يُلغى مكان اختاره المستخدم بنفسه من القائمة أو البحث. ولا يطلب إذناً أبداً: إن لم يكن ممنوحاً
-  /// مسبقاً (أو خدمة الموقع مطفأة أو تعذّرت القراءة) يبقى المكان كما هو. يعيد true إن تغيّر المكان.
+  /// تحديث صامت للموقع عند فتح التطبيق وكل عودة إليه (طلب المالك: أن يتبعه المكان دائماً، لا فقط حين يضغط
+  /// «موقعي»). ولا يطلب إذناً أبداً: إن لم يكن ممنوحاً مسبقاً (أو خدمة الموقع مطفأة أو تعذّرت القراءة) يبقى
+  /// المكان كما هو. يعيد true إن تغيّر المكان.
   Future<bool> refreshMyLocation({required String Function(String city) nearLabel}) async {
-    if (!state.hasValue || _s.cityId != gpsPlaceId) return false;
+    if (!state.hasValue) return false;
     try {
       if (!await ref.read(locationUpdatesProvider).granted()) return false;
       final p = await ref.read(locationServiceProvider).currentPosition();

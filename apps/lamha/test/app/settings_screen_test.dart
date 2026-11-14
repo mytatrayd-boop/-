@@ -553,12 +553,16 @@ void main() {
       expect(bridge.updates, updates);
     });
 
-    testWidgets('مدينة اختارها المستخدم لا يلغيها التحديث التلقائي', (tester) async {
+    testWidgets('حتى مدينة اختيرت من القائمة تتبع المستخدم إن كان الإذن ممنوحاً', (tester) async {
       final loc = _MovingLocation((latitude: 18.3, longitude: 42.6));
-      final bridge = await pumpApp(tester, location: loc);
-      final before = (bridge.last['city'] as Map)['name'];
+      final bridge = await pumpApp(tester,
+          location: loc, geocoder: FakeGeocoder(name: 'خميس مشيط'));
+      // بلا ضغط «موقعي»: المدينة الافتراضية (الرياض).
+      expect((bridge.last['city'] as Map)['latitude'], isNot(18.3));
       await resume(tester);
-      expect((bridge.last['city'] as Map)['name'], before);
+      final city = bridge.last['city'] as Map;
+      expect(city['latitude'], 18.3);
+      expect(city['name'], 'خميس مشيط');
     });
 
     testWidgets('بلا إذن ممنوح مسبقاً: لا يغيّر المكان ولا يطلب شيئاً', (tester) async {
