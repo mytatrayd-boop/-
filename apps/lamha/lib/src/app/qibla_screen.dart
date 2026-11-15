@@ -65,6 +65,9 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   double? _shown;
   var _aligned = false;
 
+  /// لوحة التشخيص المخفية: ضغطة مطوّلة على عنوان الشاشة (لمقارنة البوصلة بتطبيقات أخرى بالأرقام).
+  var _diag = false;
+
   var _where = _Where.locating;
   ({double latitude, double longitude})? _pos;
 
@@ -219,7 +222,12 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             foregroundColor: QiblaScreen.text,
-            title: Text(l.qiblaTitle),
+            title: GestureDetector(
+              key: const Key('qibla-title'),
+              behavior: HitTestBehavior.opaque,
+              onLongPress: () => setState(() => _diag = !_diag),
+              child: Text(l.qiblaTitle),
+            ),
             bottom: TabBar(
               indicatorColor: QiblaScreen.gold,
               labelColor: QiblaScreen.gold,
@@ -250,6 +258,41 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     );
   }
 
+  /// لوحة تشخيص (ضغطة مطوّلة على العنوان): قيم البوصلة الخام والمصحَّحة والموقع، للمقارنة مع تطبيقات أخرى.
+  Widget _diagPanel(double qibla, ({double latitude, double longitude}) pos) {
+    final r = _last;
+    final raw = r?.heading;
+    final corrected = raw == null ? null : normalizeDegrees(raw + ((r?.magnetic ?? true) ? _declination : 0));
+    String deg(double? v) => v == null ? '—' : '${v.toStringAsFixed(1)}°';
+    final lines = <String>[
+      'المصدر: ${compassSourceLabel.value}',
+      'الاتجاه الخام من الحساس: ${deg(raw)}${r?.magnetic == false ? ' (شمال حقيقي)' : ' (مغناطيسي)'}',
+      'الانحراف المغناطيسي: ${deg(_declination)}',
+      'الاتجاه بعد التصحيح: ${deg(corrected)}',
+      'زاوية القبلة المحسوبة: ${deg(qibla)}',
+      'زاوية السهم: ${deg(corrected == null ? null : qiblaArrowAngle(qibla: qibla, heading: corrected))}',
+      'دقة الحساس: ${r?.accuracy == null ? 'غير معروفة' : '±${r!.accuracy!.toStringAsFixed(0)}°'}',
+      'الموقع (${_where == _Where.live ? 'حي' : 'محفوظ'}): ${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}',
+    ];
+    return Container(
+      key: const Key('qibla-diag'),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: QiblaScreen.gold.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final line in lines)
+            Text(line, style: const TextStyle(color: QiblaScreen.text, fontSize: 12.5, height: 1.5)),
+        ],
+      ),
+    );
+  }
+
   Widget _compass(
     AppLocalizations l,
     AppState app,
@@ -269,6 +312,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
+        if (_diag) _diagPanel(qibla, pos),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

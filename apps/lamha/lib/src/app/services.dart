@@ -232,6 +232,9 @@ class FlutterCompassSource implements CompassSource {
       ?.map((e) => (heading: e.heading, accuracy: e.accuracy, magnetic: true));
 }
 
+/// اسم مصدر البوصلة الجاري (للوحة التشخيص المخفية في شاشة القبلة)، يضبطه المصدر عند بدء القراءة.
+final compassSourceLabel = ValueNotifier<String>('—');
+
 /// أندرويد: قناة sa.lamha/compass في MainActivity (CompassStream): حساس «متجه الدوران» (دمج المغناطيس
 /// والتسارع والجيروسكوب) مع تعويض ميل الجهاز، وهو أدق وأسرع استجابة من flutter_compass. إن لم يتوفر
 /// الحساس في الجهاز (خطأ unavailable) رجع إلى flutter_compass. الاتجاه مغناطيسي فيُضاف له الانحراف.
@@ -242,6 +245,7 @@ class AndroidCompassSource implements CompassSource {
   Stream<CompassReading>? readings() => _stream();
 
   Stream<CompassReading> _stream() async* {
+    compassSourceLabel.value = 'متجه الدوران (أصلي)';
     try {
       await for (final e in _channel.receiveBroadcastStream()) {
         final m = e as Map;
@@ -253,6 +257,7 @@ class AndroidCompassSource implements CompassSource {
       }
     } on PlatformException catch (e) {
       if (e.code != 'unavailable') rethrow;
+      compassSourceLabel.value = 'flutter_compass (احتياطي: لا حساس متجه دوران)';
       final fallback = FlutterCompassSource().readings();
       if (fallback != null) yield* fallback;
     }
@@ -265,14 +270,17 @@ class IosHeadingSource implements CompassSource {
   static const _channel = EventChannel('sa.lamha/heading');
 
   @override
-  Stream<CompassReading>? readings() => _channel.receiveBroadcastStream().map((e) {
-        final m = e as Map;
-        return (
-          heading: (m['heading'] as num?)?.toDouble(),
-          accuracy: (m['accuracy'] as num?)?.toDouble(),
-          magnetic: m['true'] != true,
-        );
-      });
+  Stream<CompassReading>? readings() {
+    compassSourceLabel.value = 'CoreLocation (آيفون)';
+    return _channel.receiveBroadcastStream().map((e) {
+      final m = e as Map;
+      return (
+        heading: (m['heading'] as num?)?.toDouble(),
+        accuracy: (m['accuracy'] as num?)?.toDouble(),
+        magnetic: m['true'] != true,
+      );
+    });
+  }
 }
 
 /// الطقس الحالي من Open-Meteo (بلا مفتاح).
