@@ -231,4 +231,24 @@ void main() {
     await tester.pump();
     expect(painter(tester).qibla, closeTo(qiblaDegrees(18.54, 42.05), 0.01));
   });
+
+  testWidgets('ضغطة مطوّلة على العنوان تُظهر لوحة التشخيص بالقيم الخام والمصحَّحة', (tester) async {
+    final compass = FakeCompass();
+    await pumpApp(tester, compass: compass, location: FakeLocation((latitude: 24.6877, longitude: 46.7219)));
+    await openQibla(tester);
+    compass.controller.add((heading: 10, accuracy: 15, magnetic: true));
+    await tester.pump();
+    expect(find.byKey(const Key('qibla-diag')), findsNothing);
+
+    await tester.longPress(find.byKey(const Key('qibla-title')));
+    await tester.pump();
+    expect(find.byKey(const Key('qibla-diag')), findsOneWidget);
+    expect(find.textContaining('الاتجاه الخام من الحساس: 10.0°'), findsOneWidget);
+    expect(find.textContaining('دقة الحساس: ±15°'), findsOneWidget);
+    expect(find.textContaining('زاوية القبلة المحسوبة: ${qiblaDegrees(24.6877, 46.7219).toStringAsFixed(1)}°'), findsOneWidget);
+
+    await tester.longPress(find.byKey(const Key('qibla-title')));
+    await tester.pump();
+    expect(find.byKey(const Key('qibla-diag')), findsNothing);
+  });
 }

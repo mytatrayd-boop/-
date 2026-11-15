@@ -65,6 +65,9 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   double? _shown;
   var _aligned = false;
 
+  /// لوحة التشخيص المخفية: ضغطة مطوّلة على عنوان الشاشة (لمقارنة البوصلة بتطبيقات أخرى بالأرقام).
+  var _diag = false;
+
   var _where = _Where.locating;
   ({double latitude, double longitude})? _pos;
 
@@ -219,7 +222,12 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             foregroundColor: QiblaScreen.text,
-            title: Text(l.qiblaTitle),
+            title: GestureDetector(
+              key: const Key('qibla-title'),
+              behavior: HitTestBehavior.opaque,
+              onLongPress: () => setState(() => _diag = !_diag),
+              child: Text(l.qiblaTitle),
+            ),
             bottom: TabBar(
               indicatorColor: QiblaScreen.gold,
               labelColor: QiblaScreen.gold,
@@ -250,6 +258,41 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     );
   }
 
+  /// لوحة تشخيص (ضغطة مطوّلة على العنوان): قيم البوصلة الخام والمصحَّحة والموقع، للمقارنة مع تطبيقات أخرى.
+  Widget _diagPanel(double qibla, ({double latitude, double longitude}) pos) {
+    final r = _last;
+    final raw = r?.heading;
+    final corrected = raw == null ? null : normalizeDegrees(raw + ((r?.magnetic ?? true) ? _declination : 0));
+    String deg(double? v) => v == null ? '—' : '${v.toStringAsFixed(1)}°';
+    final lines = <String>[
+      'المصدر: ${compassSourceLabel.value}',
+      'الاتجاه الخام من الحساس: ${deg(raw)}${r?.magnetic == false ? ' (شمال حقيقي)' : ' (مغناطيسي)'}',
+      'الانحراف المغناطيسي: ${deg(_declination)}',
+      'الاتجاه بعد التصحيح: ${deg(corrected)}',
+      'زاوية القبلة المحسوبة: ${deg(qibla)}',
+      'زاوية السهم: ${deg(corrected == null ? null : qiblaArrowAngle(qibla: qibla, heading: corrected))}',
+      'دقة الحساس: ${r?.accuracy == null ? 'غير معروفة' : '±${r!.accuracy!.toStringAsFixed(0)}°'}',
+      'الموقع (${_where == _Where.live ? 'حي' : 'محفوظ'}): ${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}',
+    ];
+    return Container(
+      key: const Key('qibla-diag'),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: QiblaScreen.gold.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final line in lines)
+            Text(line, style: const TextStyle(color: QiblaScreen.text, fontSize: 12.5, height: 1.5)),
+        ],
+      ),
+    );
+  }
+
   Widget _compass(
     AppLocalizations l,
     AppState app,
@@ -269,6 +312,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
+        if (_diag) _diagPanel(qibla, pos),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -627,9 +671,10 @@ class _Notice extends StatelessWidget {
       );
 }
 
-/// القرص الدوّار بتصميم صورة المالك: إطار ذهبي مزدوج، وقرص أسود، وحلقة خضراء مضيئة، وتدريج
+/// القرص الثابت بتصميم صورة المالك: إطار ذهبي مزدوج، وقرص أسود، وحلقة خضراء مضيئة، وتدريج
 /// كل ٥° (أطول كل ٣٠°)، وحروف N وE وS وW الذهبية قائمة دائماً، ونجمة ذهبية في الوسط، وإبرة خضراء
-/// من المركز باتجاه [qibla]. يدور بـ −[heading] فيبقى الشمال في مكانه الحقيقي، ومؤشر ثابت أعلاه.
+/// من المركز باتجاه القبلة. القرص ثابت لا يدور، والإبرة وحدها تدور بزاوية ([qibla] − [heading])،
+/// ومؤشر ثابت أعلاه (طلب المالك، ما يفعله تطبيق المصلي).
 /// الكعبة ودائرتها فوق القرص في الشاشة نفسها (على المحيط [kaabaRing]). [aligned]: كله أخضر أوضح.
 class QiblaDialPainter extends CustomPainter {
   QiblaDialPainter({required this.heading, required this.qibla, required this.aligned});
@@ -695,9 +740,9 @@ class QiblaDialPainter extends CustomPainter {
       ..strokeWidth = 1.6
       ..color = green);
 
+    // القرص ثابت على الشاشة (لا يدور)؛ السهم وحده يتحرك بزاوية (القبلة − اتجاه الجهاز).
     canvas.save();
     canvas.translate(c.dx, c.dy);
-    canvas.rotate(-heading * _rad);
 
     // التدريج بين الإطار والحلقة.
     for (var d = 0; d < 360; d += 5) {
@@ -723,7 +768,7 @@ class QiblaDialPainter extends CustomPainter {
         ..color = QiblaScreen.gold);
     }
 
-    // حروف الجهات، قائمة دائماً بالنسبة للشاشة.
+    // حروف الجهات ثابتة مع القرص.
     for (final (deg, label) in [(0, 'N'), (90, 'E'), (180, 'S'), (270, 'W')]) {
       final a = deg * _rad;
       final p = Offset(math.sin(a), -math.cos(a)) * (disc * 0.74);
@@ -739,11 +784,7 @@ class QiblaDialPainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      canvas.save();
-      canvas.translate(p.dx, p.dy);
-      canvas.rotate(heading * _rad);
-      tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
-      canvas.restore();
+      tp.paint(canvas, p + Offset(-tp.width / 2, -tp.height / 2));
     }
 
     // النجمة الذهبية (ثماني رؤوس: الطويلة للجهات الأربع).
@@ -763,9 +804,9 @@ class QiblaDialPainter extends CustomPainter {
       ..strokeWidth = 1
       ..color = QiblaScreen.goldDeep);
 
-    // الإبرة الخضراء باتجاه القبلة.
+    // الإبرة الخضراء باتجاه القبلة: زاوية السهم = زاوية القبلة − اتجاه الجهاز (azimuth).
     canvas.save();
-    canvas.rotate(qibla * _rad);
+    canvas.rotate((qibla - heading) * _rad);
     final tipY = -disc * (kaabaRing - 0.09);
     final needle = Path()
       ..moveTo(0, tipY)
