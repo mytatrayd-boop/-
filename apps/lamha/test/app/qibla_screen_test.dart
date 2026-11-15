@@ -46,7 +46,7 @@ void main() {
     expect(find.text('المسافة إلى مكة'), findsOneWidget);
     expect(find.text('دقة البوصلة'), findsOneWidget);
     expect(find.text('ممتازة'), findsOneWidget);
-    expect(find.byKey(const Key('qibla-kaaba')), findsOneWidget);
+    expect(find.byKey(const Key('qibla-needle')), findsOneWidget);
 
     // التنعيم يمر عبر الشمال (٠ → ٣٠٠ يمرّ بـ ٣١٥ لا بـ ٧٥؛ دوران كبير فثلاثة أرباعه).
     compass.controller.add((heading: 300, accuracy: 15, magnetic: true));

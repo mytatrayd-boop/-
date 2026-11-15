@@ -356,34 +356,52 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                 child: LayoutBuilder(
                   builder: (context, c) {
                     final side = c.maxWidth;
-                    // الكعبة على المحيط الداخلي باتجاه القبلة، وتدور مع القرص.
+                    // صور المالك (DECISIONS): القرص ثابت لا يدور، والسهم الذهبي وحده يدور بزاوية (القبلة − اتجاه الجوال)
+                    // حول مركز الياقوتة، والكعبة على امتداده. المؤشر الثابت أعلاه من QiblaDialPainter.
                     final a = (qibla - heading!) * math.pi / 180;
-                    final r = side / 2 * QiblaDialPainter.kaabaRing;
-                    final k = side * 0.15;
+                    final half = side / 2;
+                    final outer = half - QiblaDialPainter.pointerRoom;
+                    final nh = outer * 2 * QiblaDialPainter.needleHeight;
+                    final nw = nh * QiblaDialPainter.needleAspect;
                     return Stack(
                       children: [
+                        Positioned(
+                          left: half - outer,
+                          top: half - outer,
+                          width: outer * 2,
+                          height: outer * 2,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: .6), blurRadius: 18, offset: const Offset(0, 8)),
+                                if (aligned) BoxShadow(color: QiblaScreen.alignedColor.withValues(alpha: .8), blurRadius: 26, spreadRadius: 2),
+                              ],
+                            ),
+                            child: Image.asset(QiblaDialPainter.discAsset, fit: BoxFit.fill, filterQuality: FilterQuality.medium),
+                          ),
+                        ),
+                        Positioned(
+                          left: half - nw * QiblaDialPainter.pivotX,
+                          top: half - nh * QiblaDialPainter.pivotY,
+                          width: nw,
+                          height: nh,
+                          child: Transform.rotate(
+                            angle: a,
+                            alignment: const FractionalOffset(QiblaDialPainter.pivotX, QiblaDialPainter.pivotY),
+                            child: Image.asset(
+                              QiblaDialPainter.needleAsset,
+                              key: const Key('qibla-needle'),
+                              fit: BoxFit.fill,
+                              filterQuality: FilterQuality.medium,
+                            ),
+                          ),
+                        ),
                         Positioned.fill(
                           child: CustomPaint(
                             key: const Key('qibla-compass'),
                             painter: QiblaDialPainter(heading: heading, qibla: qibla, aligned: aligned),
-                          ),
-                        ),
-                        Positioned(
-                          left: side / 2 + math.sin(a) * r - k / 2,
-                          top: side / 2 - math.cos(a) * r - k / 2,
-                          width: k,
-                          height: k,
-                          child: Container(
-                            padding: EdgeInsets.all(k * 0.16),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.black,
-                              border: Border.all(color: aligned ? QiblaScreen.alignedColor : QiblaScreen.green, width: 2),
-                              boxShadow: [
-                                BoxShadow(color: QiblaScreen.green.withValues(alpha: aligned ? .8 : .45), blurRadius: aligned ? 16 : 9),
-                              ],
-                            ),
-                            child: Image.asset(kaabaAsset, key: const Key('qibla-kaaba'), filterQuality: FilterQuality.medium),
                           ),
                         ),
                       ],
@@ -671,11 +689,10 @@ class _Notice extends StatelessWidget {
       );
 }
 
-/// القرص الثابت بتصميم صورة المالك: إطار ذهبي مزدوج، وقرص أسود، وحلقة خضراء مضيئة، وتدريج
-/// كل ٥° (أطول كل ٣٠°)، وحروف N وE وS وW الذهبية قائمة دائماً، ونجمة ذهبية في الوسط، وإبرة خضراء
-/// من المركز باتجاه القبلة. القرص ثابت لا يدور، والإبرة وحدها تدور بزاوية ([qibla] − [heading])،
-/// ومؤشر ثابت أعلاه (طلب المالك، ما يفعله تطبيق المصلي).
-/// الكعبة ودائرتها فوق القرص في الشاشة نفسها (على المحيط [kaabaRing]). [aligned]: كله أخضر أوضح.
+/// بوصلة القبلة بصور المالك (القرص الكحلي بأسماء الجهات العربية، والإبرة الذهبية بالياقوتة وعليها الكعبة) كما في
+/// بوصلة الودجت. الصور في QiblaScreen (Stack): القرص ثابت لا يدور، والإبرة وحدها تدور بزاوية ([qibla] − [heading])
+/// (طلب المالك، ما يفعله تطبيق المصلي). هذا الرسام يرسم فوقها المؤشر الثابت أعلى القرص فقط، ويحمل القراءة
+/// للاختبارات. [aligned]: المؤشر أخضر والقرص يتوهج.
 class QiblaDialPainter extends CustomPainter {
   QiblaDialPainter({required this.heading, required this.qibla, required this.aligned});
 
@@ -683,163 +700,28 @@ class QiblaDialPainter extends CustomPainter {
   final double qibla;
   final bool aligned;
 
-  /// بعد مركز الكعبة عن مركز القرص (نسبة من نصف الضلع).
-  static const kaabaRing = 0.6;
+  static const discAsset = 'assets/branding/compass_disc.png';
 
-  static const _rad = math.pi / 180;
+  /// الإبرة قطعة واحدة (السهم الذهبي بالياقوتة وعلى رأسها القائم الكعبة، DECISIONS): تدور بزاوية القبلة حول مركز
+  /// الياقوتة، فالكعبة على رأسها تشير للقبلة. ارتفاعها نسبةً لقطر القرص، ونسبة العرض للارتفاع، ومركز الياقوتة.
+  static const needleAsset = 'assets/branding/compass_arrow.png';
+  static const needleHeight = 0.74;
+  static const needleAspect = 566 / 760;
+  static const pivotX = 0.4915;
+  static const pivotY = 0.5605;
+
+  /// مكان المؤشر الثابت فوق القرص (بكسل منطقي).
+  static const pointerRoom = 14.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     final c = size.center(Offset.zero);
-    final half = size.shortestSide / 2;
-    final outer = half - 14; // يترك مكان المؤشر الثابت.
-    final ringW = outer * 0.07;
-    final disc = outer - ringW;
-    final green = aligned ? QiblaScreen.alignedColor : QiblaScreen.green;
-
-    // ظل خلف القرص.
-    canvas.drawCircle(c, outer, Paint()
-      ..color = Colors.black.withValues(alpha: .6)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14));
-
-    // الإطار الذهبي (تدرج دائري يلمع).
-    final ringRect = Rect.fromCircle(center: c, radius: outer);
-    canvas.drawCircle(
-      c,
-      outer - ringW / 2,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = ringW
-        ..shader = const SweepGradient(
-          colors: [QiblaScreen.goldDeep, QiblaScreen.goldLight, QiblaScreen.gold, QiblaScreen.goldDeep, QiblaScreen.goldLight, QiblaScreen.goldDeep],
-        ).createShader(ringRect),
-    );
-
-    // القرص الأسود.
-    canvas.drawCircle(
-      c,
-      disc,
-      Paint()
-        ..shader = const RadialGradient(colors: [Color(0xFF1C1C1C), Color(0xFF050505)]).createShader(Rect.fromCircle(center: c, radius: disc)),
-    );
-    // خط ذهبي رفيع داخل الإطار.
-    canvas.drawCircle(c, disc - 1, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = QiblaScreen.goldDeep);
-
-    // الحلقة الخضراء المضيئة.
-    final glowR = disc * 0.86;
-    canvas.drawCircle(c, glowR, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = aligned ? 7 : 5
-      ..color = green.withValues(alpha: .55)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
-    canvas.drawCircle(c, glowR, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
-      ..color = green);
-
-    // القرص ثابت على الشاشة (لا يدور)؛ السهم وحده يتحرك بزاوية (القبلة − اتجاه الجهاز).
-    canvas.save();
-    canvas.translate(c.dx, c.dy);
-
-    // التدريج بين الإطار والحلقة.
-    for (var d = 0; d < 360; d += 5) {
-      final a = d * _rad;
-      final dir = Offset(math.sin(a), -math.cos(a));
-      final long = d % 30 == 0;
-      if (d % 90 == 0) continue; // مكان الحروف.
-      canvas.drawLine(
-        dir * (disc - (long ? disc * 0.09 : disc * 0.05)),
-        dir * (disc - disc * 0.015),
-        Paint()
-          ..strokeWidth = long ? 2.4 : 1.2
-          ..strokeCap = StrokeCap.round
-          ..color = long ? QiblaScreen.gold : const Color(0xFFDDDDDD),
-      );
-    }
-    // خطوط ذهبية قصيرة عند الجهات الأربع، خارج الحروف.
-    for (var d = 0; d < 360; d += 90) {
-      final a = d * _rad;
-      final dir = Offset(math.sin(a), -math.cos(a));
-      canvas.drawLine(dir * (disc * 0.99), dir * (disc * 0.9), Paint()
-        ..strokeWidth = 3
-        ..color = QiblaScreen.gold);
-    }
-
-    // حروف الجهات ثابتة مع القرص.
-    for (final (deg, label) in [(0, 'N'), (90, 'E'), (180, 'S'), (270, 'W')]) {
-      final a = deg * _rad;
-      final p = Offset(math.sin(a), -math.cos(a)) * (disc * 0.74);
-      final tp = TextPainter(
-        text: TextSpan(
-          text: label,
-          style: TextStyle(
-            color: QiblaScreen.gold,
-            fontSize: disc * 0.17,
-            fontWeight: FontWeight.w800,
-            shadows: const [Shadow(color: Colors.black, blurRadius: 4)],
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, p + Offset(-tp.width / 2, -tp.height / 2));
-    }
-
-    // النجمة الذهبية (ثماني رؤوس: الطويلة للجهات الأربع).
-    for (var i = 0; i < 8; i++) {
-      final a = i * 45 * _rad;
-      final len = disc * (i.isEven ? 0.5 : 0.3);
-      final w = disc * (i.isEven ? 0.07 : 0.05);
-      final tip = Offset(math.sin(a), -math.cos(a)) * len;
-      final side = Offset(math.cos(a), math.sin(a)) * w;
-      canvas.drawPath(Path()..moveTo(0, 0)..lineTo(side.dx, side.dy)..lineTo(tip.dx, tip.dy)..close(),
-          Paint()..color = QiblaScreen.goldDeep.withValues(alpha: .9));
-      canvas.drawPath(Path()..moveTo(0, 0)..lineTo(-side.dx, -side.dy)..lineTo(tip.dx, tip.dy)..close(),
-          Paint()..color = QiblaScreen.gold.withValues(alpha: .9));
-    }
-    canvas.drawCircle(Offset.zero, disc * 0.2, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = QiblaScreen.goldDeep);
-
-    // الإبرة الخضراء باتجاه القبلة: زاوية السهم = زاوية القبلة − اتجاه الجهاز (azimuth).
-    canvas.save();
-    canvas.rotate((qibla - heading) * _rad);
-    final tipY = -disc * (kaabaRing - 0.09);
-    final needle = Path()
-      ..moveTo(0, tipY)
-      ..lineTo(disc * 0.08, -disc * 0.05)
-      ..lineTo(0, disc * 0.22)
-      ..lineTo(-disc * 0.08, -disc * 0.05)
-      ..close();
-    canvas.drawPath(needle, Paint()
-      ..color = green.withValues(alpha: .6)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
-    canvas.drawPath(
-      needle,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [const Color(0xFF0E8F5A), green, const Color(0xFF9CFFD5)],
-        ).createShader(Rect.fromLTRB(-disc * 0.08, tipY, disc * 0.08, disc * 0.22)),
-    );
-    canvas.restore();
-
-    canvas.restore();
-
-    // المحور الذهبي في الوسط.
-    canvas.drawCircle(c, disc * 0.06, Paint()
-      ..shader = const RadialGradient(colors: [QiblaScreen.goldLight, QiblaScreen.goldDeep]).createShader(Rect.fromCircle(center: c, radius: disc * 0.06)));
-    canvas.drawCircle(c, disc * 0.025, Paint()..color = const Color(0xFF3A2A0A));
-
+    final outer = size.shortestSide / 2 - pointerRoom;
     // المؤشر الثابت أعلى القرص.
     final top = c.dy - outer;
     canvas.drawPath(
       Path()
-        ..moveTo(c.dx, top + ringW * 1.4)
+        ..moveTo(c.dx, top + 10)
         ..lineTo(c.dx - 11, top - 12)
         ..lineTo(c.dx + 11, top - 12)
         ..close(),

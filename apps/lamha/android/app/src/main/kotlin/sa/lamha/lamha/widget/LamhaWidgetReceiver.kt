@@ -146,13 +146,12 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val QIBLA_TICK_LONG = 0.38f
         private const val QIBLA_LETTER_AT = 0.36f
         private const val QIBLA_LETTER_SIZE = 0.13f
-        private const val QIBLA_KAABA_AT = 0.36f
-        private const val QIBLA_KAABA_SIZE = 0.18f
-        /// عرض صورة الكعبة والسهم نسبةً لضلع المربع، ونقطة ارتكاز السهم (مركز الياقوتة) نسبةً لمقاس صورته (DECISIONS ٣٦).
-        private const val QIBLA_KAABA_WIDTH = 0.25f
-        private const val QIBLA_ARROW_WIDTH = 0.36f
-        private const val QIBLA_ARROW_PIVOT_X = 0.552f
-        private const val QIBLA_ARROW_PIVOT_Y = 0.549f
+        /// ارتفاع صورة الإبرة (تحمل الكعبة على رأسها القائم) نسبةً لضلع المربع، ونسبة عرضها لارتفاعها، ونقطة
+        /// ارتكازها (مركز الياقوتة) نسبةً لمقاس صورتها (DECISIONS: الإبرة الجديدة).
+        private const val QIBLA_NEEDLE_HEIGHT = 0.74f
+        private const val QIBLA_NEEDLE_ASPECT = 566f / 760f
+        private const val QIBLA_ARROW_PIVOT_X = 0.4915f
+        private const val QIBLA_ARROW_PIVOT_Y = 0.5605f
         private const val QIBLA_ARROW_LENGTH = 0.24f
         private const val QIBLA_ARROW_HALF = 0.07f
         private const val QIBLA_STAR_LENGTH = 0.2f
@@ -1035,8 +1034,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         }
 
         /// قرص مربع القبلة بضلع [px] بتصميم المالك (DECISIONS ٣٦): صورة القرص الكحلي الثابتة، وفوقها السهم الذهبي
-        /// بالياقوتة يدور حول مركز القرص بزاوية [degrees] من الشمال، ثم الكعبة على المحيط بزاوية القبلة. صور فقط
-        /// (compass_disc وcompass_arrow وcompass_kaaba في drawable-nodpi)، لا حساب. [faceAlpha] لم يعد مستعملاً:
+        /// بالياقوتة يدور حول مركز القرص بزاوية [degrees] من الشمال، والكعبة على رأسها. صور فقط
+        /// (compass_disc وcompass_arrow في drawable-nodpi، والإبرة تحمل الكعبة)، لا حساب. [faceAlpha] لم يعد مستعملاً:
         /// القرص صورة معتمة.
         @Suppress("UNUSED_PARAMETER")
         internal fun drawQiblaDial(context: Context, px: Int, degrees: Float, faceAlpha: Int = 255): Bitmap {
@@ -1053,14 +1052,14 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 disc.recycle()
             }
             BitmapFactory.decodeResource(res, R.drawable.compass_arrow)?.let { arrow ->
-                val w = side * QIBLA_ARROW_WIDTH
-                val h = w * arrow.height / arrow.width
+                val h = side * QIBLA_NEEDLE_HEIGHT
+                val w = h * QIBLA_NEEDLE_ASPECT
                 val left = c - w * QIBLA_ARROW_PIVOT_X
                 val top = c - h * QIBLA_ARROW_PIVOT_Y
                 canvas.save()
                 canvas.rotate(degrees, c, c)
                 val dst = RectF(left, top, left + w, top + h)
-                // ظل خفيف تحت السهم يفصله عن خطوط القرص (DECISIONS: تكبير السهم).
+                // ظل خفيف تحت الإبرة يفصلها عن خطوط القرص.
                 try {
                     val shadow = arrow.extractAlpha()
                     val sp = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
@@ -1072,21 +1071,11 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                     canvas.drawBitmap(shadow, null, RectF(dst.left + d, dst.top + d, dst.right + d, dst.bottom + d), sp)
                     shadow.recycle()
                 } catch (e: Throwable) {
-                    Log.w("LamhaWidget", "arrow shadow", e)
+                    Log.w("LamhaWidget", "needle shadow", e)
                 }
                 canvas.drawBitmap(arrow, null, dst, paint)
                 canvas.restore()
                 arrow.recycle()
-            }
-            // الكعبة على المحيط بزاوية القبلة (qiblaKaabaCenter في Dart).
-            val a = Math.toRadians(degrees.toDouble())
-            val kx = c + Math.sin(a).toFloat() * side * QIBLA_KAABA_AT
-            val ky = c - Math.cos(a).toFloat() * side * QIBLA_KAABA_AT
-            BitmapFactory.decodeResource(res, R.drawable.compass_kaaba)?.let { kaaba ->
-                val w = side * QIBLA_KAABA_WIDTH
-                val h = w * kaaba.height / kaaba.width
-                canvas.drawBitmap(kaaba, null, RectF(kx - w / 2, ky - h / 2, kx + w / 2, ky + h / 2), paint)
-                kaaba.recycle()
             }
             return bmp
         }
