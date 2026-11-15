@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lamha/l10n/app_localizations.dart';
+import 'package:lamha/src/engine/adhan.dart';
 import 'package:lamha/src/app/adhan_bar.dart';
 import 'package:lamha/src/app/adhan_player.dart';
 import 'package:lamha/src/app/providers.dart';
@@ -26,6 +29,15 @@ class _FakePlayer implements AdhanPlayer {
     stops++;
     _playing.value = false;
   }
+
+  var armed = <AdhanEvent>[];
+  var disarms = 0;
+
+  @override
+  Future<void> arm(List<AdhanEvent> events, {void Function(AdhanEvent event)? onPrepare}) async => armed = events;
+
+  @override
+  Future<void> disarm() async => disarms++;
 
   @override
   void dispose() {}
@@ -61,5 +73,17 @@ void main() {
     await noop.start();
     expect(noop.playing.value, isFalse);
     noop.dispose();
+  });
+
+  test('الخلفية: ثانية الصمت المتكررة والأذان الكامل أصلان في التطبيق، وUIBackgroundModes: audio', () {
+    expect(File('assets/audio/silence.wav').existsSync(), isTrue);
+    expect(File('assets/audio/adhan.mp3').existsSync(), isTrue);
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(pubspec, contains('assets/audio/silence.wav'));
+    expect(pubspec, contains('assets/audio/adhan.mp3'));
+    final plist = File('ios/Runner/Info.plist').readAsStringSync();
+    expect(plist, contains('UIBackgroundModes'));
+    expect(plist, contains('<string>audio</string>'));
+    expect(AudioAdhanPlayer.prepareLead, const Duration(seconds: 20));
   });
 }

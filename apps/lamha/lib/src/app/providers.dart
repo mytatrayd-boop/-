@@ -81,7 +81,11 @@ final adhanNotifierProvider = Provider<AdhanNotifier>((ref) {
   final mobile = !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
   if (prefs == null || !mobile) return NoopAdhanNotifier();
-  return LocalAdhanNotifier(prefs, onPlayFull: () => ref.read(adhanPlayerProvider).start());
+  return LocalAdhanNotifier(
+    prefs,
+    onPlayFull: () => ref.read(adhanPlayerProvider).start(),
+    keeper: ref.read(adhanPlayerProvider),
+  );
 });
 
 /// مفتاح آخر قراءة طقس في shared_preferences.

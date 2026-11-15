@@ -93,6 +93,7 @@ flutter:
     - assets/branding/compass_disc.png
     - assets/branding/compass_arrow.png
     - assets/audio/adhan.mp3
+    - assets/audio/silence.wav
 
   # Tajawal برخصة SIL OFL 1.1 (assets/fonts/OFL-Tajawal.txt).
   fonts:

@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../engine/adhan.dart';
+import 'adhan_player.dart';
 
 /// جدولة الأذان بالإشعارات المحلية (flutter_local_notifications، DECISIONS ٢٨) خلف واجهة قابلة للاستبدال
 /// في الاختبارات.
@@ -51,7 +52,10 @@ const adhanFullPayload = 'adhan_full';
 const adhanActiveKey = 'adhanActive';
 
 class LocalAdhanNotifier implements AdhanNotifier {
-  LocalAdhanNotifier(this._prefs, {this.onPlayFull});
+  LocalAdhanNotifier(this._prefs, {this.onPlayFull, this.keeper});
+
+  /// آيفون: المشغّل الذي يبقى حياً في الخلفية ويشغّل الأذان الكامل تلقائياً في وقته (DECISIONS ٣٨).
+  final AdhanPlayer? keeper;
 
   final SharedPreferences _prefs;
 
@@ -165,6 +169,7 @@ class LocalAdhanNotifier implements AdhanNotifier {
       await _init();
       await _plugin.cancelAll();
       if (events.isEmpty) {
+        await keeper?.disarm();
         await _prefs.setBool(adhanActiveKey, false);
         return;
       }
@@ -183,6 +188,13 @@ class LocalAdhanNotifier implements AdhanNotifier {
           body: e.body(city),
           payload: _payload(sound),
         );
+      }
+      // آيفون والأذان الكامل: التطبيق يبقى حياً بصوت صامت ويشغّل الأذان كاملاً في وقته، ويلغي إشعار الحدث قبله
+      // بنحو ٢٠ ثانية فلا يتداخلان. إن أُغلق التطبيق بالسحب بقي إشعار المقطع القصير احتياطاً.
+      if (_ios && sound == AdhanSound.full) {
+        await keeper?.arm(events, onPrepare: (e) => _plugin.cancel(id: e.id));
+      } else {
+        await keeper?.disarm();
       }
       await _prefs.setBool(adhanActiveKey, true);
       await _prefs.remove(adhanErrorKey);
