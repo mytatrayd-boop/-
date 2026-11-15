@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -149,7 +150,7 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val QIBLA_KAABA_SIZE = 0.18f
         /// عرض صورة الكعبة والسهم نسبةً لضلع المربع، ونقطة ارتكاز السهم (مركز الياقوتة) نسبةً لمقاس صورته (DECISIONS ٣٦).
         private const val QIBLA_KAABA_WIDTH = 0.25f
-        private const val QIBLA_ARROW_WIDTH = 0.22f
+        private const val QIBLA_ARROW_WIDTH = 0.36f
         private const val QIBLA_ARROW_PIVOT_X = 0.552f
         private const val QIBLA_ARROW_PIVOT_Y = 0.549f
         private const val QIBLA_ARROW_LENGTH = 0.24f
@@ -1058,7 +1059,22 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
                 val top = c - h * QIBLA_ARROW_PIVOT_Y
                 canvas.save()
                 canvas.rotate(degrees, c, c)
-                canvas.drawBitmap(arrow, null, RectF(left, top, left + w, top + h), paint)
+                val dst = RectF(left, top, left + w, top + h)
+                // ظل خفيف تحت السهم يفصله عن خطوط القرص (DECISIONS: تكبير السهم).
+                try {
+                    val shadow = arrow.extractAlpha()
+                    val sp = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.BLACK
+                        alpha = 150
+                        maskFilter = BlurMaskFilter(side * 0.012f + 1f, BlurMaskFilter.Blur.NORMAL)
+                    }
+                    val d = side * 0.012f
+                    canvas.drawBitmap(shadow, null, RectF(dst.left + d, dst.top + d, dst.right + d, dst.bottom + d), sp)
+                    shadow.recycle()
+                } catch (e: Throwable) {
+                    Log.w("LamhaWidget", "arrow shadow", e)
+                }
+                canvas.drawBitmap(arrow, null, dst, paint)
                 canvas.restore()
                 arrow.recycle()
             }
