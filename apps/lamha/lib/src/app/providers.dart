@@ -15,6 +15,7 @@ import '../engine/arabic.dart';
 import '../engine/settings.dart';
 import '../engine/weather.dart';
 import '../engine/widget_theme.dart';
+import 'adhan_player.dart';
 import 'adhan_service.dart';
 import 'app_settings.dart';
 import 'cities.dart';
@@ -68,12 +69,19 @@ final notificationPermissionProvider =
 /// آخر خطأ في جدولة الأذان أو تجربته (يُعرض في الإعدادات)؛ يُبطَل بعد كل جدولة أو تجربة.
 final adhanErrorProvider = FutureProvider.autoDispose<String?>((ref) => ref.watch(adhanNotifierProvider).lastError());
 
+/// الأذان الكامل داخل التطبيق: آيفون فقط (حد ٣٠ ثانية لصوت الإشعار)؛ أندرويد يشغّله في إشعاره.
+final adhanPlayerProvider = Provider<AdhanPlayer>((ref) {
+  final AdhanPlayer player = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS ? AudioAdhanPlayer() : NoopAdhanPlayer();
+  ref.onDispose(player.dispose);
+  return player;
+});
+
 final adhanNotifierProvider = Provider<AdhanNotifier>((ref) {
   final prefs = ref.watch(preferencesProvider).value;
   final mobile = !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
   if (prefs == null || !mobile) return NoopAdhanNotifier();
-  return LocalAdhanNotifier(prefs);
+  return LocalAdhanNotifier(prefs, onPlayFull: () => ref.read(adhanPlayerProvider).start());
 });
 
 /// مفتاح آخر قراءة طقس في shared_preferences.

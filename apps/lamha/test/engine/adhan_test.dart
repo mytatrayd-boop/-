@@ -79,13 +79,6 @@ void main() {
     expect(a.hashCode, AdhanSettings.fromJson(a.toJson()).hashCode);
   });
 
-  test('آيفون يستبدل الأذان الكامل بالتكبيرتين (حد ٣٠ ثانية)', () {
-    expect(AdhanSound.full.forPlatform(ios: true), AdhanSound.takbeer);
-    expect(AdhanSound.full.forPlatform(ios: false), AdhanSound.full);
-    expect(AdhanSound.silent.forPlatform(ios: true), AdhanSound.silent);
-    expect(AdhanSound.takbeer.forPlatform(ios: true), AdhanSound.takbeer);
-  });
-
   test('البصمة تتغير بالصوت والمدينة والأوقات فقط', () {
     final events = planAdhan(riyadh(), now, on, max: 5);
     final sig = adhanSignature(events, AdhanSound.full, 'الرياض');

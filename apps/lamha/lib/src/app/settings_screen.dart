@@ -529,9 +529,9 @@ class _AdhanSection extends ConsumerWidget {
           AdhanSound.takbeer => l.adhanSoundTakbeer,
           AdhanSound.silent => l.adhanSoundSilent,
         };
-    // آيفون: التكبيرتان أو الصمت فقط (حد ٣٠ ثانية).
-    final sounds = ios ? [AdhanSound.takbeer, AdhanSound.silent] : AdhanSound.values;
-    final selected = adhan.sound.forPlatform(ios: ios);
+    // آيفون: الأذان مقطع ٢٨ ثانية في الإشعار يكمله التطبيق عند الضغط (DECISIONS ٣٧)، أو التكبيرتان، أو الصمت.
+    final sounds = AdhanSound.values;
+    final selected = adhan.sound;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

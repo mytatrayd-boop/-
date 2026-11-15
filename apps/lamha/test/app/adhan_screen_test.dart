@@ -109,17 +109,18 @@ void main() {
     expect(adhan.applied.last.sound, AdhanSound.silent);
   });
 
-  testWidgets('آيفون: التكبيرتان أو الصمت فقط، مع شرح حد ٣٠ ثانية', (tester) async {
+  testWidgets('آيفون: الأذان (مقطع ثم كامل بالضغط) أو التكبيرتان أو الصمت، مع الشرح', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     try {
       await pumpApp(tester, adhan: FakeAdhanNotifier());
       await tapKey(tester, 'adhan-enabled');
-      expect(find.byKey(const Key('adhan-sound-full')), findsNothing);
+      expect(find.byKey(const Key('adhan-sound-full')), findsOneWidget);
       expect(find.byKey(const Key('adhan-sound-takbeer')), findsOneWidget);
       expect(find.byKey(const Key('adhan-sound-silent')), findsOneWidget);
-      // الأذان الكامل المحفوظ يظهر تكبيرتين.
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('adhan-sound-takbeer'))).selected, isTrue);
+      // الأذان الكامل المحفوظ هو المختار، والشرح يذكر حد ٣٠ ثانية والإكمال بالضغط.
+      expect(tester.widget<ChoiceChip>(find.byKey(const Key('adhan-sound-full'))).selected, isTrue);
       expect(find.textContaining('٣٠ ثانية'), findsOneWidget);
+      expect(find.textContaining('ويكمل الأذان كاملاً'), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
@@ -176,6 +177,21 @@ void main() {
       expect(project, contains('takbeer.wav in Resources'));
       expect(project, contains('path = takbeer.wav'));
       expect(iosTakbeerSound, 'takbeer.wav');
+    });
+
+    test('آيفون: مقطع الأذان wav ضمن مشروع Xcode وأقصر من ٣٠ ثانية، والأذان الكامل أصل في التطبيق', () {
+      final wav = File('ios/Runner/adhan30.wav');
+      expect(wav.existsSync(), isTrue);
+      // wav: ‏١٦ بت أحادي ٢٢٫٠٥ ك: ٤٤١٠٠ بايت في الثانية.
+      final seconds = (wav.lengthSync() - 44) / 44100;
+      expect(seconds, inInclusiveRange(20, 29.9));
+      final project = File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+      expect(project, contains('adhan30.wav in Resources'));
+      expect(project, contains('path = adhan30.wav'));
+      expect(iosAdhanClipSound, 'adhan30.wav');
+      expect(adhanFullPayload, 'adhan_full');
+      expect(File('assets/audio/adhan.mp3').existsSync(), isTrue);
+      expect(File('pubspec.yaml').readAsStringSync(), contains('assets/audio/adhan.mp3'));
     });
   });
 }

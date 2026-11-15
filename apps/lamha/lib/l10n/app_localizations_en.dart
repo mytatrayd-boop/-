@@ -610,8 +610,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adhanTest => 'Test the sound';
 
   @override
+  String get adhanPlaying => 'The adhan is playing';
+
+  @override
+  String get adhanStop => 'Stop';
+
+  @override
   String get adhanNoteIos =>
-      'On iPhone the sound is two takbeers, because Apple limits notification sounds to 30 seconds. The next 12 days are scheduled and refreshed whenever you open Lamha.';
+      'On iPhone the notification plays the first 28 seconds of the adhan (Apple limits notification sounds to 30 seconds); tap it and Lamha opens and plays the full adhan. The next 12 days are scheduled and refreshed whenever you open Lamha.';
 
   @override
   String get adhanNoteAndroid =>

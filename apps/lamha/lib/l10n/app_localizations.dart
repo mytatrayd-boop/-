@@ -926,10 +926,22 @@ abstract class AppLocalizations {
   /// **'تجربة الصوت'**
   String get adhanTest;
 
+  /// No description provided for @adhanPlaying.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأذان يُرفع الآن'**
+  String get adhanPlaying;
+
+  /// No description provided for @adhanStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف'**
+  String get adhanStop;
+
   /// No description provided for @adhanNoteIos.
   ///
   /// In ar, this message translates to:
-  /// **'في آيفون يكون الصوت تكبيرتين، لأن آبل تحدد صوت الإشعار بـ٣٠ ثانية. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  /// **'في آيفون يصلك أول ٢٨ ثانية من الأذان في الإشعار (حد آبل ٣٠ ثانية)، وعند ضغط الإشعار يفتح لمحة ويكمل الأذان كاملاً. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
   String get adhanNoteIos;
 
   /// No description provided for @adhanNoteAndroid.

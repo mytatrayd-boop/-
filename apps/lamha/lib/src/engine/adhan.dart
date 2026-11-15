@@ -20,8 +20,6 @@ enum AdhanSound {
   static AdhanSound byName(String? name) =>
       values.firstWhere((s) => s.name == name, orElse: () => full);
 
-  /// الصوت الفعلي على المنصة: آيفون لا يشغّل الأذان الكامل في الإشعار.
-  AdhanSound forPlatform({required bool ios}) => ios && this == full ? takbeer : this;
 }
 
 /// الصلوات التي لها أذان (الشروق ليس صلاة).
