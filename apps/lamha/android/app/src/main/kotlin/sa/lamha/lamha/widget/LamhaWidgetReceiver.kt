@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -145,8 +146,12 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
         private const val QIBLA_TICK_LONG = 0.38f
         private const val QIBLA_LETTER_AT = 0.36f
         private const val QIBLA_LETTER_SIZE = 0.13f
-        private const val QIBLA_KAABA_AT = 0.36f
-        private const val QIBLA_KAABA_SIZE = 0.18f
+        /// ارتفاع صورة الإبرة (تحمل الكعبة على رأسها القائم) نسبةً لضلع المربع، ونسبة عرضها لارتفاعها، ونقطة
+        /// ارتكازها (مركز الياقوتة) نسبةً لمقاس صورتها (DECISIONS: الإبرة الجديدة).
+        private const val QIBLA_NEEDLE_HEIGHT = 0.74f
+        private const val QIBLA_NEEDLE_ASPECT = 566f / 760f
+        private const val QIBLA_ARROW_PIVOT_X = 0.4915f
+        private const val QIBLA_ARROW_PIVOT_Y = 0.5605f
         private const val QIBLA_ARROW_LENGTH = 0.24f
         private const val QIBLA_ARROW_HALF = 0.07f
         private const val QIBLA_STAR_LENGTH = 0.2f
@@ -1009,76 +1014,49 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             }
         }
 
-        /// قرص مربع القبلة بضلع [px] (صورة المالك، QiblaTileDialPainter في Dart): دائرة سوداء، وتدريج أبيض
-        /// كل ١٠° (أطول كل ٣٠°)، وحروف N وE وS وW، ونجمة داكنة، وسهم أحمر من المركز بزاوية [degrees] من
-        /// الشمال ثم خط منقّط إلى الكعبة على المحيط. رسم فقط، لا حساب.
-        /// [faceAlpha] ٠–٢٥٥: القرص الأسود يتبع شفافية خلفية الودجت، والتدريج والسهم يبقيان.
+        /// قرص مربع القبلة بضلع [px] بتصميم المالك (DECISIONS ٣٦): صورة القرص الكحلي الثابتة، وفوقها السهم الذهبي
+        /// بالياقوتة يدور حول مركز القرص بزاوية [degrees] من الشمال، والكعبة على رأسها. صور فقط
+        /// (compass_disc وcompass_arrow في drawable-nodpi، والإبرة تحمل الكعبة)، لا حساب. [faceAlpha] لم يعد مستعملاً:
+        /// القرص صورة معتمة.
+        @Suppress("UNUSED_PARAMETER")
         internal fun drawQiblaDial(context: Context, px: Int, degrees: Float, faceAlpha: Int = 255): Bitmap {
             val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)
             val side = px.toFloat()
             val c = side / 2
-            canvas.drawCircle(c, c, side * QIBLA_DIAL_RADIUS, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; alpha = faceAlpha })
-            val tick = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; strokeCap = Paint.Cap.ROUND }
-            for (d in 0 until 360 step 10) {
-                if (d % 90 == 0) continue
-                val a = Math.toRadians(d.toDouble())
-                val sx = Math.sin(a).toFloat()
-                val cy = -Math.cos(a).toFloat()
-                val long = d % 30 == 0
-                tick.strokeWidth = side * if (long) 0.022f else 0.014f
-                val inner = side * if (long) QIBLA_TICK_LONG else QIBLA_TICK_INNER
-                canvas.drawLine(c + sx * inner, c + cy * inner, c + sx * side * QIBLA_TICK_OUTER, c + cy * side * QIBLA_TICK_OUTER, tick)
+            val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            val res = context.resources
+            BitmapFactory.decodeResource(res, R.drawable.compass_disc)?.let { disc ->
+                val w = side * QIBLA_DIAL_RADIUS * 2
+                val h = w * disc.height / disc.width
+                canvas.drawBitmap(disc, null, RectF(c - w / 2, c - h / 2, c + w / 2, c + h / 2), paint)
+                disc.recycle()
             }
-            val letters = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.WHITE
-                textSize = side * QIBLA_LETTER_SIZE
-                typeface = Typeface.DEFAULT_BOLD
-                textAlign = Paint.Align.CENTER
-            }
-            for ((d, label) in listOf(0 to "N", 90 to "E", 180 to "S", 270 to "W")) {
-                val a = Math.toRadians(d.toDouble())
-                val x = c + Math.sin(a).toFloat() * side * QIBLA_LETTER_AT
-                val y = c - Math.cos(a).toFloat() * side * QIBLA_LETTER_AT
-                canvas.drawText(label, x, y - (letters.ascent() + letters.descent()) / 2, letters)
-            }
-            val star = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = QIBLA_STAR }
-            for (i in 0 until 8) {
-                val a = i * Math.PI / 4
-                val len = side * QIBLA_STAR_LENGTH * if (i % 2 == 0) 1f else 0.6f
-                val w = side * 0.035f
-                val tx = c + Math.sin(a).toFloat() * len
-                val ty = c - Math.cos(a).toFloat() * len
-                val nx = Math.cos(a).toFloat() * w
-                val ny = Math.sin(a).toFloat() * w
-                canvas.drawPath(Path().apply { moveTo(c + nx, c + ny); lineTo(tx, ty); lineTo(c - nx, c - ny); close() }, star)
-            }
-            canvas.save()
-            canvas.rotate(degrees, c, c)
-            val red = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = QIBLA_ARROW }
-            canvas.drawPath(Path().apply {
-                moveTo(c, c - side * QIBLA_ARROW_LENGTH)
-                lineTo(c + side * QIBLA_ARROW_HALF, c + side * 0.03f)
-                lineTo(c, c - side * 0.02f)
-                lineTo(c - side * QIBLA_ARROW_HALF, c + side * 0.03f)
-                close()
-            }, red)
-            red.strokeWidth = side * 0.018f
-            red.strokeCap = Paint.Cap.ROUND
-            var t = QIBLA_ARROW_LENGTH + 0.02f
-            while (t < QIBLA_KAABA_AT - QIBLA_KAABA_SIZE / 2.6f) {
-                canvas.drawLine(c, c - side * t, c, c - side * (t + 0.012f), red)
-                t += 0.035f
-            }
-            canvas.restore()
-            // الكعبة على المحيط بزاوية القبلة (qiblaKaabaCenter في Dart).
-            val a = Math.toRadians(degrees.toDouble())
-            val kx = c + Math.sin(a).toFloat() * side * QIBLA_KAABA_AT
-            val ky = c - Math.cos(a).toFloat() * side * QIBLA_KAABA_AT
-            val k = side * QIBLA_KAABA_SIZE / 2
-            BitmapFactory.decodeResource(context.resources, R.drawable.kaaba)?.let { kaaba ->
-                canvas.drawBitmap(kaaba, null, RectF(kx - k, ky - k, kx + k, ky + k), Paint(Paint.FILTER_BITMAP_FLAG))
-                kaaba.recycle()
+            BitmapFactory.decodeResource(res, R.drawable.compass_arrow)?.let { arrow ->
+                val h = side * QIBLA_NEEDLE_HEIGHT
+                val w = h * QIBLA_NEEDLE_ASPECT
+                val left = c - w * QIBLA_ARROW_PIVOT_X
+                val top = c - h * QIBLA_ARROW_PIVOT_Y
+                canvas.save()
+                canvas.rotate(degrees, c, c)
+                val dst = RectF(left, top, left + w, top + h)
+                // ظل خفيف تحت الإبرة يفصلها عن خطوط القرص.
+                try {
+                    val shadow = arrow.extractAlpha()
+                    val sp = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.BLACK
+                        alpha = 150
+                        maskFilter = BlurMaskFilter(side * 0.012f + 1f, BlurMaskFilter.Blur.NORMAL)
+                    }
+                    val d = side * 0.012f
+                    canvas.drawBitmap(shadow, null, RectF(dst.left + d, dst.top + d, dst.right + d, dst.bottom + d), sp)
+                    shadow.recycle()
+                } catch (e: Throwable) {
+                    Log.w("LamhaWidget", "needle shadow", e)
+                }
+                canvas.drawBitmap(arrow, null, dst, paint)
+                canvas.restore()
+                arrow.recycle()
             }
             return bmp
         }
