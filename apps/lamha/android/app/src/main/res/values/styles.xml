@@ -15,4 +15,6 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- نص الودجت: بلا خط مخصص هنا (يضيفه values-v26). -->
+    <style name="LamhaText" />
 </resources>

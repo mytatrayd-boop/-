@@ -18,6 +18,7 @@
         android:importantForAccessibility="no" />
 
     <TextView
+        style="@style/LamhaText"
         android:id="@+id/capsule_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

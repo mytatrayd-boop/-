@@ -12,7 +12,7 @@
 
     <!-- إطار الخلفية الحر (DECISIONS ٣٠): حشوة الغلاف (setViewPadding من الجدول) تحدد مكان لوحة الخلفية ومقاسها
          وحدها؛ الشبكة والمربعات العائمة تبقى على الودجت كلها فلا تتحرك ولا يتغير مقاسها. -->
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/bg_box"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -24,7 +24,17 @@
             android:scaleType="fitXY"
             android:src="@drawable/widget_bg"
             android:importantForAccessibility="no" />
-    </LinearLayout>
+
+        <!-- الإطار الذهبي بزخارف الزوايا (DECISIONS ٣٦): تسع قطع، الزوايا بمقاسها والوسط يتمدد. fitXY يرسمها
+             بقياس الخانة فتتمدد القطع الوسطى فقط. فوق الخلفية وتحت العناصر. -->
+        <ImageView
+            android:id="@+id/bg_frame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+            android:src="@drawable/frame_gold"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
 
     <!-- لوحة العناصر الثابتة (DECISIONS ٣٠، اختيار المالك ١٣ نوفمبر): الشبكة والمربعات العائمة في لوحة بمقاس ثابت
          (setViewLayoutWidth/Height من الكود، أندرويد ١٢+) متوسطة في الودجت. تكبير الودجت أو تصغيرها من

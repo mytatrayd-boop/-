@@ -14,6 +14,7 @@
         android:orientation="vertical">
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:id="@+id/hijri"
@@ -28,6 +29,7 @@
             android:textStyle="bold" />
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:id="@+id/gregorian"

@@ -25,6 +25,7 @@
         android:paddingBottom="4dp">
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:includeFontPadding="false"
@@ -41,6 +42,7 @@
             android:textStyle="bold" />
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:includeFontPadding="false"
@@ -58,6 +60,7 @@
             android:textStyle="bold" />
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:includeFontPadding="false"
@@ -93,6 +96,7 @@
             android:visibility="gone" />
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:includeFontPadding="false"
@@ -110,6 +114,7 @@
             android:visibility="gone" />
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:includeFontPadding="false"

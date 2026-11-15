@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- نص الودجت بخط IBM Plex Sans Arabic (أندرويد ٨+؛ الأقدم يبقى بخط النظام في values/styles.xml). -->
+    <style name="LamhaText">
+        <item name="android:fontFamily">@font/ibm_plex_sans_arabic</item>
+    </style>
+</resources>

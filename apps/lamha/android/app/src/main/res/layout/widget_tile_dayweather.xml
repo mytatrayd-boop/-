@@ -13,6 +13,7 @@
         android:orientation="vertical">
 
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/day_weekday"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,6 +28,7 @@
             android:textColor="#FFF4EFE6"
             android:textSize="22sp" android:textStyle="bold" />
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/day_city"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -41,6 +43,7 @@
             android:textColor="#FFB9B0A2"
             android:textSize="16sp" />
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/day_temp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

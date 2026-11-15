@@ -21,6 +21,7 @@
 
             <!-- ساعة النظام بلا «ص/م»: تتحدث كل دقيقة دون تحديث الودجت. -->
             <TextClock
+        style="@style/LamhaText"
                 android:gravity="right|center_vertical"
                 android:textDirection="rtl"
                 android:id="@+id/clock"
@@ -38,6 +39,7 @@
                 android:textStyle="bold" />
 
             <TextView
+        style="@style/LamhaText"
                 android:gravity="right|center_vertical"
                 android:textDirection="rtl"
                 android:id="@+id/am_pm"
@@ -53,6 +55,7 @@
         </LinearLayout>
 
         <TextView
+        style="@style/LamhaText"
             android:gravity="right|center_vertical"
             android:textDirection="rtl"
             android:id="@+id/weekday"

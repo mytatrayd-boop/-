@@ -23,6 +23,7 @@
         android:paddingBottom="2dp">
 
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/points_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -37,6 +38,7 @@
             android:textColor="#FFB9B0A2"
             android:textSize="10sp" android:textStyle="bold" />
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/point0"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -52,6 +54,7 @@
             android:textSize="10sp"
             android:layout_marginTop="2dp" />
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/point1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -67,6 +70,7 @@
             android:textSize="10sp"
             android:layout_marginTop="2dp" />
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/point2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -82,6 +86,7 @@
             android:textSize="10sp"
             android:layout_marginTop="2dp" />
         <TextView
+        style="@style/LamhaText"
             android:id="@+id/point3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -28,6 +28,7 @@
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_name0"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -43,6 +44,7 @@
                     android:textColor="#FFF4EFE6"
                     android:textSize="16sp" />
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_days0"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -71,6 +73,7 @@
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_name1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -86,6 +89,7 @@
                     android:textColor="#FFF4EFE6"
                     android:textSize="16sp" />
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_days1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -122,6 +126,7 @@
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_name2"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -137,6 +142,7 @@
                     android:textColor="#FFF4EFE6"
                     android:textSize="16sp" />
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_days2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -165,6 +171,7 @@
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_name3"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -180,6 +187,7 @@
                     android:textColor="#FFF4EFE6"
                     android:textSize="16sp" />
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_days3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -216,6 +224,7 @@
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_name4"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -231,6 +240,7 @@
                     android:textColor="#FFF4EFE6"
                     android:textSize="16sp" />
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_days4"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -259,6 +269,7 @@
                 android:baselineAligned="true"
                 android:orientation="horizontal">
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_name5"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -274,6 +285,7 @@
                     android:textColor="#FFF4EFE6"
                     android:textSize="16sp" />
                 <TextView
+        style="@style/LamhaText"
                     android:id="@+id/grid_days5"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

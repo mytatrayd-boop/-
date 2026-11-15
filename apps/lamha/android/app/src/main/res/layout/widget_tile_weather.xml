@@ -7,6 +7,7 @@
     android:layout_gravity="center_vertical">
 
     <TextView
+        style="@style/LamhaText"
         android:gravity="right|center_vertical"
         android:textDirection="rtl"
         android:id="@+id/weather"
