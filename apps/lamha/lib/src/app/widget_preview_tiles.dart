@@ -57,38 +57,25 @@ const lineGap = 2.0;
 /// حشوة الصناديق الجديدة الرأسية (أقل من المربعات القديمة لتتسع الصفوف الخمسة).
 const boxPadV = 2.0;
 
-/// مربع القبلة (صورة المالك، أكتوبر ٢٠٢٦): بوصلة سوداء مستديرة بتدريج أبيض وحروف N وE وS وW، ونجمة
-/// داكنة في الوسط، وسهم أحمر من المركز ثم خط منقّط أحمر إلى الكعبة على المحيط بزاوية القبلة من
-/// الشمال. وبين المربع والزاوية تحته [qiblaIconGap].
+/// مربع القبلة (بوصلة المالك، ١٥ نوفمبر ٢٠٢٦): قرص كحلي ثابت بأسماء الجهات العربية، وفوقه إبرة ذهبية
+/// بالياقوتة وعليها الكعبة قطعة واحدة تدور حول مركز الياقوتة بزاوية القبلة من الشمال. وبين المربع
+/// والزاوية تحته [qiblaIconGap].
 const qiblaIconGap = 2.0;
 
-/// صورة الكعبة الأصلية (من أيقونة القبلة) بخلفية شفافة، للمربع وشاشة البوصلة.
+/// صورة الكعبة الأصلية (من أيقونة القبلة) بخلفية شفافة، لخريطة شاشة البوصلة.
 const kaabaAsset = 'assets/branding/kaaba.png';
-const qiblaDialFace = Color(0xFF000000);
-const qiblaDialTicks = Color(0xFFFFFFFF);
-const qiblaDialStar = Color(0xFF3A3A3A);
-const qiblaDialArrow = Color(0xFFE53935);
 
-/// الأبعاد نسبةً لضلع المربع (مطابقة لـ drawQiblaDial في LamhaWidgetReceiver.kt وQiblaIcon في
-/// LamhaWidget.swift): نصف قطر القرص، وطرفا التدريج، وموضع الحروف وحجمها، وبعد الكعبة عن المركز
-/// وضلعها، وطول السهم ونصف عرضه، وطول النجمة.
+/// صورتا البوصلة: القرص (ثابت)، والإبرة (تحمل الكعبة وتدور).
+const qiblaDiscAsset = 'assets/branding/compass_disc.png';
+const qiblaNeedleAsset = 'assets/branding/compass_arrow.png';
+
+/// الأبعاد نسبةً لضلع المربع (مطابقة لـ drawQiblaDial في LamhaWidgetReceiver.kt): نصف قطر القرص،
+/// وارتفاع صورة الإبرة ونسبة عرضها لارتفاعها، ونقطة ارتكازها (مركز الياقوتة) نسبةً لمقاس صورتها.
 const qiblaDialRadius = 0.49;
-const qiblaTickOuter = 0.46;
-const qiblaTickInner = 0.41;
-const qiblaTickLong = 0.38;
-const qiblaLetterAt = 0.36;
-const qiblaLetterSize = 0.13;
-const qiblaKaabaAt = 0.36;
-const qiblaKaabaSize = 0.18;
-const qiblaArrowLength = 0.24;
-const qiblaArrowHalf = 0.07;
-const qiblaStarLength = 0.2;
-
-/// مركز الكعبة في مربع القبلة (نسبةً للضلع، من أعلى اليسار) عند زاوية [degrees] من الشمال.
-Offset qiblaKaabaCenter(double degrees) {
-  final a = degrees * math.pi / 180;
-  return Offset(0.5 + math.sin(a) * qiblaKaabaAt, 0.5 - math.cos(a) * qiblaKaabaAt);
-}
+const qiblaNeedleHeight = 0.74;
+const qiblaNeedleAspect = 566 / 760;
+const qiblaNeedlePivotX = 0.4915;
+const qiblaNeedlePivotY = 0.5605;
 
 /// مربع في الشبكة: يُرسم بحجمه المطلوب داخل مقاسه، ومقاسه من [base] بالحجم الأساسي.
 abstract class _Cell extends StatelessWidget {
@@ -517,20 +504,27 @@ class _QiblaTile extends _Styled {
                 dimension: icon,
                 child: Stack(
                   children: [
+                    // القرص صورة ثابتة؛ شفافيته = شفافية خلفية الودجت (faceAlpha)، والإبرة تبقى معتمة.
                     Positioned.fill(
-                      child: CustomPaint(
+                      child: Opacity(
                         key: const Key('preview-qibla-dial'),
-                        painter: QiblaTileDialPainter(degrees, faceAlpha: faceAlpha),
+                        opacity: faceAlpha,
+                        child: Padding(
+                          padding: EdgeInsets.all(icon * (0.5 - qiblaDialRadius)),
+                          child: Image.asset(qiblaDiscAsset, fit: BoxFit.fill, filterQuality: FilterQuality.medium),
+                        ),
                       ),
                     ),
                     Positioned(
-                      left: (qiblaKaabaCenter(degrees).dx - qiblaKaabaSize / 2) * icon,
-                      top: (qiblaKaabaCenter(degrees).dy - qiblaKaabaSize / 2) * icon,
-                      width: icon * qiblaKaabaSize,
-                      height: icon * qiblaKaabaSize,
-                      child: Image.asset(
-                        kaabaAsset,
-                        filterQuality: FilterQuality.medium,
+                      left: icon * 0.5 - icon * qiblaNeedleHeight * qiblaNeedleAspect * qiblaNeedlePivotX,
+                      top: icon * 0.5 - icon * qiblaNeedleHeight * qiblaNeedlePivotY,
+                      width: icon * qiblaNeedleHeight * qiblaNeedleAspect,
+                      height: icon * qiblaNeedleHeight,
+                      child: Transform.rotate(
+                        key: const Key('preview-qibla-needle'),
+                        angle: degrees * math.pi / 180,
+                        alignment: const FractionalOffset(qiblaNeedlePivotX, qiblaNeedlePivotY),
+                        child: Image.asset(qiblaNeedleAsset, fit: BoxFit.fill, filterQuality: FilterQuality.medium),
                       ),
                     ),
                   ],
@@ -559,84 +553,6 @@ class _QiblaTile extends _Styled {
       );
     },
   );
-}
-
-/// قرص مربع القبلة (صورة المالك): دائرة سوداء، وتدريج أبيض كل ١٠° (أطول كل ٣٠°)، وحروف الجهات
-/// بيضاء، ونجمة داكنة، وسهم أحمر من المركز بزاوية [degrees] من الشمال، وخط منقّط أحمر منه إلى
-/// الكعبة (صورة فوق القرص عند [qiblaKaabaCenter]).
-class QiblaTileDialPainter extends CustomPainter {
-  QiblaTileDialPainter(this.degrees, {this.faceAlpha = 1});
-
-  final double degrees;
-
-  /// ٠–١: القرص الأسود يتبع شفافية خلفية الودجت، والتدريج والسهم يبقيان.
-  final double faceAlpha;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final side = size.shortestSide;
-    final c = size.center(Offset.zero);
-    canvas.drawCircle(c, side * qiblaDialRadius, Paint()..color = qiblaDialFace.withValues(alpha: faceAlpha));
-    for (var d = 0; d < 360; d += 10) {
-      if (d % 90 == 0) continue;
-      final a = d * math.pi / 180;
-      final dir = Offset(math.sin(a), -math.cos(a));
-      final long = d % 30 == 0;
-      canvas.drawLine(
-        c + dir * side * (long ? qiblaTickLong : qiblaTickInner),
-        c + dir * side * qiblaTickOuter,
-        Paint()
-          ..color = qiblaDialTicks
-          ..strokeWidth = side * (long ? 0.022 : 0.014)
-          ..strokeCap = StrokeCap.round,
-      );
-    }
-    for (final (d, label) in [(0, 'N'), (90, 'E'), (180, 'S'), (270, 'W')]) {
-      final a = d * math.pi / 180;
-      final tp = TextPainter(
-        text: TextSpan(
-          text: label,
-          style: TextStyle(color: qiblaDialTicks, fontSize: side * qiblaLetterSize, fontWeight: FontWeight.w700, height: 1),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final p = c + Offset(math.sin(a), -math.cos(a)) * side * qiblaLetterAt;
-      tp.paint(canvas, p - Offset(tp.width / 2, tp.height / 2));
-    }
-    for (var i = 0; i < 8; i++) {
-      final a = i * math.pi / 4;
-      final len = side * qiblaStarLength * (i.isEven ? 1 : 0.6);
-      final w = side * 0.035;
-      final tip = c + Offset(math.sin(a), -math.cos(a)) * len;
-      final n = Offset(math.cos(a), math.sin(a)) * w;
-      canvas.drawPath(Path()..moveTo(c.dx + n.dx, c.dy + n.dy)..lineTo(tip.dx, tip.dy)..lineTo(c.dx - n.dx, c.dy - n.dy)..close(),
-          Paint()..color = qiblaDialStar);
-    }
-    canvas.save();
-    canvas.translate(c.dx, c.dy);
-    canvas.rotate(degrees * math.pi / 180);
-    final red = Paint()..color = qiblaDialArrow;
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, -side * qiblaArrowLength)
-        ..lineTo(side * qiblaArrowHalf, side * 0.03)
-        ..lineTo(0, -side * 0.02)
-        ..lineTo(-side * qiblaArrowHalf, side * 0.03)
-        ..close(),
-      red,
-    );
-    final dot = Paint()
-      ..color = qiblaDialArrow
-      ..strokeWidth = side * 0.018
-      ..strokeCap = StrokeCap.round;
-    for (var t = qiblaArrowLength + 0.02; t < qiblaKaabaAt - qiblaKaabaSize / 2.6; t += 0.035) {
-      canvas.drawLine(Offset(0, -side * t), Offset(0, -side * (t + 0.012)), dot);
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(QiblaTileDialPainter old) => old.degrees != degrees;
 }
 
 typedef _ColumnItem = ({String name, String sub});

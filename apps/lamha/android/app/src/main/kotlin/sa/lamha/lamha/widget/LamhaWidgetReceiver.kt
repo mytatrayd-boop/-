@@ -1016,9 +1016,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
 
         /// قرص مربع القبلة بضلع [px] بتصميم المالك (DECISIONS ٣٦): صورة القرص الكحلي الثابتة، وفوقها السهم الذهبي
         /// بالياقوتة يدور حول مركز القرص بزاوية [degrees] من الشمال، والكعبة على رأسها. صور فقط
-        /// (compass_disc وcompass_arrow في drawable-nodpi، والإبرة تحمل الكعبة)، لا حساب. [faceAlpha] لم يعد مستعملاً:
-        /// القرص صورة معتمة.
-        @Suppress("UNUSED_PARAMETER")
+        /// (compass_disc وcompass_arrow في drawable-nodpi، والإبرة تحمل الكعبة)، لا حساب. [faceAlpha] ٠–٢٥٥: شفافية
+        /// القرص = شفافية خلفية الودجت (شريط الشفافية)، والإبرة وكعبتها تبقيان معتمتين.
         internal fun drawQiblaDial(context: Context, px: Int, degrees: Float, faceAlpha: Int = 255): Bitmap {
             val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)
@@ -1029,7 +1028,8 @@ class LamhaWidgetReceiver : HomeWidgetProvider() {
             BitmapFactory.decodeResource(res, R.drawable.compass_disc)?.let { disc ->
                 val w = side * QIBLA_DIAL_RADIUS * 2
                 val h = w * disc.height / disc.width
-                canvas.drawBitmap(disc, null, RectF(c - w / 2, c - h / 2, c + w / 2, c + h / 2), paint)
+                val discPaint = Paint(paint).apply { alpha = faceAlpha.coerceIn(0, 255) }
+                canvas.drawBitmap(disc, null, RectF(c - w / 2, c - h / 2, c + w / 2, c + h / 2), discPaint)
                 disc.recycle()
             }
             BitmapFactory.decodeResource(res, R.drawable.compass_arrow)?.let { arrow ->
