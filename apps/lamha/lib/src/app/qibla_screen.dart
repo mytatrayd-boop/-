@@ -33,12 +33,15 @@ class QiblaScreen extends ConsumerStatefulWidget {
   static var mapTiles = true;
 
   // ألوان التصميم.
-  static const background = Color(0xFF0B1410);
-  static const alignedBackground = Color(0xFF0F2A17);
-  static const card = Color(0xFF15211A);
-  static const faintBorder = Color(0xFF2C3D31);
+  /// خلفية الشاشة كحلية بلون قرص البوصلة (#0C3B6E معتّماً، طلب المالك ١٥ نوفمبر).
+  static const background = Color(0xFF071229);
+  static const backgroundGlow = Color(0xFF123F78);
+  static const alignedBackground = Color(0xFF08283A);
+  static const alignedGlow = Color(0xFF14607A);
+  static const card = Color(0xFF0F1D3A);
+  static const faintBorder = Color(0xFF2A3F66);
   static const text = Color(0xFFF2ECDD);
-  static const textDim = Color(0xFFA9B5A6);
+  static const textDim = Color(0xFFA9B7CF);
   static const gold = Color(0xFFD9B45A);
   static const goldLight = Color(0xFFFFE9A8);
   static const goldDeep = Color(0xFF9C7424);
@@ -211,8 +214,8 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           center: const Alignment(0, -0.35),
           radius: 1.1,
           colors: aligned
-              ? const [Color(0xFF1E4A2B), QiblaScreen.alignedBackground]
-              : const [Color(0xFF1B2A20), QiblaScreen.background],
+              ? const [QiblaScreen.alignedGlow, QiblaScreen.alignedBackground]
+              : const [QiblaScreen.backgroundGlow, QiblaScreen.background],
         ),
       ),
       child: DefaultTabController(
