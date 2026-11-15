@@ -9,6 +9,12 @@ QiblaDialPainter painter(WidgetTester tester) => tester
     .widget<CustomPaint>(find.byKey(const Key('qibla-compass')))
     .painter! as QiblaDialPainter;
 
+/// لون حدّ الحلقة المحيطة بالبوصلة (شفاف حتى الاتجاه إلى القبلة).
+Color ringColor(WidgetTester tester) {
+  final box = tester.widget<AnimatedContainer>(find.byKey(const Key('qibla-ring'))).decoration! as BoxDecoration;
+  return (box.border! as Border).top.color;
+}
+
 Future<void> openQibla(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('qibla-button')));
   // لا pumpAndSettle: مؤشر الانتظار يدور حتى أول قراءة.
@@ -46,7 +52,7 @@ void main() {
     expect(find.text('المسافة إلى مكة'), findsOneWidget);
     expect(find.text('دقة البوصلة'), findsOneWidget);
     expect(find.text('ممتازة'), findsOneWidget);
-    expect(find.byKey(const Key('qibla-kaaba')), findsOneWidget);
+    expect(find.byKey(const Key('qibla-needle')), findsOneWidget);
 
     // التنعيم يمر عبر الشمال (٠ → ٣٠٠ يمرّ بـ ٣١٥ لا بـ ٧٥؛ دوران كبير فثلاثة أرباعه).
     compass.controller.add((heading: 300, accuracy: 15, magnetic: true));
@@ -70,6 +76,7 @@ void main() {
     expect(find.byKey(const Key('qibla-aligned')), findsNothing);
     expect(background(), QiblaScreen.background);
     expect(painter(tester).aligned, isFalse);
+    expect(ringColor(tester), Colors.transparent);
     expect(vibration.pulses, 0);
 
     compass.controller.add((heading: riyadhQibla - 2, accuracy: 15, magnetic: true));
@@ -78,6 +85,8 @@ void main() {
     expect(find.byKey(const Key('qibla-aligned')), findsOneWidget);
     expect(find.text('أنت باتجاه القبلة'), findsOneWidget);
     expect(painter(tester).aligned, isTrue);
+    // الحلقة الخضراء حول البوصلة عند الاتجاه إلى القبلة (طلب المالك، كتطبيق المصلي).
+    expect(ringColor(tester), QiblaScreen.alignedColor);
     expect(background(), QiblaScreen.alignedBackground);
     expect(vibration.pulses, 1);
 
