@@ -140,7 +140,7 @@
   "adhanTest": "Test the sound",
   "adhanPlaying": "The adhan is playing",
   "adhanStop": "Stop",
-  "adhanNoteIos": "On iPhone the notification plays the first 28 seconds of the adhan (Apple limits notification sounds to 30 seconds); tap it and Lamha opens and plays the full adhan. The next 12 days are scheduled and refreshed whenever you open Lamha.",
+  "adhanNoteIos": "On iPhone with iOS 26 or later the adhan rings in full as a system alarm, even if you close the app (it asks for the Alarms permission). On older versions the notification plays the first 28 seconds of the adhan (Apple limits notification sounds to 30 seconds); tap it and Lamha opens and plays the full adhan. The next days are scheduled and refreshed whenever you open Lamha.",
   "adhanNoteAndroid": "The Stop button in the notification stops the sound. The next 12 days are scheduled and refreshed whenever you open Lamha.",
   "adhanDenied": "Notification permission was not granted, so the adhan stays off.",
   "adhanExactMissing": "The Alarms & reminders permission was not granted, so alerts may arrive a few minutes late."
