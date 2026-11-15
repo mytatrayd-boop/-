@@ -389,7 +389,7 @@ abstract class AppLocalizations {
   /// اسم سمة اللون بمعرّفها
   ///
   /// In ar, this message translates to:
-  /// **'{theme, select, black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}'**
+  /// **'{theme, select, black{أسود} navy{كحلي} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}'**
   String themeName(String theme);
 
   /// مفتاح الإشعار الثابت (أندرويد)

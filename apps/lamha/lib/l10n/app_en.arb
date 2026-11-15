@@ -48,7 +48,7 @@
   "compassUnavailable": "This device has no compass sensor, so the arrow can't be shown. Use the angle above with another compass.",
   "weatherUnknown": "--°",
   "themeLabel": "Widget color",
-  "themeName": "{theme, select, black{Black} gold{Gold} green{Green} blue{Blue} purple{Purple} pink{Pink} gray{Gray} system{System colors} other{{theme}}}",
+  "themeName": "{theme, select, black{Black} navy{Navy} gold{Gold} green{Green} blue{Blue} purple{Purple} pink{Pink} gray{Gray} system{System colors} other{{theme}}}",
   "lockNotificationLabel": "Show on lock screen (notification)",
   "lockNotificationHint": "Most Android phones don't allow lock screen widgets, so a quiet notification shows the next prayer and qibla.",
   "notificationPermissionTitle": "Notification permission",

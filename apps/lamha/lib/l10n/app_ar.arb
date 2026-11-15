@@ -263,7 +263,7 @@
   "@themeLabel": {
     "description": "عنوان أزرار سمة اللون"
   },
-  "themeName": "{theme, select, black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}",
+  "themeName": "{theme, select, black{أسود} navy{كحلي} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}",
   "@themeName": {
     "description": "اسم سمة اللون بمعرّفها",
     "placeholders": {

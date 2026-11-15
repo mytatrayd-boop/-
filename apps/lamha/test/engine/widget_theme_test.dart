@@ -6,9 +6,9 @@ import 'package:lamha/src/engine/widget_theme.dart';
 import '../helpers.dart';
 
 void main() {
-  test('السمات الثماني، والأسود افتراضي وللمجهول (الميزة ٦)', () {
+  test('السمات التسع، والأسود افتراضي وللمجهول (الميزة ٦)', () {
     expect(WidgetTheme.values.map((t) => t.name),
-        ['black', 'gold', 'green', 'blue', 'purple', 'pink', 'gray', 'system']);
+        ['black', 'navy', 'gold', 'green', 'blue', 'purple', 'pink', 'gray', 'system']);
     expect(WidgetTheme.byName(null), WidgetTheme.black);
     expect(WidgetTheme.byName('nope'), WidgetTheme.black);
     expect(WidgetTheme.black.background, 0xFF000000);

@@ -158,11 +158,12 @@ void main() {
     expect(plain.containsKey('frame'), isFalse);
   });
 
-  // الأسود الافتراضي والذهبي والأزرق، ونسخة بالأرقام الإنجليزية (الميزة ٦).
+  // الأسود الافتراضي والذهبي والأزرق والكحلي، ونسخة بالأرقام الإنجليزية (الميزة ٦).
   for (final (name, theme, digits) in [
     ('black', WidgetTheme.black, DigitStyle.arabic),
     ('gold', WidgetTheme.gold, DigitStyle.arabic),
     ('blue', WidgetTheme.blue, DigitStyle.arabic),
+    ('navy', WidgetTheme.navy, DigitStyle.arabic),
     ('latin', WidgetTheme.black, DigitStyle.latin),
   ]) {
     test('جدول لقطات أندرويد ($name) مطابق للمحرك', () {

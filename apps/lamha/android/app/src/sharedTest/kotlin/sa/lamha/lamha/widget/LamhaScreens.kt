@@ -29,7 +29,7 @@ object LamhaScreens {
     const val NOW_MILLIS = 1792368000000L
 
     /// الجدولان مولّدان من المحرك (android_fixture_test.dart) في src/androidTest/assets.
-    val THEMES = listOf("black", "gold", "blue")
+    val THEMES = listOf("black", "gold", "blue", "navy")
     /// ٤×٥ الافتراضي (الميزة ٦) بالعرضين، ثم ٤×٤ (إخفاء مرتب) في lamha_4x4_*.
     val SIZES = listOf(Triple("wide", 338, 440), Triple("narrow", 290, 400))
     val SIZES_4X4 = listOf(Triple("wide", 338, 354), Triple("narrow", 290, 320))

@@ -227,6 +227,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String themeName(String theme) {
     String _temp0 = intl.Intl.selectLogic(theme, {
       'black': 'أسود',
+      'navy': 'كحلي',
       'gold': 'ذهبي',
       'green': 'أخضر',
       'blue': 'أزرق',

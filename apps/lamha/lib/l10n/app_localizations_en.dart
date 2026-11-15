@@ -229,6 +229,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String themeName(String theme) {
     String _temp0 = intl.Intl.selectLogic(theme, {
       'black': 'Black',
+      'navy': 'Navy',
       'gold': 'Gold',
       'green': 'Green',
       'blue': 'Blue',
