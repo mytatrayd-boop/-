@@ -14,6 +14,8 @@
 		6D2EB8B7814246F3AA5CED25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1243D9EF397F5A28E6768F09 /* Assets.xcassets */; };
 		6F5ABE40041DE437A19DC867 /* LamhaData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A23BED366A9F061FA4CDBB27 /* LamhaData.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		A11D0A5E00000000000000B3 /* AdhanAlarmBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11D0A5E00000000000000F3 /* AdhanAlarmBridge.swift */; };
+		A11D0A5E00000000000000B4 /* adhan_full.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A11D0A5E00000000000000F4 /* adhan_full.mp3 */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		895BC9F61A40E2D76A189927 /* LamhaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111B1A9729AD51680464136C /* LamhaWidget.swift */; };
@@ -80,6 +82,8 @@
 		7087FE5DA4AA85F55067DE4C /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/SwiftUI.framework; sourceTree = DEVELOPER_DIR; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A11D0A5E00000000000000F3 /* AdhanAlarmBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdhanAlarmBridge.swift; sourceTree = "<group>"; };
+		A11D0A5E00000000000000F4 /* adhan_full.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = adhan_full.mp3; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
@@ -186,6 +190,8 @@
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				A11D0A5E00000000000000F3 /* AdhanAlarmBridge.swift */,
+				A11D0A5E00000000000000F4 /* adhan_full.mp3 */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
@@ -345,6 +351,7 @@
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				A11D0A5E00000000000000B1 /* takbeer.wav in Resources */,
 				A11D0A5E00000000000000B2 /* adhan30.wav in Resources */,
+				A11D0A5E00000000000000B4 /* adhan_full.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,6 +414,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				A11D0A5E00000000000000B3 /* AdhanAlarmBridge.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 			);

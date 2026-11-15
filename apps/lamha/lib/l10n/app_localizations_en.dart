@@ -617,7 +617,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adhanNoteIos =>
-      'On iPhone the notification plays the first 28 seconds of the adhan (Apple limits notification sounds to 30 seconds); tap it and Lamha opens and plays the full adhan. The next 12 days are scheduled and refreshed whenever you open Lamha.';
+      'On iPhone with iOS 26 or later the adhan rings in full as a system alarm, even if you close the app (it asks for the Alarms permission). On older versions Lamha plays the full adhan on time while it stays in the background; if you close it, the notification plays the first 28 seconds (Apple limits notification sounds to 30 seconds) and tapping it opens Lamha to play the full adhan. The schedule refreshes whenever you open Lamha.';
 
   @override
   String get adhanNoteAndroid =>

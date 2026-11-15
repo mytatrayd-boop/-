@@ -15,6 +15,7 @@ import '../engine/arabic.dart';
 import '../engine/settings.dart';
 import '../engine/weather.dart';
 import '../engine/widget_theme.dart';
+import 'adhan_alarms.dart';
 import 'adhan_player.dart';
 import 'adhan_service.dart';
 import 'app_settings.dart';
@@ -85,6 +86,7 @@ final adhanNotifierProvider = Provider<AdhanNotifier>((ref) {
     prefs,
     onPlayFull: () => ref.read(adhanPlayerProvider).start(),
     keeper: ref.read(adhanPlayerProvider),
+    alarms: defaultTargetPlatform == TargetPlatform.iOS ? ChannelAdhanAlarms() : null,
   );
 });
 

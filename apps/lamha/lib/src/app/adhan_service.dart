@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../engine/adhan.dart';
+import 'adhan_alarms.dart';
 import 'adhan_player.dart';
 
 /// جدولة الأذان بالإشعارات المحلية (flutter_local_notifications، DECISIONS ٢٨) خلف واجهة قابلة للاستبدال
@@ -52,7 +53,11 @@ const adhanFullPayload = 'adhan_full';
 const adhanActiveKey = 'adhanActive';
 
 class LocalAdhanNotifier implements AdhanNotifier {
-  LocalAdhanNotifier(this._prefs, {this.onPlayFull, this.keeper});
+  LocalAdhanNotifier(this._prefs, {this.onPlayFull, this.keeper, AdhanAlarms? alarms})
+      : _alarms = alarms ?? NoopAdhanAlarms();
+
+  /// آيفون ٢٦+: منبّه نظام (AlarmKit) يرنّ بالأذان كاملاً في وقته حتى بعد سحب التطبيق (DECISIONS ٣٨).
+  final AdhanAlarms _alarms;
 
   /// آيفون: المشغّل الذي يبقى حياً في الخلفية ويشغّل الأذان الكامل تلقائياً في وقته (DECISIONS ٣٨).
   final AdhanPlayer? keeper;
@@ -168,9 +173,20 @@ class LocalAdhanNotifier implements AdhanNotifier {
       if (events.isEmpty && !(_prefs.getBool(adhanActiveKey) ?? false)) return;
       await _init();
       await _plugin.cancelAll();
+      if (_ios) await _cancelAlarms();
       if (events.isEmpty) {
         await keeper?.disarm();
         await _prefs.setBool(adhanActiveKey, false);
+        return;
+      }
+      // آيفون ٢٦+ والأذان الكامل: منبّه النظام يرنّ في وقته بلا تطبيق شغّال، فلا إشعار ولا صوت خلفي. وإلا (أقدم أو
+      // رُفض الإذن أو فشل) يُجدول إشعار المقطع القصير مع المشغّل الخلفي أدناه.
+      if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
+        for (final e in events.take(adhanAlarmLimit)) (time: e.time, title: e.title),
+      ])) {
+        await keeper?.disarm();
+        await _prefs.setBool(adhanActiveKey, true);
+        await _prefs.remove(adhanErrorKey);
         return;
       }
       final android = _plugin
@@ -204,6 +220,26 @@ class LocalAdhanNotifier implements AdhanNotifier {
     }
   }
 
+  /// يلغي منبّهات الأذان (آيفون)؛ الخطأ لا يوقف شيئاً.
+  Future<void> _cancelAlarms() async {
+    try {
+      await _alarms.cancelAll();
+    } catch (e) {
+      debugPrint('adhan alarms cancel: $e');
+    }
+  }
+
+  /// يجدول [items] منبّهات AlarmKit؛ true إن جُدول شيء، false لتعذّره (فيرجع الاستدعاء إلى الإشعار).
+  Future<bool> _scheduleAlarms(List<({DateTime time, String title})> items) async {
+    try {
+      if (!await _alarms.available() || !await _alarms.authorize()) return false;
+      return await _alarms.schedule(items) > 0;
+    } catch (e) {
+      await _fail('منبّه الأذان', e);
+      return false;
+    }
+  }
+
   /// هل الإشعارات مسموحة؟ يطلب الإذن إن لم يكن ممنوحاً (النظام يتجاهل الطلب إن رُفض نهائياً).
   Future<bool> _notificationsAllowed() async {
     if (_ios) {
@@ -226,6 +262,13 @@ class LocalAdhanNotifier implements AdhanNotifier {
       // كان يُطلب فقط عند تحويل مفتاح الأذان من مطفأ إلى مفعّل، فنتحقق منه ونطلبه هنا ونعرض السبب إن رُفض.
       if (!await _notificationsAllowed()) {
         await _fail('التجربة', 'الإشعارات مغلقة للتطبيق، فعّلها من إعدادات الجهاز ثم أعد التجربة');
+        return;
+      }
+      // آيفون ٢٦+: تجربة المنبّه الكامل بعد ١٠ ثوانٍ (يمكنك إغلاق التطبيق لتسمع أنه يرنّ).
+      if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
+        (time: DateTime.now().add(const Duration(seconds: 10)), title: 'تجربة الأذان'),
+      ])) {
+        await _prefs.remove(adhanErrorKey);
         return;
       }
       await _plugin.show(
