@@ -76,8 +76,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSAlarmKitUsageDescription</key>
-	<string>يرنّ الأذان كاملاً في وقت كل صلاة حتى لو أغلقت التطبيق.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

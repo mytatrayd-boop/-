@@ -79,10 +79,6 @@ final class HeadingStream: NSObject, FlutterStreamHandler, CLLocationManagerDele
       FlutterEventChannel(name: "sa.lamha/heading", binaryMessenger: registrar.messenger())
         .setStreamHandler(heading)
     }
-    // منبّه الأذان الكامل (AlarmKit، آيفون ٢٦+).
-    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LamhaAdhanAlarm") {
-      AdhanAlarmBridge.register(messenger: registrar.messenger())
-    }
     // مسار حاوية App Group لحفظ لقطة الخلفية حيث تقرؤها الودجت.
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LamhaAppGroup") {
       let channel = FlutterMethodChannel(
