@@ -363,8 +363,31 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                     final outer = half - QiblaDialPainter.pointerRoom;
                     final nh = outer * 2 * QiblaDialPainter.needleHeight;
                     final nw = nh * QiblaDialPainter.needleAspect;
+                    // الحلقة الخضراء المضيئة حول البوصلة عند الاتجاه إلى القبلة (كما في تطبيق المصلي، طلب المالك).
+                    const ringGap = 8.0;
+                    const ringWidth = 5.0;
                     return Stack(
                       children: [
+                        Positioned(
+                          left: half - outer - ringGap - ringWidth,
+                          top: half - outer - ringGap - ringWidth,
+                          width: (outer + ringGap + ringWidth) * 2,
+                          height: (outer + ringGap + ringWidth) * 2,
+                          child: AnimatedContainer(
+                            key: const Key('qibla-ring'),
+                            duration: const Duration(milliseconds: 250),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: aligned ? QiblaScreen.alignedColor : Colors.transparent,
+                                width: ringWidth,
+                              ),
+                              boxShadow: [
+                                if (aligned) BoxShadow(color: QiblaScreen.alignedColor.withValues(alpha: .75), blurRadius: 22, spreadRadius: 1),
+                              ],
+                            ),
+                          ),
+                        ),
                         Positioned(
                           left: half - outer,
                           top: half - outer,
@@ -376,7 +399,6 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(color: Colors.black.withValues(alpha: .6), blurRadius: 18, offset: const Offset(0, 8)),
-                                if (aligned) BoxShadow(color: QiblaScreen.alignedColor.withValues(alpha: .8), blurRadius: 26, spreadRadius: 2),
                               ],
                             ),
                             child: Image.asset(QiblaDialPainter.discAsset, fit: BoxFit.fill, filterQuality: FilterQuality.medium),
@@ -711,7 +733,7 @@ class QiblaDialPainter extends CustomPainter {
   static const pivotY = 0.5605;
 
   /// مكان المؤشر الثابت فوق القرص (بكسل منطقي).
-  static const pointerRoom = 14.0;
+  static const pointerRoom = 24.0;
 
   @override
   void paint(Canvas canvas, Size size) {
