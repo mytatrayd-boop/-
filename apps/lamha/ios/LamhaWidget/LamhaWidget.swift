@@ -276,10 +276,15 @@ struct LamhaWidgetView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(4)
                         .frame(width: width, height: height)
-                        // x من اليسار (position لا يتبع اتجاه اللغة)، والبعد من اليمين.
+                        // المحتوى عربي من اليمين لليسار، والموضع تحته بإحداثيات من اليسار (الطبقة أدناه LTR).
+                        .environment(\.layoutDirection, .rightToLeft)
+                        // x من اليسار، والبعد من اليمين.
                         .position(x: w - right - width / 2, y: top + height / 2)
                 }
             }
+            // الطبقة كلها LTR: داخل بيئة RTL (الودجت) كان position ينعكس فيذهب المربع المسحوب يميناً إلى اليسار
+            // (بلاغ المالك ١٦/١١/٢٠٢٦)، وإطار الخلفية (خارج RTL) صحيح بالصيغة نفسها.
+            .environment(\.layoutDirection, .leftToRight)
             .padding(-14)
         }
     }

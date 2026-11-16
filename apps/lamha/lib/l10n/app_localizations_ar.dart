@@ -610,6 +610,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get adhanStop => 'إيقاف';
 
   @override
+  String get adhanTestLinking => 'جارٍ الربط مع المنبّه…';
+
+  @override
   String get adhanNoteIos =>
       'في آيفون ٢٦ فأحدث يرنّ الأذان كاملاً كمنبّه نظام حتى لو أغلقت التطبيق (يطلب إذن المنبّهات). وفي الأقدم تشغّله لمحة كاملاً في وقته ما دامت في الخلفية؛ وإن أغلقتها يصلك أول ٢٨ ثانية في الإشعار (حد آبل ٣٠ ثانية) وعند ضغطه يفتح لمحة ويكمل الأذان كاملاً. يتجدد الجدول كلما فتحت لمحة.';
 

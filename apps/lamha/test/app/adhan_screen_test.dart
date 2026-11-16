@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -107,6 +108,39 @@ void main() {
     expect(adhan.tested, [AdhanSound.takbeer]);
     await tapKey(tester, 'adhan-sound-silent');
     expect(adhan.applied.last.sound, AdhanSound.silent);
+  });
+
+  testWidgets('آيفون: أثناء ربط المنبّه يُعطَّل الزر ويظهر تنبيه أحمر بساعة رملية، ثم يزول', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      final adhan = FakeAdhanNotifier()..testGate = Completer<void>();
+      await pumpApp(tester, adhan: adhan);
+      await tapKey(tester, 'adhan-enabled');
+      expect(find.byKey(const Key('adhan-linking')), findsNothing);
+
+      await tester.ensureVisible(find.byKey(const Key('adhan-test')));
+      await tester.tap(find.byKey(const Key('adhan-test')));
+      await tester.pump();
+      expect(find.byKey(const Key('adhan-linking')), findsOneWidget);
+      expect(find.text('جارٍ الربط مع المنبّه…'), findsOneWidget);
+      expect(find.byIcon(Icons.hourglass_bottom), findsOneWidget);
+      final text = tester.widget<Text>(find.text('جارٍ الربط مع المنبّه…'));
+      expect(text.style!.color, const Color(0xFFE53935));
+      expect(tester.widget<OutlinedButton>(find.byKey(const Key('adhan-test'))).onPressed, isNull);
+
+      // ضغطة ثانية أثناء الربط لا تُرسل تجربة أخرى.
+      await tester.tap(find.byKey(const Key('adhan-test')), warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 800));
+      expect(adhan.tested, hasLength(1));
+
+      adhan.testGate!.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(const Key('adhan-linking')), findsNothing);
+      expect(tester.widget<OutlinedButton>(find.byKey(const Key('adhan-test'))).onPressed, isNotNull);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('آيفون: الأذان (مقطع ثم كامل بالضغط) أو التكبيرتان أو الصمت، مع الشرح', (tester) async {

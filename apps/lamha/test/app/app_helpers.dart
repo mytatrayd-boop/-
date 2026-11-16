@@ -68,8 +68,14 @@ class FakeAdhanNotifier implements AdhanNotifier {
     return permission;
   }
 
+  /// يؤخّر انتهاء test حتى يكتمل (لاختبار حالة «جارٍ الربط»).
+  Completer<void>? testGate;
+
   @override
-  Future<void> test(AdhanSound sound) async => tested.add(sound);
+  Future<void> test(AdhanSound sound) async {
+    tested.add(sound);
+    await testGate?.future;
+  }
 }
 
 class FakeDeclination implements DeclinationSource {

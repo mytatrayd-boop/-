@@ -938,6 +938,12 @@ abstract class AppLocalizations {
   /// **'إيقاف'**
   String get adhanStop;
 
+  /// No description provided for @adhanTestLinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الربط مع المنبّه…'**
+  String get adhanTestLinking;
+
   /// No description provided for @adhanNoteIos.
   ///
   /// In ar, this message translates to:
