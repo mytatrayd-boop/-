@@ -604,8 +604,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get adhanTest => 'تجربة الصوت';
 
   @override
+  String get adhanPlaying => 'الأذان يُرفع الآن';
+
+  @override
+  String get adhanStop => 'إيقاف';
+
+  @override
+  String get adhanTestLinking => 'جارٍ الربط مع المنبّه…';
+
+  @override
   String get adhanNoteIos =>
-      'في آيفون يكون الصوت تكبيرتين، لأن آبل تحدد صوت الإشعار بـ٣٠ ثانية. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.';
+      'في آيفون ٢٦ فأحدث يرنّ الأذان كاملاً كمنبّه نظام حتى لو أغلقت التطبيق (يطلب إذن المنبّهات). وفي الأقدم تشغّله لمحة كاملاً في وقته ما دامت في الخلفية؛ وإن أغلقتها يصلك أول ٢٨ ثانية في الإشعار (حد آبل ٣٠ ثانية) وعند ضغطه يفتح لمحة ويكمل الأذان كاملاً. يتجدد الجدول كلما فتحت لمحة.';
 
   @override
   String get adhanNoteAndroid =>

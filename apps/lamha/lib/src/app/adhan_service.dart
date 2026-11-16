@@ -3,6 +3,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../engine/adhan.dart';
+import 'adhan_alarms.dart';
+import 'adhan_player.dart';
 
 /// جدولة الأذان بالإشعارات المحلية (flutter_local_notifications، DECISIONS ٢٨) خلف واجهة قابلة للاستبدال
 /// في الاختبارات.
@@ -36,18 +38,34 @@ abstract class AdhanNotifier {
 const adhanErrorKey = 'adhanLastError';
 
 /// مفاتيح الصوت في الأصول الأصلية: أندرويد `res/raw/adhan.mp3` و`takbeer.mp3`، وآيفون `Runner/takbeer.wav`
-/// (آبل تقبل aiff وwav وcaf فقط، وبحد ٣٠ ثانية).
+/// و`adhan30.wav` (آبل تقبل aiff وwav وcaf فقط، وبحد ٣٠ ثانية).
 const androidAdhanSound = 'adhan';
 const androidTakbeerSound = 'takbeer';
 const iosTakbeerSound = 'takbeer.wav';
+
+/// آيفون، «الأذان»: أول ٢٨٫٥ ثانية من الأذان في الإشعار (حد آبل ٣٠)، ثم يكمل التطبيق الأذان كاملاً عند الضغط.
+const iosAdhanClipSound = 'adhan30.wav';
+
+/// حمولة إشعار الأذان في آيفون: تضغط عليها فيُشغَّل الأذان الكامل داخل التطبيق.
+const adhanFullPayload = 'adhan_full';
 
 /// مفتاح في shared_preferences: هل جدوَل التطبيق تنبيهات من قبل (فلا نمسّ الإشعارات لمن لم يفعّل الأذان قط).
 const adhanActiveKey = 'adhanActive';
 
 class LocalAdhanNotifier implements AdhanNotifier {
-  LocalAdhanNotifier(this._prefs);
+  LocalAdhanNotifier(this._prefs, {this.onPlayFull, this.keeper, AdhanAlarms? alarms})
+      : _alarms = alarms ?? NoopAdhanAlarms();
+
+  /// آيفون ٢٦+: منبّه نظام (AlarmKit) يرنّ بالأذان كاملاً في وقته حتى بعد سحب التطبيق (DECISIONS ٣٨).
+  final AdhanAlarms _alarms;
+
+  /// آيفون: المشغّل الذي يبقى حياً في الخلفية ويشغّل الأذان الكامل تلقائياً في وقته (DECISIONS ٣٨).
+  final AdhanPlayer? keeper;
 
   final SharedPreferences _prefs;
+
+  /// يُستدعى عند ضغط إشعار الأذان في آيفون (أو فتح التطبيق منه): يشغّل الأذان الكامل.
+  final void Function()? onPlayFull;
   final _plugin = FlutterLocalNotificationsPlugin();
   var _ready = false;
 
@@ -65,6 +83,9 @@ class LocalAdhanNotifier implements AdhanNotifier {
   Future<void> _init() async {
     if (_ready) return;
     await _plugin.initialize(
+      onDidReceiveNotificationResponse: (r) {
+        if (r.payload == adhanFullPayload) onPlayFull?.call();
+      },
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         // الأذونات تُطلب عند تفعيل المستخدم، لا عند الفتح.
@@ -76,10 +97,22 @@ class LocalAdhanNotifier implements AdhanNotifier {
       ),
     );
     _ready = true;
+    // فُتح التطبيق من إشعار الأذان وهو مغلق: يكمل الأذان كاملاً.
+    try {
+      final launch = await _plugin.getNotificationAppLaunchDetails();
+      if ((launch?.didNotificationLaunchApp ?? false) && launch?.notificationResponse?.payload == adhanFullPayload) {
+        onPlayFull?.call();
+      }
+    } catch (e) {
+      debugPrint('adhan launch details: $e');
+    }
   }
 
+  /// حمولة الإشعار: آيفون والأذان فقط (ليكمل التطبيق الأذان عند الضغط).
+  String? _payload(AdhanSound requested) => _ios && requested == AdhanSound.full ? adhanFullPayload : null;
+
   NotificationDetails _details(AdhanSound requested) {
-    final sound = requested.forPlatform(ios: _ios);
+    final sound = requested;
     final silent = sound == AdhanSound.silent;
     final raw = sound == AdhanSound.full ? androidAdhanSound : androidTakbeerSound;
     return NotificationDetails(
@@ -104,7 +137,7 @@ class LocalAdhanNotifier implements AdhanNotifier {
       iOS: DarwinNotificationDetails(
         presentAlert: true,
         presentSound: !silent,
-        sound: silent ? null : iosTakbeerSound,
+        sound: silent ? null : (sound == AdhanSound.full ? iosAdhanClipSound : iosTakbeerSound),
       ),
     );
   }
@@ -140,8 +173,20 @@ class LocalAdhanNotifier implements AdhanNotifier {
       if (events.isEmpty && !(_prefs.getBool(adhanActiveKey) ?? false)) return;
       await _init();
       await _plugin.cancelAll();
+      if (_ios) await _cancelAlarms();
       if (events.isEmpty) {
+        await keeper?.disarm();
         await _prefs.setBool(adhanActiveKey, false);
+        return;
+      }
+      // آيفون ٢٦+ والأذان الكامل: منبّه النظام يرنّ في وقته بلا تطبيق شغّال، فلا إشعار ولا صوت خلفي. وإلا (أقدم أو
+      // رُفض الإذن أو فشل) يُجدول إشعار المقطع القصير مع المشغّل الخلفي أدناه.
+      if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
+        for (final e in events.take(adhanAlarmLimit)) (time: e.time, title: e.title),
+      ])) {
+        await keeper?.disarm();
+        await _prefs.setBool(adhanActiveKey, true);
+        await _prefs.remove(adhanErrorKey);
         return;
       }
       final android = _plugin
@@ -157,13 +202,41 @@ class LocalAdhanNotifier implements AdhanNotifier {
               exact ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
           title: e.title,
           body: e.body(city),
+          payload: _payload(sound),
         );
+      }
+      // آيفون والأذان الكامل: التطبيق يبقى حياً بصوت صامت ويشغّل الأذان كاملاً في وقته، ويلغي إشعار الحدث قبله
+      // بنحو ٢٠ ثانية فلا يتداخلان. إن أُغلق التطبيق بالسحب بقي إشعار المقطع القصير احتياطاً.
+      if (_ios && sound == AdhanSound.full) {
+        await keeper?.arm(events, onPrepare: (e) => _plugin.cancel(id: e.id));
+      } else {
+        await keeper?.disarm();
       }
       await _prefs.setBool(adhanActiveKey, true);
       await _prefs.remove(adhanErrorKey);
     } catch (e) {
       // فشل الجدولة لا يوقف التطبيق، لكن يُحفظ ويُعرض في الإعدادات.
       await _fail('الجدولة', e);
+    }
+  }
+
+  /// يلغي منبّهات الأذان (آيفون)؛ الخطأ لا يوقف شيئاً.
+  Future<void> _cancelAlarms() async {
+    try {
+      await _alarms.cancelAll();
+    } catch (e) {
+      debugPrint('adhan alarms cancel: $e');
+    }
+  }
+
+  /// يجدول [items] منبّهات AlarmKit؛ true إن جُدول شيء، false لتعذّره (فيرجع الاستدعاء إلى الإشعار).
+  Future<bool> _scheduleAlarms(List<({DateTime time, String title})> items) async {
+    try {
+      if (!await _alarms.available() || !await _alarms.authorize()) return false;
+      return await _alarms.schedule(items) > 0;
+    } catch (e) {
+      await _fail('منبّه الأذان', e);
+      return false;
     }
   }
 
@@ -191,11 +264,19 @@ class LocalAdhanNotifier implements AdhanNotifier {
         await _fail('التجربة', 'الإشعارات مغلقة للتطبيق، فعّلها من إعدادات الجهاز ثم أعد التجربة');
         return;
       }
+      // آيفون ٢٦+: تجربة المنبّه الكامل بعد ١٠ ثوانٍ (يمكنك إغلاق التطبيق لتسمع أنه يرنّ).
+      if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
+        (time: DateTime.now().add(const Duration(seconds: 10)), title: 'تجربة الأذان'),
+      ])) {
+        await _prefs.remove(adhanErrorKey);
+        return;
+      }
       await _plugin.show(
         id: 1,
         title: 'تجربة الأذان',
         body: 'هكذا يصلك التنبيه عند دخول وقت الصلاة',
         notificationDetails: _details(sound),
+        payload: _payload(sound),
       );
       await _prefs.remove(adhanErrorKey);
     } catch (e) {

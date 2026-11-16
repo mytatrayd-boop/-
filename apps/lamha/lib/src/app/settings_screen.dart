@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -529,9 +531,9 @@ class _AdhanSection extends ConsumerWidget {
           AdhanSound.takbeer => l.adhanSoundTakbeer,
           AdhanSound.silent => l.adhanSoundSilent,
         };
-    // آيفون: التكبيرتان أو الصمت فقط (حد ٣٠ ثانية).
-    final sounds = ios ? [AdhanSound.takbeer, AdhanSound.silent] : AdhanSound.values;
-    final selected = adhan.sound.forPlatform(ios: ios);
+    // آيفون: الأذان مقطع ٢٨ ثانية في الإشعار يكمله التطبيق عند الضغط (DECISIONS ٣٧)، أو التكبيرتان، أو الصمت.
+    final sounds = AdhanSound.values;
+    final selected = adhan.sound;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -581,12 +583,7 @@ class _AdhanSection extends ConsumerWidget {
           const SizedBox(height: 8),
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: OutlinedButton.icon(
-              key: const Key('adhan-test'),
-              icon: const Icon(Icons.volume_up),
-              label: Text(l.adhanTest),
-              onPressed: c.testAdhan,
-            ),
+            child: _AdhanTestButton(label: l.adhanTest, linking: l.adhanTestLinking, onTest: c.testAdhan, showProgress: ios),
           ),
           const SizedBox(height: 8),
           Text(
@@ -605,6 +602,82 @@ class _AdhanSection extends ConsumerWidget {
               ),
             ),
         ],
+      ],
+    );
+  }
+}
+
+/// زر «تجربة الأذان»: في آيفون يتأخر الربط بالمنبّه بعد الضغط فقد يضغطه المستخدم مرات، فيُعطَّل أثناء الربط
+/// ويظهر بجانبه تنبيه أحمر «جارٍ الربط مع المنبّه» وساعة رملية تنقلب (طلب المالك ١٦/١١/٢٠٢٦).
+class _AdhanTestButton extends StatefulWidget {
+  const _AdhanTestButton({required this.label, required this.linking, required this.onTest, required this.showProgress});
+
+  final String label;
+  final String linking;
+  final Future<void> Function() onTest;
+  final bool showProgress;
+
+  @override
+  State<_AdhanTestButton> createState() => _AdhanTestButtonState();
+}
+
+class _AdhanTestButtonState extends State<_AdhanTestButton> {
+  var _busy = false;
+  var _flip = false;
+  Timer? _timer;
+
+  Future<void> _run() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _flip = false;
+    });
+    _timer = Timer.periodic(const Duration(milliseconds: 700), (_) {
+      if (mounted) setState(() => _flip = !_flip);
+    });
+    try {
+      await widget.onTest();
+    } finally {
+      _timer?.cancel();
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const red = Color(0xFFE53935);
+    final linking = _busy && widget.showProgress;
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 4,
+      children: [
+        OutlinedButton.icon(
+          key: const Key('adhan-test'),
+          icon: const Icon(Icons.volume_up),
+          label: Text(widget.label),
+          onPressed: _busy ? null : _run,
+        ),
+        if (linking)
+          Row(
+            key: const Key('adhan-linking'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedRotation(
+                turns: _flip ? 0.5 : 0,
+                duration: const Duration(milliseconds: 450),
+                child: const Icon(Icons.hourglass_bottom, color: red, size: 20),
+              ),
+              const SizedBox(width: 6),
+              Text(widget.linking, style: const TextStyle(color: red, fontWeight: FontWeight.w700)),
+            ],
+          ),
       ],
     );
   }

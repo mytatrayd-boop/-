@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'l10n/app_localizations.dart';
+import 'src/app/adhan_bar.dart';
 import 'src/app/paywall.dart';
 import 'src/app/providers.dart';
 import 'src/app/qibla_screen.dart';
@@ -99,6 +100,12 @@ class _LamhaAppState extends ConsumerState<LamhaApp> with WidgetsBindingObserver
         brightness: Brightness.dark,
         fontFamily: 'Tajawal',
         colorSchemeSeed: const Color(0xFFD6AA5C),
+      ),
+      builder: (context, child) => Stack(
+        children: [
+          child ?? const SizedBox.shrink(),
+          const AdhanBar(),
+        ],
       ),
       home: const AccessGate(child: SettingsScreen()),
     );

@@ -53,98 +53,36 @@ struct LamhaProvider: TimelineProvider {
 
 // MARK: - العناصر
 
-/// مربع القبلة (صورة المالك، drawQiblaDial في أندرويد وQiblaTileDialPainter في Dart): بوصلة سوداء
-/// بتدريج أبيض وحروف N وE وS وW، ونجمة داكنة، وسهم أحمر من المركز ثم خط منقّط إلى الكعبة على المحيط
-/// بزاوية القبلة. الأبعاد نسبةً للضلع كما في widget_preview_tiles.dart. [dark] لم يعد يُستخدم.
+/// مربع القبلة ببوصلة المالك (١٥ نوفمبر، كـdrawQiblaDial في أندرويد وQiblaTile في Dart): قرص كحلي ثابت بأسماء
+/// الجهات العربية، وفوقه إبرة ذهبية بالياقوتة وعليها الكعبة قطعة واحدة تدور حول مركز الياقوتة بزاوية القبلة من
+/// الشمال. الأبعاد نسبةً للضلع: القرص ٠٫٩٨، والإبرة بارتفاع ٠٫٧٤ ونقطة ارتكازها (٠٫٤٩١٥، ٠٫٥٦٠٥) من صورتها.
+/// [faceOpacity]: القرص وحده يتبع شفافية خلفية الودجت، والإبرة وكعبتها تبقيان معتمتين. [dark] لم يعد يُستخدم.
 struct QiblaIcon: View {
     let degrees: Double
     let dark: Color
-    /// القرص الأسود يتبع شفافية خلفية الودجت، والتدريج والسهم يبقيان.
     var faceOpacity: Double = 1
+    private let pivotX: CGFloat = 0.4915
+    private let pivotY: CGFloat = 0.5605
+    private let aspect: CGFloat = 387.0 / 520.0
     var body: some View {
         GeometryReader { g in
             let side = min(g.size.width, g.size.height)
-            let a = degrees * .pi / 180
+            let h = side * 0.74
+            let w = h * aspect
             ZStack {
-                Circle().fill(Color.black.opacity(faceOpacity)).frame(width: side * 0.98, height: side * 0.98)
-                QiblaTicks(side: side).frame(width: side, height: side)
-                ForEach(Array([(0.0, "N"), (90.0, "E"), (180.0, "S"), (270.0, "W")].enumerated()), id: \.offset) { _, item in
-                    let r = item.0 * .pi / 180
-                    Text(item.1)
-                        .font(.system(size: side * 0.13, weight: .bold))
-                        .foregroundStyle(Color.white)
-                        .offset(x: sin(r) * side * 0.36, y: -cos(r) * side * 0.36)
-                }
-                QiblaStar(side: side).fill(Color(white: 0.23)).frame(width: side, height: side)
-                QiblaArrow(side: side)
-                    .fill(Color(red: 229.0 / 255, green: 57.0 / 255, blue: 53.0 / 255))
-                    .frame(width: side, height: side)
-                    .rotationEffect(.degrees(degrees))
-                Image("kaaba").resizable().aspectRatio(1, contentMode: .fit).frame(width: side * 0.18)
-                    .offset(x: sin(a) * side * 0.36, y: -cos(a) * side * 0.36)
+                Image("compass_disc").resizable().aspectRatio(contentMode: .fit)
+                    .frame(width: side * 0.98, height: side * 0.98)
+                    .opacity(faceOpacity)
+                Image("compass_needle").resizable()
+                    .frame(width: w, height: h)
+                    .rotationEffect(.degrees(degrees), anchor: UnitPoint(x: pivotX, y: pivotY))
+                    .offset(x: (0.5 - pivotX) * w, y: (0.5 - pivotY) * h)
             }
             .frame(width: side, height: side)
             .position(x: g.size.width / 2, y: g.size.height / 2)
         }
         .aspectRatio(1, contentMode: .fit)
         .environment(\.layoutDirection, .leftToRight)
-    }
-}
-
-/// التدريج: كل ١٠° (أطول كل ٣٠°)، بلا خطوط عند الجهات الأربع (مكان الحروف).
-struct QiblaTicks: View {
-    let side: CGFloat
-    var body: some View {
-        Canvas { ctx, size in
-            let c = CGPoint(x: size.width / 2, y: size.height / 2)
-            for d in stride(from: 0, to: 360, by: 10) where d % 90 != 0 {
-                let a = Double(d) * .pi / 180
-                let long = d % 30 == 0
-                let inner = side * (long ? 0.38 : 0.41), outer = side * 0.46
-                var p = Path()
-                p.move(to: CGPoint(x: c.x + sin(a) * inner, y: c.y - cos(a) * inner))
-                p.addLine(to: CGPoint(x: c.x + sin(a) * outer, y: c.y - cos(a) * outer))
-                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: side * (long ? 0.022 : 0.014), lineCap: .round))
-            }
-        }
-    }
-}
-
-/// نجمة ثمانية الرؤوس في الوسط (الطويلة للجهات الأربع).
-struct QiblaStar: Shape {
-    let side: CGFloat
-    func path(in rect: CGRect) -> Path {
-        let c = CGPoint(x: rect.midX, y: rect.midY)
-        var p = Path()
-        for i in 0..<8 {
-            let a = Double(i) * .pi / 4
-            let len = side * 0.2 * (i % 2 == 0 ? 1 : 0.6), w = side * 0.035
-            p.move(to: CGPoint(x: c.x + cos(a) * w, y: c.y + sin(a) * w))
-            p.addLine(to: CGPoint(x: c.x + sin(a) * len, y: c.y - cos(a) * len))
-            p.addLine(to: CGPoint(x: c.x - cos(a) * w, y: c.y - sin(a) * w))
-            p.closeSubpath()
-        }
-        return p
-    }
-}
-
-/// السهم الأحمر متجهاً للأعلى من المركز، ثم نقاط حتى الكعبة.
-struct QiblaArrow: Shape {
-    let side: CGFloat
-    func path(in rect: CGRect) -> Path {
-        let c = CGPoint(x: rect.midX, y: rect.midY)
-        var p = Path()
-        p.move(to: CGPoint(x: c.x, y: c.y - side * 0.24))
-        p.addLine(to: CGPoint(x: c.x + side * 0.07, y: c.y + side * 0.03))
-        p.addLine(to: CGPoint(x: c.x, y: c.y - side * 0.02))
-        p.addLine(to: CGPoint(x: c.x - side * 0.07, y: c.y + side * 0.03))
-        p.closeSubpath()
-        var t: CGFloat = 0.26
-        while t < 0.36 - 0.18 / 2.6 {
-            p.addEllipse(in: CGRect(x: c.x - side * 0.009, y: c.y - side * (t + 0.012), width: side * 0.018, height: side * 0.018))
-            t += 0.035
-        }
-        return p
     }
 }
 
@@ -338,10 +276,15 @@ struct LamhaWidgetView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(4)
                         .frame(width: width, height: height)
-                        // x من اليسار (position لا يتبع اتجاه اللغة)، والبعد من اليمين.
+                        // المحتوى عربي من اليمين لليسار، والموضع تحته بإحداثيات من اليسار (الطبقة أدناه LTR).
+                        .environment(\.layoutDirection, .rightToLeft)
+                        // x من اليسار، والبعد من اليمين.
                         .position(x: w - right - width / 2, y: top + height / 2)
                 }
             }
+            // الطبقة كلها LTR: داخل بيئة RTL (الودجت) كان position ينعكس فيذهب المربع المسحوب يميناً إلى اليسار
+            // (بلاغ المالك ١٦/١١/٢٠٢٦)، وإطار الخلفية (خارج RTL) صحيح بالصيغة نفسها.
+            .environment(\.layoutDirection, .leftToRight)
             .padding(-14)
         }
     }
