@@ -61,6 +61,10 @@ const adhanPendingKey = 'adhanPendingCount';
 const adhanSchedVersion = 2;
 const adhanSchedVersionKey = 'adhanSchedVersion';
 
+/// منبّه تجربة الأذان في آيفون ٢٦+ يرنّ بعد هذه المدة من الضغط (ليتسنى قفل الجوال)، وتبقى دالة التجربة معلّقة حتى
+/// وقته فيبقى زر التجربة معطّلاً والنص الأحمر والساعة الرملية ظاهرين حتى يرنّ (ملاحظة المالك ١٦/١١/٢٠٢٦).
+const adhanTestAlarmDelay = Duration(seconds: 10);
+
 /// مفتاح في shared_preferences: هل جدوَل التطبيق تنبيهات من قبل (فلا نمسّ الإشعارات لمن لم يفعّل الأذان قط).
 const adhanActiveKey = 'adhanActive';
 
@@ -331,9 +335,11 @@ class LocalAdhanNotifier implements AdhanNotifier {
       }
       // آيفون ٢٦+: تجربة المنبّه الكامل بعد ١٠ ثوانٍ (يمكنك إغلاق التطبيق لتسمع أنه يرنّ).
       if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
-        (time: DateTime.now().add(const Duration(seconds: 10)), title: 'تجربة الأذان'),
+        (time: DateTime.now().add(adhanTestAlarmDelay), title: 'تجربة الأذان'),
       ])) {
         await _prefs.remove(adhanErrorKey);
+        // نبقى معلّقين حتى يرنّ المنبّه: الزر معطّل والتنبيه الأحمر والساعة الرملية ظاهران طوال الانتظار.
+        await Future<void>.delayed(adhanTestAlarmDelay);
         return;
       }
       await _plugin.show(
