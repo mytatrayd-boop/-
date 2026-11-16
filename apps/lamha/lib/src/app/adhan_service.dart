@@ -30,6 +30,10 @@ abstract class AdhanNotifier {
 
   /// آخر خطأ في الجدولة أو التجربة (يُعرض في الإعدادات فلا يبقى الفشل صامتاً)، أو null إن نجح آخر ما جُرّب.
   Future<String?> lastError();
+
+  /// عدد التنبيهات المعلّقة فعلاً في النظام بعد آخر جدولة (لا ما طُلب)، أو null إن لم تُجدول بعد. يُعرض في
+  /// الإعدادات ليتحقق المالك أن لا نسخ زائدة (تكرار الإشعار).
+  Future<int?> pendingCount();
 }
 
 /// مفتاح آخر خطأ في shared_preferences.
@@ -40,6 +44,14 @@ const adhanErrorKey = 'adhanLastError';
 const androidAdhanSound = 'adhan';
 const androidTakbeerSound = 'takbeer';
 const iosTakbeerSound = 'takbeer.wav';
+
+/// عدد التنبيهات المعلّقة فعلاً بعد آخر جدولة.
+const adhanPendingKey = 'adhanPendingCount';
+
+/// نسخة الجدولة: من خزّن أقل منها يُمسح كل ما علّقه التطبيق مرة واحدة عند أول فتح بعد التحديث ثم يُجدوَل من جديد
+/// (إشعارات معلّقة من بناءات قديمة قد تتكرر مع الجديدة). ارفعها إن تغيّر نمط المعرّفات أو الجدولة.
+const adhanSchedVersion = 2;
+const adhanSchedVersionKey = 'adhanSchedVersion';
 
 /// مفتاح في shared_preferences: هل جدوَل التطبيق تنبيهات من قبل (فلا نمسّ الإشعارات لمن لم يفعّل الأذان قط).
 const adhanActiveKey = 'adhanActive';
@@ -134,32 +146,71 @@ class LocalAdhanNotifier implements AdhanNotifier {
     }
   }
 
+  /// الاستدعاءات تُنفَّذ واحداً بعد واحد: استدعاءان متداخلان (فتح التطبيق وتغيير موقع أو حفظ) كان يتشابك فيهما
+  /// `cancelAll` مع `zonedSchedule`.
+  Future<void> _chain = Future.value();
+
   @override
-  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async {
+  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) {
+    final run = _chain.then((_) => _apply(events, sound, city));
+    _chain = run.catchError((Object _) {});
+    return run;
+  }
+
+  @override
+  Future<int?> pendingCount() async => _prefs.getInt(adhanPendingKey);
+
+  Future<void> _schedule(List<AdhanEvent> events, NotificationDetails details, bool exact, String city) async {
+    for (final e in events) {
+      await _plugin.zonedSchedule(
+        id: e.id,
+        scheduledDate: e.time,
+        notificationDetails: details,
+        androidScheduleMode:
+            exact ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
+        title: e.title,
+        body: e.body(city),
+      );
+    }
+  }
+
+  /// المعلّق في النظام يساوي المطلوب تماماً وبلا معرّف مكرر.
+  Future<bool> _pendingMatches(List<AdhanEvent> events) async {
+    final pending = await _plugin.pendingNotificationRequests();
+    final ids = {for (final p in pending) p.id};
+    final want = {for (final e in events) e.id};
+    await _prefs.setInt(adhanPendingKey, pending.length);
+    return pending.length == events.length && ids.length == pending.length && ids.containsAll(want);
+  }
+
+  Future<void> _apply(List<AdhanEvent> events, AdhanSound sound, String city) async {
     try {
-      if (events.isEmpty && !(_prefs.getBool(adhanActiveKey) ?? false)) return;
+      final purge = (_prefs.getInt(adhanSchedVersionKey) ?? 0) < adhanSchedVersion;
+      if (events.isEmpty && !(_prefs.getBool(adhanActiveKey) ?? false) && !purge) return;
       await _init();
       await _plugin.cancelAll();
       if (events.isEmpty) {
         await _prefs.setBool(adhanActiveKey, false);
+        await _prefs.setInt(adhanPendingKey, 0);
+        await _prefs.setInt(adhanSchedVersionKey, adhanSchedVersion);
         return;
       }
       final android = _plugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       final exact = _ios || (await android?.canScheduleExactNotifications() ?? false);
       final details = _details(sound);
-      for (final e in events) {
-        await _plugin.zonedSchedule(
-          id: e.id,
-          scheduledDate: e.time,
-          notificationDetails: details,
-          androidScheduleMode:
-              exact ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
-          title: e.title,
-          body: e.body(city),
-        );
+      await _schedule(events, details, exact, city);
+      if (!await _pendingMatches(events)) {
+        // نسخ زائدة أو ناقصة: امسح كل شيء وأعد الجدولة مرة واحدة فقط.
+        await _plugin.cancelAll();
+        await _schedule(events, details, exact, city);
+        if (!await _pendingMatches(events)) {
+          final n = _prefs.getInt(adhanPendingKey) ?? -1;
+          throw StateError('عدد التنبيهات المعلّقة $n بدل ${events.length}');
+        }
       }
       await _prefs.setBool(adhanActiveKey, true);
+      await _prefs.setInt(adhanSchedVersionKey, adhanSchedVersion);
       await _prefs.remove(adhanErrorKey);
     } catch (e) {
       // فشل الجدولة لا يوقف التطبيق، لكن يُحفظ ويُعرض في الإعدادات.
@@ -218,4 +269,7 @@ class NoopAdhanNotifier implements AdhanNotifier {
 
   @override
   Future<String?> lastError() async => null;
+
+  @override
+  Future<int?> pendingCount() async => null;
 }
