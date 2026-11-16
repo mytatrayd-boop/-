@@ -74,7 +74,7 @@
 - ☐ C: نشر الخادم (`asraty-backend-deploy.yml`) ليعرف إيصالات Google، ثم اختبار وهمي لـ`activatePlan` بـ`platform=android`.
 - ☐ م + C: تجربة شراء حقيقية بحساب مختبر (License tester) قبل تفعيل البوابة على أندرويد.
 - ☐ C: بناء أندرويد بمدخل `paywall=true` فقط بعد نجاح ما سبق وبموافقة المالك. **حتى ذلك الحين أندرويد مجاني.**
-- ☐ C: منتجات «لمحة» في Play (`lamha.monthly` و`lamha.yearly`) لاحقًا: يُعمَّم `play_subscriptions.py` (حزمة `sa.asraty.app` مكتوبة فيه الآن) ويقرأ `lamha_subscriptions.json` وحزمة `sa.lamha.lamha`.
+- ☐ C: منتجات «لمحة» في Play (`lamha.monthly` و`lamha.yearly`): **السكربت عُمّم (١٦ نوفمبر)**؛ `play_subscriptions.py` يقرأ الحزمة من `bundleId` في الملف، وأُضيف `lamha-play-subscriptions.yml` (inspect افتراضي). اختُبر محلياً بدعوات وهمية فقط؛ لم يُشغَّل على GitHub بعد (يلزم دمجه في الفرع الرئيسي)، و`apply` بعد حساب التاجر وموافقة المالك.
 
 ### الطرح العام
 - ☐ م: **تحديد يوم الطرح العام** وإبلاغ Claude به.

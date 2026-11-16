@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Create the Asraty subscriptions in Google Play (Android Publisher API, monetization).
+"""Create an app's subscriptions in Google Play (Asraty, Lamha: the package comes from the spec's bundleId) (Android Publisher API, monetization).
 
   play_subscriptions.py inspect   read only: checks the service account's permission, lists products
   play_subscriptions.py apply     creates the missing products (base plan + 7-day free trial), activated
 
-Products come from .github/scripts/asraty_subscriptions.json (same ids and SAR prices as the App Store).
+Products come from SPEC_FILE, e.g. .github/scripts/asraty_subscriptions.json or lamha_subscriptions.json
+(same ids and SAR prices as the App Store; the Play package is the spec's "bundleId").
 Prices in other regions are converted by Google (pricing:convertRegionPrices), as the Play Console does.
 Env: PLAY_SA_JSON (the service account key), SPEC_FILE.
 """
@@ -21,8 +22,8 @@ import urllib.parse
 import urllib.request
 from decimal import Decimal
 
-PKG = "sa.asraty.app"
-API = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PKG}"
+PKG = ""  # set in main() from the spec's bundleId
+API = ""
 REGIONS_VERSION = "2022/02"
 PERIOD = {"ONE_MONTH": ("P1M", "monthly"), "ONE_YEAR": ("P1Y", "yearly")}
 
@@ -146,7 +147,11 @@ def fix_trial(sub: dict, item: dict):
 
 
 def main(mode: str):
+    global PKG, API
     spec = json.loads(pathlib.Path(os.environ["SPEC_FILE"]).read_text())
+    PKG = os.environ.get("PLAY_PACKAGE") or spec["bundleId"]
+    API = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PKG}"
+    print("package:", PKG)
     have = existing()
     print("permission OK; existing products:", sorted(have))
     for s in have.values():
