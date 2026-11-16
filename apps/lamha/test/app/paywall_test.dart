@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +32,14 @@ void main() {
   tearDown(() {
     LamhaAccess.debugGated = null;
     LamhaStore.debugNoStart = false;
+  });
+
+  test('the server is told which store to ask: Android sends platform=android, iPhone ios', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    expect(LamhaAccess.platform, 'ios');
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    expect(LamhaAccess.platform, 'android');
+    debugDefaultTargetPlatformOverride = null;
   });
 
   test('access: free when the gate is off; paid only until the server-confirmed end', () async {

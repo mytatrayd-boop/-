@@ -11,6 +11,10 @@ on:
         description: "ارفع إلى Google Play (يتطلب PLAY_SERVICE_ACCOUNT_JSON وأن يكون أول رفع قد تم يدوياً)"
         type: boolean
         default: false
+      paywall:
+        description: "فعّل بوابة الاشتراك (لا تُفعَّل قبل إنشاء lamha.monthly وlamha.yearly في Play ونشر الخادم)"
+        type: boolean
+        default: false
       track:
         description: "مسار Play"
         default: internal
@@ -49,7 +53,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: flutter build appbundle --release --build-number=${{ github.run_number }} --dart-define=APP_BUILD=${{ github.run_number }}
+        run: flutter build appbundle --release --build-number=${{ github.run_number }} --dart-define=PAYWALL=${{ inputs.paywall }} --dart-define=APP_BUILD=${{ github.run_number }}
 
       - uses: actions/upload-artifact@v4
         with:

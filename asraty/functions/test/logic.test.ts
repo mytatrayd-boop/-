@@ -223,6 +223,17 @@ test("«لمحة»: the receipt's latest subscription end is reported, other app
   ]), 300);
 });
 
+test("lamhaUntilPlay: only «لمحة» products, and only states that still count", async () => {
+  const { lamhaUntilPlay } = await import("../src/plan");
+  const now = 1_000;
+  const exp = new Date(5_000).toISOString();
+  const sub = (st: string, id = "lamha.monthly") => ({ subscriptionState: st, lineItems: [{ productId: id, expiryTime: exp }] });
+  for (const st of ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"]) assert.equal(lamhaUntilPlay(sub(st), now), 5_000, st);
+  for (const st of ["SUBSCRIPTION_STATE_ON_HOLD", "SUBSCRIPTION_STATE_PAUSED", "SUBSCRIPTION_STATE_EXPIRED"]) assert.ok(lamhaUntilPlay(sub(st), now)! <= now, st);
+  assert.equal(lamhaUntilPlay(sub("SUBSCRIPTION_STATE_ACTIVE", "asraty.monthly"), now), null);
+  assert.equal(lamhaUntilPlay({}, now), null);
+});
+
 test("plan: a Google Play subscription gives its tier until it ends (active, grace, canceled count; expired, on hold do not)", async () => {
   const { planFromPlay } = await import("../src/plan");
   const now = Date.UTC(2026, 11, 1);
