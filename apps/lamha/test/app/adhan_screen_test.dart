@@ -182,6 +182,14 @@ void main() {
     expect(find.byKey(const Key('adhan-fajr')), findsOneWidget);
   });
 
+  testWidgets('يعرض عدد التنبيهات المجدولة فعلاً ليتحقق المالك أن لا نسخ مكررة', (tester) async {
+    final adhan = FakeAdhanNotifier()..pending = 30;
+    await pumpApp(tester, adhan: adhan);
+    await tapKey(tester, 'adhan-enabled');
+    await tester.ensureVisible(find.byKey(const Key('adhan-pending')));
+    expect(find.text('مجدول: 30 تنبيه'), findsOneWidget);
+  });
+
   group('أصول الصوت في المنصتين', () {
     test('أندرويد: الأذان والتكبيرتان في res/raw ومحميّان من مصغّر الموارد', () {
       expect(File('android/app/src/main/res/raw/adhan.mp3').lengthSync(), greaterThan(1000000));

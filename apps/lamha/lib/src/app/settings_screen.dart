@@ -591,6 +591,12 @@ class _AdhanSection extends ConsumerWidget {
             key: const Key('adhan-note'),
             style: textTheme.bodySmall,
           ),
+          // عدد التنبيهات المجدولة فعلاً في النظام: يتحقق منه المالك على جهازه (يجب ألا يزيد عن المطلوب).
+          if (ref.watch(adhanPendingProvider).value case final n? when n > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('مجدول: $n تنبيه', key: const Key('adhan-pending'), style: textTheme.bodySmall),
+            ),
           // فشل الجدولة أو التجربة يظهر هنا بنصه فلا يبقى الأذان «لا يعمل» دون سبب.
           if (ref.watch(adhanErrorProvider).value case final err? when err.isNotEmpty)
             Padding(

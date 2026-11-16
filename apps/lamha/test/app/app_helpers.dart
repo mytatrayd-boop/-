@@ -62,6 +62,12 @@ class FakeAdhanNotifier implements AdhanNotifier {
   @override
   Future<String?> lastError() async => error;
 
+  /// ما يعيده pendingCount.
+  int? pending;
+
+  @override
+  Future<int?> pendingCount() async => pending;
+
   @override
   Future<AdhanPermissionResult> requestPermissions() async {
     permissionRequests++;

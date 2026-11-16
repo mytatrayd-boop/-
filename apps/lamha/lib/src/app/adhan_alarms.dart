@@ -14,6 +14,9 @@ abstract class AdhanAlarms {
 
   /// يلغي كل منبّهات لمحة؛ يعيد عددها.
   Future<int> cancelAll();
+
+  /// عدد منبّهات لمحة المجدولة فعلاً في النظام الآن (للتحقق من عدم تكرارها).
+  Future<int> count();
 }
 
 /// الأذان الكامل داخل حزمة التطبيق (`Runner/adhan_full.mp3`) كما يسمّيه AlarmKit.
@@ -49,6 +52,9 @@ class ChannelAdhanAlarms implements AdhanAlarms {
 
   @override
   Future<int> cancelAll() async => await _channel.invokeMethod<int>('cancelAll') ?? 0;
+
+  @override
+  Future<int> count() async => await _channel.invokeMethod<int>('count') ?? 0;
 }
 
 /// بلا منبّهات (أندرويد والاختبارات).
@@ -64,4 +70,7 @@ class NoopAdhanAlarms implements AdhanAlarms {
 
   @override
   Future<int> cancelAll() async => 0;
+
+  @override
+  Future<int> count() async => 0;
 }

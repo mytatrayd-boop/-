@@ -68,6 +68,8 @@ final notificationPermissionProvider =
 
 /// جدولة الأذان بالإشعارات المحلية؛ بلا منصة (ويب، سطح مكتب) أو قبل جاهزية التخزين: لا شيء.
 /// آخر خطأ في جدولة الأذان أو تجربته (يُعرض في الإعدادات)؛ يُبطَل بعد كل جدولة أو تجربة.
+final adhanPendingProvider = FutureProvider.autoDispose<int?>((ref) => ref.watch(adhanNotifierProvider).pendingCount());
+
 final adhanErrorProvider = FutureProvider.autoDispose<String?>((ref) => ref.watch(adhanNotifierProvider).lastError());
 
 /// الأذان الكامل داخل التطبيق: آيفون فقط (حد ٣٠ ثانية لصوت الإشعار)؛ أندرويد يشغّله في إشعاره.
@@ -227,6 +229,9 @@ class SettingsController extends AsyncNotifier<AppState> {
   /// بصمة آخر جدولة للأذان: لا تُعاد الجدولة مع حفظ لا يمسّ الأذان (الشفافية مثلاً).
   String? _adhanSignature;
 
+  /// بصمة جدولة جارية الآن (لا تُعاد قبل أن تنتهي).
+  String? _adhanInFlight;
+
   /// يجدوِل تنبيهات الأذان القادمة من أوقات الصلاة والإعدادات (عند الفتح وبعد كل تغيير).
   Future<void> _syncAdhan(AppState s) async {
     try {
@@ -240,10 +245,18 @@ class SettingsController extends AsyncNotifier<AppState> {
       );
       final events = planAdhan(calc, ref.read(clockProvider)(), a);
       final signature = adhanSignature(events, a.sound, s.settings.cityName);
-      if (signature == _adhanSignature) return;
-      _adhanSignature = signature;
-      await ref.read(adhanNotifierProvider).apply(events, a.sound, s.settings.cityName);
+      if (signature == _adhanSignature || signature == _adhanInFlight) return;
+      _adhanInFlight = signature;
+      final notifier = ref.read(adhanNotifierProvider);
+      try {
+        await notifier.apply(events, a.sound, s.settings.cityName);
+        // البصمة تُحفظ بعد النجاح فقط: من فشل تُعاد محاولته في المرة القادمة.
+        if ((await notifier.lastError()) == null) _adhanSignature = signature;
+      } finally {
+        if (_adhanInFlight == signature) _adhanInFlight = null;
+      }
       ref.invalidate(adhanErrorProvider);
+      ref.invalidate(adhanPendingProvider);
     } catch (e) {
       // الأذان لا يوقف التطبيق.
       debugPrint('adhan: $e');

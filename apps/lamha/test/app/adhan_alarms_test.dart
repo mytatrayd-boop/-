@@ -17,6 +17,7 @@ void main() {
         'available' || 'authorize' => true,
         'schedule' => (call.arguments['items'] as List).length,
         'cancelAll' => 2,
+        'count' => 7,
         _ => null,
       };
     });
@@ -31,6 +32,7 @@ void main() {
     expect(await alarms.available(), isTrue);
     expect(await alarms.authorize(), isTrue);
     expect(await alarms.cancelAll(), 2);
+    expect(await alarms.count(), 7);
   });
 
   test('الجدولة ترسل الوقت بالثواني وعنوان كل منبّه وصوت الأذان الكامل', () async {
@@ -52,11 +54,16 @@ void main() {
     expect(await noop.authorize(), isFalse);
     expect(await noop.schedule([]), 0);
     expect(await noop.cancelAll(), 0);
+    expect(await noop.count(), 0);
   });
 
   test('ملفات آيفون: الأذان الكامل والجسر ضمن مشروع Xcode ومفتاح الإذن في Info.plist', () {
     final project = File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
     expect(project, contains('AdhanAlarmBridge.swift in Sources'));
+    // معرّف المنبّه ثابت من وقته لا عشوائي (تكرار الأذان).
+    final bridge = File('ios/Runner/AdhanAlarmBridge.swift').readAsStringSync();
+    expect(bridge, contains('alarmId(seconds)'));
+    expect(bridge, isNot(contains('id: UUID()')));
     expect(project, contains('adhan_full.mp3 in Resources'));
     expect(File('ios/Runner/adhan_full.mp3').existsSync(), isTrue);
     expect(File('ios/Runner/Info.plist').readAsStringSync(), contains('NSAlarmKitUsageDescription'));

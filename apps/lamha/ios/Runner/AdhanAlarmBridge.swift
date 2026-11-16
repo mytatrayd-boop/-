@@ -21,7 +21,7 @@ enum AdhanAlarmBridge {
       #endif
       switch call.method {
       case "available", "authorize": result(false)
-      case "schedule", "cancelAll": result(0)
+      case "schedule", "cancelAll", "count": result(0)
       default: result(FlutterMethodNotImplemented)
       }
     }
@@ -42,6 +42,8 @@ enum AdhanAlarms {
       Task { result(await authorize()) }
     case "cancelAll":
       result(cancelAll())
+    case "count":
+      result(count())
     case "schedule":
       guard let args = call.arguments as? [String: Any],
             let items = args["items"] as? [[String: Any]],
@@ -74,6 +76,17 @@ enum AdhanAlarms {
     }
   }
 
+  /// عدد منبّهات لمحة المجدولة فعلاً في النظام (للتحقق أن لا نسخ زائدة).
+  static func count() -> Int {
+    (try? AlarmManager.shared.alarms.count) ?? 0
+  }
+
+  /// معرّف ثابت للمنبّه من وقته (ثواني منذ ١٩٧٠): نفس الوقت = نفس المعرّف، فإعادة الجدولة تستبدل ولا تضيف نسخة
+  /// (كان `UUID()` عشوائياً فتراكمت المنبّهات وتكرر الأذان ٢–٣ مرات).
+  static func alarmId(_ seconds: Double) -> UUID {
+    UUID(uuidString: String(format: "A11AAA11-0000-4000-8000-%012ld", Int(seconds.rounded())))!
+  }
+
   /// يلغي كل منبّهات لمحة (كلها أذان) ويعيد عددها.
   static func cancelAll() -> Int {
     guard let alarms = try? AlarmManager.shared.alarms else { return 0 }
@@ -88,6 +101,8 @@ enum AdhanAlarms {
       guard let seconds = item["time"] as? Double, let title = item["title"] as? String else { continue }
       let date = Date(timeIntervalSince1970: seconds)
       guard date > Date() else { continue }
+      let id = alarmId(seconds)
+      try? AlarmManager.shared.cancel(id: id) // يستبدل منبّهاً بالمعرّف نفسه إن وُجد
       let alert = AlarmPresentation.Alert(
         title: LocalizedStringResource(stringLiteral: title),
         stopButton: AlarmButton(
@@ -101,7 +116,7 @@ enum AdhanAlarms {
         schedule: .fixed(date),
         attributes: attributes,
         sound: .named(sound))
-      _ = try await AlarmManager.shared.schedule(id: UUID(), configuration: configuration)
+      _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
       count += 1
     }
     return count

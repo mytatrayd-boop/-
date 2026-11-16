@@ -32,6 +32,10 @@ abstract class AdhanNotifier {
 
   /// آخر خطأ في الجدولة أو التجربة (يُعرض في الإعدادات فلا يبقى الفشل صامتاً)، أو null إن نجح آخر ما جُرّب.
   Future<String?> lastError();
+
+  /// عدد التنبيهات المجدولة فعلاً في النظام بعد آخر جدولة (منبّهات أو إشعارات)، أو null إن لم تُجدول بعد. يُعرض
+  /// في الإعدادات ليتحقق المالك أن لا نسخ زائدة (تكرار الأذان).
+  Future<int?> pendingCount();
 }
 
 /// مفتاح آخر خطأ في shared_preferences.
@@ -48,6 +52,14 @@ const iosAdhanClipSound = 'adhan30.wav';
 
 /// حمولة إشعار الأذان في آيفون: تضغط عليها فيُشغَّل الأذان الكامل داخل التطبيق.
 const adhanFullPayload = 'adhan_full';
+
+/// عدد التنبيهات المجدولة فعلاً بعد آخر جدولة.
+const adhanPendingKey = 'adhanPendingCount';
+
+/// نسخة الجدولة: من خزّن أقل منها يُمسح كل ما علّقه التطبيق مرة واحدة عند أول فتح بعد التحديث ثم يُجدوَل من جديد
+/// (منبّهات وإشعارات معلّقة من بناءات قديمة قد تتكرر مع الجديدة). ارفعها إن تغيّر نمط المعرّفات.
+const adhanSchedVersion = 2;
+const adhanSchedVersionKey = 'adhanSchedVersion';
 
 /// مفتاح في shared_preferences: هل جدوَل التطبيق تنبيهات من قبل (فلا نمسّ الإشعارات لمن لم يفعّل الأذان قط).
 const adhanActiveKey = 'adhanActive';
@@ -167,25 +179,66 @@ class LocalAdhanNotifier implements AdhanNotifier {
     }
   }
 
+  /// الاستدعاءات تُنفَّذ واحداً بعد واحد: استدعاءان متداخلان (فتح التطبيق وتغيير موقع أو حفظ) كانا يجدولان كل منهما
+  /// المنبّهات والإشعارات فيتكرر الأذان.
+  Future<void> _chain = Future.value();
+
   @override
-  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async {
+  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) {
+    final run = _chain.then((_) => _apply(events, sound, city));
+    _chain = run.catchError((Object _) {});
+    return run;
+  }
+
+  @override
+  Future<int?> pendingCount() async => _prefs.getInt(adhanPendingKey);
+
+  Future<void> _schedule(List<AdhanEvent> events, NotificationDetails details, bool exact, String city, AdhanSound sound) async {
+    for (final e in events) {
+      await _plugin.zonedSchedule(
+        id: e.id,
+        scheduledDate: e.time,
+        notificationDetails: details,
+        androidScheduleMode:
+            exact ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
+        title: e.title,
+        body: e.body(city),
+        payload: _payload(sound),
+      );
+    }
+  }
+
+  /// المعلّق في النظام يساوي المطلوب تماماً وبلا معرّف مكرر.
+  Future<bool> _pendingMatches(List<AdhanEvent> events) async {
+    final pending = await _plugin.pendingNotificationRequests();
+    final ids = {for (final p in pending) p.id};
+    final want = {for (final e in events) e.id};
+    await _prefs.setInt(adhanPendingKey, pending.length);
+    return pending.length == events.length && ids.length == pending.length && ids.containsAll(want);
+  }
+
+  Future<void> _apply(List<AdhanEvent> events, AdhanSound sound, String city) async {
     try {
-      if (events.isEmpty && !(_prefs.getBool(adhanActiveKey) ?? false)) return;
+      final purge = (_prefs.getInt(adhanSchedVersionKey) ?? 0) < adhanSchedVersion;
+      if (events.isEmpty && !(_prefs.getBool(adhanActiveKey) ?? false) && !purge) return;
       await _init();
       await _plugin.cancelAll();
       if (_ios) await _cancelAlarms();
       if (events.isEmpty) {
         await keeper?.disarm();
         await _prefs.setBool(adhanActiveKey, false);
+        await _prefs.setInt(adhanPendingKey, 0);
+        await _prefs.setInt(adhanSchedVersionKey, adhanSchedVersion);
         return;
       }
       // آيفون ٢٦+ والأذان الكامل: منبّه النظام يرنّ في وقته بلا تطبيق شغّال، فلا إشعار ولا صوت خلفي. وإلا (أقدم أو
       // رُفض الإذن أو فشل) يُجدول إشعار المقطع القصير مع المشغّل الخلفي أدناه.
       if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
         for (final e in events.take(adhanAlarmLimit)) (time: e.time, title: e.title),
-      ])) {
+      ], verify: true)) {
         await keeper?.disarm();
         await _prefs.setBool(adhanActiveKey, true);
+        await _prefs.setInt(adhanSchedVersionKey, adhanSchedVersion);
         await _prefs.remove(adhanErrorKey);
         return;
       }
@@ -193,17 +246,15 @@ class LocalAdhanNotifier implements AdhanNotifier {
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       final exact = _ios || (await android?.canScheduleExactNotifications() ?? false);
       final details = _details(sound);
-      for (final e in events) {
-        await _plugin.zonedSchedule(
-          id: e.id,
-          scheduledDate: e.time,
-          notificationDetails: details,
-          androidScheduleMode:
-              exact ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
-          title: e.title,
-          body: e.body(city),
-          payload: _payload(sound),
-        );
+      await _schedule(events, details, exact, city, sound);
+      if (!await _pendingMatches(events)) {
+        // نسخ زائدة أو ناقصة: امسح كل شيء وأعد الجدولة مرة واحدة فقط.
+        await _plugin.cancelAll();
+        await _schedule(events, details, exact, city, sound);
+        if (!await _pendingMatches(events)) {
+          final n = _prefs.getInt(adhanPendingKey) ?? -1;
+          throw StateError('عدد التنبيهات المعلّقة $n بدل ${events.length}');
+        }
       }
       // آيفون والأذان الكامل: التطبيق يبقى حياً بصوت صامت ويشغّل الأذان كاملاً في وقته، ويلغي إشعار الحدث قبله
       // بنحو ٢٠ ثانية فلا يتداخلان. إن أُغلق التطبيق بالسحب بقي إشعار المقطع القصير احتياطاً.
@@ -213,6 +264,7 @@ class LocalAdhanNotifier implements AdhanNotifier {
         await keeper?.disarm();
       }
       await _prefs.setBool(adhanActiveKey, true);
+      await _prefs.setInt(adhanSchedVersionKey, adhanSchedVersion);
       await _prefs.remove(adhanErrorKey);
     } catch (e) {
       // فشل الجدولة لا يوقف التطبيق، لكن يُحفظ ويُعرض في الإعدادات.
@@ -229,11 +281,24 @@ class LocalAdhanNotifier implements AdhanNotifier {
     }
   }
 
-  /// يجدول [items] منبّهات AlarmKit؛ true إن جُدول شيء، false لتعذّره (فيرجع الاستدعاء إلى الإشعار).
-  Future<bool> _scheduleAlarms(List<({DateTime time, String title})> items) async {
+  /// يجدول [items] منبّهات AlarmKit؛ true إن جُدول شيء، false لتعذّره (فيرجع الاستدعاء إلى الإشعار). مع [verify]
+  /// يقارن عدد المنبّهات الفعلي في النظام بما جُدول، فإن زاد (نسخ مكررة) يمسح الكل ويعيد مرة واحدة. لا يُستعمل
+  /// مع منبّه التجربة (فالعدد حينئذ يشمل المنبّهات الحقيقية).
+  Future<bool> _scheduleAlarms(List<({DateTime time, String title})> items, {bool verify = false}) async {
     try {
       if (!await _alarms.available() || !await _alarms.authorize()) return false;
-      return await _alarms.schedule(items) > 0;
+      var n = await _alarms.schedule(items);
+      if (verify && n > 0) {
+        var actual = await _alarms.count();
+        if (actual != n) {
+          await _alarms.cancelAll();
+          n = await _alarms.schedule(items);
+          actual = await _alarms.count();
+          if (actual != n) await _fail('منبّه الأذان', 'عدد المنبّهات $actual بدل $n');
+        }
+        await _prefs.setInt(adhanPendingKey, actual);
+      }
+      return n > 0;
     } catch (e) {
       await _fail('منبّه الأذان', e);
       return false;
@@ -299,4 +364,7 @@ class NoopAdhanNotifier implements AdhanNotifier {
 
   @override
   Future<String?> lastError() async => null;
+
+  @override
+  Future<int?> pendingCount() async => null;
 }
