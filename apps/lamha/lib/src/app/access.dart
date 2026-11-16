@@ -4,12 +4,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Who may use «لمحة»: a paid App Store subscription (monthly or yearly, each with a 7-day free trial set up
-/// in App Store Connect). The app has no accounts: it sends Apple's receipt to the server, which checks it
-/// with Apple and says until when the subscription lasts. The gate is off unless the build sets
-/// `--dart-define=PAYWALL=true` (iPhone only), like «أسرتي».
+/// Who may use «لمحة»: a paid subscription (monthly or yearly, each with a 7-day free trial set up in App Store
+/// Connect or Google Play). The app has no accounts: it sends Apple's receipt (or Google's purchase token) to the
+/// server, which checks it with the store and says until when the subscription lasts. The gate is off unless the
+/// build sets `--dart-define=PAYWALL=true` (iPhone and Android), like «أسرتي».
 class LamhaAccess {
   static const paywallEnabled = bool.fromEnvironment('PAYWALL');
   static const serverUrl = String.fromEnvironment('SERVER_URL', defaultValue: 'https://asraty-mytatrayd-boop.vercel.app');
@@ -19,7 +20,10 @@ class LamhaAccess {
   static const privacyUrl = 'https://github.com/mytatrayd-boop/-/blob/claude/mobile-app-design-gxh65v/apps/lamha/store/PRIVACY.md';
   static const _untilKey = 'lamhaPaidUntil';
 
-  static bool get gated => debugGated ?? (paywallEnabled && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS);
+  /// The store the server should ask about a receipt / purchase token.
+  static String get platform => !kIsWeb && defaultTargetPlatform == TargetPlatform.android ? 'android' : 'ios';
+
+  static bool get gated => debugGated ?? (paywallEnabled && !kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android));
 
   /// Tests turn the gate on or off.
   @visibleForTesting
@@ -52,7 +56,7 @@ class ServerReceiptChecker implements ReceiptChecker {
     try {
       final req = await c.postUrl(Uri.parse('${LamhaAccess.serverUrl}/api/lamhaPlan'));
       req.headers.contentType = ContentType.json;
-      req.write(jsonEncode({'data': {'receipt': receipt}}));
+      req.write(jsonEncode({'data': {'receipt': receipt, 'platform': LamhaAccess.platform}}));
       final res = await req.close().timeout(const Duration(seconds: 30));
       final body = jsonDecode(await res.transform(utf8.decoder).join()) as Map<String, dynamic>;
       final err = body['error'];
@@ -88,7 +92,20 @@ class LamhaStore {
 
   InAppPurchase get _iap => InAppPurchase.instance;
 
-  ProductDetails? product(String id) => products.where((p) => p.id == id).firstOrNull;
+  /// Google Play lists each offer of a subscription as its own product: the one with a free first phase
+  /// (the 7-day trial) wins, else the first. App Store products are single.
+  ProductDetails? product(String id) {
+    final all = products.where((p) => p.id == id).toList();
+    return all.where(_hasTrial).firstOrNull ?? all.firstOrNull;
+  }
+
+  static bool _hasTrial(ProductDetails p) {
+    if (p is! GooglePlayProductDetails) return false;
+    final offers = p.productDetails.subscriptionOfferDetails;
+    final i = p.subscriptionIndex;
+    if (offers == null || i == null || i < 0 || i >= offers.length) return false;
+    return offers[i].pricingPhases.any((ph) => ph.priceAmountMicros == 0);
+  }
 
   /// Tests do not talk to the App Store.
   @visibleForTesting

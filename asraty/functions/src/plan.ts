@@ -82,6 +82,18 @@ export function lamhaUntil(lines: ReceiptLine[]): number | null {
 
 // ---------------------------------------------------------------- Google Play (Android)
 
+/** «لمحة»'s Android application id. */
+export const LAMHA_PACKAGE = "sa.lamha.lamha";
+
+/** When a «لمحة» Play subscription ends, or null when it is not one of its products or does not count (ON_HOLD, PAUSED, EXPIRED). ACTIVE, IN_GRACE_PERIOD and CANCELED count until the expiry. */
+export function lamhaUntilPlay(sub: PlaySubscription, now: number): number | null {
+  const counts = ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"].includes(sub.subscriptionState ?? "");
+  const ends = (sub.lineItems ?? []).filter((l) => l.productId && LAMHA_PRODUCTS.has(l.productId) && l.expiryTime).map((l) => Date.parse(l.expiryTime!) || 0);
+  if (!ends.length) return null;
+  const end = Math.max(...ends);
+  return counts ? end : Math.min(end, now);
+}
+
 /** The Android application id (Play package name). */
 export const ANDROID_PACKAGE = "sa.asraty.app";
 
@@ -128,9 +140,9 @@ export async function googleAccessToken(serviceAccountJson: string, send: Fetch 
 }
 
 /** Asks Google about a purchase token (subscriptionsv2). A token Google does not know is "receipt-invalid"; a refused call (no permission) is "plan-unavailable". */
-export async function verifyPlayPurchase(token: string, serviceAccountJson: string, send: Fetch = fetch as unknown as Fetch): Promise<PlaySubscription> {
+export async function verifyPlayPurchase(token: string, serviceAccountJson: string, send: Fetch = fetch as unknown as Fetch, packageName: string = ANDROID_PACKAGE): Promise<PlaySubscription> {
   const access = await googleAccessToken(serviceAccountJson, send);
-  const r = await send(`https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${ANDROID_PACKAGE}/purchases/subscriptionsv2/tokens/${encodeURIComponent(token)}`, {
+  const r = await send(`https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptionsv2/tokens/${encodeURIComponent(token)}`, {
     headers: { Authorization: `Bearer ${access}` },
   });
   if (r.status === 401 || r.status === 403) fail("plan-unavailable", { status: r.status });
