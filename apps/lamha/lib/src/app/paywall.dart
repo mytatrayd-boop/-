@@ -65,8 +65,12 @@ class PaywallScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final android = LamhaAccess.platform == 'android';
     Widget option(String id, String label, {bool best = false}) {
       final p = store.product(id);
+      final o = p == null ? null : LamhaStore.offer(p);
+      final period = o == null ? '—' : (id == LamhaAccess.yearlyId ? t.paywallPerYear(o.price) : t.paywallPerMonth(o.price));
+      final priceLine = o == null ? '—' : (o.trial == true ? t.paywallTrialThen(period) : (o.trial == false ? period : o.price));
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -74,10 +78,10 @@ class PaywallScreen extends StatelessWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
-                Text(p?.price ?? '—', style: const TextStyle(color: Colors.white70)),
+                Text(priceLine, style: const TextStyle(color: Colors.white70)),
               ]),
             ),
-            FilledButton(onPressed: p == null || store.checking ? null : () => store.buy(p), child: Text(t.paywallStartTrial)),
+            FilledButton(onPressed: p == null || store.checking ? null : () => store.buy(p), child: Text(o?.trial == false ? t.paywallSubscribe : t.paywallStartTrial)),
           ]),
         ),
       );
@@ -88,7 +92,7 @@ class PaywallScreen extends StatelessWidget {
         ? null
         : switch (err) {
             'store-unavailable' => t.paywallUnavailable,
-            'not-active' => t.paywallNotActive,
+            'not-active' => android ? t.paywallNotActiveAndroid : t.paywallNotActive,
             _ => t.paywallVerifyFailed,
           };
     return Scaffold(
@@ -99,7 +103,7 @@ class PaywallScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(t.paywallTitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text(t.paywallSub, textAlign: TextAlign.center, style: const TextStyle(height: 1.6)),
+          Text(android ? t.paywallSubAndroid : t.paywallSub, textAlign: TextAlign.center, style: const TextStyle(height: 1.6)),
           const SizedBox(height: 16),
           if (store.loading || store.checking)
             Padding(
