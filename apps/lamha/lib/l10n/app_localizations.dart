@@ -782,6 +782,42 @@ abstract class AppLocalizations {
   /// **'لا يوجد اشتراك فعّال على حساب آبل هذا.'**
   String get paywallNotActive;
 
+  /// No description provided for @paywallSubAndroid.
+  ///
+  /// In ar, this message translates to:
+  /// **'ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من «المدفوعات والاشتراكات» في Google Play.'**
+  String get paywallSubAndroid;
+
+  /// No description provided for @paywallNotActiveAndroid.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اشتراك فعّال على حساب Google هذا.'**
+  String get paywallNotActiveAndroid;
+
+  /// No description provided for @paywallSubscribe.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك'**
+  String get paywallSubscribe;
+
+  /// No description provided for @paywallPerMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'{price} شهريًا'**
+  String paywallPerMonth(String price);
+
+  /// No description provided for @paywallPerYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'{price} سنويًا'**
+  String paywallPerYear(String price);
+
+  /// No description provided for @paywallTrialThen.
+  ///
+  /// In ar, this message translates to:
+  /// **'٧ أيام مجانًا، ثم {price}'**
+  String paywallTrialThen(String price);
+
   /// شاشة الودجت
   ///
   /// In ar, this message translates to:

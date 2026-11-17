@@ -507,6 +507,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'There is no active subscription on this Apple account.';
 
   @override
+  String get paywallSubAndroid =>
+      'An Arabic home- and lock-screen widget: deposits, prayers, Hijri date and Qibla. Try it free for 7 days; then it renews automatically and you can cancel any time in Google Play under Payments & subscriptions.';
+
+  @override
+  String get paywallNotActiveAndroid =>
+      'There is no active subscription on this Google account.';
+
+  @override
+  String get paywallSubscribe => 'Subscribe';
+
+  @override
+  String paywallPerMonth(String price) {
+    return '$price a month';
+  }
+
+  @override
+  String paywallPerYear(String price) {
+    return '$price a year';
+  }
+
+  @override
+  String paywallTrialThen(String price) {
+    return '7 days free, then $price';
+  }
+
+  @override
   String get tabSize => 'Size';
 
   @override

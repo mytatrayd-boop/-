@@ -502,6 +502,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paywallNotActive => 'لا يوجد اشتراك فعّال على حساب آبل هذا.';
 
   @override
+  String get paywallSubAndroid =>
+      'ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من «المدفوعات والاشتراكات» في Google Play.';
+
+  @override
+  String get paywallNotActiveAndroid =>
+      'لا يوجد اشتراك فعّال على حساب Google هذا.';
+
+  @override
+  String get paywallSubscribe => 'اشترك';
+
+  @override
+  String paywallPerMonth(String price) {
+    return '$price شهريًا';
+  }
+
+  @override
+  String paywallPerYear(String price) {
+    return '$price سنويًا';
+  }
+
+  @override
+  String paywallTrialThen(String price) {
+    return '٧ أيام مجانًا، ثم $price';
+  }
+
+  @override
   String get tabSize => 'الحجم';
 
   @override

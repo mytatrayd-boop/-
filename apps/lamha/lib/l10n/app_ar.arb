@@ -531,6 +531,15 @@
   "paywallUnavailable": "المتجر غير متاح الآن. حاول لاحقًا.",
   "paywallVerifyFailed": "تعذّر التحقق من الاشتراك الآن. حاول لاحقًا، فلن يضيع اشتراكك.",
   "paywallNotActive": "لا يوجد اشتراك فعّال على حساب آبل هذا.",
+  "paywallSubAndroid": "ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من «المدفوعات والاشتراكات» في Google Play.",
+  "paywallNotActiveAndroid": "لا يوجد اشتراك فعّال على حساب Google هذا.",
+  "paywallSubscribe": "اشترك",
+  "paywallPerMonth": "{price} شهريًا",
+  "@paywallPerMonth": {"placeholders": {"price": {"type": "String"}}},
+  "paywallPerYear": "{price} سنويًا",
+  "@paywallPerYear": {"placeholders": {"price": {"type": "String"}}},
+  "paywallTrialThen": "٧ أيام مجانًا، ثم {price}",
+  "@paywallTrialThen": {"placeholders": {"price": {"type": "String"}}},
   "tabSize": "الحجم",
   "@tabSize": {
     "description": "شاشة الودجت"

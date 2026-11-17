@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:lamha/l10n/app_localizations.dart';
 import 'package:lamha/src/app/access.dart';
 import 'package:lamha/src/app/paywall.dart';
@@ -56,6 +58,33 @@ void main() {
     expect(LamhaAccess.productIds, {'lamha.monthly', 'lamha.yearly'});
   });
 
+
+  test('Google Play plan: the price after the free week, and whether this account still gets the trial', () {
+    PricingPhaseWrapper phase(int micros, String text, RecurrenceMode mode) => PricingPhaseWrapper(
+        billingCycleCount: 1, billingPeriod: 'P1M', formattedPrice: text, priceAmountMicros: micros, priceCurrencyCode: 'SAR', recurrenceMode: mode);
+    final products = GooglePlayProductDetails.fromProductDetails(ProductDetailsWrapper(
+      description: '',
+      name: 'شهري',
+      productId: LamhaAccess.monthlyId,
+      productType: ProductType.subs,
+      title: 'شهري',
+      subscriptionOfferDetails: [
+        SubscriptionOfferDetailsWrapper(basePlanId: 'm', offerId: 'trial', offerTags: const [], offerIdToken: 'a', pricingPhases: [
+          phase(0, 'مجانية', RecurrenceMode.finiteRecurring),
+          phase(10000000, '١٠٫٠٠ ر.س.', RecurrenceMode.infiniteRecurring),
+        ]),
+        SubscriptionOfferDetailsWrapper(basePlanId: 'm', offerTags: const [], offerIdToken: 'b', pricingPhases: [
+          phase(10000000, '١٠٫٠٠ ر.س.', RecurrenceMode.infiniteRecurring),
+        ]),
+      ],
+    ));
+    final trial = LamhaStore.offer(products[0]);
+    expect(trial.price, '١٠٫٠٠ ر.س.', reason: 'not «مجانية»: the price paid after the trial');
+    expect(trial.trial, isTrue);
+    final paid = LamhaStore.offer(products[1]);
+    expect(paid.price, '١٠٫٠٠ ر.س.');
+    expect(paid.trial, isFalse, reason: 'trial already used: the button says «اشترك»');
+  });
   testWidgets('the gate shows the subscription screen until paid, then the app', (tester) async {
     LamhaStore.debugNoStart = true;
     LamhaAccess.debugGated = true;

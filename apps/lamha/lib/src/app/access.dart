@@ -99,12 +99,20 @@ class LamhaStore {
     return all.where(_hasTrial).firstOrNull ?? all.firstOrNull;
   }
 
-  static bool _hasTrial(ProductDetails p) {
-    if (p is! GooglePlayProductDetails) return false;
+  static bool _hasTrial(ProductDetails p) => offer(p).trial == true;
+
+  /// What the subscription screen shows for a plan. Google Play's `price` is the offer's first phase
+  /// («مجانية» for the trial), so the price paid after it is the last phase; and `trial` says whether this
+  /// account still gets the free week (Google offers the trial only once). App Store: the price, trial unknown.
+  static ({String price, bool? trial}) offer(ProductDetails p) {
+    if (p is! GooglePlayProductDetails) return (price: p.price, trial: null);
     final offers = p.productDetails.subscriptionOfferDetails;
     final i = p.subscriptionIndex;
-    if (offers == null || i == null || i < 0 || i >= offers.length) return false;
-    return offers[i].pricingPhases.any((ph) => ph.priceAmountMicros == 0);
+    if (offers == null || i == null || i < 0 || i >= offers.length || offers[i].pricingPhases.isEmpty) {
+      return (price: p.price, trial: false);
+    }
+    final phases = offers[i].pricingPhases;
+    return (price: phases.last.formattedPrice, trial: phases.any((ph) => ph.priceAmountMicros == 0));
   }
 
   /// Tests do not talk to the App Store.
