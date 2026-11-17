@@ -61,6 +61,11 @@ const adhanPendingKey = 'adhanPendingCount';
 const adhanSchedVersion = 2;
 const adhanSchedVersionKey = 'adhanSchedVersion';
 
+/// هل يُستعمل منبّه AlarmKit للأذان الكامل في آيفون ٢٦+؟ **معطّل** بقرار المالك (١٧ نوفمبر، DECISIONS ٤٢): AlarmKit
+/// يرنّ ويهتزّ ويكرّر الصوت حتى «إيقاف» ولا خيار رسمياً لإيقافه تلقائياً أو لإلغاء الاهتزاز. يعمل بدله إشعار المقطع
+/// القصير مع المشغّل الخلفي (الأذان كاملاً مرة واحدة بلا اهتزاز المنبّه). الكود باقٍ للعودة إليه إن تغيّر الأمر.
+const adhanAlarmKitEnabled = false;
+
 /// منبّه تجربة الأذان في آيفون ٢٦+ يرنّ بعد هذه المدة من الضغط (ليتسنى قفل الجوال)، وتبقى دالة التجربة معلّقة حتى
 /// وقته فيبقى زر التجربة معطّلاً والنص الأحمر والساعة الرملية ظاهرين حتى يرنّ (ملاحظة المالك ١٦/١١/٢٠٢٦).
 const adhanTestAlarmDelay = Duration(seconds: 10);
@@ -237,7 +242,7 @@ class LocalAdhanNotifier implements AdhanNotifier {
       }
       // آيفون ٢٦+ والأذان الكامل: منبّه النظام يرنّ في وقته بلا تطبيق شغّال، فلا إشعار ولا صوت خلفي. وإلا (أقدم أو
       // رُفض الإذن أو فشل) يُجدول إشعار المقطع القصير مع المشغّل الخلفي أدناه.
-      if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
+      if (_ios && adhanAlarmKitEnabled && sound == AdhanSound.full && await _scheduleAlarms([
         for (final e in events.take(adhanAlarmLimit)) (time: e.time, title: e.title),
       ], verify: true)) {
         await keeper?.disarm();
@@ -334,7 +339,7 @@ class LocalAdhanNotifier implements AdhanNotifier {
         return;
       }
       // آيفون ٢٦+: تجربة المنبّه الكامل بعد ١٠ ثوانٍ (يمكنك إغلاق التطبيق لتسمع أنه يرنّ).
-      if (_ios && sound == AdhanSound.full && await _scheduleAlarms([
+      if (_ios && adhanAlarmKitEnabled && sound == AdhanSound.full && await _scheduleAlarms([
         (time: DateTime.now().add(adhanTestAlarmDelay), title: 'تجربة الأذان'),
       ])) {
         await _prefs.remove(adhanErrorKey);
