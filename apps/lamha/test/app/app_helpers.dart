@@ -242,6 +242,9 @@ final testNow = DateTime.utc(2026, 10, 19, 9);
 final _data = loadEngineDataFromFiles();
 final _cities = parseCities(readAsset('assets/cities.json'));
 
+/// true = يبدأ التطبيق من الترتيب الافتراضي الجديد (لقطات المتجر)؛ الافتراضي false لاختبارات الآليات.
+bool pumpWithNewDefault = false;
+
 /// يشغّل التطبيق بطبقات وهمية ويعيد طبقة الودجت.
 Future<FakeBridge> pumpApp(
   WidgetTester tester, {
@@ -265,7 +268,7 @@ Future<FakeBridge> pumpApp(
   // اختبارات آليات الشاشة (سحب، حجم، ألوان…) تبدأ من الترتيب السابق؛ الافتراضي الجديد له اختباراته
   // (new_default_layout_test). الفرق في عنصر مخفي يمنع الترحيل التلقائي إلى الافتراضي الجديد.
   SharedPreferences.setMockInitialValues({
-    if (!prefs.containsKey(LamhaSettings.prefsKey))
+    if (!pumpWithNewDefault && !prefs.containsKey(LamhaSettings.prefsKey))
       LamhaSettings.prefsKey: LamhaSettings.defaults(_cities.first, _data.deposits.defaultIds)
           .copyWith(layout: [
             ...previousDefaultLayout.take(previousDefaultLayout.length - 1),
