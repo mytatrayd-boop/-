@@ -134,6 +134,9 @@ Future<void> _shot(WidgetTester tester, Size logical, double dpr, Widget child, 
 }
 
 void main() {
+  // اللقطتان ٤ و٥ تُصوَّران بالترتيب الافتراضي الجديد (DECISIONS ٣٦).
+  setUp(() => pumpWithNewDefault = true);
+  tearDown(() => pumpWithNewDefault = false);
   // (المجلد، المقاس المنطقي، الكثافة): ١٠٨٠×١٩٢٠ لـ Play، و١٢٩٠×٢٧٩٦ لآيفون ٦٫٩ بوصة،
   // و٢٠٤٨×٢٧٣٢ لآيباد ١٣ بوصة (أبل تشترطها لأن التطبيق يعمل على آيباد).
   for (final (dir, logical, dpr) in [
