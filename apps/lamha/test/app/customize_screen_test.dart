@@ -104,7 +104,7 @@ void main() {
       );
       // لا لوحة قبل اختيار عنصر.
       expect(find.byKey(const Key('tile-panel')), findsNothing);
-      for (final t in defaultLayout) {
+      for (final t in previousDefaultLayout) {
         expect(tile(t.id.name), t.visible ? findsOneWidget : findsNothing);
         expect(
           tester.widget<Switch>(find.byKey(Key('tile-switch-${t.id.name}'))).value,
@@ -114,7 +114,7 @@ void main() {
       }
       // الصفوف بترتيب التخطيط من الأعلى للأسفل، والمقبض على اليمين.
       final ys = [
-        for (final t in defaultLayout)
+        for (final t in previousDefaultLayout)
           tester.getRect(find.byKey(ValueKey('tile-row-${t.id.name}'))).top,
       ];
       for (var i = 1; i < ys.length; i++) {
@@ -243,7 +243,7 @@ void main() {
 
   testWidgets('لا يمكن إيقاف آخر عنصر ظاهر', (tester) async {
     final bridge = await openCustomize(tester);
-    for (final t in defaultLayout.where((t) => t.visible).skip(1)) {
+    for (final t in previousDefaultLayout.where((t) => t.visible).skip(1)) {
       await tapKey(tester, 'tile-switch-${t.id.name}');
     }
     final visible = layoutOf(bridge).where((t) => t['visible'] == true).toList();
@@ -372,8 +372,10 @@ void main() {
 
     await tester.tap(find.byKey(const Key('reset-layout')));
     await tester.pumpAndSettle();
+    // «استعادة الافتراضي» تعيد الترتيب الجديد (بلقطة المالك ١٨ نوفمبر): الساعة تحت اليوم في اليمين.
     expect(order(bridge), [for (final t in defaultLayout) t.id.name]);
-    expect(tileOf(bridge, 'clock')['rect'], [0, 0, 4, 2]);
+    expect(tileOf(bridge, 'clock')['rect'], [0, 1, 2, 2]);
+    expect(tileOf(bridge, 'weekday')['rect'], [0, 0, 2, 1]);
   });
 
   testWidgets('التعديل الخفيف (الإظهار والترتيب) يطابق بناء الجدول كاملاً', (tester) async {

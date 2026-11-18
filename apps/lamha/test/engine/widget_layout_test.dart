@@ -18,7 +18,7 @@ void main() {
     test('الترتيب الافتراضي = تصميم المالك ٣ (الميزة ٦)', () {
       expect(
         shape(stackCells([
-          for (final t in defaultLayout)
+          for (final t in previousDefaultLayout)
             if (t.visible) (id: t.id.name, span: t.span),
         ])),
         [
@@ -30,13 +30,13 @@ void main() {
         ],
       );
       expect(
-        [for (final t in defaultLayout) if (!t.visible) t.id],
+        [for (final t in previousDefaultLayout) if (!t.visible) t.id],
         [WidgetElement.tradPoints, WidgetElement.dates, WidgetElement.weather, WidgetElement.prayer, WidgetElement.weekday, WidgetElement.cityTemp],
       );
-      expect(defaultLayout.first,
+      expect(previousDefaultLayout.first,
           const TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false));
       expect([
-        for (final t in defaultLayout)
+        for (final t in previousDefaultLayout)
           if (t.id == WidgetElement.season || t.id == WidgetElement.tradSeason)
             t.showTitle,
       ], [false, false]);
@@ -195,7 +195,7 @@ void main() {
       expect(l.map((t) => t.id).toList(), [
         WidgetElement.prayer,
         WidgetElement.clock,
-        for (final t in defaultLayout)
+        for (final t in previousDefaultLayout)
           if (t.id != WidgetElement.prayer && t.id != WidgetElement.clock) t.id,
       ]);
       expect(l.first.span, 3);
@@ -233,7 +233,7 @@ void main() {
       expect(migrateLayout(featureSixLayout), defaultLayout);
       final shown = defaultLayout.where((t) => t.visible).map((t) => t.id).toList();
       expect(shown, isNot(contains(WidgetElement.tradPoints)));
-      expect(shown.sublist(shown.length - 2), [WidgetElement.season, WidgetElement.tradSeason]);
+      expect(shown, containsAll([WidgetElement.season, WidgetElement.tradSeason]));
     });
 
     test('ترحيل visible القديم إلى الترتيب الافتراضي الجديد يطابقه', () {

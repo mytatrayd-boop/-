@@ -78,10 +78,10 @@ void main() {
   });
 
   testWidgets('الإيداعات بعرض صغير (خليتان): إيداع واحد', (tester) async {
-    final rects = rectsOf(defaultLayout);
+    final rects = rectsOf(previousDefaultLayout);
     final placed = place(rects, WidgetElement.deposit, const GridRect(0, 6, 2, 2));
     final s = LamhaSettings.defaults(city, {'salary', 'citizen_account', 'housing_support'}).copyWith(
-      layout: withRects(defaultLayout, placed),
+      layout: withRects(previousDefaultLayout, placed),
     );
     await pumpApp(tester, prefs: {LamhaSettings.prefsKey: s.encode()});
     expect(find.byKey(const Key('deposit-name-0')), findsOneWidget);

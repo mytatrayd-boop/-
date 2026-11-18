@@ -20,7 +20,7 @@ Finder tile(WidgetElement e) => find.byKey(Key('tile-${e.name}'));
 
 /// العناصر الظاهرة في الترتيب الافتراضي (الميزة ٦) بترتيبها.
 final shownTiles = [
-  for (final t in defaultLayout)
+  for (final t in previousDefaultLayout)
     if (t.visible) t.id,
 ];
 
