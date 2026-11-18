@@ -8,7 +8,9 @@ import 'package:lamha/main.dart';
 import 'dart:async';
 
 import 'package:lamha/src/app/adhan_service.dart';
+import 'package:lamha/src/app/app_settings.dart';
 import 'package:lamha/src/app/cities.dart';
+import 'package:lamha/src/engine/widget_layout.dart';
 import 'package:lamha/src/engine/adhan.dart';
 import 'package:lamha/src/app/places.dart';
 import 'package:lamha/src/app/providers.dart';
@@ -260,7 +262,18 @@ Future<FakeBridge> pumpApp(
   tester.view.physicalSize = const Size(1000, 3200);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  SharedPreferences.setMockInitialValues(prefs);
+  // اختبارات آليات الشاشة (سحب، حجم، ألوان…) تبدأ من الترتيب السابق؛ الافتراضي الجديد له اختباراته
+  // (new_default_layout_test). الفرق في عنصر مخفي يمنع الترحيل التلقائي إلى الافتراضي الجديد.
+  SharedPreferences.setMockInitialValues({
+    if (!prefs.containsKey(LamhaSettings.prefsKey))
+      LamhaSettings.prefsKey: LamhaSettings.defaults(_cities.first, _data.deposits.defaultIds)
+          .copyWith(layout: [
+            ...previousDefaultLayout.take(previousDefaultLayout.length - 1),
+            previousDefaultLayout.last.copyWith(span: 2),
+          ])
+          .encode(),
+    ...prefs,
+  });
   final b = bridge ?? FakeBridge();
   await tester.pumpWidget(ProviderScope(
     overrides: [

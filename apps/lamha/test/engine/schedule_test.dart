@@ -15,7 +15,7 @@ void main() {
         cityName: 'الرياض',
         deposits: deposits ?? {'salary', 'citizen_account'},
         layout: [
-          for (final t in defaultLayout)
+          for (final t in previousDefaultLayout)
             t.copyWith(
                 visible: t.id == WidgetElement.dates ||
                     t.id == WidgetElement.prayer),
@@ -55,7 +55,7 @@ void main() {
     });
     // التخطيط بترتيبه وقيمه الجاهزة (الميزة ٥)، والترتيب الافتراضي للميزة ٦.
     final layout = (schedule['layout']! as List).cast<Map>();
-    expect(layout.map((t) => t['id']), [for (final t in defaultLayout) t.id.name]);
+    expect(layout.map((t) => t['id']), [for (final t in previousDefaultLayout) t.id.name]);
     expect(layout.first, {
       'id': 'clock', 'visible': false, 'span': 2, 'fontScale': 2.0,
       'showTitle': true, 'showSub': false,

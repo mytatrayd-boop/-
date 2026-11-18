@@ -276,12 +276,30 @@ class TileLayout {
   );
 }
 
-/// الترتيب الافتراضي (الميزة ٦، تصميم المالك ٣ `mockups/owner_design_v3.png`)، من اليمين:
-/// الساعة (عرض ٢، بلا يوم تحتها) واليوم والطقس؛ ثم الهجري وتحته الميلادي (مكدسان، [stackCells])
-/// والقبلة؛ ثم مواقيت الصلاة (عرض ٣)؛ ثم الإيداعات (عرض ٣)؛ ثم الفصل والموسم (عرض ٢، ووصفه داخله) بلا
-/// عناوين. «وصف الموسم» مخفي (طلب المالك ٢٩/١٠/٢٠٢٦).
-/// والعناصر القديمة (التاريخان معاً، والمدينة والطقس، والصلاة القادمة) متاحة مخفية.
+/// الترتيب الافتراضي (طلب المالك ١٨/١١/٢٠٢٦ بلقطة شاشته، DECISIONS ٣٦)، على شبكة [freeCols]×[freeRows]
+/// (x من اليمين): اليوم فوق الساعة في اليمين، والموقع والحرارة في الوسط، والميلادي فوق الهجري في اليسار؛
+/// ثم مواقيت الصلاة؛ ثم الإيداعات؛ ثم الفصل (يميناً) والموسم (يساراً)؛ والبوصلة عائمة في وسط أسفل
+/// الودجت بحجم كبير. «اليوم والطقس» مخفي لأن اليوم والموقع صارا مربعين مستقلين. العناصر القديمة متاحة مخفية.
 const defaultLayout = <TileLayout>[
+  TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false, rect: GridRect(0, 1, 2, 2)),
+  TileLayout(WidgetElement.dayWeather, visible: false),
+  TileLayout(WidgetElement.hijri, span: 2, rect: GridRect(4, 1, 2, 1)),
+  TileLayout(WidgetElement.gregorian, span: 2, rect: GridRect(4, 0, 2, 1)),
+  TileLayout(WidgetElement.qibla, iconScale: 5.0, float: FloatRect(0.32, 0.67, 0.36, 0.33)),
+  TileLayout(WidgetElement.prayerTimes, span: 3, rect: GridRect(0, 3, 6, 2)),
+  TileLayout(WidgetElement.deposit, span: 3, rect: GridRect(0, 5, 6, 2)),
+  TileLayout(WidgetElement.season, showTitle: false, rect: GridRect(0, 7, 2, 1)),
+  TileLayout(WidgetElement.tradSeason, span: 2, showTitle: false, rect: GridRect(4, 7, 2, 1)),
+  TileLayout(WidgetElement.tradPoints, visible: false),
+  TileLayout(WidgetElement.dates, visible: false, span: 2),
+  TileLayout(WidgetElement.weather, visible: false, span: 2),
+  TileLayout(WidgetElement.prayer, visible: false),
+  TileLayout(WidgetElement.weekday, rect: GridRect(0, 0, 2, 1)),
+  TileLayout(WidgetElement.cityTemp, rect: GridRect(2, 0, 2, 2)),
+];
+
+/// الترتيب الافتراضي قبل ١٨/١١/٢٠٢٦ (بلا مستطيلات)، للترحيل: من لم يغيّره ينتقل إلى [defaultLayout].
+const previousDefaultLayout = <TileLayout>[
   TileLayout(WidgetElement.clock, span: 2, fontScale: 2.0, showSub: false),
   TileLayout(WidgetElement.dayWeather),
   TileLayout(WidgetElement.hijri, span: 2),
@@ -298,6 +316,7 @@ const defaultLayout = <TileLayout>[
   TileLayout(WidgetElement.weekday, visible: false),
   TileLayout(WidgetElement.cityTemp, visible: false),
 ];
+
 
 /// الترتيب الافتراضي للميزة ٦ قبل ملاحظة المالك (٢٩/١٠/٢٠٢٦: «الاكتفاء بأيقونة الفصول وأيقونة
 /// المواسم»)، للترحيل: من لم يغيّره ينتقل إلى [defaultLayout].
@@ -357,7 +376,8 @@ List<TileLayout> migrateLayout(List<TileLayout> layout) {
   bool same(List<TileLayout> other) =>
       layout.length == other.length &&
       [for (var i = 0; i < layout.length; i++) layout[i] == other[i]].every((x) => x);
-  return same(legacyDefaultLayout) || same(featureSixLayout) ? defaultLayout : normalizeLayout(layout);
+  return same(legacyDefaultLayout) || same(featureSixLayout) || same(previousDefaultLayout)
+      ? defaultLayout : normalizeLayout(layout);
 }
 
 /// ترحيل إعدادات ما قبل الميزة ٥ (مفاتيح «ما يظهر على الودجت»): لم يُخصَّص فيها ترتيب، فالترتيب

@@ -15,7 +15,7 @@ const c = WidgetElement.clock,
 
 void main() {
   test('التخطيط الافتراضي بلا مستطيلات يملأ الشبكة ٦×١٠ بتصميم المالك', () {
-    final r = rectsOf(defaultLayout);
+    final r = rectsOf(previousDefaultLayout);
     expect(r[c], const GridRect(0, 0, 4, 2));
     expect(r[dw], const GridRect(4, 0, 2, 2));
     expect(r[hi], const GridRect(0, 2, 4, 1));
@@ -29,14 +29,14 @@ void main() {
   });
 
   test('الإخفاء لا يترك فجوة: ما تحته يصعد', () {
-    final r = rectsOf([for (final t in defaultLayout) t.id == pt ? t.copyWith(visible: false) : t]);
+    final r = rectsOf([for (final t in previousDefaultLayout) t.id == pt ? t.copyWith(visible: false) : t]);
     expect(r.containsKey(pt), isFalse);
     expect(r[de], const GridRect(0, 4, 6, 2));
     expect(r[se]!.y, 6);
   });
 
   test('تكبير البوصلة يدفع ما تحتها ثم يصعد الجميع بلا فجوات', () {
-    final base = rectsOf(defaultLayout);
+    final base = rectsOf(previousDefaultLayout);
     final r = place(base, qi, const GridRect(4, 2, 2, 4));
     expect(r[qi], const GridRect(4, 2, 2, 4));
     expect(r[pt]!.y, 6, reason: 'المواقيت تنزل تحت البوصلة');
@@ -49,14 +49,14 @@ void main() {
   });
 
   test('تحريك عنصر إلى الأعلى يزيح غيره، والمكان القديم يمتلئ', () {
-    final r = place(rectsOf(defaultLayout), pt, const GridRect(0, 0, 6, 2));
+    final r = place(rectsOf(previousDefaultLayout), pt, const GridRect(0, 0, 6, 2));
     expect(r[pt], const GridRect(0, 0, 6, 2));
     expect(r[c], const GridRect(0, 2, 4, 2));
     expect(r[de]!.y, 6);
   });
 
   test('شجرة القص للتخطيط الافتراضي: صفوف رأسية بأوزانها، والصف الأول عمودان', () {
-    final t = cutTree(rectsOf(defaultLayout))!;
+    final t = cutTree(rectsOf(previousDefaultLayout))!;
     expect(t.vertical, isTrue);
     expect([for (final ch in t.children) ch.weight], [2, 2, 2, 2, 2]);
     final top = t.children.first.node;
@@ -108,7 +108,7 @@ void main() {
   test('شجرة القص لا تتجاوز cutTreeMaxDepth (ودجت أندرويد تسقط بأكثر من ١٠ مستويات)', () {
     // سحب وتكبير عشوائيان: كل حركة مقبولة شجرتها ضمن الحد، والمرفوضة لا تغيّر شيئاً.
     final rnd = Random(7);
-    var rects = rectsOf(defaultLayout);
+    var rects = rectsOf(previousDefaultLayout);
     var accepted = 0;
     for (var i = 0; i < 3000; i++) {
       final id = rects.keys.elementAt(rnd.nextInt(rects.length));
@@ -120,7 +120,7 @@ void main() {
       accepted++;
     }
     expect(accepted, greaterThan(100));
-    expect(cutTree(rectsOf(defaultLayout))!.depth, lessThanOrEqualTo(cutTreeMaxDepth));
+    expect(cutTree(rectsOf(previousDefaultLayout))!.depth, lessThanOrEqualTo(cutTreeMaxDepth));
   });
 
   test('شجرة أعمق من الحد تُرفض', () {
@@ -149,7 +149,7 @@ void main() {
   group('المربعات العائمة (DECISIONS ٢٩)', () {
     const f = FloatRect(0.6, 0.1, 0.3, 0.2);
     final floating = [
-      for (final t in defaultLayout) t.id == qi || t.id == pt ? t.copyWith(float: () => f) : t,
+      for (final t in previousDefaultLayout) t.id == qi || t.id == pt ? t.copyWith(float: () => f) : t,
     ];
 
     test('العائم خارج الرصّ: لا مستطيل له ولا مكان في الشجرة، وغيره يملأ مكانه', () {
@@ -170,7 +170,7 @@ void main() {
     });
 
     test('كل المربعات عائمة: لا شجرة ولا رصّ، ولا يفشل شيء', () {
-      final all = [for (final t in defaultLayout) t.copyWith(float: () => f)];
+      final all = [for (final t in previousDefaultLayout) t.copyWith(float: () => f)];
       expect(rectsOf(all), isEmpty);
       expect(reflow(all).length, all.length);
     });
@@ -226,7 +226,7 @@ void main() {
       expect(t.floating, isTrue);
       expect(TileLayout.fromJson((t.toJson()).cast<String, dynamic>()).float, t.float);
       expect(t.toScheduleJson()['float'], [0.6, 0.1, 0.3, 0.2]);
-      expect(defaultLayout.firstWhere((t) => t.id == qi).toScheduleJson().containsKey('float'), isFalse);
+      expect(previousDefaultLayout.firstWhere((t) => t.id == qi).toScheduleJson().containsKey('float'), isFalse);
     });
   });
 }

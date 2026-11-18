@@ -152,7 +152,7 @@ void main() {
             cityName: 'الرياض',
             deposits: {'salary', 'citizen_account'},
             layout: [
-              for (final t in defaultLayout)
+              for (final t in previousDefaultLayout)
                 t.id == id ? t.copyWith(fontScale: scale) : t,
             ],
           ),

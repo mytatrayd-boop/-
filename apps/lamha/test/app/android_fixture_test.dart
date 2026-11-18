@@ -41,7 +41,7 @@ String fixture(
       frame: frame,
       layout: splitDay
           ? [
-              for (final t in defaultLayout)
+              for (final t in previousDefaultLayout)
                 if (t.id == WidgetElement.dayWeather)
                   t.copyWith(visible: false)
                 else if (t.id == WidgetElement.weekday)
@@ -53,19 +53,19 @@ String fixture(
             ]
           : floatDeposits != null
           ? [
-              for (final t in defaultLayout)
+              for (final t in previousDefaultLayout)
                 t.id == WidgetElement.deposit ? t.copyWith(float: () => floatDeposits) : t,
             ]
           : floatCompass
           ? [
-              for (final t in defaultLayout)
+              for (final t in previousDefaultLayout)
                 t.id == WidgetElement.qibla
                     ? t.copyWith(float: () => const FloatRect(0.04, 0.1, 0.52, 0.3), iconScale: 5.0)
                     : t.id == WidgetElement.hijri
                         ? t.copyWith(float: () => const FloatRect(0.05, 0.45, 0.6, 0.07))
                         : t,
             ]
-          : null,
+          : previousDefaultLayout,
     ),
     loadEngineDataFromFiles(),
     days: 2,
