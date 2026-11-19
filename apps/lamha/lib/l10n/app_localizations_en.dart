@@ -637,11 +637,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adhanNoteIos =>
-      'On iPhone the sound is two takbeers, because Apple limits notification sounds to 30 seconds. The next 12 days are scheduled and refreshed whenever you open Lamha.';
+      'On iPhone the sound is two takbeers, because Apple limits notification sounds to 30 seconds. Its level follows the Ringtone and Alerts volume. The next 12 days are scheduled and refreshed whenever you open Lamha.';
 
   @override
   String get adhanNoteAndroid =>
-      'The Stop button in the notification stops the sound. The next 12 days are scheduled and refreshed whenever you open Lamha.';
+      'The adhan follows the ringtone volume: raise or lower it with the volume buttons; it is quiet in silent mode. The Stop button in the notification stops the sound. The next 12 days are scheduled and refreshed whenever you open Lamha.';
 
   @override
   String get adhanDenied =>

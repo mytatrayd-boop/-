@@ -965,13 +965,13 @@ abstract class AppLocalizations {
   /// No description provided for @adhanNoteIos.
   ///
   /// In ar, this message translates to:
-  /// **'في آيفون يكون الصوت تكبيرتين، لأن آبل تحدد صوت الإشعار بـ٣٠ ثانية. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  /// **'في آيفون يكون الصوت تكبيرتين، لأن آبل تحدد صوت الإشعار بـ٣٠ ثانية. مستواه يتبع صوت الرنين والتنبيهات. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
   String get adhanNoteIos;
 
   /// No description provided for @adhanNoteAndroid.
   ///
   /// In ar, this message translates to:
-  /// **'زر «إيقاف» في الإشعار يوقف الصوت. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  /// **'مستوى صوت الأذان يتبع صوت الرنين: ترفعه وتخفضه بأزرار الصوت، ويسكت في الوضع الصامت. زر «إيقاف» في الإشعار يوقف الصوت. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
   String get adhanNoteAndroid;
 
   /// No description provided for @adhanDenied.
