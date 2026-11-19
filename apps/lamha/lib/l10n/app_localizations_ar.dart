@@ -528,6 +528,35 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get codeOpen => 'عندي كود تفعيل';
+
+  @override
+  String get codeTitle => 'التفعيل بكود';
+
+  @override
+  String get codeSub =>
+      'أدخل كود التفعيل. كل كود يفتح لمحة مجانًا على جهاز واحد فقط.';
+
+  @override
+  String get codeActivate => 'تفعيل';
+
+  @override
+  String get codeCancel => 'إلغاء';
+
+  @override
+  String get codeInvalid => 'الكود غير صحيح.';
+
+  @override
+  String get codeUsed => 'هذا الكود مستخدم على جهاز آخر.';
+
+  @override
+  String get codeRateLimited => 'محاولات كثيرة. حاول بعد ساعة.';
+
+  @override
+  String get codeFailed =>
+      'تعذّر التفعيل الآن. تحقق من الاتصال وحاول مرة أخرى.';
+
+  @override
   String get tabSize => 'الحجم';
 
   @override

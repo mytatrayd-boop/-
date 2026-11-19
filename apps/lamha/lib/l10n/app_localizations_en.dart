@@ -533,6 +533,35 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get codeOpen => 'I have an activation code';
+
+  @override
+  String get codeTitle => 'Activate with a code';
+
+  @override
+  String get codeSub =>
+      'Enter your activation code. Each code opens Lamha for free on one device only.';
+
+  @override
+  String get codeActivate => 'Activate';
+
+  @override
+  String get codeCancel => 'Cancel';
+
+  @override
+  String get codeInvalid => 'This code is not valid.';
+
+  @override
+  String get codeUsed => 'This code is already used on another device.';
+
+  @override
+  String get codeRateLimited => 'Too many tries. Try again in an hour.';
+
+  @override
+  String get codeFailed =>
+      'Could not activate now. Check your connection and try again.';
+
+  @override
   String get tabSize => 'Size';
 
   @override
