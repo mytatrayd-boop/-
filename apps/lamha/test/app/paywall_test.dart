@@ -10,6 +10,15 @@ import 'package:lamha/src/app/paywall.dart';
 import 'package:lamha/src/app/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _FakeRedeemer implements CodeRedeemer {
+  final calls = <(String, String)>[];
+  @override
+  Future<void> redeem(String code, String deviceId) async {
+    calls.add((code, deviceId));
+    if (code.toUpperCase() != 'LAM-GOOD-0001') throw ReceiptCheckError(code.toUpperCase() == 'LAM-USED-0001' ? 'code-used' : 'code-invalid');
+  }
+}
+
 class _FakeChecker implements ReceiptChecker {
   _FakeChecker(this.until);
   final int? until;
@@ -33,6 +42,7 @@ Widget app(SharedPreferences prefs) => ProviderScope(
 void main() {
   tearDown(() {
     LamhaAccess.debugGated = null;
+    LamhaAccess.debugDeviceId = null;
     LamhaStore.debugNoStart = false;
   });
 
@@ -84,6 +94,50 @@ void main() {
     final paid = LamhaStore.offer(products[1]);
     expect(paid.price, '١٠٫٠٠ ر.س.');
     expect(paid.trial, isFalse, reason: 'trial already used: the button says «اشترك»');
+  });
+
+  testWidgets('an activation code opens the app on this phone; a wrong or used code says why', (tester) async {
+    LamhaStore.debugNoStart = true;
+    LamhaAccess.debugGated = true;
+    LamhaAccess.debugDeviceId = 'a-test-device';
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final redeemer = _FakeRedeemer();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        preferencesProvider.overrideWith((ref) async => prefs),
+        receiptCheckerProvider.overrideWithValue(_FakeChecker(null)),
+        codeRedeemerProvider.overrideWithValue(redeemer),
+      ],
+      child: const MaterialApp(
+        locale: Locale('ar'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: AccessGate(child: Scaffold(body: Text('الشاشة الرئيسية'))),
+      ),
+    ));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.text('عندي كود تفعيل'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'lam-used-0001');
+    await tester.tap(find.text('تفعيل'));
+    await tester.pumpAndSettle();
+    expect(find.text('هذا الكود مستخدم على جهاز آخر.'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'nope');
+    await tester.tap(find.text('تفعيل'));
+    await tester.pumpAndSettle();
+    expect(find.text('الكود غير صحيح.'), findsOneWidget);
+    expect(LamhaAccess.savedCode(prefs), isNull);
+
+    await tester.enterText(find.byType(TextField), ' lam-good-0001 ');
+    await tester.tap(find.text('تفعيل'));
+    await tester.pumpAndSettle();
+    expect(redeemer.calls.last, ('lam-good-0001', 'a-test-device'));
+    expect(LamhaAccess.savedCode(prefs), 'LAM-GOOD-0001');
+    expect(find.text('الشاشة الرئيسية'), findsOneWidget);
+    expect(LamhaAccess.allowed(prefs, DateTime.now()), isTrue, reason: 'a code needs no subscription');
   });
   testWidgets('the gate shows the subscription screen until paid, then the app', (tester) async {
     LamhaStore.debugNoStart = true;

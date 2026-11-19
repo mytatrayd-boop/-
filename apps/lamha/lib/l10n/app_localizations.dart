@@ -818,6 +818,60 @@ abstract class AppLocalizations {
   /// **'٧ أيام مجانًا، ثم {price}'**
   String paywallTrialThen(String price);
 
+  /// No description provided for @codeOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندي كود تفعيل'**
+  String get codeOpen;
+
+  /// No description provided for @codeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفعيل بكود'**
+  String get codeTitle;
+
+  /// No description provided for @codeSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل كود التفعيل. كل كود يفتح لمحة مجانًا على جهاز واحد فقط.'**
+  String get codeSub;
+
+  /// No description provided for @codeActivate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get codeActivate;
+
+  /// No description provided for @codeCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get codeCancel;
+
+  /// No description provided for @codeInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود غير صحيح.'**
+  String get codeInvalid;
+
+  /// No description provided for @codeUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود مستخدم على جهاز آخر.'**
+  String get codeUsed;
+
+  /// No description provided for @codeRateLimited.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولات كثيرة. حاول بعد ساعة.'**
+  String get codeRateLimited;
+
+  /// No description provided for @codeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التفعيل الآن. تحقق من الاتصال وحاول مرة أخرى.'**
+  String get codeFailed;
+
   /// شاشة الودجت
   ///
   /// In ar, this message translates to:

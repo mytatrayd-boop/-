@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +22,9 @@ class LamhaAccess {
   static const productIds = {monthlyId, yearlyId};
   static const privacyUrl = 'https://github.com/mytatrayd-boop/-/blob/claude/mobile-app-design-gxh65v/apps/lamha/store/PRIVACY.md';
   static const _untilKey = 'lamhaPaidUntil';
+  static const _codeKey = 'lamhaCode';
+  static const _secure = FlutterSecureStorage();
+  static const _channel = MethodChannel('sa.lamha/android');
 
   /// The store the server should ask about a receipt / purchase token.
   static String get platform => !kIsWeb && defaultTargetPlatform == TargetPlatform.android ? 'android' : 'ios';
@@ -32,8 +38,40 @@ class LamhaAccess {
   static int paidUntil(SharedPreferences p) => p.getInt(_untilKey) ?? 0;
   static Future<void> savePaidUntil(SharedPreferences p, int ms) => p.setInt(_untilKey, ms);
 
-  /// The app may be used: the gate is off, or the subscription the server confirmed has not ended.
-  static bool allowed(SharedPreferences p, DateTime now) => !gated || paidUntil(p) > now.millisecondsSinceEpoch;
+  /// A free activation code the server bound to this phone (like «أسرتي»: one phone per code).
+  static String? savedCode(SharedPreferences p) => p.getString(_codeKey);
+  static Future<void> saveCode(SharedPreferences p, String code) => p.setString(_codeKey, code);
+
+  /// The app may be used: the gate is off, a code was activated here, or the subscription the server confirmed
+  /// has not ended.
+  static bool allowed(SharedPreferences p, DateTime now) =>
+      !gated || savedCode(p) != null || paidUntil(p) > now.millisecondsSinceEpoch;
+
+  /// A stable id for this phone, so a used code keeps working after a reinstall. Android: the per-app
+  /// ANDROID_ID; iPhone: a random id kept in the keychain.
+  static Future<String> deviceId() async {
+    if (debugDeviceId != null) return debugDeviceId!;
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        final id = await _channel.invokeMethod<String>('androidId');
+        if (id != null && id.length >= 8) return 'a-$id';
+      } catch (_) {}
+    }
+    try {
+      final saved = await _secure.read(key: 'deviceId');
+      if (saved != null && saved.length >= 8) return saved;
+    } catch (_) {}
+    final r = Random.secure();
+    final id = 'i-${List.generate(24, (_) => '0123456789abcdef'[r.nextInt(16)]).join()}';
+    try {
+      await _secure.write(key: 'deviceId', value: id);
+    } catch (_) {}
+    return id;
+  }
+
+  /// Tests set this instead of reading platform storage.
+  @visibleForTesting
+  static String? debugDeviceId;
 }
 
 /// Asks the server about a receipt: until when (epoch ms) the subscription lasts, or null when it has none.
@@ -49,32 +87,48 @@ class ReceiptCheckError implements Exception {
   String toString() => 'ReceiptCheckError($code)';
 }
 
+/// One call to the server (the Firebase callable protocol): the `result`, or a [ReceiptCheckError] with its code.
+Future<Object?> _callServer(String name, Map<String, Object?> data) async {
+  final c = HttpClient()..connectionTimeout = const Duration(seconds: 15);
+  try {
+    final req = await c.postUrl(Uri.parse('${LamhaAccess.serverUrl}/api/$name'));
+    req.headers.contentType = ContentType.json;
+    req.write(jsonEncode({'data': data}));
+    final res = await req.close().timeout(const Duration(seconds: 30));
+    final body = jsonDecode(await res.transform(utf8.decoder).join()) as Map<String, dynamic>;
+    final err = body['error'];
+    if (err is Map) {
+      final d = err['details'];
+      throw ReceiptCheckError(d is Map && d['code'] is String ? d['code'] as String : '${err['message'] ?? 'failed'}');
+    }
+    return body['result'];
+  } on ReceiptCheckError {
+    rethrow;
+  } catch (_) {
+    throw ReceiptCheckError('network');
+  } finally {
+    c.close(force: true);
+  }
+}
+
 class ServerReceiptChecker implements ReceiptChecker {
   @override
   Future<int?> check(String receipt) async {
-    final c = HttpClient()..connectionTimeout = const Duration(seconds: 15);
-    try {
-      final req = await c.postUrl(Uri.parse('${LamhaAccess.serverUrl}/api/lamhaPlan'));
-      req.headers.contentType = ContentType.json;
-      req.write(jsonEncode({'data': {'receipt': receipt, 'platform': LamhaAccess.platform}}));
-      final res = await req.close().timeout(const Duration(seconds: 30));
-      final body = jsonDecode(await res.transform(utf8.decoder).join()) as Map<String, dynamic>;
-      final err = body['error'];
-      if (err is Map) {
-        final d = err['details'];
-        throw ReceiptCheckError(d is Map && d['code'] is String ? d['code'] as String : '${err['message'] ?? 'failed'}');
-      }
-      final r = body['result'];
-      if (r is Map && r['active'] == true && r['until'] is num) return (r['until'] as num).toInt();
-      return null;
-    } on ReceiptCheckError {
-      rethrow;
-    } catch (_) {
-      throw ReceiptCheckError('network');
-    } finally {
-      c.close(force: true);
-    }
+    final r = await _callServer('lamhaPlan', {'receipt': receipt, 'platform': LamhaAccess.platform});
+    if (r is Map && r['active'] == true && r['until'] is num) return (r['until'] as num).toInt();
+    return null;
   }
+}
+
+/// Asks the server to bind a free activation code to this phone; throws [ReceiptCheckError]
+/// (code-invalid, code-used, rate-limited, network) when it cannot.
+abstract interface class CodeRedeemer {
+  Future<void> redeem(String code, String deviceId);
+}
+
+class ServerCodeRedeemer implements CodeRedeemer {
+  @override
+  Future<void> redeem(String code, String deviceId) => _callServer('lamhaRedeem', {'code': code, 'deviceId': deviceId});
 }
 
 /// App Store purchases: prices, buying, and restoring on a new phone. A bought or restored subscription

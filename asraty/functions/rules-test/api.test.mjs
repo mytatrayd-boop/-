@@ -374,6 +374,16 @@ test("an activation code works on one device only", async () => {
   await rejects(call("redeemCode", { code: "ASR-NOPE-0000", deviceId: "device-aaaa-1" }), "code-invalid");
 });
 
+test("«لمحة» codes are separate: a لمحة code works in لمحة only, on one device", async () => {
+  const { codeRef } = await import("../build/src/activation.js");
+  await codeRef("LAM-TEST-0001", "lamha").set({ deviceId: null, usedAt: null, disabled: false });
+  await rejects(call("redeemCode", { code: "LAM-TEST-0001", deviceId: "device-cccc-3" }), "code-invalid");
+  await rejects(call("lamhaRedeem", { code: "ASR-TEST-0001", deviceId: "device-aaaa-1" }), "code-invalid");
+  await call("lamhaRedeem", { code: "lam-test-0001", deviceId: "device-cccc-3" });
+  await call("lamhaRedeem", { code: "LAM-TEST-0001", deviceId: "device-cccc-3" });
+  await rejects(call("lamhaRedeem", { code: "LAM-TEST-0001", deviceId: "device-dddd-4" }), "code-used");
+});
+
 test("family trip and saved places: only trip admins pick places; sharing only notifies; locations vanish at the end", async () => {
   await clearRate();
   const kid = await login("kid1@test.sa", "member");
