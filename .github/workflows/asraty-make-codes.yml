@@ -1,4 +1,4 @@
-name: Asraty — make activation codes
+name: Asraty / Lamha — make activation codes
 
 # Makes free-use activation codes (one device each) and emails them to the
 # support address (asraty200@gmail.com). Codes never appear in this log: the
@@ -12,6 +12,11 @@ on:
       note:
         description: "Optional note sent with the codes (who they are for)"
         default: ""
+      app:
+        description: "Which app the codes open"
+        type: choice
+        default: asraty
+        options: [asraty, lamha]
 
 permissions:
   contents: read
@@ -38,6 +43,7 @@ jobs:
           SUPPORT_EMAIL: asraty200@gmail.com
           COUNT: ${{ inputs.count }}
           NOTE: ${{ inputs.note }}
+          APP: ${{ inputs.app }}
         run: node scripts/make-codes.mjs "$COUNT" "$NOTE"
       - if: always()
         run: rm -f "$RUNNER_TEMP/sa.json"

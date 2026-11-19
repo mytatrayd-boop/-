@@ -1,5 +1,6 @@
 package sa.lamha.lamha
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.GeomagneticField
@@ -7,6 +8,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -30,6 +32,8 @@ class MainActivity : FlutterActivity() {
                 "systemColors" -> result.success(systemColors())
                 "requestNotificationPermission" -> requestNotificationPermission(result)
                 "vibrate" -> result.success(vibrate())
+                // معرّف ثابت للجهاز لأكواد التفعيل (access.dart): يبقى بعد إعادة التثبيت.
+                "androidId" -> result.success(androidId())
                 "declination" -> {
                     val lat = call.argument<Double>("latitude") ?: 0.0
                     val lng = call.argument<Double>("longitude") ?: 0.0
@@ -39,6 +43,9 @@ class MainActivity : FlutterActivity() {
             }
         }
     }
+
+    @SuppressLint("HardwareIds")
+    private fun androidId(): String? = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
 
     /// ألوان النظام في أندرويد ١٢+ (كـ LamhaWidgetReceiver.colors)، وإلا null.
     private fun systemColors(): Map<String, Int>? {
