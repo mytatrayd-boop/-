@@ -153,8 +153,8 @@
   "adhanSoundTakbeer": "Two takbeers",
   "adhanSoundSilent": "Silent",
   "adhanTest": "Test the sound",
-  "adhanNoteIos": "On iPhone the sound is two takbeers, because Apple limits notification sounds to 30 seconds. The next 12 days are scheduled and refreshed whenever you open Lamha.",
-  "adhanNoteAndroid": "The Stop button in the notification stops the sound. The next 12 days are scheduled and refreshed whenever you open Lamha.",
+  "adhanNoteIos": "On iPhone the sound is two takbeers, because Apple limits notification sounds to 30 seconds. Its level follows the Ringtone and Alerts volume. The next 12 days are scheduled and refreshed whenever you open Lamha.",
+  "adhanNoteAndroid": "The adhan follows the ringtone volume: raise or lower it with the volume buttons; it is quiet in silent mode. The Stop button in the notification stops the sound. The next 12 days are scheduled and refreshed whenever you open Lamha.",
   "adhanDenied": "Notification permission was not granted, so the adhan stays off.",
   "adhanExactMissing": "The Alarms & reminders permission was not granted, so alerts may arrive a few minutes late."
 }

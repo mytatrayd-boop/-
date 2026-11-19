@@ -41,6 +41,12 @@ const androidAdhanSound = 'adhan';
 const androidTakbeerSound = 'takbeer';
 const iosTakbeerSound = 'takbeer.wav';
 
+/// قنوات أندرويد للأذان: `adhan_<الصوت>_ring`. القنوات بلا اللاحقة (`adhan_full` وأخواتها) كانت على
+/// مستوى صوت الإشعارات، وصوت القناة وخصائصها لا تتغير بعد إنشائها، فلزم اسم جديد.
+const adhanChannelPrefix = 'adhan_';
+const adhanChannelSuffix = '_ring';
+const legacyAdhanChannels = ['adhan_full', 'adhan_takbeer', 'adhan_silent'];
+
 /// مفتاح في shared_preferences: هل جدوَل التطبيق تنبيهات من قبل (فلا نمسّ الإشعارات لمن لم يفعّل الأذان قط).
 const adhanActiveKey = 'adhanActive';
 
@@ -76,6 +82,15 @@ class LocalAdhanNotifier implements AdhanNotifier {
       ),
     );
     _ready = true;
+    if (!_ios) {
+      // القنوات القديمة (صوت الإشعارات) لا يُعاد استعمالها: تُحذف فلا تبقى مكررة في إعدادات التطبيق.
+      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      for (final old in legacyAdhanChannels) {
+        try {
+          await android?.deleteNotificationChannel(channelId: old);
+        } catch (_) {}
+      }
+    }
   }
 
   NotificationDetails _details(AdhanSound requested) {
@@ -84,8 +99,8 @@ class LocalAdhanNotifier implements AdhanNotifier {
     final raw = sound == AdhanSound.full ? androidAdhanSound : androidTakbeerSound;
     return NotificationDetails(
       android: AndroidNotificationDetails(
-        // قناة لكل صوت: صوت القناة لا يتغير بعد إنشائها.
-        'adhan_${sound.name}',
+        // قناة لكل صوت: صوت القناة لا يتغير بعد إنشائها. اللاحقة _ring: قنوات مستوى صوت الرنين (DECISIONS ٣٨).
+        '$adhanChannelPrefix${sound.name}$adhanChannelSuffix',
         switch (sound) {
           AdhanSound.full => 'الأذان',
           AdhanSound.takbeer => 'التكبير',
@@ -96,6 +111,8 @@ class LocalAdhanNotifier implements AdhanNotifier {
         priority: Priority.high,
         playSound: !silent,
         sound: silent ? null : RawResourceAndroidNotificationSound(raw),
+        // يتبع مستوى «صوت الرنين» (أزرار الصوت ترفعه وتخفضه) ويسكت في وضع الصامت، بدل «صوت الإشعارات».
+        audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
         // زر «إيقاف» يلغي الإشعار فيتوقف صوته (النظام يوقف صوت الإشعار عند إلغائه).
         actions: silent
             ? null
