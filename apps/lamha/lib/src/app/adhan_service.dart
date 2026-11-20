@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,8 +26,15 @@ abstract class AdhanNotifier {
   /// يطلب الأذونات (عند تفعيل المستخدم للأذان).
   Future<AdhanPermissionResult> requestPermissions();
 
-  /// تنبيه فوري بالصوت المختار لتجربته.
+  /// تجربة الصوت المختار. أندرويد: يُشغَّل داخل التطبيق على مستوى الرنين وأزرار الصوت تتحكم به وهو يعمل؛
+  /// ضغطها مرة ثانية وهو يعمل يوقفه. آيفون: إشعار فوري.
   Future<void> test(AdhanSound sound);
+
+  /// هل تجربة الصوت تعمل الآن (لتبديل الزر بين «تجربة» و«إيقاف»).
+  ValueListenable<bool> get testing;
+
+  /// يوقف التجربة الجارية.
+  Future<void> stopTest();
 
   /// آخر خطأ في الجدولة أو التجربة (يُعرض في الإعدادات فلا يبقى الفشل صامتاً)، أو null إن نجح آخر ما جُرّب.
   Future<String?> lastError();
@@ -56,6 +64,11 @@ class LocalAdhanNotifier implements AdhanNotifier {
   final SharedPreferences _prefs;
   final _plugin = FlutterLocalNotificationsPlugin();
   var _ready = false;
+  final _testing = ValueNotifier<bool>(false);
+  static const _channel = MethodChannel('sa.lamha/android');
+
+  @override
+  ValueListenable<bool> get testing => _testing;
 
   bool get _ios => defaultTargetPlatform == TargetPlatform.iOS;
 
@@ -199,8 +212,39 @@ class LocalAdhanNotifier implements AdhanNotifier {
   }
 
   @override
+  Future<void> stopTest() async {
+    try {
+      await _channel.invokeMethod<bool>('stopAdhanTest');
+    } catch (_) {}
+    _testing.value = false;
+  }
+
+  /// أندرويد: تشغيل داخل التطبيق (DECISIONS ٣٩). false إن لم يبدأ (فيُعرض السبب).
+  Future<bool> _playInApp(AdhanSound sound) async {
+    final raw = sound == AdhanSound.full ? androidAdhanSound : androidTakbeerSound;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'adhanTestDone') _testing.value = false;
+    });
+    final ok = await _channel.invokeMethod<bool>('playAdhanTest', {'sound': raw}) ?? false;
+    _testing.value = ok;
+    return ok;
+  }
+
+  @override
   Future<void> test(AdhanSound sound) async {
     try {
+      if (!_ios && sound != AdhanSound.silent) {
+        if (_testing.value) {
+          await stopTest();
+          return;
+        }
+        if (await _playInApp(sound)) {
+          await _prefs.remove(adhanErrorKey);
+        } else {
+          await _fail('التجربة', 'تعذّر تشغيل الصوت');
+        }
+        return;
+      }
       await _init();
       // بلا إذن الإشعارات يهمل النظام الإشعار بصمت (أندرويد ١٣+ وآيفون)، فيبدو الزر «لا يستجيب». الإذن
       // كان يُطلب فقط عند تحويل مفتاح الأذان من مطفأ إلى مفعّل، فنتحقق منه ونطلبه هنا ونعرض السبب إن رُفض.
@@ -223,6 +267,12 @@ class LocalAdhanNotifier implements AdhanNotifier {
 
 /// لا يفعل شيئاً (الاختبارات والمنصات بلا إشعارات).
 class NoopAdhanNotifier implements AdhanNotifier {
+  @override
+  ValueListenable<bool> get testing => ValueNotifier<bool>(false);
+
+  @override
+  Future<void> stopTest() async {}
+
   @override
   Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async {}
 
