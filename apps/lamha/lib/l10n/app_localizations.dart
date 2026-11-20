@@ -1040,6 +1040,12 @@ abstract class AppLocalizations {
   /// **'تجربة الصوت'**
   String get adhanTest;
 
+  /// No description provided for @adhanTestStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف التجربة'**
+  String get adhanTestStop;
+
   /// No description provided for @adhanNoteIos.
   ///
   /// In ar, this message translates to:
@@ -1049,7 +1055,7 @@ abstract class AppLocalizations {
   /// No description provided for @adhanNoteAndroid.
   ///
   /// In ar, this message translates to:
-  /// **'مستوى صوت الأذان يتبع صوت الرنين: ترفعه وتخفضه بأزرار الصوت، ويسكت في الوضع الصامت. زر «إيقاف» في الإشعار يوقف الصوت. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  /// **'مستوى صوت الأذان يتبع صوت الرنين: ترفعه وتخفضه بأزرار الصوت (حتى أثناء زر «تجربة الصوت»)، ويسكت في الوضع الصامت. زر «إيقاف» في الإشعار يوقف الصوت. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
   String get adhanNoteAndroid;
 
   /// No description provided for @adhanDenied.
