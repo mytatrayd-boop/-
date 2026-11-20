@@ -581,11 +581,14 @@ class _AdhanSection extends ConsumerWidget {
           const SizedBox(height: 8),
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: OutlinedButton.icon(
-              key: const Key('adhan-test'),
-              icon: const Icon(Icons.volume_up),
-              label: Text(l.adhanTest),
-              onPressed: c.testAdhan,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: ref.watch(adhanNotifierProvider).testing,
+              builder: (_, playing, _) => OutlinedButton.icon(
+                key: const Key('adhan-test'),
+                icon: Icon(playing ? Icons.stop : Icons.volume_up),
+                label: Text(playing ? l.adhanTestStop : l.adhanTest),
+                onPressed: c.testAdhan,
+              ),
             ),
           ),
           const SizedBox(height: 8),

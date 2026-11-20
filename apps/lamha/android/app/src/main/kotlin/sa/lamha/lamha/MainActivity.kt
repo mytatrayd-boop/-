@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.GeomagneticField
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -19,6 +22,8 @@ import sa.lamha.lamha.widget.LamhaWeatherWorker
 /// والانحراف المغناطيسي للبوصلة.
 class MainActivity : FlutterActivity() {
     private var pendingPermission: MethodChannel.Result? = null
+    private var channel: MethodChannel? = null
+    private var testPlayer: MediaPlayer? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -27,11 +32,17 @@ class MainActivity : FlutterActivity() {
         // اتجاه البوصلة الحي لشاشة القبلة (متجه الدوران مع تعويض الميل).
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, COMPASS_CHANNEL)
             .setStreamHandler(CompassStream(this))
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        channel!!.setMethodCallHandler { call, result ->
             when (call.method) {
                 "systemColors" -> result.success(systemColors())
                 "requestNotificationPermission" -> requestNotificationPermission(result)
                 "vibrate" -> result.success(vibrate())
+                "playAdhanTest" -> result.success(playAdhanTest(call.argument<String>("sound") ?: "takbeer"))
+                "stopAdhanTest" -> {
+                    stopAdhanTest(notify = false)
+                    result.success(true)
+                }
                 // معرّف ثابت للجهاز لأكواد التفعيل (access.dart): يبقى بعد إعادة التثبيت.
                 "androidId" -> result.success(androidId())
                 "declination" -> {
@@ -42,6 +53,53 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /// تجربة الأذان داخل التطبيق (لا إشعاراً): المشغّل على مستوى «الرنين»، وأزرار الصوت تتحكم بهذا المستوى
+    /// وهو يعمل (volumeControlStream)، فلا يصمت بضغطها كما يفعل صوت الإشعار حين يرنّ. false إن تعذّر التشغيل.
+    private fun playAdhanTest(sound: String): Boolean {
+        stopAdhanTest(notify = false)
+        val id = resources.getIdentifier(sound, "raw", packageName)
+        if (id == 0) return false
+        return try {
+            val p = MediaPlayer()
+            resources.openRawResourceFd(id).use { p.setDataSource(it.fileDescriptor, it.startOffset, it.length) }
+            p.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
+            p.setOnCompletionListener { stopAdhanTest(notify = true) }
+            p.setOnErrorListener { _, _, _ ->
+                stopAdhanTest(notify = true)
+                true
+            }
+            p.prepare()
+            testPlayer = p
+            volumeControlStream = AudioManager.STREAM_RING
+            p.start()
+            true
+        } catch (e: Exception) {
+            stopAdhanTest(notify = false)
+            false
+        }
+    }
+
+    private fun stopAdhanTest(notify: Boolean) {
+        val p = testPlayer ?: return
+        testPlayer = null
+        try {
+            p.release()
+        } catch (_: Exception) {
+        }
+        volumeControlStream = AudioManager.USE_DEFAULT_STREAM_TYPE
+        if (notify) channel?.invokeMethod("adhanTestDone", null)
+    }
+
+    override fun onPause() {
+        stopAdhanTest(notify = true)
+        super.onPause()
     }
 
     @SuppressLint("HardwareIds")

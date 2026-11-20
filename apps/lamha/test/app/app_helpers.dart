@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -72,6 +73,14 @@ class FakeAdhanNotifier implements AdhanNotifier {
 
   @override
   Future<void> test(AdhanSound sound) async => tested.add(sound);
+
+  final _testing = ValueNotifier<bool>(false);
+
+  @override
+  ValueListenable<bool> get testing => _testing;
+
+  @override
+  Future<void> stopTest() async => _testing.value = false;
 }
 
 class FakeDeclination implements DeclinationSource {
