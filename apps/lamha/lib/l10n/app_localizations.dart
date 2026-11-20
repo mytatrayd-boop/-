@@ -872,6 +872,30 @@ abstract class AppLocalizations {
   /// **'تعذّر التفعيل الآن. تحقق من الاتصال وحاول مرة أخرى.'**
   String get codeFailed;
 
+  /// No description provided for @updateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتوفر تحديث جديد'**
+  String get updateTitle;
+
+  /// No description provided for @updateBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث لمحة للحصول على أحدث الإصلاحات والمزايا.'**
+  String get updateBody;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث الآن'**
+  String get updateNow;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحقًا'**
+  String get updateLater;
+
   /// شاشة الودجت
   ///
   /// In ar, this message translates to:

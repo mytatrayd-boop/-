@@ -548,6 +548,10 @@
   "codeUsed": "هذا الكود مستخدم على جهاز آخر.",
   "codeRateLimited": "محاولات كثيرة. حاول بعد ساعة.",
   "codeFailed": "تعذّر التفعيل الآن. تحقق من الاتصال وحاول مرة أخرى.",
+  "updateTitle": "يتوفر تحديث جديد",
+  "updateBody": "حدّث لمحة للحصول على أحدث الإصلاحات والمزايا.",
+  "updateNow": "حدّث الآن",
+  "updateLater": "لاحقًا",
   "@paywallTrialThen": {"placeholders": {"price": {"type": "String"}}},
   "tabSize": "الحجم",
   "@tabSize": {

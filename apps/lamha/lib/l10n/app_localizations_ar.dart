@@ -557,6 +557,18 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذّر التفعيل الآن. تحقق من الاتصال وحاول مرة أخرى.';
 
   @override
+  String get updateTitle => 'يتوفر تحديث جديد';
+
+  @override
+  String get updateBody => 'حدّث لمحة للحصول على أحدث الإصلاحات والمزايا.';
+
+  @override
+  String get updateNow => 'حدّث الآن';
+
+  @override
+  String get updateLater => 'لاحقًا';
+
+  @override
   String get tabSize => 'الحجم';
 
   @override
