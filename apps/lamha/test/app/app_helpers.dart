@@ -8,6 +8,7 @@ import 'package:lamha/main.dart';
 import 'dart:async';
 
 import 'package:lamha/src/app/adhan_service.dart';
+import 'package:lamha/src/app/update_service.dart';
 import 'package:lamha/src/app/app_settings.dart';
 import 'package:lamha/src/app/cities.dart';
 import 'package:lamha/src/engine/widget_layout.dart';
@@ -300,6 +301,7 @@ Future<FakeBridge> pumpApp(
       vibrationProvider.overrideWithValue(vibration ?? FakeVibration()),
       declinationProvider.overrideWithValue(FakeDeclination()),
       adhanNotifierProvider.overrideWithValue(adhan ?? FakeAdhanNotifier()),
+      updateCheckerProvider.overrideWithValue(NoopUpdateChecker()),
     ],
     child: const LamhaApp(),
   ));

@@ -562,6 +562,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not activate now. Check your connection and try again.';
 
   @override
+  String get updateTitle => 'A new update is available';
+
+  @override
+  String get updateBody => 'Update Lamha to get the latest fixes and features.';
+
+  @override
+  String get updateNow => 'Update now';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
   String get tabSize => 'Size';
 
   @override

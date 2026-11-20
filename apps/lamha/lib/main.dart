@@ -9,6 +9,7 @@ import 'src/app/providers.dart';
 import 'src/app/qibla_screen.dart';
 import 'src/app/services.dart';
 import 'src/app/settings_screen.dart';
+import 'src/app/update_service.dart';
 
 void main() {
   // بلا إعادة محاولة تلقائية: الخطأ يظهر للمستخدم بدل دوّامة تحميل لا تنتهي.
@@ -100,7 +101,7 @@ class _LamhaAppState extends ConsumerState<LamhaApp> with WidgetsBindingObserver
         fontFamily: 'Tajawal',
         colorSchemeSeed: const Color(0xFFD6AA5C),
       ),
-      home: const AccessGate(child: SettingsScreen()),
+      home: const UpdatePrompt(child: AccessGate(child: SettingsScreen())),
     );
   }
 }
