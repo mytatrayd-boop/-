@@ -170,3 +170,23 @@ test('بنك الأسئلة: لصاحبه فقط، بحالات وإصدارات
     await assertFails(deleteDoc(doc(teacherDb(T2), 'bank/B1')));
     await assertSucceeds(deleteDoc(doc(teacherDb(T1), 'bank/B1')));
 });
+
+test('المحاولات الورقية: المعلم صاحب الاختبار يرفعها ويستبدلها، ولا يستبدل محاولة إلكترونية', async () => {
+    await seedTests(); // T1 منشور، DRAFT مسودة، الطالب 1111111111 للمعلم T1
+    const paper = (extra = {}) => attempt('T1', '1111111111', { source: 'paper', ...extra });
+    const t1 = teacherDb(T1);
+    await assertSucceeds(setDoc(doc(t1, 'attempts/T1_1111111111'), paper()));            // رفع أول
+    await assertSucceeds(setDoc(doc(t1, 'attempts/T1_1111111111'), paper({ answers: [1, 1] }))); // استبدال ورقية
+    await assertSucceeds(setDoc(doc(t1, 'attempts/DRAFT_1111111111'), paper({ testId: 'DRAFT' }))); // ولو مسودة
+    await assertFails(setDoc(doc(t1, 'attempts/T1_1111111111'), attempt())); // بلا source
+    await assertFails(setDoc(doc(t1, 'attempts/T1_1111111111'), paper({ source: 'x' })));
+    await assertFails(setDoc(doc(t1, 'attempts/T1_1111111111'), paper({ answers: [0] })));    // عدد الإجابات
+    await assertFails(setDoc(doc(t1, 'attempts/T1_2222222222'), paper({ studentId: '2222222222' }))); // طالب غير موجود
+    await assertFails(setDoc(doc(t1, 'attempts/T1_1111111111'), paper({ extra: 1 })));
+    await assertFails(setDoc(doc(teacherDb(T2), 'attempts/T1_1111111111'), paper({ teacherUid: T2 }))); // اختبار ليس له
+    await assertFails(setDoc(doc(studentDb(), 'attempts/T1_1111111111'), paper())); // الطالب لا يرفع ورقية
+    // محاولة إلكترونية قائمة لا تُستبدل بورقية
+    await assertSucceeds(deleteDoc(doc(t1, 'attempts/T1_1111111111')));
+    await assertSucceeds(setDoc(doc(studentDb(), 'attempts/T1_1111111111'), attempt()));
+    await assertFails(setDoc(doc(t1, 'attempts/T1_1111111111'), paper()));
+});

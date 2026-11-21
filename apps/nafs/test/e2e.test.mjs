@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import XLSX from 'xlsx';
+import { omrSheetHtml, idCenters, answerCenters } from '../src/omr.js';
 
 const URL_ = 'http://localhost:5000/';
 // CHROME_PATH أو متصفح Playwright المثبت مسبقاً، وإلا Google Chrome الموجود في GitHub Actions.
@@ -308,6 +309,33 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.click('[data-action="bp-create"]');
     assert.match(await closeModal(page2, 'أُنشئ اختبار'), /مسودة/);
     assert.match(await page2.textContent('#testsList'), /بنك نافس — الرياضيات/);
+
+    // المسح الضوئي: ورقة إجابة مظلَّلة للطالب فهد (2000000001) على اختبار البنك، فتُصحَّح وتُعتمد وتظهر محاولته
+    {
+        const card = page2.locator('#testsList > div', { hasText: 'بنك نافس — الرياضيات' }).first();
+        const n = Number((await card.locator('p').first().textContent()).match(/(\d+) سؤالاً/)[1]);
+        const sp = await browser.newPage({ viewport: { width: 1000, height: 1300 }, deviceScaleFactor: 1.4 });
+        await sp.setContent(omrSheetHtml({ title: 't', className: 'c', subjectName: 'm', count: n }));
+        const ids = idCenters(), ans = answerCenters(n);
+        const marks = '2000000001'.split('').map((d, i) => ids[i][Number(d)]).concat(ans.map((a) => a[0])); // كل الإجابات «أ»
+        await sp.evaluate((marks) => {
+            for (const b of document.querySelectorAll('.b')) {
+                const x = parseFloat(b.style.left), y = parseFloat(b.style.top);
+                if (marks.some((m) => Math.abs(m.x - x) < 0.01 && Math.abs(m.y - y) < 0.01)) { b.style.background = '#000'; b.style.color = '#000'; }
+            }
+            document.querySelector('.page').style.margin = '30px';
+        }, marks);
+        const png = await sp.screenshot({ fullPage: true });
+        await sp.close();
+        await card.locator('[data-action="scan-omr"]').click();
+        await page2.locator('#omrModal').waitFor({ state: 'visible' });
+        await page2.setInputFiles('#omrFiles', { name: 'ورقة-فهد.png', mimeType: 'image/png', buffer: png });
+        await page2.waitForFunction(() => document.getElementById('omrResults').textContent.includes('فهد محمد'), null, { timeout: 30000 });
+        assert.match(await page2.textContent('#omrResults'), /الدرجة: \d+ من \d+/);
+        await page2.click('#omrApprove');
+        assert.match(await closeModal(page2, 'اعتُمدت'), /1 ورقة/);
+        assert.match(await page2.textContent('#testsList'), /أجاب 1 من/);
+    }
 
     // حذف طالب مع التأكيد
     await page2.click('#tabBtnStudents');

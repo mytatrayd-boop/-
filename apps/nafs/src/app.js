@@ -12,7 +12,8 @@ import {
 } from './logic.js';
 import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skillsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
-import { omrSheetHtml, omrKeyHtml, bookletHtml } from './omr.js';
+import { omrSheetHtml, omrKeyHtml, bookletHtml, OMR_PER_PAGE } from './omr.js';
+import { scanSheet } from './omr-scan.js';
 import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, newBankQuestion } from './bank.js';
 
 const $ = (id) => document.getElementById(id);
@@ -446,7 +447,7 @@ function renderTestsTab() {
         btns.append(actionButton(t.status === 'published' ? 'إيقاف النشر' : 'نشر للطلاب', 'toggle-publish', t.id, 'text-emerald-700 hover:text-emerald-900'));
         // النماذج الرسمية أسئلتها صور: لا تُعدَّل (تُحذف وتُضاف من جديد)
         if (!isImageTest(t)) btns.append(actionButton(done ? 'نسخ كاختبار جديد' : 'تعديل', 'edit-test', t.id, 'text-slate-700 hover:text-slate-900'));
-        btns.append(actionButton('🖨️ ورقة إجابة (تظليل يدوي)', 'print-omr', t.id, 'text-teal-700 hover:text-teal-900'), actionButton('كتيّب الأسئلة', 'print-book', t.id, 'text-teal-700 hover:text-teal-900'), actionButton('مفتاح التصحيح', 'print-key', t.id, 'text-teal-700 hover:text-teal-900'));
+        btns.append(actionButton('🖨️ ورقة إجابة (تظليل يدوي)', 'print-omr', t.id, 'text-teal-700 hover:text-teal-900'), actionButton('كتيّب الأسئلة', 'print-book', t.id, 'text-teal-700 hover:text-teal-900'), actionButton('📷 مسح الأوراق وتصحيحها', 'scan-omr', t.id, 'text-indigo-700 hover:text-indigo-900'), actionButton('مفتاح التصحيح', 'print-key', t.id, 'text-teal-700 hover:text-teal-900'));
         btns.append(actionButton('حذف', 'delete-test', t.id, 'text-red-500 hover:text-red-700'));
         card.append(head, meta, chips, btns);
         box.append(card);
@@ -454,15 +455,139 @@ function renderTestsTab() {
 }
 
 // طباعة ورقة الإجابة أو مفتاح التصحيح في نافذة جديدة
+// ---------- مسح أوراق الإجابة وتصحيحها آلياً ----------
+const OMR_MAX_SIDE = 1800;
+let omrTest = null, omrRows = [];
+
+function openOmrScan(id) {
+    const t = classTests().find((x) => x.id === id);
+    if (!t) return;
+    if (t.questions.length > OMR_PER_PAGE) return showAlert(`المسح يدعم حتى ${OMR_PER_PAGE} سؤالاً. هذا الاختبار فيه ${t.questions.length}.`, 'عدد الأسئلة كبير');
+    if (!keys[t.id]) return showAlert('لا يتوفر مفتاح هذا الاختبار.', 'تنبيه');
+    omrTest = t; omrRows = [];
+    $('omrTitle').textContent = `مسح أوراق الإجابة — ${t.title}`;
+    $('omrFiles').value = '';
+    $('omrStatus').textContent = '';
+    $('omrApprove').disabled = true;
+    renderOmrRows();
+    $('omrModal').classList.remove('hidden');
+}
+
+async function fileToGray(file) {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, OMR_MAX_SIDE / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+    g.drawImage(bmp, 0, 0, w, h);
+    const d = g.getImageData(0, 0, w, h).data;
+    const gray = new Uint8Array(w * h);
+    for (let i = 0; i < gray.length; i++) gray[i] = (d[i * 4] * 299 + d[i * 4 + 1] * 587 + d[i * 4 + 2] * 114) / 1000;
+    bmp.close?.();
+    return { gray, w, h };
+}
+
+function omrRowState(r) {
+    const st = classStudents().find((s) => s.id === r.id);
+    r.student = st ?? null;
+    const key = keys[omrTest.id] ?? [];
+    r.correct = r.answers ? r.answers.filter((a, i) => a === key[i]).length : 0;
+    const prior = st ? attempts.find((a) => a.id === `${omrTest.id}_${st.id}`) : null;
+    r.blocked = prior && prior.source !== 'paper' ? 'أجاب إلكترونياً' : '';
+    r.replace = !!prior && prior.source === 'paper';
+    r.importable = !!(r.ok && st && !r.blocked);
+    if (!r.importable) r.include = false;
+}
+
+function renderOmrRows() {
+    const box = $('omrResults');
+    box.replaceChildren();
+    for (const r of omrRows) {
+        const row = el('div', `border rounded-2xl p-3 text-xs space-y-2 ${r.ok ? 'border-slate-200' : 'border-red-200 bg-red-50'}`);
+        const top = el('div', 'flex flex-wrap items-center gap-3');
+        const cb = el('input', ''); cb.type = 'checkbox'; cb.checked = !!r.include; cb.disabled = !r.importable;
+        cb.addEventListener('change', () => { r.include = cb.checked; updateOmrApprove(); });
+        top.append(cb, el('span', 'font-bold text-slate-700', r.name));
+        if (!r.ok) { top.append(el('span', 'text-red-700 font-bold', r.error)); row.append(top); box.append(row); continue; }
+        const idIn = el('input', 'border border-slate-300 rounded-lg px-2 py-1 w-28 text-center font-mono'); idIn.value = r.id; idIn.maxLength = 10; idIn.setAttribute('aria-label', 'رقم السجل المدني');
+        idIn.addEventListener('change', () => { r.id = idIn.value.trim(); omrRowState(r); r.include = r.importable; renderOmrRows(); });
+        top.append(idIn);
+        top.append(el('span', r.student ? 'text-emerald-700 font-bold' : 'text-red-600 font-bold', r.student ? r.student.name : (isCivilId(r.id) ? 'غير مسجل في هذا الفصل' : 'رقم السجل ناقص: صحّحه')));
+        top.append(el('span', 'text-slate-700', `الدرجة: ${r.correct} من ${omrTest.questions.length}`));
+        if (r.blanks) top.append(el('span', 'text-amber-700', `${r.blanks} بلا تظليل`));
+        if (r.multiples) top.append(el('span', 'text-amber-700', `${r.multiples} تظليل مزدوج`));
+        if (r.blocked) top.append(el('span', 'text-red-600 font-bold', r.blocked + ' — لا يُستبدل'));
+        else if (r.replace) top.append(el('span', 'text-slate-500', 'سيستبدل محاولة ورقية سابقة'));
+        const letters = ['أ', 'ب', 'ج', 'د'];
+        const key = keys[omrTest.id] ?? [];
+        const det = el('p', 'leading-7 text-slate-600');
+        r.answers.forEach((a, i) => {
+            const s = el('span', `inline-block mx-0.5 px-1.5 rounded ${a === key[i] ? 'bg-emerald-50 text-emerald-800' : (a < 0 ? 'bg-amber-100 text-amber-800' : 'bg-red-50 text-red-700')}`, `${i + 1}:${a === -1 ? '—' : a === -2 ? '⚠' : letters[a]}`);
+            det.append(s);
+        });
+        row.append(top, det);
+        box.append(row);
+    }
+    updateOmrApprove();
+}
+
+function updateOmrApprove() {
+    const n = omrRows.filter((r) => r.include).length;
+    $('omrApprove').disabled = !n;
+    $('omrApprove').textContent = n ? `اعتماد ${n} ورقة` : 'اعتماد النتائج المحددة';
+}
+
+async function handleOmrFiles(files) {
+    if (!omrTest) return;
+    const total = files.length;
+    let n = 0;
+    for (const f of files) {
+        $('omrStatus').textContent = `جارٍ قراءة ${++n} من ${total}…`;
+        await new Promise((r) => setTimeout(r)); // لتحديث الواجهة بين الصور
+        let res;
+        try { const { gray, w, h } = await fileToGray(f); res = scanSheet(gray, w, h, omrTest.questions.length); }
+        catch { res = { ok: false, error: 'تعذّرت قراءة الملف كصورة.' }; }
+        const r = { name: f.name, ...res, include: false };
+        if (r.ok) { omrRowState(r); r.include = r.importable; }
+        omrRows.push(r);
+        renderOmrRows();
+    }
+    $('omrStatus').textContent = `تمت قراءة ${total} ملف. راجع النتائج ثم اعتمد.`;
+}
+
+async function approveOmr(btn) {
+    const chosen = omrRows.filter((r) => r.include && r.importable);
+    if (!chosen.length) return;
+    await busy(btn, async () => {
+        for (let i = 0; i < chosen.length; i += 400) {
+            const batch = writeBatch(db);
+            for (const r of chosen.slice(i, i + 400)) {
+                batch.set(doc(db, 'attempts', `${omrTest.id}_${r.student.id}`), {
+                    testId: omrTest.id, studentId: r.student.id, teacherUid: teacher.uid, className: teacher.className,
+                    answers: r.answers.map((a) => (a >= 0 ? a : -1)), source: 'paper', submittedAt: serverTimestamp(),
+                });
+            }
+            await batch.commit();
+        }
+        $('omrModal').classList.add('hidden');
+        await loadTeacherTests();
+        showAlert(`اعتُمدت نتائج ${chosen.length} ورقة، وظهرت في تقارير الفصل مع نتائج الاختبارات الإلكترونية.`, 'تم التصحيح');
+    });
+}
+
 function printOmr(id, action) {
     const t = classTests().find((x) => x.id === id);
     if (!t) return;
     const base = { title: t.title, className: teacher.className };
     const subjectName = SUBJECTS[testSubject(t)].name;
     let html;
-    if (action === 'print-key') html = omrKeyHtml({ ...base, answers: t.questions.map((q) => q.answer) });
+    if (action === 'print-key') html = omrKeyHtml({ ...base, answers: keys[t.id] ?? [] });
     else if (action === 'print-book') html = bookletHtml({ ...base, subjectName, passageText: t.passage || '', questions: t.questions, baseUrl: `${location.origin}/` });
-    else html = omrSheetHtml({ ...base, subjectName, count: t.questions.length });
+    else {
+        if (t.questions.length > OMR_PER_PAGE) return showAlert(`ورقة الإجابة تتسع لـ ${OMR_PER_PAGE} سؤالاً. هذا الاختبار فيه ${t.questions.length}.`, 'عدد الأسئلة كبير');
+        html = omrSheetHtml({ ...base, subjectName, count: t.questions.length });
+    }
     html = html.replace('</body>', '<script>addEventListener("load",()=>setTimeout(()=>print(),900))</script></body>');
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
     if (!window.open(url, '_blank')) showAlert('اسمح للموقع بفتح النوافذ المنبثقة ثم أعد المحاولة.', 'تعذّر فتح الطباعة');
@@ -1548,6 +1673,7 @@ function bindEvents() {
     $('addStudentForm').addEventListener('submit', addStudent);
     $('studentLoginForm').addEventListener('submit', studentLogin);
     $('excelFile').addEventListener('change', handleExcelUpload);
+    $('omrFiles').addEventListener('change', (e) => handleOmrFiles([...e.target.files]));
     $('dashClass').addEventListener('change', changeClass);
     $('bankImport').addEventListener('change', importBank);
     $('bankPanel').addEventListener('change', (e) => {
@@ -1616,6 +1742,9 @@ function bindEvents() {
             case 'toggle-publish': togglePublish(id); break;
             case 'delete-test': deleteTest(id); break;
             case 'print-omr': case 'print-key': case 'print-book': printOmr(id, action); break;
+            case 'scan-omr': openOmrScan(id); break;
+            case 'close-omr': $('omrModal').classList.add('hidden'); break;
+            case 'approve-omr': approveOmr(el); break;
             case 'student-detail': showStudentDetail(id); break;
             case 'show-perf': showPerf(); break;
             case 'close-perf': $('perfModal').classList.add('hidden'); break;

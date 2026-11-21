@@ -536,6 +536,27 @@
             </div>
         </div>
 
+        <!-- مسح أوراق الإجابة وتصحيحها آلياً -->
+        <div id="omrModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-start justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-6 my-8 space-y-4">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <h3 id="omrTitle" class="text-lg font-black text-slate-800"></h3>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">صوّر ورقة الإجابة المطبوعة من الموقع (ورقة واحدة في كل صورة، كاملة ومستقيمة وبإضاءة جيدة وعلامات الزوايا السوداء ظاهرة، واسم الاختبار في الأعلى). يقرأ الموقع رقم السجل والتظليل ويصحّح، وأنت تراجع ثم تعتمد.</p>
+                    </div>
+                    <button data-action="close-omr" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input id="omrFiles" type="file" accept="image/*" multiple class="text-xs">
+                    <span id="omrStatus" class="text-xs text-slate-500"></span>
+                </div>
+                <div id="omrResults" class="space-y-2"></div>
+                <div class="flex flex-wrap gap-3 justify-end">
+                    <button data-action="approve-omr" id="omrApprove" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs disabled:opacity-40" disabled>اعتماد النتائج المحددة</button>
+                </div>
+            </div>
+        </div>
+
         <!-- تفاصيل طالب -->
         <div id="studentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-start justify-center p-4 overflow-y-auto">
             <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 my-8 space-y-5">
