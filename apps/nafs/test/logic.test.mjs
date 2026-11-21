@@ -145,14 +145,15 @@ test('المواد: العلوم للسادس والتاسع فقط، ومعرّ
     assert.deepEqual(groupsFor('science', 3), []);
 });
 
-test('نماذج نافس الرسمية: ست نماذج، كل سؤال مربوط بمهارة من صفه ومادته، وصوره موجودة', () => {
-    assert.deepEqual(FORMS.map((f) => f.id), ['a3', 'b3', 'a6', 'b6', 'a9', 'b9']);
-    const expected = { a3: [13, 8], b3: [13, 8], a6: [28, 10], b6: [27, 10], a9: [26, 10], b9: [27, 10] };
+test('النماذج الجاهزة: ست رسمية وتدريبيان، كل سؤال مربوط بمهارة من صفه ومادته، وصوره موجودة', () => {
+    assert.deepEqual(FORMS.map((f) => f.id), ['a3', 'b3', 'a6', 'b6', 'a9', 'b9', 't1', 't2']);
+    assert.deepEqual(FORMS.map((f) => f.kind), ['official', 'official', 'official', 'official', 'official', 'official', 'training', 'training']);
+    const expected = { a3: [13, 8], b3: [13, 8], a6: [28, 10], b6: [27, 10], a9: [26, 10], b9: [27, 10], t1: [12, 0], t2: [12, 0] };
     for (const f of FORMS) {
         const total = Object.values(f.subjects).reduce((n, qs) => n + qs.length, 0);
         assert.equal(total, expected[f.id][0], f.id);
-        assert.equal(f.subjects.math.length, expected[f.id][1], f.id + ' math');
-        assert.equal(Boolean(f.subjects.science), f.grade !== 3, f.id + ' science');
+        assert.equal((f.subjects.math ?? []).length, expected[f.id][1], f.id + ' math');
+        if (f.kind === 'official') assert.equal(Boolean(f.subjects.science), f.grade !== 3, f.id + ' science');
         for (const [subject, qs] of Object.entries(f.subjects)) {
             let passages = 0;
             for (const q of qs) {

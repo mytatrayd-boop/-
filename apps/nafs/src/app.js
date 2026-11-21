@@ -620,21 +620,30 @@ async function showOfficial() {
     const grade = currentGrade();
     const list = $('officialList');
     list.replaceChildren();
-    for (const form of FORMS.filter((f) => f.grade === grade)) {
-        const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3');
-        card.append(el('h4', 'font-bold text-slate-800 text-sm', form.name));
-        for (const subject of subjectsOfGrade(grade)) {
-            const qs = form.subjects[subject];
-            if (!qs) continue;
-            const source = `${form.id}-${subject}`;
-            const added = classTests().some((t) => t.source === source);
-            const row = el('div', 'flex items-center justify-between gap-3 text-xs');
-            row.append(el('span', 'font-semibold text-slate-700', `${SUBJECTS[subject].name} — ${qs.length} سؤالاً`));
-            if (added) row.append(el('span', 'text-emerald-700 font-bold', '✓ مضاف إلى اختبارات الفصل'));
-            else row.append(actionButton('إضافة كمسودة', 'add-official', source, 'bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg'));
-            card.append(row);
+    for (const [kind, title] of [['official', 'نماذج التهيئة الرسمية — نافس 2026'], ['training', 'نماذج تدريبية']]) {
+        const forms = FORMS.filter((f) => f.grade === grade && f.kind === kind);
+        if (!forms.length) continue;
+        const section = el('div', 'space-y-3');
+        section.append(el('h4', 'text-xs font-black text-amber-800 bg-amber-50 rounded-lg px-3 py-2', title));
+        const grid = el('div', 'grid grid-cols-1 md:grid-cols-2 gap-4');
+        for (const form of forms) {
+            const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3');
+            card.append(el('h4', 'font-bold text-slate-800 text-sm', form.name));
+            for (const subject of subjectsOfGrade(grade)) {
+                const qs = form.subjects[subject];
+                if (!qs) continue;
+                const source = `${form.id}-${subject}`;
+                const added = classTests().some((t) => t.source === source);
+                const row = el('div', 'flex items-center justify-between gap-3 text-xs');
+                row.append(el('span', 'font-semibold text-slate-700', `${SUBJECTS[subject].name} — ${qs.length} سؤالاً`));
+                if (added) row.append(el('span', 'text-emerald-700 font-bold', '✓ مضاف إلى اختبارات الفصل'));
+                else row.append(actionButton('إضافة كمسودة', 'add-official', source, 'bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg'));
+                card.append(row);
+            }
+            grid.append(card);
         }
-        list.append(card);
+        section.append(grid);
+        list.append(section);
     }
     $('officialPanel').classList.remove('hidden');
 }
@@ -649,7 +658,7 @@ async function addOfficial(source, button) {
         const ref = doc(collection(db, 'tests'));
         const batch = writeBatch(db);
         batch.set(ref, {
-            teacherUid: teacher.uid, title: `${form.name} — ${SUBJECTS[subject].name}`, className: teacher.className, grade: form.grade, subject,
+            teacherUid: teacher.uid, title: form.kind === 'training' ? form.name : `${form.name} — ${SUBJECTS[subject].name}`, className: teacher.className, grade: form.grade, subject,
             source, passage: '',
             questions: qs.map((q) => ({
                 skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: q.img, iw: q.w, ih: q.h,

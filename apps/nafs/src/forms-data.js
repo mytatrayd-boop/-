@@ -3,9 +3,10 @@
 // ربط الأسئلة بالمهارات اجتهاد من فريق الموقع وليس من الهيئة. تُحمَّل هذه الوحدة عند المعلم فقط (import ديناميكي).
 // w وh: أبعاد الصورة بالبكسل عند 100 نقطة/بوصة، تُستخدم لعرضها بمقياس موحّد.
 
+// kind: 'official' نماذج التهيئة الرسمية، 'training' نماذج تدريبية (ربط المهارات من وضع الموقع)
 export const FORMS = [
     {
-        id: 'a3', grade: 3, name: 'نموذج التهيئة (أ)',
+        id: 'a3', grade: 3, kind: 'official', name: 'نموذج التهيئة (أ)',
         subjects: {
             reading: [
                 { n: 9, img: 'forms/a3/q09.webp', w: 510, h: 122, skill: '3-1.1', level: 'know', answer: 3 },
@@ -27,7 +28,7 @@ export const FORMS = [
         },
     },
     {
-        id: 'b3', grade: 3, name: 'نموذج التهيئة (ب)',
+        id: 'b3', grade: 3, kind: 'official', name: 'نموذج التهيئة (ب)',
         subjects: {
             reading: [
                 { n: 9, img: 'forms/b3/q09.webp', w: 468, h: 122, skill: '3-1.1', level: 'know', answer: 1 },
@@ -49,7 +50,7 @@ export const FORMS = [
         },
     },
     {
-        id: 'a6', grade: 6, name: 'نموذج التهيئة (أ)',
+        id: 'a6', grade: 6, kind: 'official', name: 'نموذج التهيئة (أ)',
         subjects: {
             reading: [
                 { n: 21, img: 'forms/a6/q21.webp', w: 688, h: 114, skill: '6-1.1', level: 'know', answer: 0, passage: { img: 'forms/a6/p.webp', w: 686, h: 494 } },
@@ -88,7 +89,7 @@ export const FORMS = [
         },
     },
     {
-        id: 'b6', grade: 6, name: 'نموذج التهيئة (ب)',
+        id: 'b6', grade: 6, kind: 'official', name: 'نموذج التهيئة (ب)',
         subjects: {
             reading: [
                 { n: 21, img: 'forms/b6/q21.webp', w: 684, h: 131, skill: '6-1.1', level: 'know', answer: 0, passage: { img: 'forms/b6/p.webp', w: 686, h: 602 } },
@@ -126,7 +127,7 @@ export const FORMS = [
         },
     },
     {
-        id: 'a9', grade: 9, name: 'نموذج التهيئة (أ)',
+        id: 'a9', grade: 9, kind: 'official', name: 'نموذج التهيئة (أ)',
         subjects: {
             reading: [
                 { n: 21, img: 'forms/a9/q21.webp', w: 688, h: 128, skill: '9-1.1', level: 'know', answer: 2, passage: { img: 'forms/a9/p.webp', w: 686, h: 771 } },
@@ -163,7 +164,7 @@ export const FORMS = [
         },
     },
     {
-        id: 'b9', grade: 9, name: 'نموذج التهيئة (ب)',
+        id: 'b9', grade: 9, kind: 'official', name: 'نموذج التهيئة (ب)',
         subjects: {
             reading: [
                 { n: 21, img: 'forms/b9/q21.webp', w: 686, h: 148, skill: '9-1.1', level: 'know', answer: 1, passage: { img: 'forms/b9/p.webp', w: 686, h: 772 } },
@@ -197,6 +198,44 @@ export const FORMS = [
                 { n: 18, img: 'forms/b9/q18.webp', w: 660, h: 159, skill: 's9-2-3-3', level: 'apply', answer: 1 },
                 { n: 19, img: 'forms/b9/q19.webp', w: 669, h: 161, skill: 's9-2-5-2', level: 'apply', answer: 2 },
                 { n: 20, img: 'forms/b9/q20.webp', w: 662, h: 238, skill: 's9-3-1-1', level: 'know', answer: 0 },
+            ],
+        },
+    },
+    {
+        id: 't1', grade: 9, kind: 'training', name: 'نموذج تدريبي (1)',
+        subjects: {
+            reading: [
+                { n: 1, img: 'forms/t1/q01.webp', w: 792, h: 237, skill: '9-2.5', level: 'apply', answer: 3, passage: { img: 'forms/t1/p.webp', w: 792, h: 1618 } },
+                { n: 2, img: 'forms/t1/q02.webp', w: 792, h: 206, skill: '9-2.2', level: 'know', answer: 1 },
+                { n: 3, img: 'forms/t1/q03.webp', w: 792, h: 206, skill: '9-2.2', level: 'know', answer: 0 },
+                { n: 4, img: 'forms/t1/q04.webp', w: 792, h: 206, skill: '9-3.2', level: 'reason', answer: 2 },
+                { n: 5, img: 'forms/t1/q05.webp', w: 792, h: 242, skill: '9-2.5', level: 'apply', answer: 1 },
+                { n: 6, img: 'forms/t1/q06.webp', w: 792, h: 192, skill: '9-2.5', level: 'apply', answer: 3 },
+                { n: 7, img: 'forms/t1/q07.webp', w: 792, h: 229, skill: '9-3.2', level: 'reason', answer: 3 },
+                { n: 8, img: 'forms/t1/q08.webp', w: 792, h: 188, skill: '9-2.5', level: 'apply', answer: 0 },
+                { n: 9, img: 'forms/t1/q09.webp', w: 792, h: 200, skill: '9-2.2', level: 'know', answer: 0 },
+                { n: 10, img: 'forms/t1/q10.webp', w: 792, h: 209, skill: '9-3.2', level: 'reason', answer: 2 },
+                { n: 11, img: 'forms/t1/q11.webp', w: 792, h: 187, skill: '9-2.5', level: 'apply', answer: 3 },
+                { n: 12, img: 'forms/t1/q12.webp', w: 792, h: 164, skill: '9-3.2', level: 'reason', answer: 1 },
+            ],
+        },
+    },
+    {
+        id: 't2', grade: 9, kind: 'training', name: 'نموذج تدريبي (2)',
+        subjects: {
+            reading: [
+                { n: 1, img: 'forms/t2/q01.webp', w: 792, h: 203, skill: '9-2.5', level: 'apply', answer: 2, passage: { img: 'forms/t2/p.webp', w: 792, h: 811 } },
+                { n: 2, img: 'forms/t2/q02.webp', w: 792, h: 186, skill: '9-2.2', level: 'know', answer: 0 },
+                { n: 3, img: 'forms/t2/q03.webp', w: 792, h: 220, skill: '9-3.2', level: 'reason', answer: 1 },
+                { n: 4, img: 'forms/t2/q04.webp', w: 792, h: 221, skill: '9-2.2', level: 'know', answer: 2 },
+                { n: 5, img: 'forms/t2/q05.webp', w: 792, h: 256, skill: '9-2.5', level: 'apply', answer: 3 },
+                { n: 6, img: 'forms/t2/q06.webp', w: 792, h: 173, skill: '9-3.2', level: 'reason', answer: 0 },
+                { n: 7, img: 'forms/t2/q07.webp', w: 792, h: 220, skill: '9-2.5', level: 'apply', answer: 2 },
+                { n: 8, img: 'forms/t2/q08.webp', w: 792, h: 166, skill: '9-2.2', level: 'know', answer: 0 },
+                { n: 9, img: 'forms/t2/q09.webp', w: 792, h: 206, skill: '9-3.2', level: 'reason', answer: 2 },
+                { n: 10, img: 'forms/t2/q10.webp', w: 792, h: 242, skill: '9-3.2', level: 'reason', answer: 2 },
+                { n: 11, img: 'forms/t2/q11.webp', w: 792, h: 220, skill: '9-2.2', level: 'know', answer: 0 },
+                { n: 12, img: 'forms/t2/q12.webp', w: 792, h: 222, skill: '9-3.2', level: 'reason', answer: 1 },
             ],
         },
     },

@@ -234,6 +234,18 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.click('#modalOk');
     await page2.waitForFunction(() => document.getElementById('studentCount').textContent === '2');
 
+    // الثالث المتوسط: نماذج رسمية (أ، ب × 3 مواد) ونموذجان تدريبيان للقراءة
+    await page2.selectOption('#dashClass', 'الثالث المتوسط - أ');
+    await page2.click('#tabBtnTests');
+    await page2.click('[data-action="show-official"]');
+    await page2.locator('#officialList [data-action="add-official"]').first().waitFor();
+    assert.equal(await page2.locator('#officialList [data-action="add-official"]').count(), 8);
+    assert.match(await page2.textContent('#officialList'), /نماذج تدريبية/);
+    await page2.locator('#officialList [data-action="add-official"][data-id="t1-reading"]').click();
+    assert.match(await closeModal(page2, 'أُضيف النموذج'), /مسودة/);
+    assert.match(await page2.textContent('#testsList'), /نموذج تدريبي \(1\)/);
+    assert.doesNotMatch(await page2.textContent('#testsList'), /جازان/);
+
     assert.deepEqual(errors, []);
     await ctx1.close();
     await ctx2.close();
