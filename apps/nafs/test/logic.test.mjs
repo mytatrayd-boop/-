@@ -205,7 +205,7 @@ test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا �
 });
 
 test('بنك نافس الرسمي: كل سؤال بمؤشر صحيح وصورة موجودة ومفتاح 0-3', () => {
-    for (const [key, subject, grade] of [['math3', 'math', 3]]) {
+    for (const [key, subject, grade] of [['math3', 'math', 3], ['math6', 'math', 6], ['math9', 'math', 9], ['science6', 'science', 6]]) {
         const items = JSON.parse(readFileSync(new URL(`../public/bank-official/${key}.json`, import.meta.url), 'utf8'));
         assert.ok(items.length > 50, key);
         const ids = new Set();
