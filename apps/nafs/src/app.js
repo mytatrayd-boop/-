@@ -1186,6 +1186,16 @@ function printCards() {
     if (!window.open(url, '_blank')) showAlert('اسمح للموقع بفتح النوافذ المنبثقة ثم أعد المحاولة.', 'تعذّر فتح الطباعة');
 }
 
+// بيان مطبوع للمعلم: الاسم والسجل المدني وكلمة المرور في جدول واحد
+function printRoster() {
+    const list = classStudents();
+    if (!list.length) return showAlert('لا يوجد طلاب في فصلك بعد.', 'تنبيه');
+    const rows = list.map((s, i) => `<tr><td>${i + 1}</td><td>${esc(s.name)}</td><td>${esc(s.id)}</td><td>${esc(pins[s.id] ?? '—')}</td></tr>`).join('');
+    const html = `<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>بيان الطلاب</title><style>body{font-family:Tahoma,sans-serif;margin:12mm}h1{font-size:14pt}table{width:100%;border-collapse:collapse;font-size:11pt}th,td{border:1px solid #888;padding:2mm 3mm;text-align:right}th{background:#eee}td:nth-child(3),td:nth-child(4){font-family:monospace;font-weight:bold}</style><h1>بيان الطلاب وكلمات المرور — ${esc(teacher.className)} (${list.length})</h1><p>سري: للمعلم فقط.</p><table><tr><th>م</th><th>اسم الطالب</th><th>السجل المدني</th><th>كلمة المرور</th></tr>${rows}</table><script>addEventListener("load",()=>setTimeout(()=>print(),600))</script></html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    if (!window.open(url, '_blank')) showAlert('اسمح للموقع بفتح النوافذ المنبثقة ثم أعد المحاولة.', 'تعذّر فتح الطباعة');
+}
+
 async function deleteStudent(id) {
     const s = students.find((x) => x.id === id);
     if (!s || !(await confirmDialog(`حذف الطالب «${s.name}» ونتائجه نهائياً؟`))) return;
@@ -2255,6 +2265,7 @@ function bindEvents() {
             case 'delete-student': deleteStudent(id); break;
             case 'gen-pins': genPins(); break;
             case 'print-cards': printCards(); break;
+            case 'print-roster': printRoster(); break;
             case 'download-upload': downloadUpload(id); break;
             case 'delete-upload': deleteUpload(id); break;
             case 'show-about': showAbout(); break;
