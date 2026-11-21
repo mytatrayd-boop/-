@@ -98,3 +98,41 @@ export function omrKeyHtml({ title, className = '', answers }) {
 function wrap(title, body) {
     return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${CSS}</style></head><body>${body}</body></html>`;
 }
+
+const BOOK_CSS = `
+@page{size:A4 portrait;margin:12mm}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Cairo','Noto Naskh Arabic','Tahoma',sans-serif;color:#000;background:#fff;font-size:12pt}
+.top{border-bottom:2px solid #000;margin-bottom:5mm;padding-bottom:3mm}
+h1{margin:0 0 1mm;font-size:18pt}.meta{font-size:11pt;font-weight:700}
+.nm{display:flex;gap:6mm;margin-top:3mm;font-size:11pt}.nm span{flex:1;border-bottom:1px dotted #000;padding-bottom:1mm}
+.q{break-inside:avoid;page-break-inside:avoid;margin:0 0 5mm;display:flex;gap:3mm;align-items:flex-start}
+.q .n{flex:none;width:9mm;height:9mm;border:1.5px solid #000;border-radius:50%;text-align:center;line-height:8mm;font-weight:800;font-size:11pt}
+.q .c{flex:1;min-width:0}
+.q img{max-width:100%;height:auto;display:block}
+.ps{break-inside:avoid;margin:0 0 5mm;border:1px solid #000;border-radius:2mm;padding:2mm}
+.ps img{max-width:100%;height:auto;display:block}
+.ps p{margin:0 0 2mm;line-height:1.9;text-align:justify}
+.pl{font-weight:800;font-size:10.5pt;margin-bottom:1.5mm}
+.opt{margin:1mm 0}
+.opt b{display:inline-block;min-width:8mm}
+`;
+
+/** كتيّب أسئلة مطبوع. questions: [{text, options, image, passageImage}] ؛ baseUrl لتحويل مسارات الصور إلى مطلقة. */
+export function bookletHtml({ title, className = '', subjectName = '', passageText = '', questions, baseUrl = '' }) {
+    const abs = (p) => (baseUrl ? new URL(p, baseUrl).href : p);
+    let body = `<div class="top"><h1>${esc(title)}</h1><div class="meta">${esc(subjectName)}${subjectName && className ? ' · ' : ''}${esc(className)} · ${questions.length} سؤالاً — أجب في ورقة الإجابة المنفصلة بتظليل الدائرة</div><div class="nm"><span>الاسم:</span><span>الفصل:</span></div></div>`;
+    if (passageText.trim()) body += `<div class="ps"><div class="pl">اقرأ النص التالي ثم أجب عن الأسئلة:</div>${esc(passageText).split(/\n+/).map((l) => `<p>${l}</p>`).join('')}</div>`;
+    let lastPassage = null;
+    questions.forEach((q, i) => {
+        if (q.passageImage && q.passageImage !== lastPassage) {
+            lastPassage = q.passageImage;
+            body += `<div class="ps"><div class="pl">اقرأ النص التالي ثم أجب عن الأسئلة التي بعده:</div><img src="${esc(abs(q.passageImage))}" alt="نص القراءة"></div>`;
+        }
+        const inner = q.image
+            ? `<img src="${esc(abs(q.image))}" alt="السؤال ${i + 1}">`
+            : `<div>${esc(q.text)}</div>${(q.options || []).map((o, k) => `<div class="opt"><b>${LETTERS[k]}.</b> ${esc(o)}</div>`).join('')}`;
+        body += `<div class="q"><div class="n">${i + 1}</div><div class="c">${inner}</div></div>`;
+    });
+    return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc('كتيّب الأسئلة — ' + title)}</title><style>${BOOK_CSS}</style></head><body>${body}</body></html>`;
+}

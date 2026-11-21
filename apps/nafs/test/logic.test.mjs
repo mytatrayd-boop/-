@@ -267,3 +267,20 @@ test('ورقة الإجابة (التظليل اليدوي): عدد الصفوف
     const k = omrKeyHtml({ title: 'ت', answers: [0, 1, 2, 3] });
     assert.ok(k.includes('<td>أ</td><td>ب</td><td>ج</td><td>د</td>'));
 });
+
+test('كتيّب الأسئلة المطبوع: ترقيم، نص مشترك مرة واحدة، صور مطلقة، تهريب', async () => {
+    const { bookletHtml } = await import('../src/omr.js');
+    const h = bookletHtml({
+        title: '<b>x</b>', className: 'ص', baseUrl: 'https://example.com/',
+        questions: [
+            { image: 'bank-official/a.webp', passageImage: 'bank-official/p.webp' },
+            { image: 'bank-official/b.webp', passageImage: 'bank-official/p.webp' },
+            { text: 'سؤال <i>نصي</i>', options: ['١', '٢', '٣', '٤'] },
+        ],
+    });
+    assert.equal((h.match(/class="n"/g) || []).length, 3);
+    assert.equal((h.match(/alt="نص القراءة"/g) || []).length, 1);
+    assert.ok(h.includes('https://example.com/bank-official/a.webp'));
+    assert.ok(!h.includes('<b>x</b>') && !h.includes('<i>نصي</i>'));
+    assert.ok(h.includes('<b>د.</b> ٤'));
+});
