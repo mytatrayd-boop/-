@@ -51,6 +51,6 @@ def blocks(pdf,tag,pages,top=84,bottom=770,gap=7,dpi=130,out=None):
     return res
 if __name__=='__main__':
     pdf,tag,pages=sys.argv[1],sys.argv[2],[int(x) for x in sys.argv[3].split(',')]
-    r=blocks(pdf,tag,pages)
+    r=blocks(pdf,tag,pages,**({'top':float(sys.argv[4])} if len(sys.argv)>4 else {}))
     json.dump(r,open(f'formout/{tag}.json','w'),ensure_ascii=False)
     import collections; print(len(r),dict(collections.Counter(x['page'] for x in r)))
