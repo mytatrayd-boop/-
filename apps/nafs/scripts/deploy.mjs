@@ -3,6 +3,7 @@
 // يستخدم واجهات REST مباشرة لأن firebase-tools يحتاج صلاحيات Service Usage لا يملكها مفتاح Admin SDK.
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getSecurityRules } from 'firebase-admin/security-rules';
@@ -45,7 +46,10 @@ const HOSTING = 'https://firebasehosting.googleapis.com/v1beta1';
 const firebaseJson = JSON.parse(readFileSync(root + 'firebase.json', 'utf8')).hosting;
 const files = {};
 const blobs = {};
-for (const name of readdirSync(root + 'dist')) {
+const walk = (dir, prefix = '') => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (
+    d.isDirectory() ? walk(join(dir, d.name), prefix + d.name + '/') : [prefix + d.name]
+));
+for (const name of walk(root + 'dist')) {
     const gz = gzipSync(readFileSync(root + 'dist/' + name), { level: 9 });
     const hash = createHash('sha256').update(gz).digest('hex');
     files['/' + name] = hash;
@@ -109,7 +113,7 @@ if (problems.length) {
 } else {
     try {
         await smokeTest(url);
-        console.log('✓ Live test: teacher signup, add student, build + publish test, student submits (test data removed)');
+        console.log('✓ Live test: teacher signup, add student, build + publish test, official form (images), student submits both (test data removed)');
         console.log(`\n✓ الموقع جاهز: ${url}`);
     } catch (err) {
         console.log(`✗ Live test failed: ${err.message}`);

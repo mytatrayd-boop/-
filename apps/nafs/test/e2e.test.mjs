@@ -39,6 +39,18 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(URL_);
+    // صفحة التعريف باختبارات نافس
+    await page.locator('#roleSelectionScreen').waitFor();
+    await page.locator('#roleSelectionScreen [data-action="show-about"]').click();
+    await page.locator('#aboutScreen').waitFor();
+    assert.match(await page.textContent('#aboutPanelStudent'), /اقرأ.*السؤال جيداً/);
+    await page.click('#aboutTabParent');
+    assert.match(await page.textContent('#aboutPanelParent'), /ناقش/);
+    await page.click('#aboutTabFormat');
+    assert.match(await page.textContent('#aboutPanelFormat'), /45 دقيقة/);
+    assert.equal(await page.locator('header img').getAttribute('alt'), 'شعار الاختبارات الوطنية نافس');
+    await page.click('[data-action="back-from-about"]');
+    await page.locator('#roleSelectionScreen').waitFor();
     await page.click('[data-action="show-teacher-login"]');
     await page.click('#authTabSignup');
     await page.fill('#tName', 'أحمد محمد القحطاني');
@@ -109,6 +121,17 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await closeModal(page, 'نشره');
     await page.waitForFunction(() => document.querySelectorAll('#testsList > div').length === 2);
 
+    // نموذج نافس الرسمي (رياضيات، الصف الثالث): يُضاف مسودة ثم يُنشر
+    await page.click('[data-action="show-official"]');
+    await page.locator('#officialList [data-action="add-official"]').first().waitFor();
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 4); // (أ) و(ب) × قراءة ورياضيات، بلا علوم للثالث
+    await page.locator('#officialList [data-action="add-official"][data-id="a3-math"]').click();
+    assert.match(await closeModal(page, 'أُضيف النموذج'), /مسودة/);
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 3);
+    await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="toggle-publish"]').click();
+    await page.waitForFunction(() => [...document.querySelectorAll('#testsList > div')].some((d) => d.textContent.includes('الرياضيات') && d.textContent.includes('منشور')));
+    assert.equal(await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="edit-test"]').count(), 0);
+
     await page.click('[data-action="logout"]');
     await closeModal(page, 'تسجيل الخروج');
 
@@ -121,7 +144,7 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page.click('#studentLoginForm button[type=submit]');
     await page.locator('#studentDashboardScreen').waitFor();
     assert.match(await page.textContent('#studentFullNameDisplay'), /فهد محمد/);
-    await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 2);
+    await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 3);
 
     await page.locator('#studentTestsList > div', { hasText: 'اختبار المفردات والفكرة' }).locator('[data-action="open-test"]').click();
     assert.match(await page.textContent('#stPassage'), /الحديقة العامة/);
@@ -132,14 +155,30 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page.click('[data-action="submit-test"]');
     await page.click('#modalOk'); // تأكيد الإرسال
     assert.match(await closeModal(page, 'تم إرسال'), /تم إرسال إجاباتك/);
-    await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 1);
+    await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 2);
 
-    await page.click('[data-action="open-test"]');
+    await page.locator('#studentTestsList > div', { hasText: 'النخلة الصغيرة' }).locator('[data-action="open-test"]').click();
     const count = await page.locator('#stQuestions > div').count();
     for (let i = 0; i < count; i++) await page.locator(`input[name="sq-${i}"]`).first().check();
     await page.click('[data-action="submit-test"]');
     await page.click('#modalOk');
     await closeModal(page, 'تم إرسال');
+    await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 1);
+
+    // النموذج الرسمي: أسئلته صور وخياراته أ ب ج د
+    await page.locator('#studentTestsList > div', { hasText: 'الرياضيات' }).locator('[data-action="open-test"]').click();
+    assert.equal(await page.locator('#stQuestions img').count(), 8);
+    for (let i = 0; i < 8; i++) { // الصور كسولة التحميل: نمرّر إلى كل صورة ثم ننتظر تحميلها
+        const img = page.locator('#stQuestions img').nth(i);
+        await img.scrollIntoViewIfNeeded();
+        await img.evaluate((el) => (el.complete && el.naturalWidth > 100 ? true : new Promise((ok, no) => { el.onload = () => ok(true); el.onerror = () => no(new Error('صورة لم تُحمَّل: ' + el.src)); })));
+    }
+    assert.equal(await page.locator('#stQuestions label').count(), 32);
+    for (let i = 0; i < 8; i++) await page.locator(`input[name="sq-${i}"]`).nth(i % 4).check();
+    await page.click('[data-action="submit-test"]');
+    await page.click('#modalOk');
+    await closeModal(page, 'تم إرسال');
+    await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 0);
 
     // جهاز ثانٍ: المعلم يدخل ويرى المستوى لكل مهارة
     const ctx2 = await browser.newContext({ acceptDownloads: true });
@@ -157,7 +196,7 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.click('#tabBtnReports');
     await page2.waitForFunction(() => document.getElementById('repCompletedCount').textContent === '1');
     assert.equal(await page2.textContent('#repTotalStudents'), '3');
-    assert.equal(await page2.textContent('#repTests'), '2');
+    assert.equal(await page2.textContent('#repTests'), '2'); // مادة القراءة
     assert.ok((await page2.locator('#repSkills > div').count()) === 3);
     await page2.click('[data-action="student-detail"]');
     await page2.locator('#studentModal').waitFor({ state: 'visible' });
@@ -170,6 +209,24 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.match(csvText, /المرادف والضد ومعنى المفردة/);
     assert.match(csvText, /فهد محمد/);
     await closeModal(page2, 'تصدير');
+
+    // مادة الرياضيات: نتيجة النموذج الرسمي تظهر لكل مهارة
+    await page2.click('[data-action="rep-subject"][data-id="math"]');
+    assert.equal(await page2.getAttribute('[data-action="rep-subject"][data-id="math"]', 'aria-pressed'), 'true');
+    assert.equal(await page2.locator('[data-action="rep-subject"]').count(), 2); // الثالث الابتدائي: بلا علوم
+    await page2.waitForFunction(() => document.getElementById('repCompletedCount').textContent === '1');
+    assert.equal(await page2.textContent('#repTests'), '1');
+    assert.equal(await page2.locator('#repSkills > div').count(), 6);
+    assert.match(await page2.textContent('#repSkills'), /القيمة المنزلية|الكسور وتمثيلها ومقارنتها/);
+    assert.match(await page2.textContent('#repSkills details'), /مهارات لم تُقَس بعد \(5\)/);
+    await page2.click('[data-action="student-detail"]');
+    await page2.locator('#studentModal').waitFor({ state: 'visible' });
+    assert.match(await page2.textContent('#smMeta'), /الرياضيات/);
+    await page2.click('[data-action="close-student"]');
+    const [csv2] = await Promise.all([page2.waitForEvent('download'), page2.click('[data-action="export"]')]);
+    assert.match(readFileSync(await csv2.path(), 'utf8'), /الأنماط العددية وغير العددية/);
+    await closeModal(page2, 'الرياضيات');
+    await page2.click('[data-action="rep-subject"][data-id="reading"]');
 
     // حذف طالب مع التأكيد
     await page2.click('#tabBtnStudents');

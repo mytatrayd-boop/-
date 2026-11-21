@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseStudentRows, isCivilId, gradeAttempt, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError } from '../src/logic.js';
-import { GRADES, gradeOfClass, skillById } from '../src/skills.js';
+import { GRADES, SUBJECTS, gradeOfClass, skillById, groupsFor, skillIdsFor, subjectsOfGrade } from '../src/skills.js';
+import { FORMS } from '../src/forms-data.js';
+import { existsSync, statSync } from 'node:fs';
 import { TEMPLATES } from '../src/templates.js';
 
 test('parseStudentRows: يقبل العمودين بأي ترتيب ويتجاوز العنوان والناقص والمكرر', () => {
@@ -111,4 +113,60 @@ test('isCivilId', () => {
     assert.ok(!isCivilId('123456789'));
     assert.ok(!isCivilId('12345678901'));
     assert.ok(!isCivilId('12345a7890'));
+});
+
+test('المواد: العلوم للسادس والتاسع فقط، ومعرّفات المهارات فريدة ومرتبطة بصفها ومادتها', () => {
+    assert.deepEqual(subjectsOfGrade(3), ['reading', 'math']);
+    assert.deepEqual(subjectsOfGrade(6), ['reading', 'math', 'science']);
+    assert.deepEqual(Object.keys(SUBJECTS), ['reading', 'math', 'science']);
+    const seen = new Set();
+    for (const grade of [3, 6, 9]) {
+        for (const subject of subjectsOfGrade(grade)) {
+            const groups = groupsFor(subject, grade);
+            assert.ok(groups.length > 0, `${subject} ${grade}`);
+            for (const g of groups) {
+                assert.ok(g.domain && g.title && g.skills.length, `${subject} ${grade} ${g.title}`);
+                for (const sk of g.skills) {
+                    assert.ok(sk.id && sk.name && sk.desc, sk.id);
+                    assert.ok(!seen.has(sk.id), 'معرّف مكرر ' + sk.id);
+                    seen.add(sk.id);
+                    assert.equal(skillById(sk.id).grade, grade);
+                    assert.equal(skillById(sk.id).subject, subject);
+                }
+            }
+            assert.deepEqual(skillIdsFor(subject, grade), groups.flatMap((g) => g.skills.map((sk) => sk.id)));
+        }
+    }
+    assert.equal(skillIdsFor('math', 3).length, 13);
+    assert.equal(skillIdsFor('math', 6).length, 21);
+    assert.equal(skillIdsFor('math', 9).length, 25);
+    assert.equal(skillIdsFor('science', 6).length, 33);
+    assert.equal(skillIdsFor('science', 9).length, 48);
+    assert.deepEqual(groupsFor('science', 3), []);
+});
+
+test('نماذج نافس الرسمية: ست نماذج، كل سؤال مربوط بمهارة من صفه ومادته، وصوره موجودة', () => {
+    assert.deepEqual(FORMS.map((f) => f.id), ['a3', 'b3', 'a6', 'b6', 'a9', 'b9']);
+    const expected = { a3: [13, 8], b3: [13, 8], a6: [28, 10], b6: [27, 10], a9: [26, 10], b9: [27, 10] };
+    for (const f of FORMS) {
+        const total = Object.values(f.subjects).reduce((n, qs) => n + qs.length, 0);
+        assert.equal(total, expected[f.id][0], f.id);
+        assert.equal(f.subjects.math.length, expected[f.id][1], f.id + ' math');
+        assert.equal(Boolean(f.subjects.science), f.grade !== 3, f.id + ' science');
+        for (const [subject, qs] of Object.entries(f.subjects)) {
+            let passages = 0;
+            for (const q of qs) {
+                const sk = skillById(q.skill);
+                assert.ok(sk && sk.grade === f.grade && sk.subject === subject, `${f.id} q${q.n} ${q.skill}`);
+                assert.ok(['know', 'apply', 'reason'].includes(q.level), `${f.id} q${q.n}`);
+                assert.ok([0, 1, 2, 3].includes(q.answer), `${f.id} q${q.n}`);
+                for (const img of [q.img, q.passage?.img].filter(Boolean)) {
+                    const path = new URL('../public/' + img, import.meta.url);
+                    assert.ok(existsSync(path) && statSync(path).size > 1000, img);
+                }
+                if (q.passage) passages++;
+            }
+            assert.equal(passages, subject === 'reading' ? 1 : 0, `${f.id} ${subject} passage`);
+        }
+    }
 });
