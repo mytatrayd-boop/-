@@ -4,4 +4,4 @@
 الصيغة: `{skill, level, text, options[4], answer(0-3), explanation}` أو `{skill, level, applicable:false, reason}` لـ«غير منطبق».
 كتبها Claude؛ لم يراجعها بشر بعد، فهي مسودات لا أسئلة معتمدة.
 
-- `reading-3.json` — القراءة، الثالث الابتدائي (13 مؤشراً × 3 مستويات).
+- `reading-3.json`, `reading-6.json`, `reading-9.json` — القراءة (كل مؤشر × 3 مستويات).

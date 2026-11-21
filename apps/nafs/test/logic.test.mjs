@@ -192,11 +192,14 @@ test('البنك: فحص الجودة والمسار والتوليد مع «غ�
 });
 
 test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا ملاحظات جودة، ولكل مؤشر ثلاثة مستويات', () => {
-    const rows = JSON.parse(readFileSync(new URL('../public/bank-drafts/reading-3.json', import.meta.url), 'utf8'));
-    for (const r of rows) {
-        assert.equal(skillById(r.skill)?.grade, 3, r.skill);
-        if (r.applicable === false) assert.ok(r.reason, r.skill);
-        else assert.deepEqual(qualityIssues(r), [], `${r.skill} ${r.level}`);
+    for (const [file, subject, grade] of [['reading-3', 'reading', 3], ['reading-6', 'reading', 6], ['reading-9', 'reading', 9]]) {
+        const rows = JSON.parse(readFileSync(new URL(`../public/bank-drafts/${file}.json`, import.meta.url), 'utf8'));
+        for (const r of rows) {
+            assert.equal(skillById(r.skill)?.grade, grade, r.skill);
+            assert.equal(skillById(r.skill)?.subject, subject, r.skill);
+            if (r.applicable === false) assert.ok(r.reason, r.skill);
+            else assert.deepEqual(qualityIssues(r), [], `${r.skill} ${r.level}`);
+        }
+        for (const id of skillIdsFor(subject, grade)) assert.deepEqual(rows.filter((r) => r.skill === id).map((r) => r.level).sort(), ['apply', 'know', 'reason'], id);
     }
-    for (const id of skillIdsFor('reading', 3)) assert.deepEqual(rows.filter((r) => r.skill === id).map((r) => r.level).sort(), ['apply', 'know', 'reason'], id);
 });
