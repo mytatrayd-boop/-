@@ -19,6 +19,9 @@
 ## البيانات
 - `principals/{uid}`: name, civilId, email, schoolNo (مدير يسجّل نفسه بحرّية)
 - `schools/{الرقم الإحصائي}`: no, name, principalUid, principalName, classes[], year, createdAt
+- `schoolTransfers/{الرقم}`: طلب نقل تبعية مدرسة لمدير جديد (requesterUid, requesterName)
+- `providers/{uid}`، `providerLinks/{الرقم}` (مدرسة ↔ مقدم خدمات التميز)، `providerRequests/{الرقم}`
+- `schools/{no}.years[]`: [{label, start}] أعوام المدرسة؛ عام الاختبار من تاريخ إنشائه — لا حذف ولا إعادة كتابة
 - `teacherRoster/{civilId}`: schoolNo, name, classes[] (الفصول المسندة)، uid (فارغ حتى يفعّل المعلم حسابه)، email، activatedAt — يضيفه المدير ولا يدخل معلم لم يُضَف
 - `teachers/{uid}`: name, civilId, school, schoolNo, className (من فصوله المسندة)، email, createdAt
 - `teachers/{uid}/uploads/{id}`: name, size, type, data (base64), className, added, createdAt

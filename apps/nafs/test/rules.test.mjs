@@ -338,3 +338,12 @@ test('مقدم خدمات التميز: يضيف المدارس المسجّلة
     await assertSucceeds(deleteDoc(doc(v2, 'providerLinks/123456')));                                               // يحذفها من عنده
     await assertFails(deleteDoc(doc(v1, 'providerLinks/123456')));
 });
+
+test('الأعوام الدراسية: المدير يفتح عاماً جديداً (تُؤرشف الأعوام ولا تُحذف)، وغيره لا', async () => {
+    const p1 = teacherDbNew(P1), p2 = teacherDbNew(P2);
+    const years = [{ label: '1447هـ', start: 1 }, { label: '1448هـ', start: 2 }];
+    await assertSucceeds(updateDoc(doc(p1, 'schools/123456'), { year: '1448هـ', years }));
+    await assertFails(updateDoc(doc(p2, 'schools/123456'), { year: '1449هـ', years }));
+    await assertFails(updateDoc(doc(p1, 'schools/123456'), { year: '1449هـ', years: Array.from({ length: 81 }, (_, i) => ({ label: String(i), start: i })) }));
+    await assertSucceeds(getDoc(doc(teacherDbNew('t'), 'schools/123456')));      // المعلم يقرأ العام الحالي والأعوام
+});

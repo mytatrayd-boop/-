@@ -132,6 +132,18 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
         await np.click('[data-action="pd-refresh"]');
         await np.waitForFunction(() => document.getElementById('pdMeta').textContent.includes('العام الدراسي'));
         assert.match(await np.textContent('#pdBody'), /أحمد محمد القحطاني/); // معلمو المدرسة انتقلوا معها
+        // نهاية العام: يُؤرشف العام ويُفتح عام جديد بتاريخه، ويراه المعلم في قائمة الأعوام
+        const before = (await np.textContent('#pdMeta')).match(/العام الدراسي: (\S+ · \S+)/)[1];
+        await np.click('[data-action="pd-new-year"]');
+        await np.click('#modalOk');
+        await closeModal(np, 'فُتح العام');
+        const after = (await np.textContent('#pdMeta')).match(/العام الدراسي: (\S+ · \S+)/)[1];
+        assert.notEqual(after, before);
+        assert.match(await np.textContent('#pdBody'), new RegExp(before.replace(/[·]/g, '.')));
+        await page.reload();
+        await page.locator('#teacherDashboardScreen').waitFor();
+        await page.waitForFunction(() => document.getElementById('yearSel').options.length === 2);
+        assert.match(await page.textContent('#yearSel'), /\(الحالي\).*\(أرشيف\)/s);
         await c2.close();
     }
 

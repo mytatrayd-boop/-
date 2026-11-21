@@ -35,7 +35,7 @@ service cloud.firestore {
       allow get: if signedIn() && schoolNo(no);
       allow create: if isTeacher() && schoolNo(no)
         && existsAfter(/databases/$(database)/documents/principals/$(request.auth.uid))
-        && request.resource.data.keys().hasOnly(['no', 'name', 'principalUid', 'principalName', 'classes', 'year', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['no', 'name', 'principalUid', 'principalName', 'classes', 'year', 'years', 'createdAt'])
         && request.resource.data.no == no
         && request.resource.data.principalUid == request.auth.uid
         && text(request.resource.data.name, 120)
@@ -43,9 +43,10 @@ service cloud.firestore {
         && request.resource.data.classes is list
         && text(request.resource.data.year, 20);
       allow update: if isPrincipalOf(no)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'year'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'year', 'years'])
         && text(request.resource.data.name, 120)
-        && request.resource.data.classes is list;
+        && request.resource.data.classes is list
+        && (!('years' in request.resource.data) || (request.resource.data.years is list && request.resource.data.years.size() <= 80));
 
       // المدير الحالي ينقل التبعية لصاحب طلب النقل («حذف المدرسة من عندي»)
       allow update: if isPrincipalOf(no)

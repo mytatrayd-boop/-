@@ -28,6 +28,9 @@ let provider = null;       // مقدم خدمات التميز {uid, name, civil
 let providerSchools = [];  // مدارس المقدم: {no, schoolName, principalName, incoming}
 let school = null;         // مدرسة المدير (مستند schools)
 let roster = [];           // كشف معلمي المدرسة
+let schoolYears = [];      // أعوام مدرسة المعلم [{label, start}]
+let currentYear = '';      // العام الدراسي الحالي
+let viewYear = '';         // العام المعروض (الأرشيف للاطلاع فقط)
 let transferIn = null;     // طلب نقل وارد لمدرستي من مدير جديد
 let otherSchool = null;    // مدرسة برقمي تتبع مديراً آخر {name, principalName}
 let transferOut = null;    // طلبي لنقل تبعية مدرسة إليّ
@@ -227,6 +230,19 @@ async function logout() {
     showAlert('تم تسجيل الخروج بنجاح.', 'إشعار');
 }
 
+async function loadSchoolYears() {
+    try {
+        const sc = (await getDoc(doc(db, 'schools', teacher.schoolNo))).data();
+        currentYear = sc.year;
+        schoolYears = (sc.years?.length ? sc.years : [{ label: sc.year, start: 0 }]).slice().sort((a, b) => a.start - b.start);
+    } catch { currentYear = ''; schoolYears = []; }
+    viewYear = currentYear;
+    const sel = $('yearSel');
+    sel.replaceChildren(...schoolYears.slice().reverse().map((y) => new Option(y.label + (y.label === currentYear ? ' (الحالي)' : ' (أرشيف)'), y.label)));
+    sel.value = currentYear;
+    sel.classList.toggle('hidden', !schoolYears.length);
+}
+
 async function loadTeacherClasses() {
     try {
         const r = await getDoc(doc(db, 'teacherRoster', teacher.civilId));
@@ -239,6 +255,7 @@ async function loadTeacherClasses() {
 
 async function openTeacherDashboard() {
     await loadTeacherClasses();
+    await loadSchoolYears();
     showScreen('teacherDashboardScreen');
     $('dashWelcome').textContent = `مرحباً بك أستاذ/ة: ${teacher.name}`;
     $('dashClass').value = teacher.className;
@@ -337,7 +354,14 @@ function statRow(name, stat, hint = '') {
 }
 
 const ms = (ts) => ts?.toMillis?.() ?? 0;
-const classTests = () => tests.filter((t) => t.className === teacher.className);
+function inViewYear(created) {
+    const i = schoolYears.findIndex((y) => y.label === viewYear);
+    if (i < 0 || schoolYears.length < 2) return true;
+    const from = i === 0 ? -Infinity : schoolYears[i].start, to = i === schoolYears.length - 1 ? Infinity : schoolYears[i + 1].start;
+    const t = ms(created);
+    return t >= from && t < to;
+}
+const classTests = () => tests.filter((t) => t.className === teacher.className && inViewYear(t.createdAt));
 const currentGrade = () => gradeOfClass(teacher.className);
 
 // subject = null: كل المواد (للمستوى العام)؛ وإلا اختبارات تلك المادة فقط.
@@ -494,6 +518,8 @@ function renderTestsTab() {
     const grade = currentGrade();
     $('testsClassName').textContent = teacher.className;
     $('testsGradeName').textContent = GRADES[grade].name;
+    const archive = viewYear !== currentYear;
+    for (const a of ['show-official', 'show-bankpanel', 'new-test']) document.querySelector(`#testsListView [data-action="${a}"], [data-action="${a}"]`)?.classList.toggle('hidden', archive);
     if (draft) return renderBuilder();
     $('testsListView').classList.remove('hidden');
     $('testBuilder').classList.add('hidden');
@@ -1409,7 +1435,16 @@ async function studentLogout(message = 'تم تسجيل خروج الطالب.',
 // ---------- مدير المدرسة ----------
 
 const isSchoolNo = (v) => /^[0-9]{3,12}$/.test(v);
-const academicYear = () => { const d = new Date(); const y = d.getFullYear(); return d.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`; };
+const hijriYear = (d) => Number(new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { year: 'numeric' }).format(d).replace(/\D/g, '').slice(0, 4));
+// العام الدراسي يبدأ في أغسطس: «1448هـ · 2026-2027»
+function academicYear(now = new Date()) {
+    const g = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+    return `${hijriYear(new Date(g, 7, 15))}هـ · ${g}-${g + 1}`;
+}
+function nextYearLabel(label) {
+    const m = /^(\d{4})هـ · (\d{4})-(\d{4})$/.exec(label);
+    return m ? `${+m[1] + 1}هـ · ${+m[2] + 1}-${+m[3] + 1}` : academicYear();
+}
 
 function setPrincipalTab(tab) {
     $('principalLoginForm').classList.toggle('hidden', tab !== 'login');
@@ -1448,7 +1483,7 @@ async function principalSignup(e) {
             batch.set(doc(db, 'principals', user.uid), { ...p, createdAt: serverTimestamp() });
             const existing = await getDoc(doc(db, 'schools', p.schoolNo));
             if (!existing.exists()) {
-                batch.set(doc(db, 'schools', p.schoolNo), { no: p.schoolNo, name: schoolName, principalUid: user.uid, principalName: p.name, classes: [], year: academicYear(), createdAt: serverTimestamp() });
+                batch.set(doc(db, 'schools', p.schoolNo), { no: p.schoolNo, name: schoolName, principalUid: user.uid, principalName: p.name, classes: [], year: academicYear(), years: [{ label: academicYear(), start: Date.now() }], createdAt: serverTimestamp() });
             }
             await batch.commit();
             $('pSignupPassword').value = '';
@@ -1526,6 +1561,13 @@ function renderPrincipal() {
     classes.append(grid, save);
     body.append(classes);
 
+    // العام الدراسي والأرشيف
+    const yr = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3');
+    yr.append(el('h3', 'font-black text-slate-800', 'العام الدراسي والأرشيف'), el('p', 'text-sm text-slate-600 leading-relaxed', `العام الحالي: ${school.year}. عند نهاية العام يُؤرشف بما فيه من اختبارات ونتائج ولا يُحذف شيء، ويُفتح عام جديد بتاريخه. يرى المعلمون الأعوام السابقة للاطلاع.`));
+    const ys = (school.years?.length ? school.years : [{ label: school.year }]).map((y) => y.label);
+    yr.append(el('p', 'text-xs text-slate-500', `الأعوام المحفوظة: ${ys.join(' ، ')}`), actionButton('إنهاء العام الدراسي وفتح عام جديد', 'pd-new-year', '', 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl'));
+    body.append(yr);
+
     // المعلمون
     const t = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4');
     t.append(el('h3', 'font-black text-slate-800', 'المعلمون وإسنادهم للفصول'));
@@ -1562,6 +1604,17 @@ function renderPrincipal() {
     }
     t.append(list);
     body.append(t);
+}
+
+async function openNewYear(btn) {
+    const next = nextYearLabel(school.year);
+    if (!(await confirmDialog(`إنهاء العام ${school.year} وفتح العام ${next}؟ يُؤرشف العام الحالي بكل بياناته ولا يُحذف منه شيء.`, 'نعم، افتح العام الجديد'))) return;
+    await busy(btn, async () => {
+        const years = school.years?.length ? school.years : [{ label: school.year, start: 0 }];
+        await updateDoc(doc(db, 'schools', school.no), { year: next, years: [...years, { label: next, start: Date.now() }] });
+        await openPrincipalDashboard();
+        showAlert(`فُتح العام الدراسي ${next}، وأُرشف العام السابق.`, 'عام دراسي جديد');
+    });
 }
 
 async function requestTransfer(btn) {
@@ -2106,6 +2159,7 @@ function bindEvents() {
     $('excelFile').addEventListener('change', handleExcelUpload);
     $('omrFiles').addEventListener('change', (e) => handleOmrFiles([...e.target.files]));
     $('dashClass').addEventListener('change', changeClass);
+    $('yearSel').addEventListener('change', () => { viewYear = $('yearSel').value; renderTeacher(); });
     $('bankImport').addEventListener('change', importBank);
     $('bankPanel').addEventListener('change', (e) => {
         const t = e.target;
@@ -2137,6 +2191,7 @@ function bindEvents() {
             case 'p-auth-tab': setPrincipalTab(tab); break;
             case 'p-reset-password': principalReset(); break;
             case 'pd-save-classes': savePrincipalClasses(el); break;
+            case 'pd-new-year': openNewYear(el); break;
             case 'pd-request-transfer': requestTransfer(el); break;
             case 'pd-cancel-transfer': cancelTransfer(); break;
             case 'pd-approve-transfer': approveTransfer(el); break;
