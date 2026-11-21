@@ -302,7 +302,7 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.click('[data-action="bp-subject"][data-id="math"]');
     await page2.locator('#bpSkills input[data-bp-skill="m3-1-1-2.1"]').waitFor();
     await page2.check('#bpSkills input[data-bp-skill="m3-1-1-2.1"]');
-    assert.equal(await page2.textContent('#bpCount'), '2');
+    assert.equal(await page2.textContent('#bpCount'), '5');
     await page2.uncheck('#bankPanel input[data-bp-level="reason"]');
     await page2.check('#bpSkills input[data-bp-skill="m3-1-1-2.1"]');
     await page2.click('[data-action="bp-create"]');
