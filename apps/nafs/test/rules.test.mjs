@@ -347,3 +347,21 @@ test('الأعوام الدراسية: المدير يفتح عاماً جديد
     await assertFails(updateDoc(doc(p1, 'schools/123456'), { year: '1449هـ', years: Array.from({ length: 81 }, (_, i) => ({ label: String(i), start: i })) }));
     await assertSucceeds(getDoc(doc(teacherDbNew('t'), 'schools/123456')));      // المعلم يقرأ العام الحالي والأعوام
 });
+
+test('مدرسة بلا مدير: يتسلمها مديرها المسجل برقمها فقط، ويقرأ أرشيفها', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore();
+        await updateDoc(doc(f, 'schools/123456'), { principalUid: null, principalName: null });
+        await setDoc(doc(f, 'principals', P2), { name: 'مدير جديد', civilId: '1000000200', email: 'n@x.com', schoolNo: '123456', createdAt: new Date() });
+        await setDoc(doc(f, 'principals', 'principal3'), { name: 'آخر', civilId: '1000000300', email: 'o@x.com', schoolNo: '999999', createdAt: new Date() });
+        await setDoc(doc(f, 'tests/old1'), { teacherUid: 'gone', schoolNo: '123456', year: 'y', title: 'قديم', createdAt: new Date() });
+        await setDoc(doc(f, 'attempts/oldA'), { testId: 'old1', teacherUid: 'gone', studentId: 's', schoolNo: '123456', year: 'y', score: 3 });
+    });
+    const pdb = (uid) => teacherDb(uid);
+    await assertFails(updateDoc(doc(pdb('principal3'), 'schools/123456'), { principalUid: 'principal3', principalName: 'آخر' }));
+    await assertFails(updateDoc(doc(pdb(P2), 'schools/123456'), { principalUid: P2, principalName: 'م', name: 'غيّرت' }));
+    await assertSucceeds(updateDoc(doc(pdb(P2), 'schools/123456'), { principalUid: P2, principalName: 'مدير جديد' }));
+    await assertSucceeds(getDoc(doc(pdb(P2), 'tests/old1')));
+    await assertSucceeds(getDocs(query(collection(pdb(P2), 'attempts'), where('schoolNo', '==', '123456'))));
+    await assertFails(getDocs(query(collection(pdb('principal3'), 'attempts'), where('schoolNo', '==', '123456'))));
+});

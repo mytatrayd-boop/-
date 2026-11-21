@@ -14,6 +14,7 @@ import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skil
 import { TEMPLATES } from './templates.js';
 import { omrSheetHtml, omrKeyHtml, bookletHtml, OMR_PER_PAGE } from './omr.js';
 import { scanSheet } from './omr-scan.js';
+import { academicYear, nextYearLabel } from './years.js';
 import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, newBankQuestion } from './bank.js';
 
 const $ = (id) => document.getElementById(id);
@@ -1435,17 +1436,6 @@ async function studentLogout(message = 'تم تسجيل خروج الطالب.',
 // ---------- مدير المدرسة ----------
 
 const isSchoolNo = (v) => /^[0-9]{3,12}$/.test(v);
-const hijriYear = (d) => Number(new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { year: 'numeric' }).format(d).replace(/\D/g, '').slice(0, 4));
-// العام الدراسي يبدأ في أغسطس: «1448هـ · 2026-2027»
-function academicYear(now = new Date()) {
-    const g = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
-    return `${hijriYear(new Date(g, 7, 15))}هـ · ${g}-${g + 1}`;
-}
-function nextYearLabel(label) {
-    const m = /^(\d{4})هـ · (\d{4})-(\d{4})$/.exec(label);
-    return m ? `${+m[1] + 1}هـ · ${+m[2] + 1}-${+m[3] + 1}` : academicYear();
-}
-
 function setPrincipalTab(tab) {
     $('principalLoginForm').classList.toggle('hidden', tab !== 'login');
     $('principalSignupForm').classList.toggle('hidden', tab !== 'signup');
@@ -1486,11 +1476,14 @@ async function principalSignup(e) {
                 batch.set(doc(db, 'schools', p.schoolNo), { no: p.schoolNo, name: schoolName, principalUid: user.uid, principalName: p.name, classes: [], year: academicYear(), years: [{ label: academicYear(), start: Date.now() }], createdAt: serverTimestamp() });
             }
             await batch.commit();
+            // مدرسة بلا مدير (بعد بداية عام جديد): يتسلّمها أول مدير مسجّل برقمها
+            const vacant = existing.exists() && existing.data().principalUid == null;
+            if (vacant) await updateDoc(doc(db, 'schools', p.schoolNo), { principalUid: user.uid, principalName: p.name });
             $('pSignupPassword').value = '';
             principal = { uid: user.uid, ...p };
             activating = false;
             await openPrincipalDashboard();
-            showAlert(existing.exists() ? `رقم المدرسة ${p.schoolNo} مسجّل لمدير آخر (${existing.data().principalName}). سُجّل حسابك، ويمكنك من لوحتك طلب نقل تبعية المدرسة إليك.` : 'تم تسجيل مدرستك. أضف الفصول ثم المعلمين.', 'تم التسجيل');
+            showAlert(vacant ? `تسلّمتَ مدرسة «${existing.data().name}» بفصولها واختباراتها ونتائجها المؤرشفة.` : existing.exists() ? `رقم المدرسة ${p.schoolNo} مسجّل لمدير آخر (${existing.data().principalName}). سُجّل حسابك، ويمكنك من لوحتك طلب نقل تبعية المدرسة إليك.` : 'تم تسجيل مدرستك. أضف الفصول ثم المعلمين.', 'تم التسجيل');
         } catch (err) {
             if (user) { await user.delete().catch(() => {}); await signOut(auth).catch(() => {}); }
             throw err;
@@ -1567,6 +1560,17 @@ function renderPrincipal() {
     const ys = (school.years?.length ? school.years : [{ label: school.year }]).map((y) => y.label);
     yr.append(el('p', 'text-xs text-slate-500', `الأعوام المحفوظة: ${ys.join(' ، ')}`), actionButton('إنهاء العام الدراسي وفتح عام جديد', 'pd-new-year', '', 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl'));
     body.append(yr);
+    const arch = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-2');
+    arch.append(el('h3', 'font-black text-slate-800', 'أرشيف الاختبارات والنتائج'));
+    const archList = el('p', 'text-sm text-slate-600', 'جارٍ التحميل...');
+    arch.append(archList);
+    body.append(arch);
+    getDocs(query(collection(db, 'tests'), where('schoolNo', '==', school.no))).then((snap) => {
+        const byYear = {};
+        snap.docs.forEach((d) => { const y = d.data().year || 'بلا عام'; byYear[y] = (byYear[y] || 0) + 1; });
+        const rows = Object.entries(byYear);
+        archList.textContent = rows.length ? rows.map(([y, n]) => `${y}: ${n} اختبار`).join(' ، ') : 'لا توجد اختبارات مؤرشفة بعد.';
+    }).catch(() => { archList.textContent = 'تعذّر تحميل الأرشيف.'; });
 
     // المعلمون
     const t = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4');
