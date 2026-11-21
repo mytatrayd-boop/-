@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseStudentRows, isCivilId, gradeAttempt, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError } from '../src/logic.js';
-import { buildPrompt, parseResult } from '../functions/generate.js';
 import { canTransition, qualityIssues, usableInTest, isDuplicate, fromGeneration } from '../src/bank.js';
 import { GRADES, SUBJECTS, gradeOfClass, skillById, groupsFor, skillIdsFor, subjectsOfGrade } from '../src/skills.js';
 import { FORMS } from '../src/forms-data.js';
@@ -189,14 +188,4 @@ test('البنك: فحص الجودة والمسار والتوليد مع «غ�
     assert.deepEqual(recs.map((r) => r.status), ['generated', 'na', 'na']);
     assert.equal(recs[1].reason, 'لا يناسب');
     assert.equal(recs[2].reason, 'لم يحدَّد سبب');
-});
-
-test('التوليد: المطالبة تتضمن المؤشر، والرد يُفحص شكله ويقبل «غير منطبق»', () => {
-    assert.match(buildPrompt({ subject: 'math', grade: 6, outcome: 'ن', indicator: 'مؤشر س' }), /مؤشر س[\s\S]*السادس الابتدائي|السادس الابتدائي[\s\S]*مؤشر س/);
-    const q = { text: 'سؤال', options: ['1', '2', '3', '4'], answer: 2, explanation: 'ش' };
-    const ok = parseResult('```json\n' + JSON.stringify({ know: q, apply: q, reason: { applicable: false, reason: 'لا يناسب' } }) + '\n```');
-    assert.equal(ok.reason.applicable, false);
-    assert.equal(ok.know.answer, 2);
-    assert.throws(() => parseResult(JSON.stringify({ know: { ...q, options: ['1'] }, apply: q, reason: q })));
-    assert.throws(() => parseResult('لا json'));
 });

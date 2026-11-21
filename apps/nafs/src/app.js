@@ -12,12 +12,11 @@ import {
 } from './logic.js';
 import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skillsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
-import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, fromGeneration, newBankQuestion } from './bank.js';
+import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, newBankQuestion } from './bank.js';
 
 const $ = (id) => document.getElementById(id);
 
-let auth, db, fns;
+let auth, db;
 let bank = [];            // بنك أسئلة المعلم
 let bankEditing = null;   // id السؤال قيد التحرير ('new' لسؤال جديد)
 let teacher = null;        // {uid, name, civilId, school, className, email}
@@ -58,11 +57,9 @@ async function start() {
         const app = initializeApp(config);
         auth = getAuth(app);
         db = getFirestore(app);
-        fns = getFunctions(app);
         if (emulator) {
             connectAuthEmulator(auth, `http://${location.hostname}:9099`, { disableWarnings: true });
             connectFirestoreEmulator(db, location.hostname, 8080);
-            connectFunctionsEmulator(fns, location.hostname, 5001);
         }
     } catch (err) {
         console.error(err);
@@ -1207,26 +1204,30 @@ function bankData(q, over = {}) {
     return data;
 }
 
-async function generateBank(button) {
-    const skillId = $('bankSkill').value;
-    const sk = skillById(skillId);
-    await busy(button, async () => {
-        const call = httpsCallable(fns, 'generateQuestions');
-        let res;
-        try {
-            res = await call({ subject: sk.subject, grade: sk.grade, outcome: sk.outcome.name, indicator: sk.desc });
-        } catch { return showAlert('خدمة التوليد غير متاحة الآن. يمكنك إدخال الأسئلة يدوياً.', 'تعذر التوليد'); }
-        const records = fromGeneration(skillId, res.data.result);
-        const have = bank.filter((q) => q.skill === skillId);
-        let added = 0;
-        for (const r of records) {
-            if (r.status !== 'na' && isDuplicate(r, have)) continue;
-            await addDoc(collection(db, 'bank'), { ...bankData(r), createdAt: serverTimestamp() });
-            added++;
-        }
+// استيراد مسودات من ملف JSON: [{skill, level, text, options, answer, explanation} | {skill, level, applicable:false, reason}]
+async function importBank(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    let rows;
+    try { rows = JSON.parse(await file.text()); if (!Array.isArray(rows) || rows.length > 300) throw new Error(); } catch { return showAlert('الملف غير صالح: يجب أن يكون قائمة JSON (حتى 300 عنصر).', 'تعذر الاستيراد'); }
+    const have = [...bank];
+    const records = [], skipped = [];
+    for (const r of rows) {
+        const sk = skillById(r?.skill);
+        if (!sk || sk.grade !== gradeOfClass(teacher.className) || !['know', 'apply', 'reason'].includes(r.level)) { skipped.push('مهارة أو مستوى غير صحيح'); continue; }
+        const rec = r.applicable === false
+            ? { skill: r.skill, level: r.level, status: 'na', reason: String(r.reason ?? 'لم يحدَّد سبب').slice(0, 300), version: 1, source: 'ai' }
+            : newBankQuestion({ skill: r.skill, level: r.level, text: String(r.text ?? ''), options: (r.options ?? []).map(String), answer: r.answer, explanation: String(r.explanation ?? ''), source: 'ai' });
+        if (rec.status !== 'na' && (!Array.isArray(r.options) || r.options.length !== 4 || !Number.isInteger(r.answer) || r.answer < 0 || r.answer > 3)) { skipped.push('خيارات أو مفتاح غير صحيح'); continue; }
+        if (rec.status !== 'na' && isDuplicate(rec, have)) { skipped.push('مكرر'); continue; }
+        records.push(rec); have.push(rec);
+    }
+    try {
+        for (const r of records) await addDoc(collection(db, 'bank'), { ...bankData(r), createdAt: serverTimestamp() });
         await loadBank();
-        showAlert(`أُضيف ${added} إلى «بانتظار المراجعة». راجعها واعتمد المناسب منها.`, 'تم التوليد');
-    });
+        showAlert(`أُضيف ${records.length} إلى «بانتظار المراجعة»${skipped.length ? `، وتُجوهل ${skipped.length} (${[...new Set(skipped)].join('، ')})` : ''}.`, 'تم الاستيراد');
+    } catch (err) { reportError(err); }
 }
 
 async function saveBankQuestion(button) {
@@ -1299,6 +1300,7 @@ function bindEvents() {
     $('studentLoginForm').addEventListener('submit', studentLogin);
     $('excelFile').addEventListener('change', handleExcelUpload);
     $('dashClass').addEventListener('change', changeClass);
+    $('bankImport').addEventListener('change', importBank);
     $('bankFilter').addEventListener('change', renderBank);
     $('bankSubject').addEventListener('change', renderBank);
     $('modalOk').addEventListener('click', () => closeModal(true));
@@ -1332,7 +1334,6 @@ function bindEvents() {
             case 'show-official': showOfficial(); break;
             case 'hide-official': $('officialPanel').classList.add('hidden'); break;
             case 'add-official': addOfficial(id, el); break;
-            case 'bank-generate': generateBank(el); break;
             case 'bank-new': bankEditing = 'new'; renderBank(); break;
             case 'bank-edit': bankEditing = id; renderBank(); break;
             case 'bank-cancel': bankEditing = null; renderBank(); break;

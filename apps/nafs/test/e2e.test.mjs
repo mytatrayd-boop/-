@@ -250,6 +250,14 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.locator('#bankList >> text=معتمد').first().waitFor();
     await page2.selectOption('#bankFilter', 'approved');
     assert.equal(await page2.textContent('#bankCount'), '1');
+    const imp = join(dir, 'bank.json');
+    const mk = (level, text) => ({ skill: '3-1.1', level, text, options: ['نعم', 'لا', 'ربما', 'أبداً'], answer: 0, explanation: 'شرح' });
+    writeFileSync(imp, JSON.stringify([mk('apply', 'سؤال التطبيق عن المرادف هنا'), { skill: '3-1.1', level: 'reason', applicable: false, reason: 'لا يناسب المؤشر' }, { skill: 'zzz', level: 'know' }, mk('know', 'ما مرادف كلمة «سعيد» في الجملة؟')]));
+    await page2.setInputFiles('#bankImport', imp);
+    assert.match(await closeModal(page2, 'أُضيف 2'), /تُجوهل 2/);
+    await page2.selectOption('#bankFilter', 'na');
+    assert.match(await page2.textContent('#bankList'), /لا يناسب المؤشر/);
+    await page2.selectOption('#bankFilter', 'approved');
     await page2.click('#tabBtnTests');
     await page2.click('[data-action="new-test"]');
     await page2.check('[data-skill="3-1.1"]');

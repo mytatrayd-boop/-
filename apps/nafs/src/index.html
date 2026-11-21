@@ -409,14 +409,14 @@
             <!-- بنك الأسئلة -->
             <div id="teacherTabBank" class="hidden space-y-6">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-                    <h3 class="font-bold text-slate-800 text-sm">توليد مسودات أسئلة لمؤشر (معرفة · تطبيق · استدلال)</h3>
-                    <p class="text-xs text-slate-500">كل سؤال يُولَّد يبقى «بانتظار المراجعة» ولا يظهر في اختبار قبل أن تعتمده. يُرسَل للخدمة نص المؤشر فقط، دون أي بيانات طلاب. قد يعود مستوى «غير منطبق» إن لم يناسب المؤشر.</p>
+                    <h3 class="font-bold text-slate-800 text-sm">إضافة أسئلة إلى البنك (معرفة · تطبيق · استدلال)</h3>
+                    <p class="text-xs text-slate-500">أدخل سؤالاً يدوياً، أو استورد ملف مسودات جاهزاً (JSON). كل سؤال مستورد يبقى «بانتظار المراجعة» ولا يظهر في اختبار قبل أن تعتمده. يمكن أن يكون مستوى «غير منطبق» مع ذكر السبب.</p>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <select id="bankSubject" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></select>
                         <select id="bankSkill" class="md:col-span-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></select>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <button data-action="bank-generate" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs">✨ توليد ثلاثة أسئلة</button>
+                        <label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">📥 استيراد مسودات (JSON)<input type="file" id="bankImport" accept=".json,application/json" class="hidden"></label>
                         <button data-action="bank-new" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ إدخال سؤال يدوي</button>
                     </div>
                 </div>
