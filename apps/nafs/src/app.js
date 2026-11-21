@@ -12,6 +12,7 @@ import {
 } from './logic.js';
 import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skillsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
+import { omrSheetHtml, omrKeyHtml } from './omr.js';
 import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, newBankQuestion } from './bank.js';
 
 const $ = (id) => document.getElementById(id);
@@ -445,10 +446,24 @@ function renderTestsTab() {
         btns.append(actionButton(t.status === 'published' ? 'إيقاف النشر' : 'نشر للطلاب', 'toggle-publish', t.id, 'text-emerald-700 hover:text-emerald-900'));
         // النماذج الرسمية أسئلتها صور: لا تُعدَّل (تُحذف وتُضاف من جديد)
         if (!isImageTest(t)) btns.append(actionButton(done ? 'نسخ كاختبار جديد' : 'تعديل', 'edit-test', t.id, 'text-slate-700 hover:text-slate-900'));
+        btns.append(actionButton('🖨️ ورقة إجابة (تظليل يدوي)', 'print-omr', t.id, 'text-teal-700 hover:text-teal-900'), actionButton('مفتاح التصحيح', 'print-key', t.id, 'text-teal-700 hover:text-teal-900'));
         btns.append(actionButton('حذف', 'delete-test', t.id, 'text-red-500 hover:text-red-700'));
         card.append(head, meta, chips, btns);
         box.append(card);
     }
+}
+
+// طباعة ورقة الإجابة أو مفتاح التصحيح في نافذة جديدة
+function printOmr(id, key) {
+    const t = classTests().find((x) => x.id === id);
+    if (!t) return;
+    const base = { title: t.title, className: teacher.className };
+    let html = key
+        ? omrKeyHtml({ ...base, answers: t.questions.map((q) => q.answer) })
+        : omrSheetHtml({ ...base, subjectName: SUBJECTS[testSubject(t)].name, count: t.questions.length });
+    html = html.replace('</body>', '<script>addEventListener("load",()=>setTimeout(()=>print(),500))</script></body>');
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    if (!window.open(url, '_blank')) showAlert('اسمح للموقع بفتح النوافذ المنبثقة ثم أعد المحاولة.', 'تعذّر فتح الطباعة');
 }
 
 function openBuilder(test) {
@@ -1598,6 +1613,7 @@ function bindEvents() {
             case 'save-test': saveTest(el, publish === '1'); break;
             case 'toggle-publish': togglePublish(id); break;
             case 'delete-test': deleteTest(id); break;
+            case 'print-omr': case 'print-key': printOmr(id, action === 'print-key'); break;
             case 'student-detail': showStudentDetail(id); break;
             case 'show-perf': showPerf(); break;
             case 'close-perf': $('perfModal').classList.add('hidden'); break;

@@ -253,3 +253,17 @@ test('نماذج حلّها الموقع: مؤشرات صحيحة وصور مو�
         }
     }
 });
+
+test('ورقة الإجابة (التظليل اليدوي): عدد الصفوف والصفحات وتهريب النص ومفتاح التصحيح', async () => {
+    const { omrSheetHtml, omrKeyHtml, OMR_PER_PAGE } = await import('../src/omr.js');
+    const h = omrSheetHtml({ title: '<img src=x onerror=alert(1)>', className: 'السادس - أ', subjectName: 'رياضيات', count: 25 });
+    assert.equal((h.match(/class="qr"/g) || []).length, 25);
+    assert.equal((h.match(/class="page"/g) || []).length, 1);
+    assert.ok(!h.includes('<img src=x'), 'العنوان يُهرَّب');
+    assert.equal((h.match(/class="qr"/g) || []).length, 25);
+    const big = omrSheetHtml({ title: 'ت', count: OMR_PER_PAGE + 1 });
+    assert.equal((big.match(/class="page"/g) || []).length, 2);
+    assert.equal((big.match(/class="qr"/g) || []).length, OMR_PER_PAGE + 1);
+    const k = omrKeyHtml({ title: 'ت', answers: [0, 1, 2, 3] });
+    assert.ok(k.includes('<td>أ</td><td>ب</td><td>ج</td><td>د</td>'));
+});
