@@ -165,9 +165,36 @@ service cloud.firestore {
       }
     }
 
+    // كلمة مرور الطالب (6 أرقام يولّدها الموقع بعد إضافته): يقرؤها معلمه فقط. الطالب يُثبت معرفته بها بكتابة جلسة باسم حسابه
+    // لا تُقبل إلا إن طابقت الكلمة؛ وبدون جلسة صالحة لا يقرأ سجله ولا يرفع محاولة.
+    function hasSession(sid) {
+      return exists(/databases/$(database)/documents/studentSessions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/studentSessions/$(request.auth.uid)).data.studentId == sid;
+    }
+    match /studentPins/{sid} {
+      allow read, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow create: if isTeacher() && civilId(sid)
+        && request.resource.data.keys().hasOnly(['teacherUid', 'pin', 'createdAt'])
+        && request.resource.data.teacherUid == request.auth.uid
+        && request.resource.data.pin is string && request.resource.data.pin.matches('^[0-9]{6}$')
+        && getAfter(/databases/$(database)/documents/students/$(sid)).data.teacherUid == request.auth.uid;
+      allow update: if isTeacher() && resource.data.teacherUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['teacherUid', 'pin', 'createdAt'])
+        && request.resource.data.teacherUid == request.auth.uid
+        && request.resource.data.pin is string && request.resource.data.pin.matches('^[0-9]{6}$');
+    }
+    match /studentSessions/{uid} {
+      allow create, update: if isStudentSession() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['studentId', 'pin'])
+        && civilId(request.resource.data.studentId)
+        && exists(/databases/$(database)/documents/studentPins/$(request.resource.data.studentId))
+        && get(/databases/$(database)/documents/studentPins/$(request.resource.data.studentId)).data.pin == request.resource.data.pin;
+      allow delete: if isStudentSession() && request.auth.uid == uid;
+    }
+
     // مستند لكل طالب، معرّفه رقم السجل المدني. الطالب مسجل عند معلم واحد فقط.
     match /students/{sid} {
-      allow get: if signedIn();
+      allow get: if isTeacher() || (isStudentSession() && hasSession(sid));
       allow list: if isTeacher() && resource.data.teacherUid == request.auth.uid;
 
       allow create: if isTeacher() && civilId(sid)
@@ -245,6 +272,7 @@ service cloud.firestore {
       allow update: if paperAttempt() && resource.data.get('source', '') == 'paper';
       allow create: if paperAttempt();
       allow create: if isStudentSession()
+        && hasSession(request.resource.data.studentId)
         && request.resource.data.keys().hasOnly(['testId', 'studentId', 'teacherUid', 'className', 'answers', 'submittedAt'])
         && attemptId == request.resource.data.testId + '_' + request.resource.data.studentId
         && civilId(request.resource.data.studentId)

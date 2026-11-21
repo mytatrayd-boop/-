@@ -2,7 +2,7 @@
 import test, { before, after, beforeEach } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 let env;
 const T1 = 'teacher1', T2 = 'teacher2';
@@ -23,6 +23,8 @@ beforeEach(async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
         const f = ctx.firestore();
         await setDoc(doc(f, 'students/1111111111'), { ...student(T1), createdAt: new Date() });
+        await setDoc(doc(f, 'studentPins/1111111111'), { teacherUid: T1, pin: '123456', createdAt: new Date() });
+        await setDoc(doc(f, 'studentSessions/anon1'), { studentId: '1111111111', pin: '123456' });
         // مدرسة 123456 لمدير P1، وكشف فيه المعلم 1000000001 مفعّلاً لـ T1، وآخر 1000000002 لم يُفعَّل
         await setDoc(doc(f, 'principals', P1), { name: 'مدير', civilId: '1000000100', email: 'p@x.com', schoolNo: '123456', createdAt: new Date() });
         await setDoc(doc(f, 'schools/123456'), { no: '123456', name: 'مدرسة', principalUid: P1, principalName: 'مدير', classes: CLASSES_ASSIGNED, year: '1447-1448', createdAt: new Date() });
@@ -364,4 +366,25 @@ test('مدرسة بلا مدير: يتسلمها مديرها المسجل بر�
     await assertSucceeds(getDoc(doc(pdb(P2), 'tests/old1')));
     await assertSucceeds(getDocs(query(collection(pdb(P2), 'attempts'), where('schoolNo', '==', '123456'))));
     await assertFails(getDocs(query(collection(pdb('principal3'), 'attempts'), where('schoolNo', '==', '123456'))));
+});
+
+test('كلمة مرور الطالب: يقرؤها معلمه فقط، والجلسة لا تصح إلا بالكلمة الصحيحة', async () => {
+    await assertSucceeds(getDoc(doc(teacherDb(T1), 'studentPins/1111111111')));
+    await assertFails(getDoc(doc(teacherDb(T2), 'studentPins/1111111111')));
+    await assertFails(getDoc(doc(studentDb(), 'studentPins/1111111111')));
+    const anon2 = env.authenticatedContext('anon2', { firebase: { sign_in_provider: 'anonymous' } }).firestore();
+    await assertFails(getDoc(doc(anon2, 'students/1111111111'))); // بلا جلسة
+    await assertFails(setDoc(doc(anon2, 'studentSessions/anon2'), { studentId: '1111111111', pin: '000000' }));
+    await assertFails(setDoc(doc(anon2, 'studentSessions/anon1'), { studentId: '1111111111', pin: '123456' })); // جلسة باسم غيره
+    await assertSucceeds(setDoc(doc(anon2, 'studentSessions/anon2'), { studentId: '1111111111', pin: '123456' }));
+    await assertSucceeds(getDoc(doc(anon2, 'students/1111111111')));
+    await assertFails(getDoc(doc(anon2, 'studentSessions/anon2'))); // لا قراءة للجلسات
+    // لا محاولة لطالب آخر بجلسة هذا الطالب
+    await assertFails(setDoc(doc(anon2, 'attempts/T1_2222222222'), attempt()));
+    // المعلم يولّد كلمة لطالبه فقط، بصيغة 6 أرقام
+    const b = (u) => { const w = writeBatch(teacherDb(u)); return w; };
+    await assertFails(setDoc(doc(teacherDb(T1), 'studentPins/1111111111'), { teacherUid: T1, pin: '12ab', createdAt: new Date() }));
+    await assertFails(setDoc(doc(teacherDb(T2), 'studentPins/1111111111'), { teacherUid: T2, pin: '654321', createdAt: new Date() }));
+    await assertSucceeds(updateDoc(doc(teacherDb(T1), 'studentPins/1111111111'), { pin: '654321' }));
+    void b;
 });

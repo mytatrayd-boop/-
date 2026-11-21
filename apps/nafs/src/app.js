@@ -12,7 +12,7 @@ import {
 } from './logic.js';
 import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skillsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
-import { omrSheetHtml, omrKeyHtml, bookletHtml, OMR_PER_PAGE } from './omr.js';
+import { omrSheetHtml, omrKeyHtml, bookletHtml, esc, OMR_PER_PAGE } from './omr.js';
 import { scanSheet } from './omr-scan.js';
 import { academicYear, nextYearLabel } from './years.js';
 import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, newBankQuestion } from './bank.js';
@@ -39,6 +39,7 @@ let students = [];         // طلاب المعلم كلهم (كل الفصول)
 let uploads = [];
 let activeStudent = null;  // {id, name, ...}
 let teacherTab = 'students';
+let pins = {}; // كلمات مرور طلاب المعلم الحالي: {سجل مدني: 6 أرقام}
 let authMode = 'login';
 let activating = false;    // تسجيل مدير أو تفعيل معلم قيد التنفيذ
 let tests = [];            // اختبارات المعلم (كل الفصول)
@@ -299,6 +300,8 @@ async function loadStudents() {
     const snap = await getDocs(query(collection(db, 'students'), where('teacherUid', '==', teacher.uid)));
     students = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0));
+    const ps = await getDocs(query(collection(db, 'studentPins'), where('teacherUid', '==', teacher.uid)));
+    pins = Object.fromEntries(ps.docs.map((d) => [d.id, d.data().pin]));
     renderTeacher();
 }
 
@@ -402,7 +405,7 @@ function renderStudentsTab(report) {
         level.append(el('span', 'font-black text-slate-800 ml-2', r?.pct === null || !r ? '' : r.pct + '%'), badge(r?.pct ?? null));
         const actions = cell('', 'p-3 text-center');
         actions.append(actionButton('حذف', 'delete-student', s.id, 'text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded'));
-        tr.append(cell(i + 1, 'p-3 font-bold'), cell(s.name, 'p-3 font-semibold text-slate-800'), cell(s.id, 'p-3 font-mono text-slate-600'), level, actions);
+        tr.append(cell(i + 1, 'p-3 font-bold'), cell(s.name, 'p-3 font-semibold text-slate-800'), cell(s.id, 'p-3 font-mono text-slate-600'), cell(pins[s.id] ?? '—', 'p-3 font-mono font-bold text-teal-700'), level, actions);
         tbody.append(tr);
     });
 }
@@ -1124,6 +1127,10 @@ async function deleteInBatches(refs) {
     }
 }
 
+// كلمة مرور سهلة: 6 أرقام عشوائية آمنة، تُولَّد بعد إضافة الطالب وتُطبع في بطاقته
+function newPin() { return String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0'); }
+const pinDoc = () => ({ teacherUid: teacher.uid, pin: newPin(), createdAt: serverTimestamp() });
+
 function newStudentDoc(name) {
     return { name, teacherUid: teacher.uid, className: teacher.className, school: teacher.school, status: 'لم يبدأ', createdAt: serverTimestamp() };
 }
@@ -1145,7 +1152,10 @@ async function addStudent(e) {
         const owner = await existingOwner(id);
         if (owner === 'mine') return showAlert('رقم السجل المدني هذا مسجل مسبقاً في فصولك.', 'تنبيه');
         if (owner === 'other') return showAlert('هذا الطالب مسجل لدى معلم آخر.', 'تنبيه');
-        await setDoc(doc(db, 'students', id), newStudentDoc(name));
+        const b = writeBatch(db);
+        b.set(doc(db, 'students', id), newStudentDoc(name));
+        b.set(doc(db, 'studentPins', id), pinDoc());
+        await b.commit();
         $('newStudentName').value = '';
         $('newStudentId').value = '';
         await loadStudents();
@@ -1153,11 +1163,34 @@ async function addStudent(e) {
     });
 }
 
+async function genPins() {
+    const miss = students.filter((s) => !pins[s.id]);
+    if (!miss.length) return showAlert('لكل طلابك كلمات مرور.', 'تنبيه');
+    try {
+        for (let i = 0; i < miss.length; i += 400) {
+            const b = writeBatch(db);
+            miss.slice(i, i + 400).forEach((s) => b.set(doc(db, 'studentPins', s.id), pinDoc()));
+            await b.commit();
+        }
+        await loadStudents();
+        showAlert(`وُلّدت كلمات مرور لـ ${miss.length} طالباً. اطبع البطاقات ووزعها.`, 'تم');
+    } catch (err) { reportError(err); }
+}
+
+function printCards() {
+    const list = classStudents().filter((s) => pins[s.id]);
+    if (!list.length) return showAlert('ولّد كلمات المرور أولاً.', 'تنبيه');
+    const cards = list.map((s) => `<div class="c"><b>${esc(s.name)}</b><p>السجل المدني: <span>${esc(s.id)}</span></p><p>كلمة المرور: <span>${esc(pins[s.id])}</span></p></div>`).join('');
+    const html = `<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>بطاقات دخول الطلاب</title><style>body{font-family:Tahoma,sans-serif;margin:10mm}h1{font-size:14pt}.g{display:grid;grid-template-columns:1fr 1fr;gap:6mm}.c{border:1.5px dashed #555;border-radius:3mm;padding:4mm;break-inside:avoid;font-size:11pt}.c p{margin:2mm 0}.c span{font-family:monospace;font-size:13pt;font-weight:bold;letter-spacing:1px}</style><h1>بطاقات دخول الطلاب — ${esc(teacher.className)}</h1><div class="g">${cards}</div><script>addEventListener("load",()=>setTimeout(()=>print(),600))</script></html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    if (!window.open(url, '_blank')) showAlert('اسمح للموقع بفتح النوافذ المنبثقة ثم أعد المحاولة.', 'تعذّر فتح الطباعة');
+}
+
 async function deleteStudent(id) {
     const s = students.find((x) => x.id === id);
     if (!s || !(await confirmDialog(`حذف الطالب «${s.name}» ونتائجه نهائياً؟`))) return;
     try {
-        await deleteInBatches([doc(db, 'students', id), ...attempts.filter((a) => a.studentId === id).map((a) => doc(db, 'attempts', a.id))]);
+        await deleteInBatches([doc(db, 'students', id), doc(db, 'studentPins', id), ...attempts.filter((a) => a.studentId === id).map((a) => doc(db, 'attempts', a.id))]);
         await Promise.all([loadStudents(), loadTeacherTests()]);
     } catch (err) { reportError(err); }
 }
@@ -1168,7 +1201,7 @@ async function clearAllStudents() {
     if (!(await confirmDialog(`حذف جميع طلاب فصل «${teacher.className}» (${list.length}) ونتائجهم نهائياً؟`))) return;
     try {
         const ids = new Set(list.map((s) => s.id));
-        await deleteInBatches([...list.map((s) => doc(db, 'students', s.id)), ...attempts.filter((a) => ids.has(a.studentId)).map((a) => doc(db, 'attempts', a.id))]);
+        await deleteInBatches([...list.map((s) => doc(db, 'students', s.id)), ...list.map((s) => doc(db, 'studentPins', s.id)), ...attempts.filter((a) => ids.has(a.studentId)).map((a) => doc(db, 'attempts', a.id))]);
         await Promise.all([loadStudents(), loadTeacherTests()]);
         showAlert('تم حذف جميع الطلاب بنجاح.', 'إشعار');
     } catch (err) { reportError(err); }
@@ -1210,11 +1243,11 @@ async function handleExcelUpload(e) {
             else if (owner === 'other') other++;
             else toAdd.push(s);
         }
-        for (let i = 0; i < toAdd.length; i += 400) {
+        for (let i = 0; i < toAdd.length; i += 200) {
             const batch = writeBatch(db);
-            toAdd.slice(i, i + 400).forEach((s) => batch.set(doc(db, 'students', s.id), newStudentDoc(s.name)));
+            toAdd.slice(i, i + 200).forEach((s) => { batch.set(doc(db, 'students', s.id), newStudentDoc(s.name)); batch.set(doc(db, 'studentPins', s.id), pinDoc()); });
             await batch.commit();
-            added += Math.min(400, toAdd.length - i);
+            added += Math.min(200, toAdd.length - i);
         }
         await addDoc(collection(db, 'teachers', teacher.uid, 'uploads'), {
             name: file.name.slice(0, 200), size: file.size, type: file.type || 'application/octet-stream',
@@ -1305,10 +1338,18 @@ async function deleteUpload(id) {
 async function studentLogin(e) {
     e.preventDefault();
     const id = $('sIdInput').value.trim();
+    const pin = $('sPinInput').value.trim();
     if (!isCivilId(id)) return showAlert('رقم السجل المدني يجب أن يكون 10 أرقام.', 'تنبيه');
+    if (!/^\d{6}$/.test(pin)) return showAlert('كلمة المرور 6 أرقام يعطيك إياها معلمك.', 'تنبيه');
     await busy(e.submitter, async () => {
         activeStudent = { id };
         if (!auth.currentUser) await signInAnonymously(auth);
+        try { await setDoc(doc(db, 'studentSessions', auth.currentUser.uid), { studentId: id, pin }); } catch (err) {
+            activeStudent = null;
+            if (err?.code === 'permission-denied') return showAlert('رقم السجل المدني أو كلمة المرور غير صحيحة. اطلب من معلمك بطاقة الدخول.', 'تنبيه دخول');
+            throw err;
+        }
+        $('sPinInput').value = '';
         const snap = await getDoc(doc(db, 'students', id));
         if (!snap.exists()) {
             activeStudent = null;
@@ -2212,6 +2253,8 @@ function bindEvents() {
             case 'export': exportReport(); break;
             case 'clear-all': clearAllStudents(); break;
             case 'delete-student': deleteStudent(id); break;
+            case 'gen-pins': genPins(); break;
+            case 'print-cards': printCards(); break;
             case 'download-upload': downloadUpload(id); break;
             case 'delete-upload': deleteUpload(id); break;
             case 'show-about': showAbout(); break;

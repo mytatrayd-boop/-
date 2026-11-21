@@ -14,7 +14,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { readFileSync } from 'node:fs';
 import { nextYearLabel, yearOf } from '../src/years.js';
 
-const PEOPLE = ['students', 'teachers', 'principals', 'providers', 'providerLinks', 'providerRequests', 'schoolTransfers', 'teacherRoster'];
+const PEOPLE = ['students', 'studentPins', 'studentSessions', 'teachers', 'principals', 'providers', 'providerLinks', 'providerRequests', 'schoolTransfers', 'teacherRoster'];
 const ms = (t) => (t?.toMillis ? t.toMillis() : typeof t === 'number' ? t : 0);
 
 async function all(db, name) {

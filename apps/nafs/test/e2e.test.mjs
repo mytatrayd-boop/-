@@ -256,15 +256,25 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page.waitForFunction(() => [...document.querySelectorAll('#testsList > div')].some((d) => d.textContent.includes('الرياضيات') && d.textContent.includes('منشور')));
     assert.equal(await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="edit-test"]').count(), 0);
 
+    // كلمة مرور الطالب وُلّدت عند إضافته (6 أرقام) وتظهر للمعلم
+    const pin = (await page.locator('#studentsTableBody tr', { hasText: '2000000001' }).locator('td').nth(3).textContent()).trim();
+    assert.match(pin, /^\d{6}$/);
+
     await page.click('[data-action="logout"]');
     await closeModal(page, 'تسجيل الخروج');
 
-    // الطالب يدخل برقمه ويختبر
+    // الطالب يدخل برقمه وكلمة مروره ويختبر
     await page.click('[data-action="show-student-login"]');
     await page.fill('#sIdInput', '9999999999');
+    await page.fill('#sPinInput', '123456');
     await page.click('#studentLoginForm button[type=submit]');
-    assert.match(await closeModal(page, 'غير مسجل'), /غير مسجل/);
+    assert.match(await closeModal(page, 'غير صحيحة'), /غير صحيحة/);
     await page.fill('#sIdInput', '2000000001');
+    await page.fill('#sPinInput', pin === '000000' ? '111111' : '000000');
+    await page.click('#studentLoginForm button[type=submit]');
+    assert.match(await closeModal(page, 'غير صحيحة'), /غير صحيحة/);
+    await page.fill('#sIdInput', '2000000001');
+    await page.fill('#sPinInput', pin);
     await page.click('#studentLoginForm button[type=submit]');
     await page.locator('#studentDashboardScreen').waitFor();
     assert.match(await page.textContent('#studentFullNameDisplay'), /فهد محمد/);
