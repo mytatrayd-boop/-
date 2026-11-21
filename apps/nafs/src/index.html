@@ -51,7 +51,12 @@
         <div id="roleSelectionScreen" class="screen hidden max-w-2xl mx-auto my-12 bg-white rounded-3xl shadow-xl border border-slate-100 p-8 text-center">
             <h2 class="text-3xl font-black text-slate-800 mb-4">أهلاً بك في مهارات اختبارات نافس</h2>
             <p class="text-slate-500 mb-8">اختر صفحتك للبدء في العملية التعليمية وتتبع مستويات الطلاب</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button data-action="show-principal-login" class="group p-8 rounded-2xl border-2 border-indigo-100 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 transition flex flex-col items-center">
+                    <div class="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition">🏫</div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة المدير</h3>
+                    <p class="text-xs text-slate-500 text-center">تسجيل المدرسة، الفصول، وإضافة المعلمين</p>
+                </button>
                 <button data-action="show-teacher-login" class="group p-8 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition flex flex-col items-center">
                     <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition">👨‍🏫</div>
                     <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة المعلم</h3>
@@ -263,7 +268,7 @@
 
             <div class="flex bg-slate-100 rounded-xl p-1 mb-6 text-sm font-bold">
                 <button data-action="auth-tab" data-tab="login" id="authTabLogin" class="flex-1 py-2 rounded-lg bg-white shadow text-emerald-700">تسجيل الدخول</button>
-                <button data-action="auth-tab" data-tab="signup" id="authTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">حساب جديد</button>
+                <button data-action="auth-tab" data-tab="signup" id="authTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">تفعيل حسابي (أول مرة)</button>
             </div>
 
             <form id="teacherLoginForm" class="space-y-4">
@@ -282,35 +287,67 @@
             </form>
 
             <form id="teacherSignupForm" class="hidden space-y-4">
-                <h2 class="text-2xl font-black text-slate-800">حساب معلم جديد</h2>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tName">اسم المعلم الثلاثي</label>
-                    <input type="text" id="tName" required maxlength="100" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="مثال: أحمد محمد القحطاني">
-                </div>
+                <h2 class="text-2xl font-black text-slate-800">تفعيل حساب المعلم</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">يتعرّف عليك النظام برقم سجلك المدني إذا كان <b>مدير مدرستك قد أضافك</b>. ثم تنشئ كلمة مرور وتكتب بريداً إلكترونياً لاستعادتها. ولا يُقبل دخول معلم لم يُضَف.</p>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1" for="tId">السجل المدني للمعلم</label>
-                    <input type="text" id="tId" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="10 أرقام">
+                    <input type="text" id="tId" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tSchool">المدرسة</label>
-                    <input type="text" id="tSchool" required maxlength="120" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="اسم المدرسة">
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupEmail">البريد الإلكتروني (لاستعادة كلمة المرور)</label>
+                    <input type="email" id="signupEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tClass">الصف والفصل</label>
-                    <select id="tClass" required class="class-select w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                        <option value="">اختر الصف والفصل</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupEmail">البريد الإلكتروني</label>
-                    <input type="email" id="signupEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-right">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupPassword">كلمة المرور (6 أحرف على الأقل)</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupPassword">أنشئ كلمة مرور (6 أحرف فأكثر)</label>
                     <input type="password" id="signupPassword" required minlength="6" autocomplete="new-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">إنشاء الحساب والدخول</button>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">تفعيل الحساب</button>
             </form>
+        </div>
+
+        <!-- بوابة المدير: دخول أو تسجيل مدير ومدرسته -->
+        <div id="principalAuthScreen" class="screen hidden max-w-md mx-auto my-8 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <button data-action="back" class="text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+            <div class="flex bg-slate-100 rounded-xl p-1 mb-6 text-sm font-bold">
+                <button data-action="p-auth-tab" data-tab="login" id="pTabLogin" class="flex-1 py-2 rounded-lg bg-white shadow text-indigo-700">تسجيل الدخول</button>
+                <button data-action="p-auth-tab" data-tab="signup" id="pTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">تسجيل مدير ومدرسة</button>
+            </div>
+            <form id="principalLoginForm" class="space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">دخول مدير المدرسة</h2>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pLoginEmail">البريد الإلكتروني</label>
+                    <input type="email" id="pLoginEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pLoginPassword">كلمة المرور</label>
+                    <input type="password" id="pLoginPassword" required autocomplete="current-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">دخول</button>
+                <button type="button" data-action="p-reset-password" class="w-full text-xs text-slate-500 hover:text-indigo-700 font-semibold">نسيت كلمة المرور؟</button>
+            </form>
+            <form id="principalSignupForm" class="hidden space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">تسجيل مدير ومدرسة</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">يسجّل المدير نفسه بحرّية دون اعتماد. أدخل بيانات مدرستك ورقمها الإحصائي (أرقام فقط) وبريداً إلكترونياً لاستعادة كلمة المرور.</p>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pName">اسم المدير الثلاثي</label>
+                    <input type="text" id="pName" required maxlength="100" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pCivil">السجل المدني للمدير</label>
+                    <input type="text" id="pCivil" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSchool">اسم المدرسة</label>
+                    <input type="text" id="pSchool" required maxlength="120" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSchoolNo">الرقم الإحصائي للمدرسة (أرقام فقط)</label>
+                    <input type="text" id="pSchoolNo" required pattern="[0-9]{3,12}" maxlength="12" inputmode="numeric" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSignupEmail">البريد الإلكتروني (لاستعادة كلمة المرور)</label>
+                    <input type="email" id="pSignupEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSignupPassword">كلمة المرور (6 أحرف فأكثر)</label>
+                    <input type="password" id="pSignupPassword" required minlength="6" autocomplete="new-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">تسجيل المدرسة</button>
+            </form>
+        </div>
+
+        <!-- لوحة المدير -->
+        <div id="principalDashboardScreen" class="screen hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-full">لوحة مدير المدرسة</span>
+                <h2 id="pdTitle" class="text-xl font-bold text-slate-800 mt-2"></h2>
+                <p id="pdMeta" class="text-xs text-slate-500 mt-0.5"></p>
+            </div>
+            <div id="pdBody" class="space-y-6"></div>
         </div>
 
         <!-- لوحة المعلم -->

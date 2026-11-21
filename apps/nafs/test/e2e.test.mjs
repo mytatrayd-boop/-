@@ -52,17 +52,56 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.equal(await page.locator('header img').getAttribute('alt'), 'شعار الاختبارات الوطنية نافس');
     await page.click('[data-action="back-from-about"]');
     await page.locator('#roleSelectionScreen').waitFor();
+    // مدير المدرسة يسجّل نفسه بحرّية (بلا اعتماد) ومدرسته برقمها الإحصائي، ثم يضيف الفصول والمعلم
+    const schoolNo = String(100000 + Math.floor(Math.random() * 899999));
+    const ctxP = await browser.newContext();
+    const pp = await ctxP.newPage();
+    pp.on('pageerror', (e) => errors.push(e.message));
+    await pp.goto(URL_);
+    await pp.click('[data-action="show-principal-login"]');
+    await pp.click('#pTabSignup');
+    await pp.fill('#pName', 'سعد عبدالله المدير');
+    await pp.fill('#pCivil', '1000000100');
+    await pp.fill('#pSchool', 'ابتدائية التجربة');
+    assert.equal(await pp.getAttribute('#pSchoolNo', 'pattern'), '[0-9]{3,12}'); // أرقام فقط
+    await pp.fill('#pSchoolNo', schoolNo);
+    await pp.fill('#pSignupEmail', `p${Date.now()}@example.com`);
+    await pp.fill('#pSignupPassword', 'secret123');
+    await pp.click('#principalSignupForm button[type=submit]');
+    assert.match(await closeModal(pp, 'تم تسجيل'), /تم تسجيل مدرستك/);
+    await pp.locator('#principalDashboardScreen').waitFor();
+    assert.match(await pp.textContent('#pdMeta'), new RegExp(`ابتدائية التجربة .* ${schoolNo}`));
+    await pp.check('[data-pd-class="الثالث الابتدائي - أ"]');
+    await pp.check('[data-pd-class="الثالث المتوسط - أ"]');
+    await pp.click('[data-action="pd-save-classes"]');
+    await closeModal(pp, 'حُفظت');
+    await pp.fill('#pdTName', 'أحمد محمد القحطاني');
+    await pp.fill('#pdTCivil', '1000000009');
+    await pp.check('[data-pd-t-class="الثالث الابتدائي - أ"]');
+    await pp.check('[data-pd-t-class="الثالث المتوسط - أ"]');
+    await pp.click('#pdTeacherForm button[type=submit]');
+    assert.match(await closeModal(pp, 'أُضيف المعلم'), /تفعيل حسابي/);
+    assert.match(await pp.textContent('#pdBody'), /لم يُفعّل حسابه/);
+
+    // معلم لم يضفه المدير: لا يُقبل ولا يبقى له حساب
     await page.click('[data-action="show-teacher-login"]');
     await page.click('#authTabSignup');
-    await page.fill('#tName', 'أحمد محمد القحطاني');
+    await page.fill('#tId', '1999999999');
+    await page.fill('#signupEmail', `x${email}`);
+    await page.fill('#signupPassword', 'secret123');
+    await page.click('#teacherSignupForm button[type=submit]');
+    assert.match(await closeModal(page, 'لم يتعرّف عليك'), /أضافه مدير مدرسته/);
+    assert.equal(await page.locator('#teacherDashboardScreen').isVisible(), false);
+
+    // المعلم المضاف يفعّل حسابه برقم سجله ويُنشئ كلمة المرور والبريد
     await page.fill('#tId', '1000000009');
-    await page.fill('#tSchool', 'ابتدائية التجربة');
-    await page.selectOption('#tClass', 'الثالث الابتدائي - أ');
     await page.fill('#signupEmail', email);
     await page.fill('#signupPassword', 'secret123');
     await page.click('#teacherSignupForm button[type=submit]');
-    assert.match(await closeModal(page, 'تم إنشاء حسابك'), /تم إنشاء حسابك/);
+    assert.match(await closeModal(page, 'تم تفعيل حسابك'), /تم تفعيل حسابك/);
     await page.locator('#teacherDashboardScreen').waitFor();
+    assert.match(await page.textContent('#dashMeta'), /ابتدائية التجربة/);
+    assert.deepEqual(await page.locator('#dashClass option').allTextContents(), ['الثالث الابتدائي (أ)', 'الثالث المتوسط (أ)']); // فصوله المسندة فقط
 
     // إضافة طالب يدوياً
     await page.fill('#newStudentName', 'خالد سعد');

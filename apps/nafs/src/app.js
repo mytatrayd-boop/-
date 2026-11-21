@@ -21,12 +21,17 @@ const $ = (id) => document.getElementById(id);
 let auth, db;
 let bank = [];            // بنك أسئلة المعلم
 let bankEditing = null;   // id السؤال قيد التحرير ('new' لسؤال جديد)
-let teacher = null;        // {uid, name, civilId, school, className, email}
+let teacher = null;        // {uid, name, civilId, school, schoolNo, className, email}
+let teacherClasses = [];   // الفصول المسندة للمعلم من كشف مدرسته
+let principal = null;      // {uid, name, civilId, email, schoolNo}
+let school = null;         // مدرسة المدير (مستند schools)
+let roster = [];           // كشف معلمي المدرسة
 let students = [];         // طلاب المعلم كلهم (كل الفصول)
 let uploads = [];
 let activeStudent = null;  // {id, name, ...}
 let teacherTab = 'students';
 let authMode = 'login';
+let activating = false;    // تسجيل مدير أو تفعيل معلم قيد التنفيذ
 let tests = [];            // اختبارات المعلم (كل الفصول)
 let keys = {};             // testId → الإجابات الصحيحة
 let attempts = [];         // محاولات طلاب المعلم
@@ -72,25 +77,28 @@ async function start() {
 }
 
 async function handleAuthChange(user) {
-    if (!user) { teacher = null; showScreen(activeStudent ? 'studentLoginScreen' : 'roleSelectionScreen'); return; }
+    if (!user) { if (activating) return; teacher = null; principal = null; school = null; showScreen(activeStudent ? 'studentLoginScreen' : 'roleSelectionScreen'); return; }
     if (user.isAnonymous) {
         // جلسة الطالب لا تُستعاد بعد تحديث الصفحة.
         if (!activeStudent) await signOut(auth);
         return;
     }
+    if (activating) return; // تفعيل معلم أو تسجيل مدير جارٍ: ينهيه مسار التسجيل نفسه
     try {
         const snap = await getDoc(doc(db, 'teachers', user.uid));
-        if (!snap.exists()) {
-            // حساب أنشئ ولم يكتمل ملفه (انقطاع أثناء التسجيل) — ننتظر نموذج التسجيل يكمله.
-            if (authMode === 'signup') return;
-            showScreen('teacherLoginScreen');
-            setAuthMode('signup');
-            $('signupEmail').value = user.email || '';
-            showAlert('أكمل بيانات حسابك للمتابعة.', 'إكمال التسجيل');
-            return;
+        if (snap.exists()) {
+            teacher = { uid: user.uid, ...snap.data() };
+            if (!teacher.schoolNo) return linkLegacyTeacher(user); // حساب قديم: يُربط بكشف مدرسته أو يُمنع
+            return await openTeacherDashboard();
         }
-        teacher = { uid: user.uid, ...snap.data() };
-        await openTeacherDashboard();
+        const ps = await getDoc(doc(db, 'principals', user.uid));
+        if (ps.exists()) {
+            principal = { uid: user.uid, ...ps.data() };
+            return await openPrincipalDashboard();
+        }
+        // حساب بلا ملف (تسجيل لم يكتمل أو معلم لم يُضَف): لا دخول.
+        await signOut(auth);
+        showAlert('لم يتعرّف النظام على هذا الحساب. المعلم يُفعّل حسابه بعد أن يضيفه مدير مدرسته، والمدير يسجّل مدرسته من بوابة المدير.', 'لا يوجد حساب');
     } catch (err) {
         reportError(err);
     }
@@ -100,9 +108,10 @@ async function handleAuthChange(user) {
 
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('hidden', el.id !== id));
-    const isTeacher = id === 'teacherDashboardScreen';
-    $('userInfoHeader').classList.toggle('hidden', !isTeacher);
+    const isTeacher = id === 'teacherDashboardScreen', isPrincipal = id === 'principalDashboardScreen';
+    $('userInfoHeader').classList.toggle('hidden', !isTeacher && !isPrincipal);
     if (isTeacher) $('headerTeacherName').textContent = teacher.name;
+    if (isPrincipal) $('headerTeacherName').textContent = principal.name;
 }
 
 function setAuthMode(mode) {
@@ -131,28 +140,65 @@ async function teacherLogin(e) {
     });
 }
 
+// المعلم لا يدخل ما لم يُضِفه مدير مدرسته: نتحقق من كشف المدرسة برقم سجله المدني قبل إبقاء الحساب.
 async function teacherSignup(e) {
     e.preventDefault();
-    const profile = {
-        name: $('tName').value.trim(),
-        civilId: $('tId').value.trim(),
-        school: $('tSchool').value.trim(),
-        className: $('tClass').value,
-        email: $('signupEmail').value.trim(),
-    };
-    if (!isCivilId(profile.civilId)) return showAlert('السجل المدني يجب أن يكون مكوناً من 10 أرقام.', 'تنبيه خطأ');
+    const civilId = $('tId').value.trim(), email = $('signupEmail').value.trim();
+    if (!isCivilId(civilId)) return showAlert('السجل المدني يجب أن يكون مكوناً من 10 أرقام.', 'تنبيه خطأ');
     await busy(e.submitter, async () => {
-        let user = auth.currentUser;
-        if (!user || user.isAnonymous || user.email !== profile.email) {
-            user = (await createUserWithEmailAndPassword(auth, profile.email, $('signupPassword').value)).user;
-        }
-        await setDoc(doc(db, 'teachers', user.uid), { ...profile, createdAt: serverTimestamp() });
-        $('signupPassword').value = '';
-        teacher = { uid: user.uid, ...profile };
-        authMode = 'login';
-        await openTeacherDashboard();
-        showAlert('تم إنشاء حسابك. بياناتك محفوظة وتجدها من أي جهاز.', 'نجح التسجيل');
+        activating = true;
+        let user;
+        try {
+            user = (await createUserWithEmailAndPassword(auth, email, $('signupPassword').value)).user;
+            let row;
+            try { row = await getDoc(doc(db, 'teacherRoster', civilId)); } catch { row = null; }
+            if (!row?.exists() || row.data().uid) {
+                await user.delete();
+                showScreen('teacherLoginScreen'); setAuthMode('signup');
+                return showAlert('لم يتعرّف عليك النظام: لا يوجد معلم بهذا السجل المدني أضافه مدير مدرسته، أو أن حسابه مفعّل مسبقاً. اطلب من مدير مدرستك إضافتك.', 'لا يُقبل الدخول');
+            }
+            const r = row.data();
+            const sc = (await getDoc(doc(db, 'schools', r.schoolNo))).data();
+            const profile = { name: r.name, civilId, school: sc.name, schoolNo: r.schoolNo, className: r.classes[0], email };
+            const batch = writeBatch(db);
+            batch.update(doc(db, 'teacherRoster', civilId), { uid: user.uid, email, activatedAt: serverTimestamp() });
+            batch.set(doc(db, 'teachers', user.uid), { ...profile, createdAt: serverTimestamp() });
+            await batch.commit();
+            $('signupPassword').value = '';
+            teacher = { uid: user.uid, ...profile };
+            authMode = 'login';
+            teacherClasses = r.classes;
+            activating = false;
+            await openTeacherDashboard();
+            showAlert('تم تفعيل حسابك. تجد بياناتك من أي جهاز، وتدخل لاحقاً ببريدك وكلمة مرورك.', 'تم إنشاء حسابك');
+        } catch (err) {
+            if (user) { await user.delete().catch(() => {}); await signOut(auth).catch(() => {}); }
+            throw err;
+        } finally { setTimeout(() => { activating = false; }, 600); }
     });
+}
+
+// حساب معلم قديم (قبل نظام المدارس): يُربط بكشف مدرسته إن أضافه المدير، وإلا يُمنع.
+async function linkLegacyTeacher(user) {
+    try {
+        const row = await getDoc(doc(db, 'teacherRoster', teacher.civilId));
+        if (row.exists() && !row.data().uid) {
+            const r = row.data();
+            const sc = (await getDoc(doc(db, 'schools', r.schoolNo))).data();
+            const className = r.classes.includes(teacher.className) ? teacher.className : r.classes[0];
+            const profile = { name: teacher.name, civilId: teacher.civilId, school: sc.name, schoolNo: r.schoolNo, className, email: teacher.email };
+            const batch = writeBatch(db);
+            batch.update(doc(db, 'teacherRoster', teacher.civilId), { uid: user.uid, email: teacher.email || user.email, activatedAt: serverTimestamp() });
+            batch.set(doc(db, 'teachers', user.uid), { ...profile, createdAt: serverTimestamp() });
+            await batch.commit();
+            teacher = { uid: user.uid, ...profile };
+            teacherClasses = r.classes;
+            return await openTeacherDashboard();
+        }
+    } catch { /* نمنع الدخول أدناه */ }
+    teacher = null;
+    await signOut(auth);
+    showAlert('لم يتعرّف عليك النظام: مدير مدرستك لم يضفك بعد. اطلب منه إضافتك برقم سجلك المدني ثم ادخل من جديد.', 'لا يُقبل الدخول');
 }
 
 async function resetPassword() {
@@ -170,7 +216,18 @@ async function logout() {
     showAlert('تم تسجيل الخروج بنجاح.', 'إشعار');
 }
 
+async function loadTeacherClasses() {
+    try {
+        const r = await getDoc(doc(db, 'teacherRoster', teacher.civilId));
+        if (r.exists() && r.data().uid === teacher.uid) teacherClasses = r.data().classes;
+    } catch { /* نبقي الفصل الحالي فقط */ }
+    if (!teacherClasses.includes(teacher.className)) teacherClasses = [teacher.className, ...teacherClasses];
+    const sel = $('dashClass');
+    sel.replaceChildren(...teacherClasses.map((c) => new Option(c.replace(' - ', ' (') + ')', c)));
+}
+
 async function openTeacherDashboard() {
+    await loadTeacherClasses();
     showScreen('teacherDashboardScreen');
     $('dashWelcome').textContent = `مرحباً بك أستاذ/ة: ${teacher.name}`;
     $('dashClass').value = teacher.className;
@@ -1338,6 +1395,181 @@ async function studentLogout(message = 'تم تسجيل خروج الطالب.',
     showAlert(message, title);
 }
 
+// ---------- مدير المدرسة ----------
+
+const isSchoolNo = (v) => /^[0-9]{3,12}$/.test(v);
+const academicYear = () => { const d = new Date(); const y = d.getFullYear(); return d.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`; };
+
+function setPrincipalTab(tab) {
+    $('principalLoginForm').classList.toggle('hidden', tab !== 'login');
+    $('principalSignupForm').classList.toggle('hidden', tab !== 'signup');
+    $('pTabLogin').className = tab === 'login' ? 'flex-1 py-2 rounded-lg bg-white shadow text-indigo-700' : 'flex-1 py-2 rounded-lg text-slate-500';
+    $('pTabSignup').className = tab === 'signup' ? 'flex-1 py-2 rounded-lg bg-white shadow text-indigo-700' : 'flex-1 py-2 rounded-lg text-slate-500';
+}
+
+async function principalLogin(e) {
+    e.preventDefault();
+    await busy(e.submitter, async () => {
+        await signInWithEmailAndPassword(auth, $('pLoginEmail').value.trim(), $('pLoginPassword').value);
+        $('pLoginPassword').value = '';
+    });
+}
+
+async function principalReset() {
+    const email = $('pLoginEmail').value.trim();
+    if (!email) return showAlert('اكتب بريدك الإلكتروني أولاً ثم اضغط «نسيت كلمة المرور».', 'تنبيه');
+    try { await sendPasswordResetEmail(auth, email); showAlert('أرسلنا رابط تغيير كلمة المرور إلى بريدك (إن كان مسجلاً).', 'تم الإرسال'); } catch (err) { reportError(err); }
+}
+
+// يسجّل المدير نفسه بحرّية (بلا اعتماد) ويُنشئ مدرسته برقمها الإحصائي، إلا إن كان الرقم مسجلاً لمدير آخر.
+async function principalSignup(e) {
+    e.preventDefault();
+    const p = { name: $('pName').value.trim(), civilId: $('pCivil').value.trim(), email: $('pSignupEmail').value.trim(), schoolNo: $('pSchoolNo').value.trim() };
+    const schoolName = $('pSchool').value.trim();
+    if (!isCivilId(p.civilId)) return showAlert('السجل المدني يجب أن يكون مكوناً من 10 أرقام.', 'تنبيه خطأ');
+    if (!isSchoolNo(p.schoolNo)) return showAlert('الرقم الإحصائي أرقام فقط (من 3 إلى 12 رقماً) دون حروف.', 'تنبيه خطأ');
+    await busy(e.submitter, async () => {
+        activating = true;
+        let user;
+        try {
+            user = (await createUserWithEmailAndPassword(auth, p.email, $('pSignupPassword').value)).user;
+            const batch = writeBatch(db);
+            batch.set(doc(db, 'principals', user.uid), { ...p, createdAt: serverTimestamp() });
+            const existing = await getDoc(doc(db, 'schools', p.schoolNo));
+            if (!existing.exists()) {
+                batch.set(doc(db, 'schools', p.schoolNo), { no: p.schoolNo, name: schoolName, principalUid: user.uid, principalName: p.name, classes: [], year: academicYear(), createdAt: serverTimestamp() });
+            }
+            await batch.commit();
+            $('pSignupPassword').value = '';
+            principal = { uid: user.uid, ...p };
+            activating = false;
+            await openPrincipalDashboard();
+            showAlert(existing.exists() ? `رقم المدرسة ${p.schoolNo} مسجّل لمدير آخر (${existing.data().principalName}). سُجّل حسابك، ويمكنك من لوحتك طلب نقل تبعية المدرسة إليك.` : 'تم تسجيل مدرستك. أضف الفصول ثم المعلمين.', 'تم التسجيل');
+        } catch (err) {
+            if (user) { await user.delete().catch(() => {}); await signOut(auth).catch(() => {}); }
+            throw err;
+        } finally { setTimeout(() => { activating = false; }, 600); }
+    });
+}
+
+async function openPrincipalDashboard() {
+    school = null; roster = [];
+    const sc = await getDoc(doc(db, 'schools', principal.schoolNo));
+    if (sc.exists() && sc.data().principalUid === principal.uid) {
+        school = { id: sc.id, ...sc.data() };
+        const r = await getDocs(query(collection(db, 'teacherRoster'), where('schoolNo', '==', school.no)));
+        roster = r.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    }
+    showScreen('principalDashboardScreen');
+    renderPrincipal();
+}
+
+function renderPrincipal() {
+    const body = $('pdBody');
+    body.replaceChildren();
+    $('pdTitle').textContent = `مرحباً بك أستاذ/ة: ${principal.name}`;
+    if (!school) {
+        $('pdMeta').textContent = `الرقم الإحصائي: ${principal.schoolNo}`;
+        body.append(el('div', 'bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 text-sm font-bold text-amber-900 leading-relaxed', 'مدرسة هذا الرقم تتبع مديراً آخر. لن تظهر لك بيانات المدرسة حتى تُنقل إليك.'));
+        return;
+    }
+    $('pdMeta').textContent = `${school.name} · الرقم الإحصائي: ${school.no} · العام الدراسي: ${school.year}`;
+
+    // الفصول
+    const classes = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4');
+    classes.append(el('h3', 'font-black text-slate-800', 'الصفوف والفصول في مدرستك'), el('p', 'text-xs text-slate-500', 'اختر الفصول المستهدفة باختبارات نافس (الثالث الابتدائي، السادس الابتدائي، الثالث المتوسط).'));
+    const grid = el('div', 'grid grid-cols-1 sm:grid-cols-3 gap-2');
+    for (const c of CLASSES) {
+        const lab = el('label', 'flex items-center gap-2 text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2');
+        const cb = el('input', ''); cb.type = 'checkbox'; cb.value = c; cb.checked = school.classes.includes(c); cb.dataset.pdClass = c;
+        lab.append(cb, el('span', '', c));
+        grid.append(lab);
+    }
+    const save = actionButton('حفظ الفصول', 'pd-save-classes', '', 'bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl');
+    classes.append(grid, save);
+    body.append(classes);
+
+    // المعلمون
+    const t = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4');
+    t.append(el('h3', 'font-black text-slate-800', 'المعلمون وإسنادهم للفصول'));
+    if (!school.classes.length) t.append(el('p', 'text-sm text-amber-700 font-bold', 'احفظ الفصول أولاً ثم أضف المعلمين.'));
+    else {
+        const f = el('form', 'space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-100'); f.id = 'pdTeacherForm';
+        const row = el('div', 'grid grid-cols-1 md:grid-cols-2 gap-3');
+        const name = el('input', 'px-3 py-2.5 border border-slate-200 rounded-xl text-sm'); name.id = 'pdTName'; name.placeholder = 'اسم المعلم الثلاثي'; name.required = true; name.maxLength = 100;
+        const cid = el('input', 'px-3 py-2.5 border border-slate-200 rounded-xl text-sm'); cid.id = 'pdTCivil'; cid.placeholder = 'السجل المدني (10 أرقام)'; cid.required = true; cid.pattern = '[0-9]{10}'; cid.maxLength = 10; cid.inputMode = 'numeric';
+        row.append(name, cid);
+        const cl = el('div', 'flex flex-wrap gap-2 text-xs');
+        for (const c of school.classes) {
+            const lab = el('label', 'flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5');
+            const cb = el('input', ''); cb.type = 'checkbox'; cb.value = c; cb.dataset.pdTClass = c;
+            lab.append(cb, el('span', '', c)); cl.append(lab);
+        }
+        const add = el('button', 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs', 'إضافة المعلم'); add.type = 'submit';
+        f.append(row, el('p', 'text-xs font-bold text-slate-600', 'الفصول المسندة له:'), cl, add);
+        f.addEventListener('submit', addRosterTeacher);
+        t.append(f);
+    }
+    const list = el('div', 'space-y-2');
+    if (!roster.length) list.append(el('p', 'text-sm text-slate-400', 'لم تُضف معلمين بعد.'));
+    for (const r of roster) {
+        const card = el('div', 'border border-slate-200 rounded-2xl p-3 text-xs flex flex-wrap items-center gap-3 justify-between');
+        const info = el('div', 'space-y-1');
+        info.append(el('p', 'font-bold text-slate-800 text-sm', `${r.name} — ${r.id}`), el('p', 'text-slate-500', r.classes.join('، ')));
+        const btns = el('div', 'flex flex-wrap items-center gap-3 font-bold');
+        btns.append(el('span', `px-2.5 py-1 rounded-full ${r.uid ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`, r.uid ? 'مفعّل' : 'لم يُفعّل حسابه'));
+        if (r.uid) btns.append(actionButton('إعادة ضبط التفعيل', 'pd-reset-teacher', r.id, 'text-amber-700 hover:text-amber-900'));
+        btns.append(actionButton('حذف', 'pd-del-teacher', r.id, 'text-red-500 hover:text-red-700'));
+        card.append(info, btns);
+        list.append(card);
+    }
+    t.append(list);
+    body.append(t);
+}
+
+async function deleteRosterTeacher(id) {
+    const r = roster.find((x) => x.id === id);
+    if (!r || !(await confirmDialog(`حذف المعلم ${r.name} من كشف المدرسة؟ لن يستطيع تفعيل حساب جديد، وتبقى بيانات طلابه واختباراته محفوظة.`, 'نعم، احذف'))) return;
+    await deleteDoc(doc(db, 'teacherRoster', id));
+    await openPrincipalDashboard();
+}
+
+async function resetRosterTeacher(id) {
+    const r = roster.find((x) => x.id === id);
+    if (!r || !(await confirmDialog(`إعادة ضبط تفعيل ${r.name}؟ سيحتاج لتفعيل حسابه من جديد برقم سجله (استعمله إن شككت أن غيره فعّل حسابه).`, 'نعم، أعد الضبط'))) return;
+    await updateDoc(doc(db, 'teacherRoster', id), { uid: null, email: null, activatedAt: null });
+    await openPrincipalDashboard();
+}
+
+async function savePrincipalClasses(btn) {
+    const classes = [...document.querySelectorAll('[data-pd-class]')].filter((c) => c.checked).map((c) => c.dataset.pdClass);
+    await busy(btn, async () => {
+        await updateDoc(doc(db, 'schools', school.no), { classes });
+        school.classes = classes;
+        renderPrincipal();
+        showAlert('حُفظت فصول المدرسة.', 'تم الحفظ');
+    });
+}
+
+async function addRosterTeacher(e) {
+    e.preventDefault();
+    const name = $('pdTName').value.trim(), cid = $('pdTCivil').value.trim();
+    const classes = [...document.querySelectorAll('[data-pd-t-class]')].filter((c) => c.checked).map((c) => c.dataset.pdTClass);
+    if (!isCivilId(cid)) return showAlert('السجل المدني يجب أن يكون مكوناً من 10 أرقام.', 'تنبيه خطأ');
+    if (!classes.length) return showAlert('اختر فصلاً واحداً على الأقل للمعلم.', 'تنبيه');
+    await busy(e.submitter, async () => {
+        const prior = await getDoc(doc(db, 'teacherRoster', cid)).catch(() => null);
+        if (prior?.exists() && prior.data().schoolNo === school.no) {
+            await updateDoc(doc(db, 'teacherRoster', cid), { name, classes, uid: prior.data().uid ?? null, email: prior.data().email ?? null, activatedAt: prior.data().activatedAt ?? null });
+        } else {
+            try { await setDoc(doc(db, 'teacherRoster', cid), { schoolNo: school.no, name, classes, uid: null, createdAt: serverTimestamp() }); }
+            catch (err) { if (err?.code === 'permission-denied') return showAlert('هذا السجل المدني مسجّل لمعلم في مدرسة أخرى. يلزم أن يحذفه مدير تلك المدرسة أولاً.', 'تعذّرت الإضافة'); throw err; }
+        }
+        await openPrincipalDashboard();
+        showAlert(`أُضيف المعلم ${name}. يدخل من بوابة المعلم ← «تفعيل حسابي» برقم سجله المدني، فينشئ كلمة مروره.`, 'تمت الإضافة');
+    });
+}
+
 // ---------- كيف يعمل الموقع (إنفوجرافيك) ----------
 let howFrom = 'roleSelectionScreen';
 function showHow() {
@@ -1679,6 +1911,8 @@ function useBankQuestion(id) {
 function bindEvents() {
     $('teacherLoginForm').addEventListener('submit', teacherLogin);
     $('teacherSignupForm').addEventListener('submit', teacherSignup);
+    $('principalLoginForm').addEventListener('submit', principalLogin);
+    $('principalSignupForm').addEventListener('submit', principalSignup);
     $('addStudentForm').addEventListener('submit', addStudent);
     $('studentLoginForm').addEventListener('submit', studentLogin);
     $('excelFile').addEventListener('change', handleExcelUpload);
@@ -1705,6 +1939,12 @@ function bindEvents() {
         const { action, id, tab, publish } = el.dataset;
         switch (action) {
             case 'show-teacher-login': showScreen('teacherLoginScreen'); setAuthMode('login'); break;
+            case 'show-principal-login': showScreen('principalAuthScreen'); setPrincipalTab('login'); break;
+            case 'p-auth-tab': setPrincipalTab(tab); break;
+            case 'p-reset-password': principalReset(); break;
+            case 'pd-save-classes': savePrincipalClasses(el); break;
+            case 'pd-del-teacher': deleteRosterTeacher(id); break;
+            case 'pd-reset-teacher': resetRosterTeacher(id); break;
             case 'show-student-login': showScreen('studentLoginScreen'); break;
             case 'back': showScreen('roleSelectionScreen'); break;
             case 'auth-tab': setAuthMode(tab); break;

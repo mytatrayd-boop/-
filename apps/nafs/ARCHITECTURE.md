@@ -17,7 +17,10 @@
 | `scripts/deploy.mjs` | ينشر القواعد والموقع عبر REST بمفتاح حساب الخدمة، ثم يفحص جاهزية المشروع |
 
 ## البيانات
-- `teachers/{uid}`: name, civilId, school, className, email, createdAt
+- `principals/{uid}`: name, civilId, email, schoolNo (مدير يسجّل نفسه بحرّية)
+- `schools/{الرقم الإحصائي}`: no, name, principalUid, principalName, classes[], year, createdAt
+- `teacherRoster/{civilId}`: schoolNo, name, classes[] (الفصول المسندة)، uid (فارغ حتى يفعّل المعلم حسابه)، email، activatedAt — يضيفه المدير ولا يدخل معلم لم يُضَف
+- `teachers/{uid}`: name, civilId, school, schoolNo, className (من فصوله المسندة)، email, createdAt
 - `teachers/{uid}/uploads/{id}`: name, size, type, data (base64), className, added, createdAt
 - `students/{civilId}`: name, teacherUid, className, school, status, createdAt
 - `tests/{id}`: teacherUid, title, className, grade (3|6|9), subject (reading|math|science؛ الغائب = reading)، source (مثل a3-math للنماذج الرسمية)، passage, questions [{skill, level, text, options, image?, iw?, ih?, passageImage?, pw?, ph?}], skills, status (draft|published), createdAt, updatedAt

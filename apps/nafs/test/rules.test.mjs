@@ -8,7 +8,9 @@ let env;
 const T1 = 'teacher1', T2 = 'teacher2';
 const teacherDb = (uid) => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'password' } }).firestore();
 const studentDb = () => env.authenticatedContext('anon1', { firebase: { sign_in_provider: 'anonymous' } }).firestore();
-const profile = { name: 'معلم', civilId: '1000000001', school: 'مدرسة', className: 'الثالث الابتدائي - أ', email: 't@x.com' };
+const profile = { name: 'معلم', civilId: '1000000001', school: 'مدرسة', schoolNo: '123456', className: 'الثالث الابتدائي - أ', email: 't@x.com' };
+const P1 = 'principal1', P2 = 'principal2';
+const CLASSES_ASSIGNED = ['الثالث الابتدائي - أ', 'الثالث الابتدائي - ب'];
 const student = (uid) => ({ name: 'طالب', teacherUid: uid, className: 'الثالث الابتدائي - أ', school: 'مدرسة', status: 'لم يبدأ', createdAt: serverTimestamp() });
 
 before(async () => {
@@ -19,7 +21,13 @@ after(() => env.cleanup());
 beforeEach(async () => {
     await env.clearFirestore();
     await env.withSecurityRulesDisabled(async (ctx) => {
-        await setDoc(doc(ctx.firestore(), 'students/1111111111'), { ...student(T1), createdAt: new Date() });
+        const f = ctx.firestore();
+        await setDoc(doc(f, 'students/1111111111'), { ...student(T1), createdAt: new Date() });
+        // مدرسة 123456 لمدير P1، وكشف فيه المعلم 1000000001 مفعّلاً لـ T1، وآخر 1000000002 لم يُفعَّل
+        await setDoc(doc(f, 'principals', P1), { name: 'مدير', civilId: '1000000100', email: 'p@x.com', schoolNo: '123456', createdAt: new Date() });
+        await setDoc(doc(f, 'schools/123456'), { no: '123456', name: 'مدرسة', principalUid: P1, principalName: 'مدير', classes: CLASSES_ASSIGNED, year: '1447-1448', createdAt: new Date() });
+        await setDoc(doc(f, 'teacherRoster/1000000001'), { schoolNo: '123456', name: 'معلم', classes: CLASSES_ASSIGNED, uid: T1, email: 't@x.com', createdAt: new Date(), activatedAt: new Date() });
+        await setDoc(doc(f, 'teacherRoster/1000000002'), { schoolNo: '123456', name: 'معلم ٢', classes: CLASSES_ASSIGNED, uid: null, createdAt: new Date() });
     });
 });
 
@@ -189,4 +197,70 @@ test('المحاولات الورقية: المعلم صاحب الاختبار 
     await assertSucceeds(deleteDoc(doc(t1, 'attempts/T1_1111111111')));
     await assertSucceeds(setDoc(doc(studentDb(), 'attempts/T1_1111111111'), attempt()));
     await assertFails(setDoc(doc(t1, 'attempts/T1_1111111111'), paper()));
+});
+
+const teacherDbNew = (uid) => teacherDb(uid);
+test('المدير: يسجّل نفسه ويُنشئ مدرسته برقم إحصائي أرقام فقط، ولا يتصرف في مدرسة غيره', async () => {
+    const p2 = teacherDbNew(P2);
+    const pr = { name: 'مدير ٢', civilId: '1000000200', email: 'p2@x.com', schoolNo: '654321', createdAt: serverTimestamp() };
+    await assertFails(setDoc(doc(p2, 'principals', P2), { ...pr, schoolNo: '65a321' }));      // حروف
+    await assertFails(setDoc(doc(p2, 'principals', P2), { ...pr, civilId: '123' }));
+    await assertFails(setDoc(doc(p2, 'principals', P1), pr));                                   // ليس مستنده
+    await assertSucceeds(setDoc(doc(p2, 'principals', P2), pr));
+    const school = { no: '654321', name: 'مدرسة ٢', principalUid: P2, principalName: 'مدير ٢', classes: [], year: '1447-1448', createdAt: serverTimestamp() };
+    await assertFails(setDoc(doc(p2, 'schools/65a321'), { ...school, no: '65a321' }));
+    await assertFails(setDoc(doc(p2, 'schools/654321'), { ...school, principalUid: P1 }));       // يسند لغيره
+    await assertFails(setDoc(doc(p2, 'schools/123456'), { ...school, no: '123456' }));          // رقم مأخوذ (تعديل غير مالك)
+    await assertSucceeds(setDoc(doc(p2, 'schools/654321'), school));
+    await assertSucceeds(getDoc(doc(p2, 'schools/123456')));                                    // يرى تبعيتها لمدير آخر
+    await assertFails(getDocs(collection(p2, 'schools')));                                      // لا قائمة
+    await assertFails(updateDoc(doc(p2, 'schools/123456'), { name: 'اختراق' }));
+    await assertFails(updateDoc(doc(p2, 'schools/123456'), { principalUid: P2 }));             // لا ينقل ملكية بنفسه
+    await assertSucceeds(updateDoc(doc(teacherDbNew(P1), 'schools/123456'), { name: 'مدرسة جديدة', classes: ['الثالث الابتدائي - أ'] }));
+    await assertFails(updateDoc(doc(teacherDbNew(P1), 'schools/123456'), { principalUid: P2 }));
+    await assertFails(setDoc(doc(studentDb(), 'principals', 'anon1'), pr));
+});
+
+test('كشف المعلمين: المدير يضيف ويعدّل ويعيد ضبط التفعيل، والمعلم يفعّل نفسه مرة واحدة فقط', async () => {
+    const p1 = teacherDbNew(P1), p2 = teacherDbNew(P2);
+    const row = { schoolNo: '123456', name: 'معلم ٣', classes: ['الثالث الابتدائي - أ'], uid: null, createdAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(p1, 'teacherRoster/1000000003'), row));
+    await assertFails(setDoc(doc(p2, 'teacherRoster/1000000004'), row));                         // ليس مدير المدرسة
+    await assertFails(setDoc(doc(p1, 'teacherRoster/12345'), row));                              // سجل مدني غير صالح
+    await assertFails(setDoc(doc(p1, 'teacherRoster/1000000005'), { ...row, uid: 'x' }));        // لا يفعّل بنفسه
+    await assertFails(setDoc(doc(p1, 'teacherRoster/1000000005'), { ...row, classes: [] }));
+    await assertFails(setDoc(doc(p1, 'teacherRoster/1000000005'), { ...row, schoolNo: '1' }));
+    await assertSucceeds(getDocs(query(collection(p1, 'teacherRoster'), where('schoolNo', '==', '123456'))));
+    await assertFails(getDocs(query(collection(p2, 'teacherRoster'), where('schoolNo', '==', '123456'))));
+    await assertSucceeds(updateDoc(doc(p1, 'teacherRoster/1000000003'), { classes: ['الثالث الابتدائي - ب'] }));
+    // تفعيل المعلم لنفسه: كشف جاهز لم يُفعَّل
+    const t3 = teacherDbNew('newteacher');
+    await assertSucceeds(getDoc(doc(t3, 'teacherRoster/1000000002')));
+    await assertFails(updateDoc(doc(t3, 'teacherRoster/1000000002'), { uid: 'someoneelse', email: 'a@b.c', activatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(t3, 'teacherRoster/1000000002'), { uid: 'newteacher', email: 'a@b.c', activatedAt: serverTimestamp(), classes: ['السادس الابتدائي - أ'] }));
+    await assertSucceeds(updateDoc(doc(t3, 'teacherRoster/1000000002'), { uid: 'newteacher', email: 'a@b.c', activatedAt: serverTimestamp() }));
+    // لا ينتحل معلم آخر كشفاً مفعّلاً، ولا يفعّل مرتين
+    await assertFails(updateDoc(doc(teacherDbNew('thief'), 'teacherRoster/1000000002'), { uid: 'thief', email: 'x@y.z', activatedAt: serverTimestamp() }));
+    await assertFails(getDoc(doc(teacherDbNew('thief'), 'teacherRoster/1000000002')));
+    // المدير يعيد ضبط التفعيل (مثلاً بعد انتحال) ويحذف
+    await assertSucceeds(updateDoc(doc(p1, 'teacherRoster/1000000002'), { uid: null, email: null, activatedAt: null }));
+    await assertSucceeds(deleteDoc(doc(p1, 'teacherRoster/1000000003')));
+    await assertFails(deleteDoc(doc(p2, 'teacherRoster/1000000002')));
+});
+
+test('إنشاء ملف المعلم يتطلب تفعيل الكشف معه، والفصل من فصوله المسندة', async () => {
+    const t = teacherDbNew('newteacher');
+    const prof = { name: 'معلم ٢', civilId: '1000000002', school: 'مدرسة', schoolNo: '123456', className: 'الثالث الابتدائي - ب', email: 'a@b.c' };
+    // بلا تفعيل الكشف: مرفوض
+    await assertFails(setDoc(doc(t, 'teachers', 'newteacher'), { ...prof, createdAt: serverTimestamp() }));
+    // التفعيل وإنشاء الملف في دفعة واحدة
+    const { writeBatch } = await import('firebase/firestore');
+    const b = writeBatch(t);
+    b.update(doc(t, 'teacherRoster/1000000002'), { uid: 'newteacher', email: 'a@b.c', activatedAt: serverTimestamp() });
+    b.set(doc(t, 'teachers', 'newteacher'), { ...prof, createdAt: serverTimestamp() });
+    await assertSucceeds(b.commit());
+    await assertFails(updateDoc(doc(t, 'teachers', 'newteacher'), { className: 'السادس الابتدائي - أ' })); // فصل غير مسند
+    await assertSucceeds(updateDoc(doc(t, 'teachers', 'newteacher'), { className: 'الثالث الابتدائي - أ' }));
+    // معلم غير مدرج في أي كشف لا ينشئ ملفاً
+    await assertFails(setDoc(doc(teacherDbNew('stranger'), 'teachers', 'stranger'), { ...prof, civilId: '1000000009', createdAt: serverTimestamp() }));
 });
