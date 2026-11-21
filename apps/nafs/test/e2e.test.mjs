@@ -124,10 +124,10 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     // نموذج نافس الرسمي (رياضيات، الصف الثالث): يُضاف مسودة ثم يُنشر
     await page.click('[data-action="show-official"]');
     await page.locator('#officialList [data-action="add-official"]').first().waitFor();
-    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 17); // عدد نماذج الثالث (رسمية + نماذج الموقع) المعروضة؛ يزداد كلما أُدرج نموذج للثالث
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 18); // عدد نماذج الثالث (رسمية + نماذج الموقع) المعروضة؛ يزداد كلما أُدرج نموذج للثالث
     await page.locator('#officialList [data-action="add-official"][data-id="a3-math"]').click();
     assert.match(await closeModal(page, 'أُضيف النموذج'), /مسودة/);
-    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 16);
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 17);
     await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="toggle-publish"]').click();
     await page.waitForFunction(() => [...document.querySelectorAll('#testsList > div')].some((d) => d.textContent.includes('الرياضيات') && d.textContent.includes('منشور')));
     assert.equal(await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="edit-test"]').count(), 0);
@@ -322,7 +322,7 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.click('#tabBtnTests');
     await page2.click('[data-action="show-official"]');
     await page2.locator('#officialList [data-action="add-official"]').first().waitFor();
-    assert.equal(await page2.locator('#officialList [data-action="add-official"]').count(), 16);
+    assert.equal(await page2.locator('#officialList [data-action="add-official"]').count(), 17);
     assert.match(await page2.textContent('#officialList'), /نماذج تدريبية/);
     await page2.locator('#officialList [data-action="add-official"][data-id="t1-reading"]').click();
     assert.match(await closeModal(page2, 'أُضيف النموذج'), /مسودة/);
