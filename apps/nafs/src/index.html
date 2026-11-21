@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مهارات القراءة لاختبارات نافس</title>
+    <title>مهارات اختبارات نافس</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="favicon.png">
@@ -17,8 +17,8 @@
             <div class="flex items-center gap-3">
                 <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="h-14 w-auto rounded-2xl shadow-md ring-1 ring-white/20">
                 <div>
-                    <h1 class="text-2xl font-black tracking-wide">مهارات القراءة لاختبارات نافس</h1>
-                    <p class="text-xs text-emerald-200">قراءة · رياضيات · علوم — القياس والتحليل والتدريب المستمر</p>
+                    <h1 class="text-2xl font-black tracking-wide">مهارات اختبارات نافس</h1>
+                    <p class="text-xs text-emerald-200">القراءة والعلوم والرياضيات — القياس والتحليل والتدريب المستمر</p>
                 </div>
             </div>
             <button data-action="show-about" class="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition">عن اختبارات نافس · دليل الطالب وولي الأمر</button>
@@ -49,7 +49,7 @@
 
         <!-- اختيار البوابة -->
         <div id="roleSelectionScreen" class="screen hidden max-w-2xl mx-auto my-12 bg-white rounded-3xl shadow-xl border border-slate-100 p-8 text-center">
-            <h2 class="text-3xl font-black text-slate-800 mb-4">أهلاً بك في مهارات القراءة لاختبارات نافس</h2>
+            <h2 class="text-3xl font-black text-slate-800 mb-4">أهلاً بك في مهارات اختبارات نافس</h2>
             <p class="text-slate-500 mb-8">اختر صفحتك للبدء في العملية التعليمية وتتبع مستويات الطلاب</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <button data-action="show-teacher-login" class="group p-8 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition flex flex-col items-center">
@@ -319,7 +319,7 @@
                                     <th class="p-3 rounded-r-xl">م</th>
                                     <th class="p-3">اسم الطالب الكامل</th>
                                     <th class="p-3">رقم السجل المدني</th>
-                                    <th class="p-3">مستوى القراءة</th>
+                                    <th class="p-3">المستوى العام</th>
                                     <th class="p-3 rounded-l-xl text-center">إجراءات</th>
                                 </tr>
                             </thead>
@@ -363,7 +363,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1" for="tbTitle">عنوان الاختبار</label>
-                            <input type="text" id="tbTitle" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مثال: اختبار الفهم القرائي ١">
+                            <input type="text" id="tbTitle" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مثال: اختبار الوحدة الأولى">
                         </div>
                         <div>
                             <span class="block text-xs font-bold text-slate-700 mb-2">المادة</span>
@@ -507,7 +507,7 @@
             </div>
 
             <div id="studentTestsView" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 text-base mb-4">📖 اختبارات القراءة</h3>
+                <h3 class="font-bold text-slate-800 text-base mb-4">📖 اختبارات فصلك (القراءة والرياضيات والعلوم)</h3>
                 <div id="studentTestsList" class="space-y-3"></div>
             </div>
 
