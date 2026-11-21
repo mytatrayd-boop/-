@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseStudentRows, isCivilId, gradeAttempt, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError } from '../src/logic.js';
@@ -188,4 +189,14 @@ test('البنك: فحص الجودة والمسار والتوليد مع «غ�
     assert.deepEqual(recs.map((r) => r.status), ['generated', 'na', 'na']);
     assert.equal(recs[1].reason, 'لا يناسب');
     assert.equal(recs[2].reason, 'لم يحدَّد سبب');
+});
+
+test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا ملاحظات جودة، ولكل مؤشر ثلاثة مستويات', () => {
+    const rows = JSON.parse(readFileSync(new URL('../bank-drafts/reading-3.json', import.meta.url), 'utf8'));
+    for (const r of rows) {
+        assert.equal(skillById(r.skill)?.grade, 3, r.skill);
+        if (r.applicable === false) assert.ok(r.reason, r.skill);
+        else assert.deepEqual(qualityIssues(r), [], `${r.skill} ${r.level}`);
+    }
+    for (const id of skillIdsFor('reading', 3)) assert.deepEqual(rows.filter((r) => r.skill === id).map((r) => r.level).sort(), ['apply', 'know', 'reason'], id);
 });
