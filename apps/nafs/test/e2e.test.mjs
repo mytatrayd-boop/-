@@ -322,7 +322,7 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.click('#tabBtnTests');
     await page2.click('[data-action="show-official"]');
     await page2.locator('#officialList [data-action="add-official"]').first().waitFor();
-    assert.equal(await page2.locator('#officialList [data-action="add-official"]').count(), 14);
+    assert.equal(await page2.locator('#officialList [data-action="add-official"]').count(), 16);
     assert.match(await page2.textContent('#officialList'), /نماذج تدريبية/);
     await page2.locator('#officialList [data-action="add-official"][data-id="t1-reading"]').click();
     assert.match(await closeModal(page2, 'أُضيف النموذج'), /مسودة/);
