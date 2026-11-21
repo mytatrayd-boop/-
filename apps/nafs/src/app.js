@@ -12,10 +12,14 @@ import {
 } from './logic.js';
 import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skillsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
+import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, fromGeneration, newBankQuestion } from './bank.js';
 
 const $ = (id) => document.getElementById(id);
 
-let auth, db;
+let auth, db, fns;
+let bank = [];            // بنك أسئلة المعلم
+let bankEditing = null;   // id السؤال قيد التحرير ('new' لسؤال جديد)
 let teacher = null;        // {uid, name, civilId, school, className, email}
 let students = [];         // طلاب المعلم كلهم (كل الفصول)
 let uploads = [];
@@ -54,9 +58,11 @@ async function start() {
         const app = initializeApp(config);
         auth = getAuth(app);
         db = getFirestore(app);
+        fns = getFunctions(app);
         if (emulator) {
             connectAuthEmulator(auth, `http://${location.hostname}:9099`, { disableWarnings: true });
             connectFirestoreEmulator(db, location.hostname, 8080);
+            connectFunctionsEmulator(fns, location.hostname, 5001);
         }
     } catch (err) {
         console.error(err);
@@ -194,11 +200,11 @@ const TAB_OFF = 'pb-3 border-b-2 border-transparent text-slate-500 hover:text-sl
 
 function switchTeacherTab(tab) {
     teacherTab = tab;
-    for (const [name, panel, btn] of [['students', 'teacherTabStudents', 'tabBtnStudents'], ['tests', 'teacherTabTests', 'tabBtnTests'], ['reports', 'teacherTabReports', 'tabBtnReports']]) {
+    for (const [name, panel, btn] of [['students', 'teacherTabStudents', 'tabBtnStudents'], ['tests', 'teacherTabTests', 'tabBtnTests'], ['bank', 'teacherTabBank', 'tabBtnBank'], ['reports', 'teacherTabReports', 'tabBtnReports']]) {
         $(panel).classList.toggle('hidden', tab !== name);
         $(btn).className = tab === name ? TAB_ON : TAB_OFF;
     }
-    renderTeacher();
+    if (tab === 'bank') loadBank(); else renderTeacher();
 }
 
 const classStudents = () => students.filter((s) => s.className === teacher.className);
@@ -285,6 +291,7 @@ function renderTeacher() {
     if (!teacher) return;
     if (teacherTab === 'students') renderStudentsTab(classReport());
     else if (teacherTab === 'tests') renderTestsTab();
+    else if (teacherTab === 'bank') renderBank();
     else renderReports(classReport(repSubject));
 }
 
@@ -1107,6 +1114,182 @@ async function busy(button, fn) {
     try { await fn(); } catch (err) { reportError(err); } finally { if (button) button.disabled = false; }
 }
 
+// ---------- بنك الأسئلة ----------
+
+async function loadBank() {
+    try {
+        const snap = await getDocs(query(collection(db, 'bank'), where('teacherUid', '==', teacher.uid)));
+        bank = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ms(b.createdAt) - ms(a.createdAt));
+        renderBank();
+    } catch (err) { reportError(err); }
+}
+
+function bankSkillOptions() {
+    const grade = gradeOfClass(teacher.className);
+    const subSel = $('bankSubject');
+    const subjects = subjectsOfGrade(grade);
+    if (subSel.options.length !== subjects.length) {
+        subSel.replaceChildren(...subjects.map((s) => new Option(SUBJECTS[s].name, s)));
+    }
+    const skSel = $('bankSkill');
+    const keep = skSel.value;
+    skSel.replaceChildren();
+    for (const sk of skillsFor(subSel.value || subjects[0], grade)) {
+        const full = skillById(sk.id);
+        skSel.add(new Option(`${full.outcome.name} — ${sk.name}`, sk.id));
+    }
+    if (keep && [...skSel.options].some((o) => o.value === keep)) skSel.value = keep;
+}
+
+function bankCard(q) {
+    const sk = skillById(q.skill);
+    const card = el('div', 'bg-white border border-slate-200 rounded-2xl p-4 space-y-2');
+    const head = el('div', 'flex flex-wrap items-center gap-2 text-[11px]');
+    const tone = { approved: 'bg-emerald-100 text-emerald-800', generated: 'bg-amber-100 text-amber-800', rejected: 'bg-red-100 text-red-700', na: 'bg-slate-100 text-slate-500' }[q.status];
+    head.append(el('span', `px-2 py-0.5 rounded-lg font-bold ${tone}`, BANK_STATUS[q.status]), el('span', 'px-2 py-0.5 rounded-lg bg-teal-50 text-teal-800', LEVELS.find((l) => l.id === q.level)?.name ?? q.level), el('span', 'text-slate-500', `${sk?.outcome?.name ?? ''} — ${sk?.name ?? q.skill}`), el('span', 'text-slate-400', q.source === 'ai' ? 'مولَّد' : 'يدوي'));
+    card.append(head);
+    if (q.status === 'na') {
+        card.append(el('p', 'text-sm text-slate-600', `غير منطبق: ${q.reason || '—'}`), actionButton('حذف', 'bank-delete', q.id, 'text-xs text-red-500 font-bold'));
+        return card;
+    }
+    card.append(el('p', 'text-sm font-bold text-slate-800', q.text));
+    const ol = el('div', 'grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs');
+    q.options.forEach((o, i) => ol.append(el('span', `rounded-lg px-2 py-1 ${i === q.answer ? 'bg-emerald-50 text-emerald-800 font-bold' : 'bg-slate-50 text-slate-600'}`, `${'أبجد'[i]}) ${o}`)));
+    card.append(ol, el('p', 'text-[11px] text-slate-500', `التفسير: ${q.explanation || '—'}`));
+    const issues = qualityIssues(q);
+    if (issues.length) card.append(el('p', 'text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1', 'ملاحظات الجودة: ' + issues.join(' · ')));
+    const row = el('div', 'flex flex-wrap gap-3 pt-1');
+    if (canTransition(q.status, 'approved')) { const b = actionButton('اعتماد', 'bank-set', q.id, 'text-xs text-emerald-700 font-bold'); b.dataset.to = 'approved'; row.append(b); }
+    if (canTransition(q.status, 'rejected')) { const b = actionButton('رفض', 'bank-set', q.id, 'text-xs text-red-600 font-bold'); b.dataset.to = 'rejected'; row.append(b); }
+    row.append(actionButton('تحرير', 'bank-edit', q.id, 'text-xs text-slate-700 font-bold'), actionButton('حذف', 'bank-delete', q.id, 'text-xs text-red-500 font-bold'));
+    card.append(row);
+    return card;
+}
+
+function bankEditor(q) {
+    const card = el('div', 'bg-white border-2 border-emerald-300 rounded-2xl p-4 space-y-2');
+    card.id = 'bankEditor';
+    const text = el('textarea', 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm'); text.rows = 2; text.id = 'beText'; text.value = q.text ?? ''; text.maxLength = 600; text.placeholder = 'نص السؤال';
+    const lvl = el('select', 'px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs'); lvl.id = beLevelId;
+    for (const l of LEVELS) lvl.add(new Option(l.name, l.id)); lvl.value = q.level ?? 'know';
+    const opts = el('div', 'grid grid-cols-1 sm:grid-cols-2 gap-2');
+    for (let j = 0; j < 4; j++) {
+        const row = el('label', 'flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2');
+        const r = el('input', 'accent-emerald-600'); r.type = 'radio'; r.name = 'beAns'; r.value = j; r.checked = (q.answer ?? 0) === j;
+        const i = el('input', 'flex-1 min-w-0 text-sm bg-transparent focus:outline-none'); i.className += ' beOpt'; i.value = q.options?.[j] ?? ''; i.maxLength = 300; i.placeholder = `الخيار ${j + 1}`;
+        row.append(r, i); opts.append(row);
+    }
+    const ex = el('input', 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm'); ex.id = 'beExplain'; ex.value = q.explanation ?? ''; ex.maxLength = 400; ex.placeholder = 'تفسير الإجابة الصحيحة';
+    const row = el('div', 'flex gap-3');
+    row.append(actionButton('حفظ', 'bank-save', '', 'bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl text-xs'), actionButton('إلغاء', 'bank-cancel', '', 'text-xs text-slate-500 font-bold'));
+    card.append(lvl, text, opts, ex, row);
+    return card;
+}
+const beLevelId = 'beLevel';
+
+function renderBank() {
+    if (!teacher) return;
+    bankSkillOptions();
+    const f = $('bankFilter').value;
+    const list = bank.filter((q) => f === 'all' || q.status === f);
+    $('bankCount').textContent = list.length;
+    const box = $('bankList');
+    box.replaceChildren();
+    if (bankEditing === 'new') box.append(bankEditor({ skill: $('bankSkill').value }));
+    if (!list.length && bankEditing !== 'new') box.append(el('p', 'text-sm text-slate-400 text-center py-8', 'لا أسئلة هنا بعد. اختر مؤشراً ثم ولّد مسودات أو أدخل سؤالاً.'));
+    for (const q of list) box.append(bankEditing === q.id ? bankEditor(q) : bankCard(q));
+}
+
+function bankData(q, over = {}) {
+    const { id, createdAt, ...rest } = { ...q, ...over };
+    const data = { ...rest, teacherUid: teacher.uid, updatedAt: serverTimestamp() };
+    for (const k of Object.keys(data)) if (data[k] === undefined || (k === 'passageId' && data[k] === null)) delete data[k];
+    return data;
+}
+
+async function generateBank(button) {
+    const skillId = $('bankSkill').value;
+    const sk = skillById(skillId);
+    await busy(button, async () => {
+        const call = httpsCallable(fns, 'generateQuestions');
+        let res;
+        try {
+            res = await call({ subject: sk.subject, grade: sk.grade, outcome: sk.outcome.name, indicator: sk.desc });
+        } catch { return showAlert('خدمة التوليد غير متاحة الآن. يمكنك إدخال الأسئلة يدوياً.', 'تعذر التوليد'); }
+        const records = fromGeneration(skillId, res.data.result);
+        const have = bank.filter((q) => q.skill === skillId);
+        let added = 0;
+        for (const r of records) {
+            if (r.status !== 'na' && isDuplicate(r, have)) continue;
+            await addDoc(collection(db, 'bank'), { ...bankData(r), createdAt: serverTimestamp() });
+            added++;
+        }
+        await loadBank();
+        showAlert(`أُضيف ${added} إلى «بانتظار المراجعة». راجعها واعتمد المناسب منها.`, 'تم التوليد');
+    });
+}
+
+async function saveBankQuestion(button) {
+    const options = [...document.querySelectorAll('#bankEditor .beOpt')].map((i) => i.value.trim());
+    const q = { skill: bankEditing === 'new' ? $('bankSkill').value : bank.find((x) => x.id === bankEditing).skill, level: $(beLevelId).value, text: $('beText').value.trim(), options, answer: Number(document.querySelector('#bankEditor input[name=beAns]:checked')?.value ?? 0), explanation: $('beExplain').value.trim() };
+    await busy(button, async () => {
+        if (bankEditing === 'new') {
+            await addDoc(collection(db, 'bank'), { ...bankData(newBankQuestion({ ...q, source: 'manual' })), createdAt: serverTimestamp() });
+        } else {
+            const old = bank.find((x) => x.id === bankEditing);
+            // أي تحرير يعيد السؤال إلى المراجعة ويرفع الإصدار
+            await setDoc(doc(db, 'bank', old.id), { ...bankData(old, { ...q, status: 'generated', version: old.version + 1 }), createdAt: old.createdAt ?? serverTimestamp() });
+        }
+        bankEditing = null;
+        await loadBank();
+    });
+}
+
+async function setBankStatus(id, to, button) {
+    const q = bank.find((x) => x.id === id);
+    if (!q || !canTransition(q.status, to)) return;
+    if (to === 'approved') {
+        const issues = qualityIssues(q);
+        if (issues.length) return showAlert('لا يمكن اعتماد السؤال قبل معالجة: ' + issues.join(' · '), 'ملاحظات الجودة');
+    }
+    await busy(button, async () => {
+        await updateDoc(doc(db, 'bank', id), { status: to, version: q.version + 1, updatedAt: serverTimestamp() });
+        await loadBank();
+    });
+}
+
+async function deleteBank(id) {
+    if (!(await confirmDialog('حذف هذا السؤال من البنك نهائياً؟'))) return;
+    try { await deleteDoc(doc(db, 'bank', id)); await loadBank(); } catch (err) { reportError(err); }
+}
+
+// في منشئ الاختبار: المعتمد فقط، لمهارات الاختبار المختارة
+async function showBankPicker() {
+    if (!draft.skills.length) return builderError('اختر مهارة واحدة على الأقل أولاً.');
+    const box = $('bankPicker');
+    if (!box.classList.contains('hidden')) return box.classList.add('hidden');
+    try { await loadBankQuiet(); } catch (err) { return reportError(err); }
+    const usable = bank.filter((q) => usableInTest(q) && draft.skills.includes(q.skill));
+    box.replaceChildren(el('p', 'text-xs font-bold text-emerald-800', 'أسئلة معتمدة من بنكك لمهاراتك المختارة:'));
+    if (!usable.length) box.append(el('p', 'text-xs text-slate-500', 'لا أسئلة معتمدة لهذه المهارات بعد. أضفها من تبويب «بنك الأسئلة».'));
+    for (const q of usable) {
+        const row = el('div', 'flex items-center justify-between gap-3 bg-white rounded-xl px-3 py-2 border border-slate-200');
+        row.append(el('span', 'text-xs text-slate-700', `${LEVELS.find((l) => l.id === q.level)?.name}: ${q.text}`), actionButton('إضافة', 'bank-use', q.id, 'text-xs text-emerald-700 font-bold shrink-0'));
+        box.append(row);
+    }
+    box.classList.remove('hidden');
+}
+async function loadBankQuiet() {
+    const snap = await getDocs(query(collection(db, 'bank'), where('teacherUid', '==', teacher.uid)));
+    bank = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+function useBankQuestion(id) {
+    const q = bank.find((x) => x.id === id);
+    if (!q || !usableInTest(q)) return;
+    draft.questions.push({ skill: q.skill, level: q.level, text: q.text, options: [...q.options], answer: q.answer, bankId: q.id, bankVersion: q.version });
+    renderQuestions();
+}
+
 // ---------- الأحداث ----------
 
 function bindEvents() {
@@ -1116,6 +1299,8 @@ function bindEvents() {
     $('studentLoginForm').addEventListener('submit', studentLogin);
     $('excelFile').addEventListener('change', handleExcelUpload);
     $('dashClass').addEventListener('change', changeClass);
+    $('bankFilter').addEventListener('change', renderBank);
+    $('bankSubject').addEventListener('change', renderBank);
     $('modalOk').addEventListener('click', () => closeModal(true));
     $('modalCancel').addEventListener('click', () => closeModal(false));
     $('testBuilder').addEventListener('input', builderInput);
@@ -1147,6 +1332,15 @@ function bindEvents() {
             case 'show-official': showOfficial(); break;
             case 'hide-official': $('officialPanel').classList.add('hidden'); break;
             case 'add-official': addOfficial(id, el); break;
+            case 'bank-generate': generateBank(el); break;
+            case 'bank-new': bankEditing = 'new'; renderBank(); break;
+            case 'bank-edit': bankEditing = id; renderBank(); break;
+            case 'bank-cancel': bankEditing = null; renderBank(); break;
+            case 'bank-save': saveBankQuestion(el); break;
+            case 'bank-set': setBankStatus(id, el.dataset.to, el); break;
+            case 'bank-delete': deleteBank(id); break;
+            case 'add-from-bank': showBankPicker(); break;
+            case 'bank-use': useBankQuestion(id); break;
             case 'new-test': openBuilder(null); break;
             case 'edit-test': openBuilder(tests.find((t) => t.id === id)); break;
             case 'cancel-test': closeBuilder(); break;

@@ -228,6 +228,37 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await closeModal(page2, 'الرياضيات');
     await page2.click('[data-action="rep-subject"][data-id="reading"]');
 
+    // بنك الأسئلة: إدخال يدوي ← اعتماد (بعد فحص الجودة) ← استخدامه في اختبار
+    await page2.click('#tabBtnBank');
+    await page2.locator('#bankSkill option').first().waitFor({ state: 'attached' });
+    await page2.selectOption('#bankSubject', 'reading');
+    await page2.selectOption('#bankSkill', '3-1.1');
+    await page2.click('[data-action="bank-new"]');
+    await page2.selectOption('#beLevel', 'know');
+    await page2.fill('#beText', 'ما مرادف كلمة «سعيد» في الجملة؟');
+    for (const [j, o] of ['حزين', 'فرِح', 'غاضب', 'متعب'].entries()) await page2.locator('#bankEditor .beOpt').nth(j).fill(o);
+    await page2.check('#bankEditor input[name=beAns][value="1"]');
+    await page2.click('[data-action="bank-save"]');
+    await page2.locator('#bankList [data-action="bank-set"][data-to="approved"]').waitFor();
+    assert.match(await page2.textContent('#bankList'), /تفسير الإجابة/); // ملاحظة جودة: بلا تفسير
+    await page2.click('[data-action="bank-set"][data-to="approved"]');
+    assert.match(await closeModal(page2, 'قبل معالجة'), /تفسير/);
+    await page2.click('[data-action="bank-edit"]');
+    await page2.fill('#beExplain', 'سعيد بمعنى فرِح.');
+    await page2.click('[data-action="bank-save"]');
+    await page2.click('[data-action="bank-set"][data-to="approved"]');
+    await page2.locator('#bankList >> text=معتمد').first().waitFor();
+    await page2.selectOption('#bankFilter', 'approved');
+    assert.equal(await page2.textContent('#bankCount'), '1');
+    await page2.click('#tabBtnTests');
+    await page2.click('[data-action="new-test"]');
+    await page2.check('[data-skill="3-1.1"]');
+    await page2.click('[data-action="add-from-bank"]');
+    await page2.click('[data-action="bank-use"]');
+    assert.equal(await page2.inputValue('[data-q="0"][data-f="text"]'), 'ما مرادف كلمة «سعيد» في الجملة؟');
+    assert.equal(await page2.locator('[data-q="0"][data-f="answer"][data-o="1"]').isChecked(), true);
+    await page2.click('[data-action="cancel-test"]');
+
     // حذف طالب مع التأكيد
     await page2.click('#tabBtnStudents');
     await page2.locator('[data-action="delete-student"]').first().click();

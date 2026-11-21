@@ -271,6 +271,7 @@
             <div class="flex border-b border-slate-200 gap-6 overflow-x-auto">
                 <button data-action="teacher-tab" data-tab="students" id="tabBtnStudents" class="pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition whitespace-nowrap">إدارة الطلاب واستيراد الأكسل</button>
                 <button data-action="teacher-tab" data-tab="tests" id="tabBtnTests" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">بناء الاختبارات</button>
+                <button data-action="teacher-tab" data-tab="bank" id="tabBtnBank" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">بنك الأسئلة</button>
                 <button data-action="teacher-tab" data-tab="reports" id="tabBtnReports" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">متابعة المستويات والتقارير</button>
             </div>
 
@@ -387,8 +388,12 @@
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="font-bold text-slate-800 text-sm">٣. الأسئلة (<span id="tbCount">0</span>)</h3>
-                            <button data-action="add-question" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ سؤال</button>
+                            <div class="flex gap-2">
+                                <button data-action="add-from-bank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs">📚 من البنك</button>
+                                <button data-action="add-question" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ سؤال</button>
+                            </div>
                         </div>
+                        <div id="bankPicker" class="hidden space-y-2 mb-4 border border-emerald-200 bg-emerald-50/40 rounded-2xl p-3"></div>
                         <div id="tbQuestions" class="space-y-4"></div>
                     </div>
 
@@ -399,6 +404,30 @@
                         <button data-action="cancel-test" class="sm:w-32 text-slate-500 hover:text-slate-800 font-bold py-3.5 text-sm">إلغاء</button>
                     </div>
                 </div>
+            </div>
+
+            <!-- بنك الأسئلة -->
+            <div id="teacherTabBank" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <h3 class="font-bold text-slate-800 text-sm">توليد مسودات أسئلة لمؤشر (معرفة · تطبيق · استدلال)</h3>
+                    <p class="text-xs text-slate-500">كل سؤال يُولَّد يبقى «بانتظار المراجعة» ولا يظهر في اختبار قبل أن تعتمده. يُرسَل للخدمة نص المؤشر فقط، دون أي بيانات طلاب. قد يعود مستوى «غير منطبق» إن لم يناسب المؤشر.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <select id="bankSubject" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></select>
+                        <select id="bankSkill" class="md:col-span-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></select>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button data-action="bank-generate" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs">✨ توليد ثلاثة أسئلة</button>
+                        <button data-action="bank-new" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ إدخال سؤال يدوي</button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-slate-600">عرض:</span>
+                    <select id="bankFilter" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                        <option value="all">كل الحالات</option><option value="generated">بانتظار المراجعة</option><option value="approved">المعتمدة</option><option value="rejected">المرفوضة</option><option value="na">غير منطبق</option>
+                    </select>
+                    <span class="text-xs text-slate-500">(<span id="bankCount">0</span>)</span>
+                </div>
+                <div id="bankList" class="space-y-3"></div>
             </div>
 
             <!-- التقارير -->
