@@ -218,7 +218,7 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.equal(await page2.textContent('#repTests'), '1');
     assert.equal(await page2.locator('#repSkills > div').count(), 6);
     assert.match(await page2.textContent('#repSkills'), /القيمة المنزلية|الكسور وتمثيلها ومقارنتها/);
-    assert.match(await page2.textContent('#repSkills details'), /مهارات لم تُقَس بعد \(5\)/);
+    assert.match(await page2.textContent('#repSkills details'), /مؤشرات لم تُقَس بعد \(37\)/);
     await page2.click('[data-action="student-detail"]');
     await page2.locator('#studentModal').waitFor({ state: 'visible' });
     assert.match(await page2.textContent('#smMeta'), /الرياضيات/);

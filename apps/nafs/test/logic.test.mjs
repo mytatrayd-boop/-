@@ -125,8 +125,8 @@ test('المواد: العلوم للسادس والتاسع فقط، ومعرّ
             const groups = groupsFor(subject, grade);
             assert.ok(groups.length > 0, `${subject} ${grade}`);
             for (const g of groups) {
-                assert.ok(g.domain && g.title && g.skills.length, `${subject} ${grade} ${g.title}`);
-                for (const sk of g.skills) {
+                assert.ok(g.domain && g.outcomes.length, `${subject} ${grade} ${g.title}`);
+                for (const sk of g.outcomes.flatMap((o) => o.skills)) {
                     assert.ok(sk.id && sk.name && sk.desc, sk.id);
                     assert.ok(!seen.has(sk.id), 'معرّف مكرر ' + sk.id);
                     seen.add(sk.id);
@@ -134,14 +134,14 @@ test('المواد: العلوم للسادس والتاسع فقط، ومعرّ
                     assert.equal(skillById(sk.id).subject, subject);
                 }
             }
-            assert.deepEqual(skillIdsFor(subject, grade), groups.flatMap((g) => g.skills.map((sk) => sk.id)));
+            assert.deepEqual(skillIdsFor(subject, grade), groups.flatMap((g) => g.outcomes.flatMap((o) => o.skills.map((sk) => sk.id))));
         }
     }
-    assert.equal(skillIdsFor('math', 3).length, 13);
-    assert.equal(skillIdsFor('math', 6).length, 21);
-    assert.equal(skillIdsFor('math', 9).length, 25);
-    assert.equal(skillIdsFor('science', 6).length, 33);
-    assert.equal(skillIdsFor('science', 9).length, 48);
+    assert.equal(skillIdsFor('math', 3).length, 45);
+    assert.equal(skillIdsFor('math', 6).length, 81);
+    assert.equal(skillIdsFor('math', 9).length, 95);
+    assert.equal(skillIdsFor('science', 6).length, 110);
+    assert.equal(skillIdsFor('science', 9).length, 159);
     assert.deepEqual(groupsFor('science', 3), []);
 });
 

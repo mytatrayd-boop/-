@@ -10,7 +10,7 @@ import {
 import {
     CLASSES, MAX_UPLOAD_BYTES, isCivilId, parseStudentRows, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError,
 } from './logic.js';
-import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
+import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skillsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
 
 const $ = (id) => document.getElementById(id);
@@ -327,29 +327,39 @@ function renderReports(report) {
     $('repCompletedCount').textContent = report.tested;
     $('repAvgMastery').textContent = report.avg === null ? '—' : report.avg + '%';
 
-    // المهارات المقاسة تُعرض بشريط، وغير المقاسة تُختصر في قائمة مطوية (مواد الرياضيات والعلوم فيها عشرات المهارات).
+    // المؤشرات المقاسة تُعرض بشريط تحت ناتج تعلمها، وما لم يُقَس يُلخَّص بنواتج التعلم في قائمة مطوية
     const skillsBox = $('repSkills');
     skillsBox.replaceChildren();
-    const untested = [];
+    const untestedOutcomes = [];
+    let untestedCount = 0;
     for (const g of groupsFor(repSubject, grade)) {
-        const done = g.skills.filter((sk) => report.skills[sk.id]);
-        untested.push(...g.skills.filter((sk) => !report.skills[sk.id]));
-        if (!done.length) continue;
         const group = el('div', 'space-y-3');
-        group.append(el('p', 'text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2', `${g.domain} — ${g.title}`));
-        for (const sk of done) group.append(statRow(sk.name, report.skills[sk.id], sk.desc));
-        skillsBox.append(group);
+        let shown = false;
+        for (const o of g.outcomes) {
+            const done = o.skills.filter((sk) => report.skills[sk.id]);
+            if (!done.length) { untestedOutcomes.push(o); untestedCount += o.skills.length; continue; }
+            untestedCount += o.skills.length - done.length;
+            if (!shown) {
+                group.append(el('p', 'text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2', g.title ? `${g.domain} — ${g.title}` : g.domain));
+                shown = true;
+            }
+            const sub = el('div', 'space-y-2 pr-3 border-r-2 border-emerald-100');
+            sub.append(el('p', 'text-xs font-black text-slate-700', o.name));
+            for (const sk of done) sub.append(statRow(sk.name, report.skills[sk.id], sk.desc));
+            group.append(sub);
+        }
+        if (shown) skillsBox.append(group);
     }
-    if (untested.length === groupsFor(repSubject, grade).flatMap((g) => g.skills).length) {
+    if (untestedCount === skillIdsFor(repSubject, grade).length) {
         skillsBox.append(el('p', 'text-sm text-slate-400 text-center py-6', 'لم يُقَس أي طالب في هذه المادة بعد. انشر اختباراً وانتظر إجابات طلابك.'));
     }
-    if (untested.length) {
+    if (untestedCount) {
         const det = el('details', 'text-xs text-slate-500');
-        det.append(el('summary', 'cursor-pointer font-bold text-slate-600', `مهارات لم تُقَس بعد (${untested.length})`));
+        det.append(el('summary', 'cursor-pointer font-bold text-slate-600', `مؤشرات لم تُقَس بعد (${untestedCount})${untestedOutcomes.length ? ` — منها ${untestedOutcomes.length} ناتج تعلم لم يُقَس إطلاقاً` : ''}`));
         const chips = el('div', 'flex flex-wrap gap-1.5 mt-3');
-        for (const sk of untested) {
-            const c = el('span', 'text-[11px] bg-slate-100 text-slate-600 rounded-lg px-2 py-0.5', sk.name);
-            c.title = sk.desc;
+        for (const o of untestedOutcomes) {
+            const c = el('span', 'text-[11px] bg-slate-100 text-slate-600 rounded-lg px-2 py-0.5', `${o.name} (${o.skills.length})`);
+            c.title = o.desc;
             chips.append(c);
         }
         det.append(chips);
@@ -386,8 +396,11 @@ function showStudentDetail(id) {
     $('smHistory').replaceChildren(...s.history.map((h) => statRow(`${h.title} — ${new Date(h.at).toLocaleDateString('ar-SA')}`, { pct: h.pct })));
     const box = $('smSkills');
     box.replaceChildren();
-    for (const g of groupsFor(repSubject, currentGrade())) {
-        for (const sk of g.skills) if (s.skills[sk.id]) box.append(statRow(sk.name, s.skills[sk.id], sk.desc));
+    for (const o of outcomesFor(repSubject, currentGrade())) {
+        const done = o.skills.filter((sk) => s.skills[sk.id]);
+        if (!done.length) continue;
+        box.append(el('p', 'text-xs font-black text-slate-700 pt-1', o.name));
+        for (const sk of done) box.append(statRow(sk.name, s.skills[sk.id], sk.desc));
     }
     $('studentModal').classList.remove('hidden');
 }
@@ -396,7 +409,7 @@ function exportReport() {
     const report = classReport(repSubject);
     if (!report.students.length) return showAlert('لا توجد بيانات طلاب لتصديرها.', 'تنبيه');
     const ids = skillIdsFor(repSubject, currentGrade());
-    downloadBlob(new Blob([reportCsv(report, ids, (id) => skillById(id).name)], { type: 'text/csv;charset=utf-8;' }), `تقرير_${SUBJECTS[repSubject].name}_${teacher.className}.csv`);
+    downloadBlob(new Blob([reportCsv(report, ids, (id) => { const sk = skillById(id); return `${sk.outcome.name} — ${sk.name}`; })], { type: 'text/csv;charset=utf-8;' }), `تقرير_${SUBJECTS[repSubject].name}_${teacher.className}.csv`);
     showAlert(`تم تصدير تقرير مادة ${SUBJECTS[repSubject].name} بنجاح!`, 'نجاح التصدير');
 }
 
@@ -472,23 +485,40 @@ function renderBuilder() {
     const box = $('tbSkills');
     box.replaceChildren();
     for (const g of groupsFor(draft.subject, draft.grade)) {
-        const group = el('fieldset', 'border border-slate-200 rounded-2xl p-4 space-y-2');
-        group.append(el('legend', 'px-2 text-xs font-bold text-emerald-700', g.domain));
-        group.append(el('p', 'text-[11px] text-slate-500 mb-2', g.title));
-        for (const sk of g.skills) {
-            const label = el('label', 'flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer');
-            const cb = el('input', 'mt-1 accent-emerald-600 w-4 h-4 shrink-0');
-            cb.type = 'checkbox';
-            cb.dataset.skill = sk.id;
-            cb.checked = draft.skills.includes(sk.id);
-            const txt = el('span');
-            txt.append(el('span', 'block text-sm font-bold text-slate-800', sk.name), el('span', 'block text-[11px] text-slate-500 leading-relaxed', sk.desc));
-            label.append(cb, txt);
-            group.append(label);
+        const group = el('fieldset', 'border border-slate-200 rounded-2xl p-4 space-y-3');
+        group.append(el('legend', 'px-2 text-xs font-bold text-emerald-700', g.title ? `${g.domain} — ${g.title}` : g.domain));
+        for (const o of g.outcomes) {
+            const block = el('div', 'space-y-1 bg-slate-50/60 rounded-xl p-3');
+            const head = el('div', 'flex items-start justify-between gap-3');
+            const heading = el('div');
+            heading.append(el('p', 'text-sm font-black text-slate-800', o.name), el('p', 'text-[11px] text-slate-400 leading-relaxed', o.desc));
+            const all = o.skills.every((sk) => draft.skills.includes(sk.id));
+            head.append(heading, actionButton(all ? 'إلغاء الكل' : 'تحديد الكل', 'toggle-outcome', o.id, 'shrink-0 text-[11px] font-bold text-emerald-700 hover:text-emerald-900'));
+            block.append(head);
+            for (const sk of o.skills) {
+                const label = el('label', 'flex items-start gap-3 p-2 rounded-lg hover:bg-white cursor-pointer');
+                const cb = el('input', 'mt-1 accent-emerald-600 w-4 h-4 shrink-0');
+                cb.type = 'checkbox';
+                cb.dataset.skill = sk.id;
+                cb.checked = draft.skills.includes(sk.id);
+                label.append(cb, el('span', 'block text-[13px] leading-relaxed text-slate-700', sk.desc));
+                block.append(label);
+            }
+            group.append(block);
         }
         box.append(group);
     }
     renderQuestions();
+}
+
+function toggleOutcome(outcomeId) {
+    const o = outcomesFor(draft.subject, draft.grade).find((x) => x.id === outcomeId);
+    if (!o) return;
+    const ids = o.skills.map((sk) => sk.id);
+    draft.skills = ids.every((id) => draft.skills.includes(id))
+        ? draft.skills.filter((id) => !ids.includes(id))
+        : [...new Set([...draft.skills, ...ids])];
+    renderBuilder();
 }
 
 async function setBuilderSubject(subject) {
@@ -514,7 +544,7 @@ function renderQuestions() {
         const skill = el('select', 'sm:col-span-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs');
         skill.dataset.q = i; skill.dataset.f = 'skill';
         skill.add(new Option('— اختر مهارة السؤال —', ''));
-        for (const id of chosen) skill.add(new Option(skillById(id).name, id));
+        for (const id of chosen) { const sk = skillById(id); skill.add(new Option(sk.outcome ? `${sk.outcome.name} — ${sk.name}` : sk.name, id)); }
         skill.value = chosen.includes(q.skill) ? q.skill : '';
         const level = el('select', 'px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs');
         level.dataset.q = i; level.dataset.f = 'level';
@@ -1113,6 +1143,7 @@ function bindEvents() {
             case 'about-tab': setAboutTab(tab); break;
             case 'rep-subject': repSubject = id; renderTeacher(); break;
             case 'tb-subject': setBuilderSubject(id); break;
+            case 'toggle-outcome': toggleOutcome(id); break;
             case 'show-official': showOfficial(); break;
             case 'hide-official': $('officialPanel').classList.add('hidden'); break;
             case 'add-official': addOfficial(id, el); break;

@@ -107,7 +107,7 @@ test('الاختبارات: المعلم يبني لنفسه فقط، والطا
 test('الاختبارات: المادة والمصدر وأسئلة الصور (النماذج الرسمية)', async () => {
     const official = {
         ...testData(T1, 'draft'), subject: 'math', source: 'a3-math',
-        questions: [{ skill: 'm3-1-1-2', level: 'apply', text: '', options: ['أ', 'ب', 'ج', 'د'], image: 'forms/a3/q01.webp', iw: 600, ih: 300 }],
+        questions: [{ skill: 'm3-1-1-2.1', level: 'apply', text: '', options: ['أ', 'ب', 'ج', 'د'], image: 'forms/a3/q01.webp', iw: 600, ih: 300 }],
     };
     await assertSucceeds(setDoc(doc(teacherDb(T1), 'tests/OFF1'), official));
     await assertSucceeds(setDoc(doc(teacherDb(T1), 'tests/OFF2'), { ...official, subject: 'science', source: 'a6-science' }));
