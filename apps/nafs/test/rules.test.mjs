@@ -104,6 +104,20 @@ test('الاختبارات: المعلم يبني لنفسه فقط، والطا
     await assertFails(deleteDoc(doc(teacherDb(T2), 'tests/T1')));
 });
 
+test('الاختبارات: المادة والمصدر وأسئلة الصور (النماذج الرسمية)', async () => {
+    const official = {
+        ...testData(T1, 'draft'), subject: 'math', source: 'a3-math',
+        questions: [{ skill: 'm3-1-1-2', level: 'apply', text: '', options: ['أ', 'ب', 'ج', 'د'], image: 'forms/a3/q01.webp', iw: 600, ih: 300 }],
+    };
+    await assertSucceeds(setDoc(doc(teacherDb(T1), 'tests/OFF1'), official));
+    await assertSucceeds(setDoc(doc(teacherDb(T1), 'tests/OFF2'), { ...official, subject: 'science', source: 'a6-science' }));
+    await assertSucceeds(setDoc(doc(teacherDb(T1), 'tests/OLD'), testData(T1))); // بلا مادة = قراءة (اختبارات قديمة)
+    await assertFails(setDoc(doc(teacherDb(T1), 'tests/BAD1'), { ...official, subject: 'history' }));
+    await assertFails(setDoc(doc(teacherDb(T1), 'tests/BAD2'), { ...official, source: 'x'.repeat(21) }));
+    await assertFails(setDoc(doc(teacherDb(T1), 'tests/BAD3'), { ...official, source: 5 }));
+    await assertFails(setDoc(doc(teacherDb(T2), 'tests/OFF1'), official));
+});
+
 test('مفاتيح الإجابات: للمعلم صاحبها فقط', async () => {
     await seedTests();
     await assertSucceeds(getDoc(doc(teacherDb(T1), 'testKeys/T1')));

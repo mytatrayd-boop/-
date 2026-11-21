@@ -1,4 +1,4 @@
-// تجربة حية على الرابط المنشور: معلم تجريبي يسجل ويضيف طالباً ويبني اختباراً وينشره، والطالب يحله.
+// تجربة حية على الرابط المنشور: معلم تجريبي يسجل ويضيف طالباً ويبني اختباراً وينشره ويضيف نموذج نافس رسمياً (بصوره)، والطالب يحلهما.
 // تُحذف بيانات التجربة في النهاية (حساب المعلم، ملفه، اختباراته، والطالب ومحاولته). يُستدعى من deploy.mjs.
 import { chromium } from 'playwright-core';
 import { getAuth } from 'firebase-admin/auth';
@@ -39,21 +39,40 @@ export async function smokeTest(url) {
         await page.click('[data-action="load-template"]');
         await page.click('[data-action="save-test"][data-publish="1"]');
         await ok(page, 'نشره');
+        // نموذج نافس الرسمي (رياضيات): صوره تُخدَّم من الاستضافة نفسها
+        await page.click('[data-action="show-official"]');
+        await page.locator('#officialList [data-action="add-official"][data-id="a3-math"]').click({ timeout: 30000 });
+        await ok(page, 'أُضيف النموذج');
+        await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="toggle-publish"]').click();
+        await page.waitForFunction(() => [...document.querySelectorAll('#testsList > div')].some((d) => d.textContent.includes('الرياضيات') && d.textContent.includes('منشور')), null, { timeout: 30000 });
         await page.click('[data-action="logout"]');
         await ok(page, 'تسجيل الخروج');
 
         await page.click('[data-action="show-student-login"]');
         await page.fill('#sIdInput', studentId);
         await page.click('#studentLoginForm button[type=submit]');
-        await page.click('[data-action="open-test"]', { timeout: 30000 });
-        const n = await page.locator('#stQuestions > div').count();
-        for (let i = 0; i < n; i++) await page.locator(`input[name="sq-${i}"]`).first().check();
-        await page.click('[data-action="submit-test"]');
-        await page.click('#modalOk');
-        await ok(page, 'تم إرسال');
+        const answerAll = async (title) => {
+            await page.locator('#studentTestsList > div', { hasText: title }).locator('[data-action="open-test"]').click({ timeout: 30000 });
+            const imgs = await page.locator('#stQuestions img').count();
+            for (let i = 0; i < imgs; i++) {
+                const img = page.locator('#stQuestions img').nth(i);
+                await img.scrollIntoViewIfNeeded();
+                await img.evaluate((el) => (el.complete && el.naturalWidth > 100 ? true : new Promise((res, rej) => { el.onload = () => res(true); el.onerror = () => rej(new Error('صورة لم تُحمَّل: ' + el.src)); })));
+            }
+            const n = await page.locator('#stQuestions input[type=radio]').evaluateAll((r) => new Set(r.map((x) => x.name)).size);
+            for (let i = 0; i < n; i++) await page.locator(`input[name="sq-${i}"]`).first().check();
+            await page.click('[data-action="submit-test"]');
+            await page.click('#modalOk');
+            await ok(page, 'تم إرسال');
+            return { n, imgs };
+        };
+        const math = await answerAll('الرياضيات');
+        if (math.imgs !== 8) throw new Error('math form images: ' + math.imgs);
+        const reading = await answerAll('النخلة الصغيرة');
         if (errors.length) throw new Error('page errors: ' + errors.join(' | '));
         const saved = await getFirestore().collection('attempts').where('studentId', '==', studentId).get();
-        if (saved.size !== 1 || saved.docs[0].get('answers').length !== n) throw new Error('attempt not saved');
+        const lengths = saved.docs.map((d) => d.get('answers').length).sort((a, b) => a - b);
+        if (lengths.join() !== [math.n, reading.n].sort((a, b) => a - b).join()) throw new Error('attempts not saved: ' + lengths);
     } finally {
         await browser.close();
         const db = getFirestore();

@@ -7,8 +7,11 @@
 | `src/index.html` | الشاشات (نفس تصميم الأصل، Tailwind) |
 | `src/app.js` | الدخول، القراءة والكتابة في Firestore، رفع الأكسل |
 | `src/logic.js` | منطق نقي: قراءة صفوف الأكسل، تصحيح المحاولات، تقرير المهارات والتقدّم، CSV |
-| `src/skills.js` | مهارات القراءة من وثيقة نواتج التعلم 2026 (الصفوف 3، 6، 9) |
-| `src/templates.js` | نموذج اختبار جاهز لكل صف |
+| `src/skills.js` | مهارات القراءة، ويجمع مع الرياضيات والعلوم: `SUBJECTS`، `groupsFor(مادة، صف)`، `skillById` |
+| `src/skills-math.js`، `src/skills-science.js` | مهارات الرياضيات والعلوم (ناتج تعلم = مهارة) من وثيقة 2026 |
+| `src/templates.js` | نموذج قراءة نصي جاهز لكل صف |
+| `src/forms-data.js` | نماذج نافس الرسمية: صور الأسئلة، المهارة والمستوى ومفتاح الإجابة (يُحمَّل عند المعلم فقط) |
+| `public/` | الشعار والأيقونة وصور النماذج (`public/forms/<نموذج>/q01.webp` وp.webp للنص) — تُنسخ إلى `dist/` |
 | `firestore.rules` | الصلاحيات |
 | `scripts/build.mjs` | يبني `dist/` (esbuild + Tailwind، أسماء ملفات ببصمة المحتوى) |
 | `scripts/deploy.mjs` | ينشر القواعد والموقع عبر REST بمفتاح حساب الخدمة، ثم يفحص جاهزية المشروع |
@@ -17,7 +20,7 @@
 - `teachers/{uid}`: name, civilId, school, className, email, createdAt
 - `teachers/{uid}/uploads/{id}`: name, size, type, data (base64), className, added, createdAt
 - `students/{civilId}`: name, teacherUid, className, school, status, createdAt
-- `tests/{id}`: teacherUid, title, className, grade (3|6|9), passage, questions [{skill, level, text, options}], skills, status (draft|published), createdAt, updatedAt
+- `tests/{id}`: teacherUid, title, className, grade (3|6|9), subject (reading|math|science؛ الغائب = reading)، source (مثل a3-math للنماذج الرسمية)، passage, questions [{skill, level, text, options, image?, iw?, ih?, passageImage?, pw?, ph?}], skills, status (draft|published), createdAt, updatedAt
 - `testKeys/{testId}`: teacherUid, answers — الإجابات الصحيحة، للمعلم فقط
 - `attempts/{testId_civilId}`: testId, studentId, teacherUid, className, answers, submittedAt — تُكتب مرة واحدة
 

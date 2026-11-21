@@ -2,12 +2,13 @@
 import { build } from 'esbuild';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
 const root = new URL('..', import.meta.url).pathname;
 const dist = root + 'dist/';
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist);
+cpSync(root + 'public', dist, { recursive: true }); // الشعار والأيقونة وصور النماذج الرسمية
 
 const js = await build({
     entryPoints: [root + 'src/app.js'], bundle: true, minify: true, format: 'esm', splitting: true,

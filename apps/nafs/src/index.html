@@ -6,6 +6,7 @@
     <title>مهارات القراءة لاختبارات نافس</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="app.css">
     <script type="module" src="app.js"></script>
 </head>
@@ -14,16 +15,13 @@
     <header class="bg-gradient-to-r from-emerald-700 to-teal-800 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                </div>
+                <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="h-14 w-auto rounded-2xl shadow-md ring-1 ring-white/20">
                 <div>
                     <h1 class="text-2xl font-black tracking-wide">مهارات القراءة لاختبارات نافس</h1>
-                    <p class="text-xs text-emerald-200">القياس والتحليل والتدريب المستمر</p>
+                    <p class="text-xs text-emerald-200">قراءة · رياضيات · علوم — القياس والتحليل والتدريب المستمر</p>
                 </div>
             </div>
+            <button data-action="show-about" class="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition">عن اختبارات نافس · دليل الطالب وولي الأمر</button>
             <div id="userInfoHeader" class="hidden flex items-center gap-4 bg-emerald-900/40 px-4 py-2 rounded-xl border border-emerald-600/30">
                 <span id="headerTeacherName" class="text-sm font-semibold"></span>
                 <button data-action="logout" class="text-xs bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">خروج</button>
@@ -64,6 +62,139 @@
                     <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة الطالب</h3>
                     <p class="text-xs text-slate-500 text-center">الدخول برقم السجل المدني للتدريب والاختبار</p>
                 </button>
+            </div>
+            <button data-action="show-about" class="mt-6 w-full p-5 rounded-2xl border-2 border-amber-100 hover:border-amber-400 bg-amber-50/50 hover:bg-amber-50 transition flex items-center justify-center gap-4 text-right">
+                <img src="logo-nafs.png" alt="" width="58" height="50" class="h-12 w-auto rounded-xl">
+                <span>
+                    <span class="block font-bold text-slate-800">تعرّف على الاختبارات الوطنية «نافس»</span>
+                    <span class="block text-xs text-slate-500 mt-1">دليل الطالب ودليل ولي الأمر: المواد، شكل الاختبار، وإرشادات الاستعداد</span>
+                </span>
+            </button>
+        </div>
+
+        <!-- عن اختبارات نافس: دليل الطالب وولي الأمر -->
+        <div id="aboutScreen" class="screen hidden max-w-4xl mx-auto space-y-6">
+            <button data-action="back-from-about" class="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+
+            <div class="bg-[#074d31] text-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-lg">
+                <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="140" height="120" class="h-28 w-auto rounded-2xl">
+                <div class="text-center md:text-right">
+                    <h2 class="text-2xl md:text-3xl font-black">الاختبارات الوطنية «نافس»</h2>
+                    <p class="mt-2 text-emerald-100 leading-relaxed">اختبارات تقيس مستوى تحصيل الطلاب في القراءة والرياضيات والعلوم وفق نواتج التعلم، تعدّها هيئة تقويم التعليم والتدريب وتُطبَّق سنوياً في مدارس المملكة.</p>
+                    <p class="mt-3 text-xs text-emerald-200">الخلاصة هنا من دليل الطالب الإرشادي ودليل ولي الأمر (1447هـ/2026م). المرجع الرسمي: <span dir="ltr" class="font-bold">nafs.etec.gov.sa</span></p>
+                </div>
+            </div>
+
+            <div class="flex bg-slate-100 rounded-xl p-1 text-sm font-bold">
+                <button data-action="about-tab" data-tab="student" id="aboutTabStudent" class="flex-1 py-2.5 rounded-lg bg-white shadow text-emerald-700">للطالب</button>
+                <button data-action="about-tab" data-tab="parent" id="aboutTabParent" class="flex-1 py-2.5 rounded-lg text-slate-500">لولي الأمر</button>
+                <button data-action="about-tab" data-tab="format" id="aboutTabFormat" class="flex-1 py-2.5 rounded-lg text-slate-500">شكل الاختبار</button>
+            </div>
+
+            <!-- للطالب -->
+            <div id="aboutPanelStudent" class="space-y-5">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-2">عزيزي الطالب</h3>
+                    <p class="text-sm text-slate-600 leading-loose">اختبارات نافس أداة مهمة في رحلتك التعليمية، تساعد في قياس تقدّمك وفهمك للمواد الدراسية الأساسية (القراءة والرياضيات والعلوم)؛ لأنها اختبارات بُنيت على نواتج التعلم المستهدفة.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-black text-slate-800 mb-3">معلومات تهمك</h3>
+                        <ul class="space-y-2.5 text-sm text-slate-700 leading-relaxed list-disc pr-5 marker:text-emerald-600">
+                            <li><b>من يُختبر؟</b> طلاب الصف الثالث الابتدائي، والسادس الابتدائي، والثالث المتوسط (التاسع).</li>
+                            <li><b>المجالات:</b> القراءة والرياضيات والعلوم. والصف الثالث الابتدائي: القراءة والرياضيات فقط.</li>
+                            <li><b>نمط الأسئلة:</b> اختيار من متعدد فقط، تحت كل سؤال أربعة خيارات واحد منها صحيح.</li>
+                            <li><b>لغة الاختبار:</b> العربية والإنجليزية بحسب نوع التعليم في المدرسة (حكومي، أهلي، عالمي).</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-black text-slate-800 mb-3">إرشادات عامة للاختبار</h3>
+                        <ul class="space-y-2.5 text-sm text-slate-700 leading-relaxed list-disc pr-5 marker:text-emerald-600">
+                            <li><b>انتبه</b> للتعليمات التي يقدّمها مشرف الاختبار.</li>
+                            <li><b>اقرأ</b> السؤال جيداً قبل أن تختار.</li>
+                            <li><b>حاول</b> الإجابة عن جميع الأسئلة وعدم ترك أي سؤال دون إجابة.</li>
+                            <li>اختر الإجابة التي ترى أنها صحيحة بعد قراءة الخيارات كلها بهدوء.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-3">كيف تتدرّب على هذه المنصة؟</h3>
+                    <p class="text-sm text-slate-600 leading-loose">ادخل من «بوابة الطالب» برقم سجلك المدني. ستجد اختبارات فصلك التي نشرها معلمك، ومنها نماذج التهيئة الرسمية. أجب عن الأسئلة وأرسلها، وسيرى معلمك مستواك في كل مهارة ويتابع تقدّمك.</p>
+                </div>
+            </div>
+
+            <!-- لولي الأمر -->
+            <div id="aboutPanelParent" class="hidden space-y-5">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-2">ما الاختبارات الوطنية (نافس)؟ ولماذا؟</h3>
+                    <p class="text-sm text-slate-600 leading-loose">اختبارات أُعدّت بناءً على نواتج التعلم المستهدفة للمواد الأساسية (القراءة والرياضيات والعلوم)، وتُطبَّق سنوياً على نفس الصفوف في كل المدارس. تساعد التربويين وأولياء الأمور في معرفة مستوى التحصيل التعليمي في مدارس أبنائهم، ومتابعة التغيّرات في مستواها سنة بعد سنة. وتعمل على تعزيز جوانب القوة وتحسين جوانب التعلّم، ومعرفة ما تُقدّمه المدرسة من معارف ومهارات مقارنةً بما ينبغي أن تحققه، والمساهمة في تحقيق العدالة في تقديم تعليم جيد للجميع.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-black text-slate-800 mb-3">ماذا تقدّم لكم من معلومات؟</h3>
+                        <ul class="space-y-2.5 text-sm text-slate-700 leading-relaxed list-disc pr-5 marker:text-emerald-600">
+                            <li>قياس مخرجات المدرسة للمهارات الأساسية في القراءة والرياضيات والعلوم.</li>
+                            <li>ترتيب مدارس أبنائكم مقارنةً بالمدارس الأخرى.</li>
+                            <li>تعريفكم بمستوى مدارس أبنائكم، ومعرفة المدارس المتميزة.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <h3 class="font-black text-slate-800 mb-3">لماذا هذه الصفوف تحديداً؟</h3>
+                        <p class="text-sm text-slate-700 leading-loose">الصفوف المستهدفة تمثّل نهاية مراحل تعليمية: فالثالث الابتدائي نهاية مرحلة الطفولة المبكرة، والسادس نهاية المرحلة الابتدائية، والتاسع (الثالث المتوسط) نهاية المرحلة المتوسطة. وهي تقيس ما تعلّمه الطلبة وما يستطيعون القيام به في نهاية كل مرحلة.</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-3">كيف تساعد ابنك/ابنتك؟</h3>
+                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm text-slate-700 leading-relaxed list-disc pr-5 marker:text-emerald-600">
+                        <li><b>ناقش</b> أهميتها معهم.</li>
+                        <li><b>ضع</b> لأولادك موضوعاتهم وتابع مواعيد الاختبارات.</li>
+                        <li><b>راجع معهم</b> ما يتعلق بها في الكتب المدرسية.</li>
+                        <li><b>شاركهم</b> أمثلة الدليل الإرشادي.</li>
+                        <li><b>صِف</b> لأولادك كتيب الطالب وطريقة تعبئته.</li>
+                        <li><b>احرص</b> على عدم غياب أولادك أثناء تطبيقها.</li>
+                        <li><b>أكّد</b> على أولادك قراءة كل الأسئلة.</li>
+                        <li><b>عوّد</b> أولادك على التأني في تسليم كتيب الاختبار.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-2">رأي ولي الأمر يهمنا</h3>
+                    <p class="text-sm text-slate-600 leading-loose">يصاحب الاختبار عدد من الاستبانات لمعرفة الأسباب التي تؤثر في التحصيل التعليمي عند الطلبة: استبانة للطالب، واستبانة لولي الأمر (إلكترونية تُقدَّم عبر منصة الهيئة)، واستبانة لمدير المدرسة، واستبانة لمعلم كل مادة. يُرجى قراءة إرشادات الاستبانة قراءة وافية والإجابة عن جميع فقراتها بصراحة.</p>
+                </div>
+            </div>
+
+            <!-- شكل الاختبار -->
+            <div id="aboutPanelFormat" class="hidden space-y-5">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-1">مدة الاختبار وعدد الأسئلة في كل قسم</h3>
+                    <p class="text-xs text-slate-500 mb-4">بحسب دليل الطالب الإرشادي (1447هـ/2026م).</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs md:text-sm">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="p-3 rounded-r-xl">الصف</th>
+                                    <th class="p-3">التهيئة</th>
+                                    <th class="p-3">كل قسم</th>
+                                    <th class="p-3">الاستراحة</th>
+                                    <th class="p-3">الاستبانة</th>
+                                    <th class="p-3 rounded-l-xl">عدد الأسئلة</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr><td class="p-3 font-bold">الثالث الابتدائي</td><td class="p-3">15 دقيقة</td><td class="p-3">40 دقيقة (قسمان)</td><td class="p-3">5 دقائق</td><td class="p-3">15 دقيقة</td><td class="p-3">قراءة 20 · رياضيات 20</td></tr>
+                                <tr><td class="p-3 font-bold">السادس الابتدائي</td><td class="p-3">15 دقيقة</td><td class="p-3">45 دقيقة (ثلاثة أقسام)</td><td class="p-3">5 دقائق</td><td class="p-3">15 دقيقة</td><td class="p-3">قراءة 20 · رياضيات 25 · علوم 25</td></tr>
+                                <tr><td class="p-3 font-bold">الثالث المتوسط (التاسع)</td><td class="p-3">15 دقيقة</td><td class="p-3">45 دقيقة (ثلاثة أقسام)</td><td class="p-3">5 دقائق</td><td class="p-3">15 دقيقة</td><td class="p-3">قراءة 20 · رياضيات 25 · علوم 25</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-3">مكوّنات كتيّب الاختبار</h3>
+                    <p class="text-sm text-slate-700 leading-loose">يتكوّن كتيّب الصف الثالث الابتدائي من قسمين (قراءة ورياضيات)، بينما يتكوّن كتيّب السادس والثالث المتوسط من ثلاثة أقسام (قراءة ورياضيات وعلوم)، بالإضافة إلى استبانة الطالب. يبدأ الاختبار بخمس عشرة دقيقة لتهيئة الطلاب وتوضيح التعليمات، وتُدوَّن الإجابات في ورقة الإجابات المخصصة.</p>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-black text-slate-800 mb-2">كيف يرتبط هذا بمنصتنا؟</h3>
+                    <p class="text-sm text-slate-700 leading-loose">أسئلة المنصة مربوطة بمهارات «وثيقة نواتج التعلم للاختبارات الوطنية 2026». يبني المعلم اختباراً من المهارات التي يختارها، أو يضيف نماذج التهيئة الرسمية الجاهزة، ثم يقرأ في التقارير مستوى طلابه في كل مهارة وتقدّمهم عبر الاختبارات.</p>
+                </div>
             </div>
         </div>
 
@@ -206,7 +337,20 @@
                             <h3 class="font-bold text-slate-800 text-sm">اختبارات فصل <span id="testsClassName"></span></h3>
                             <p class="text-xs text-slate-500 mt-1">ابنِ اختباراً من المهارات التي تختارها حسب وثيقة نواتج التعلم (<span id="testsGradeName"></span>).</p>
                         </div>
-                        <button data-action="new-test" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">➕ بناء اختبار جديد</button>
+                        <div class="flex flex-wrap gap-2">
+                            <button data-action="show-official" class="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-5 py-3 rounded-xl text-xs transition border border-amber-200">📥 نماذج نافس الرسمية الجاهزة</button>
+                            <button data-action="new-test" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">➕ بناء اختبار جديد</button>
+                        </div>
+                    </div>
+                    <div id="officialPanel" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-amber-200 space-y-4">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">نماذج التهيئة الرسمية — الاختبارات الوطنية (نافس) 2026</h3>
+                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">نموذجان (أ) و(ب) لكل مادة في صف فصلك، بأسئلتها الأصلية ومفاتيح إجاباتها الرسمية. تُضاف مسودة، ثم تنشرها لطلابك. أسئلتها مربوطة بالمهارات، فتظهر في التقارير. <b>الربط بالمهارات اجتهاد من الموقع وليس من الهيئة.</b></p>
+                            </div>
+                            <button data-action="hide-official" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
+                        </div>
+                        <div id="officialList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                     </div>
                     <div id="testsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
@@ -221,6 +365,10 @@
                             <label class="block text-xs font-bold text-slate-700 mb-1" for="tbTitle">عنوان الاختبار</label>
                             <input type="text" id="tbTitle" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مثال: اختبار الفهم القرائي ١">
                         </div>
+                        <div>
+                            <span class="block text-xs font-bold text-slate-700 mb-2">المادة</span>
+                            <div id="tbSubject" class="flex flex-wrap gap-2"></div>
+                        </div>
                         <p class="text-xs text-slate-500">الفصل: <b id="tbClass"></b> — المهارات من <b id="tbGrade"></b></p>
                     </div>
 
@@ -231,8 +379,9 @@
                     </div>
 
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        <h3 class="font-bold text-slate-800 mb-3 text-sm">٢. نص القراءة</h3>
+                        <h3 id="tbPassageTitle" class="font-bold text-slate-800 mb-3 text-sm">٢. نص القراءة</h3>
                         <textarea id="tbPassage" rows="8" maxlength="20000" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-loose" placeholder="الصق أو اكتب النص الذي سيقرؤه الطالب قبل الأسئلة"></textarea>
+                        <p id="tbPassageHint" class="hidden text-xs text-slate-500 mt-2">اختياري: يُعرض للطالب قبل الأسئلة (مثل وصف تجربة أو مسألة طويلة).</p>
                     </div>
 
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
@@ -254,6 +403,10 @@
 
             <!-- التقارير -->
             <div id="teacherTabReports" class="hidden space-y-6">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-slate-600 ml-2">المادة:</span>
+                    <div id="repSubject" class="flex flex-wrap gap-2"></div>
+                </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center">
                         <h4 class="text-xs text-slate-500 font-bold mb-1">طلاب الفصل</h4>
@@ -376,6 +529,7 @@
             <p class="font-bold tracking-wide">مشرف دعم التميز المدرسي</p>
             <p class="font-semibold">جابر عبدالله ال الغبشه</p>
             <p class="text-slate-400">قطاع تعليم محايل عسير</p>
+            <p class="text-xs text-slate-500 mt-3 max-w-2xl leading-relaxed">منصة تدريبية مساندة غير تابعة لهيئة تقويم التعليم والتدريب. المحتوى مبني على وثائقها المنشورة: وثيقة نواتج التعلم 2026، ونماذج التهيئة، ودليلا الطالب وولي الأمر. الموقع الرسمي: nafs.etec.gov.sa</p>
         </div>
     </footer>
 </body>

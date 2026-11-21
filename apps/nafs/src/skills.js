@@ -1,5 +1,8 @@
-// مهارات القراءة من «وثيقة نواتج التعلم للاختبارات الوطنية 2026» (هيئة تقويم التعليم والتدريب، ص 9–15).
+// مهارات القراءة من «وثيقة نواتج التعلم للاختبارات الوطنية 2026» (هيئة تقويم التعليم والتدريب، ص 9–15)،
+// وتُجمع هنا مع مهارات الرياضيات والعلوم (skills-math.js وskills-science.js).
 // الصف التاسع في الوثيقة = الثالث المتوسط في الموقع.
+import { MATH } from './skills-math.js';
+import { SCIENCE } from './skills-science.js';
 
 export const LEVELS = [
     { id: 'know', name: 'المعرفة والفهم' },
@@ -102,9 +105,32 @@ export function gradeOfClass(className) {
     return null;
 }
 
+export const SUBJECTS = {
+    reading: { id: 'reading', name: 'القراءة (لغتي)' },
+    math: { id: 'math', name: 'الرياضيات' },
+    science: { id: 'science', name: 'العلوم' },
+};
+
+// الصف الثالث: القراءة والرياضيات فقط. السادس والتاسع: الثلاثة.
+export const subjectsOfGrade = (grade) => (grade === 3 ? ['reading', 'math'] : ['reading', 'math', 'science']);
+
+// مجموعات المهارات لمادة وصف: [{domain, title, text?, skills:[{id,name,desc}]}]
+export function groupsFor(subject, grade) {
+    if (subject === 'math') return MATH[grade] ?? [];
+    if (subject === 'science') return SCIENCE[grade] ?? [];
+    return GRADES[grade].outcomes.map((o) => ({ domain: DOMAINS[o.domain], title: o.text, skills: o.indicators }));
+}
+
+export const skillIdsFor = (subject, grade) => groupsFor(subject, grade).flatMap((g) => g.skills.map((s) => s.id));
+
 const SKILL_INDEX = {};
 for (const [grade, g] of Object.entries(GRADES)) {
-    for (const o of g.outcomes) for (const ind of o.indicators) SKILL_INDEX[ind.id] = { ...ind, grade: Number(grade), outcome: o };
+    for (const o of g.outcomes) for (const ind of o.indicators) SKILL_INDEX[ind.id] = { ...ind, grade: Number(grade), subject: 'reading', outcome: o };
+}
+for (const [subject, table] of [['math', MATH], ['science', SCIENCE]]) {
+    for (const [grade, groups] of Object.entries(table)) {
+        for (const group of groups) for (const sk of group.skills) SKILL_INDEX[sk.id] = { ...sk, grade: Number(grade), subject, group };
+    }
 }
 export const skillById = (id) => SKILL_INDEX[id];
 export const levelName = (id) => LEVELS.find((l) => l.id === id)?.name ?? '';

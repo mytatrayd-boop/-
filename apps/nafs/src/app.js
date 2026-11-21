@@ -10,7 +10,7 @@ import {
 import {
     CLASSES, MAX_UPLOAD_BYTES, isCivilId, parseStudentRows, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError,
 } from './logic.js';
-import { GRADES, LEVELS, DOMAINS, gradeOfClass, skillById, levelName } from './skills.js';
+import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
 
 const $ = (id) => document.getElementById(id);
@@ -28,6 +28,11 @@ let attempts = [];         // محاولات طلاب المعلم
 let draft = null;          // الاختبار قيد البناء
 let studentTests = [];     // اختبارات فصل الطالب المنشورة
 let openTest = null;
+let repSubject = 'reading'; // مادة تقرير المعلم الحالية
+let aboutFrom = 'roleSelectionScreen';
+
+const testSubject = (t) => t.subject ?? 'reading'; // الاختبارات القديمة بلا مادة = قراءة
+const isImageTest = (t) => t.questions.some((q) => q.image);
 
 // ---------- الإعداد ----------
 
@@ -177,6 +182,8 @@ async function changeClass() {
     try {
         await updateDoc(doc(db, 'teachers', teacher.uid), { className });
         teacher.className = className;
+        if (!subjectsOfGrade(currentGrade()).includes(repSubject)) repSubject = 'reading';
+        $('officialPanel').classList.add('hidden');
         renderMeta();
         renderTeacher();
     } catch (err) { reportError(err); $('dashClass').value = teacher.className; }
@@ -259,8 +266,9 @@ const ms = (ts) => ts?.toMillis?.() ?? 0;
 const classTests = () => tests.filter((t) => t.className === teacher.className);
 const currentGrade = () => gradeOfClass(teacher.className);
 
-function classReport() {
-    const ct = Object.fromEntries(classTests().map((t) => [t.id, t]));
+// subject = null: كل المواد (للمستوى العام)؛ وإلا اختبارات تلك المادة فقط.
+function classReport(subject = null) {
+    const ct = Object.fromEntries(classTests().filter((t) => !subject || testSubject(t) === subject).map((t) => [t.id, t]));
     return buildReport(classStudents(), attempts.filter((a) => ct[a.testId]), ct, keys);
 }
 
@@ -275,10 +283,9 @@ async function loadTeacherTests() {
 
 function renderTeacher() {
     if (!teacher) return;
-    const report = classReport();
-    if (teacherTab === 'students') renderStudentsTab(report);
+    if (teacherTab === 'students') renderStudentsTab(classReport());
     else if (teacherTab === 'tests') renderTestsTab();
-    else renderReports(report);
+    else renderReports(classReport(repSubject));
 }
 
 function renderStudentsTab(report) {
@@ -302,20 +309,51 @@ function renderStudentsTab(report) {
 
 // ---------- التقارير ----------
 
+function subjectChips(box, subjects, current, action) {
+    box.replaceChildren(...subjects.map((id) => {
+        const on = id === current;
+        const b = actionButton(SUBJECTS[id].name, action, id, 'px-4 py-2 rounded-xl text-xs font-bold border transition ' + (on ? 'bg-emerald-600 text-white border-emerald-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'));
+        b.setAttribute('aria-pressed', String(on));
+        return b;
+    }));
+}
+
 function renderReports(report) {
     const grade = currentGrade();
+    if (!subjectsOfGrade(grade).includes(repSubject)) repSubject = 'reading';
+    subjectChips($('repSubject'), subjectsOfGrade(grade), repSubject, 'rep-subject');
     $('repTotalStudents').textContent = report.students.length;
-    $('repTests').textContent = classTests().filter((t) => t.status === 'published').length;
+    $('repTests').textContent = classTests().filter((t) => testSubject(t) === repSubject && t.status === 'published').length;
     $('repCompletedCount').textContent = report.tested;
     $('repAvgMastery').textContent = report.avg === null ? '—' : report.avg + '%';
 
+    // المهارات المقاسة تُعرض بشريط، وغير المقاسة تُختصر في قائمة مطوية (مواد الرياضيات والعلوم فيها عشرات المهارات).
     const skillsBox = $('repSkills');
     skillsBox.replaceChildren();
-    for (const o of GRADES[grade].outcomes) {
+    const untested = [];
+    for (const g of groupsFor(repSubject, grade)) {
+        const done = g.skills.filter((sk) => report.skills[sk.id]);
+        untested.push(...g.skills.filter((sk) => !report.skills[sk.id]));
+        if (!done.length) continue;
         const group = el('div', 'space-y-3');
-        group.append(el('p', 'text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2', `${DOMAINS[o.domain]} — ${o.text}`));
-        for (const ind of o.indicators) group.append(statRow(ind.name, report.skills[ind.id], ind.desc));
+        group.append(el('p', 'text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2', `${g.domain} — ${g.title}`));
+        for (const sk of done) group.append(statRow(sk.name, report.skills[sk.id], sk.desc));
         skillsBox.append(group);
+    }
+    if (untested.length === groupsFor(repSubject, grade).flatMap((g) => g.skills).length) {
+        skillsBox.append(el('p', 'text-sm text-slate-400 text-center py-6', 'لم يُقَس أي طالب في هذه المادة بعد. انشر اختباراً وانتظر إجابات طلابك.'));
+    }
+    if (untested.length) {
+        const det = el('details', 'text-xs text-slate-500');
+        det.append(el('summary', 'cursor-pointer font-bold text-slate-600', `مهارات لم تُقَس بعد (${untested.length})`));
+        const chips = el('div', 'flex flex-wrap gap-1.5 mt-3');
+        for (const sk of untested) {
+            const c = el('span', 'text-[11px] bg-slate-100 text-slate-600 rounded-lg px-2 py-0.5', sk.name);
+            c.title = sk.desc;
+            chips.append(c);
+        }
+        det.append(chips);
+        skillsBox.append(det);
     }
 
     const levelsBox = $('repLevels');
@@ -340,26 +378,26 @@ function renderReports(report) {
 }
 
 function showStudentDetail(id) {
-    const s = classReport().students.find((x) => x.id === id);
+    const s = classReport(repSubject).students.find((x) => x.id === id);
     if (!s) return;
     $('smName').textContent = s.name;
-    $('smMeta').textContent = `السجل المدني: ${s.id} · النسبة العامة: ${s.pct ?? '—'}% · ${masteryLevel(s.pct).label}`
+    $('smMeta').textContent = `${SUBJECTS[repSubject].name} · السجل المدني: ${s.id} · النسبة: ${s.pct ?? '—'}% · ${masteryLevel(s.pct).label}`
         + (s.progress === null ? '' : ` · التقدّم من أول اختبار: ${s.progress > 0 ? '+' : ''}${s.progress}%`);
     $('smHistory').replaceChildren(...s.history.map((h) => statRow(`${h.title} — ${new Date(h.at).toLocaleDateString('ar-SA')}`, { pct: h.pct })));
     const box = $('smSkills');
     box.replaceChildren();
-    for (const o of GRADES[currentGrade()].outcomes) {
-        for (const ind of o.indicators) if (s.skills[ind.id]) box.append(statRow(ind.name, s.skills[ind.id], ind.desc));
+    for (const g of groupsFor(repSubject, currentGrade())) {
+        for (const sk of g.skills) if (s.skills[sk.id]) box.append(statRow(sk.name, s.skills[sk.id], sk.desc));
     }
     $('studentModal').classList.remove('hidden');
 }
 
 function exportReport() {
-    const report = classReport();
+    const report = classReport(repSubject);
     if (!report.students.length) return showAlert('لا توجد بيانات طلاب لتصديرها.', 'تنبيه');
-    const ids = GRADES[currentGrade()].outcomes.flatMap((o) => o.indicators.map((i) => i.id));
-    downloadBlob(new Blob([reportCsv(report, ids, (id) => skillById(id).name)], { type: 'text/csv;charset=utf-8;' }), `تقرير_مهارات_القراءة_${teacher.className}.csv`);
-    showAlert('تم تصدير تقرير المهارات بنجاح!', 'نجاح التصدير');
+    const ids = skillIdsFor(repSubject, currentGrade());
+    downloadBlob(new Blob([reportCsv(report, ids, (id) => skillById(id).name)], { type: 'text/csv;charset=utf-8;' }), `تقرير_${SUBJECTS[repSubject].name}_${teacher.className}.csv`);
+    showAlert(`تم تصدير تقرير مادة ${SUBJECTS[repSubject].name} بنجاح!`, 'نجاح التصدير');
 }
 
 // ---------- بناء الاختبارات ----------
@@ -382,12 +420,13 @@ function renderTestsTab() {
         const head = el('div', 'flex justify-between items-start gap-3');
         head.append(el('h4', 'font-bold text-slate-800', t.title),
             el('span', 'text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ' + (t.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'), t.status === 'published' ? 'منشور' : 'مسودة'));
-        const meta = el('p', 'text-xs text-slate-500', `${t.questions.length} سؤالاً · ${t.skills.length} مهارات · أجاب ${done} من ${total} طالباً`);
+        const meta = el('p', 'text-xs text-slate-500', `${SUBJECTS[testSubject(t)].name} · ${t.questions.length} سؤالاً · ${t.skills.length} مهارات · أجاب ${done} من ${total} طالباً`);
         const chips = el('div', 'flex flex-wrap gap-1.5');
         for (const id of t.skills) chips.append(el('span', 'text-[11px] bg-teal-50 text-teal-800 border border-teal-100 rounded-lg px-2 py-0.5', skillById(id)?.name ?? id));
         const btns = el('div', 'flex flex-wrap gap-3 pt-1 text-xs font-bold');
         btns.append(actionButton(t.status === 'published' ? 'إيقاف النشر' : 'نشر للطلاب', 'toggle-publish', t.id, 'text-emerald-700 hover:text-emerald-900'));
-        btns.append(actionButton(done ? 'نسخ كاختبار جديد' : 'تعديل', 'edit-test', t.id, 'text-slate-700 hover:text-slate-900'));
+        // النماذج الرسمية أسئلتها صور: لا تُعدَّل (تُحذف وتُضاف من جديد)
+        if (!isImageTest(t)) btns.append(actionButton(done ? 'نسخ كاختبار جديد' : 'تعديل', 'edit-test', t.id, 'text-slate-700 hover:text-slate-900'));
         btns.append(actionButton('حذف', 'delete-test', t.id, 'text-red-500 hover:text-red-700'));
         card.append(head, meta, chips, btns);
         box.append(card);
@@ -402,11 +441,12 @@ function openBuilder(test) {
         status: copy ? 'draft' : test.status,
         title: copy ? `${test.title} (نسخة)` : test.title,
         passage: test.passage,
+        subject: testSubject(test),
         className: teacher.className,
         grade: test.grade,
         skills: [...test.skills],
         questions: test.questions.map((q, i) => ({ ...q, options: [...q.options, '', '', ''].slice(0, Math.max(4, q.options.length)), answer: keys[test.id]?.[i] ?? 0 })),
-    } : { id: null, title: '', passage: '', className: teacher.className, grade: currentGrade(), skills: [], questions: [] };
+    } : { id: null, title: '', passage: '', subject: 'reading', className: teacher.className, grade: currentGrade(), skills: [], questions: [] };
     renderTestsTab();
 }
 
@@ -424,20 +464,25 @@ function renderBuilder() {
     $('tbPassage').value = draft.passage;
     $('tbClass').textContent = draft.className;
     $('tbGrade').textContent = GRADES[draft.grade].name;
+    subjectChips($('tbSubject'), subjectsOfGrade(draft.grade), draft.subject, 'tb-subject');
+    const reading = draft.subject === 'reading';
+    $('tbPassageTitle').textContent = reading ? '٢. نص القراءة' : '٢. نص أو معطيات (اختياري)';
+    $('tbPassageHint').classList.toggle('hidden', reading);
+    document.querySelector('[data-action="load-template"]').classList.toggle('hidden', !reading || !TEMPLATES[draft.grade]);
     const box = $('tbSkills');
     box.replaceChildren();
-    for (const o of GRADES[draft.grade].outcomes) {
+    for (const g of groupsFor(draft.subject, draft.grade)) {
         const group = el('fieldset', 'border border-slate-200 rounded-2xl p-4 space-y-2');
-        group.append(el('legend', 'px-2 text-xs font-bold text-emerald-700', DOMAINS[o.domain]));
-        group.append(el('p', 'text-[11px] text-slate-500 mb-2', o.text));
-        for (const ind of o.indicators) {
+        group.append(el('legend', 'px-2 text-xs font-bold text-emerald-700', g.domain));
+        group.append(el('p', 'text-[11px] text-slate-500 mb-2', g.title));
+        for (const sk of g.skills) {
             const label = el('label', 'flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer');
             const cb = el('input', 'mt-1 accent-emerald-600 w-4 h-4 shrink-0');
             cb.type = 'checkbox';
-            cb.dataset.skill = ind.id;
-            cb.checked = draft.skills.includes(ind.id);
+            cb.dataset.skill = sk.id;
+            cb.checked = draft.skills.includes(sk.id);
             const txt = el('span');
-            txt.append(el('span', 'block text-sm font-bold text-slate-800', ind.name), el('span', 'block text-[11px] text-slate-500 leading-relaxed', ind.desc));
+            txt.append(el('span', 'block text-sm font-bold text-slate-800', sk.name), el('span', 'block text-[11px] text-slate-500 leading-relaxed', sk.desc));
             label.append(cb, txt);
             group.append(label);
         }
@@ -446,14 +491,21 @@ function renderBuilder() {
     renderQuestions();
 }
 
-const SKILL_ORDER = (grade) => GRADES[grade].outcomes.flatMap((o) => o.indicators.map((i) => i.id));
+async function setBuilderSubject(subject) {
+    if (subject === draft.subject) return;
+    if ((draft.skills.length || draft.questions.length) && !(await confirmDialog('تغيير المادة يمسح المهارات والأسئلة الحالية. متابعة؟', 'نعم، غيّر المادة'))) return;
+    Object.assign(draft, { subject, skills: [], questions: [] });
+    renderBuilder();
+}
+
+const SKILL_ORDER = () => skillIdsFor(draft.subject, draft.grade);
 
 function renderQuestions() {
     $('tbCount').textContent = draft.questions.length;
     const box = $('tbQuestions');
     box.replaceChildren();
     if (!draft.questions.length) box.append(el('p', 'text-sm text-slate-400 text-center py-6', draft.skills.length ? 'أضف سؤالاً لكل مهارة اخترتها.' : 'اختر المهارات أولاً، ثم أضف الأسئلة.'));
-    const chosen = SKILL_ORDER(draft.grade).filter((id) => draft.skills.includes(id));
+    const chosen = SKILL_ORDER().filter((id) => draft.skills.includes(id));
     draft.questions.forEach((q, i) => {
         const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3 bg-slate-50/50');
         const head = el('div', 'flex justify-between items-center');
@@ -506,7 +558,7 @@ function builderInput(e) {
 
 function addQuestion() {
     if (!draft.skills.length) return builderError('اختر مهارة واحدة على الأقل قبل إضافة الأسئلة.');
-    const chosen = SKILL_ORDER(draft.grade).filter((id) => draft.skills.includes(id));
+    const chosen = SKILL_ORDER().filter((id) => draft.skills.includes(id));
     // المهارة الافتراضية: أول مهارة مختارة ليس لها سؤال بعد
     const skill = chosen.find((id) => !draft.questions.some((q) => q.skill === id)) ?? chosen[0];
     draft.questions.push({ skill, level: 'know', text: '', options: ['', '', '', ''], answer: 0 });
@@ -533,7 +585,7 @@ function builderError(msg) {
 
 async function saveTest(button, publish) {
     if (!draft.title.trim()) return builderError('اكتب عنوان الاختبار.');
-    if (!draft.passage.trim()) return builderError('اكتب نص القراءة.');
+    if (draft.subject === 'reading' && !draft.passage.trim()) return builderError('اكتب نص القراءة.');
     if (!draft.questions.length) return builderError('أضف سؤالاً واحداً على الأقل.');
     for (const [i, q] of draft.questions.entries()) {
         const err = questionError(q, draft.skills);
@@ -544,12 +596,12 @@ async function saveTest(button, publish) {
         const kept = q.options.map((o, j) => [o.trim(), j]).filter(([o]) => o);
         return { skill: q.skill, level: q.level, text: q.text.trim(), options: kept.map(([o]) => o), answer: kept.findIndex(([, j]) => j === q.answer) };
     });
-    const skills = SKILL_ORDER(draft.grade).filter((id) => clean.some((q) => q.skill === id));
+    const skills = SKILL_ORDER().filter((id) => clean.some((q) => q.skill === id));
     await busy(button, async () => {
         const ref = draft.id ? doc(db, 'tests', draft.id) : doc(collection(db, 'tests'));
         const batch = writeBatch(db);
         batch.set(ref, {
-            teacherUid: teacher.uid, title: draft.title.trim(), className: draft.className, grade: draft.grade,
+            teacherUid: teacher.uid, title: draft.title.trim(), className: draft.className, grade: draft.grade, subject: draft.subject,
             passage: draft.passage.trim(), questions: clean.map(({ answer, ...q }) => q), skills,
             status: publish ? 'published' : 'draft', createdAt: draft.createdAt ?? serverTimestamp(), updatedAt: serverTimestamp(),
         });
@@ -558,6 +610,59 @@ async function saveTest(button, publish) {
         draft = null;
         await loadTeacherTests();
         showAlert(publish ? 'تم حفظ الاختبار ونشره. يظهر الآن لطلاب الفصل عند دخولهم.' : 'تم حفظ الاختبار كمسودة.', 'تم الحفظ');
+    });
+}
+
+// ---------- نماذج نافس الرسمية ----------
+
+async function showOfficial() {
+    const { FORMS } = await import('./forms-data.js'); // يُحمَّل عند المعلم فقط
+    const grade = currentGrade();
+    const list = $('officialList');
+    list.replaceChildren();
+    for (const form of FORMS.filter((f) => f.grade === grade)) {
+        const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3');
+        card.append(el('h4', 'font-bold text-slate-800 text-sm', form.name));
+        for (const subject of subjectsOfGrade(grade)) {
+            const qs = form.subjects[subject];
+            if (!qs) continue;
+            const source = `${form.id}-${subject}`;
+            const added = classTests().some((t) => t.source === source);
+            const row = el('div', 'flex items-center justify-between gap-3 text-xs');
+            row.append(el('span', 'font-semibold text-slate-700', `${SUBJECTS[subject].name} — ${qs.length} سؤالاً`));
+            if (added) row.append(el('span', 'text-emerald-700 font-bold', '✓ مضاف إلى اختبارات الفصل'));
+            else row.append(actionButton('إضافة كمسودة', 'add-official', source, 'bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg'));
+            card.append(row);
+        }
+        list.append(card);
+    }
+    $('officialPanel').classList.remove('hidden');
+}
+
+async function addOfficial(source, button) {
+    const [formId, subject] = source.split('-');
+    const { FORMS } = await import('./forms-data.js');
+    const form = FORMS.find((f) => f.id === formId);
+    const qs = form?.subjects[subject];
+    if (!qs) return;
+    await busy(button, async () => {
+        const ref = doc(collection(db, 'tests'));
+        const batch = writeBatch(db);
+        batch.set(ref, {
+            teacherUid: teacher.uid, title: `${form.name} — ${SUBJECTS[subject].name}`, className: teacher.className, grade: form.grade, subject,
+            source, passage: '',
+            questions: qs.map((q) => ({
+                skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: q.img, iw: q.w, ih: q.h,
+                ...(q.passage ? { passageImage: q.passage.img, pw: q.passage.w, ph: q.passage.h } : {}),
+            })),
+            skills: skillIdsFor(subject, form.grade).filter((id) => qs.some((q) => q.skill === id)),
+            status: 'draft', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        });
+        batch.set(doc(db, 'testKeys', ref.id), { teacherUid: teacher.uid, answers: qs.map((q) => q.answer) });
+        await batch.commit();
+        await loadTeacherTests();
+        await showOfficial();
+        showAlert('أُضيف النموذج إلى اختبارات فصلك كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.', 'تمت الإضافة');
     });
 }
 
@@ -805,11 +910,30 @@ function renderStudentTests() {
     for (const t of studentTests) {
         const row = el('div', 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border ' + (t.done ? 'border-slate-200 bg-slate-50' : 'border-teal-200 bg-teal-50/40'));
         const info = el('div');
-        info.append(el('p', 'font-bold text-slate-800', t.title), el('p', 'text-xs text-slate-500 mt-1', `${t.questions.length} سؤالاً`));
+        info.append(el('p', 'font-bold text-slate-800', t.title), el('p', 'text-xs text-slate-500 mt-1', `${SUBJECTS[testSubject(t)].name} · ${t.questions.length} سؤالاً`));
         row.append(info, t.done ? el('span', 'text-xs font-bold text-emerald-700', '✓ تم الإرسال')
             : actionButton('ابدأ الاختبار ➔', 'open-test', t.id, 'bg-teal-600 hover:bg-teal-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs'));
         box.append(row);
     }
+}
+
+const PANEL_W = 708; // عرض صفحة النموذج الرسمي بالبكسل عند 100 نقطة/بوصة
+
+// صورة من نموذج رسمي بمقياس موحّد؛ في الشاشات الضيقة يُمرَّر أفقياً بدل أن يصغر الخط، مع تنبيه.
+function formImage(src, w, h, alt) {
+    const box = el('div', 'space-y-1');
+    const wrap = el('div', 'overflow-x-auto rounded-xl border border-slate-200 bg-white');
+    const img = el('img', 'block max-w-none');
+    img.src = src; img.alt = alt; img.width = w; img.height = h; img.loading = 'lazy';
+    img.style.width = Math.min(100, (w / PANEL_W) * 100) + '%';
+    img.style.minWidth = Math.round(w * 0.82) + 'px';
+    wrap.append(img);
+    const hint = el('p', 'hidden text-[11px] text-amber-700', 'الصورة أوسع من الشاشة: اسحبها يميناً ويساراً لقراءة بقية السؤال، أو أدِر الجهاز أفقياً.');
+    const update = () => hint.classList.toggle('hidden', wrap.scrollWidth <= wrap.clientWidth + 2);
+    img.addEventListener('load', update);
+    new ResizeObserver(update).observe(wrap);
+    box.append(wrap, hint);
+    return box;
 }
 
 function openStudentTest(id) {
@@ -819,14 +943,21 @@ function openStudentTest(id) {
     $('studentTestView').classList.remove('hidden');
     $('stTitle').textContent = openTest.title;
     $('stPassage').textContent = openTest.passage;
+    $('stPassage').classList.toggle('hidden', !openTest.passage);
     const box = $('stQuestions');
     box.replaceChildren();
     openTest.questions.forEach((q, i) => {
+        if (q.passageImage) {
+            const p = el('div', 'space-y-2');
+            p.append(el('p', 'text-xs font-bold text-slate-600', 'اقرأ النص التالي ثم أجب عن الأسئلة التي بعده:'), formImage(q.passageImage, q.pw, q.ph, 'نص القراءة'));
+            box.append(p);
+        }
         const card = el('div', 'p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3');
-        card.append(el('p', 'text-sm font-bold text-slate-800', `${i + 1}. ${q.text}`));
-        const opts = el('div', 'grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm');
+        if (q.image) card.append(formImage(q.image, q.iw, q.ih, `السؤال ${i + 1}`));
+        else card.append(el('p', 'text-sm font-bold text-slate-800', `${i + 1}. ${q.text}`));
+        const opts = el('div', q.image ? 'grid grid-cols-4 gap-2 text-sm' : 'grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm');
         q.options.forEach((o, j) => {
-            const label = el('label', 'p-3 bg-white rounded-xl border border-slate-200 flex items-center gap-2 cursor-pointer hover:border-teal-500');
+            const label = el('label', 'p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-center sm:justify-start gap-2 cursor-pointer hover:border-teal-500 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50');
             const r = el('input', 'accent-teal-600');
             r.type = 'radio'; r.name = `sq-${i}`; r.value = j;
             label.append(r, document.createTextNode(o));
@@ -868,6 +999,25 @@ async function studentLogout(message = 'تم تسجيل خروج الطالب.',
     if (auth.currentUser?.isAnonymous) await signOut(auth);
     showScreen(teacher ? 'teacherDashboardScreen' : 'roleSelectionScreen');
     showAlert(message, title);
+}
+
+// ---------- عن اختبارات نافس ----------
+
+function showAbout() {
+    const current = document.querySelector('.screen:not(.hidden)')?.id;
+    if (current && current !== 'aboutScreen' && current !== 'loadingScreen') aboutFrom = current;
+    setAboutTab('student');
+    showScreen('aboutScreen');
+    window.scrollTo({ top: 0 });
+}
+
+function setAboutTab(tab) {
+    const on = 'flex-1 py-2.5 rounded-lg bg-white shadow text-emerald-700';
+    const off = 'flex-1 py-2.5 rounded-lg text-slate-500';
+    for (const [name, label] of [['student', 'Student'], ['parent', 'Parent'], ['format', 'Format']]) {
+        $(`aboutPanel${label}`).classList.toggle('hidden', tab !== name);
+        $(`aboutTab${label}`).className = tab === name ? on : off;
+    }
 }
 
 // ---------- رسائل ----------
@@ -949,6 +1099,14 @@ function bindEvents() {
             case 'delete-student': deleteStudent(id); break;
             case 'download-upload': downloadUpload(id); break;
             case 'delete-upload': deleteUpload(id); break;
+            case 'show-about': showAbout(); break;
+            case 'back-from-about': showScreen(aboutFrom === 'loadingScreen' || (aboutFrom === 'teacherDashboardScreen' && !teacher) ? 'roleSelectionScreen' : aboutFrom); break;
+            case 'about-tab': setAboutTab(tab); break;
+            case 'rep-subject': repSubject = id; renderTeacher(); break;
+            case 'tb-subject': setBuilderSubject(id); break;
+            case 'show-official': showOfficial(); break;
+            case 'hide-official': $('officialPanel').classList.add('hidden'); break;
+            case 'add-official': addOfficial(id, el); break;
             case 'new-test': openBuilder(null); break;
             case 'edit-test': openBuilder(tests.find((t) => t.id === id)); break;
             case 'cancel-test': closeBuilder(); break;

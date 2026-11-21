@@ -65,10 +65,12 @@ service cloud.firestore {
       allow create, update: if isTeacher()
         && request.resource.data.teacherUid == request.auth.uid
         && (resource == null || resource.data.teacherUid == request.auth.uid)
-        && request.resource.data.keys().hasOnly(['teacherUid', 'title', 'className', 'grade', 'passage', 'questions', 'skills', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['teacherUid', 'title', 'className', 'grade', 'subject', 'source', 'passage', 'questions', 'skills', 'status', 'createdAt', 'updatedAt'])
         && text(request.resource.data.title, 120)
         && text(request.resource.data.className, 60)
         && request.resource.data.grade in [3, 6, 9]
+        && request.resource.data.get('subject', 'reading') in ['reading', 'math', 'science']
+        && request.resource.data.get('source', 'custom') is string && request.resource.data.get('source', 'custom').size() <= 20
         && request.resource.data.passage is string && request.resource.data.passage.size() <= 20000
         && request.resource.data.questions is list
         && request.resource.data.questions.size() > 0 && request.resource.data.questions.size() <= 60
