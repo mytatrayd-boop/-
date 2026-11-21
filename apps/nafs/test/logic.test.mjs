@@ -90,10 +90,10 @@ test('questionError', () => {
 
 test('المهارات: الصفوف الثلاثة من الوثيقة، والتاسع = الثالث المتوسط', () => {
     assert.deepEqual(Object.keys(GRADES), ['3', '6', '9']);
-    for (const g of Object.values(GRADES)) assert.equal(g.outcomes.length, 4); // 3 من الوثيقة + «قواعد اللغة والإملاء» (من بيان حصر المهارات)
-    assert.equal(GRADES[3].outcomes.slice(0, 3).flatMap((o) => o.indicators).length, 13);
-    assert.equal(GRADES[6].outcomes.slice(0, 3).flatMap((o) => o.indicators).length, 14);
-    assert.equal(GRADES[9].outcomes.slice(0, 3).flatMap((o) => o.indicators).length, 16);
+    for (const g of Object.values(GRADES)) assert.equal(g.outcomes.length, 3);
+    assert.equal(GRADES[3].outcomes.flatMap((o) => o.indicators).length, 13);
+    assert.equal(GRADES[6].outcomes.flatMap((o) => o.indicators).length, 14);
+    assert.equal(GRADES[9].outcomes.flatMap((o) => o.indicators).length, 16);
     assert.equal(gradeOfClass('الثالث المتوسط - ب'), 9);
     assert.equal(gradeOfClass('السادس الابتدائي - أ'), 6);
     assert.equal(gradeOfClass('الثالث الابتدائي - ج'), 3);
@@ -200,7 +200,7 @@ test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا �
             if (r.applicable === false) assert.ok(r.reason, r.skill);
             else assert.deepEqual(qualityIssues(r), [], `${r.skill} ${r.level}`);
         }
-        for (const id of skillIdsFor(subject, grade).filter((x) => !x.startsWith(`${grade}-4.`))) assert.deepEqual(rows.filter((r) => r.skill === id).map((r) => r.level).sort(), ['apply', 'know', 'reason'], id);
+        for (const id of skillIdsFor(subject, grade)) assert.deepEqual(rows.filter((r) => r.skill === id).map((r) => r.level).sort(), ['apply', 'know', 'reason'], id);
     }
 });
 
@@ -241,7 +241,7 @@ test('الاختبارات المحاكية: مؤشرات صحيحة وصور م
 
 test('نماذج حلّها الموقع: مؤشرات صحيحة وصور موجودة ومفاتيح 0-3', () => {
     const forms = JSON.parse(readFileSync(new URL('../public/bank-official/solved.json', import.meta.url), 'utf8'));
-    assert.ok(forms.length >= 5);
+    assert.equal(forms.length, 0); // قرار المالك: الموقع بالمفاتيح الرسمية فقط (الأرشيف في tools/bank-import/archive-site-key)
     for (const m of forms) {
         for (const [subject, qs] of Object.entries(m.subjects)) {
             for (const q of qs) {
