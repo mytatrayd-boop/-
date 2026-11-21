@@ -1338,6 +1338,15 @@ async function studentLogout(message = 'تم تسجيل خروج الطالب.',
     showAlert(message, title);
 }
 
+// ---------- كيف يعمل الموقع (إنفوجرافيك) ----------
+let howFrom = 'roleSelectionScreen';
+function showHow() {
+    const current = document.querySelector('.screen:not(.hidden)')?.id;
+    if (current && current !== 'howScreen' && current !== 'loadingScreen') howFrom = current;
+    showScreen('howScreen');
+    window.scrollTo({ top: 0 });
+}
+
 // ---------- عن اختبارات نافس ----------
 
 function showAbout() {
@@ -1708,6 +1717,8 @@ function bindEvents() {
             case 'download-upload': downloadUpload(id); break;
             case 'delete-upload': deleteUpload(id); break;
             case 'show-about': showAbout(); break;
+            case 'show-how': showHow(); break;
+            case 'back-from-how': showScreen(howFrom === 'teacherDashboardScreen' && !teacher ? 'roleSelectionScreen' : howFrom); break;
             case 'back-from-about': showScreen(aboutFrom === 'loadingScreen' || (aboutFrom === 'teacherDashboardScreen' && !teacher) ? 'roleSelectionScreen' : aboutFrom); break;
             case 'about-tab': setAboutTab(tab); break;
             case 'rep-subject': repSubject = id; renderTeacher(); break;

@@ -70,6 +70,65 @@
                     <span class="block text-xs text-slate-500 mt-1">دليل الطالب ودليل ولي الأمر: المواد، شكل الاختبار، وإرشادات الاستعداد</span>
                 </span>
             </button>
+            <button data-action="show-how" class="mt-4 w-full p-5 rounded-2xl border-2 border-emerald-100 hover:border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50 transition flex items-center justify-center gap-4 text-right">
+                <span class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl">🧭</span>
+                <span>
+                    <span class="block font-bold text-slate-800">كيف يعمل الموقع؟ خطوات الاستخدام</span>
+                    <span class="block text-xs text-slate-500 mt-1">مدير المدرسة ← المعلم ← الطالب: ماذا يفعل كل منهم</span>
+                </span>
+            </button>
+        </div>
+
+        <!-- كيف يعمل الموقع: إنفوجرافيك الاستخدام -->
+        <div id="howScreen" class="screen hidden max-w-5xl mx-auto space-y-6">
+            <button data-action="back-from-how" class="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+            <div class="rounded-3xl bg-gradient-to-br from-emerald-900 to-teal-700 text-white p-6 md:p-8 text-center shadow-lg">
+                <h2 class="text-3xl md:text-4xl font-black">كيف يعمل «مهارات اختبارات نافس»؟</h2>
+                <p class="text-base md:text-lg mt-2 text-emerald-100 font-semibold">ثلاث بوابات تعمل معاً: المدير يهيّئ، والمعلم يُدخل الطلاب ويختبر، والطالب يتدرّب ويعرف مستواه</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-5 items-stretch">
+                <section class="rounded-3xl bg-white border-2 border-indigo-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="bg-indigo-600 text-white p-4 text-center">
+                        <div class="text-5xl">🏫</div>
+                        <h3 class="text-2xl font-black mt-1"><span class="bg-white text-indigo-700 rounded-full w-9 h-9 inline-flex items-center justify-center text-xl ml-2">1</span>مدير المدرسة</h3>
+                    </div>
+                    <ol class="p-5 space-y-3 text-base font-semibold text-slate-800 flex-1">
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">أ</span><span>يدخل ببوابة المدير</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">ب</span><span>يضيف مدرسته: <b>الاسم</b> و<b>الرقم الإحصائي</b> (أرقام فقط، دون حروف)</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">ج</span><span>يضيف <b>الصفوف والفصول</b></span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">د</span><span>يضيف <b>المعلم</b> باسمه ورقم سجله المدني، ويُسنده إلى فصوله</span></li>
+                    </ol>
+                </section>
+                <section class="rounded-3xl bg-white border-2 border-emerald-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="bg-emerald-600 text-white p-4 text-center">
+                        <div class="text-5xl">👩‍🏫</div>
+                        <h3 class="text-2xl font-black mt-1"><span class="bg-white text-emerald-700 rounded-full w-9 h-9 inline-flex items-center justify-center text-xl ml-2">2</span>المعلم</h3>
+                    </div>
+                    <ol class="p-5 space-y-3 text-base font-semibold text-slate-800 flex-1">
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">أ</span><span>يدخل برقم سجله المدني فيتعرّف عليه النظام</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">ب</span><span>أول مرة: ينشئ <b>كلمة مرور</b> ويكتب <b>بريداً إلكترونياً</b> لاستعادتها</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">ج</span><span>يرفع ملف <b>أكسل من «نور»</b> لطلاب كل فصل (الاسم + السجل المدني)</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">د</span><span>يولّد النظام <b>كلمات مرور سهلة</b> للطلاب، ويوزّعها المعلم عليهم</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">هـ</span><span>ينشئ الاختبار (إلكترونياً أو ورقياً بالمسح الضوئي) ويتابع التقارير</span></li>
+                    </ol>
+                </section>
+                <section class="rounded-3xl bg-white border-2 border-teal-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="bg-teal-600 text-white p-4 text-center">
+                        <div class="text-5xl">🧑‍🎓</div>
+                        <h3 class="text-2xl font-black mt-1"><span class="bg-white text-teal-700 rounded-full w-9 h-9 inline-flex items-center justify-center text-xl ml-2">3</span>الطالب</h3>
+                    </div>
+                    <ol class="p-5 space-y-3 text-base font-semibold text-slate-800 flex-1">
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center">أ</span><span>يدخل برقم سجله المدني وكلمة المرور التي أعطاه إياها معلمه</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center">ب</span><span>يعرف <b>مستوى تحصيله</b> في كل مهارة</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center">ج</span><span>أو ينجز <b>اختباراً إلكترونياً</b> نشره معلمه</span></li>
+                    </ol>
+                    <div class="mx-5 mb-5 rounded-2xl bg-teal-50 border border-teal-100 p-3 text-sm text-teal-900 font-semibold text-center">النتيجة تصل معلمه تلقائياً، وتظهر في تقارير الفصل</div>
+                </section>
+            </div>
+            <div class="rounded-3xl bg-amber-50 border-2 border-amber-300 p-5 flex gap-4 items-start">
+                <div class="text-4xl">🔒</div>
+                <div class="text-base md:text-lg font-bold text-amber-900 leading-relaxed">لا يُقبل دخول أي معلم ما لم يتعرّف عليه النظام برقم سجله المدني، أي أن يكون مديره قد أضافه. وكل معلم يرى طلاب فصوله فقط، وكل مدير يرى مدرسته فقط.</div>
+            </div>
         </div>
 
         <!-- عن اختبارات نافس: دليل الطالب وولي الأمر -->
