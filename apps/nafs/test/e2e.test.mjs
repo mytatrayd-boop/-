@@ -103,6 +103,38 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.match(await page.textContent('#dashMeta'), /ابتدائية التجربة/);
     assert.deepEqual(await page.locator('#dashClass option').allTextContents(), ['الثالث الابتدائي (أ)', 'الثالث المتوسط (أ)']); // فصوله المسندة فقط
 
+    // مدير جديد يسجّل بالرقم الإحصائي نفسه: تظهر تبعيتها لمدير آخر، ويرسل تنبيهاً بحذفها من عنده فتنتقل إليه
+    {
+        const c2 = await browser.newContext();
+        const np = await c2.newPage();
+        np.on('pageerror', (e) => errors.push(e.message));
+        await np.goto(URL_);
+        await np.click('[data-action="show-principal-login"]');
+        await np.click('#pTabSignup');
+        await np.fill('#pName', 'ناصر المدير الجديد');
+        await np.fill('#pCivil', '1000000200');
+        await np.fill('#pSchool', 'اسم آخر');
+        await np.fill('#pSchoolNo', schoolNo);
+        await np.fill('#pSignupEmail', `n${Date.now()}@example.com`);
+        await np.fill('#pSignupPassword', 'secret123');
+        await np.click('#principalSignupForm button[type=submit]');
+        assert.match(await closeModal(np, 'سُجّل حسابك'), /سعد عبدالله المدير/); // اسم المدير السابق
+        assert.match(await np.textContent('#pdBody'), /تتبع حالياً المدير: سعد عبدالله المدير/);
+        await np.click('[data-action="pd-request-transfer"]');
+        await closeModal(np, 'أُرسل التنبيه');
+        await pp.reload();
+        await pp.locator('[data-action="pd-approve-transfer"]').waitFor();
+        assert.match(await pp.textContent('#pdBody'), /ناصر المدير الجديد/);
+        await pp.click('[data-action="pd-approve-transfer"]');
+        await pp.click('#modalOk'); // تأكيد
+        await closeModal(pp, 'نُقلت');
+        assert.match(await pp.textContent('#pdBody'), /تتبع حالياً المدير: ناصر المدير الجديد/);
+        await np.click('[data-action="pd-refresh"]');
+        await np.waitForFunction(() => document.getElementById('pdMeta').textContent.includes('العام الدراسي'));
+        assert.match(await np.textContent('#pdBody'), /أحمد محمد القحطاني/); // معلمو المدرسة انتقلوا معها
+        await c2.close();
+    }
+
     // إضافة طالب يدوياً
     await page.fill('#newStudentName', 'خالد سعد');
     await page.fill('#newStudentId', '2000000003');

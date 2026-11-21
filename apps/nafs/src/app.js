@@ -26,6 +26,9 @@ let teacherClasses = [];   // الفصول المسندة للمعلم من كش
 let principal = null;      // {uid, name, civilId, email, schoolNo}
 let school = null;         // مدرسة المدير (مستند schools)
 let roster = [];           // كشف معلمي المدرسة
+let transferIn = null;     // طلب نقل وارد لمدرستي من مدير جديد
+let otherSchool = null;    // مدرسة برقمي تتبع مديراً آخر {name, principalName}
+let transferOut = null;    // طلبي لنقل تبعية مدرسة إليّ
 let students = [];         // طلاب المعلم كلهم (كل الفصول)
 let uploads = [];
 let activeStudent = null;  // {id, name, ...}
@@ -1453,12 +1456,17 @@ async function principalSignup(e) {
 }
 
 async function openPrincipalDashboard() {
-    school = null; roster = [];
+    school = null; roster = []; transferIn = null; otherSchool = null; transferOut = null;
     const sc = await getDoc(doc(db, 'schools', principal.schoolNo));
+    const tr = await getDoc(doc(db, 'schoolTransfers', principal.schoolNo)).catch(() => null);
     if (sc.exists() && sc.data().principalUid === principal.uid) {
         school = { id: sc.id, ...sc.data() };
+        if (tr?.exists()) transferIn = tr.data();
         const r = await getDocs(query(collection(db, 'teacherRoster'), where('schoolNo', '==', school.no)));
         roster = r.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    } else {
+        otherSchool = sc.exists() ? sc.data() : null;
+        if (tr?.exists() && tr.data().requesterUid === principal.uid) transferOut = tr.data();
     }
     showScreen('principalDashboardScreen');
     renderPrincipal();
@@ -1470,8 +1478,29 @@ function renderPrincipal() {
     $('pdTitle').textContent = `مرحباً بك أستاذ/ة: ${principal.name}`;
     if (!school) {
         $('pdMeta').textContent = `الرقم الإحصائي: ${principal.schoolNo}`;
-        body.append(el('div', 'bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 text-sm font-bold text-amber-900 leading-relaxed', 'مدرسة هذا الرقم تتبع مديراً آخر. لن تظهر لك بيانات المدرسة حتى تُنقل إليك.'));
+        const box = el('div', 'bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 space-y-3');
+        box.append(el('p', 'text-sm font-bold text-amber-900 leading-relaxed', otherSchool
+            ? `المدرسة «${otherSchool.name}» (الرقم ${principal.schoolNo}) تتبع حالياً المدير: ${otherSchool.principalName}. لا تظهر لك بياناتها حتى تُنقل إليك.`
+            : 'لا توجد مدرسة مسجّلة بهذا الرقم.'));
+        const row = el('div', 'flex flex-wrap gap-3 text-xs font-bold');
+        if (otherSchool && transferOut) {
+            box.append(el('p', 'text-sm text-slate-700', `أُرسل تنبيه إلى ${otherSchool.principalName} ليحذف المدرسة من عنده. بعد موافقته اضغط «تحقق من التبعية».`));
+            row.append(actionButton('إلغاء الطلب', 'pd-cancel-transfer', '', 'text-red-600 hover:text-red-800'));
+        } else if (otherSchool) {
+            row.append(actionButton(`إرسال تنبيه إلى ${otherSchool.principalName} بحذف المدرسة من عنده`, 'pd-request-transfer', '', 'bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl'));
+        }
+        row.append(actionButton('تحقق من التبعية', 'pd-refresh', '', 'text-indigo-700 hover:text-indigo-900'));
+        box.append(row);
+        body.append(box);
         return;
+    }
+    if (transferIn) {
+        const box = el('div', 'bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 space-y-3');
+        box.append(el('p', 'text-sm font-bold text-amber-900 leading-relaxed', `تنبيه: المدير ${transferIn.requesterName} سجّل برقم مدرستك ويطلب أن تُنقل تبعيتها إليه. إن كنتَ انتقلتَ من المدرسة فاحذفها من عندك لتُضاف له بمعلميها وفصولها، وإن لم تكن ذلك فارفض الطلب.`));
+        const row = el('div', 'flex flex-wrap gap-3 text-xs font-bold');
+        row.append(actionButton('حذف المدرسة من عندي', 'pd-approve-transfer', '', 'bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl'), actionButton('رفض الطلب', 'pd-reject-transfer', '', 'text-slate-700 hover:text-slate-900'));
+        box.append(row);
+        body.append(box);
     }
     $('pdMeta').textContent = `${school.name} · الرقم الإحصائي: ${school.no} · العام الدراسي: ${school.year}`;
 
@@ -1525,6 +1554,36 @@ function renderPrincipal() {
     }
     t.append(list);
     body.append(t);
+}
+
+async function requestTransfer(btn) {
+    await busy(btn, async () => {
+        await setDoc(doc(db, 'schoolTransfers', principal.schoolNo), { schoolNo: principal.schoolNo, requesterUid: principal.uid, requesterName: principal.name, createdAt: serverTimestamp() });
+        await openPrincipalDashboard();
+        showAlert('أُرسل التنبيه إلى المدير الحالي ليحذف المدرسة من عنده. عند موافقته اضغط «تحقق من التبعية».', 'تم الإرسال');
+    });
+}
+
+async function cancelTransfer() {
+    await deleteDoc(doc(db, 'schoolTransfers', principal.schoolNo));
+    await openPrincipalDashboard();
+}
+
+async function approveTransfer(btn) {
+    if (!transferIn || !(await confirmDialog(`حذف المدرسة «${school.name}» من عندك ونقل تبعيتها إلى ${transferIn.requesterName}؟ تبقى بياناتها محفوظة عند المدير الجديد.`, 'نعم، احذفها من عندي'))) return;
+    await busy(btn, async () => {
+        const batch = writeBatch(db);
+        batch.update(doc(db, 'schools', school.no), { principalUid: transferIn.requesterUid, principalName: transferIn.requesterName });
+        batch.delete(doc(db, 'schoolTransfers', school.no));
+        await batch.commit();
+        await openPrincipalDashboard();
+        showAlert('نُقلت تبعية المدرسة إلى المدير الجديد.', 'تم النقل');
+    });
+}
+
+async function rejectTransfer() {
+    await deleteDoc(doc(db, 'schoolTransfers', school.no));
+    await openPrincipalDashboard();
 }
 
 async function deleteRosterTeacher(id) {
@@ -1943,6 +2002,11 @@ function bindEvents() {
             case 'p-auth-tab': setPrincipalTab(tab); break;
             case 'p-reset-password': principalReset(); break;
             case 'pd-save-classes': savePrincipalClasses(el); break;
+            case 'pd-request-transfer': requestTransfer(el); break;
+            case 'pd-cancel-transfer': cancelTransfer(); break;
+            case 'pd-approve-transfer': approveTransfer(el); break;
+            case 'pd-reject-transfer': rejectTransfer(); break;
+            case 'pd-refresh': openPrincipalDashboard(); break;
             case 'pd-del-teacher': deleteRosterTeacher(id); break;
             case 'pd-reset-teacher': resetRosterTeacher(id); break;
             case 'show-student-login': showScreen('studentLoginScreen'); break;

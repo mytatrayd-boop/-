@@ -46,6 +46,26 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'year'])
         && text(request.resource.data.name, 120)
         && request.resource.data.classes is list;
+
+      // المدير الحالي ينقل التبعية لصاحب طلب النقل («حذف المدرسة من عندي»)
+      allow update: if isPrincipalOf(no)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['principalUid', 'principalName'])
+        && request.resource.data.principalUid == get(/databases/$(database)/documents/schoolTransfers/$(no)).data.requesterUid
+        && request.resource.data.principalName == get(/databases/$(database)/documents/schoolTransfers/$(no)).data.requesterName;
+    }
+
+    // نقل تبعية مدرسة: مدير جديد (سجّل بالرقم الإحصائي نفسه) يرسل تنبيهاً للمدير الحالي، فيحذفها من عنده لتصير للجديد.
+    match /schoolTransfers/{no} {
+      allow get: if signedIn() && schoolNo(no)
+        && (resource == null || resource.data.requesterUid == request.auth.uid || isPrincipalOf(no));
+      allow create: if isTeacher() && schoolNo(no)
+        && get(/databases/$(database)/documents/principals/$(request.auth.uid)).data.schoolNo == no
+        && schoolDoc(no).principalUid != request.auth.uid
+        && request.resource.data.keys().hasOnly(['schoolNo', 'requesterUid', 'requesterName', 'createdAt'])
+        && request.resource.data.schoolNo == no
+        && request.resource.data.requesterUid == request.auth.uid
+        && text(request.resource.data.requesterName, 100);
+      allow delete: if isTeacher() && (resource.data.requesterUid == request.auth.uid || isPrincipalOf(no));
     }
 
     // كشف المعلمين: مستند لكل معلم معرّفه رقم سجله المدني. يضيفه المدير؛ ثم يُفعّله المعلم نفسه بإنشاء حسابه.

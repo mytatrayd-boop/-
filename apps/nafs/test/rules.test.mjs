@@ -264,3 +264,44 @@ test('إنشاء ملف المعلم يتطلب تفعيل الكشف معه، �
     // معلم غير مدرج في أي كشف لا ينشئ ملفاً
     await assertFails(setDoc(doc(teacherDbNew('stranger'), 'teachers', 'stranger'), { ...prof, civilId: '1000000009', createdAt: serverTimestamp() }));
 });
+
+test('نقل تبعية مدرسة: المدير الجديد يرسل طلباً، والحالي يحذفها من عنده فتصير للجديد', async () => {
+    const p1 = teacherDbNew(P1), p2 = teacherDbNew(P2);
+    // المدير الجديد سجّل نفسه بالرقم الإحصائي نفسه (المدرسة مسجلة لغيره)
+    await assertSucceeds(setDoc(doc(p2, 'principals', P2), { name: 'مدير جديد', civilId: '1000000200', email: 'n@x.com', schoolNo: '123456', createdAt: serverTimestamp() }));
+    const req = { schoolNo: '123456', requesterUid: P2, requesterName: 'مدير جديد', createdAt: serverTimestamp() };
+    await assertFails(setDoc(doc(teacherDbNew('rand'), 'schoolTransfers/123456'), { ...req, requesterUid: 'rand' })); // ليس مديراً مسجلاً بالرقم
+    await assertFails(setDoc(doc(p2, 'schoolTransfers/123456'), { ...req, requesterUid: P1 }));
+    await assertFails(setDoc(doc(p1, 'schoolTransfers/123456'), { ...req, requesterUid: P1 }));  // الحالي لا يطلب لنفسه
+    await assertSucceeds(setDoc(doc(p2, 'schoolTransfers/123456'), req));
+    await assertSucceeds(getDoc(doc(p1, 'schoolTransfers/123456')));        // المدير الحالي يرى التنبيه
+    await assertSucceeds(getDoc(doc(p2, 'schoolTransfers/123456')));
+    await assertFails(getDoc(doc(teacherDbNew('thief'), 'schoolTransfers/123456')));
+    // لا ينقل المدير الجديد الملكية بنفسه، ولا يوجّهها لغير صاحب الطلب
+    await assertFails(updateDoc(doc(p2, 'schools/123456'), { principalUid: P2, principalName: 'مدير جديد' }));
+    await assertFails(updateDoc(doc(p1, 'schools/123456'), { principalUid: 'thief', principalName: 'x' }));
+    await assertFails(updateDoc(doc(p1, 'schools/123456'), { principalUid: P2, principalName: 'اسم آخر' }));
+    // المدير الحالي: «حذف المدرسة من عندي»
+    const { writeBatch } = await import('firebase/firestore');
+    const b = writeBatch(p1);
+    b.update(doc(p1, 'schools/123456'), { principalUid: P2, principalName: 'مدير جديد' });
+    b.delete(doc(p1, 'schoolTransfers/123456'));
+    await assertSucceeds(b.commit());
+    // الجديد يملك الآن كشف المعلمين، والسابق لا
+    await assertSucceeds(getDocs(query(collection(p2, 'teacherRoster'), where('schoolNo', '==', '123456'))));
+    await assertFails(getDocs(query(collection(p1, 'teacherRoster'), where('schoolNo', '==', '123456'))));
+    await assertSucceeds(updateDoc(doc(p2, 'schools/123456'), { name: 'باسم الجديد' }));
+    await assertFails(updateDoc(doc(p1, 'schools/123456'), { name: 'اسم السابق' }));
+});
+
+test('طلب النقل: يلغيه صاحبه أو يرفضه المدير الحالي', async () => {
+    const p1 = teacherDbNew(P1), p2 = teacherDbNew(P2);
+    await assertSucceeds(setDoc(doc(p2, 'principals', P2), { name: 'مدير جديد', civilId: '1000000200', email: 'n@x.com', schoolNo: '123456', createdAt: serverTimestamp() }));
+    const req = { schoolNo: '123456', requesterUid: P2, requesterName: 'مدير جديد', createdAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(p2, 'schoolTransfers/123456'), req));
+    await assertFails(setDoc(doc(p2, 'schoolTransfers/123456'), req)); // طلب واحد قائم
+    await assertSucceeds(deleteDoc(doc(p1, 'schoolTransfers/123456')));  // رفض
+    await assertSucceeds(setDoc(doc(p2, 'schoolTransfers/123456'), req));
+    await assertFails(deleteDoc(doc(teacherDbNew('thief'), 'schoolTransfers/123456')));
+    await assertSucceeds(deleteDoc(doc(p2, 'schoolTransfers/123456')));  // إلغاء
+});
