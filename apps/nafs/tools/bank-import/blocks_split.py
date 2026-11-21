@@ -1,7 +1,7 @@
 import fitz,json,sys,os,re,unicodedata
 from PIL import Image
 # تقطيع عام: كل كتلة متصلة رأسياً (كلمات + رسوم) فاصلها فراغ >= GAP نقطة. سؤال = كتلة فيها >=3 خطوط عمودية أو رمز خيار «أ»؛ نص = كتلة طويلة بلا ذلك.
-def blocks(pdf,tag,pages,top=84,bottom=735,gap=7,dpi=130,out=None):
+def blocks(pdf,tag,pages,top=84,bottom=770,gap=7,dpi=130,out=None):
     q=fitz.open(pdf); base=f'formout/{tag}'; os.makedirs(base,exist_ok=True); res=[]; cur=None; npass=0
     for pi in pages:
         p=q[pi]; W=p.rect.width
