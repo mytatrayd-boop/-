@@ -220,3 +220,21 @@ test('بنك نافس الرسمي: كل سؤال بمؤشر صحيح وصورة
         }
     }
 });
+
+test('الاختبارات المحاكية: مؤشرات صحيحة وصور موجودة ومفاتيح 0-3', () => {
+    const mocks = JSON.parse(readFileSync(new URL('../public/bank-official/mocks.json', import.meta.url), 'utf8'));
+    assert.equal(mocks.length, 6);
+    let n = 0;
+    for (const m of mocks) {
+        for (const [subject, qs] of Object.entries(m.subjects)) {
+            for (const q of qs) {
+                n++;
+                const sk = skillById(q.skill);
+                assert.ok(sk && sk.grade === m.grade && sk.subject === subject, `${m.id} ${q.skill}`);
+                assert.ok(['know', 'apply', 'reason'].includes(q.level) && [0, 1, 2, 3].includes(q.answer), m.id);
+                for (const f of [q.img, q.passage].filter(Boolean)) assert.ok(existsSync(new URL(`../public/bank-official/${f}`, import.meta.url)), f);
+            }
+        }
+    }
+    assert.ok(n > 280, String(n));
+});

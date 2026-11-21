@@ -124,10 +124,10 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     // نموذج نافس الرسمي (رياضيات، الصف الثالث): يُضاف مسودة ثم يُنشر
     await page.click('[data-action="show-official"]');
     await page.locator('#officialList [data-action="add-official"]').first().waitFor();
-    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 4); // (أ) و(ب) × قراءة ورياضيات، بلا علوم للثالث
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 8); // (أ) و(ب) × قراءة ورياضيات، بلا علوم للثالث
     await page.locator('#officialList [data-action="add-official"][data-id="a3-math"]').click();
     assert.match(await closeModal(page, 'أُضيف النموذج'), /مسودة/);
-    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 3);
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 7);
     await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="toggle-publish"]').click();
     await page.waitForFunction(() => [...document.querySelectorAll('#testsList > div')].some((d) => d.textContent.includes('الرياضيات') && d.textContent.includes('منشور')));
     assert.equal(await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="edit-test"]').count(), 0);
@@ -280,6 +280,14 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.equal(await page2.locator('[data-q="0"][data-f="answer"][data-o="1"]').isChecked(), true);
     await page2.click('[data-action="cancel-test"]');
 
+    // الاختبارات المحاكية تظهر ضمن النماذج الجاهزة
+    await page2.click('#tabBtnTests');
+    await page2.click('[data-action="show-official"]');
+    await page2.locator('#officialList [data-action="add-official"][data-id="mock-m3a-math"]').waitFor();
+    await page2.click('[data-action="add-official"][data-id="mock-m3a-math"]');
+    assert.match(await closeModal(page2, 'محاكي'), /مسودة/);
+    assert.match(await page2.textContent('#testsList'), /الاختبار المحاكي الأول/);
+
     // اختبار من بنك نافس الرسمي (أسئلة صور بمفاتيحها)
     await page2.click('#tabBtnTests');
     await page2.click('[data-action="show-bankpanel"]');
@@ -305,7 +313,7 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.click('#tabBtnTests');
     await page2.click('[data-action="show-official"]');
     await page2.locator('#officialList [data-action="add-official"]').first().waitFor();
-    assert.equal(await page2.locator('#officialList [data-action="add-official"]').count(), 8);
+    assert.equal(await page2.locator('#officialList [data-action="add-official"]').count(), 14);
     assert.match(await page2.textContent('#officialList'), /نماذج تدريبية/);
     await page2.locator('#officialList [data-action="add-official"][data-id="t1-reading"]').click();
     assert.match(await closeModal(page2, 'أُضيف النموذج'), /مسودة/);

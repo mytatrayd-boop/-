@@ -680,8 +680,61 @@ async function showOfficial() {
         section.append(grid);
         list.append(section);
     }
+    // الاختبارات المحاكية (بنك نافس للأسئلة والاختبارات المحاكية)
+    let mocks = [];
+    try { const r = await fetch('/bank-official/mocks.json'); mocks = r.ok ? (await r.json()).filter((m) => m.grade === grade) : []; } catch { mocks = []; }
+    if (mocks.length) {
+        const section = el('div', 'space-y-3');
+        section.append(el('h4', 'text-xs font-black text-amber-800 bg-amber-50 rounded-lg px-3 py-2', 'الاختبارات المحاكية — مكتب تعليم السلي 1446هـ'));
+        const grid = el('div', 'grid grid-cols-1 md:grid-cols-2 gap-4');
+        for (const m of mocks) {
+            const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3');
+            card.append(el('h4', 'font-bold text-slate-800 text-sm', m.name));
+            for (const subject of subjectsOfGrade(grade)) {
+                const qs = m.subjects[subject];
+                if (!qs) continue;
+                const source = `mock-${m.id}-${subject}`;
+                const row = el('div', 'flex items-center justify-between gap-3 text-xs');
+                row.append(el('span', 'font-semibold text-slate-700', `${SUBJECTS[subject].name} — ${qs.length} سؤالاً`));
+                if (classTests().some((t) => t.source === source)) row.append(el('span', 'text-emerald-700 font-bold', '✓ مضاف إلى اختبارات الفصل'));
+                else row.append(actionButton('إضافة كمسودة', 'add-official', source, 'bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg'));
+                card.append(row);
+            }
+            grid.append(card);
+        }
+        section.append(grid);
+        list.append(section);
+    }
     $('bankPanel').classList.add('hidden');
     $('officialPanel').classList.remove('hidden');
+}
+
+async function addMock(source, button) {
+    const [, id, subject] = source.split('-');
+    let mocks = [];
+    try { mocks = await (await fetch('/bank-official/mocks.json')).json(); } catch { return showAlert('تعذر تحميل الاختبار المحاكي.', 'خطأ'); }
+    const m = mocks.find((x) => x.id === id);
+    const qs = m?.subjects[subject];
+    if (!qs) return;
+    await busy(button, async () => {
+        const ref = doc(collection(db, 'tests'));
+        const batch = writeBatch(db);
+        batch.set(ref, {
+            teacherUid: teacher.uid, title: `${m.name} — ${SUBJECTS[subject].name}`, className: teacher.className, grade: m.grade, subject,
+            source, passage: '',
+            questions: qs.map((q) => ({
+                skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: `bank-official/${q.img}`, iw: q.w, ih: q.h,
+                ...(q.passage ? { passageImage: `bank-official/${q.passage}`, pw: q.pw, ph: q.ph } : {}),
+            })),
+            skills: skillIdsFor(subject, m.grade).filter((sid) => qs.some((q) => q.skill === sid)),
+            status: 'draft', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        });
+        batch.set(doc(db, 'testKeys', ref.id), { teacherUid: teacher.uid, answers: qs.map((q) => q.answer) });
+        await batch.commit();
+        await loadTeacherTests();
+        await showOfficial();
+        showAlert('أُضيف الاختبار المحاكي إلى اختبارات فصلك كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.', 'تمت الإضافة');
+    });
 }
 
 async function addOfficial(source, button) {
@@ -1501,7 +1554,7 @@ function bindEvents() {
             case 'bp-subject': bpState.subject = id; bpState.skills.clear(); renderBankPanel(); break;
             case 'bp-create': createBankTest(el); break;
             case 'hide-official': $('officialPanel').classList.add('hidden'); break;
-            case 'add-official': addOfficial(id, el); break;
+            case 'add-official': (id.startsWith('mock-') ? addMock(id, el) : addOfficial(id, el)); break;
             case 'draft-toggle': $('draftPanel').classList.toggle('hidden'); if (!$('draftPanel').classList.contains('hidden')) loadDrafts(); break;
             case 'draft-all': document.querySelectorAll('#draftList input[data-draft]').forEach((c) => { c.checked = true; draftPick.add(c.dataset.draft); }); $('draftSel').textContent = draftPick.size; break;
             case 'draft-none': draftPick.clear(); renderDrafts(); break;
