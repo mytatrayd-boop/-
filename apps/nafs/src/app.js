@@ -680,20 +680,21 @@ async function showOfficial() {
         section.append(grid);
         list.append(section);
     }
-    // الاختبارات المحاكية (بنك نافس للأسئلة والاختبارات المحاكية)
-    let mocks = [];
-    try { const r = await fetch('/bank-official/mocks.json'); mocks = r.ok ? (await r.json()).filter((m) => m.grade === grade) : []; } catch { mocks = []; }
-    if (mocks.length) {
+    // الاختبارات المحاكية، ثم نماذج حلّها الموقع (مفاتيحها غير رسمية)
+    for (const [file, prefix, title] of [['mocks', 'mock', 'الاختبارات المحاكية — مكتب تعليم السلي 1446هـ'], ['solved', 'sol', 'نماذج تدريبية بمفتاح الموقع (غير رسمي) — راجع المفتاح قبل النشر']]) {
+        let forms = [];
+        try { const r = await fetch(`/bank-official/${file}.json`); forms = r.ok ? (await r.json()).filter((m) => m.grade === grade) : []; } catch { forms = []; }
+        if (!forms.length) continue;
         const section = el('div', 'space-y-3');
-        section.append(el('h4', 'text-xs font-black text-amber-800 bg-amber-50 rounded-lg px-3 py-2', 'الاختبارات المحاكية — مكتب تعليم السلي 1446هـ'));
+        section.append(el('h4', `text-xs font-black rounded-lg px-3 py-2 ${prefix === 'sol' ? 'text-rose-800 bg-rose-50' : 'text-amber-800 bg-amber-50'}`, title));
         const grid = el('div', 'grid grid-cols-1 md:grid-cols-2 gap-4');
-        for (const m of mocks) {
+        for (const m of forms) {
             const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3');
             card.append(el('h4', 'font-bold text-slate-800 text-sm', m.name));
             for (const subject of subjectsOfGrade(grade)) {
                 const qs = m.subjects[subject];
                 if (!qs) continue;
-                const source = `mock-${m.id}-${subject}`;
+                const source = `${prefix}-${m.id}-${subject}`;
                 const row = el('div', 'flex items-center justify-between gap-3 text-xs');
                 row.append(el('span', 'font-semibold text-slate-700', `${SUBJECTS[subject].name} — ${qs.length} سؤالاً`));
                 if (classTests().some((t) => t.source === source)) row.append(el('span', 'text-emerald-700 font-bold', '✓ مضاف إلى اختبارات الفصل'));
@@ -710,9 +711,9 @@ async function showOfficial() {
 }
 
 async function addMock(source, button) {
-    const [, id, subject] = source.split('-');
+    const [prefix, id, subject] = source.split('-');
     let mocks = [];
-    try { mocks = await (await fetch('/bank-official/mocks.json')).json(); } catch { return showAlert('تعذر تحميل الاختبار المحاكي.', 'خطأ'); }
+    try { mocks = await (await fetch(`/bank-official/${prefix === 'sol' ? 'solved' : 'mocks'}.json`)).json(); } catch { return showAlert('تعذر تحميل النموذج.', 'خطأ'); }
     const m = mocks.find((x) => x.id === id);
     const qs = m?.subjects[subject];
     if (!qs) return;
@@ -720,7 +721,7 @@ async function addMock(source, button) {
         const ref = doc(collection(db, 'tests'));
         const batch = writeBatch(db);
         batch.set(ref, {
-            teacherUid: teacher.uid, title: `${m.name} — ${SUBJECTS[subject].name}`, className: teacher.className, grade: m.grade, subject,
+            teacherUid: teacher.uid, title: prefix === 'sol' ? `${m.name} (مفتاح الموقع)` : `${m.name} — ${SUBJECTS[subject].name}`, className: teacher.className, grade: m.grade, subject,
             source, passage: '',
             questions: qs.map((q) => ({
                 skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: `bank-official/${q.img}`, iw: q.w, ih: q.h,
@@ -733,7 +734,7 @@ async function addMock(source, button) {
         await batch.commit();
         await loadTeacherTests();
         await showOfficial();
-        showAlert('أُضيف الاختبار المحاكي إلى اختبارات فصلك كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.', 'تمت الإضافة');
+        showAlert(prefix === 'sol' ? 'أُضيف النموذج كمسودة. مفتاحه من حلّ الموقع وليس رسمياً، فراجعه قبل أن تنشره لطلابك.' : 'أُضيف الاختبار المحاكي إلى اختبارات فصلك كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.', 'تمت الإضافة');
     });
 }
 
@@ -1554,7 +1555,7 @@ function bindEvents() {
             case 'bp-subject': bpState.subject = id; bpState.skills.clear(); renderBankPanel(); break;
             case 'bp-create': createBankTest(el); break;
             case 'hide-official': $('officialPanel').classList.add('hidden'); break;
-            case 'add-official': (id.startsWith('mock-') ? addMock(id, el) : addOfficial(id, el)); break;
+            case 'add-official': (id.startsWith('mock-') || id.startsWith('sol-') ? addMock(id, el) : addOfficial(id, el)); break;
             case 'draft-toggle': $('draftPanel').classList.toggle('hidden'); if (!$('draftPanel').classList.contains('hidden')) loadDrafts(); break;
             case 'draft-all': document.querySelectorAll('#draftList input[data-draft]').forEach((c) => { c.checked = true; draftPick.add(c.dataset.draft); }); $('draftSel').textContent = draftPick.size; break;
             case 'draft-none': draftPick.clear(); renderDrafts(); break;

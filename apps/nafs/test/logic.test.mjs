@@ -238,3 +238,18 @@ test('الاختبارات المحاكية: مؤشرات صحيحة وصور م
     }
     assert.ok(n > 280, String(n));
 });
+
+test('نماذج حلّها الموقع: مؤشرات صحيحة وصور موجودة ومفاتيح 0-3', () => {
+    const forms = JSON.parse(readFileSync(new URL('../public/bank-official/solved.json', import.meta.url), 'utf8'));
+    assert.ok(forms.length >= 5);
+    for (const m of forms) {
+        for (const [subject, qs] of Object.entries(m.subjects)) {
+            for (const q of qs) {
+                const sk = skillById(q.skill);
+                assert.ok(sk && sk.grade === m.grade && sk.subject === subject, `${m.id} ${q.skill}`);
+                assert.ok(['know', 'apply', 'reason'].includes(q.level) && [0, 1, 2, 3].includes(q.answer), m.id);
+                for (const f of [q.img, q.passage].filter(Boolean)) assert.ok(existsSync(new URL(`../public/bank-official/${f}`, import.meta.url)), f);
+            }
+        }
+    }
+});

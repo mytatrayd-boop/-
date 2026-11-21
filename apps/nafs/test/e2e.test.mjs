@@ -124,10 +124,10 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     // نموذج نافس الرسمي (رياضيات، الصف الثالث): يُضاف مسودة ثم يُنشر
     await page.click('[data-action="show-official"]');
     await page.locator('#officialList [data-action="add-official"]').first().waitFor();
-    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 8); // (أ) و(ب) × قراءة ورياضيات، بلا علوم للثالث
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 13); // (أ) و(ب) × قراءة ورياضيات، بلا علوم للثالث
     await page.locator('#officialList [data-action="add-official"][data-id="a3-math"]').click();
     assert.match(await closeModal(page, 'أُضيف النموذج'), /مسودة/);
-    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 7);
+    assert.equal(await page.locator('#officialList [data-action="add-official"]').count(), 12);
     await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="toggle-publish"]').click();
     await page.waitForFunction(() => [...document.querySelectorAll('#testsList > div')].some((d) => d.textContent.includes('الرياضيات') && d.textContent.includes('منشور')));
     assert.equal(await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="edit-test"]').count(), 0);
@@ -286,6 +286,9 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page2.locator('#officialList [data-action="add-official"][data-id="mock-m3a-math"]').waitFor();
     await page2.click('[data-action="add-official"][data-id="mock-m3a-math"]');
     assert.match(await closeModal(page2, 'محاكي'), /مسودة/);
+    await page2.click('#officialList [data-action="add-official"][data-id="sol-g3f1-reading"]');
+    assert.match(await closeModal(page2, 'حلّ الموقع'), /ليس رسمياً/);
+    assert.match(await page2.textContent('#testsList'), /\(مفتاح الموقع\)/);
     assert.match(await page2.textContent('#testsList'), /الاختبار المحاكي الأول/);
 
     // اختبار من بنك نافس الرسمي (أسئلة صور بمفاتيحها)
