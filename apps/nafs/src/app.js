@@ -1263,6 +1263,27 @@ async function busy(button, fn) {
     try { await fn(); } catch (err) { reportError(err); } finally { if (button) button.disabled = false; }
 }
 
+// ---------- مستويات الأداء الرسمية (هيئة تقويم التعليم والتدريب) ----------
+
+const PERF_PAGES = {
+    reading3: [2, 3], reading6: [4], reading9: [5], math3: [6], math6: [7], math9: [8], science6: [9, 10], science9: [11, 12],
+};
+
+function showPerf() {
+    const grade = currentGrade();
+    const pages = PERF_PAGES[`${repSubject}${grade}`] ?? [];
+    $('perfTitle').textContent = `مستويات الأداء الرسمية — ${SUBJECTS[repSubject].name} (${GRADES[grade].name})`;
+    const body = $('perfBody');
+    body.replaceChildren();
+    if (!pages.length) body.append(el('p', 'text-sm text-slate-500', 'لا يتوفر وصف رسمي لهذه المادة والصف.'));
+    for (const n of pages) {
+        const img = el('img', 'w-full rounded-xl border border-slate-200');
+        img.src = `performance/p${n}.webp`; img.alt = 'مستويات الأداء الرسمية'; img.loading = 'lazy';
+        body.append(img);
+    }
+    $('perfModal').classList.remove('hidden');
+}
+
 // ---------- بنك الأسئلة ----------
 
 async function loadBank() {
@@ -1578,6 +1599,8 @@ function bindEvents() {
             case 'toggle-publish': togglePublish(id); break;
             case 'delete-test': deleteTest(id); break;
             case 'student-detail': showStudentDetail(id); break;
+            case 'show-perf': showPerf(); break;
+            case 'close-perf': $('perfModal').classList.add('hidden'); break;
             case 'close-student': $('studentModal').classList.add('hidden'); break;
             case 'open-test': openStudentTest(id); break;
             case 'back-to-tests': renderStudentTests(); break;

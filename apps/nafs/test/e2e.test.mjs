@@ -210,6 +210,12 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.match(csvText, /فهد محمد/);
     await closeModal(page2, 'تصدير');
 
+    await page2.click('[data-action="show-perf"]');
+    await page2.locator('#perfBody img').first().waitFor();
+    assert.equal(await page2.locator('#perfBody img').count(), 2); // القراءة للثالث الابتدائي: صفحتان
+    assert.match(await page2.textContent('#perfTitle'), /القراءة/);
+    await page2.click('[data-action="close-perf"]');
+
     // مادة الرياضيات: نتيجة النموذج الرسمي تظهر لكل مهارة
     await page2.click('[data-action="rep-subject"][data-id="math"]');
     assert.equal(await page2.getAttribute('[data-action="rep-subject"][data-id="math"]', 'aria-pressed'), 'true');
