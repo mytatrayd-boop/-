@@ -187,6 +187,7 @@ async function changeClass() {
         teacher.className = className;
         if (!subjectsOfGrade(currentGrade()).includes(repSubject)) repSubject = 'reading';
         $('officialPanel').classList.add('hidden');
+        $('bankPanel').classList.add('hidden');
         renderMeta();
         renderTeacher();
     } catch (err) { reportError(err); $('dashClass').value = teacher.className; }
@@ -679,6 +680,7 @@ async function showOfficial() {
         section.append(grid);
         list.append(section);
     }
+    $('bankPanel').classList.add('hidden');
     $('officialPanel').classList.remove('hidden');
 }
 
@@ -706,6 +708,98 @@ async function addOfficial(source, button) {
         await loadTeacherTests();
         await showOfficial();
         showAlert('أُضيف النموذج إلى اختبارات فصلك كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.', 'تمت الإضافة');
+    });
+}
+
+// ---------- اختبار من بنك نافس للأسئلة (صور + مفاتيح) ----------
+
+const bpState = { subject: null, levels: new Set(['know', 'apply', 'reason']), skills: new Set(), data: {} };
+
+async function loadBankOfficial(subject, grade) {
+    const key = `${subject}${grade}`;
+    if (!(key in bpState.data)) {
+        try { const r = await fetch(`/bank-official/${key}.json`); bpState.data[key] = r.ok ? await r.json() : []; } catch { bpState.data[key] = []; }
+    }
+    return bpState.data[key];
+}
+
+async function showBankPanel() {
+    const grade = currentGrade();
+    const subjects = subjectsOfGrade(grade);
+    if (!subjects.includes(bpState.subject)) bpState.subject = subjects[0];
+    bpState.skills.clear();
+    $('officialPanel').classList.add('hidden');
+    $('bankPanel').classList.remove('hidden');
+    await renderBankPanel();
+}
+
+async function renderBankPanel() {
+    const grade = currentGrade();
+    const subj = $('bpSubject');
+    subj.replaceChildren();
+    for (const s of subjectsOfGrade(grade)) {
+        const b = actionButton(SUBJECTS[s].name, 'bp-subject', s, `px-3 py-1.5 rounded-lg text-xs font-bold border ${s === bpState.subject ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200'}`);
+        subj.append(b);
+    }
+    const lv = $('bpLevels');
+    lv.replaceChildren(el('span', 'font-bold text-slate-600', 'المستويات:'));
+    for (const l of LEVELS) {
+        const lab = el('label', 'flex items-center gap-1');
+        const cb = el('input', 'accent-teal-600'); cb.type = 'checkbox'; cb.dataset.bpLevel = l.id; cb.checked = bpState.levels.has(l.id);
+        lab.append(cb, el('span', '', l.name));
+        lv.append(lab);
+    }
+    const items = await loadBankOfficial(bpState.subject, grade);
+    const box = $('bpSkills');
+    box.replaceChildren();
+    if (!items.length) box.append(el('p', 'text-xs text-slate-400 text-center py-6', 'لا أسئلة جاهزة لهذه المادة والصف بعد.'));
+    for (const o of outcomesFor(bpState.subject, grade)) {
+        const rows = o.skills.map((sk) => ({ sk, n: items.filter((q) => q.skill === sk.id && bpState.levels.has(q.level)).length })).filter((r) => r.n);
+        if (!rows.length) continue;
+        const sec = el('div', 'border border-slate-200 rounded-2xl p-3 space-y-1');
+        sec.append(el('p', 'text-xs font-black text-slate-700', o.name));
+        for (const { sk, n } of rows) {
+            const lab = el('label', 'flex items-start gap-2 text-xs text-slate-700 cursor-pointer');
+            const cb = el('input', 'mt-0.5 accent-teal-600'); cb.type = 'checkbox'; cb.dataset.bpSkill = sk.id; cb.checked = bpState.skills.has(sk.id);
+            lab.append(cb, el('span', 'flex-1', sk.name), el('span', 'text-slate-400 shrink-0', `${n} سؤالاً`));
+            sec.append(lab);
+        }
+        box.append(sec);
+    }
+    updateBankCount(items);
+}
+
+function bankSelection(items) {
+    const order = skillIdsFor(bpState.subject, currentGrade());
+    const LV = ['know', 'apply', 'reason'];
+    return items.filter((q) => bpState.skills.has(q.skill) && bpState.levels.has(q.level))
+        .sort((a, b) => order.indexOf(a.skill) - order.indexOf(b.skill) || LV.indexOf(a.level) - LV.indexOf(b.level));
+}
+
+function updateBankCount(items) {
+    $('bpCount').textContent = bankSelection(items ?? bpState.data[`${bpState.subject}${currentGrade()}`] ?? []).length;
+}
+
+async function createBankTest(button) {
+    const grade = currentGrade();
+    const items = bankSelection(await loadBankOfficial(bpState.subject, grade));
+    if (!items.length) return showAlert('اختر مؤشراً واحداً على الأقل.', 'لا تحديد');
+    if (items.length > 60) return showAlert('الحد الأقصى 60 سؤالاً للاختبار. قلّل المؤشرات أو المستويات.', 'عدد كبير');
+    await busy(button, async () => {
+        const ref = doc(collection(db, 'tests'));
+        const batch = writeBatch(db);
+        const skills = skillIdsFor(bpState.subject, grade).filter((id) => items.some((q) => q.skill === id));
+        batch.set(ref, {
+            teacherUid: teacher.uid, title: `بنك نافس — ${SUBJECTS[bpState.subject].name} (${skills.length} مؤشراً)`, className: teacher.className, grade, subject: bpState.subject,
+            source: 'nafs-bank', passage: '',
+            questions: items.map((q) => ({ skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: `bank-official/${q.img}`, iw: q.w, ih: q.h })),
+            skills, status: 'draft', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        });
+        batch.set(doc(db, 'testKeys', ref.id), { teacherUid: teacher.uid, answers: items.map((q) => q.answer) });
+        await batch.commit();
+        await loadTeacherTests();
+        $('bankPanel').classList.add('hidden');
+        showAlert(`أُنشئ اختبار من ${items.length} سؤالاً كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.`, 'تم الإنشاء');
     });
 }
 
@@ -1360,6 +1454,11 @@ function bindEvents() {
     $('excelFile').addEventListener('change', handleExcelUpload);
     $('dashClass').addEventListener('change', changeClass);
     $('bankImport').addEventListener('change', importBank);
+    $('bankPanel').addEventListener('change', (e) => {
+        const t = e.target;
+        if (t.dataset.bpSkill) { t.checked ? bpState.skills.add(t.dataset.bpSkill) : bpState.skills.delete(t.dataset.bpSkill); updateBankCount(); }
+        else if (t.dataset.bpLevel) { t.checked ? bpState.levels.add(t.dataset.bpLevel) : bpState.levels.delete(t.dataset.bpLevel); renderBankPanel(); }
+    });
     $('bankFilter').addEventListener('change', renderBank);
     $('bankSubject').addEventListener('change', () => { renderBank(); if (!$('draftPanel').classList.contains('hidden')) loadDrafts(); });
     $('bankSkill').addEventListener('change', renderDrafts);
@@ -1393,6 +1492,10 @@ function bindEvents() {
             case 'tb-subject': setBuilderSubject(id); break;
             case 'toggle-outcome': toggleOutcome(id); break;
             case 'show-official': showOfficial(); break;
+            case 'show-bankpanel': showBankPanel(); break;
+            case 'hide-bankpanel': $('bankPanel').classList.add('hidden'); break;
+            case 'bp-subject': bpState.subject = id; bpState.skills.clear(); renderBankPanel(); break;
+            case 'bp-create': createBankTest(el); break;
             case 'hide-official': $('officialPanel').classList.add('hidden'); break;
             case 'add-official': addOfficial(id, el); break;
             case 'draft-toggle': $('draftPanel').classList.toggle('hidden'); if (!$('draftPanel').classList.contains('hidden')) loadDrafts(); break;

@@ -280,6 +280,20 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.equal(await page2.locator('[data-q="0"][data-f="answer"][data-o="1"]').isChecked(), true);
     await page2.click('[data-action="cancel-test"]');
 
+    // اختبار من بنك نافس الرسمي (أسئلة صور بمفاتيحها)
+    await page2.click('#tabBtnTests');
+    await page2.click('[data-action="show-bankpanel"]');
+    await page2.locator('#bankPanel').waitFor({ state: 'visible' });
+    await page2.click('[data-action="bp-subject"][data-id="math"]');
+    await page2.locator('#bpSkills input[data-bp-skill="m3-1-1-2.1"]').waitFor();
+    await page2.check('#bpSkills input[data-bp-skill="m3-1-1-2.1"]');
+    assert.equal(await page2.textContent('#bpCount'), '2');
+    await page2.uncheck('#bankPanel input[data-bp-level="reason"]');
+    await page2.check('#bpSkills input[data-bp-skill="m3-1-1-2.1"]');
+    await page2.click('[data-action="bp-create"]');
+    assert.match(await closeModal(page2, 'أُنشئ اختبار'), /مسودة/);
+    assert.match(await page2.textContent('#testsList'), /بنك نافس — الرياضيات/);
+
     // حذف طالب مع التأكيد
     await page2.click('#tabBtnStudents');
     await page2.locator('[data-action="delete-student"]').first().click();

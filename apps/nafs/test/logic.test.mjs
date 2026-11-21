@@ -203,3 +203,19 @@ test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا �
         for (const id of skillIdsFor(subject, grade)) assert.deepEqual(rows.filter((r) => r.skill === id).map((r) => r.level).sort(), ['apply', 'know', 'reason'], id);
     }
 });
+
+test('بنك نافس الرسمي: كل سؤال بمؤشر صحيح وصورة موجودة ومفتاح 0-3', () => {
+    for (const [key, subject, grade] of [['math3', 'math', 3]]) {
+        const items = JSON.parse(readFileSync(new URL(`../public/bank-official/${key}.json`, import.meta.url), 'utf8'));
+        assert.ok(items.length > 50, key);
+        const ids = new Set();
+        for (const q of items) {
+            assert.ok(!ids.has(q.id), q.id); ids.add(q.id);
+            const sk = skillById(q.skill);
+            assert.ok(sk && sk.grade === grade && sk.subject === subject, `${q.id} ${q.skill}`);
+            assert.ok(['know', 'apply', 'reason'].includes(q.level), q.id);
+            assert.ok([0, 1, 2, 3].includes(q.answer), q.id);
+            assert.ok(existsSync(new URL(`../public/bank-official/${q.img}`, import.meta.url)), q.img);
+        }
+    }
+});
