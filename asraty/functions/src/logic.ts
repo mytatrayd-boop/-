@@ -3,19 +3,30 @@
 // design/prototype.html (pk/dk/wk, tierOf, ranking, reportText, compDone).
 
 export type Period = "daily" | "weekly";
+/** Report / prize periods (day and week, plus month and year). */
+export type Span = "daily" | "weekly" | "monthly" | "yearly";
+export const SPANS: readonly Span[] = ["daily", "weekly", "monthly", "yearly"];
+/** How a task repeats: every day, week, month or year, or once only. */
+export type TaskRepeat = Span | "once";
 export type Scope = "each" | "family";
 export type Role = "owner" | "admin" | "member";
 
-export const PERM_KEYS = ["addMembers", "approve", "tasks", "report", "comps", "viewReports"] as const;
+export const PERM_KEYS = ["addMembers", "approve", "tasks", "report", "comps", "viewReports", "trip"] as const;
 export type PermKey = (typeof PERM_KEYS)[number];
 export type Perms = Partial<Record<PermKey, boolean>>;
 
+/** Portrait avatars (app/assets/avatars), then the older cartoon ones kept for existing accounts. */
 export const AVATAR_KEYS = [
-  "dad", "dad2", "grandpa", "mom", "mom2", "grandma",
-  "teen", "boy", "boy2", "girl", "girl2", "baby",
+  "dad_shemagh", "dad_bisht", "grandpa", "grandpa2", "grandpa3", "mom_black", "mom_brown", "mom_green",
+  "mom_purple", "woman_black", "grandma", "teen_shemagh", "teen_shemagh2", "teen_ghutra", "teen_ghutra2", "teen_hijab",
+  "teen_brown", "teen_black", "girl_rose", "boy_shemagh", "boy_ghutra", "boy_kuma", "girl_curly", "girl_pink",
+  "dad", "dad2", "mom", "mom2", "teen", "boy", "boy2", "girl", "girl2", "baby",
 ] as const;
 
-export const REWARD_EMOJI = ["🏞️", "🍔", "🎮", "🍦", "🎡", "🎁", "📚", "🏖️"];
+/** Avatar value of a member who uploaded their own photo (stored in people/{id}.photo). */
+export const PHOTO_AVATAR = "photo";
+
+export const REWARD_EMOJI = ["🎁", "🏆", "🏞️", "🍔", "🎮", "🍦", "🎡", "📚", "🏖️", "💵", "🚲", "📱"];
 
 // Asia/Riyadh is UTC+3 all year (no DST), so a fixed offset is exact.
 const RIYADH_OFFSET_MS = 3 * 3600 * 1000;
@@ -45,8 +56,10 @@ export function yearKey(ms: number): string {
   return "y" + dayKey(ms).slice(0, 4);
 }
 
-export function periodKey(period: Period, ms: number): string {
-  return period === "daily" ? dayKey(ms) : weekKey(ms);
+export function periodKey(period: TaskRepeat, ms: number): string {
+  // A one-time task has a single period: done once, it stays done.
+  if (period === "once") return "once";
+  return { daily: dayKey, weekly: weekKey, monthly: monthKey, yearly: yearKey }[period](ms);
 }
 
 export function can(person: { role: Role; perms?: Perms } | undefined, perm: PermKey): boolean {
@@ -105,13 +118,28 @@ export function arabicDate(ms: number): string {
   return `${AR_WEEKDAYS[d.getUTCDay()]}، ${d.getUTCDate()} ${AR_MONTHS[d.getUTCMonth()]}`;
 }
 
-/** Daily ranking report text (same format as the app preview). */
-export function reportText(rows: RankRow[], ms: number): string {
+export type ReportPeriod = Span;
+
+/** Title of a ranking report for its period. */
+export const REPORT_TITLE: Record<ReportPeriod, string> = {
+  daily: "ترتيب إنجاز اليوم",
+  weekly: "ترتيب إنجاز الأسبوع",
+  monthly: "ترتيب إنجاز الشهر",
+  yearly: "ترتيب إنجاز السنة",
+};
+
+/** Summary key a report period reads (the same keys addPoints writes). */
+export function reportKey(period: ReportPeriod, ms: number): string {
+  return { daily: dayKey, weekly: weekKey, monthly: monthKey, yearly: yearKey }[period](ms);
+}
+
+/** Ranking report text (same format as the app preview). */
+export function reportText(rows: RankRow[], ms: number, period: ReportPeriod = "daily"): string {
   if (!rows.length) return "لا يوجد أعضاء بعد.";
   const sorted = [...rows].sort((a, b) => b.points - a.points);
   const total = sorted.reduce((a, r) => a + r.points, 0);
   return (
-    `ترتيب إنجاز اليوم — ${arabicDate(ms)}\n\n` +
+    `${REPORT_TITLE[period]} — ${arabicDate(ms)}\n\n` +
     sorted.map((r, i) => `${medal(i)} ${r.name}: ${r.points} نقطة (${r.count} إنجاز)`).join("\n") +
     `\n\nمجموع الأسرة: ${total} نقطة`
   );
@@ -155,4 +183,40 @@ export function pushPayload(title: string, body: string, familyId: string) {
       payload: { aps: { sound: "default", "interruption-level": "active" as const } },
     },
   };
+}
+
+/**
+ * An old hand-made prayer task ("صلاة الفجر"...). Prayers are automatic now (one task at each prayer time),
+ * so when the family's prayer reminders are on these are hidden from members and cannot be completed.
+ * Mirrored in app/lib/core/logic.dart isManualPrayerTitle.
+ */
+export const isManualPrayerTitle = (title: unknown): boolean => /صلا[ةه]/.test(String(title ?? ""));
+
+// ---------- "أنا هنا" (family trip location sharing)
+
+/** Great-circle distance in metres between two coordinates. */
+export function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** A valid latitude/longitude pair, or null. */
+export function cleanCoord(lat: unknown, lng: unknown): { lat: number; lng: number } | null {
+  const la = Number(lat), lo = Number(lng);
+  if (lat === null || lat === "" || lng === null || lng === "") return null;
+  if (!Number.isFinite(la) || !Number.isFinite(lo) || Math.abs(la) > 90 || Math.abs(lo) > 180) return null;
+  return { lat: la, lng: lo };
+}
+
+/** A trip is live while it is active and its end time has not passed. */
+export function tripLive(trip: { active?: boolean; endsAt?: number } | undefined, now: number): boolean {
+  return !!trip?.active && typeof trip.endsAt === "number" && trip.endsAt > now;
+}
+
+/** May [actor] switch location sharing on/off for [target]? Kids (members) are managed by a trip admin. */
+export function canToggleShare(actor: { id: string; role: Role; perms?: Perms }, target: { id: string }): boolean {
+  if (can(actor, "trip")) return true;
+  return actor.id === target.id && actor.role !== "member";
 }

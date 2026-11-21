@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- التخطيط الحر: تقسيم أفقي (من اليمين) تُضاف إليه الأجزاء، جزءاً في صف أفقي بوزن 10. الوزن في الملف نفسه لا في غلاف، فلا يزيد التداخل
+     (النظام يرفض أكثر من ١٠ مستويات addView). مولّد. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fbox"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="10"
+    android:baselineAligned="false"
+    android:orientation="horizontal" />

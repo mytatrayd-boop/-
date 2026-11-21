@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- وصف الموسم (الميزة ٦، _PointsTile): «في الوسم:» ١٣ عريض ثم نقاط ١٣ تبدأ بـ«-»، من الأعلى. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile_box"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/tile_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/tile_bg"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="9dp"
+        android:paddingEnd="9dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp">
+
+        <TextView
+            android:id="@+id/points_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFB9B0A2"
+            android:textSize="10sp" android:textStyle="bold" />
+        <TextView
+            android:id="@+id/point0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFF4EFE6"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp" />
+        <TextView
+            android:id="@+id/point1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFF4EFE6"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp" />
+        <TextView
+            android:id="@+id/point2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFF4EFE6"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp" />
+        <TextView
+            android:id="@+id/point3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:includeFontPadding="false"
+            android:fallbackLineSpacing="false"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textColor="#FFF4EFE6"
+            android:textSize="10sp"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+</FrameLayout>

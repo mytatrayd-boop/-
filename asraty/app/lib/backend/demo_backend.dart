@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -11,10 +12,16 @@ final _rnd = Random();
 String _uid() => List.generate(8, (_) => 'abcdefghijklmnopqrstuvwxyz0123456789'[_rnd.nextInt(36)]).join();
 
 class _Log {
-  _Log(this.personId, this.delta, this.at);
+  _Log(this.personId, this.delta, this.at, [this.task = true, this.source]);
   final String personId;
   final int delta;
   final DateTime at;
+
+  /// The violation that took these points (they change the total but are not an achievement).
+  final String? source;
+
+  /// A done task (not a prayer or a competition), for the done / not-done report.
+  final bool task;
 }
 
 class _Code {
@@ -42,14 +49,23 @@ class DemoBackend extends Backend {
   final _tasks = <TaskItem>[];
   final _completions = <Completion>[];
   final _comps = <Competition>[];
-  final _tiers = <Tier>[];
-  final _delivered = <String>{};
+  final _prizes = <Prize>[];
+  final _passwords = <String, String>{};
+  final _pendingPassword = <String, String>{};
+  PrayerSettings? _prayer;
   final _notices = <Notice>[];
   final _goals = <Goal>[];
   final _log = <_Log>[];
+  final _violations = <Violation>[];
+  DateTime? _cycleStartedAt;
+  TripState? _trip;
+  final List<SavedPlace> _places = [];
+  final Map<String, MemberLoc> _locs = {};
   final _codes = <String, _Code>{};
   final _photos = <String, Uint8List>{};
   final _mail = <DemoMail>[];
+  /// Demo activation codes ("ASR-" + 8 letters/digits) and the device each was used on.
+  final _activations = <String, String>{};
   ({String familyName, String name})? _pendingSetup;
   String? _me;
 
@@ -62,6 +78,7 @@ class DemoBackend extends Backend {
   Person? get _meP => _me == null ? null : _people.where((p) => p.id == _me).firstOrNull;
 
   void _publish() {
+    _sweep();
     final me = _meP;
     if (me == null || _familyName == null) {
       emit(const AppState());
@@ -72,9 +89,10 @@ class DemoBackend extends Backend {
       final key = keyOf(now);
       final m = <String, PeriodSum>{};
       for (final l in _log) {
-        if (l.delta <= 0 || keyOf(l.at) != key) continue;
+        if (keyOf(l.at) != key) continue;
         final s = m[l.personId];
-        m[l.personId] = PeriodSum((s?.points ?? 0) + l.delta, (s?.count ?? 0) + 1);
+        final ach = l.source == null;
+        m[l.personId] = PeriodSum((s?.points ?? 0) + l.delta, (s?.count ?? 0) + (ach ? 1 : 0), (s?.tasks ?? 0) + (ach && l.task ? 1 : 0));
       }
       return m;
     }
@@ -87,14 +105,19 @@ class DemoBackend extends Backend {
         tasks: List.of(_tasks),
         completions: List.of(_completions),
         competitions: List.of(_comps),
-        tiers: List.of(_tiers),
+        prizes: List.of(_prizes),
+        prayer: _prayer,
         goals: _goals.where((g) => g.periodKey == honorKey(g.period, now)).toList(),
-        deliveries: Set.of(_delivered),
         notices: me.role == Role.member ? _notices.where((n) => n.to == 'all' || n.to == me.id).toList() : List.of(_notices),
         daily: sums(dayKey),
         weekly: sums(weekKey),
         monthly: sums(monthKey),
         yearly: sums(yearKey),
+        violations: me.role == Role.owner ? List.of(_violations) : const [],
+        cycleStartedAt: _cycleStartedAt,
+        trip: _trip,
+        locations: Map.of(_locs),
+        places: List.of(_places),
       ),
     ));
   }
@@ -117,8 +140,8 @@ class DemoBackend extends Backend {
     if (_mail.length > 40) _mail.removeLast();
   }
 
-  void _note(String to, String title, String body, {DateTime? expiresAt}) {
-    _notices.insert(0, Notice(id: _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now, expiresAt: expiresAt));
+  void _note(String to, String title, String body, {DateTime? expiresAt, String kind = 'notice', int points = 0, String? id, double? lat, double? lng}) {
+    _notices.insert(0, Notice(id: id ?? _uid(), to: to, title: title, body: body, from: _meP?.name ?? '', createdAt: _now, expiresAt: expiresAt, kind: kind, points: points, lat: lat, lng: lng));
   }
 
   /// What the server's removePersonData deletes along with the person.
@@ -126,11 +149,43 @@ class DemoBackend extends Backend {
     _people.remove(p);
     _tasks.removeWhere((t) => t.personId == p.id);
     _notices.removeWhere((n) => n.to == p.id);
-    _tiers.removeWhere((t) => t.personId == p.id);
     _goals.removeWhere((g) => g.personId == p.id);
+    _locs.remove(p.id);
   }
 
-  void _addLog(String personId, int delta) => _log.insert(0, _Log(personId, delta, _now));
+  void _addLog(String personId, int delta, {bool task = true}) => _log.insert(0, _Log(personId, delta, _now, task));
+
+  static const _spanWord = {Span.daily: 'اليوم', Span.weekly: 'الأسبوع', Span.monthly: 'الشهر', Span.yearly: 'السنة'};
+  final _reminded = <String>{};
+
+  /// Mirrors the server's sweepPrizes: a reminder an hour before, then the top member wins.
+  void _sweep() {
+    final now = _now;
+    for (final p in _prizes.where((p) => !p.awarded)) {
+      if (p.awardAt.isAfter(now)) {
+        if (p.awardAt.difference(now) <= const Duration(hours: 1) && _reminded.add(p.id)) {
+          _notices.insert(0, Notice(id: _uid(), to: 'all', title: '⏰ باقي ساعة على الجائزة',
+              body: '${p.emoji} ${p.name}: تُسلَّم بعد ساعة لصاحب أعلى نقاط ${_spanWord[p.period]}.', from: 'أسرتي', createdAt: now));
+        }
+        continue;
+      }
+      final key = spanKey(p.period, p.awardAt.subtract(const Duration(seconds: 1)));
+      final pts = <String, int>{};
+      for (final l in _log) {
+        if (l.delta > 0 && spanKey(p.period, l.at) == key) pts[l.personId] = (pts[l.personId] ?? 0) + l.delta;
+      }
+      final members = _people.where((x) => x.role == Role.member && (pts[x.id] ?? 0) > 0).toList()
+        ..sort((a, b) => (pts[b.id] ?? 0).compareTo(pts[a.id] ?? 0));
+      p.awarded = true;
+      final w = members.firstOrNull;
+      p.winnerId = w?.id;
+      p.winnerPoints = w == null ? 0 : pts[w.id]!;
+      _notices.insert(0, w == null
+          ? Notice(id: _uid(), to: 'all', title: '${p.emoji} ${p.name}', body: 'حان موعد الجائزة ولم يجمع أحد نقاطاً ${_spanWord[p.period]}.', from: 'أسرتي', createdAt: now, kind: 'prize')
+          : Notice(id: _uid(), to: 'all', title: '🎉 مبروك يا ${w.name}!',
+              body: 'فاز ${w.name} بجائزة ${p.emoji} ${p.name}\nبأعلى نقاط ${_spanWord[p.period]}: ${p.winnerPoints} نقطة. ألف مبروك!', from: 'أسرتي', createdAt: now, kind: 'prize'));
+    }
+  }
 
   // ---------------------------------------------------------------- seed
   void _seed() {
@@ -138,17 +193,17 @@ class DemoBackend extends Backend {
     _familyName = 'أسرة آل محمد';
     Person p(String name, String email, String avatar, Role role, bool active, [Map<Perm, bool>? perms]) =>
         Person(id: _uid(), name: name, email: email, role: role, avatar: avatar, active: active, perms: perms);
-    final o = p('أبو أصيل', 'abu@demo.sa', 'dad', Role.owner, true);
-    final a = p('أم أصيل', 'um@demo.sa', 'mom', Role.admin, true, {Perm.approve: true, Perm.tasks: true, Perm.viewReports: true});
-    final k1 = p('أصيل', 'aseel@demo.sa', 'boy', Role.member, true);
-    final k2 = p('لمى', 'lama@demo.sa', 'girl', Role.member, true);
-    final k3 = p('سلمان', 'salman@demo.sa', 'boy2', Role.member, false);
+    final o = p('أبو أصيل', 'abu@demo.sa', 'dad_shemagh', Role.owner, true);
+    final a = p('أم أصيل', 'um@demo.sa', 'mom_purple', Role.admin, true, {Perm.approve: true, Perm.tasks: true, Perm.viewReports: true});
+    final k1 = p('أصيل', 'aseel@demo.sa', 'boy_shemagh', Role.member, true);
+    final k2 = p('لمى', 'lama@demo.sa', 'girl_pink', Role.member, true);
+    final k3 = p('سلمان', 'salman@demo.sa', 'boy_ghutra', Role.member, false);
     _people.addAll([o, a, k1, k2, k3]);
     TaskItem t(String title, Person m, int pts, Period rep) => TaskItem(id: _uid(), title: title, personId: m.id, points: pts, repeat: rep);
     final t1 = t('ترتيب السرير', k1, 5, Period.daily), t2 = t('مراجعة الرياضيات', k1, 10, Period.daily);
     final t3 = t('قراءة صفحة قرآن', k2, 10, Period.daily), t4 = t('المساعدة في ترتيب المجلس', k2, 15, Period.weekly);
-    final t5 = t('ترتيب الألعاب', k3, 5, Period.daily);
-    _tasks.addAll([t1, t2, t3, t4, t5]);
+    final t5 = t('ترتيب الألعاب', k3, 5, Period.daily), t6 = t('تنظيف الدرج', k1, 30, Period.monthly);
+    _tasks.addAll([t1, t2, t3, t4, t5, t6]);
     Completion c(TaskItem t, Status st, Duration ago) => Completion(
         id: _uid(), taskId: t.id, personId: t.personId, title: t.title, points: t.points,
         periodKey: periodKey(t.repeat, now), status: st, createdAt: now.subtract(ago));
@@ -160,17 +215,18 @@ class DemoBackend extends Backend {
       return dayKey(x) == dayKey(now) ? x : now;
     }
     _log.addAll([_Log(k1.id, 5, ago(h * 2)), _Log(k1.id, 10, ago(h)), _Log(k2.id, 15, ago(const Duration(minutes: 30)))]);
-    _tiers.addAll([
-      Tier(id: _uid(), name: 'نزهة عائلية', emoji: '🏞️', threshold: 66, period: Period.weekly, scope: Scope.each),
-      Tier(id: _uid(), name: 'وجبة خارجية', emoji: '🍔', threshold: 30, period: Period.weekly, scope: Scope.each),
-      Tier(id: _uid(), name: 'ساعة ألعاب إضافية', emoji: '🎮', threshold: 15, period: Period.daily, scope: Scope.each),
-      Tier(id: _uid(), name: 'كتاب تختاره', emoji: '📚', threshold: 40, period: Period.weekly, scope: Scope.each, personId: k2.id),
-    ]);
+    // Today's prize, handed over at 9 pm Riyadh time (tomorrow's if that has passed).
+    final r = now.toUtc().add(const Duration(hours: 3));
+    var at = DateTime.utc(r.year, r.month, r.day, 21 - 3);
+    if (!at.isAfter(now)) at = at.add(const Duration(days: 1));
+    _prizes.add(Prize(id: _uid(), name: 'آيسكريم من اختيارك', emoji: '🍦', period: Span.daily, awardAt: at));
+    _prayer = const PrayerSettings(enabled: true, lat: 24.7136, lng: 46.6753, points: 5);
     _goals.addAll([
       Goal(id: _uid(), title: 'قراءة 12 كتاباً', target: 12, progress: 3, personId: 'family', period: Honor.yearly, periodKey: yearKey(now)),
       Goal(id: _uid(), title: 'حفظ سورة الملك', target: 30, progress: 18, personId: k1.id, period: Honor.monthly, periodKey: monthKey(now)),
     ]);
     _codes[k3.email] = _Code('482915', now);
+    _passwords['abu@demo.sa'] = '123456';
     _mail.add(DemoMail(k3.email, 'دعوة للانضمام إلى أسرة آل محمد',
         'أضافك أبو أصيل إلى أسرة آل محمد في تطبيق أسرتي.\nللربط: افتح التطبيق، اختر «أحد أفراد الأسرة»، أدخل بريدك ثم هذا الكود.\n\nكود التحقق: 482915\nصالح لمدة 30 دقيقة.', now));
     _me = o.id;
@@ -178,7 +234,8 @@ class DemoBackend extends Backend {
 
   // ---------------------------------------------------------------- auth
   @override
-  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, bool resend = false}) async {
+  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, String? password, bool resend = false}) async {
+    if (password != null && password.length < 6) _fail('weak-password');
     final u = _people.where((p) => p.email == email).firstOrNull;
     _pendingSetup = null;
     if (role != Role.member) {
@@ -194,7 +251,11 @@ class DemoBackend extends Backend {
       if (u == null) _fail('not-invited');
     }
     final c = _codes[email];
-    if (!resend && c != null && _now.difference(c.at).inMinutes < 30) return false;
+    if (password != null) {
+      _pendingPassword[email] = password;
+    } else if (!resend && c != null && _now.difference(c.at).inMinutes < 30) {
+      return false;
+    }
     _sendCode(email, 'كود الدخول إلى أسرتي',
         resend ? 'كود تحقق جديد لتسجيل الدخول إلى تطبيق أسرتي.' : 'هذا كود التحقق لتسجيل الدخول إلى تطبيق أسرتي.');
     _publish();
@@ -212,11 +273,13 @@ class DemoBackend extends Backend {
       _fail('bad-code');
     }
     _codes.remove(email);
+    final pw = _pendingPassword.remove(email);
+    if (pw != null) _passwords[email] = pw;
     var u = _people.where((p) => p.email == email).firstOrNull;
     if (u == null) {
       final s = _pendingSetup ?? _fail('bad-code');
       _familyName = s.familyName;
-      u = Person(id: _uid(), name: s.name, email: email, role: Role.owner, avatar: 'dad', active: true);
+      u = Person(id: _uid(), name: s.name, email: email, role: Role.owner, avatar: 'dad_shemagh', active: true);
       _people.add(u);
     }
     final first = !u.active;
@@ -224,6 +287,17 @@ class DemoBackend extends Backend {
     _me = u.id;
     _publish();
     return VerifyResult(first: first, familyName: _familyName!, name: u.name);
+  }
+
+  @override
+  Future<VerifyResult> login({required String email, required String password}) async {
+    final u = _people.where((p) => p.email == email).firstOrNull ?? _fail('bad-login');
+    final pw = _passwords[email] ?? _fail('no-password');
+    if (pw != password) _fail('bad-login');
+    u.active = true;
+    _me = u.id;
+    _publish();
+    return VerifyResult(first: false, familyName: _familyName!, name: u.name);
   }
 
   @override
@@ -248,6 +322,8 @@ class DemoBackend extends Backend {
   Future<void> addPerson({required Role role, required String name, required String email, required String avatar, Map<Perm, bool>? perms}) async {
     final me = role == Role.admin ? _need(null, true) : _need(Perm.addMembers);
     if (_people.any((p) => p.email == email)) _fail('email-taken');
+    // Mirrors the server: children are limited by the plan (adults are not counted).
+    if (role == Role.member && _people.where((p) => p.role == Role.member).length >= freeMembers) _fail('member-limit', {'limit': freeMembers});
     _people.add(Person(id: _uid(), name: name, email: email, role: role, avatar: avatar, active: false, perms: role == Role.admin ? perms : {}));
     final m = _invite(role, me.name);
     _sendCode(email, m.subject, m.intro);
@@ -280,11 +356,21 @@ class DemoBackend extends Backend {
   }
 
   @override
-  Future<void> setAvatar(String personId, String avatar) async {
+  Future<void> setAvatar(String personId, String avatar, {Uint8List? photo}) async {
     final me = _need();
     final p = _person(personId);
-    if (!(p.id == me.id || me.role == Role.owner || (p.role == Role.member && can(me, Perm.addMembers)))) _fail('no-permission');
-    p.avatar = avatar;
+    final manager = me.role == Role.owner || (p.role == Role.member && can(me, Perm.addMembers));
+    if (!(manager || (p.id == me.id && !(p.role == Role.member && p.avatarLocked)))) _fail('avatar-locked');
+    p
+      ..avatar = avatar
+      ..photo = photo == null ? null : base64Encode(photo);
+    _publish();
+  }
+
+  @override
+  Future<void> setAvatarLock(String personId, bool locked) async {
+    _need(Perm.addMembers);
+    _person(personId).avatarLocked = locked;
     _publish();
   }
 
@@ -321,14 +407,15 @@ class DemoBackend extends Backend {
   @override
   Future<void> completeTask(String taskId, {Uint8List? photo}) async {
     final me = _need();
-    final t = _tasks.where((t) => t.id == taskId && t.personId == me.id).firstOrNull ?? _fail('task-not-found');
-    final key = periodKey(t.repeat, _now);
+    final t = current.data?.tasksOf(me.id, _now).where((t) => t.id == taskId).firstOrNull ??
+        (taskId.startsWith('prayer-') ? _fail('prayer-over') : _fail('task-not-found'));
+    final key = t.prayer?.dayKey ?? periodKey(t.repeat, _now);
     if (_completions.any((c) => c.taskId == t.id && c.periodKey == key && c.status != Status.rejected)) _fail('already-done');
     final id = _uid();
     if (photo != null) _photos[id] = photo;
     _completions.add(Completion(
         id: id, taskId: t.id, personId: me.id, title: t.title, points: t.points, periodKey: key,
-        status: Status.pending, createdAt: _now, photoPath: photo != null ? id : null));
+        status: Status.pending, createdAt: _now, photoPath: photo != null ? id : null, prayer: t.prayer != null));
     _publish();
   }
 
@@ -340,7 +427,7 @@ class DemoBackend extends Backend {
     c.status = approve ? Status.approved : Status.rejected;
     _photos.remove(c.photoPath);
     c.photoPath = null;
-    if (approve) _addLog(c.personId, c.points);
+    if (approve) _addLog(c.personId, c.points, task: !c.prayer);
     _publish();
   }
 
@@ -388,30 +475,57 @@ class DemoBackend extends Backend {
     final e = c.entries[personId] ?? _fail('not-found');
     if (e.status != Status.pending) _fail('already-decided');
     e.status = approve ? Status.approved : Status.rejected;
-    if (approve) _addLog(personId, e.points);
+    if (approve) _addLog(personId, e.points, task: false);
     _publish();
   }
 
-  // ---------------------------------------------------------------- rewards
+  // ---------------------------------------------------------------- prizes
   @override
-  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope, String? personId}) async {
+  Future<void> addPrize({required String name, required String emoji, required Span period, required DateTime awardAt}) async {
     _need(null, true);
-    if (personId != null && _person(personId).role != Role.member) _fail('person-not-found');
-    _tiers.add(Tier(id: _uid(), name: name, emoji: emoji, threshold: threshold, period: period, scope: personId != null ? Scope.each : scope, personId: personId));
-    _publish();
-  }
-
-  @override
-  Future<void> deleteTier(String tierId) async {
-    _need(null, true);
-    _tiers.removeWhere((t) => t.id == tierId);
+    if (!awardAt.isAfter(_now)) _fail('bad-time');
+    _prizes
+      ..add(Prize(id: _uid(), name: name, emoji: emoji, period: period, awardAt: awardAt))
+      ..sort((a, b) => a.awardAt.compareTo(b.awardAt));
+    _note('all', '$emoji جائزة جديدة', '$name\nلصاحب أعلى نقاط ${_spanWord[period]}.');
     _publish();
   }
 
   @override
-  Future<void> deliver(String tierId, String who, String periodKey) async {
+  Future<void> deletePrize(String prizeId) async {
     _need(null, true);
-    _delivered.add('${tierId}_${who}_$periodKey');
+    _prizes.removeWhere((p) => p.id == prizeId);
+    _publish();
+  }
+
+  @override
+  Future<void> tick() async => _publish();
+
+  @override
+  Future<void> setPrayer({required double lat, required double lng, required int points, required bool enabled}) async {
+    _need(null, true);
+    _prayer = PrayerSettings(enabled: enabled, lat: lat, lng: lng, points: points, grace: _prayer?.grace ?? const {});
+    _publish();
+  }
+
+  @override
+  Future<void> setPrayerGrace(String target, Map<String, int?> grace) async {
+    _need(Perm.tasks);
+    final p = _prayer;
+    if (p == null) return;
+    final all = {for (final e in p.grace.entries) e.key: {...e.value}};
+    for (final e in grace.entries) {
+      final v = e.value;
+      if (v != null && (v < graceMin || v > graceMax)) throw StateError('bad-number');
+      final row = all.putIfAbsent(target, () => {});
+      v == null ? row.remove(e.key) : row[e.key] = v;
+      if (target == 'all') {
+        for (final m in all.entries.where((x) => x.key != 'all')) {
+          m.value.remove(e.key);
+        }
+      }
+    }
+    _prayer = p.copyWith(grace: all);
     _publish();
   }
 
@@ -427,6 +541,13 @@ class DemoBackend extends Backend {
   Future<void> deleteAlert(String noticeId) async {
     _need(null, true);
     _notices.removeWhere((n) => n.id == noticeId);
+    _publish();
+  }
+
+  @override
+  Future<void> deleteAllAlerts() async {
+    _need(null, true);
+    _notices.clear();
     _publish();
   }
 
@@ -459,13 +580,62 @@ class DemoBackend extends Backend {
   }
 
   @override
-  Future<void> sendReport() async {
+  Future<void> sendReport({Span span = Span.daily}) async {
     _need(Perm.report);
     final s = current.data!;
-    final r = s.ranking(Period.daily);
+    final r = s.rankingFor(span);
+    final title = const {
+      Span.daily: 'ترتيب إنجاز اليوم', Span.weekly: 'ترتيب إنجاز الأسبوع', Span.monthly: 'ترتيب إنجاز الشهر', Span.yearly: 'ترتيب إنجاز السنة',
+    }[span]!;
     final lines = [for (var i = 0; i < r.length; i++) '${medal(i)} ${r[i].person.name}: ${r[i].points} نقطة (${r[i].count} إنجاز)'];
-    _note('all', '🏆 ترتيب إنجاز اليوم', 'ترتيب إنجاز اليوم\n\n${lines.join('\n')}\n\nمجموع الأسرة: ${s.familyEarned(Period.daily)} نقطة');
+    _note('all', '🏆 $title', '$title\n\n${lines.join('\n')}\n\nمجموع الأسرة: ${s.familyEarnedFor(span)} نقطة');
     _publish();
+  }
+
+  @override
+  Future<void> newCycle() async {
+    _need(null, true);
+    _cycleStartedAt = _now;
+    _log.clear();
+    _violations.clear();
+    _notices.removeWhere((n) => n.kind == 'violation');
+    _note('all', '🔄 بدأت دورة تقييم جديدة', 'بدأت دورة تقييم جديدة، وكل النقاط تبدأ من الصفر.\nتستمر الدورة سنة، ثم تبدأ دورة جديدة.');
+    _publish();
+  }
+
+  @override
+  Future<void> addViolation({required String personId, required int points, String reason = ''}) async {
+    _need(null, true);
+    if (points < 1 || points > 1000) _fail('bad-number', {'min': 1, 'max': 1000});
+    final members = _people.where((p) => p.role == Role.member).toList();
+    final who = personId == 'all' ? members : members.where((m) => m.id == personId).toList();
+    if (who.isEmpty) _fail('person-not-found');
+    final id = _uid();
+    for (final m in who) {
+      _log.insert(0, _Log(m.id, -points, _now, false, id));
+      _note(m.id, 'مخالفة', reason.trim(), kind: 'violation', points: points, id: 'v-$id-${m.id}');
+    }
+    _violations.insert(0, Violation(id: id, personIds: [for (final m in who) m.id], all: personId == 'all', points: points, reason: reason.trim(), at: _now));
+    _publish();
+  }
+
+  @override
+  Future<void> deleteViolation(String violationId) async {
+    _need(null, true);
+    final v = _violations.where((v) => v.id == violationId).firstOrNull ?? _fail('not-found');
+    _violations.remove(v);
+    _log.removeWhere((l) => l.source == v.id);
+    _notices.removeWhere((n) => n.id.startsWith('v-${v.id}-'));
+    _publish();
+  }
+
+  @override
+  Future<void> redeemCode(String code, String deviceId) async {
+    final c = code.toUpperCase().replaceAll(RegExp(r'[\s-]'), '');
+    if (!RegExp(r'^ASR[A-Z0-9]{8}$').hasMatch(c)) _fail('code-invalid');
+    final used = _activations[c];
+    if (used != null && used != deviceId) _fail('code-used');
+    _activations[c] = deviceId;
   }
 
   @override
@@ -478,6 +648,126 @@ class DemoBackend extends Backend {
   }
 
   // ---------------------------------------------------------------- account
+  // ---------------------------------------------------------------- family trip (mirrors functions/src/api.ts)
+  TripState _live() {
+    final tr = _trip;
+    if (tr == null || !tr.liveAt(_now)) _fail('no-trip');
+    return tr;
+  }
+
+  TripState _with(TripState t, {MeetPoint? meet, bool clearMeet = false, Set<String>? paused}) => TripState(
+        active: t.active, startedBy: t.startedBy, endsAt: t.endsAt, farMeters: t.farMeters, meet: clearMeet ? null : (meet ?? t.meet), paused: paused ?? t.paused);
+
+  @override
+  Future<void> tripStart({int hours = 12, int farMeters = 300}) async {
+    final me = _need(Perm.trip);
+    _trip = TripState(active: true, startedBy: me.id, endsAt: _now.add(Duration(hours: hours.clamp(1, 72))), farMeters: farMeters.clamp(50, 5000));
+    _locs.clear();
+    _note('all', '📍 بدأت رحلة «أنا هنا»', '${me.name} فعّل مشاركة الأماكن لمدة $hours ساعة. افتح التطبيق واضغط «أنا هنا».', kind: 'trip');
+    _publish();
+  }
+
+  @override
+  Future<void> tripEnd() async {
+    _need(Perm.trip);
+    final tr = _trip;
+    if (tr != null) _trip = TripState(active: false, startedBy: tr.startedBy, endsAt: tr.endsAt, farMeters: tr.farMeters);
+    _locs.clear();
+    _note('all', '🏁 انتهت الرحلة', 'أُوقفت مشاركة الأماكن وحُذفت المواقع.', kind: 'trip');
+    _publish();
+  }
+
+  @override
+  Future<void> tripPing({required double lat, required double lng, required double acc}) async {
+    final me = _need();
+    final tr = _live();
+    if (tr.paused.contains(me.id)) return;
+    if (lat.abs() > 90 || lng.abs() > 180) _fail('bad-location');
+    _locs[me.id] = MemberLoc(personId: me.id, lat: lat, lng: lng, acc: acc.round().clamp(0, 100000), at: _now);
+    _publish();
+  }
+
+  @override
+  Future<void> tripShare(String personId, bool on) async {
+    final me = _need();
+    final tr = _live();
+    final p = _person(personId);
+    if (!canToggleShare(me, p)) _fail('no-permission');
+    final paused = {...tr.paused};
+    if (on) {
+      paused.remove(p.id);
+    } else {
+      paused.add(p.id);
+      _locs.remove(p.id);
+    }
+    _trip = _with(tr, paused: paused);
+    _publish();
+  }
+
+  @override
+  Future<void> tripMeet({required double lat, required double lng, required String label}) async {
+    final me = _need(Perm.trip);
+    final tr = _live();
+    if (lat.abs() > 90 || lng.abs() > 180) _fail('bad-location');
+    final l = label.trim().isEmpty ? 'نقطة التجمع' : label.trim();
+    _trip = _with(tr, meet: MeetPoint(lat: lat, lng: lng, label: l, by: me.name));
+    _note('all', '📌 نقطة تجمع', '${me.name} حدّد «$l». افتح «أنا هنا» واضغط «توجّه».', kind: 'trip');
+    _publish();
+  }
+
+  @override
+  Future<void> tripMeetClear() async {
+    _need(Perm.trip);
+    _trip = _with(_live(), clearMeet: true);
+    _publish();
+  }
+
+  void _sharePlace(Person me, SavedPlace p) {
+    final tr = _trip;
+    if (tr != null && tr.liveAt(_now)) _trip = _with(tr, meet: MeetPoint(lat: p.lat, lng: p.lng, label: p.label, by: me.name));
+    _note('all', '📌 ${p.label}', '${me.name} شارك مكاناً: «${p.label}»\nhttps://maps.google.com/?q=${p.lat.toStringAsFixed(6)},${p.lng.toStringAsFixed(6)}', kind: 'place', lat: p.lat, lng: p.lng);
+  }
+
+  @override
+  Future<void> placeSave({required double lat, required double lng, required String label, bool share = false}) async {
+    final me = _need(Perm.trip);
+    if (lat.abs() > 90 || lng.abs() > 180) _fail('bad-location');
+    if (_places.length >= 30) _fail('too-many-places', {'max': 30});
+    final p = SavedPlace(id: _uid(), label: label.trim().isEmpty ? 'مكان' : label.trim(), lat: lat, lng: lng, by: me.name, at: _now);
+    _places.insert(0, p);
+    if (share) _sharePlace(me, p);
+    _publish();
+  }
+
+  @override
+  Future<void> placeShare(String placeId) async {
+    final me = _need(Perm.trip);
+    final p = _places.where((x) => x.id == placeId).firstOrNull ?? _fail('not-found');
+    _sharePlace(me, p);
+    _publish();
+  }
+
+  @override
+  Future<void> placeDelete(String placeId) async {
+    _need(Perm.trip);
+    _places.removeWhere((x) => x.id == placeId);
+    _publish();
+  }
+
+  @override
+  Future<void> syncPlan() async {}
+
+  @override
+  Future<void> activatePlan(String receipt, {String platform = 'ios'}) async {}
+
+  @override
+  Future<void> tripSos({double? lat, double? lng}) async {
+    final me = _need();
+    final where = lat != null && lng != null ? '\nمكانه: https://maps.google.com/?q=${lat.toStringAsFixed(6)},${lng.toStringAsFixed(6)}' : '';
+    _note('all', '🆘 ${me.name} يحتاج مساعدة', '${me.name} ضغط زر الاستغاثة.$where', kind: 'sos', lat: lat, lng: lng);
+    _publish();
+  }
+
   @override
   Future<void> deleteAccount() async {
     final me = _need();
@@ -491,10 +781,12 @@ class DemoBackend extends Backend {
   Future<void> deleteFamily() async {
     _need(null, true);
     _familyName = null;
-    for (final l in [_people, _tasks, _completions, _comps, _tiers, _notices, _goals, _log]) {
+    for (final l in [_people, _tasks, _completions, _comps, _prizes, _notices, _goals, _log, _violations]) {
       l.clear();
     }
-    _delivered.clear();
+    _prayer = null;
+    _cycleStartedAt = null;
+    _passwords.clear();
     _codes.clear();
     _photos.clear();
     _me = null;

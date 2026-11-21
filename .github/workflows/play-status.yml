@@ -1,0 +1,27 @@
+name: Google Play status (read only)
+
+# يعرض مسارات Google Play لتطبيق من stores/apps.json (أو لكل التطبيقات): الإصدارات وأرقام النسخ وحالتها
+# ونسبة الطرح. للقراءة فقط (يفتح «تعديلاً» في Play ثم يحذفه دون تغيير شيء). التشغيل يدوي.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "اسم الحزمة (مثل sa.lamha.lamha)، أو فارغ لكل التطبيقات"
+        required: false
+        default: sa.lamha.lamha
+
+permissions:
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show tracks
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] || { echo "::error::Missing secret PLAY_SERVICE_ACCOUNT_JSON"; exit 1; }
+          python3 .github/scripts/play_status.py $PACKAGE

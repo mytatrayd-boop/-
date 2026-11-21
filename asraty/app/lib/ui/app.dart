@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../backend/access.dart';
 import '../backend/backend.dart';
+import '../backend/reminders.dart';
 import '../core/models.dart';
 import '../l10n/app_localizations.dart';
 import 'admin.dart';
 import 'common.dart';
 import 'member.dart';
 import 'onboarding.dart';
+import 'paywall.dart';
+import 'prizes.dart';
 import 'providers.dart';
+import 'report_page.dart';
 import 'settings.dart';
 import 'shell.dart';
 import 'theme.dart';
+import 'trip_page.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
@@ -47,7 +53,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/:page',
         builder: (context, state) => Shell(child: signedIn((c) => AdminPage(state.pathParameters['page']!, c))),
       ),
+      GoRoute(path: '/trip', builder: (context, state) => Shell(child: signedIn(TripPage.new))),
+      GoRoute(path: '/plan', builder: (context, state) => Shell(child: signedIn((c) => const PaywallPage(upgrade: true)))),
       GoRoute(path: '/settings', builder: (context, state) => Shell(child: signedIn(SettingsPage.new))),
+      GoRoute(path: '/report', builder: (context, state) => Shell(child: signedIn(ReportRoute.new))),
+      GoRoute(path: '/prizes', builder: (context, state) => Shell(child: signedIn(PrizesPage.new))),
     ],
   );
 });
@@ -60,11 +70,27 @@ class _Home extends ConsumerWidget {
     if (s.session != null && !s.signedIn) {
       return Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(children: [const CircularProgressIndicator(), const SizedBox(height: 12), Muted(context.t.loading)]),
+        child: Column(children: [
+          const PulseDot(size: 44),
+          const SizedBox(height: 14),
+          Muted(context.t.loadingFamily),
+        ]),
       );
     }
+    ref.watch(accessProvider);
     if (!s.signedIn) return const Onboarding();
+    // iPhone builds with the subscription gate: a code or a subscription is needed (never in the demo).
     final c = Ctx(s);
+    // Only the family admin pays (or uses a code); members and delegated admins join a paid family.
+    if (!ref.read(backendProvider).isDemo && c.me.role == Role.owner && Access.gated) {
+      final access = ref.read(accessProvider.notifier);
+      // An old family is marked "legacy" by the server first, so it never flashes the paywall.
+      if (c.data.plan == null && !access.synced && !access.hasCode) {
+        Future.microtask(access.syncOnce);
+        return Padding(padding: const EdgeInsets.all(32), child: Center(child: Column(children: [const PulseDot(size: 44), const SizedBox(height: 14), Muted(context.t.planChecking)])));
+      }
+      if (!access.ownerAllowed(c.data.plan, DateTime.now())) return const PaywallPage();
+    }
     return c.me.role == Role.member ? MemberHome(c) : AdminHome(c);
   }
 }
@@ -73,7 +99,27 @@ class AsratyApp extends ConsumerWidget {
   const AsratyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Phone reminders follow the family's prayer settings and prizes.
+    ref.listen(appStateProvider, (_, next) {
+      final st = next.value;
+      Reminders.sync(st?.signedIn == true ? st!.data : null, st?.signedIn == true ? st!.me : null);
+    });
+    // While the app is open, a prize's reminder or hand-over time asks the server
+    // to act right away (it also does so on any other request).
+    ref.listen(clockProvider, (prev, next) {
+      final a = prev?.value, b = next.value;
+      final d = ref.read(appStateProvider).value?.data;
+      if (a == null || b == null || d == null) return;
+      bool crossed(DateTime t) => t.isAfter(a) && !t.isAfter(b);
+      if (d.prizes.any((p) => !p.awarded && (crossed(p.awardAt) || crossed(p.awardAt.subtract(const Duration(hours: 1)))))) {
+        ref.read(backendProvider).tick().ignore();
+      }
+    });
+    return _app(ref);
+  }
+
+  Widget _app(WidgetRef ref) => MaterialApp.router(
         onGenerateTitle: (c) => L10n.of(c).appName,
         debugShowCheckedModeBanner: false,
         locale: const Locale('ar'),

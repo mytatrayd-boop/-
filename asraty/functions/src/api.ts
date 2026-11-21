@@ -3,10 +3,13 @@ import {
   FieldValue, Timestamp, Person, CallContext,
 } from "./db";
 import {
-  AVATAR_KEYS, EMAIL_RE, PermKey, Period, REWARD_EMOJI, Scope,
-  can, cleanPerms, cleanText, noticeTargets, competitionPoints, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
+  AVATAR_KEYS, EMAIL_RE, PHOTO_AVATAR, PermKey, Period, REWARD_EMOJI, SPANS, Scope, Span, TaskRepeat,
+  REPORT_TITLE, ReportPeriod, arabicDate, can, cleanPerms, cleanText, noticeTargets, reportKey, competitionPoints, isManualPrayerTitle, cleanCoord, canToggleShare, distanceMeters, tripLive, dayKey, monthKey, normalizeEmail, periodKey, reportText, weekKey, yearKey,
 } from "./logic";
 import { issueCode } from "./authCodes";
+import { FamilyPlan, FoundPlan, FREE_MEMBERS, LEGACY_BEFORE, bestFromReceipt, memberLimit, planFromPlay, verifyPlayPurchase, verifyReceipt } from "./plan";
+import { credRef } from "./passwords";
+import { GRACE_MAX, GRACE_MIN, PRAYERS, PRAYER_NAMES, PrayerSettings, currentPrayer, graceFor, parsePrayerTaskId, prayerPoints } from "./prayer";
 
 interface Ctx {
   fid: string;
@@ -24,15 +27,17 @@ const int = (v: unknown, min: number, max: number) => {
   return n;
 };
 /** Optional proof photo: base64 JPEG/PNG, resized on the device (~720px). */
-function checkPhoto(v: unknown): string {
+function checkPhoto(v: unknown, max = 900_000): string {
   const b64 = String(v);
-  if (b64.length > 900_000 || !/^[A-Za-z0-9+/=]+$/.test(b64)) fail("bad-photo", {}, "invalid-argument");
+  if (b64.length > max || !/^[A-Za-z0-9+/=]+$/.test(b64)) fail("bad-photo", {}, "invalid-argument");
   const head = Buffer.from(b64.slice(0, 16), "base64");
   const jpeg = head[0] === 0xff && head[1] === 0xd8, png = head[0] === 0x89 && head[1] === 0x50;
   if (!jpeg && !png) fail("bad-photo", {}, "invalid-argument");
   return b64;
 }
 const period = (v: unknown): Period => (v === "weekly" ? "weekly" : "daily");
+const span = (v: unknown): Span => SPANS.find((x) => x === v) ?? "daily";
+const repeatOf = (v: unknown): TaskRepeat => (v === "once" ? "once" : span(v));
 const scope = (v: unknown): Scope => (v === "family" ? "family" : "each");
 const avatar = (v: unknown) => ((AVATAR_KEYS as readonly string[]).includes(String(v)) ? String(v) : null);
 
@@ -46,11 +51,16 @@ async function person(fid: string, id: unknown): Promise<Person> {
   return { id: snap.id, ...(snap.data() as Omit<Person, "id">) };
 }
 
-async function notify(fid: string, to: string, title: string, body: string, sender: Person, expiresAt: Timestamp | null = null) {
+async function notify(fid: string, to: string, title: string, body: string, sender: { id: string; name: string }, expiresAt: Timestamp | null = null, kind = "notice", extra: Record<string, unknown> = {}) {
   const coll = fam(fid).collection("notifications");
   await coll.add({
-    to, title, body, from: sender.name, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt,
+    to, title, body, from: sender.name, createdAt: FieldValue.serverTimestamp(), readBy: [], expiresAt, kind, ...extra,
   });
+  await Promise.all([cleanNotices(fid), getPeople(fid).then((all) => push(fid, noticeTargets(all, to, sender.id), title, body))]);
+}
+
+async function cleanNotices(fid: string) {
+  const coll = fam(fid).collection("notifications");
   // Keep the list small (members load it without ordering): drop notices older than
   // 60 days, and timed alerts one day after they end (the app shows them as ended until then).
   const [old, ended] = await Promise.all([
@@ -63,24 +73,48 @@ async function notify(fid: string, to: string, title: string, body: string, send
     new Map(stale.map((d) => [d.id, d.ref])).forEach((ref) => b.delete(ref));
     await b.commit();
   }
-  const all = await getPeople(fid);
-  const targets = noticeTargets(all, to, sender.id);
-  await push(fid, targets, title, body);
 }
 
 /** Writes a ledger entry and bumps the per-person day/week summaries in one transaction. */
-function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: string, delta: number, reason: string, source: string) {
-  const now = Date.now();
+type PointKind = "task" | "prayer" | "comp" | "violation";
+
+/**
+ * `at` picks the periods the points land in (a cancelled violation gives its points
+ * back to the periods it was taken from). Violations change points but are not achievements.
+ */
+function addPoints(tx: FirebaseFirestore.Transaction, fid: string, personId: string, delta: number, reason: string, source: string, kind: PointKind, at = Date.now()) {
   const f = fam(fid);
   tx.set(f.collection("ledger").doc(), {
-    personId, delta, reason, source, createdAt: FieldValue.serverTimestamp(), dayKey: dayKey(now), weekKey: weekKey(now),
+    personId, delta, reason, source, createdAt: FieldValue.serverTimestamp(), dayKey: dayKey(at), weekKey: weekKey(at),
   });
   // Day and week drive rewards; month and year drive the honor board.
-  for (const key of [dayKey(now), weekKey(now), monthKey(now), yearKey(now)]) {
+  for (const key of [dayKey(at), weekKey(at), monthKey(at), yearKey(at)]) {
     tx.set(f.collection("summaries").doc(`${personId}_${key}`), {
-      personId, periodKey: key, points: FieldValue.increment(delta), count: FieldValue.increment(1),
+      personId, periodKey: key, points: FieldValue.increment(delta),
+      // Reports split done tasks from prayers and competitions.
+      ...(kind === "violation" ? {} : {
+        count: FieldValue.increment(1),
+        [kind === "task" ? "tasks" : kind === "prayer" ? "prayers" : "comps"]: FieldValue.increment(1),
+      }),
     }, { merge: true });
   }
+}
+
+/** Number of days an evaluation cycle lasts before the next one starts by itself. */
+export const CYCLE_DAYS = 365;
+
+/** Wipes every point (summaries, ledger, violations and their notices) and starts a new cycle now. */
+async function resetCycle(fid: string, sender: { id: string; name: string }) {
+  const f = fam(fid);
+  await f.update({ cycleStartedAt: Timestamp.now() });
+  await Promise.all(["summaries", "ledger", "violations"].map((c) => db.recursiveDelete(f.collection(c))));
+  const notes = await f.collection("notifications").where("kind", "==", "violation").get();
+  if (!notes.empty) {
+    const b = db.batch();
+    notes.docs.forEach((d) => b.delete(d.ref));
+    await b.commit();
+  }
+  await notify(fid, "all", "🔄 بدأت دورة تقييم جديدة", `بدأت دورة تقييم جديدة، وكل النقاط تبدأ من الصفر.\nتستمر الدورة سنة، ثم تبدأ دورة جديدة.`, sender);
 }
 
 const inviteMail = (p: { role: string }, famName: string, inviter: string, reminder = false) => {
@@ -97,6 +131,7 @@ async function removePersonData(fid: string, p: Person) {
   const batch = db.batch();
   batch.delete(f.collection("people").doc(p.id));
   batch.delete(db.collection("emailIndex").doc(p.email));
+  batch.delete(credRef(p.email));
   // Their tasks, the alerts sent to them, and their private rewards and goals go with them.
   const owned = await Promise.all([
     f.collection("tasks").where("personId", "==", p.id).get(),
@@ -104,12 +139,43 @@ async function removePersonData(fid: string, p: Person) {
     f.collection("tiers").where("personId", "==", p.id).get(),
     f.collection("goals").where("personId", "==", p.id).get(),
   ]);
+  batch.delete(f.collection("locations").doc(p.id));
   owned.forEach((q) => q.docs.forEach((d) => batch.delete(d.ref)));
   await batch.commit();
   const comps = await f.collection("completions").where("personId", "==", p.id).get();
   await Promise.all(comps.docs.filter((d) => d.data().hasPhoto).map((d) => proofRef(fid, d.id).delete()));
   await auth.revokeRefreshTokens(p.id).catch(() => undefined);
   await auth.deleteUser(p.id).catch(() => undefined);
+}
+
+const MAX_PLACES = 30;
+
+/** Tells the whole family about a place (with a map link); during a live trip it becomes the meeting point. */
+async function sharePlace(c: Ctx, place: { lat: number; lng: number; label: string }) {
+  const trip = (await tripRef(c.fid).get()).data();
+  if (tripLive(trip as { active?: boolean; endsAt?: number } | undefined, Date.now())) {
+    await tripRef(c.fid).update({ meet: { ...place, by: c.me.name, at: Date.now() } });
+  }
+  const link = `https://maps.google.com/?q=${place.lat.toFixed(6)},${place.lng.toFixed(6)}`;
+  await notify(c.fid, "all", `📌 ${place.label}`, `${c.me.name} شارك مكاناً: «${place.label}»\n${link}`, c.me, null, "place", { lat: place.lat, lng: place.lng });
+}
+
+const tripRef = (fid: string) => fam(fid).collection("trip").doc("state");
+
+/** The running trip, or an error: an expired trip is closed (and its locations wiped) on first touch. */
+async function liveTrip(fid: string): Promise<Record<string, unknown>> {
+  const trip = (await tripRef(fid).get()).data();
+  if (tripLive(trip as { active?: boolean; endsAt?: number } | undefined, Date.now())) return trip!;
+  if (trip?.active) await endTrip(fid);
+  return fail("no-trip", {}, "failed-precondition");
+}
+
+async function endTrip(fid: string) {
+  const locs = await fam(fid).collection("locations").get();
+  const b = db.batch();
+  locs.docs.forEach((d) => b.delete(d.ref));
+  b.set(tripRef(fid), { active: false, endedAt: Date.now(), meet: null, paused: {} }, { merge: true });
+  await b.commit();
 }
 
 const ops: Record<string, Handler> = {
@@ -120,19 +186,67 @@ const ops: Record<string, Handler> = {
     const name = str(c.data.name, 40);
     const email = normalizeEmail(c.data.email);
     if (!name || !EMAIL_RE.test(email)) fail("bad-name-email", {}, "invalid-argument");
+    // The plan limits the children (members); more need a bigger subscription tier.
+    if (role === "member") {
+      const [f, all] = await Promise.all([fam(c.fid).get(), getPeople(c.fid)]);
+      const limit = memberLimit(f.data()?.plan as FamilyPlan | undefined, Date.now());
+      if (all.filter((p) => p.role === "member").length >= limit) fail("member-limit", { limit });
+    }
     const ref = people(c.fid).doc();
     const idxRef = db.collection("emailIndex").doc(email);
     await db.runTransaction(async (tx) => {
       if ((await tx.get(idxRef)).exists) fail("email-taken");
       tx.set(ref, {
         name, email, role, perms: role === "admin" ? cleanPerms(c.data.perms) : {},
-        avatar: avatar(c.data.avatar) ?? (role === "admin" ? "mom" : "boy"),
+        avatar: avatar(c.data.avatar) ?? (role === "admin" ? "mom_black" : "boy_shemagh"), avatarLocked: false,
         status: "invited", authUid: null, fcmTokens: [], createdAt: FieldValue.serverTimestamp(),
       });
       tx.set(idxRef, { familyId: c.fid, personId: ref.id, role });
     });
     await issueCode(email, inviteMail({ role }, c.famName, c.me.name));
     return { personId: ref.id };
+  },
+
+  // ---------- the family's plan (subscription / legacy)
+  /** The owner's app asks for the plan at start: families made before the paywall are marked "legacy" (they keep using the app). */
+  async syncPlan(c) {
+    need(c, "owner");
+    const snap = await fam(c.fid).get();
+    let plan = snap.data()?.plan as FamilyPlan | undefined;
+    const created = (snap.data()?.createdAt as Timestamp | undefined)?.toMillis?.();
+    if (!plan && created !== undefined && created < LEGACY_BEFORE) {
+      plan = { source: "legacy", tier: FREE_MEMBERS, until: null };
+      await fam(c.fid).update({ plan });
+    }
+    return { plan: plan ?? null };
+  },
+
+  /** The owner bought or restored a subscription: the store's receipt / purchase token is checked here, never trusted from the phone. */
+  async activatePlan(c) {
+    need(c, "owner");
+    const receipt = String(c.data.receipt ?? "");
+    if (receipt.length < 20 || receipt.length > 3_000_000) fail("receipt-invalid", {}, "invalid-argument");
+    let found: FoundPlan | null;
+    if (c.data.platform === "android") {
+      const sa = process.env.GOOGLE_PLAY_SA_B64;
+      if (!sa) fail("plan-unavailable");
+      found = planFromPlay(receipt, await verifyPlayPurchase(receipt, Buffer.from(sa, "base64").toString("utf8")), Date.now());
+    } else {
+      const secret = process.env.APPLE_SHARED_SECRET;
+      if (!secret) fail("plan-unavailable");
+      found = bestFromReceipt(await verifyReceipt(receipt, secret), Date.now());
+    }
+    if (!found) fail("receipt-invalid", {}, "invalid-argument");
+    const { otid, ...plan } = found;
+    const ownerRef = db.collection("planOwners").doc(otid);
+    await db.runTransaction(async (tx) => {
+      const o = (await tx.get(ownerRef)).data();
+      // A subscription belongs to one family while it lasts.
+      if (o && o.fid !== c.fid && Number(o.until) > Date.now()) fail("plan-used");
+      tx.set(ownerRef, { fid: c.fid, until: plan.until });
+      tx.update(fam(c.fid), { plan });
+    });
+    return { plan };
   },
 
   async resendInvite(c) {
@@ -161,11 +275,27 @@ const ops: Record<string, Handler> = {
 
   async setAvatar(c) {
     const p = await person(c.fid, c.data.personId);
-    const ok = p.id === c.me.id || c.me.role === "owner" || (p.role === "member" && can(c.me, "addMembers"));
-    if (!ok) fail("no-permission", {}, "permission-denied");
+    const manager = c.me.role === "owner" || (p.role === "member" && can(c.me, "addMembers"));
+    // A member changes their own avatar unless a parent locked it.
+    const ok = manager || (p.id === c.me.id && !(p.role === "member" && p.avatarLocked));
+    if (!ok) fail("avatar-locked", {}, "permission-denied");
+    if (c.data.avatar === PHOTO_AVATAR) {
+      // Own photo from the device, resized to ~256px there.
+      const photo = checkPhoto(c.data.photo, 200_000);
+      await people(c.fid).doc(p.id).update({ avatar: PHOTO_AVATAR, photo });
+      return {};
+    }
     const a = avatar(c.data.avatar);
     if (!a) fail("bad-avatar", {}, "invalid-argument");
-    await people(c.fid).doc(p.id).update({ avatar: a });
+    await people(c.fid).doc(p.id).update({ avatar: a, photo: FieldValue.delete() });
+    return {};
+  },
+
+  async setAvatarLock(c) {
+    const p = await person(c.fid, c.data.personId);
+    if (p.role !== "member") fail("person-not-found", {}, "not-found");
+    need(c, "addMembers");
+    await people(c.fid).doc(p.id).update({ avatarLocked: c.data.locked === true });
     return {};
   },
 
@@ -188,7 +318,7 @@ const ops: Record<string, Handler> = {
     const title = str(c.data.title, 80);
     if (!title) fail("bad-title", {}, "invalid-argument");
     const points = int(c.data.points, 1, 1000);
-    const repeat = period(c.data.repeat);
+    const repeat = repeatOf(c.data.repeat);
     const all = await getPeople(c.fid);
     const members = all.filter((p) => p.role === "member");
     const who = c.data.personId === "all" ? members : members.filter((m) => m.id === c.data.personId);
@@ -213,7 +343,7 @@ const ops: Record<string, Handler> = {
     await ref.update({
       title: str(c.data.title, 80) || t.title,
       points: int(c.data.points ?? t.points, 1, 1000),
-      repeat: period(c.data.repeat ?? t.repeat),
+      repeat: repeatOf(c.data.repeat ?? t.repeat),
       personId: target.id,
     });
     return {};
@@ -227,18 +357,34 @@ const ops: Record<string, Handler> = {
 
   async completeTask(c) {
     if (c.me.role !== "member") fail("members-only", {}, "permission-denied");
-    const tRef = fam(c.fid).collection("tasks").doc(String(c.data.taskId ?? ""));
+    const taskId = String(c.data.taskId ?? "");
     const photo = c.data.photo ? checkPhoto(c.data.photo) : null;
+    const prayer = parsePrayerTaskId(taskId);
+    // Prayers are not stored tasks: one per member per prayer time, open until the next prayer comes in.
+    const prayerTask = prayer ? await (async () => {
+      if (prayer.personId !== c.me.id) fail("task-not-found", {}, "not-found");
+      const s = (await fam(c.fid).get()).data()?.prayer as PrayerSettings | undefined;
+      if (!s?.enabled) fail("task-not-found", {}, "not-found");
+      const now = Date.now();
+      const w = currentPrayer(s.lat, s.lng, now);
+      if (w.key !== prayer.key) fail("prayer-over");
+      return { title: `صلاة ${PRAYER_NAMES[w.key]}`, points: prayerPoints(w, s.points, now, graceFor(s, c.me.id, w.key)), pk: w.dayKey };
+    })() : null;
+    const familyPrayerOn = ((await fam(c.fid).get()).data()?.prayer as PrayerSettings | undefined)?.enabled === true;
+    const tRef = fam(c.fid).collection("tasks").doc(taskId);
     const created = await db.runTransaction(async (tx) => {
-      const t = (await tx.get(tRef)).data();
-      if (!t || t.personId !== c.me.id) fail("task-not-found", {}, "not-found");
-      const pk = periodKey(t.repeat, Date.now());
+      const stored = prayerTask ? null : (await tx.get(tRef)).data();
+      if (!prayerTask && (!stored || stored.personId !== c.me.id)) fail("task-not-found", {}, "not-found");
+      // Old hand-made prayer tasks are gone for members while the automatic prayers are on.
+      if (!prayerTask && isManualPrayerTitle(stored!.title) && familyPrayerOn) fail("task-not-found", {}, "not-found");
+      const t = (prayerTask ?? stored) as { title: string; points: number };
+      const pk = prayerTask ? prayerTask.pk : periodKey(stored!.repeat, Date.now());
       // One completion per task per period; a rejected one may be retried.
-      const cRef = fam(c.fid).collection("completions").doc(`${tRef.id}_${pk}`);
+      const cRef = fam(c.fid).collection("completions").doc(`${taskId}_${pk}`);
       const prev = (await tx.get(cRef)).data();
       if (prev && prev.status !== "rejected") fail("already-done");
       tx.set(cRef, {
-        taskId: tRef.id, personId: c.me.id, title: t.title, points: t.points, periodKey: pk,
+        taskId, personId: c.me.id, title: t.title, points: t.points, periodKey: pk, kind: prayerTask ? "prayer" : "task",
         status: "pending", hasPhoto: !!photo, createdAt: FieldValue.serverTimestamp(), decidedBy: null,
       });
       const proof = proofRef(c.fid, cRef.id);
@@ -247,7 +393,8 @@ const ops: Record<string, Handler> = {
       return t.title as string;
     });
     const all = await getPeople(c.fid);
-    await push(c.fid, all.filter((p) => can(p, "approve")), "مهمة بانتظار موافقتك", `${c.me.name}: ${created}`);
+    // Every parent hears of it (a delegated admin without the approve permission too).
+    await push(c.fid, all.filter((p) => p.role !== "member"), "مهمة بانتظار الموافقة", `${c.me.name}: ${created}`);
     return {};
   },
 
@@ -261,7 +408,7 @@ const ops: Record<string, Handler> = {
       if (d.status !== "pending") fail("already-decided");
       tx.update(ref, { status: approve ? "approved" : "rejected", decidedBy: c.me.id, decidedAt: FieldValue.serverTimestamp(), hasPhoto: false });
       if (d.hasPhoto) tx.delete(proofRef(c.fid, ref.id));
-      if (approve) addPoints(tx, c.fid, d.personId, d.points, `إنجاز: ${d.title}`, d.taskId);
+      if (approve) addPoints(tx, c.fid, d.personId, d.points, `إنجاز: ${d.title}`, d.taskId, d.kind === "prayer" ? "prayer" : "task");
       return d;
     });
     const kid = (await people(c.fid).doc(done.personId).get()).data() as Person | undefined;
@@ -312,7 +459,7 @@ const ops: Record<string, Handler> = {
       return { rank, points, title: comp.title as string };
     });
     const all = await getPeople(c.fid);
-    await push(c.fid, all.filter((p) => can(p, "approve")), "إنجاز في مسابقة", `${c.me.name}: ${r.title} (المركز ${r.rank})`);
+    await push(c.fid, all.filter((p) => p.role !== "member"), "إنجاز في مسابقة", `${c.me.name}: ${r.title} (المركز ${r.rank})`);
     return { rank: r.rank, points: r.points };
   },
 
@@ -327,7 +474,7 @@ const ops: Record<string, Handler> = {
       if (!comp || !entry) fail("not-found", {}, "not-found");
       if (entry.status !== "pending") fail("already-decided");
       tx.update(ref, { [`entries.${pid}.status`]: approve ? "approved" : "rejected" });
-      if (approve) addPoints(tx, c.fid, pid, entry.points, `مسابقة: ${comp.title} (المركز ${entry.rank})`, ref.id);
+      if (approve) addPoints(tx, c.fid, pid, entry.points, `مسابقة: ${comp.title} (المركز ${entry.rank})`, ref.id, "comp");
       return { ...entry, title: comp.title };
     });
     const kid = (await people(c.fid).doc(pid).get()).data() as Person | undefined;
@@ -368,6 +515,70 @@ const ops: Record<string, Handler> = {
     await fam(c.fid).collection("deliveries").doc(`${tierId}_${who}_${pk}`).set({
       tierId, who, periodKey: pk, deliveredBy: c.me.id, at: FieldValue.serverTimestamp(),
     });
+    return {};
+  },
+
+  // ---------- prizes: the top member of a period wins, handed over automatically at a set time
+  async addPrize(c) {
+    need(c, "owner");
+    const name = str(c.data.name, 60);
+    if (!name) fail("bad-title", {}, "invalid-argument");
+    const emoji = REWARD_EMOJI.includes(String(c.data.emoji)) ? String(c.data.emoji) : "🎁";
+    const p = span(c.data.period);
+    const awardAt = Number(c.data.awardAt);
+    if (!Number.isFinite(awardAt) || awardAt <= Date.now() || awardAt > Date.now() + 400 * 86400e3) fail("bad-time", {}, "invalid-argument");
+    await fam(c.fid).collection("prizes").add({
+      name, emoji, period: p, awardAt: Timestamp.fromMillis(awardAt), status: "scheduled", reminded: false,
+      winnerId: null, winnerPoints: 0, createdBy: c.me.id, createdAt: FieldValue.serverTimestamp(),
+    });
+    await notify(c.fid, "all", `${emoji} جائزة جديدة`,
+      `${name}\nلصاحب أعلى نقاط ${PERIOD_LABEL[p]}، وتُسلَّم ${arabicDateTime(awardAt)}.`, c.me);
+    return {};
+  },
+
+  async deletePrize(c) {
+    need(c, "owner");
+    await fam(c.fid).collection("prizes").doc(String(c.data.prizeId ?? "")).delete();
+    return {};
+  },
+
+  /** Called by the app when it opens and when a prize is due; every other call also sweeps. */
+  async tick() {
+    return {};
+  },
+
+  // ---------- prayer reminders: the owner sets the family's location once
+  async setPrayer(c) {
+    need(c, "owner");
+    const lat = Number(c.data.lat), lng = Number(c.data.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 66 || Math.abs(lng) > 180) fail("bad-location", {}, "invalid-argument");
+    const points = int(c.data.points ?? 5, 1, 1000);
+    // Field paths, so the grace periods («مهلة أداء الصلاة») survive a location or points change.
+    await fam(c.fid).update({ "prayer.enabled": c.data.enabled !== false, "prayer.lat": lat, "prayer.lng": lng, "prayer.points": points });
+    return {};
+  },
+
+  /**
+   * «مهلة أداء الصلاة»: minutes each prayer keeps its points, for every member (`target: "all"`, which
+   * also clears the members' own values for those prayers) or one member. `null` restores the default.
+   */
+  async setPrayerGrace(c) {
+    need(c, "tasks");
+    const target = String(c.data.target ?? "");
+    if (target !== "all") {
+      const p = await person(c.fid, target);
+      if (p.role !== "member") fail("person-not-found", {}, "not-found");
+    }
+    const grace = (c.data.grace ?? {}) as Record<string, unknown>;
+    const update: Record<string, unknown> = {};
+    const members = target === "all" ? (await getPeople(c.fid)).filter((p) => p.role === "member") : [];
+    for (const k of PRAYERS) {
+      if (!(k in grace)) continue;
+      const v = grace[k];
+      update[`prayer.grace.${target}.${k}`] = v === null ? FieldValue.delete() : int(v, GRACE_MIN, GRACE_MAX);
+      for (const m of members) update[`prayer.grace.${m.id}.${k}`] = FieldValue.delete();
+    }
+    if (Object.keys(update).length) await fam(c.fid).update(update);
     return {};
   },
 
@@ -418,6 +629,60 @@ const ops: Record<string, Handler> = {
     return {};
   },
 
+  // ---------- evaluation cycles: the owner wipes all points and starts over (and every year by itself)
+  async newCycle(c) {
+    need(c, "owner");
+    await resetCycle(c.fid, c.me);
+    return {};
+  },
+
+  // ---------- violations: the owner takes points from one member or everyone; cancelling gives them back
+  async addViolation(c) {
+    need(c, "owner");
+    const points = int(c.data.points, 1, 1000);
+    const reason = str(c.data.reason, 120);
+    const all = await getPeople(c.fid);
+    const members = all.filter((p) => p.role === "member");
+    const who = c.data.personId === "all" ? members : members.filter((m) => m.id === c.data.personId);
+    if (!who.length) fail("person-not-found", {}, "not-found");
+    const f = fam(c.fid);
+    const vRef = f.collection("violations").doc();
+    const at = Date.now();
+    // One pop-up notice per member, with their own name and the points taken.
+    const notes = who.map((m) => ({ ref: f.collection("notifications").doc(), m }));
+    await db.runTransaction(async (tx) => {
+      for (const m of who) addPoints(tx, c.fid, m.id, -points, `مخالفة${reason ? `: ${reason}` : ""}`, vRef.id, "violation", at);
+      tx.set(vRef, {
+        personIds: who.map((m) => m.id), all: c.data.personId === "all", points, reason, at: Timestamp.fromMillis(at),
+        noticeIds: notes.map((n) => n.ref.id), createdBy: c.me.id, createdAt: FieldValue.serverTimestamp(),
+      });
+      for (const n of notes) {
+        tx.set(n.ref, {
+          to: n.m.id, title: "مخالفة", body: reason, from: c.me.name, createdAt: FieldValue.serverTimestamp(), readBy: [],
+          expiresAt: null, kind: "violation", points, violationId: vRef.id,
+        });
+      }
+    });
+    await Promise.all(who.map((m) => push(c.fid, [m], "🔔 مخالفة", `${m.name}: −${points} نقطة${reason ? `\n${reason}` : ""}`)));
+    await cleanNotices(c.fid);
+    return { violationId: vRef.id };
+  },
+
+  async deleteViolation(c) {
+    need(c, "owner");
+    const f = fam(c.fid);
+    const ref = f.collection("violations").doc(String(c.data.violationId ?? ""));
+    await db.runTransaction(async (tx) => {
+      const v = (await tx.get(ref)).data();
+      if (!v) fail("not-found", {}, "not-found");
+      const at = (v.at as Timestamp).toMillis();
+      for (const pid of v.personIds as string[]) addPoints(tx, c.fid, pid, v.points, "إلغاء مخالفة", ref.id, "violation", at);
+      tx.delete(ref);
+      for (const id of (v.noticeIds ?? []) as string[]) tx.delete(f.collection("notifications").doc(id));
+    });
+    return {};
+  },
+
   // ---------- notifications & reports
   async sendAlert(c) {
     need(c, "owner");
@@ -437,18 +702,36 @@ const ops: Record<string, Handler> = {
     return {};
   },
 
+  /** Clears every alert of the family (the owner's list and the members' inboxes), in batches. */
+  async deleteAllAlerts(c) {
+    need(c, "owner");
+    const coll = fam(c.fid).collection("notifications");
+    let n = 0;
+    for (;;) {
+      const snap = await coll.limit(400).get();
+      if (snap.empty) break;
+      const b = db.batch();
+      snap.docs.forEach((d) => b.delete(d.ref));
+      await b.commit();
+      n += snap.size;
+    }
+    return { deleted: n };
+  },
+
   async sendReport(c) {
     need(c, "report");
     const all = await getPeople(c.fid);
     const members = all.filter((p) => p.role === "member");
-    const key = dayKey(Date.now());
+    const period: ReportPeriod = (["daily", "weekly", "monthly", "yearly"] as const).find((p) => p === c.data.period) ?? "daily";
+    const key = reportKey(period, Date.now());
     const sums = await fam(c.fid).collection("summaries").where("periodKey", "==", key).get();
     const byId = new Map(sums.docs.map((d) => [d.data().personId as string, d.data()]));
     const text = reportText(
       members.map((m) => ({ name: m.name, points: byId.get(m.id)?.points ?? 0, count: byId.get(m.id)?.count ?? 0 })),
       Date.now(),
+      period,
     );
-    await notify(c.fid, "all", "🏆 ترتيب إنجاز اليوم", text, c.me);
+    await notify(c.fid, "all", `🏆 ${REPORT_TITLE[period]}`, text, c.me);
     return {};
   },
 
@@ -467,6 +750,118 @@ const ops: Record<string, Handler> = {
     return { n };
   },
 
+  // ---------- "أنا هنا": family trip location sharing
+  // trip/state: {active, startedBy, startedAt, endsAt, farMeters, meet?, paused{personId:true}}
+  // locations/{personId}: {lat, lng, acc, at}. Locations exist only while a trip is live and are
+  // wiped when it ends, so nothing is kept after the trip.
+  async tripStart(c) {
+    need(c, "trip");
+    const hours = int(c.data.hours ?? 12, 1, 72);
+    const farMeters = int(c.data.farMeters ?? 300, 50, 5000);
+    const now = Date.now();
+    await tripRef(c.fid).set({
+      active: true, startedBy: c.me.id, startedAt: now, endsAt: now + hours * 3600e3, farMeters, meet: null, paused: {},
+    });
+    await notify(c.fid, "all", "📍 بدأت رحلة «أنا هنا»", `${c.me.name} فعّل مشاركة الأماكن لمدة ${hours} ساعة. افتح التطبيق واضغط «أنا هنا».`, c.me, null, "trip");
+    return {};
+  },
+
+  async tripEnd(c) {
+    need(c, "trip");
+    await endTrip(c.fid);
+    await notify(c.fid, "all", "🏁 انتهت الرحلة", "أُوقفت مشاركة الأماكن وحُذفت المواقع.", c.me, null, "trip");
+    return {};
+  },
+
+  async tripPing(c) {
+    const trip = await liveTrip(c.fid);
+    const paused = (trip.paused ?? {}) as Record<string, boolean>;
+    if (paused[c.me.id]) return { paused: true };
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    if (!pos) fail("bad-location", {}, "invalid-argument");
+    const acc = Math.min(100000, Math.max(0, Math.round(Number(c.data.acc) || 0)));
+    const now = Date.now();
+    const ref = fam(c.fid).collection("locations").doc(c.me.id);
+    const prev = (await ref.get()).data() as { farAt?: number } | undefined;
+    let farAt = prev?.farAt ?? 0;
+    // A child who drifts away from whoever started the trip alerts the trip admins (at most every 10 minutes).
+    if (c.me.role === "member" && trip.startedBy !== c.me.id && now - farAt > 600e3) {
+      const lead = (await fam(c.fid).collection("locations").doc(String(trip.startedBy)).get()).data() as { lat: number; lng: number; at: number } | undefined;
+      if (lead && now - lead.at < 600e3) {
+        const dist = distanceMeters(pos, lead);
+        if (dist > Number(trip.farMeters ?? 300)) {
+          farAt = now;
+          const all = await getPeople(c.fid);
+          await push(c.fid, all.filter((p) => can(p, "trip") && p.id !== c.me.id), "⚠️ ابتعد عن المجموعة", `${c.me.name} صار بعيداً عنكم نحو ${Math.round(dist)} متراً.`);
+        }
+      }
+    }
+    await ref.set({ lat: pos.lat, lng: pos.lng, acc, at: now, farAt });
+    return {};
+  },
+
+  async tripShare(c) {
+    await liveTrip(c.fid);
+    const p = await person(c.fid, c.data.personId);
+    if (!canToggleShare(c.me, p)) fail("no-permission", { perm: "trip" }, "permission-denied");
+    const on = c.data.on !== false;
+    await tripRef(c.fid).update({ [`paused.${p.id}`]: on ? FieldValue.delete() : true });
+    if (!on) await fam(c.fid).collection("locations").doc(p.id).delete();
+    return {};
+  },
+
+  async tripMeet(c) {
+    need(c, "trip");
+    await liveTrip(c.fid);
+    if (c.data.clear === true) {
+      await tripRef(c.fid).update({ meet: null });
+      return {};
+    }
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    if (!pos) fail("bad-location", {}, "invalid-argument");
+    const label = str(c.data.label, 60) || "نقطة التجمع";
+    await tripRef(c.fid).update({ meet: { ...pos, label, by: c.me.name, at: Date.now() } });
+    await notify(c.fid, "all", "📌 نقطة تجمع", `${c.me.name} حدّد «${label}». افتح «أنا هنا» واضغط «توجّه».`, c.me, null, "trip", { lat: pos.lat, lng: pos.lng });
+    return {};
+  },
+
+  // Saved places: a place the family picked on the map. Sharing one only sends a notification with a
+  // map link (and, while a trip is live, makes it the trip's meeting point). No trip is needed to save or share.
+  async placeSave(c) {
+    need(c, "trip");
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    if (!pos) fail("bad-location", {}, "invalid-argument");
+    const label = str(c.data.label, 60) || "مكان";
+    const coll = fam(c.fid).collection("places");
+    if ((await coll.limit(MAX_PLACES).get()).size >= MAX_PLACES) fail("too-many-places", { max: MAX_PLACES });
+    const ref = await coll.add({ ...pos, label, by: c.me.name, at: Date.now() });
+    if (c.data.share === true) await sharePlace(c, { ...pos, label });
+    return { placeId: ref.id };
+  },
+
+  async placeShare(c) {
+    need(c, "trip");
+    const snap = await fam(c.fid).collection("places").doc(String(c.data.placeId ?? "")).get();
+    const x = snap.data();
+    if (!x) fail("not-found", {}, "not-found");
+    await sharePlace(c, { lat: x.lat as number, lng: x.lng as number, label: x.label as string });
+    return {};
+  },
+
+  async placeDelete(c) {
+    need(c, "trip");
+    await fam(c.fid).collection("places").doc(String(c.data.placeId ?? "")).delete();
+    return {};
+  },
+
+  // The SOS works any time (no trip needed): safety comes first.
+  async tripSos(c) {
+    const pos = cleanCoord(c.data.lat, c.data.lng);
+    const where = pos ? `\nمكانه: https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}` : "";
+    await notify(c.fid, "all", `🆘 ${c.me.name} يحتاج مساعدة`, `${c.me.name} ضغط زر الاستغاثة.${where}`, c.me, null, "sos", pos ? { lat: pos.lat, lng: pos.lng } : {});
+    return {};
+  },
+
   // ---------- account & family deletion (App Store requirement)
   async deleteAccount(c) {
     if (c.me.role === "owner") fail("owner-must-delete-family");
@@ -477,7 +872,7 @@ const ops: Record<string, Handler> = {
   async deleteFamily(c) {
     need(c, "owner");
     const all = await getPeople(c.fid);
-    await Promise.all(all.map((p) => db.collection("emailIndex").doc(p.email).delete()));
+    await Promise.all(all.flatMap((p) => [db.collection("emailIndex").doc(p.email).delete(), credRef(p.email).delete()]));
     await deleteTree(fam(c.fid));
     await Promise.all(all.map(async (p) => {
       await auth.revokeRefreshTokens(p.id).catch(() => undefined);
@@ -499,5 +894,72 @@ export async function api(data: unknown, ctx: CallContext) {
   // A removed person keeps a valid token until it expires; the people doc is the source of truth.
   if (!meSnap.exists || !famSnap.exists) fail("removed", {}, "permission-denied");
   const me = { id: meSnap.id, ...(meSnap.data() as Omit<Person, "id">) };
-  return handler({ fid, me, famName: famSnap.data()!.name, data: d });
+  // A cycle lasts a year; the first call after that starts the next one.
+  const started = (famSnap.data()!.cycleStartedAt as Timestamp | undefined)?.toMillis();
+  if (started && Date.now() - started > CYCLE_DAYS * 86400e3) {
+    const first = await db.runTransaction(async (tx) => {
+      const cur = ((await tx.get(fam(fid))).data()?.cycleStartedAt as Timestamp | undefined)?.toMillis();
+      if (cur !== started) return false;
+      tx.update(fam(fid), { cycleStartedAt: Timestamp.now() });
+      return true;
+    });
+    if (first) await resetCycle(fid, { id: "", name: "أسرتي" }).catch((e) => console.warn("cycle", e));
+  }
+  // Prizes are handed over by whichever call comes first after their time (no scheduler on the free plan).
+  const [out] = await Promise.all([handler({ fid, me, famName: famSnap.data()!.name, data: d }), sweepPrizes(fid).catch((e) => console.warn("sweep", e))]);
+  return out;
+}
+
+const PERIOD_LABEL: Record<Span, string> = { daily: "اليوم", weekly: "الأسبوع", monthly: "الشهر", yearly: "السنة" };
+
+function arabicDateTime(ms: number): string {
+  const d = new Date(ms + 3 * 3600e3);
+  const h = d.getUTCHours(), m = d.getUTCMinutes();
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${arabicDate(ms)} الساعة ${h12}:${String(m).padStart(2, "0")} ${h < 12 ? "ص" : "م"}`;
+}
+
+/** Sends the one-hour reminder and hands due prizes to the top member of their period. */
+export async function sweepPrizes(fid: string, now = Date.now()) {
+  // Single-field query (no composite index needed); a family has few scheduled prizes.
+  const due = await fam(fid).collection("prizes").where("status", "==", "scheduled").get();
+  const system = { id: "", name: "أسرتي" };
+  for (const doc of due.docs) {
+    const p = doc.data();
+    const at = (p.awardAt as Timestamp).toMillis();
+    if (at > now + 3600e3) continue;
+    if (at > now) {
+      if (p.reminded) continue;
+      const first = await db.runTransaction(async (tx) => {
+        if ((await tx.get(doc.ref)).data()?.reminded) return false;
+        tx.update(doc.ref, { reminded: true });
+        return true;
+      });
+      if (first) await notify(fid, "all", "⏰ باقي ساعة على الجائزة", `${p.emoji} ${p.name}: تُسلَّم بعد ساعة لصاحب أعلى نقاط ${PERIOD_LABEL[p.period as Span]}.`, system);
+      continue;
+    }
+    // The period that ended at (or contains) the hand-over time.
+    const key = reportKey(p.period as ReportPeriod, at - 1000);
+    const [sums, all] = await Promise.all([fam(fid).collection("summaries").where("periodKey", "==", key).get(), getPeople(fid)]);
+    const members = new Map(all.filter((x) => x.role === "member").map((x) => [x.id, x]));
+    let winner: { id: string; points: number } | null = null;
+    for (const s of sums.docs) {
+      const x = s.data();
+      if (!members.has(x.personId) || !(x.points > 0)) continue;
+      if (!winner || x.points > winner.points) winner = { id: x.personId, points: x.points };
+    }
+    const awarded = await db.runTransaction(async (tx) => {
+      if ((await tx.get(doc.ref)).data()?.status !== "scheduled") return false;
+      tx.update(doc.ref, { status: "awarded", winnerId: winner?.id ?? null, winnerPoints: winner?.points ?? 0, awardedAt: FieldValue.serverTimestamp() });
+      return true;
+    });
+    if (!awarded) continue;
+    if (winner) {
+      const w = members.get(winner.id)!;
+      await notify(fid, "all", `🎉 مبروك يا ${w.name}!`,
+        `فاز ${w.name} بجائزة ${p.emoji} ${p.name}\nبأعلى نقاط ${PERIOD_LABEL[p.period as Span]}: ${winner.points} نقطة. ألف مبروك!`, system, null, "prize");
+    } else {
+      await notify(fid, "all", `${p.emoji} ${p.name}`, `حان موعد الجائزة ولم يجمع أحد نقاطاً ${PERIOD_LABEL[p.period as Span]}.`, system, null, "prize");
+    }
+  }
 }

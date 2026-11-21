@@ -222,7 +222,7 @@ abstract class L10n {
   /// No description provided for @back.
   ///
   /// In ar, this message translates to:
-  /// **'‹ رجوع'**
+  /// **'رجوع'**
   String get back;
 
   /// No description provided for @loginAdmin.
@@ -612,7 +612,7 @@ abstract class L10n {
   /// No description provided for @backToDashboard.
   ///
   /// In ar, this message translates to:
-  /// **'‹ لوحة المسؤول'**
+  /// **'لوحة المسؤول'**
   String get backToDashboard;
 
   /// No description provided for @tileApprovals.
@@ -666,7 +666,7 @@ abstract class L10n {
   /// No description provided for @tileRewards.
   ///
   /// In ar, this message translates to:
-  /// **'الجوائز والمكافآت'**
+  /// **'الجوائز'**
   String get tileRewards;
 
   /// No description provided for @permAddMembers.
@@ -969,6 +969,30 @@ abstract class L10n {
   /// **'إرسال لكل الأعضاء'**
   String get sendToAll;
 
+  /// No description provided for @reportTitleDaily.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز اليوم'**
+  String get reportTitleDaily;
+
+  /// No description provided for @reportTitleWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز الأسبوع'**
+  String get reportTitleWeekly;
+
+  /// No description provided for @reportTitleMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز الشهر'**
+  String get reportTitleMonthly;
+
+  /// No description provided for @reportTitleYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيب إنجاز السنة'**
+  String get reportTitleYearly;
+
   /// No description provided for @reportSent.
   ///
   /// In ar, this message translates to:
@@ -1040,6 +1064,12 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'أسبوعية'**
   String get weeklyF;
+
+  /// No description provided for @onceF.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة واحدة'**
+  String get onceF;
 
   /// No description provided for @points.
   ///
@@ -1470,7 +1500,7 @@ abstract class L10n {
   /// No description provided for @tabRewards.
   ///
   /// In ar, this message translates to:
-  /// **'المكافآت'**
+  /// **'الجوائز'**
   String get tabRewards;
 
   /// No description provided for @tabNotices.
@@ -1830,7 +1860,7 @@ abstract class L10n {
   /// Quick task suggestions, separated by |
   ///
   /// In ar, this message translates to:
-  /// **'ترتيب السرير|قراءة صفحة قرآن|صلاة الفجر في وقتها|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب'**
+  /// **'ترتيب السرير|قراءة صفحة قرآن|سقي الزرع|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب'**
   String get taskPresets;
 
   /// No description provided for @memberTaskMeta.
@@ -1842,7 +1872,7 @@ abstract class L10n {
   /// No description provided for @signOutConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكود التحقق.'**
+  /// **'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكلمة المرور.'**
   String get signOutConfirm;
 
   /// No description provided for @adminHaveAccount.
@@ -1866,7 +1896,7 @@ abstract class L10n {
   /// No description provided for @stayLoggedIn.
   ///
   /// In ar, this message translates to:
-  /// **'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج الكود مرة أخرى إلا إذا سجّلت الخروج.'**
+  /// **'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج كلمة المرور مرة أخرى إلا إذا سجّلت الخروج.'**
   String get stayLoggedIn;
 
   /// No description provided for @pasteCode.
@@ -2096,6 +2126,1386 @@ abstract class L10n {
   /// In ar, this message translates to:
   /// **'لـ{name}'**
   String goalForName(String name);
+
+  /// No description provided for @navHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرئيسية'**
+  String get navHome;
+
+  /// No description provided for @navReports.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقارير'**
+  String get navReports;
+
+  /// No description provided for @navPrizes.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجوائز'**
+  String get navPrizes;
+
+  /// No description provided for @monthlyF.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهرية'**
+  String get monthlyF;
+
+  /// No description provided for @yearlyF.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنوية'**
+  String get yearlyF;
+
+  /// No description provided for @thisMonthLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الشهر'**
+  String get thisMonthLabel;
+
+  /// No description provided for @thisYearLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه السنة'**
+  String get thisYearLabel;
+
+  /// No description provided for @avatarLockedNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثبّت مسؤول الأسرة رمزك، فلا يمكنك تغييره الآن.'**
+  String get avatarLockedNote;
+
+  /// No description provided for @uploadPhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'صورة من جهازي'**
+  String get uploadPhoto;
+
+  /// No description provided for @avatarLock.
+  ///
+  /// In ar, this message translates to:
+  /// **'السماح بتغيير الرمز والصورة'**
+  String get avatarLock;
+
+  /// No description provided for @avatarLockOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔒 الرمز مثبّت'**
+  String get avatarLockOn;
+
+  /// No description provided for @avatarLockOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنه تغيير رمزه'**
+  String get avatarLockOff;
+
+  /// No description provided for @doneTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنجزة'**
+  String get doneTasks;
+
+  /// No description provided for @notDoneTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير المنجزة'**
+  String get notDoneTasks;
+
+  /// No description provided for @pendingTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار الموافقة'**
+  String get pendingTasks;
+
+  /// No description provided for @noneHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا شيء هنا.'**
+  String get noneHere;
+
+  /// No description provided for @deleteTaskConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذه المهمة؟'**
+  String get deleteTaskConfirm;
+
+  /// No description provided for @doneCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'منجزة'**
+  String get doneCount;
+
+  /// No description provided for @notDoneCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير منجزة'**
+  String get notDoneCount;
+
+  /// No description provided for @myReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقريري'**
+  String get myReport;
+
+  /// No description provided for @myRanks.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيبي'**
+  String get myRanks;
+
+  /// No description provided for @pointsWord.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقطة'**
+  String get pointsWord;
+
+  /// No description provided for @prizesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجوائز'**
+  String get prizesTitle;
+
+  /// No description provided for @prizesSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد جائزة لفترة (يوم، أسبوع، شهر، سنة) وموعد تسليمها. تظهر للجميع، وقبل الموعد بساعة يصل تذكير، وعند الموعد يفوز بها صاحب أعلى نقاط في الفترة تلقائياً وتصل الجميع بطاقة تهنئة.'**
+  String get prizesSub;
+
+  /// No description provided for @prizeNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجائزة، مثل: رحلة إلى الحديقة'**
+  String get prizeNameHint;
+
+  /// No description provided for @prizeFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'لصاحب أعلى نقاط'**
+  String get prizeFor;
+
+  /// No description provided for @awardDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم التسليم'**
+  String get awardDate;
+
+  /// No description provided for @awardTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعة التسليم'**
+  String get awardTime;
+
+  /// No description provided for @addPrize.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة الجائزة'**
+  String get addPrize;
+
+  /// No description provided for @prizeAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيفت الجائزة ✓ وأُبلغ الجميع'**
+  String get prizeAdded;
+
+  /// No description provided for @noPrizes.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد جوائز بعد.'**
+  String get noPrizes;
+
+  /// No description provided for @noPrizesMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يحدد المسؤول جوائز بعد.'**
+  String get noPrizesMember;
+
+  /// No description provided for @upcomingPrizes.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجوائز القادمة'**
+  String get upcomingPrizes;
+
+  /// No description provided for @pastPrizes.
+  ///
+  /// In ar, this message translates to:
+  /// **'جوائز سُلّمت'**
+  String get pastPrizes;
+
+  /// No description provided for @noWinner.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يفز أحد'**
+  String get noWinner;
+
+  /// No description provided for @errPrizeInput.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم الجائزة واختر موعداً قادماً'**
+  String get errPrizeInput;
+
+  /// No description provided for @prizeLeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتصدّر الآن'**
+  String get prizeLeading;
+
+  /// No description provided for @prayerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير الصلاة'**
+  String get prayerTitle;
+
+  /// No description provided for @prayerSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد موقع الأسرة مرة واحدة من جوالك، فتُحسب مواقيت الصلاة تلقائياً (أم القرى) ويصل كل عضو تنبيه عند دخول الوقت، وتظهر الصلاة في مهامه. إن لم يؤدّها تظهر متأخرة، ومع دخول الصلاة التالية تختفي ونقاطها.'**
+  String get prayerSub;
+
+  /// No description provided for @useMyLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد موقعي الآن'**
+  String get useMyLocation;
+
+  /// No description provided for @locationSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظ الموقع ✓'**
+  String get locationSet;
+
+  /// No description provided for @prayerPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقاط كل صلاة'**
+  String get prayerPoints;
+
+  /// No description provided for @prayerEnabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل تذكير الصلاة'**
+  String get prayerEnabled;
+
+  /// No description provided for @prayerSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظت إعدادات الصلاة ✓'**
+  String get prayerSaved;
+
+  /// No description provided for @errLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحديد الموقع. فعّل خدمة الموقع واسمح للتطبيق باستخدامها.'**
+  String get errLocation;
+
+  /// No description provided for @prayerTimesToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواقيت اليوم'**
+  String get prayerTimesToday;
+
+  /// No description provided for @prayerNotSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُحدَّد الموقع بعد.'**
+  String get prayerNotSet;
+
+  /// No description provided for @prayerLate.
+  ///
+  /// In ar, this message translates to:
+  /// **'متأخرة، بلا نقاط'**
+  String get prayerLate;
+
+  /// No description provided for @prayerNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقتها الآن'**
+  String get prayerNow;
+
+  /// No description provided for @prayerReminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'حان الآن وقت صلاة'**
+  String get prayerReminder;
+
+  /// No description provided for @loginTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الدخول'**
+  String get loginTitle;
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل جديد'**
+  String get registerTitle;
+
+  /// No description provided for @accountType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الحساب'**
+  String get accountType;
+
+  /// No description provided for @password.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور'**
+  String get password;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور (٦ أحرف على الأقل)'**
+  String get passwordHint;
+
+  /// No description provided for @rememberMe.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكّرني'**
+  String get rememberMe;
+
+  /// No description provided for @loginBtn.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخول'**
+  String get loginBtn;
+
+  /// No description provided for @registerBtn.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل ومتابعة'**
+  String get registerBtn;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيت كلمة المرور؟'**
+  String get forgotPassword;
+
+  /// No description provided for @noAccountRegister.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس لديك حساب؟ تسجيل جديد'**
+  String get noAccountRegister;
+
+  /// No description provided for @haveAccountLogin.
+  ///
+  /// In ar, this message translates to:
+  /// **'لديك حساب؟ تسجيل الدخول'**
+  String get haveAccountLogin;
+
+  /// No description provided for @resetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين كلمة مرور'**
+  String get resetTitle;
+
+  /// No description provided for @resetSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب بريدك وكلمة مرور جديدة، ثم أدخل الكود الذي يصلك.'**
+  String get resetSub;
+
+  /// No description provided for @registerSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسؤول الأسرة ينشئ أسرته، وفرد الأسرة يسجّل ببريده الذي أضافه به المسؤول. بعدها يصلك كود للتحقق.'**
+  String get registerSub;
+
+  /// No description provided for @accountFromDevice.
+  ///
+  /// In ar, this message translates to:
+  /// **'البريد المحفوظ في الجهاز'**
+  String get accountFromDevice;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار كلمة المرور'**
+  String get showPassword;
+
+  /// No description provided for @errBadLogin.
+  ///
+  /// In ar, this message translates to:
+  /// **'البريد أو كلمة المرور غير صحيحة.'**
+  String get errBadLogin;
+
+  /// No description provided for @errNoPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الحساب لم تُعيَّن له كلمة مرور بعد. اضغط «نسيت كلمة المرور؟» لتعيينها بكود يصل بريدك.'**
+  String get errNoPassword;
+
+  /// No description provided for @errWeakPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور قصيرة: ٦ أحرف على الأقل.'**
+  String get errWeakPassword;
+
+  /// No description provided for @errPrayerOver.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهى وقت هذه الصلاة.'**
+  String get errPrayerOver;
+
+  /// No description provided for @errAvatarLocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثبّت مسؤول الأسرة رمز هذا العضو.'**
+  String get errAvatarLocked;
+
+  /// No description provided for @errBadTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر موعداً قادماً.'**
+  String get errBadTime;
+
+  /// No description provided for @prayerLocationSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقع الأسرة محفوظ'**
+  String get prayerLocationSaved;
+
+  /// No description provided for @errLocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولات كثيرة. حاول بعد {minutes} دقيقة.'**
+  String errLocked(String minutes);
+
+  /// No description provided for @rankIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'{place} من {total}'**
+  String rankIn(String place, String total);
+
+  /// No description provided for @prizeMeta.
+  ///
+  /// In ar, this message translates to:
+  /// **'{period} · تُسلَّم {when}'**
+  String prizeMeta(String period, String when);
+
+  /// No description provided for @prizeWonBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاز بها {name} ({points} نقطة)'**
+  String prizeWonBy(String name, String points);
+
+  /// No description provided for @reportDoneLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} منجزة · {notDone} غير منجزة'**
+  String reportDoneLine(String done, String notDone);
+
+  /// No description provided for @prizeForPeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'لصاحب أعلى نقاط {period}'**
+  String prizeForPeriod(String period);
+
+  /// No description provided for @pickMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر العضو'**
+  String get pickMember;
+
+  /// No description provided for @demoLoginNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'في الوضع التجريبي: البريد abu@demo.sa وكلمة المرور 123456، أو استخدم «نسيت كلمة المرور؟» واضغط 📧 في الأعلى لرؤية الكود.'**
+  String get demoLoginNote;
+
+  /// No description provided for @prizesSubMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'يفوز بالجائزة صاحب أعلى نقاط في فترتها، وتُسلَّم تلقائياً في موعدها.'**
+  String get prizesSubMember;
+
+  /// No description provided for @spanShortDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get spanShortDay;
+
+  /// No description provided for @spanShortWeek.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوع'**
+  String get spanShortWeek;
+
+  /// No description provided for @spanShortMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر'**
+  String get spanShortMonth;
+
+  /// No description provided for @spanShortYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة'**
+  String get spanShortYear;
+
+  /// No description provided for @tileViolations.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخالفات'**
+  String get tileViolations;
+
+  /// No description provided for @violationsIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخصم نقاطاً من عضو أو من كل الأعضاء. تصلهم المخالفة رسالة منبثقة، وحذفها من القائمة يعيد النقاط.'**
+  String get violationsIntro;
+
+  /// No description provided for @violationPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد النقاط المخصومة'**
+  String get violationPoints;
+
+  /// No description provided for @violationReasonHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب المخالفة (اختياري)'**
+  String get violationReasonHint;
+
+  /// No description provided for @addViolation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل المخالفة'**
+  String get addViolation;
+
+  /// No description provided for @errViolationPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب عدد نقاط من 1 إلى 1000'**
+  String get errViolationPoints;
+
+  /// No description provided for @violationAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'سُجّلت المخالفة وخُصمت النقاط'**
+  String get violationAdded;
+
+  /// No description provided for @violationsList.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخالفات المسجلة'**
+  String get violationsList;
+
+  /// No description provided for @noViolations.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مخالفات'**
+  String get noViolations;
+
+  /// No description provided for @deleteViolation.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المخالفة وإعادة النقاط'**
+  String get deleteViolation;
+
+  /// No description provided for @deleteViolationQ.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذه المخالفة؟ ستعود النقاط المخصومة لأصحابها.'**
+  String get deleteViolationQ;
+
+  /// No description provided for @violationDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت المخالفة وأُعيدت النقاط'**
+  String get violationDeleted;
+
+  /// No description provided for @violationWord.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخالفة'**
+  String get violationWord;
+
+  /// No description provided for @tileCycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورة تقييم جديدة'**
+  String get tileCycle;
+
+  /// No description provided for @cycleNever.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تبدأ دورة تقييم بعد'**
+  String get cycleNever;
+
+  /// No description provided for @cycleSince.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدورة الحالية بدأت في {date}'**
+  String cycleSince(String date);
+
+  /// No description provided for @cycleIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء دورة تقييم جديدة يمحو نقاط كل الأعضاء ليبدأ الجميع من الصفر. تستمر الدورة سنة ثم تبدأ دورة جديدة تلقائياً.'**
+  String get cycleIntro;
+
+  /// No description provided for @startCycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء دورة تقييم جديدة'**
+  String get startCycle;
+
+  /// No description provided for @cycleWarn1.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه: هذه الخاصية ستمحو كل النقاط الحالية.'**
+  String get cycleWarn1;
+
+  /// No description provided for @cycleWarn2Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه'**
+  String get cycleWarn2Title;
+
+  /// No description provided for @cycleWarn2.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل دورة تقييم تستمر سنة ثم تبدأ دورة جديدة.'**
+  String get cycleWarn2;
+
+  /// No description provided for @cycleAsk.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد بدء دورة تقييم جديدة؟'**
+  String get cycleAsk;
+
+  /// No description provided for @cycleStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأت دورة تقييم جديدة'**
+  String get cycleStarted;
+
+  /// No description provided for @next.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get next;
+
+  /// No description provided for @confirmWord.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get confirmWord;
+
+  /// No description provided for @ok.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسناً'**
+  String get ok;
+
+  /// No description provided for @noticesNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات جديدة'**
+  String get noticesNew;
+
+  /// No description provided for @showAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الكل'**
+  String get showAll;
+
+  /// No description provided for @useCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدم كود للتسجيل'**
+  String get useCode;
+
+  /// No description provided for @activationTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود التفعيل'**
+  String get activationTitle;
+
+  /// No description provided for @activationSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب كود التفعيل الذي وصلك. يعمل الكود على جهاز واحد فقط، وبعد تفعيله لا يمكن استخدامه على جهاز آخر.'**
+  String get activationSub;
+
+  /// No description provided for @activationHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ASR-XXXX-XXXX'**
+  String get activationHint;
+
+  /// No description provided for @activate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get activate;
+
+  /// No description provided for @activated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفعيل التطبيق على هذا الجهاز مجاناً'**
+  String get activated;
+
+  /// No description provided for @activatedNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ التطبيق مفعّل على هذا الجهاز بكود تفعيل'**
+  String get activatedNote;
+
+  /// No description provided for @errActivationInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود غير صحيح. تأكد من كتابته كما وصلك.'**
+  String get errActivationInvalid;
+
+  /// No description provided for @errActivationUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود مستخدم على جهاز آخر، ولا يعمل إلا عليه.'**
+  String get errActivationUsed;
+
+  /// No description provided for @paywallTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في أسرتي'**
+  String get paywallTitle;
+
+  /// No description provided for @paywallSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب التطبيق مجاناً ٧ أيام، ثم اختر الاشتراك المناسب. يمكنك الإلغاء في أي وقت من إعدادات حسابك في App Store.'**
+  String get paywallSub;
+
+  /// No description provided for @planMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك شهري'**
+  String get planMonthly;
+
+  /// No description provided for @planYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك سنوي'**
+  String get planYearly;
+
+  /// No description provided for @planMonthlyPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'١٠ ريال شهرياً'**
+  String get planMonthlyPrice;
+
+  /// No description provided for @planYearlyPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'٧٥ ريال سنوياً'**
+  String get planYearlyPrice;
+
+  /// No description provided for @startTrial.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ ٧ أيام مجاناً'**
+  String get startTrial;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة الاشتراك'**
+  String get restorePurchases;
+
+  /// No description provided for @storeUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتجر غير متاح الآن. حاول لاحقاً.'**
+  String get storeUnavailable;
+
+  /// No description provided for @paywallFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'إذا فعّلت «المشاركة العائلية» في Apple، يستفيد أفراد أسرتك من اشتراكك.'**
+  String get paywallFamily;
+
+  /// No description provided for @orUseCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو لديك كود تفعيل؟'**
+  String get orUseCode;
+
+  /// No description provided for @permTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة رحلة «أنا هنا»'**
+  String get permTrip;
+
+  /// No description provided for @tileTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا هنا'**
+  String get tileTrip;
+
+  /// No description provided for @tripTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا هنا'**
+  String get tripTitle;
+
+  /// No description provided for @tripSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'شاركوا أماكنكم أثناء السفر لتعرفوا أين بعضكم. تعمل أثناء الرحلة فقط، وتُحذف المواقع عند انتهائها.'**
+  String get tripSub;
+
+  /// No description provided for @tripPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكانك يظهر لأفراد أسرتك فقط، وأثناء الرحلة فقط. تستمر المشاركة والجوال مقفل (تظهر إشارة على الجوال أثناءها). في الزحام وداخل المباني قد تقلّ الدقة، وتظهر دائرة حول المكان توضّحها.'**
+  String get tripPrivacy;
+
+  /// No description provided for @tripNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلة الآن.'**
+  String get tripNone;
+
+  /// No description provided for @tripNoneMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلة الآن. يبدأها مسؤول الأسرة عند السفر.'**
+  String get tripNoneMember;
+
+  /// No description provided for @tripStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء رحلة'**
+  String get tripStart;
+
+  /// No description provided for @tripEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء الرحلة'**
+  String get tripEnd;
+
+  /// No description provided for @tripEndConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستتوقف المشاركة وتُحذف كل المواقع. متأكد؟'**
+  String get tripEndConfirm;
+
+  /// No description provided for @tripHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدة الرحلة (بالساعات)'**
+  String get tripHours;
+
+  /// No description provided for @tripFar.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه الابتعاد (بالأمتار)'**
+  String get tripFar;
+
+  /// No description provided for @tripFarHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ننبّهك إذا ابتعد طفل عنك أكثر من هذه المسافة.'**
+  String get tripFarHint;
+
+  /// No description provided for @tripEndsAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي الرحلة'**
+  String get tripEndsAt;
+
+  /// No description provided for @tripImHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا هنا'**
+  String get tripImHere;
+
+  /// No description provided for @tripSharingOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت تشارك مكانك مع أسرتك'**
+  String get tripSharingOn;
+
+  /// No description provided for @tripSharingOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط ليعرف أهلك مكانك'**
+  String get tripSharingOff;
+
+  /// No description provided for @tripStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف المشاركة'**
+  String get tripStop;
+
+  /// No description provided for @tripPausedByAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'أوقف المسؤول مشاركتك'**
+  String get tripPausedByAdmin;
+
+  /// No description provided for @tripSos.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعدوني'**
+  String get tripSos;
+
+  /// No description provided for @tripSosConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال استغاثة لكل أفراد الأسرة مع مكانك؟'**
+  String get tripSosConfirm;
+
+  /// No description provided for @tripSosSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get tripSosSend;
+
+  /// No description provided for @tripSosSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُرسلت الاستغاثة لأسرتك ✓'**
+  String get tripSosSent;
+
+  /// No description provided for @tripFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'أين أسرتي'**
+  String get tripFamily;
+
+  /// No description provided for @tripMeet.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقطة التجمع'**
+  String get tripMeet;
+
+  /// No description provided for @tripMeetSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد نقطة تجمع هنا'**
+  String get tripMeetSet;
+
+  /// No description provided for @tripMeetClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء النقطة'**
+  String get tripMeetClear;
+
+  /// No description provided for @tripMeetGo.
+  ///
+  /// In ar, this message translates to:
+  /// **'توجّه'**
+  String get tripMeetGo;
+
+  /// No description provided for @tripMeetLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم النقطة (مثال: بوابة ٣)'**
+  String get tripMeetLabel;
+
+  /// No description provided for @tripOpenMap.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الخريطة'**
+  String get tripOpenMap;
+
+  /// No description provided for @tripNotSharing.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يشارك مكانه بعد'**
+  String get tripNotSharing;
+
+  /// No description provided for @tripPaused.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشاركة متوقفة'**
+  String get tripPaused;
+
+  /// No description provided for @tripPause.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف مشاركته'**
+  String get tripPause;
+
+  /// No description provided for @tripResume.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيل مشاركته'**
+  String get tripResume;
+
+  /// No description provided for @tripNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'الآن'**
+  String get tripNow;
+
+  /// No description provided for @tripAgo.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل'**
+  String get tripAgo;
+
+  /// No description provided for @tripMinute.
+  ///
+  /// In ar, this message translates to:
+  /// **'دقيقة'**
+  String get tripMinute;
+
+  /// No description provided for @tripHour.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعة'**
+  String get tripHour;
+
+  /// No description provided for @tripAway.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبعد'**
+  String get tripAway;
+
+  /// No description provided for @tripMeters.
+  ///
+  /// In ar, this message translates to:
+  /// **'م'**
+  String get tripMeters;
+
+  /// No description provided for @tripKm.
+  ///
+  /// In ar, this message translates to:
+  /// **'كم'**
+  String get tripKm;
+
+  /// No description provided for @tripDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج إذن الموقع لتعمل الميزة. فعّله من إعدادات الجوال.'**
+  String get tripDenied;
+
+  /// No description provided for @tripNoTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلة جارية الآن.'**
+  String get tripNoTrip;
+
+  /// No description provided for @tripStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأت الرحلة ✓'**
+  String get tripStarted;
+
+  /// No description provided for @tripEnded.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت الرحلة ✓'**
+  String get tripEnded;
+
+  /// No description provided for @tripMeetSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُدّدت نقطة التجمع ✓'**
+  String get tripMeetSaved;
+
+  /// No description provided for @tripStaleHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تحديث قديم، قد يكون المكان تغيّر'**
+  String get tripStaleHint;
+
+  /// No description provided for @tripPickPlace.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مكانًا على الخريطة'**
+  String get tripPickPlace;
+
+  /// No description provided for @placePickTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد المكان'**
+  String get placePickTitle;
+
+  /// No description provided for @placeTapHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'المس الخريطة لتحديد المكان'**
+  String get placeTapHint;
+
+  /// No description provided for @placeMyLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقعي'**
+  String get placeMyLocation;
+
+  /// No description provided for @placeSaveShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ وإرسال للأسرة'**
+  String get placeSaveShare;
+
+  /// No description provided for @placeSaveOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ فقط'**
+  String get placeSaveOnly;
+
+  /// No description provided for @placeSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظ المكان ✓'**
+  String get placeSaved;
+
+  /// No description provided for @placeShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُرسل المكان للأسرة ✓'**
+  String get placeShared;
+
+  /// No description provided for @placesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأماكن المحفوظة'**
+  String get placesTitle;
+
+  /// No description provided for @placesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحفظ أماكن بعد.'**
+  String get placesEmpty;
+
+  /// No description provided for @placesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مكانًا على الخريطة واحفظه، وأرسله لأسرتك كتنبيه فيه رابط الخريطة.'**
+  String get placesHint;
+
+  /// No description provided for @placeSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسل للأسرة'**
+  String get placeSend;
+
+  /// No description provided for @placeDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get placeDelete;
+
+  /// No description provided for @placeDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف هذا المكان المحفوظ؟'**
+  String get placeDeleteConfirm;
+
+  /// No description provided for @placeNeedPick.
+  ///
+  /// In ar, this message translates to:
+  /// **'المس الخريطة أولاً لتحديد المكان.'**
+  String get placeNeedPick;
+
+  /// No description provided for @placeTooMany.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد الأقصى من الأماكن المحفوظة (٣٠). احذف مكانًا ثم أعد المحاولة.'**
+  String get placeTooMany;
+
+  /// No description provided for @tripAccuracy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدقة ±'**
+  String get tripAccuracy;
+
+  /// No description provided for @tripApprox.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجوال يعطي هذا التطبيق موقعًا تقريبيًا فقط (قد يبعد كيلومترًا عن مكانك الحقيقي). فعّل «الموقع الدقيق» لأسرتي من إعدادات الجوال حتى تعمل الميزة بدقة، خصوصًا في الزحام.'**
+  String get tripApprox;
+
+  /// No description provided for @tripOpenSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الإعدادات'**
+  String get tripOpenSettings;
+
+  /// No description provided for @placeEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get placeEdit;
+
+  /// No description provided for @tripSendFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إرسال مكانك، سنعيد المحاولة'**
+  String get tripSendFailed;
+
+  /// No description provided for @waitingServer.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الاتصال بالخادم… قد يستغرق بضع ثوانٍ'**
+  String get waitingServer;
+
+  /// No description provided for @loadingFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحميل بيانات أسرتك…'**
+  String get loadingFamily;
+
+  /// No description provided for @tripNotifOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعارات التطبيق مغلقة. يحتاج «أنا هنا» إلى إشعار دائم ليستمر والشاشة مقفلة، فعّل الإشعارات لأسرتي من إعدادات الجوال ثم أعد المحاولة.'**
+  String get tripNotifOff;
+
+  /// No description provided for @prayerLegacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهمة صلاة يدوية قديمة، مخفية عن الفرد (الصلاة آلية). احذفها'**
+  String get prayerLegacy;
+
+  /// No description provided for @planTierUpTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'حتى'**
+  String get planTierUpTo;
+
+  /// No description provided for @planTierMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفراد'**
+  String get planTierMembers;
+
+  /// No description provided for @memberLimitReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى الحد الأقصى لأفراد أسرتك'**
+  String get memberLimitReached;
+
+  /// No description provided for @upgradePlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترقية الاشتراك'**
+  String get upgradePlan;
+
+  /// No description provided for @planChecking.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحقق من اشتراكك…'**
+  String get planChecking;
+
+  /// No description provided for @errMemberLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى الحد الأقصى لأفراد الأسرة. رقِّ اشتراكك لإضافة المزيد.'**
+  String get errMemberLimit;
+
+  /// No description provided for @errPlanUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من الاشتراك الآن. حاول لاحقاً، فلن يضيع اشتراكك.'**
+  String get errPlanUnavailable;
+
+  /// No description provided for @errPlanUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الاشتراك مرتبط بأسرة أخرى.'**
+  String get errPlanUsed;
+
+  /// No description provided for @errReceiptInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من إيصال الاشتراك.'**
+  String get errReceiptInvalid;
+
+  /// No description provided for @deleteAllAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف جميع التنبيهات'**
+  String get deleteAllAlerts;
+
+  /// No description provided for @deleteAllAlertsConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُحذف كل تنبيه أُرسل للأسرة ويختفي من عند الجميع. هل أنت متأكد؟'**
+  String get deleteAllAlertsConfirm;
+
+  /// No description provided for @allAlertsDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت جميع التنبيهات ✓'**
+  String get allAlertsDeleted;
+
+  /// No description provided for @alertsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد التنبيهات المحفوظة: {n}'**
+  String alertsCount(int n);
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'مهلة أداء الصلاة'**
+  String get graceTitle;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة بعد الأذان التي تُحتسب فيها نقاط كل صلاة. بعدها تبقى الصلاة مهمة بلا نقاط حتى الصلاة التالية.'**
+  String get graceSub;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'لمن؟'**
+  String get graceTarget;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الأفراد'**
+  String get graceAll;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'افتراضي'**
+  String get graceDefault;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'إنقاص'**
+  String get graceLess;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة'**
+  String get graceMore;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظت مهلة الصلاة ✓'**
+  String get graceSaved;
+
+  /// مهلة أداء الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل «تذكير الصلاة» وحدّد موقع الأسرة أولاً.'**
+  String get graceNeedPrayer;
+
+  /// دقائق المهلة
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} د'**
+  String graceMinutes(int n);
+
+  /// وقت انتهاء النقاط
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي النقاط {time}'**
+  String graceEndsAt(String time);
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

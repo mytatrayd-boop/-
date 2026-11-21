@@ -2,6 +2,7 @@ import { createHash, randomInt } from "node:crypto";
 import { db, fam, people, auth, fail, FieldValue, Timestamp, CallContext } from "./db";
 import { AVATAR_KEYS, EMAIL_RE, cleanText, normalizeEmail } from "./logic";
 import { codeMailText, sendMail } from "./mail";
+import { checkPassword, credRef, hashPassword } from "./passwords";
 
 export const CODE_TTL_MS = 30 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
@@ -20,6 +21,7 @@ export async function issueCode(
   email: string,
   mail: { subject: string; intro: string },
   setup?: { familyName: string; name: string },
+  password?: { salt: string; hash: string },
 ): Promise<void> {
   const ref = db.collection("authCodes").doc(codeDocId(email));
   const code = String(randomInt(100000, 1000000));
@@ -44,6 +46,8 @@ export async function issueCode(
       windowStart: Timestamp.fromMillis(windowStart),
       sentAt: Timestamp.fromMillis(now),
       setup: setup ?? null,
+      // Applied by verifyCode once the code proves the email (sign-up or password reset).
+      password: password ?? null,
     });
   });
   await sendMail({ to: email, subject: mail.subject, text: codeMailText(mail.intro, code) });
@@ -55,6 +59,8 @@ interface RequestCodeData {
   familyName?: string;
   name?: string;
   resend?: boolean;
+  /** Sign-up / reset: the password to set once the code is verified. */
+  password?: string;
 }
 
 export async function requestCode(data: unknown, _ctx: CallContext) {
@@ -81,9 +87,12 @@ export async function requestCode(data: unknown, _ctx: CallContext) {
     if (!idx) fail("not-invited");
   }
 
+  const password = d.password !== undefined ? hashPassword(checkPassword(d.password)) : undefined;
+
   // If an unexpired code exists (e.g. from the invite email), don't replace it
-  // unless the user explicitly asked to resend — matches the prototype.
-  if (!d.resend && !setup) {
+  // unless the user explicitly asked to resend — matches the prototype. A new
+  // password always needs a fresh code that carries it.
+  if (!d.resend && !setup && !password) {
     const cur = (await db.collection("authCodes").doc(codeDocId(email)).get()).data();
     if (cur && cur.expiresAt.toMillis() > Date.now() && cur.attempts < 5) return { sent: false, alreadySent: true };
   }
@@ -91,7 +100,7 @@ export async function requestCode(data: unknown, _ctx: CallContext) {
   await issueCode(email, {
     subject: "كود الدخول إلى أسرتي",
     intro: d.resend ? "كود تحقق جديد لتسجيل الدخول إلى تطبيق أسرتي." : "هذا كود التحقق لتسجيل الدخول إلى تطبيق أسرتي.",
-  }, setup);
+  }, setup, password);
   return { sent: true };
 }
 
@@ -103,7 +112,7 @@ export async function verifyCode(data: unknown, _ctx: CallContext) {
 
   const ref = db.collection("authCodes").doc(codeDocId(email));
   // Check and count the attempt atomically so parallel guesses can't exceed the limit.
-  const setup = await db.runTransaction(async (tx) => {
+  const verified = await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const c = snap.data();
     if (!c) fail("bad-code");
@@ -114,9 +123,10 @@ export async function verifyCode(data: unknown, _ctx: CallContext) {
       return "wrong" as const;
     }
     tx.delete(ref);
-    return (c.setup ?? null) as { familyName: string; name: string } | null;
+    return { setup: (c.setup ?? null) as { familyName: string; name: string } | null, password: c.password ?? null };
   });
-  if (setup === "wrong") fail("bad-code");
+  if (verified === "wrong") fail("bad-code");
+  const { setup } = verified;
 
   const idxRef = db.collection("emailIndex").doc(email);
   let familyId: string, personId: string, role: string, first = false;
@@ -129,7 +139,7 @@ export async function verifyCode(data: unknown, _ctx: CallContext) {
       if ((await tx.get(idxRef)).exists) fail("already-registered");
       tx.set(famRef, { name: setup.familyName, ownerPersonId: pRef.id, createdAt: FieldValue.serverTimestamp() });
       tx.set(pRef, {
-        name: setup.name, email, role: "owner", perms: {}, avatar: AVATAR_KEYS[0],
+        name: setup.name, email, role: "owner", perms: {}, avatar: AVATAR_KEYS[0], avatarLocked: false,
         status: "active", authUid: pRef.id, fcmTokens: [], createdAt: FieldValue.serverTimestamp(),
       });
       tx.set(idxRef, { familyId: famRef.id, personId: pRef.id, role: "owner" });
@@ -151,6 +161,7 @@ export async function verifyCode(data: unknown, _ctx: CallContext) {
     await pRef.update({ status: "active", authUid: personId });
   }
 
+  if (verified.password) await credRef(email).set({ ...verified.password, fails: 0, lockUntil: null, updatedAt: FieldValue.serverTimestamp() });
   const famName = ((await fam(familyId).get()).data()?.name as string) ?? "";
   const token = await auth.createCustomToken(personId, { familyId, role });
   return { token, familyId, personId, role, familyName: famName, first };

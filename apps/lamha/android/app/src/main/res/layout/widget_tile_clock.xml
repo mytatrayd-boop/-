@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- مربع الساعة واليوم (الميزة ٥، بلا صندوق كالصف العلوي السابق): الساعة ٥٢ و«ص/م» بجانبها،
+     وتحتها مباشرة اليوم ١٨ عريض بلون التمييز. الأحجام والألوان من LamhaWidgetReceiver. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile_box"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <!-- ساعة النظام بلا «ص/م»: تتحدث كل دقيقة دون تحديث الودجت. -->
+            <TextClock
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:id="@+id/clock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="h:mm"
+                android:format24Hour="h:mm"
+                android:includeFontPadding="false"
+                android:fallbackLineSpacing="false"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="52sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:gravity="right|center_vertical"
+                android:textDirection="rtl"
+                android:id="@+id/am_pm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:maxLines="1"
+                android:shadowColor="#66000000"
+                android:shadowRadius="3"
+                android:textColor="#FFF4EFE6"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:gravity="right|center_vertical"
+            android:textDirection="rtl"
+            android:id="@+id/weekday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-4dp"
+            android:includeFontPadding="false"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:shadowColor="#66000000"
+            android:shadowRadius="3"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</FrameLayout>

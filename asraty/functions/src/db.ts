@@ -42,6 +42,8 @@ export interface Person {
   role: Role;
   perms: Perms;
   avatar: string;
+  /** A parent locked this member's avatar (they can't change it themselves). */
+  avatarLocked?: boolean;
   status: "invited" | "active";
   authUid?: string | null;
   fcmTokens?: string[];

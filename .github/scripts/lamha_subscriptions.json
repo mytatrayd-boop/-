@@ -1,0 +1,11 @@
+{
+  "bundleId": "sa.lamha.lamha",
+  "group": "Lamha",
+  "groupDisplayName": "لمحة",
+  "products": [
+    {"productId": "lamha.monthly", "referenceName": "Lamha Monthly", "period": "ONE_MONTH", "level": 1, "price": "10.00",
+     "name": "لمحة — شهري", "description": "اشتراك شهري لاستخدام ودجت لمحة وكل ميزاتها."},
+    {"productId": "lamha.yearly", "referenceName": "Lamha Yearly", "period": "ONE_YEAR", "level": 1, "price": "100.00",
+     "name": "لمحة — سنوي", "description": "اشتراك سنوي لاستخدام ودجت لمحة وكل ميزاتها."}
+  ]
+}

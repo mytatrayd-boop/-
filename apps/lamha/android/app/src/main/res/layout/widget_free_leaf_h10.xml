@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- التخطيط الحر: مربع واحد بحشوة ٤dp (تباعد ٨dp كالمعاينة)، جزءاً في صف أفقي بوزن 10. الوزن في الملف نفسه لا في غلاف، فلا يزيد التداخل
+     (النظام يرفض أكثر من ١٠ مستويات addView). مولّد. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fleaf"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="10"
+    android:padding="4dp" />

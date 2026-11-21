@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Tajawal', 'Noto Color Emoji', sans-serif; background: #e9e6e1; padding: 32px; color: #f4efe6; }
+  .row { display: flex; gap: 48px; justify-content: center; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .label { color: #2b2620; font-weight: 700; font-size: 20px; direction: rtl; }
+  .sub { color: #6b6257; font-size: 14px; direction: rtl; }
+
+  /* الجوال: 393×852 نقطة (آيفون 15 برو) */
+  .phone { width: 393px; height: 852px; border-radius: 56px; border: 10px solid #1b1b1d; overflow: hidden; position: relative;
+           background: radial-gradient(120% 80% at 70% 10%, #3a3128 0%, #16130f 55%, #0b0a09 100%); box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .android.phone { border-radius: 40px; background: radial-gradient(120% 80% at 30% 10%, #2f3a33 0%, #131714 55%, #0a0b0a 100%); }
+  .status { height: 54px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; font-size: 15px; font-weight: 700; direction: ltr; color: #fff; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 120px; height: 34px; background: #000; border-radius: 20px; }
+  .android .island { width: 14px; height: 14px; top: 16px; border-radius: 50%; }
+
+  /* الودجت الكبيرة: 338×354 نقطة في آيفون — نفس المقاس تقريباً 4×4 في أندرويد */
+  .widget { width: 338px; height: 354px; margin: 10px auto 0; border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+            background: linear-gradient(160deg, rgba(58,50,40,.92), rgba(24,21,18,.95)); border: 1px solid rgba(255,255,255,.08); }
+  .android .widget { border-radius: 28px; background: linear-gradient(160deg, rgba(46,58,50,.95), rgba(20,24,21,.96)); }
+
+  .head { height: 34px; display: flex; justify-content: space-between; align-items: center; }
+  .city { font-size: 21px; font-weight: 800; }
+  .wx { font-size: 12.5px; color: #cfc6b8; }
+  .time { font-size: 26px; font-weight: 800; letter-spacing: .5px; }
+  .time small { font-size: 15px; font-weight: 700; margin-right: 3px; }
+
+  .hero { height: 100px; border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+          background: linear-gradient(120deg, rgba(214,170,92,.22), rgba(214,170,92,.06)); border: 1px solid rgba(214,170,92,.30); }
+  .android .hero { background: linear-gradient(120deg, rgba(120,190,150,.22), rgba(120,190,150,.06)); border-color: rgba(120,190,150,.30); }
+  .hero .ico { font-size: 46px; line-height: 1; }
+  .hero .txt { flex: 1; }
+  .kicker { font-size: 11.5px; color: #d9c08e; font-weight: 700; }
+  .android .kicker { color: #9fd4b4; }
+  .big { font-size: 22px; font-weight: 800; margin-top: 2px; }
+  .big span { font-size: 15px; font-weight: 500; color: #cfc6b8; margin-right: 6px; }
+  .bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); margin-top: 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 62%; background: #d6aa5c; border-radius: 3px; margin-right: auto; margin-left: 0; float: right; }
+  .android .bar i { background: #78be96; }
+  .left { font-size: 12.5px; color: #cfc6b8; margin-top: 5px; }
+
+  .grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; }
+  .tile { border-radius: 14px; padding: 9px 11px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07);
+          display: flex; flex-direction: column; justify-content: space-between; }
+  .android .tile { border-radius: 18px; }
+  .t-top { display: flex; justify-content: space-between; align-items: center; }
+  .t-top .k { font-size: 11.5px; color: #b9b0a2; font-weight: 700; }
+  .t-top .e { font-size: 22px; line-height: 1; }
+  .v { font-size: 16.5px; font-weight: 800; }
+  .s { font-size: 11.5px; color: #b9b0a2; }
+
+  .icons { position: absolute; left: 0; right: 0; top: 440px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px 0; padding: 0 22px; justify-items: center; }
+  .app { width: 62px; height: 62px; border-radius: 15px; background: rgba(255,255,255,.10); }
+  .android .app { border-radius: 50%; }
+  .dock { position: absolute; bottom: 18px; left: 14px; right: 14px; height: 88px; border-radius: 32px; background: rgba(255,255,255,.10);
+          display: flex; justify-content: space-around; align-items: center; }
+  .android .dock { background: transparent; }
+  .half { position: absolute; left: 0; right: 0; top: 426px; border-top: 2px dashed rgba(255,90,90,.75); }
+  .half b { position: absolute; left: 10px; top: 4px; font-size: 11px; color: #ff8a8a; direction: rtl; }
+
+  .head2 { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 2px 8px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .clock .time { font-size: 44px; line-height: 1; }
+  .clock .time small { font-size: 20px; }
+  .clock .day { font-size: 15px; font-weight: 700; color: #d9c08e; margin-top: 4px; }
+  .android .clock .day { color: #9fd4b4; }
+  .dates { text-align: right; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding-top: 2px; }
+  .hj { font-size: 14px; font-weight: 700; }
+  .gr { font-size: 13px; color: #cfc6b8; }
+  .wx2 { font-size: 12.5px; color: #cfc6b8; margin-top: 4px; }
+  .wx2 b { color: #f4efe6; font-size: 15px; }
+  .grid3 { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; }
+  .grid3 .tile { padding: 8px 9px; }
+  .grid3 .v { font-size: 15px; }
+  .grid3 .s { font-size: 11px; line-height: 1.35; }
+  .grid3 .t-top .k { font-size: 11px; }
+  .grid3 .t-top .e { font-size: 18px; }
+  .wide { grid-column: span 2; }
+  .vs { font-size: 11.5px; font-weight: 500; color: #b9b0a2; }
+  .hl { background: linear-gradient(140deg, rgba(214,170,92,.25), rgba(214,170,92,.07)); border-color: rgba(214,170,92,.3); }
+  .android .hl { background: linear-gradient(140deg, rgba(120,190,150,.25), rgba(120,190,150,.07)); border-color: rgba(120,190,150,.3); }
+  .qibla { display: flex; align-items: center; justify-content: space-between; color: #f4efe6; }
+  .android .qibla path:first-child { fill: #78be96; }
+</style>
+</head>
+<body>
+<div class="row">
+
+<script>
+const widget = `
+  <div class="widget">
+    <div class="head2">
+      <div class="clock">
+        <div class="time">٧:١١<small>م</small></div>
+        <div class="day">الخميس</div>
+      </div>
+      <div class="dates">
+        <div class="hj">٧ جمادى الآخرة ١٤٤٨ هـ</div>
+        <div class="gr">٥ أكتوبر ٢٠٢٦ م</div>
+        <div class="wx2">📍 تبوك · ⛅ <b>٢٧°</b> غائم جزئي</div>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="tile hl">
+        <div class="t-top"><span class="k">الصلاة القادمة</span><span class="e">🕌</span></div>
+        <div><div class="v">المغرب</div><div class="s">باقي ٣٤ دقيقة</div></div>
+      </div>
+      <div class="tile">
+        <div class="t-top"><span class="k">القبلة</span></div>
+        <div class="qibla"><svg viewBox="0 0 40 40" width="38" height="38"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><g transform="rotate(134 20 20)"><path d="M20 5 L24 20 L20 18 L16 20 Z" fill="#d6aa5c"/><path d="M20 35 L24 20 L20 22 L16 20 Z" fill="currentColor" opacity=".45"/></g></svg><div class="v">١٣٤°</div></div>
+      </div>
+      <div class="tile">
+        <div class="t-top"><span class="k">الإيداع القادم</span><span class="e">💰</span></div>
+        <div><div class="v">راتب نوفمبر</div><div class="s">باقي ٣ أيام</div></div>
+      </div>
+      <div class="tile">
+        <div class="t-top"><span class="k">الفصل</span><span class="e">🍂</span></div>
+        <div><div class="v">الخريف</div><div class="s">باقي ٣٤ يوماً للشتاء</div></div>
+      </div>
+      <div class="tile wide">
+        <div class="t-top"><span class="k">الموسم</span><span class="e">🌧️</span></div>
+        <div><div class="v">الوسم <span class="vs">· باقي ٤١ يوماً للمربعانية</span></div><div class="s">يُترقّب فيه المطر واعتدال الأجواء ونمو النباتات الموسمية</div></div>
+      </div>
+    </div>
+  </div>`;
+
+const apps = '<div class="app"></div>'.repeat(8);
+const dock = '<div class="app"></div>'.repeat(4);
+
+function phone(kind, clock, title, sub) {
+  return `<div class="col">
+    <div class="label">${title}</div>
+    <div class="sub">${sub}</div>
+    <div class="phone ${kind}">
+      <div class="island"></div>
+      <div class="status"><span>${clock}</span><span>📶 🔋</span></div>
+      ${widget}
+      <div class="half"><b>منتصف الشاشة</b></div>
+      <div class="icons">${apps}</div>
+      <div class="dock">${dock}</div>
+    </div>
+  </div>`;
+}
+document.write(
+  phone('ios', '7:11', 'آيفون — ودجت كبيرة (Large)', '٣٣٨×٣٥٤ نقطة') +
+  phone('android', '7:11', 'أندرويد — ودجت ٤×٤', 'نفس المحتوى بنمط Material You')
+);
+</script>
+
+</div>
+</body>
+</html>

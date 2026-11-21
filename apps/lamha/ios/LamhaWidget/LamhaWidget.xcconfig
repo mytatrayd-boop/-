@@ -1,0 +1,2 @@
+// ودجت آيفون: رقم الإصدار والبناء من Flutter (FLUTTER_BUILD_NAME وFLUTTER_BUILD_NUMBER) ليطابقا التطبيق.
+#include "../Flutter/Generated.xcconfig"

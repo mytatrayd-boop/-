@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { can, competitionPoints, noticeTargets, dayKey, monthKey, yearKey, periodKey, reportText, tierOf, weekKey, cleanPerms, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
+import { can, competitionPoints, noticeTargets, reportKey, dayKey, monthKey, yearKey, periodKey, reportText, tierOf, weekKey, cleanPerms, distanceMeters, cleanCoord, tripLive, canToggleShare, pushPayload, PUSH_CHANNEL, Tier } from "../src/logic";
 
 const riyadh = (iso: string) => Date.parse(iso + "+03:00");
 
@@ -29,6 +29,11 @@ test("notices reach delegated admins too, never the sender", () => {
   assert.deepEqual(noticeTargets(fam, "all", "owner").map((p) => p.id), ["mom", "aseel", "lama"]);
   assert.deepEqual(noticeTargets(fam, "mom", "owner").map((p) => p.id), ["mom"]);
   assert.deepEqual(noticeTargets(fam, "all", "mom").map((p) => p.id), ["owner", "aseel", "lama"]);
+});
+
+test("report keys match the summaries addPoints writes", () => {
+  const t = riyadh("2026-10-20T12:00:00");
+  assert.deepEqual(["daily", "weekly", "monthly", "yearly"].map((p) => reportKey(p as never, t)), ["2026-10-20", "w2026-10-18", "m2026-10", "y2026"]);
 });
 
 test("month and year keys use Riyadh time", () => {
@@ -69,7 +74,7 @@ test("permissions", () => {
   assert.ok(!can({ role: "admin", perms: { tasks: true } }, "approve"));
   assert.ok(!can({ role: "member", perms: { approve: true } }, "approve"));
   assert.deepEqual(cleanPerms({ approve: true, evil: true, tasks: "yes" }), {
-    addMembers: false, approve: true, tasks: false, report: false, comps: false, viewReports: false,
+    addMembers: false, approve: true, tasks: false, report: false, comps: false, viewReports: false, trip: false,
   });
 });
 
@@ -89,4 +94,182 @@ test("push payload pops up with sound on Android and iOS", () => {
   assert.equal(p.apns.payload.aps.sound, "default");
   assert.equal(p.apns.headers["apns-push-type"], "alert");
   assert.ok(pushPayload("t", "x".repeat(500), "f").notification.body.length <= 178);
+});
+
+test("tasks repeat monthly and yearly too", () => {
+  const t = riyadh("2026-10-20T12:00:00");
+  assert.equal(periodKey("monthly", t), "m2026-10");
+  assert.equal(periodKey("yearly", t), "y2026");
+  assert.equal(periodKey("once", t), "once");
+});
+
+test("prayer window runs from its adhan until the next prayer (Riyadh)", async () => {
+  const { currentPrayer, prayerTimes, parsePrayerTaskId, prayerTaskId } = await import("../src/prayer");
+  const lat = 24.7136, lng = 46.6753;
+  const day = prayerTimes(lat, lng, riyadh("2026-10-20T12:00:00"));
+  // Riyadh in October: dhuhr around 11:40, asr around 15:00, isha around 19:00.
+  assert.equal(dayKey(day.fajr), "2026-10-20");
+  assert.ok(day.fajr < day.dhuhr && day.dhuhr < day.asr && day.asr < day.maghrib && day.maghrib < day.isha);
+  const noon = currentPrayer(lat, lng, day.dhuhr + 60e3);
+  assert.equal(noon.key, "dhuhr");
+  assert.equal(noon.end, day.asr);
+  // After midnight, isha of the previous day is still running until fajr.
+  const night = currentPrayer(lat, lng, riyadh("2026-10-21T01:00:00"));
+  assert.equal(night.key, "isha");
+  assert.equal(night.dayKey, "2026-10-20");
+  assert.deepEqual(parsePrayerTaskId(prayerTaskId("asr", "abc123")), { key: "asr", personId: "abc123" });
+  assert.equal(parsePrayerTaskId("prayer-xx-abc"), null);
+});
+
+test("a prayer half an hour after its adhan is worth no points", async () => {
+  const { prayerPoints, PRAYER_GRACE_MS } = await import("../src/prayer");
+  const w = { start: riyadh("2026-10-20T11:40:00") };
+  assert.equal(prayerPoints(w, 5, w.start + 10 * 60e3), 5);
+  assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS), 5);
+  assert.equal(prayerPoints(w, 5, w.start + PRAYER_GRACE_MS + 1000), 0);
+});
+
+test("Isha keeps its points until 11 pm Riyadh time", async () => {
+  const { prayerPoints } = await import("../src/prayer");
+  const w = { key: "isha" as const, start: riyadh("2026-10-20T18:45:00") };
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T20:30:00")), 5);
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T23:00:00")), 5);
+  assert.equal(prayerPoints(w, 5, riyadh("2026-10-20T23:00:01")), 0);
+  // Other prayers keep the half hour.
+  assert.equal(prayerPoints({ key: "maghrib", start: riyadh("2026-10-20T17:20:00") }, 5, riyadh("2026-10-20T18:00:00")), 0);
+});
+
+test("old hand-made prayer tasks are recognised by their title", async () => {
+  const { isManualPrayerTitle } = await import("../src/logic");
+  for (const t of ["صلاة الفجر", "صلاه العصر", "الصلاة في المسجد", " صلاة "]) assert.equal(isManualPrayerTitle(t), true, t);
+  for (const t of ["ترتيب الغرفة", "صلة الرحم", "حفظ سورة العصر", ""]) assert.equal(isManualPrayerTitle(t), false, t);
+});
+
+test("trip: distance, coordinates, live window and sharing permission", () => {
+  // Makkah Haram to Madinah Haram is roughly 340 km
+  const d = distanceMeters({ lat: 21.4225, lng: 39.8262 }, { lat: 24.4672, lng: 39.6112 });
+  assert.ok(d > 335_000 && d < 345_000);
+  assert.equal(distanceMeters({ lat: 24.7, lng: 46.7 }, { lat: 24.7, lng: 46.7 }), 0);
+  assert.deepEqual(cleanCoord("24.7", 46.7), { lat: 24.7, lng: 46.7 });
+  assert.equal(cleanCoord(91, 0), null);
+  assert.equal(cleanCoord("x", 0), null);
+  assert.equal(cleanCoord(null, 0), null);
+  assert.equal(tripLive({ active: true, endsAt: 2000 }, 1000), true);
+  assert.equal(tripLive({ active: true, endsAt: 500 }, 1000), false);
+  assert.equal(tripLive({ active: false, endsAt: 2000 }, 1000), false);
+  assert.equal(tripLive(undefined, 1000), false);
+  const owner = { id: "o", role: "owner" as const };
+  const adminNo = { id: "a", role: "admin" as const, perms: {} };
+  const adminYes = { id: "b", role: "admin" as const, perms: { trip: true } };
+  const kid = { id: "k", role: "member" as const };
+  assert.equal(canToggleShare(owner, kid), true);
+  assert.equal(canToggleShare(adminYes, kid), true);
+  assert.equal(canToggleShare(adminNo, adminNo), true);
+  assert.equal(canToggleShare(adminNo, kid), false);
+  assert.equal(canToggleShare(kid, kid), false);
+  assert.equal(cleanPerms({ trip: true }).trip, true);
+});
+
+test("plan: members limit by tier; an ended subscription falls back to the free five", async () => {
+  const { memberLimit, planActive, FREE_MEMBERS } = await import("../src/plan");
+  const now = Date.UTC(2026, 11, 1);
+  assert.equal(memberLimit(undefined, now), FREE_MEMBERS);
+  assert.equal(memberLimit({ source: "apple", tier: 10, until: now + 1000 }, now), 10);
+  assert.equal(memberLimit({ source: "apple", tier: 20, until: now + 1000 }, now), 20);
+  assert.equal(memberLimit({ source: "apple", tier: 20, until: now - 1000 }, now), FREE_MEMBERS, "ended");
+  assert.equal(memberLimit({ source: "legacy", tier: 5, until: null }, now), 5);
+  assert.equal(planActive({ source: "legacy", tier: 5, until: null }, now), true);
+  assert.equal(planActive(undefined, now), false);
+});
+
+test("plan: the receipt's best subscription counts (biggest active tier, else the last one that ended)", async () => {
+  const { bestFromReceipt } = await import("../src/plan");
+  const now = 1_000_000;
+  const lines = [
+    { product_id: "asraty.monthly", expires_date_ms: String(now + 5000), original_transaction_id: "A" },
+    { product_id: "asraty.m10", expires_date_ms: String(now + 100), original_transaction_id: "A" },
+    { product_id: "other.app", expires_date_ms: String(now + 9999), original_transaction_id: "A" },
+  ];
+  const best = bestFromReceipt(lines, now)!;
+  assert.equal(best.tier, 10, "the bigger active tier wins");
+  assert.equal(best.otid, "A");
+  const ended = bestFromReceipt([{ product_id: "asraty.y20", expires_date_ms: String(now - 10), original_transaction_id: "B" }], now)!;
+  assert.equal(ended.until, now - 10);
+  assert.equal(bestFromReceipt([{ product_id: "unknown", expires_date_ms: "1", original_transaction_id: "C" }], now), null);
+});
+
+test("plan: Apple is asked in production first, then in the sandbox for a TestFlight receipt", async () => {
+  const { verifyReceipt } = await import("../src/plan");
+  const urls: string[] = [];
+  const lines = [{ product_id: "asraty.monthly", expires_date_ms: "5", original_transaction_id: "A" }];
+  const out = await verifyReceipt("x".repeat(30), "secret", async (url) => {
+    urls.push(url);
+    return url.includes("sandbox") ? { status: 0, latest_receipt_info: lines } : { status: 21007 };
+  });
+  assert.deepEqual(out, lines);
+  assert.equal(urls.length, 2);
+  assert.match(urls[1], /sandbox/);
+  await assert.rejects(verifyReceipt("x".repeat(30), "secret", async () => ({ status: 21003 })), (e: { code?: string }) => e.code === "receipt-invalid");
+});
+
+test("«لمحة»: the receipt's latest subscription end is reported, other apps' products are ignored", async () => {
+  const { lamhaUntil } = await import("../src/plan");
+  assert.equal(lamhaUntil([]), null);
+  assert.equal(lamhaUntil([{ product_id: "asraty.monthly", expires_date_ms: "999" }]), null);
+  assert.equal(lamhaUntil([
+    { product_id: "lamha.monthly", expires_date_ms: "100" },
+    { product_id: "lamha.yearly", expires_date_ms: "300" },
+    { product_id: "asraty.m10", expires_date_ms: "9999" },
+  ]), 300);
+});
+
+test("lamhaUntilPlay: only «لمحة» products, and only states that still count", async () => {
+  const { lamhaUntilPlay } = await import("../src/plan");
+  const now = 1_000;
+  const exp = new Date(5_000).toISOString();
+  const sub = (st: string, id = "lamha.monthly") => ({ subscriptionState: st, lineItems: [{ productId: id, expiryTime: exp }] });
+  for (const st of ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"]) assert.equal(lamhaUntilPlay(sub(st), now), 5_000, st);
+  for (const st of ["SUBSCRIPTION_STATE_ON_HOLD", "SUBSCRIPTION_STATE_PAUSED", "SUBSCRIPTION_STATE_EXPIRED"]) assert.ok(lamhaUntilPlay(sub(st), now)! <= now, st);
+  assert.equal(lamhaUntilPlay(sub("SUBSCRIPTION_STATE_ACTIVE", "asraty.monthly"), now), null);
+  assert.equal(lamhaUntilPlay({}, now), null);
+});
+
+test("plan: a Google Play subscription gives its tier until it ends (active, grace, canceled count; expired, on hold do not)", async () => {
+  const { planFromPlay } = await import("../src/plan");
+  const now = Date.UTC(2026, 11, 1);
+  const iso = (ms: number) => new Date(ms).toISOString();
+  const sub = (state: string, product = "asraty.m10", end = now + 86_400_000) => ({ subscriptionState: state, lineItems: [{ productId: product, expiryTime: iso(end) }] });
+  for (const st of ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"]) {
+    const p = planFromPlay("tok", sub(st), now)!;
+    assert.equal(p.tier, 10, st);
+    assert.equal(p.source, "google");
+    assert.equal(p.until, now + 86_400_000);
+  }
+  for (const st of ["SUBSCRIPTION_STATE_EXPIRED", "SUBSCRIPTION_STATE_ON_HOLD", "SUBSCRIPTION_STATE_PAUSED"]) {
+    assert.ok(planFromPlay("tok", sub(st), now)!.until! <= now, st + " is not active");
+  }
+  assert.equal(planFromPlay("tok", sub("SUBSCRIPTION_STATE_ACTIVE", "other.app"), now), null);
+  assert.equal(planFromPlay("a", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid, planFromPlay("a", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid, "stable id");
+  assert.notEqual(planFromPlay("a", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid, planFromPlay("b", sub("SUBSCRIPTION_STATE_ACTIVE"), now)!.otid);
+});
+
+test("plan: the Google access token request is a signed RS256 JWT, and Play's answers map to our errors", async () => {
+  const { generateKeyPairSync, createVerify } = await import("node:crypto");
+  const { googleAccessToken, verifyPlayPurchase } = await import("../src/plan");
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const sa = JSON.stringify({ client_email: "svc@x.iam.gserviceaccount.com", private_key: privateKey.export({ type: "pkcs8", format: "pem" }) });
+  let tokenBody = "";
+  const ok = async (url: string, init?: { body?: string }) => {
+    if (url.includes("oauth2")) { tokenBody = init?.body ?? ""; return { status: 200, json: async () => ({ access_token: "AT" }) }; }
+    return { status: 200, json: async () => ({ subscriptionState: "SUBSCRIPTION_STATE_ACTIVE" }) };
+  };
+  assert.equal(await googleAccessToken(sa, ok as never), "AT");
+  const jwt = decodeURIComponent(tokenBody.split("assertion=")[1]);
+  const [h, c, s] = jwt.split(".");
+  assert.equal(JSON.parse(Buffer.from(h, "base64url").toString()).alg, "RS256");
+  assert.equal(JSON.parse(Buffer.from(c, "base64url").toString()).iss, "svc@x.iam.gserviceaccount.com");
+  assert.ok(createVerify("RSA-SHA256").update(`${h}.${c}`).verify(publicKey, Buffer.from(s, "base64url")), "signature verifies");
+  const answer = (status: number) => async (url: string) => (url.includes("oauth2") ? { status: 200, json: async () => ({ access_token: "AT" }) } : { status, json: async () => ({}) });
+  await assert.rejects(verifyPlayPurchase("t", sa, answer(404) as never), /receipt-invalid/);
+  await assert.rejects(verifyPlayPurchase("t", sa, answer(403) as never), /plan-unavailable/);
 });

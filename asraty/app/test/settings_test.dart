@@ -17,7 +17,7 @@ Future<void> _openDemoSettings(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 100));
   await tester.tap(find.text('تجربة سريعة بأسرة جاهزة'));
   await tester.pump(const Duration(milliseconds: 300));
-  await tester.tap(find.text('⚙️'));
+  await tester.tap(find.byIcon(Icons.settings_outlined));
   for (var i = 0; i < 5; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
@@ -39,12 +39,12 @@ void main() {
   testWidgets('sign-out returns to the full onboarding screen', (tester) async {
     await _openDemoSettings(tester);
     expect(find.text('الإعدادات'), findsWidgets);
-    await tester.tap(find.text('خروج'));
+    await tester.tap(find.text('خروج').last); // the settings button (the header one asks first)
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('أهلاً بك في أسرتي'), findsOneWidget);
-    expect(find.text('مسؤول الأسرة'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsOneWidget);
     expect(find.text('تجربة سريعة بأسرة جاهزة'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
   });
@@ -84,16 +84,16 @@ void realAccountTests() {
     ));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('لوحة المسؤول'), findsOneWidget);
-    await tester.tap(find.text('⚙️'));
+    await tester.tap(find.byIcon(Icons.settings_outlined));
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    await tester.tap(find.text('خروج'));
+    await tester.tap(find.text('خروج').last); // the settings button (the header one asks first)
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('أهلاً بك في أسرتي'), findsOneWidget);
-    expect(find.text('مسؤول الأسرة'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsOneWidget);
   });
 
   testWidgets('real account: deleting the family ends on the onboarding form', (tester) async {
@@ -107,7 +107,7 @@ void realAccountTests() {
       child: const AsratyApp(),
     ));
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('⚙️'));
+    await tester.tap(find.byIcon(Icons.settings_outlined));
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -119,7 +119,7 @@ void realAccountTests() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('أهلاً بك في أسرتي'), findsOneWidget);
-    expect(find.text('مسؤول الأسرة'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
   });
 }

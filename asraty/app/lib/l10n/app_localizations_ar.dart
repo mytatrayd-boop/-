@@ -77,7 +77,7 @@ class L10nAr extends L10n {
       'التجربة السريعة تعمل على جهازك فقط، ولا تُرسل أي بيانات.';
 
   @override
-  String get back => '‹ رجوع';
+  String get back => 'رجوع';
 
   @override
   String get loginAdmin => 'دخول مسؤول الأسرة';
@@ -295,7 +295,7 @@ class L10nAr extends L10n {
   String get viewTasksOnly => 'عرض المهام فقط';
 
   @override
-  String get backToDashboard => '‹ لوحة المسؤول';
+  String get backToDashboard => 'لوحة المسؤول';
 
   @override
   String get tileApprovals => 'الموافقات';
@@ -322,7 +322,7 @@ class L10nAr extends L10n {
   String get tileComps => 'المسابقات';
 
   @override
-  String get tileRewards => 'الجوائز والمكافآت';
+  String get tileRewards => 'الجوائز';
 
   @override
   String get permAddMembers => 'إضافة أعضاء للأسرة';
@@ -497,6 +497,18 @@ class L10nAr extends L10n {
   String get sendToAll => 'إرسال لكل الأعضاء';
 
   @override
+  String get reportTitleDaily => 'ترتيب إنجاز اليوم';
+
+  @override
+  String get reportTitleWeekly => 'ترتيب إنجاز الأسبوع';
+
+  @override
+  String get reportTitleMonthly => 'ترتيب إنجاز الشهر';
+
+  @override
+  String get reportTitleYearly => 'ترتيب إنجاز السنة';
+
+  @override
   String get reportSent => 'أُرسل التقرير لكل الأعضاء';
 
   @override
@@ -537,6 +549,9 @@ class L10nAr extends L10n {
 
   @override
   String get weeklyF => 'أسبوعية';
+
+  @override
+  String get onceF => 'مرة واحدة';
 
   @override
   String get points => 'النقاط';
@@ -773,7 +788,7 @@ class L10nAr extends L10n {
   String get tabComps => 'المسابقات';
 
   @override
-  String get tabRewards => 'المكافآت';
+  String get tabRewards => 'الجوائز';
 
   @override
   String get tabNotices => 'التنبيهات';
@@ -974,7 +989,7 @@ class L10nAr extends L10n {
 
   @override
   String get taskPresets =>
-      'ترتيب السرير|قراءة صفحة قرآن|صلاة الفجر في وقتها|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب';
+      'ترتيب السرير|قراءة صفحة قرآن|سقي الزرع|مراجعة الواجبات|ترتيب المجلس|المساعدة في المطبخ|قراءة كتاب 15 دقيقة|ترتيب الألعاب';
 
   @override
   String memberTaskMeta(String when, String points) {
@@ -983,7 +998,7 @@ class L10nAr extends L10n {
 
   @override
   String get signOutConfirm =>
-      'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكود التحقق.';
+      'تسجيل الخروج من هذا الجهاز؟ للدخول مرة أخرى تكفي كتابة بريدك وكلمة المرور.';
 
   @override
   String get adminHaveAccount => 'لدي حساب';
@@ -997,7 +1012,7 @@ class L10nAr extends L10n {
 
   @override
   String get stayLoggedIn =>
-      'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج الكود مرة أخرى إلا إذا سجّلت الخروج.';
+      'بعد الدخول تبقى مسجلاً على هذا الجهاز، ولا تحتاج كلمة المرور مرة أخرى إلا إذا سجّلت الخروج.';
 
   @override
   String get pasteCode => 'لصق الكود';
@@ -1120,5 +1135,744 @@ class L10nAr extends L10n {
   @override
   String goalForName(String name) {
     return 'لـ$name';
+  }
+
+  @override
+  String get navHome => 'الرئيسية';
+
+  @override
+  String get navReports => 'التقارير';
+
+  @override
+  String get navPrizes => 'الجوائز';
+
+  @override
+  String get monthlyF => 'شهرية';
+
+  @override
+  String get yearlyF => 'سنوية';
+
+  @override
+  String get thisMonthLabel => 'هذا الشهر';
+
+  @override
+  String get thisYearLabel => 'هذه السنة';
+
+  @override
+  String get avatarLockedNote =>
+      'ثبّت مسؤول الأسرة رمزك، فلا يمكنك تغييره الآن.';
+
+  @override
+  String get uploadPhoto => 'صورة من جهازي';
+
+  @override
+  String get avatarLock => 'السماح بتغيير الرمز والصورة';
+
+  @override
+  String get avatarLockOn => '🔒 الرمز مثبّت';
+
+  @override
+  String get avatarLockOff => 'يمكنه تغيير رمزه';
+
+  @override
+  String get doneTasks => 'المنجزة';
+
+  @override
+  String get notDoneTasks => 'غير المنجزة';
+
+  @override
+  String get pendingTasks => 'بانتظار الموافقة';
+
+  @override
+  String get noneHere => 'لا شيء هنا.';
+
+  @override
+  String get deleteTaskConfirm => 'حذف هذه المهمة؟';
+
+  @override
+  String get doneCount => 'منجزة';
+
+  @override
+  String get notDoneCount => 'غير منجزة';
+
+  @override
+  String get myReport => 'تقريري';
+
+  @override
+  String get myRanks => 'ترتيبي';
+
+  @override
+  String get pointsWord => 'نقطة';
+
+  @override
+  String get prizesTitle => 'الجوائز';
+
+  @override
+  String get prizesSub =>
+      'حدّد جائزة لفترة (يوم، أسبوع، شهر، سنة) وموعد تسليمها. تظهر للجميع، وقبل الموعد بساعة يصل تذكير، وعند الموعد يفوز بها صاحب أعلى نقاط في الفترة تلقائياً وتصل الجميع بطاقة تهنئة.';
+
+  @override
+  String get prizeNameHint => 'الجائزة، مثل: رحلة إلى الحديقة';
+
+  @override
+  String get prizeFor => 'لصاحب أعلى نقاط';
+
+  @override
+  String get awardDate => 'يوم التسليم';
+
+  @override
+  String get awardTime => 'ساعة التسليم';
+
+  @override
+  String get addPrize => 'إضافة الجائزة';
+
+  @override
+  String get prizeAdded => 'أُضيفت الجائزة ✓ وأُبلغ الجميع';
+
+  @override
+  String get noPrizes => 'لا توجد جوائز بعد.';
+
+  @override
+  String get noPrizesMember => 'لم يحدد المسؤول جوائز بعد.';
+
+  @override
+  String get upcomingPrizes => 'الجوائز القادمة';
+
+  @override
+  String get pastPrizes => 'جوائز سُلّمت';
+
+  @override
+  String get noWinner => 'لم يفز أحد';
+
+  @override
+  String get errPrizeInput => 'اكتب اسم الجائزة واختر موعداً قادماً';
+
+  @override
+  String get prizeLeading => 'المتصدّر الآن';
+
+  @override
+  String get prayerTitle => 'تذكير الصلاة';
+
+  @override
+  String get prayerSub =>
+      'حدّد موقع الأسرة مرة واحدة من جوالك، فتُحسب مواقيت الصلاة تلقائياً (أم القرى) ويصل كل عضو تنبيه عند دخول الوقت، وتظهر الصلاة في مهامه. إن لم يؤدّها تظهر متأخرة، ومع دخول الصلاة التالية تختفي ونقاطها.';
+
+  @override
+  String get useMyLocation => 'تحديد موقعي الآن';
+
+  @override
+  String get locationSet => 'حُفظ الموقع ✓';
+
+  @override
+  String get prayerPoints => 'نقاط كل صلاة';
+
+  @override
+  String get prayerEnabled => 'تفعيل تذكير الصلاة';
+
+  @override
+  String get prayerSaved => 'حُفظت إعدادات الصلاة ✓';
+
+  @override
+  String get errLocation =>
+      'تعذّر تحديد الموقع. فعّل خدمة الموقع واسمح للتطبيق باستخدامها.';
+
+  @override
+  String get prayerTimesToday => 'مواقيت اليوم';
+
+  @override
+  String get prayerNotSet => 'لم يُحدَّد الموقع بعد.';
+
+  @override
+  String get prayerLate => 'متأخرة، بلا نقاط';
+
+  @override
+  String get prayerNow => 'وقتها الآن';
+
+  @override
+  String get prayerReminder => 'حان الآن وقت صلاة';
+
+  @override
+  String get loginTitle => 'تسجيل الدخول';
+
+  @override
+  String get registerTitle => 'تسجيل جديد';
+
+  @override
+  String get accountType => 'نوع الحساب';
+
+  @override
+  String get password => 'كلمة المرور';
+
+  @override
+  String get passwordHint => 'كلمة المرور (٦ أحرف على الأقل)';
+
+  @override
+  String get rememberMe => 'تذكّرني';
+
+  @override
+  String get loginBtn => 'دخول';
+
+  @override
+  String get registerBtn => 'تسجيل ومتابعة';
+
+  @override
+  String get forgotPassword => 'نسيت كلمة المرور؟';
+
+  @override
+  String get noAccountRegister => 'ليس لديك حساب؟ تسجيل جديد';
+
+  @override
+  String get haveAccountLogin => 'لديك حساب؟ تسجيل الدخول';
+
+  @override
+  String get resetTitle => 'تعيين كلمة مرور';
+
+  @override
+  String get resetSub =>
+      'اكتب بريدك وكلمة مرور جديدة، ثم أدخل الكود الذي يصلك.';
+
+  @override
+  String get registerSub =>
+      'مسؤول الأسرة ينشئ أسرته، وفرد الأسرة يسجّل ببريده الذي أضافه به المسؤول. بعدها يصلك كود للتحقق.';
+
+  @override
+  String get accountFromDevice => 'البريد المحفوظ في الجهاز';
+
+  @override
+  String get showPassword => 'إظهار كلمة المرور';
+
+  @override
+  String get errBadLogin => 'البريد أو كلمة المرور غير صحيحة.';
+
+  @override
+  String get errNoPassword =>
+      'هذا الحساب لم تُعيَّن له كلمة مرور بعد. اضغط «نسيت كلمة المرور؟» لتعيينها بكود يصل بريدك.';
+
+  @override
+  String get errWeakPassword => 'كلمة المرور قصيرة: ٦ أحرف على الأقل.';
+
+  @override
+  String get errPrayerOver => 'انتهى وقت هذه الصلاة.';
+
+  @override
+  String get errAvatarLocked => 'ثبّت مسؤول الأسرة رمز هذا العضو.';
+
+  @override
+  String get errBadTime => 'اختر موعداً قادماً.';
+
+  @override
+  String get prayerLocationSaved => 'موقع الأسرة محفوظ';
+
+  @override
+  String errLocked(String minutes) {
+    return 'محاولات كثيرة. حاول بعد $minutes دقيقة.';
+  }
+
+  @override
+  String rankIn(String place, String total) {
+    return '$place من $total';
+  }
+
+  @override
+  String prizeMeta(String period, String when) {
+    return '$period · تُسلَّم $when';
+  }
+
+  @override
+  String prizeWonBy(String name, String points) {
+    return 'فاز بها $name ($points نقطة)';
+  }
+
+  @override
+  String reportDoneLine(String done, String notDone) {
+    return '$done منجزة · $notDone غير منجزة';
+  }
+
+  @override
+  String prizeForPeriod(String period) {
+    return 'لصاحب أعلى نقاط $period';
+  }
+
+  @override
+  String get pickMember => 'اختر العضو';
+
+  @override
+  String get demoLoginNote =>
+      'في الوضع التجريبي: البريد abu@demo.sa وكلمة المرور 123456، أو استخدم «نسيت كلمة المرور؟» واضغط 📧 في الأعلى لرؤية الكود.';
+
+  @override
+  String get prizesSubMember =>
+      'يفوز بالجائزة صاحب أعلى نقاط في فترتها، وتُسلَّم تلقائياً في موعدها.';
+
+  @override
+  String get spanShortDay => 'اليوم';
+
+  @override
+  String get spanShortWeek => 'الأسبوع';
+
+  @override
+  String get spanShortMonth => 'الشهر';
+
+  @override
+  String get spanShortYear => 'السنة';
+
+  @override
+  String get tileViolations => 'المخالفات';
+
+  @override
+  String get violationsIntro =>
+      'اخصم نقاطاً من عضو أو من كل الأعضاء. تصلهم المخالفة رسالة منبثقة، وحذفها من القائمة يعيد النقاط.';
+
+  @override
+  String get violationPoints => 'عدد النقاط المخصومة';
+
+  @override
+  String get violationReasonHint => 'سبب المخالفة (اختياري)';
+
+  @override
+  String get addViolation => 'تسجيل المخالفة';
+
+  @override
+  String get errViolationPoints => 'اكتب عدد نقاط من 1 إلى 1000';
+
+  @override
+  String get violationAdded => 'سُجّلت المخالفة وخُصمت النقاط';
+
+  @override
+  String get violationsList => 'المخالفات المسجلة';
+
+  @override
+  String get noViolations => 'لا توجد مخالفات';
+
+  @override
+  String get deleteViolation => 'حذف المخالفة وإعادة النقاط';
+
+  @override
+  String get deleteViolationQ =>
+      'حذف هذه المخالفة؟ ستعود النقاط المخصومة لأصحابها.';
+
+  @override
+  String get violationDeleted => 'حُذفت المخالفة وأُعيدت النقاط';
+
+  @override
+  String get violationWord => 'مخالفة';
+
+  @override
+  String get tileCycle => 'دورة تقييم جديدة';
+
+  @override
+  String get cycleNever => 'لم تبدأ دورة تقييم بعد';
+
+  @override
+  String cycleSince(String date) {
+    return 'الدورة الحالية بدأت في $date';
+  }
+
+  @override
+  String get cycleIntro =>
+      'بدء دورة تقييم جديدة يمحو نقاط كل الأعضاء ليبدأ الجميع من الصفر. تستمر الدورة سنة ثم تبدأ دورة جديدة تلقائياً.';
+
+  @override
+  String get startCycle => 'بدء دورة تقييم جديدة';
+
+  @override
+  String get cycleWarn1 => 'تنبيه: هذه الخاصية ستمحو كل النقاط الحالية.';
+
+  @override
+  String get cycleWarn2Title => 'تنبيه';
+
+  @override
+  String get cycleWarn2 => 'كل دورة تقييم تستمر سنة ثم تبدأ دورة جديدة.';
+
+  @override
+  String get cycleAsk => 'هل تريد بدء دورة تقييم جديدة؟';
+
+  @override
+  String get cycleStarted => 'بدأت دورة تقييم جديدة';
+
+  @override
+  String get next => 'متابعة';
+
+  @override
+  String get confirmWord => 'تأكيد';
+
+  @override
+  String get ok => 'حسناً';
+
+  @override
+  String get noticesNew => 'تنبيهات جديدة';
+
+  @override
+  String get showAll => 'عرض الكل';
+
+  @override
+  String get useCode => 'استخدم كود للتسجيل';
+
+  @override
+  String get activationTitle => 'كود التفعيل';
+
+  @override
+  String get activationSub =>
+      'اكتب كود التفعيل الذي وصلك. يعمل الكود على جهاز واحد فقط، وبعد تفعيله لا يمكن استخدامه على جهاز آخر.';
+
+  @override
+  String get activationHint => 'ASR-XXXX-XXXX';
+
+  @override
+  String get activate => 'تفعيل';
+
+  @override
+  String get activated => 'تم تفعيل التطبيق على هذا الجهاز مجاناً';
+
+  @override
+  String get activatedNote => '✅ التطبيق مفعّل على هذا الجهاز بكود تفعيل';
+
+  @override
+  String get errActivationInvalid => 'الكود غير صحيح. تأكد من كتابته كما وصلك.';
+
+  @override
+  String get errActivationUsed =>
+      'هذا الكود مستخدم على جهاز آخر، ولا يعمل إلا عليه.';
+
+  @override
+  String get paywallTitle => 'اشترك في أسرتي';
+
+  @override
+  String get paywallSub =>
+      'جرّب التطبيق مجاناً ٧ أيام، ثم اختر الاشتراك المناسب. يمكنك الإلغاء في أي وقت من إعدادات حسابك في App Store.';
+
+  @override
+  String get planMonthly => 'اشتراك شهري';
+
+  @override
+  String get planYearly => 'اشتراك سنوي';
+
+  @override
+  String get planMonthlyPrice => '١٠ ريال شهرياً';
+
+  @override
+  String get planYearlyPrice => '٧٥ ريال سنوياً';
+
+  @override
+  String get startTrial => 'ابدأ ٧ أيام مجاناً';
+
+  @override
+  String get restorePurchases => 'استعادة الاشتراك';
+
+  @override
+  String get storeUnavailable => 'المتجر غير متاح الآن. حاول لاحقاً.';
+
+  @override
+  String get paywallFamily =>
+      'إذا فعّلت «المشاركة العائلية» في Apple، يستفيد أفراد أسرتك من اشتراكك.';
+
+  @override
+  String get orUseCode => 'أو لديك كود تفعيل؟';
+
+  @override
+  String get permTrip => 'إدارة رحلة «أنا هنا»';
+
+  @override
+  String get tileTrip => 'أنا هنا';
+
+  @override
+  String get tripTitle => 'أنا هنا';
+
+  @override
+  String get tripSub =>
+      'شاركوا أماكنكم أثناء السفر لتعرفوا أين بعضكم. تعمل أثناء الرحلة فقط، وتُحذف المواقع عند انتهائها.';
+
+  @override
+  String get tripPrivacy =>
+      'مكانك يظهر لأفراد أسرتك فقط، وأثناء الرحلة فقط. تستمر المشاركة والجوال مقفل (تظهر إشارة على الجوال أثناءها). في الزحام وداخل المباني قد تقلّ الدقة، وتظهر دائرة حول المكان توضّحها.';
+
+  @override
+  String get tripNone => 'لا توجد رحلة الآن.';
+
+  @override
+  String get tripNoneMember =>
+      'لا توجد رحلة الآن. يبدأها مسؤول الأسرة عند السفر.';
+
+  @override
+  String get tripStart => 'بدء رحلة';
+
+  @override
+  String get tripEnd => 'إنهاء الرحلة';
+
+  @override
+  String get tripEndConfirm => 'ستتوقف المشاركة وتُحذف كل المواقع. متأكد؟';
+
+  @override
+  String get tripHours => 'مدة الرحلة (بالساعات)';
+
+  @override
+  String get tripFar => 'تنبيه الابتعاد (بالأمتار)';
+
+  @override
+  String get tripFarHint => 'ننبّهك إذا ابتعد طفل عنك أكثر من هذه المسافة.';
+
+  @override
+  String get tripEndsAt => 'تنتهي الرحلة';
+
+  @override
+  String get tripImHere => 'أنا هنا';
+
+  @override
+  String get tripSharingOn => 'أنت تشارك مكانك مع أسرتك';
+
+  @override
+  String get tripSharingOff => 'اضغط ليعرف أهلك مكانك';
+
+  @override
+  String get tripStop => 'إيقاف المشاركة';
+
+  @override
+  String get tripPausedByAdmin => 'أوقف المسؤول مشاركتك';
+
+  @override
+  String get tripSos => 'ساعدوني';
+
+  @override
+  String get tripSosConfirm => 'إرسال استغاثة لكل أفراد الأسرة مع مكانك؟';
+
+  @override
+  String get tripSosSend => 'إرسال';
+
+  @override
+  String get tripSosSent => 'أُرسلت الاستغاثة لأسرتك ✓';
+
+  @override
+  String get tripFamily => 'أين أسرتي';
+
+  @override
+  String get tripMeet => 'نقطة التجمع';
+
+  @override
+  String get tripMeetSet => 'تحديد نقطة تجمع هنا';
+
+  @override
+  String get tripMeetClear => 'إلغاء النقطة';
+
+  @override
+  String get tripMeetGo => 'توجّه';
+
+  @override
+  String get tripMeetLabel => 'اسم النقطة (مثال: بوابة ٣)';
+
+  @override
+  String get tripOpenMap => 'افتح الخريطة';
+
+  @override
+  String get tripNotSharing => 'لم يشارك مكانه بعد';
+
+  @override
+  String get tripPaused => 'المشاركة متوقفة';
+
+  @override
+  String get tripPause => 'إيقاف مشاركته';
+
+  @override
+  String get tripResume => 'تشغيل مشاركته';
+
+  @override
+  String get tripNow => 'الآن';
+
+  @override
+  String get tripAgo => 'قبل';
+
+  @override
+  String get tripMinute => 'دقيقة';
+
+  @override
+  String get tripHour => 'ساعة';
+
+  @override
+  String get tripAway => 'يبعد';
+
+  @override
+  String get tripMeters => 'م';
+
+  @override
+  String get tripKm => 'كم';
+
+  @override
+  String get tripDenied =>
+      'نحتاج إذن الموقع لتعمل الميزة. فعّله من إعدادات الجوال.';
+
+  @override
+  String get tripNoTrip => 'لا توجد رحلة جارية الآن.';
+
+  @override
+  String get tripStarted => 'بدأت الرحلة ✓';
+
+  @override
+  String get tripEnded => 'انتهت الرحلة ✓';
+
+  @override
+  String get tripMeetSaved => 'حُدّدت نقطة التجمع ✓';
+
+  @override
+  String get tripStaleHint => 'آخر تحديث قديم، قد يكون المكان تغيّر';
+
+  @override
+  String get tripPickPlace => 'اختر مكانًا على الخريطة';
+
+  @override
+  String get placePickTitle => 'حدّد المكان';
+
+  @override
+  String get placeTapHint => 'المس الخريطة لتحديد المكان';
+
+  @override
+  String get placeMyLocation => 'موقعي';
+
+  @override
+  String get placeSaveShare => 'حفظ وإرسال للأسرة';
+
+  @override
+  String get placeSaveOnly => 'حفظ فقط';
+
+  @override
+  String get placeSaved => 'حُفظ المكان ✓';
+
+  @override
+  String get placeShared => 'أُرسل المكان للأسرة ✓';
+
+  @override
+  String get placesTitle => 'الأماكن المحفوظة';
+
+  @override
+  String get placesEmpty => 'لم تحفظ أماكن بعد.';
+
+  @override
+  String get placesHint =>
+      'اختر مكانًا على الخريطة واحفظه، وأرسله لأسرتك كتنبيه فيه رابط الخريطة.';
+
+  @override
+  String get placeSend => 'أرسل للأسرة';
+
+  @override
+  String get placeDelete => 'حذف';
+
+  @override
+  String get placeDeleteConfirm => 'حذف هذا المكان المحفوظ؟';
+
+  @override
+  String get placeNeedPick => 'المس الخريطة أولاً لتحديد المكان.';
+
+  @override
+  String get placeTooMany =>
+      'وصلت للحد الأقصى من الأماكن المحفوظة (٣٠). احذف مكانًا ثم أعد المحاولة.';
+
+  @override
+  String get tripAccuracy => 'الدقة ±';
+
+  @override
+  String get tripApprox =>
+      'الجوال يعطي هذا التطبيق موقعًا تقريبيًا فقط (قد يبعد كيلومترًا عن مكانك الحقيقي). فعّل «الموقع الدقيق» لأسرتي من إعدادات الجوال حتى تعمل الميزة بدقة، خصوصًا في الزحام.';
+
+  @override
+  String get tripOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get placeEdit => 'تعديل';
+
+  @override
+  String get tripSendFailed => 'تعذّر إرسال مكانك، سنعيد المحاولة';
+
+  @override
+  String get waitingServer => 'جارٍ الاتصال بالخادم… قد يستغرق بضع ثوانٍ';
+
+  @override
+  String get loadingFamily => 'جارٍ تحميل بيانات أسرتك…';
+
+  @override
+  String get tripNotifOff =>
+      'إشعارات التطبيق مغلقة. يحتاج «أنا هنا» إلى إشعار دائم ليستمر والشاشة مقفلة، فعّل الإشعارات لأسرتي من إعدادات الجوال ثم أعد المحاولة.';
+
+  @override
+  String get prayerLegacy =>
+      'مهمة صلاة يدوية قديمة، مخفية عن الفرد (الصلاة آلية). احذفها';
+
+  @override
+  String get planTierUpTo => 'حتى';
+
+  @override
+  String get planTierMembers => 'أفراد';
+
+  @override
+  String get memberLimitReached => 'وصلت إلى الحد الأقصى لأفراد أسرتك';
+
+  @override
+  String get upgradePlan => 'ترقية الاشتراك';
+
+  @override
+  String get planChecking => 'جارٍ التحقق من اشتراكك…';
+
+  @override
+  String get errMemberLimit =>
+      'وصلت إلى الحد الأقصى لأفراد الأسرة. رقِّ اشتراكك لإضافة المزيد.';
+
+  @override
+  String get errPlanUnavailable =>
+      'تعذّر التحقق من الاشتراك الآن. حاول لاحقاً، فلن يضيع اشتراكك.';
+
+  @override
+  String get errPlanUsed => 'هذا الاشتراك مرتبط بأسرة أخرى.';
+
+  @override
+  String get errReceiptInvalid => 'تعذّر التحقق من إيصال الاشتراك.';
+
+  @override
+  String get deleteAllAlerts => 'حذف جميع التنبيهات';
+
+  @override
+  String get deleteAllAlertsConfirm =>
+      'سيُحذف كل تنبيه أُرسل للأسرة ويختفي من عند الجميع. هل أنت متأكد؟';
+
+  @override
+  String get allAlertsDeleted => 'حُذفت جميع التنبيهات ✓';
+
+  @override
+  String alertsCount(int n) {
+    return 'عدد التنبيهات المحفوظة: $n';
+  }
+
+  @override
+  String get graceTitle => 'مهلة أداء الصلاة';
+
+  @override
+  String get graceSub =>
+      'المدة بعد الأذان التي تُحتسب فيها نقاط كل صلاة. بعدها تبقى الصلاة مهمة بلا نقاط حتى الصلاة التالية.';
+
+  @override
+  String get graceTarget => 'لمن؟';
+
+  @override
+  String get graceAll => 'كل الأفراد';
+
+  @override
+  String get graceDefault => 'افتراضي';
+
+  @override
+  String get graceLess => 'إنقاص';
+
+  @override
+  String get graceMore => 'زيادة';
+
+  @override
+  String get graceSaved => 'حُفظت مهلة الصلاة ✓';
+
+  @override
+  String get graceNeedPrayer => 'فعّل «تذكير الصلاة» وحدّد موقع الأسرة أولاً.';
+
+  @override
+  String graceMinutes(int n) {
+    return '$n د';
+  }
+
+  @override
+  String graceEndsAt(String time) {
+    return 'تنتهي النقاط $time';
   }
 }

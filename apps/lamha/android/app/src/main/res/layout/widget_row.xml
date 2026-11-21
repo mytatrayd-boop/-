@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- صف في الشبكة (الميزة ٥). الأوزان متساوية احتياطاً (أندرويد أقدم من ١٢)، وفي ١٢+ يضبط
+     LamhaWidgetReceiver ارتفاعه بوزن محتواه (rowHeights) بـ setViewLayoutHeight. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/row"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:baselineAligned="false"
+    android:orientation="horizontal" />

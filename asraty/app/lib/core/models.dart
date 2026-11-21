@@ -1,12 +1,14 @@
 enum Role { owner, admin, member }
 
-enum Perm { addMembers, approve, tasks, report, comps, viewReports }
+enum Perm { addMembers, approve, tasks, report, comps, viewReports, trip }
 
-enum Period { daily, weekly }
-
-enum Scope { each, family }
+/// How often a task repeats: every day, week, month or year, or [once] only.
+enum Period { daily, weekly, monthly, yearly, once }
 
 enum Status { pending, approved, rejected }
+
+/// Report and prize periods.
+enum Span { daily, weekly, monthly, yearly }
 
 /// Honor board periods (separate from [Period], which drives tasks and rewards).
 enum Honor { monthly, yearly }
@@ -20,7 +22,7 @@ T _enum<T extends Enum>(List<T> values, Object? v, T fallback) {
 
 Role roleFrom(Object? v) => _enum(Role.values, v, Role.member);
 Period periodFrom(Object? v) => _enum(Period.values, v, Period.daily);
-Scope scopeFrom(Object? v) => _enum(Scope.values, v, Scope.each);
+Span spanFrom(Object? v) => _enum(Span.values, v, Span.daily);
 Status statusFrom(Object? v) => _enum(Status.values, v, Status.pending);
 
 Map<Perm, bool> permsFrom(Object? v) {
@@ -46,6 +48,8 @@ class Person {
     required this.avatar,
     required this.active,
     Map<Perm, bool>? perms,
+    this.avatarLocked = false,
+    this.photo,
   }) : perms = perms ?? {};
 
   final String id;
@@ -55,15 +59,85 @@ class Person {
   String avatar;
   bool active;
   Map<Perm, bool> perms;
+
+  /// A parent locked this member's avatar.
+  bool avatarLocked;
+
+  /// Base64 JPEG when [avatar] is "photo" (uploaded from the device).
+  String? photo;
 }
 
 class TaskItem {
-  TaskItem({required this.id, required this.title, required this.personId, required this.points, required this.repeat});
+  TaskItem({required this.id, required this.title, required this.personId, required this.points, required this.repeat, this.prayer, this.legacyPrayer = false});
   final String id;
   String title;
   String personId;
   int points;
   Period repeat;
+
+  /// Set on the generated task of the prayer whose time is running.
+  final PrayerSlot? prayer;
+
+  /// An old hand-made prayer task. Members never see it while the automatic prayers are on; the
+  /// admin's task list shows it (marked) so it can be deleted.
+  final bool legacyPrayer;
+}
+
+/// The running prayer for a member: open from its adhan until the next one.
+class PrayerSlot {
+  const PrayerSlot({required this.key, required this.start, required this.end, required this.dayKey, this.graceMinutes});
+  final String key; // fajr | dhuhr | asr | maghrib | isha
+  final DateTime start, end;
+  final String dayKey;
+
+  /// «مهلة أداء الصلاة» set by an admin for this member and prayer; null = the default rule.
+  final int? graceMinutes;
+
+  /// Late once half an hour has passed (Isha: at 11 pm Riyadh time): it stays as a
+  /// task until the next prayer, but its points are gone (functions/src/prayer.ts lateAfter).
+  bool lateAt(DateTime now) => now.isAfter(lateFrom);
+
+  DateTime get lateFrom {
+    if (graceMinutes != null) return start.add(Duration(minutes: graceMinutes!));
+    final grace = start.add(const Duration(minutes: 30));
+    if (key != 'isha') return grace;
+    final r = start.toUtc().add(const Duration(hours: 3));
+    final until = DateTime.utc(r.year, r.month, r.day, 23).subtract(const Duration(hours: 3));
+    return until.isAfter(grace) ? until : grace;
+  }
+}
+
+/// Prayer reminders, set by the owner from their phone's location.
+class PrayerSettings {
+  const PrayerSettings({required this.enabled, required this.lat, required this.lng, required this.points, this.grace = const {}});
+  final bool enabled;
+  final double lat, lng;
+  final int points;
+
+  /// «مهلة أداء الصلاة»: target ("all" or a member id) → prayer → minutes (functions/src/prayer.ts).
+  final Map<String, Map<String, int>> grace;
+
+  /// A member's grace for [key]: their own, else the family's, else null (the default rule).
+  int? graceFor(String personId, String key) => grace[personId]?[key] ?? grace['all']?[key];
+
+  PrayerSettings copyWith({bool? enabled, double? lat, double? lng, int? points, Map<String, Map<String, int>>? grace}) =>
+      PrayerSettings(enabled: enabled ?? this.enabled, lat: lat ?? this.lat, lng: lng ?? this.lng, points: points ?? this.points, grace: grace ?? this.grace);
+}
+
+/// Grace minutes the admin can pick (functions/src/prayer.ts GRACE_MIN/GRACE_MAX).
+const graceMin = 5, graceMax = 240, graceStep = 5;
+
+/// A prize: the member with the most points in [period] wins it at [awardAt].
+class Prize {
+  Prize({required this.id, required this.name, required this.emoji, required this.period, required this.awardAt, this.awarded = false, this.winnerId, this.winnerPoints = 0});
+  final String id;
+  final String name;
+  final String emoji;
+  final Span period;
+  final DateTime awardAt;
+  bool awarded;
+  String? winnerId;
+  int winnerPoints;
 }
 
 class Completion {
@@ -77,9 +151,11 @@ class Completion {
     required this.status,
     required this.createdAt,
     this.photoPath,
+    this.prayer = false,
   });
   final String id;
   final String taskId;
+  final bool prayer;
   final String personId;
   final String title;
   final int points;
@@ -118,19 +194,6 @@ class Competition {
   bool activeAt(DateTime now) => !ended && (deadline == null || now.isBefore(deadline!));
 }
 
-class Tier {
-  Tier({required this.id, required this.name, required this.emoji, required this.threshold, required this.period, required this.scope, this.personId});
-  final String id;
-  final String name;
-  final String emoji;
-  final int threshold;
-  final Period period;
-  final Scope scope;
-
-  /// Private reward: only this member earns it and sees it.
-  final String? personId;
-}
-
 /// A family goal on the honor board (e.g. read 12 books this year).
 class Goal {
   Goal({required this.id, required this.title, required this.target, required this.progress, required this.personId, required this.period, required this.periodKey});
@@ -146,8 +209,20 @@ class Goal {
 }
 
 class Notice {
-  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy})
+  Notice({required this.id, required this.to, required this.title, required this.body, required this.from, required this.createdAt, this.expiresAt, List<String>? readBy, this.kind = 'notice', this.points = 0, this.lat, this.lng})
       : readBy = readBy ?? [];
+
+  /// A shared place or an SOS carries the spot, so the app can open it on the map.
+  final double? lat, lng;
+
+  bool get hasPlace => lat != null && lng != null;
+
+  /// 'prize' for the congratulation card sent to everyone when a prize is won;
+  /// 'violation' for the pop-up a member gets when points are taken ([to] is that member).
+  final String kind;
+
+  /// Points taken by a violation.
+  final int points;
   final String id;
   final String to; // 'all' or personId
   final String title;
@@ -162,10 +237,24 @@ class Notice {
   bool activeAt(DateTime now) => expiresAt == null || now.isBefore(expiresAt!);
 }
 
+/// Points the owner took from one member or from every member; cancelling it gives them back.
+class Violation {
+  Violation({required this.id, required this.personIds, required this.all, required this.points, required this.reason, required this.at});
+  final String id;
+  final List<String> personIds;
+  final bool all;
+  final int points;
+  final String reason;
+  final DateTime at;
+}
+
 class PeriodSum {
-  const PeriodSum(this.points, this.count);
+  const PeriodSum(this.points, this.count, [this.tasks = 0]);
   final int points;
   final int count;
+
+  /// Approved tasks only (no prayers or competitions), for the done / not-done report.
+  final int tasks;
 }
 
 /// A sent email, shown only in the local demo (the prototype's "📧" mailbox).
@@ -185,6 +274,58 @@ class SentFeedback {
 }
 
 /// Everything the UI needs about the signed-in family, for the current periods.
+/// Members (children) every family may have, subscribed or using a free code. Mirrors functions/src/plan.ts.
+const freeMembers = 5;
+
+/// The family's plan, written by the server: a subscription tier (5 / 10 / 20 members) or "legacy"
+/// (a family made before the paywall, which keeps using the app).
+class FamilyPlan {
+  const FamilyPlan({required this.source, required this.tier, this.until});
+  final String source; // apple | legacy
+  final int tier;
+  final DateTime? until; // null = no end (legacy)
+  bool activeAt(DateTime now) => until == null || until!.isAfter(now);
+}
+
+/// A place the family picked on the map and saved (shared as a notification, not as a live location).
+class SavedPlace {
+  const SavedPlace({required this.id, required this.label, required this.lat, required this.lng, required this.by, required this.at});
+  final String id, label, by;
+  final double lat, lng;
+  final DateTime at;
+}
+
+/// A meeting point set by a trip admin.
+class MeetPoint {
+  const MeetPoint({required this.lat, required this.lng, required this.label, required this.by});
+  final double lat, lng;
+  final String label, by;
+}
+
+/// The family trip ("أنا هنا"): while it is live, members share their places.
+class TripState {
+  const TripState({required this.active, required this.startedBy, required this.endsAt, this.farMeters = 300, this.meet, this.paused = const {}});
+  final bool active;
+  final String startedBy;
+  final DateTime endsAt;
+  final int farMeters;
+  final MeetPoint? meet;
+
+  /// People whose sharing a trip admin (or they themselves, if adults) switched off.
+  final Set<String> paused;
+
+  bool liveAt(DateTime now) => active && endsAt.isAfter(now);
+}
+
+/// Last place a member shared during the trip.
+class MemberLoc {
+  const MemberLoc({required this.personId, required this.lat, required this.lng, required this.acc, required this.at});
+  final String personId;
+  final double lat, lng;
+  final int acc; // metres
+  final DateTime at;
+}
+
 class FamilySnapshot {
   FamilySnapshot({
     required this.familyName,
@@ -192,14 +333,20 @@ class FamilySnapshot {
     required this.tasks,
     required this.completions,
     required this.competitions,
-    required this.tiers,
-    required this.deliveries,
     required this.notices,
     required this.daily,
     required this.weekly,
     this.monthly = const {},
     this.yearly = const {},
     this.goals = const [],
+    this.prizes = const [],
+    this.prayer,
+    this.violations = const [],
+    this.cycleStartedAt,
+    this.trip,
+    this.locations = const {},
+    this.places = const [],
+    this.plan,
   });
 
   final String familyName;
@@ -207,12 +354,27 @@ class FamilySnapshot {
   final List<TaskItem> tasks;
   final List<Completion> completions;
   final List<Competition> competitions;
-  final List<Tier> tiers;
-  final Set<String> deliveries; // "{tierId}_{who}_{periodKey}"
   final List<Notice> notices;
   final Map<String, PeriodSum> daily; // personId -> today's points
   final Map<String, PeriodSum> weekly; // personId -> this week's points
   final Map<String, PeriodSum> monthly; // personId -> this month's points (honor board)
   final Map<String, PeriodSum> yearly; // personId -> this year's points (honor board)
   final List<Goal> goals;
+  final List<Prize> prizes;
+  final PrayerSettings? prayer;
+  final List<Violation> violations; // newest first
+  /// When the owner last started an evaluation cycle (null: never).
+  final DateTime? cycleStartedAt;
+
+  /// The family trip, if one was ever started (check [TripState.liveAt]).
+  final TripState? trip;
+
+  /// personId -> last shared place (only while a trip is live).
+  final Map<String, MemberLoc> locations;
+
+  /// Saved places, newest first.
+  final List<SavedPlace> places;
+
+  /// The subscription / legacy plan (null until the server writes one).
+  final FamilyPlan? plan;
 }

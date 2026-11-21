@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- مربع عائم (DECISIONS ٢٩): يُضاف فوق الشبكة في widget_lamha. الغلاف لا يلتقط اللمس، وحشوته
+     (setViewPadding من الجدول) تترك للخانة مكانها ومقاسها فقط، فيبقى ما حولها قابلاً للضغط. الخانة بحشوة ٤dp
+     كورقة شجرة القص. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/float_box"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/float_slot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="4dp" />
+</FrameLayout>

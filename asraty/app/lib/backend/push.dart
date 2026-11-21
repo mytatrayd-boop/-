@@ -24,9 +24,13 @@ class Push {
     enableVibration: true,
   );
 
-  static Future<void> init() async {
-    if (_ready || kIsWeb) return;
-    _ready = true;
+  static FlutterLocalNotificationsPlugin get local => _local;
+  static var _localReady = false;
+
+  /// Local notifications only (scheduled reminders work without Firebase, in the demo too).
+  static Future<void> initLocal() async {
+    if (_localReady || kIsWeb) return;
+    _localReady = true;
     await _local.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('ic_notification'),
@@ -36,6 +40,22 @@ class Push {
     await _local
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_channel);
+  }
+
+  static AndroidNotificationDetails get androidDetails => AndroidNotificationDetails(
+        _channel.id,
+        _channel.name,
+        channelDescription: _channel.description,
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: 'ic_notification',
+        color: const Color(0xFF2F6158),
+      );
+
+  static Future<void> init() async {
+    if (_ready || kIsWeb) return;
+    _ready = true;
+    await initLocal();
 
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
 

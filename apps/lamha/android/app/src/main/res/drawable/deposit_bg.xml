@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- مستطيل إيداع (طلب المالك): لون الصناديق (tile_bg) بزوايا أصغر (depositRadius في widget_preview_tiles.dart). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#4096AAD2" />
+    <corners android:radius="12dp" />
+</shape>

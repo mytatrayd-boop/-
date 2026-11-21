@@ -1,0 +1,288 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../engine/adhan.dart';
+
+/// جدولة الأذان بالإشعارات المحلية (flutter_local_notifications، DECISIONS ٢٨) خلف واجهة قابلة للاستبدال
+/// في الاختبارات.
+
+/// نتيجة طلب الأذونات.
+class AdhanPermissionResult {
+  const AdhanPermissionResult({required this.notifications, required this.exactAlarms});
+
+  /// إذن عرض الإشعارات (أندرويد ١٣+ وآيفون).
+  final bool notifications;
+
+  /// أندرويد ١٢+: إذن المنبّه الدقيق. بدونه يقع التنبيه قرب الموعد (قد يتأخر دقائق) لا فيه بالضبط.
+  final bool exactAlarms;
+}
+
+abstract class AdhanNotifier {
+  /// يستبدل كل التنبيهات المجدولة بـ[events] (فارغة = يلغيها كلها) بصوت [sound] لمدينة [city].
+  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city);
+
+  /// يطلب الأذونات (عند تفعيل المستخدم للأذان).
+  Future<AdhanPermissionResult> requestPermissions();
+
+  /// تجربة الصوت المختار. أندرويد: يُشغَّل داخل التطبيق على مستوى الرنين وأزرار الصوت تتحكم به وهو يعمل؛
+  /// ضغطها مرة ثانية وهو يعمل يوقفه. آيفون: إشعار فوري.
+  Future<void> test(AdhanSound sound);
+
+  /// هل تجربة الصوت تعمل الآن (لتبديل الزر بين «تجربة» و«إيقاف»).
+  ValueListenable<bool> get testing;
+
+  /// يوقف التجربة الجارية.
+  Future<void> stopTest();
+
+  /// آخر خطأ في الجدولة أو التجربة (يُعرض في الإعدادات فلا يبقى الفشل صامتاً)، أو null إن نجح آخر ما جُرّب.
+  Future<String?> lastError();
+}
+
+/// مفتاح آخر خطأ في shared_preferences.
+const adhanErrorKey = 'adhanLastError';
+
+/// مفاتيح الصوت في الأصول الأصلية: أندرويد `res/raw/adhan.mp3` و`takbeer.mp3`، وآيفون `Runner/takbeer.wav`
+/// (آبل تقبل aiff وwav وcaf فقط، وبحد ٣٠ ثانية).
+const androidAdhanSound = 'adhan';
+const androidTakbeerSound = 'takbeer';
+const iosTakbeerSound = 'takbeer.wav';
+
+/// قنوات أندرويد للأذان: `adhan_<الصوت>_ring`. القنوات بلا اللاحقة (`adhan_full` وأخواتها) كانت على
+/// مستوى صوت الإشعارات، وصوت القناة وخصائصها لا تتغير بعد إنشائها، فلزم اسم جديد.
+const adhanChannelPrefix = 'adhan_';
+const adhanChannelSuffix = '_ring';
+const legacyAdhanChannels = ['adhan_full', 'adhan_takbeer', 'adhan_silent'];
+
+/// مفتاح في shared_preferences: هل جدوَل التطبيق تنبيهات من قبل (فلا نمسّ الإشعارات لمن لم يفعّل الأذان قط).
+const adhanActiveKey = 'adhanActive';
+
+class LocalAdhanNotifier implements AdhanNotifier {
+  LocalAdhanNotifier(this._prefs);
+
+  final SharedPreferences _prefs;
+  final _plugin = FlutterLocalNotificationsPlugin();
+  var _ready = false;
+  final _testing = ValueNotifier<bool>(false);
+  static const _channel = MethodChannel('sa.lamha/android');
+
+  @override
+  ValueListenable<bool> get testing => _testing;
+
+  bool get _ios => defaultTargetPlatform == TargetPlatform.iOS;
+
+  Future<void> _fail(String where, Object e) async {
+    debugPrint('adhan $where: $e');
+    final msg = '$where: ${e.toString().split('\n').first}';
+    await _prefs.setString(adhanErrorKey, msg.length > 200 ? msg.substring(0, 200) : msg);
+  }
+
+  @override
+  Future<String?> lastError() async => _prefs.getString(adhanErrorKey);
+
+  Future<void> _init() async {
+    if (_ready) return;
+    await _plugin.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        // الأذونات تُطلب عند تفعيل المستخدم، لا عند الفتح.
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
+      ),
+    );
+    _ready = true;
+    if (!_ios) {
+      // القنوات القديمة (صوت الإشعارات) لا يُعاد استعمالها: تُحذف فلا تبقى مكررة في إعدادات التطبيق.
+      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      for (final old in legacyAdhanChannels) {
+        try {
+          await android?.deleteNotificationChannel(channelId: old);
+        } catch (_) {}
+      }
+    }
+  }
+
+  NotificationDetails _details(AdhanSound requested) {
+    final sound = requested.forPlatform(ios: _ios);
+    final silent = sound == AdhanSound.silent;
+    final raw = sound == AdhanSound.full ? androidAdhanSound : androidTakbeerSound;
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        // قناة لكل صوت: صوت القناة لا يتغير بعد إنشائها. اللاحقة _ring: قنوات مستوى صوت الرنين (DECISIONS ٣٨).
+        '$adhanChannelPrefix${sound.name}$adhanChannelSuffix',
+        switch (sound) {
+          AdhanSound.full => 'الأذان',
+          AdhanSound.takbeer => 'التكبير',
+          AdhanSound.silent => 'تنبيه الصلاة (بلا صوت)',
+        },
+        channelDescription: 'تنبيه عند دخول وقت الصلاة',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: !silent,
+        sound: silent ? null : RawResourceAndroidNotificationSound(raw),
+        // يتبع مستوى «صوت الرنين» (أزرار الصوت ترفعه وتخفضه) ويسكت في وضع الصامت، بدل «صوت الإشعارات».
+        audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+        // زر «إيقاف» يلغي الإشعار فيتوقف صوته (النظام يوقف صوت الإشعار عند إلغائه).
+        actions: silent
+            ? null
+            : const [AndroidNotificationAction('stop', 'إيقاف', cancelNotification: true)],
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentSound: !silent,
+        sound: silent ? null : iosTakbeerSound,
+      ),
+    );
+  }
+
+  @override
+  Future<AdhanPermissionResult> requestPermissions() async {
+    try {
+      await _init();
+      if (_ios) {
+        final ok = await _plugin
+            .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+            ?.requestPermissions(alert: true, sound: true);
+        return AdhanPermissionResult(notifications: ok ?? false, exactAlarms: true);
+      }
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final notifications = await android?.requestNotificationsPermission() ?? false;
+      var exact = await android?.canScheduleExactNotifications() ?? false;
+      if (!exact) {
+        // يفتح إعداد «المنبهات والتذكيرات» للتطبيق؛ إن رفضه المستخدم نكتفي بالتقريبي.
+        exact = await android?.requestExactAlarmsPermission() ?? false;
+      }
+      return AdhanPermissionResult(notifications: notifications, exactAlarms: exact);
+    } catch (e) {
+      await _fail('الأذونات', e);
+      return const AdhanPermissionResult(notifications: false, exactAlarms: false);
+    }
+  }
+
+  @override
+  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async {
+    try {
+      if (events.isEmpty && !(_prefs.getBool(adhanActiveKey) ?? false)) return;
+      await _init();
+      await _plugin.cancelAll();
+      if (events.isEmpty) {
+        await _prefs.setBool(adhanActiveKey, false);
+        return;
+      }
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final exact = _ios || (await android?.canScheduleExactNotifications() ?? false);
+      final details = _details(sound);
+      for (final e in events) {
+        await _plugin.zonedSchedule(
+          id: e.id,
+          scheduledDate: e.time,
+          notificationDetails: details,
+          androidScheduleMode:
+              exact ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
+          title: e.title,
+          body: e.body(city),
+        );
+      }
+      await _prefs.setBool(adhanActiveKey, true);
+      await _prefs.remove(adhanErrorKey);
+    } catch (e) {
+      // فشل الجدولة لا يوقف التطبيق، لكن يُحفظ ويُعرض في الإعدادات.
+      await _fail('الجدولة', e);
+    }
+  }
+
+  /// هل الإشعارات مسموحة؟ يطلب الإذن إن لم يكن ممنوحاً (النظام يتجاهل الطلب إن رُفض نهائياً).
+  Future<bool> _notificationsAllowed() async {
+    if (_ios) {
+      final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      final current = await ios?.checkPermissions();
+      if (current?.isEnabled ?? false) return true;
+      return await ios?.requestPermissions(alert: true, sound: true) ?? false;
+    }
+    final android =
+        _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (await android?.areNotificationsEnabled() ?? true) return true;
+    return await android?.requestNotificationsPermission() ?? false;
+  }
+
+  @override
+  Future<void> stopTest() async {
+    try {
+      await _channel.invokeMethod<bool>('stopAdhanTest');
+    } catch (_) {}
+    _testing.value = false;
+  }
+
+  /// أندرويد: تشغيل داخل التطبيق (DECISIONS ٣٩). false إن لم يبدأ (فيُعرض السبب).
+  Future<bool> _playInApp(AdhanSound sound) async {
+    final raw = sound == AdhanSound.full ? androidAdhanSound : androidTakbeerSound;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'adhanTestDone') _testing.value = false;
+    });
+    final ok = await _channel.invokeMethod<bool>('playAdhanTest', {'sound': raw}) ?? false;
+    _testing.value = ok;
+    return ok;
+  }
+
+  @override
+  Future<void> test(AdhanSound sound) async {
+    try {
+      if (!_ios && sound != AdhanSound.silent) {
+        if (_testing.value) {
+          await stopTest();
+          return;
+        }
+        if (await _playInApp(sound)) {
+          await _prefs.remove(adhanErrorKey);
+        } else {
+          await _fail('التجربة', 'تعذّر تشغيل الصوت');
+        }
+        return;
+      }
+      await _init();
+      // بلا إذن الإشعارات يهمل النظام الإشعار بصمت (أندرويد ١٣+ وآيفون)، فيبدو الزر «لا يستجيب». الإذن
+      // كان يُطلب فقط عند تحويل مفتاح الأذان من مطفأ إلى مفعّل، فنتحقق منه ونطلبه هنا ونعرض السبب إن رُفض.
+      if (!await _notificationsAllowed()) {
+        await _fail('التجربة', 'الإشعارات مغلقة للتطبيق، فعّلها من إعدادات الجهاز ثم أعد التجربة');
+        return;
+      }
+      await _plugin.show(
+        id: 1,
+        title: 'تجربة الأذان',
+        body: 'هكذا يصلك التنبيه عند دخول وقت الصلاة',
+        notificationDetails: _details(sound),
+      );
+      await _prefs.remove(adhanErrorKey);
+    } catch (e) {
+      await _fail('التجربة', e);
+    }
+  }
+}
+
+/// لا يفعل شيئاً (الاختبارات والمنصات بلا إشعارات).
+class NoopAdhanNotifier implements AdhanNotifier {
+  @override
+  ValueListenable<bool> get testing => ValueNotifier<bool>(false);
+
+  @override
+  Future<void> stopTest() async {}
+
+  @override
+  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async {}
+
+  @override
+  Future<AdhanPermissionResult> requestPermissions() async =>
+      const AdhanPermissionResult(notifications: true, exactAlarms: true);
+
+  @override
+  Future<void> test(AdhanSound sound) async {}
+
+  @override
+  Future<String?> lastError() async => null;
+}

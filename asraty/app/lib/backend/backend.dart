@@ -57,8 +57,10 @@ abstract class Backend {
 
   // ---- auth
   /// Returns false when a still-valid code was already sent (not re-sent).
-  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, bool resend = false});
+  /// With [password], verifying the code also sets it (sign-up or reset).
+  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, String? password, bool resend = false});
   Future<VerifyResult> verifyCode({required String email, required String code});
+  Future<VerifyResult> login({required String email, required String password});
   Future<void> signOut();
 
   // ---- people
@@ -66,7 +68,9 @@ abstract class Backend {
   Future<void> resendInvite(String personId);
   Future<void> updatePerms(String personId, Map<Perm, bool> perms);
   Future<void> removePerson(String personId);
-  Future<void> setAvatar(String personId, String avatar);
+  /// [photo] (JPEG bytes) goes with avatar "photo".
+  Future<void> setAvatar(String personId, String avatar, {Uint8List? photo});
+  Future<void> setAvatarLock(String personId, bool locked);
 
   // ---- tasks
   Future<void> addTask({required String title, required String personId, required int points, required Period repeat});
@@ -82,27 +86,74 @@ abstract class Backend {
   Future<({int rank, int points})> enterCompetition(String compId);
   Future<void> decideEntry(String compId, String personId, bool approve);
 
-  // ---- rewards
-  /// [personId] makes it a private reward for that member only.
-  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope, String? personId});
-  Future<void> deleteTier(String tierId);
-  Future<void> deliver(String tierId, String who, String periodKey);
+  // ---- prizes
+  Future<void> addPrize({required String name, required String emoji, required Span period, required DateTime awardAt});
+  Future<void> deletePrize(String prizeId);
+
+  /// Lets the server hand over prizes whose time came (the app calls it when one is due).
+  Future<void> tick();
+
+  // ---- prayer reminders
+  Future<void> setPrayer({required double lat, required double lng, required int points, required bool enabled});
+
+  /// «مهلة أداء الصلاة»: minutes per prayer for [target] ("all" or a member id); null restores the default.
+  /// "all" also clears the members' own values for those prayers. Needs [Perm.tasks].
+  Future<void> setPrayerGrace(String target, Map<String, int?> grace);
 
   // ---- notices
   /// [minutes] > 0 makes a timed alert that ends after that many minutes.
   Future<void> sendAlert(String to, String body, {int minutes = 0});
   Future<void> deleteAlert(String noticeId);
-  Future<void> sendReport();
+  /// Clears every alert of the family (owner only).
+  Future<void> deleteAllAlerts();
+  Future<void> sendReport({Span span = Span.daily});
   Future<void> markRead();
+
+  // ---- evaluation cycles and violations (owner)
+  /// Wipes every member's points and starts a new year-long cycle.
+  Future<void> newCycle();
+  /// [personId] is a member id or 'all'.
+  Future<void> addViolation({required String personId, required int points, String reason = ''});
+  /// Cancels a violation and gives its points back.
+  Future<void> deleteViolation(String violationId);
 
   // ---- honor board goals
   Future<void> addGoal({required String title, required int target, required String personId, required Honor period});
   Future<void> goalProgress(String goalId, int delta);
   Future<void> deleteGoal(String goalId);
 
+  // ---- family trip ("أنا هنا")
+  Future<void> tripStart({int hours = 12, int farMeters = 300});
+  Future<void> tripEnd();
+  /// Shares the signed-in person's place (while the trip is live).
+  Future<void> tripPing({required double lat, required double lng, required double acc});
+  /// Switches sharing on/off for [personId] (a trip admin for anyone, an adult for themselves).
+  Future<void> tripShare(String personId, bool on);
+  Future<void> tripMeet({required double lat, required double lng, required String label});
+  Future<void> tripMeetClear();
+
+  // ---- saved places (picked on the map; sharing one only notifies the family)
+  /// Saves a place; with [share] the whole family gets a notification with a map link
+  /// (and, while a trip is live, it becomes the meeting point).
+  Future<void> placeSave({required double lat, required double lng, required String label, bool share = false});
+  Future<void> placeShare(String placeId);
+  Future<void> placeDelete(String placeId);
+  /// Alerts the whole family, with the sender's place when known.
+  Future<void> tripSos({double? lat, double? lng});
+
+  // ---- plan (subscription)
+  /// Marks a family made before the paywall as legacy (the owner's app asks once at start).
+  Future<void> syncPlan();
+  /// The owner bought or restored a subscription: the server checks Apple's receipt and records the tier.
+  Future<void> activatePlan(String receipt, {String platform = 'ios'});
+
   // ---- account
   Future<void> deleteAccount();
   Future<void> deleteFamily();
+
+  // ---- activation codes (work before sign-in)
+  /// Binds [code] to [deviceId] on first use; later it only works on that device.
+  Future<void> redeemCode(String code, String deviceId);
 
   // ---- feedback (works signed in or not)
   Future<void> sendFeedback({required String type, required String text, String? email, required String platform});

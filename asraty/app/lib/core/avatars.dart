@@ -15,6 +15,19 @@ class AvatarSpec {
   final bool glasses;
 }
 
+/// Portrait avatars (`assets/avatars/<key>.webp`), offered in the picker.
+const portraitKeys = [
+  'dad_shemagh', 'dad_bisht', 'grandpa', 'grandpa2', 'grandpa3', 'mom_black', 'mom_brown', 'mom_green',
+  'mom_purple', 'woman_black', 'grandma', 'teen_shemagh', 'teen_shemagh2', 'teen_ghutra', 'teen_ghutra2', 'teen_hijab',
+  'teen_brown', 'teen_black', 'girl_rose', 'boy_shemagh', 'boy_ghutra', 'boy_kuma', 'girl_curly', 'girl_pink',
+];
+
+bool isPortrait(String key) => portraitKeys.contains(key);
+
+/// Avatar value of a member who uploaded their own photo.
+const photoAvatar = 'photo';
+
+/// The older cartoon avatars, still drawn for accounts that chose them.
 const avatarKeys = ['dad', 'dad2', 'grandpa', 'mom', 'mom2', 'grandma', 'teen', 'boy', 'boy2', 'girl', 'girl2', 'baby'];
 
 const avatarSpecs = <String, AvatarSpec>{

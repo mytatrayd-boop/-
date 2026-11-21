@@ -1,0 +1,1106 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_ar.dart';
+import 'app_localizations_en.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
+    Locale('en'),
+  ];
+
+  /// اسم التطبيق
+  ///
+  /// In ar, this message translates to:
+  /// **'لمحة'**
+  String get appTitle;
+
+  /// خطأ عند فشل تحميل البيانات
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل الإعدادات'**
+  String get loadError;
+
+  /// زر إعادة التحميل بعد الخطأ
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get retry;
+
+  /// عنوان شريط الشفافية (SPEC ٢)
+  ///
+  /// In ar, this message translates to:
+  /// **'الشفافية'**
+  String get opacityLabel;
+
+  /// نسبة مئوية؛ value رقم منسق مسبقاً
+  ///
+  /// In ar, this message translates to:
+  /// **'{value}٪'**
+  String percent(String value);
+
+  /// زر اختيار لقطة خلفية الشاشة (آيفون فقط)
+  ///
+  /// In ar, this message translates to:
+  /// **'لقطة الخلفية'**
+  String get backgroundButton;
+
+  /// تأكيد حفظ اللقطة
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظت لقطة الخلفية'**
+  String get backgroundSaved;
+
+  /// فشل اختيار اللقطة أو حفظها
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ لقطة الخلفية. تأكد من إذن الصور وحاول مرة أخرى.'**
+  String get backgroundError;
+
+  /// عنوان اختيار المدينة
+  ///
+  /// In ar, this message translates to:
+  /// **'المدينة'**
+  String get cityLabel;
+
+  /// زر تحديد المدينة من الموقع
+  ///
+  /// In ar, this message translates to:
+  /// **'موقعي'**
+  String get myLocation;
+
+  /// رفض إذن الموقع
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُسمح بالوصول إلى الموقع، أو خدمة الموقع مغلقة. ابحث عن مدينتك أو اخترها من القائمة.'**
+  String get locationDenied;
+
+  /// فشل قراءة الموقع
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحديد الموقع. ابحث عن مدينتك أو اخترها من القائمة.'**
+  String get locationFailed;
+
+  /// عنوان قائمة طرق الحساب
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة حساب الصلاة'**
+  String get prayerMethodLabel;
+
+  /// اسم طريقة الحساب بمعرّفها
+  ///
+  /// In ar, this message translates to:
+  /// **'{method, select, ummAlQura{أم القرى} muslimWorldLeague{رابطة العالم الإسلامي} egyptian{الهيئة المصرية العامة للمساحة} karachi{جامعة العلوم الإسلامية بكراتشي} dubai{دبي} kuwait{الكويت} qatar{قطر} gulfRegion{منطقة الخليج} northAmerica{أمريكا الشمالية} turkiye{تركيا} other{{method}}}'**
+  String prayerMethodName(String method);
+
+  /// اسم عنصر الودجت بمعرّفه
+  ///
+  /// In ar, this message translates to:
+  /// **'{element, select, clock{الساعة واليوم} dates{التاريخ الهجري والميلادي} weather{المدينة والطقس} prayer{الصلاة القادمة} qibla{القبلة} deposit{الإيداعات} season{الفصل} tradSeason{الموسم} dayWeather{اليوم والطقس} hijri{التاريخ الهجري} gregorian{التاريخ الميلادي} prayerTimes{مواقيت الصلاة} tradPoints{وصف الموسم} weekday{اليوم} cityTemp{الموقع والحرارة} other{{element}}}'**
+  String elementName(String element);
+
+  /// عند محاولة إلغاء آخر إيداع
+  ///
+  /// In ar, this message translates to:
+  /// **'يلزم إيداع واحد على الأقل. لإخفاء المربع استخدم «تخصيص الودجت».'**
+  String get lastDepositMessage;
+
+  /// عنوان مربع الصلاة
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاة القادمة'**
+  String get tilePrayer;
+
+  /// عنوان مربع القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'القبلة'**
+  String get tileQibla;
+
+  /// عنوان مربع الإيداع
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيداع القادم'**
+  String get tileDeposit;
+
+  /// عنوان مربع الإيداع المختصر إذا لم يتسع العنوان الكامل سطراً واحداً
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيداع'**
+  String get tileDepositShort;
+
+  /// عنوان مربع الفصل الفلكي
+  ///
+  /// In ar, this message translates to:
+  /// **'الفصل'**
+  String get tileSeason;
+
+  /// عنوان مربع الموسم التراثي
+  ///
+  /// In ar, this message translates to:
+  /// **'الموسم'**
+  String get tileTradSeason;
+
+  /// التاريخ الهجري في المعاينة
+  ///
+  /// In ar, this message translates to:
+  /// **'{date} هـ'**
+  String hijriDateText(String date);
+
+  /// التاريخ الميلادي في المعاينة
+  ///
+  /// In ar, this message translates to:
+  /// **'{date} م'**
+  String gregorianDateText(String date);
+
+  /// سطر المدينة والطقس في المعاينة؛ weather مثل «☀️ ٣١°» أو weatherUnknown
+  ///
+  /// In ar, this message translates to:
+  /// **'📍 {city} · {weather}'**
+  String cityWeather(String city, String weather);
+
+  /// مثل: باقي ٣٤ يوماً للشتاء؛ next مسبوق باللام
+  ///
+  /// In ar, this message translates to:
+  /// **'{remaining} {next}'**
+  String remainingToNext(String remaining, String next);
+
+  /// زاوية بالدرجات
+  ///
+  /// In ar, this message translates to:
+  /// **'{value}°'**
+  String degrees(String value);
+
+  /// إشارة رخص البيانات والخط
+  ///
+  /// In ar, this message translates to:
+  /// **'إحداثيات المدن من GeoNames (geonames.org) برخصة CC BY 4.0، وبعضها من OpenStreetMap (© مساهمو OpenStreetMap، ODbL). الخط Tajawal برخصة SIL OFL 1.1.'**
+  String get dataLicense;
+
+  /// اسم المكان من «موقعي» إذا تعذّر geocoding
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب {city}'**
+  String nearCity(String city);
+
+  /// «موقعي» بلا إنترنت
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر جلب اسم المكان، فظهر اسم أقرب مدينة. الحساب بموقعك الفعلي.'**
+  String get locationNearest;
+
+  /// حقل البحث عن المكان
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن مدينة أو محافظة'**
+  String get searchHint;
+
+  /// البحث بلا نتائج
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج. جرّب اسماً آخر.'**
+  String get searchNoResults;
+
+  /// فشل البحث (لا إنترنت)
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر البحث. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.'**
+  String get searchFailed;
+
+  /// تلميح قائمة المدن الجاهزة
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار سريع'**
+  String get quickPick;
+
+  /// عنوان شاشة البوصلة وزرها في الإعدادات
+  ///
+  /// In ar, this message translates to:
+  /// **'اتجاه القبلة'**
+  String get qiblaTitle;
+
+  /// زاوية القبلة من الشمال
+  ///
+  /// In ar, this message translates to:
+  /// **'{degrees} من الشمال'**
+  String qiblaFromNorth(String degrees);
+
+  /// إرشاد استخدام البوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'أدر الجوال حتى تصل الكعبة للسهم بالأعلى'**
+  String get compassHint;
+
+  /// الجهاز متجه إلى القبلة (ضمن ٣°)
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت باتجاه القبلة'**
+  String get qiblaAligned;
+
+  /// السطر الصغير تحت زاوية القبلة في مربع الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'من الشمال · {direction}'**
+  String qiblaTileSub(String direction);
+
+  /// عنوان بطاقة المسافة إلى مكة
+  ///
+  /// In ar, this message translates to:
+  /// **'المسافة إلى مكة'**
+  String get qiblaDistance;
+
+  /// المسافة بالكيلومتر
+  ///
+  /// In ar, this message translates to:
+  /// **'{km} كم'**
+  String qiblaDistanceKm(String km);
+
+  /// عنوان بطاقة دقة البوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'دقة البوصلة'**
+  String get compassAccuracyTitle;
+
+  /// مستوى دقة البوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'{level, select, excellent{ممتازة} good{جيدة} other{ضعيفة}}'**
+  String compassAccuracy(String level);
+
+  /// قبل أول قراءة من الحساس
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ قراءة البوصلة…'**
+  String get compassWaiting;
+
+  /// دقة الحساس منخفضة
+  ///
+  /// In ar, this message translates to:
+  /// **'حرّك الجوال على شكل رقم ٨ لمعايرة البوصلة'**
+  String get compassCalibrate;
+
+  /// الجهاز بلا حساس بوصلة
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يتوفر حساس بوصلة في هذا الجهاز، فلا يمكن عرض السهم. استعن بالزاوية أعلاه وبوصلة أخرى.'**
+  String get compassUnavailable;
+
+  /// لا قراءة طقس أحدث من ٣ ساعات
+  ///
+  /// In ar, this message translates to:
+  /// **'--°'**
+  String get weatherUnknown;
+
+  /// عنوان أزرار سمة اللون
+  ///
+  /// In ar, this message translates to:
+  /// **'لون الودجت'**
+  String get themeLabel;
+
+  /// اسم سمة اللون بمعرّفها
+  ///
+  /// In ar, this message translates to:
+  /// **'{theme, select, black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} gray{رمادي} system{ألوان النظام} other{{theme}}}'**
+  String themeName(String theme);
+
+  /// مفتاح الإشعار الثابت (أندرويد)
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار في شاشة القفل (إشعار)'**
+  String get lockNotificationLabel;
+
+  /// شرح تحت المفتاح
+  ///
+  /// In ar, this message translates to:
+  /// **'أغلب جوالات أندرويد لا تسمح بودجت على شاشة القفل، فيظهر إشعار هادئ بالصلاة القادمة والقبلة.'**
+  String get lockNotificationHint;
+
+  /// عنوان رسالة شرح الإذن
+  ///
+  /// In ar, this message translates to:
+  /// **'إذن الإشعارات'**
+  String get notificationPermissionTitle;
+
+  /// سبب طلب POST_NOTIFICATIONS
+  ///
+  /// In ar, this message translates to:
+  /// **'لعرض الصلاة القادمة والعد التنازلي والقبلة في شاشة القفل، تحتاج لمحة إذن الإشعارات. الإشعار ثابت وهادئ: بلا صوت ولا اهتزاز، ويمكنك إطفاؤه من هنا في أي وقت.'**
+  String get notificationPermissionBody;
+
+  /// زر متابعة
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get continueAction;
+
+  /// زر إلغاء
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cancelAction;
+
+  /// رفض إذن الإشعارات
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُسمح بالإشعارات، فلن يظهر شيء في شاشة القفل. يمكنك السماح بها من إعدادات الجوال.'**
+  String get notificationDenied;
+
+  /// عنوان اختيار حجم خط الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط'**
+  String get fontScaleLabel;
+
+  /// أسماء أحجام الخط
+  ///
+  /// In ar, this message translates to:
+  /// **'{scale, select, small{صغير} medium{متوسط} large{كبير} xlarge{كبير جداً} other{{scale}}}'**
+  String fontScaleName(String scale);
+
+  /// العد التنازلي للصلاة في المعاينة (كـ countdown_format في أندرويد)
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {time}'**
+  String countdownText(String time);
+
+  /// عنوان مفاتيح الإيداعات في الإعدادات
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيداعات الظاهرة'**
+  String get depositsSection;
+
+  /// زر الإعدادات وعنوان شاشة التخصيص (الميزة ٥)
+  ///
+  /// In ar, this message translates to:
+  /// **'الودجت'**
+  String get customizeTitle;
+
+  /// زر إعادة التخطيط الافتراضي
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة الافتراضي'**
+  String get resetLayout;
+
+  /// مفتاح إظهار المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار'**
+  String get tileVisible;
+
+  /// عنوان اختيار عرض المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'العرض'**
+  String get tileSpanLabel;
+
+  /// عنوان حجم خط المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط'**
+  String get tileFontLabel;
+
+  /// لون القيمة
+  ///
+  /// In ar, this message translates to:
+  /// **'لون الخط الرئيسي'**
+  String get primaryColorLabel;
+
+  /// لون العنوان والثانويات
+  ///
+  /// In ar, this message translates to:
+  /// **'لون الخط الفرعي'**
+  String get secondaryColorLabel;
+
+  /// مربع ظاهر بعد الصف الخامس
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يتسع في الودجت (أكثر من ٥ صفوف)'**
+  String get tileOverflow;
+
+  /// تلميح مقبض السحب
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط مطولاً واسحب لإعادة الترتيب'**
+  String get dragHandle;
+
+  /// إرشاد أعلى القائمة
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب أي مربع في المعاينة لتحريكه. اضغطه لفتح لوحة خطه وألوانه ومحتواه، وتظهر في زواياه الأربع مقابض لتكبيره أو تصغيره من أي جهة. زر «ملء الشاشة» للتعديل بدقة. العناصر تصعد تلقائياً لتملأ الفراغ.'**
+  String get tileHint;
+
+  /// عرض المربع ١/٢/٣
+  ///
+  /// In ar, this message translates to:
+  /// **'{span, select, small{صغير} medium{متوسط} wide{عريض} other{{span}}}'**
+  String tileSpanName(String span);
+
+  /// ألوان الخط؛ auto حسب السمة
+  ///
+  /// In ar, this message translates to:
+  /// **'{color, select, auto{تلقائي} white{أبيض} black{أسود} gold{ذهبي} green{أخضر} blue{أزرق} purple{بنفسجي} pink{وردي} lightGray{رمادي فاتح} cream{كريمي} yellow{أصفر} orange{برتقالي} red{أحمر} lime{أخضر فاتح} teal{تركوازي} cyan{سماوي} brown{بني} gray{رمادي} other{{color}}}'**
+  String tileColorName(String color);
+
+  /// مفتاح عنوان المربع
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار العنوان'**
+  String get tileShowTitle;
+
+  /// مفتاح الأسطر الثانوية
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار السطر الفرعي'**
+  String get tileShowSub;
+
+  /// عنوان اختيار شكل الأرقام في الودجت (الميزة ٦)
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام'**
+  String get digitsLabel;
+
+  /// اسم شكل الأرقام
+  ///
+  /// In ar, this message translates to:
+  /// **'{style, select, arabic{عربية (١٢٣)} latin{إنجليزية (123)} other{{style}}}'**
+  String digitsName(String style);
+
+  /// عنوان مربع الإيداعات (الميزة ٦)
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي على:'**
+  String get depositsTitle;
+
+  /// عنوان مربع وصف الموسم، مثل «في الوسم:»
+  ///
+  /// In ar, this message translates to:
+  /// **'في {season}:'**
+  String tradPointsTitle(String season);
+
+  /// نقطة في وصف الموسم
+  ///
+  /// In ar, this message translates to:
+  /// **'- {point}'**
+  String pointText(String point);
+
+  /// مثل: الشتاء بعد ٦٠ يوماً
+  ///
+  /// In ar, this message translates to:
+  /// **'{next} {after}'**
+  String nextAfter(String next, String after);
+
+  /// سطر المدينة في مربع اليوم والطقس، icon رمز الطقس أو فارغ
+  ///
+  /// In ar, this message translates to:
+  /// **'📍 {city} {icon}'**
+  String cityIcon(String city, String icon);
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'البوصلة'**
+  String get qiblaTabCompass;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'الخريطة'**
+  String get qiblaTabMap;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'ضع هاتفك أفقياً للحصول على أفضل نتيجة'**
+  String get qiblaHoldFlat;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'موقعك الحالي'**
+  String get qiblaMyLocation;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحديد موقعك…'**
+  String get qiblaLocating;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحديد موقعك الآن، فالحساب من المدينة المحفوظة: {city}'**
+  String qiblaSavedLocation(String city);
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'الاتجاه من الشمال'**
+  String get qiblaMapDirection;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'تبعد عن الكعبة'**
+  String get qiblaMapDistance;
+
+  /// شاشة القبلة
+  ///
+  /// In ar, this message translates to:
+  /// **'تحتاج الخريطة اتصالاً بالإنترنت'**
+  String get qiblaMapOffline;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'العدّاد التنازلي للصلاة القادمة'**
+  String get prayerCountdownLabel;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'يظهر تحت الساعة في الودجت. مطفأ افتراضياً.'**
+  String get prayerCountdownHint;
+
+  /// No description provided for @adhanErrorLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تنفيذ الأذان'**
+  String get adhanErrorLabel;
+
+  /// No description provided for @appVersionLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة'**
+  String get appVersionLabel;
+
+  /// No description provided for @splitDayWeather.
+  ///
+  /// In ar, this message translates to:
+  /// **'فصل اليوم عن الموقع والحرارة (مربعان مستقلان)'**
+  String get splitDayWeather;
+
+  /// No description provided for @frameEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إطار الودجت'**
+  String get frameEdit;
+
+  /// No description provided for @frameDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get frameDone;
+
+  /// No description provided for @frameReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الإطار'**
+  String get frameReset;
+
+  /// No description provided for @tileFloatLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'عائم فوق المربعات (تحريك وتكبير حرّ)'**
+  String get tileFloatLabel;
+
+  /// No description provided for @tileFloatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحبه في المعاينة وغيّر مقاسه من زواياه؛ لا يزاحم المربعات ولا تزاحمه.'**
+  String get tileFloatHint;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم أيقونة البوصلة'**
+  String get qiblaIconSizeLabel;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن تبقى نافذة واحدة على الأقل'**
+  String get tilesLastOne;
+
+  /// إعدادات لمحة
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لإعادة الترتيب'**
+  String get tilesDragHandle;
+
+  /// No description provided for @paywallTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في لمحة'**
+  String get paywallTitle;
+
+  /// No description provided for @paywallSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من إعدادات حسابك على آبل.'**
+  String get paywallSub;
+
+  /// No description provided for @paywallMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهري'**
+  String get paywallMonthly;
+
+  /// No description provided for @paywallYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنوي'**
+  String get paywallYearly;
+
+  /// No description provided for @paywallStartTrial.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ التجربة المجانية'**
+  String get paywallStartTrial;
+
+  /// No description provided for @paywallRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة المشتريات'**
+  String get paywallRestore;
+
+  /// No description provided for @paywallPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الخصوصية'**
+  String get paywallPrivacy;
+
+  /// No description provided for @paywallChecking.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحقق من اشتراكك…'**
+  String get paywallChecking;
+
+  /// No description provided for @paywallUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتجر غير متاح الآن. حاول لاحقًا.'**
+  String get paywallUnavailable;
+
+  /// No description provided for @paywallVerifyFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحقق من الاشتراك الآن. حاول لاحقًا، فلن يضيع اشتراكك.'**
+  String get paywallVerifyFailed;
+
+  /// No description provided for @paywallNotActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اشتراك فعّال على حساب آبل هذا.'**
+  String get paywallNotActive;
+
+  /// No description provided for @paywallSubAndroid.
+  ///
+  /// In ar, this message translates to:
+  /// **'ودجت عربية للشاشة الرئيسية وشاشة القفل: الإيداعات والصلوات والهجري والقبلة. جرّب ٧ أيام مجانًا، ثم يتجدد الاشتراك تلقائيًا ويمكنك إلغاؤه في أي وقت من «المدفوعات والاشتراكات» في Google Play.'**
+  String get paywallSubAndroid;
+
+  /// No description provided for @paywallNotActiveAndroid.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اشتراك فعّال على حساب Google هذا.'**
+  String get paywallNotActiveAndroid;
+
+  /// No description provided for @paywallSubscribe.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك'**
+  String get paywallSubscribe;
+
+  /// No description provided for @paywallPerMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'{price} شهريًا'**
+  String paywallPerMonth(String price);
+
+  /// No description provided for @paywallPerYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'{price} سنويًا'**
+  String paywallPerYear(String price);
+
+  /// No description provided for @paywallTrialThen.
+  ///
+  /// In ar, this message translates to:
+  /// **'٧ أيام مجانًا، ثم {price}'**
+  String paywallTrialThen(String price);
+
+  /// No description provided for @codeOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندي كود تفعيل'**
+  String get codeOpen;
+
+  /// No description provided for @codeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفعيل بكود'**
+  String get codeTitle;
+
+  /// No description provided for @codeSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل كود التفعيل. كل كود يفتح لمحة مجانًا على جهاز واحد فقط.'**
+  String get codeSub;
+
+  /// No description provided for @codeActivate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get codeActivate;
+
+  /// No description provided for @codeCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get codeCancel;
+
+  /// No description provided for @codeInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود غير صحيح.'**
+  String get codeInvalid;
+
+  /// No description provided for @codeUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود مستخدم على جهاز آخر.'**
+  String get codeUsed;
+
+  /// No description provided for @codeRateLimited.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولات كثيرة. حاول بعد ساعة.'**
+  String get codeRateLimited;
+
+  /// No description provided for @codeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التفعيل الآن. تحقق من الاتصال وحاول مرة أخرى.'**
+  String get codeFailed;
+
+  /// No description provided for @updateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتوفر تحديث جديد'**
+  String get updateTitle;
+
+  /// No description provided for @updateBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث لمحة للحصول على أحدث الإصلاحات والمزايا.'**
+  String get updateBody;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث الآن'**
+  String get updateNow;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحقًا'**
+  String get updateLater;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجم'**
+  String get tabSize;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'الألوان'**
+  String get tabColors;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'المحتوى'**
+  String get tabContent;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'لا خيارات محتوى لهذا العنصر'**
+  String get tileNoContent;
+
+  /// شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'ألوان جاهزة'**
+  String get colorPresetsLabel;
+
+  /// ألوان جاهزة لكل العناصر
+  ///
+  /// In ar, this message translates to:
+  /// **'{name, select, auto{تلقائي} gold{ذهبي} white{أبيض} green{أخضر} blue{أزرق} rose{وردي} dark{داكن} other{{name}}}'**
+  String colorPresetName(String name);
+
+  /// تنبيه الشفافية في آيفون
+  ///
+  /// In ar, this message translates to:
+  /// **'آيفون لا يسمح بودجت شفافة فعلاً، فيظهر اللون الأبيض خلفها. لمحاكاة الشفافية: خذ لقطة لشاشتك الرئيسية فارغة، ثم اختر «لقطة الخلفية» بالأسفل.'**
+  String get opacityNeedsBackground;
+
+  /// إعدادات لمحة (آيفون)
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف لقطة الخلفية'**
+  String get backgroundRemove;
+
+  /// إعدادات لمحة (آيفون)
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت لقطة الخلفية، وعادت الودجت للون السمة'**
+  String get backgroundRemoved;
+
+  /// شاشة قص لقطة الخلفية
+  ///
+  /// In ar, this message translates to:
+  /// **'ضبط لقطة الخلفية'**
+  String get cropTitle;
+
+  /// شاشة قص لقطة الخلفية
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get cropSave;
+
+  /// شاشة قص لقطة الخلفية
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مقاس الودجت وموضعه في شاشتك، ثم اسحب الإطار حتى يطابق مكان الودجت تماماً.'**
+  String get cropHint;
+
+  /// مقاس الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'{size, select, large{كبير} medium{متوسط} other{{size}}}'**
+  String cropSizeName(String size);
+
+  /// موضع الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'{slot, select, top{أعلى} middle{وسط} bottom{أسفل} other{{slot}}}'**
+  String cropSlotName(String slot);
+
+  /// محرر التخطيط الحر
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن هذا الترتيب في الودجت. جرّب موضعاً أو مقاساً آخر.'**
+  String get freeLayoutRejected;
+
+  /// زر فتح معاينة الودجت بكامل الشاشة في شاشة الودجت
+  ///
+  /// In ar, this message translates to:
+  /// **'ملء الشاشة'**
+  String get previewFullscreen;
+
+  /// No description provided for @adhanSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأذان'**
+  String get adhanSection;
+
+  /// No description provided for @adhanEnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأذان عند كل صلاة'**
+  String get adhanEnable;
+
+  /// No description provided for @adhanEnableHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه صوتي عند دخول وقت الصلاة بحسب مدينتك'**
+  String get adhanEnableHint;
+
+  /// No description provided for @adhanSoundLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت'**
+  String get adhanSoundLabel;
+
+  /// No description provided for @adhanSoundFull.
+  ///
+  /// In ar, this message translates to:
+  /// **'أذان كامل'**
+  String get adhanSoundFull;
+
+  /// No description provided for @adhanSoundTakbeer.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكبيرتان'**
+  String get adhanSoundTakbeer;
+
+  /// No description provided for @adhanSoundSilent.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلا صوت'**
+  String get adhanSoundSilent;
+
+  /// No description provided for @adhanTest.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجربة الصوت'**
+  String get adhanTest;
+
+  /// No description provided for @adhanTestStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف التجربة'**
+  String get adhanTestStop;
+
+  /// No description provided for @adhanNoteIos.
+  ///
+  /// In ar, this message translates to:
+  /// **'في آيفون يكون الصوت تكبيرتين، لأن آبل تحدد صوت الإشعار بـ٣٠ ثانية. مستواه يتبع صوت الرنين والتنبيهات. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  String get adhanNoteIos;
+
+  /// No description provided for @adhanNoteAndroid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستوى صوت الأذان يتبع صوت الرنين: ترفعه وتخفضه بأزرار الصوت (حتى أثناء زر «تجربة الصوت»)، ويسكت في الوضع الصامت. زر «إيقاف» في الإشعار يوقف الصوت. يُجدول ١٢ يوماً قادماً ويتجدد كلما فتحت لمحة.'**
+  String get adhanNoteAndroid;
+
+  /// No description provided for @adhanDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُمنح إذن الإشعارات، فبقي الأذان مطفأً.'**
+  String get adhanDenied;
+
+  /// No description provided for @adhanExactMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُمنح إذن «المنبهات والتذكيرات»، فقد يتأخر التنبيه دقائق عن وقته.'**
+  String get adhanExactMissing;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['ar', 'en'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'en':
+      return AppLocalizationsEn();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

@@ -47,11 +47,17 @@ class FirebaseBackend extends Backend {
   List<TaskItem> _tasks = [];
   List<Completion> _completions = [];
   List<Competition> _comps = [];
-  List<Tier> _tiers = [];
-  Set<String> _deliveries = {};
+  List<Prize> _prizes = [];
+  PrayerSettings? _prayer;
   List<Notice> _notices = [];
   Map<String, PeriodSum> _daily = {}, _weekly = {}, _monthly = {}, _yearly = {};
   List<Goal> _goals = [];
+  List<Violation> _violations = [];
+  DateTime? _cycleStartedAt;
+  TripState? _trip;
+  FamilyPlan? _plan;
+  List<SavedPlace> _places = [];
+  Map<String, MemberLoc> _locations = {};
 
   @override
   bool get isDemo => false;
@@ -100,6 +106,8 @@ class FirebaseBackend extends Backend {
     emit(AppState(session: s, loading: true));
     _listen(s);
     unawaited(_setupPush());
+    // Hands over any prize whose time came while nobody had the app open.
+    unawaited(_op('tick').then((_) {}, onError: (_) {}));
   }
 
   void _stop() {
@@ -109,6 +117,11 @@ class FirebaseBackend extends Backend {
     _subs.clear();
     _famName = null;
     _people = null;
+    _violations = [];
+    _trip = null;
+    _locations = {};
+    _places = [];
+    _plan = null;
   }
 
   void _listen(Session s) {
@@ -124,6 +137,16 @@ class FirebaseBackend extends Backend {
 
     on(f.snapshots(), (DocumentSnapshot<Map<String, dynamic>> d) {
       _famName = d.data()?['name'] as String?;
+      final cy = d.data()?['cycleStartedAt'];
+      _cycleStartedAt = cy is Timestamp ? cy.toDate() : null;
+      final p = d.data()?['prayer'];
+      _prayer = p is Map && p['lat'] is num && p['lng'] is num
+          ? PrayerSettings(enabled: p['enabled'] != false, lat: (p['lat'] as num).toDouble(), lng: (p['lng'] as num).toDouble(), points: _int(p['points']), grace: _grace(p['grace']))
+          : null;
+      final pl = d.data()?['plan'];
+      _plan = pl is Map && pl['tier'] is num
+          ? FamilyPlan(source: pl['source'] as String? ?? 'apple', tier: (pl['tier'] as num).toInt(), until: pl['until'] is num ? DateTime.fromMillisecondsSinceEpoch((pl['until'] as num).toInt()) : null)
+          : null;
       if (!d.exists) _auth.signOut();
     });
     on(f.collection('people').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
@@ -131,7 +154,8 @@ class FirebaseBackend extends Backend {
         final x = d.data();
         return Person(
           id: d.id, name: x['name'] ?? '', email: x['email'] ?? '', role: roleFrom(x['role']),
-          avatar: x['avatar'] ?? 'boy', active: x['status'] == 'active', perms: permsFrom(x['perms']));
+          avatar: x['avatar'] ?? 'boy', active: x['status'] == 'active', perms: permsFrom(x['perms']),
+          avatarLocked: x['avatarLocked'] == true, photo: x['photo'] as String?);
       }).toList()
         ..sort((a, b) => a.role.index.compareTo(b.role.index));
       // Removed from the family → sign out.
@@ -143,13 +167,16 @@ class FirebaseBackend extends Backend {
         return TaskItem(id: d.id, title: x['title'] ?? '', personId: x['personId'] ?? '', points: _int(x['points']), repeat: periodFrom(x['repeat']));
       }).toList();
     });
-    on(f.collection('completions').where('periodKey', whereIn: [_dayKey, wk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+    final mk = monthKey(now), yk = yearKey(now);
+    // Yesterday too: isha's window runs past midnight.
+    final yesterday = dayKey(now.subtract(const Duration(days: 1)));
+    on(f.collection('completions').where('periodKey', whereIn: [_dayKey, yesterday, wk, mk, yk, 'once']).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _completions = q.docs.map((d) {
         final x = d.data();
         return Completion(
           id: d.id, taskId: x['taskId'] ?? '', personId: x['personId'] ?? '', title: x['title'] ?? '',
           points: _int(x['points']), periodKey: x['periodKey'] ?? '', status: statusFrom(x['status']),
-          createdAt: _ts(x['createdAt']), photoPath: x['hasPhoto'] == true ? d.id : null);
+          createdAt: _ts(x['createdAt']), photoPath: x['hasPhoto'] == true ? d.id : null, prayer: x['kind'] == 'prayer');
       }).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     });
@@ -165,16 +192,14 @@ class FirebaseBackend extends Backend {
           deadline: x['deadline'] is Timestamp ? (x['deadline'] as Timestamp).toDate() : null, ended: x['ended'] == true, entries: entries);
       }).toList();
     });
-    on(f.collection('tiers').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
-      _tiers = q.docs.map((d) {
+    on(f.collection('prizes').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+      _prizes = q.docs.map((d) {
         final x = d.data();
-        return Tier(
-            id: d.id, name: x['name'] ?? '', emoji: x['emoji'] ?? '🎁', threshold: _int(x['threshold']), period: periodFrom(x['period']),
-            scope: scopeFrom(x['scope']), personId: x['personId'] as String?);
-      }).toList();
-    });
-    on(f.collection('deliveries').where('periodKey', whereIn: [_dayKey, wk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
-      _deliveries = q.docs.map((d) => d.id).toSet();
+        return Prize(
+            id: d.id, name: x['name'] ?? '', emoji: x['emoji'] ?? '🎁', period: spanFrom(x['period']), awardAt: _ts(x['awardAt']),
+            awarded: x['status'] == 'awarded', winnerId: x['winnerId'] as String?, winnerPoints: _int(x['winnerPoints']));
+      }).toList()
+        ..sort((a, b) => a.awardAt.compareTo(b.awardAt));
     });
     // Members filter by recipient (no ordering, so no composite index is needed;
     // the server keeps only the last 60 days). Sorted newest first below.
@@ -187,11 +212,11 @@ class FirebaseBackend extends Backend {
         return Notice(
           id: d.id, to: x['to'] ?? 'all', title: x['title'] ?? '', body: x['body'] ?? '', from: x['from'] ?? '',
           createdAt: _ts(x['createdAt']), expiresAt: x['expiresAt'] is Timestamp ? (x['expiresAt'] as Timestamp).toDate() : null,
-          readBy: List<String>.from(x['readBy'] ?? const []));
+          readBy: List<String>.from(x['readBy'] ?? const []), kind: x['kind'] as String? ?? 'notice', points: _int(x['points']),
+          lat: x['lat'] is num ? (x['lat'] as num).toDouble() : null, lng: x['lng'] is num ? (x['lng'] as num).toDouble() : null);
       }).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
-    final mk = monthKey(now), yk = yearKey(now);
     on(f.collection('summaries').where('periodKey', whereIn: [_dayKey, wk, mk, yk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _daily = {};
       _weekly = {};
@@ -200,8 +225,52 @@ class FirebaseBackend extends Backend {
       final byKey = {_dayKey: _daily, wk: _weekly, mk: _monthly, yk: _yearly};
       for (final d in q.docs) {
         final x = d.data();
-        byKey[x['periodKey']]?[x['personId'] as String] = PeriodSum(_int(x['points']), _int(x['count']));
+        byKey[x['periodKey']]?[x['personId'] as String] = PeriodSum(_int(x['points']), _int(x['count']), _int(x['tasks']));
       }
+    });
+    // The owner manages violations; members get them as notices.
+    if (s.role == Role.owner) {
+      on(f.collection('violations').orderBy('at', descending: true).limit(50).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+        _violations = q.docs.map((d) {
+          final x = d.data();
+          return Violation(
+              id: d.id, personIds: List<String>.from(x['personIds'] ?? const []), all: x['all'] == true, points: _int(x['points']),
+              reason: x['reason'] as String? ?? '', at: _ts(x['at']));
+        }).toList();
+      });
+    }
+    on(f.collection('trip').doc('state').snapshots(), (DocumentSnapshot<Map<String, dynamic>> d) {
+      final x = d.data();
+      if (x == null || x['startedBy'] == null) {
+        _trip = null;
+        return;
+      }
+      final m = x['meet'];
+      _trip = TripState(
+        active: x['active'] == true, startedBy: x['startedBy'] as String, endsAt: DateTime.fromMillisecondsSinceEpoch(_int(x['endsAt'])),
+        farMeters: _int(x['farMeters']) == 0 ? 300 : _int(x['farMeters']),
+        meet: m is Map && m['lat'] is num && m['lng'] is num
+            ? MeetPoint(lat: (m['lat'] as num).toDouble(), lng: (m['lng'] as num).toDouble(), label: m['label'] as String? ?? '', by: m['by'] as String? ?? '')
+            : null,
+        paused: {for (final e in ((x['paused'] as Map?) ?? const {}).entries) if (e.value == true) e.key as String});
+    });
+    on(f.collection('places').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+      _places = [
+        for (final d in q.docs)
+          if (d.data()['lat'] is num && d.data()['lng'] is num)
+            SavedPlace(
+                id: d.id, label: d.data()['label'] as String? ?? '', lat: (d.data()['lat'] as num).toDouble(), lng: (d.data()['lng'] as num).toDouble(),
+                by: d.data()['by'] as String? ?? '', at: DateTime.fromMillisecondsSinceEpoch(_int(d.data()['at']))),
+      ]..sort((a, b) => b.at.compareTo(a.at));
+    });
+    on(f.collection('locations').snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
+      _locations = {
+        for (final d in q.docs)
+          if (d.data()['lat'] is num && d.data()['lng'] is num)
+            d.id: MemberLoc(
+                personId: d.id, lat: (d.data()['lat'] as num).toDouble(), lng: (d.data()['lng'] as num).toDouble(),
+                acc: _int(d.data()['acc']), at: DateTime.fromMillisecondsSinceEpoch(_int(d.data()['at']))),
+      };
     });
     on(f.collection('goals').where('periodKey', whereIn: [mk, yk]).snapshots(), (QuerySnapshot<Map<String, dynamic>> q) {
       _goals = q.docs.map((d) {
@@ -225,8 +294,8 @@ class FirebaseBackend extends Backend {
       session: s,
       data: FamilySnapshot(
         familyName: _famName!, people: _people!, tasks: _tasks, completions: _completions, competitions: _comps,
-        tiers: _tiers, deliveries: _deliveries, notices: _notices, daily: _daily, weekly: _weekly,
-        monthly: _monthly, yearly: _yearly, goals: _goals),
+        notices: _notices, daily: _daily, weekly: _weekly, monthly: _monthly, yearly: _yearly, goals: _goals,
+        prizes: _prizes, prayer: _prayer, violations: _violations, cycleStartedAt: _cycleStartedAt, trip: _trip, locations: _locations, places: _places, plan: _plan),
     ));
   }
 
@@ -256,10 +325,10 @@ class FirebaseBackend extends Backend {
 
   // ---------------------------------------------------------------- auth
   @override
-  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, bool resend = false}) async {
+  Future<bool> requestCode({required String email, required Role role, String? familyName, String? name, String? password, bool resend = false}) async {
     final r = await _call('requestCode', {
       'email': email, 'role': role == Role.member ? 'member' : 'admin',
-      'familyName': ?familyName, 'name': ?name, 'resend': resend,
+      'familyName': ?familyName, 'name': ?name, 'password': ?password, 'resend': resend,
     });
     return r['sent'] == true;
   }
@@ -269,6 +338,13 @@ class FirebaseBackend extends Backend {
     final r = await _call('verifyCode', {'email': email, 'code': code});
     await _auth.signInWithCustomToken(r['token'] as String);
     return VerifyResult(first: r['first'] == true, familyName: r['familyName'] ?? '', name: '');
+  }
+
+  @override
+  Future<VerifyResult> login({required String email, required String password}) async {
+    final r = await _call('login', {'email': email, 'password': password});
+    await _auth.signInWithCustomToken(r['token'] as String);
+    return VerifyResult(first: false, familyName: r['familyName'] ?? '', name: r['name'] ?? '');
   }
 
   @override
@@ -296,7 +372,11 @@ class FirebaseBackend extends Backend {
   Future<void> removePerson(String personId) => _op('removePerson', {'personId': personId});
 
   @override
-  Future<void> setAvatar(String personId, String avatar) => _op('setAvatar', {'personId': personId, 'avatar': avatar});
+  Future<void> setAvatar(String personId, String avatar, {Uint8List? photo}) =>
+      _op('setAvatar', {'personId': personId, 'avatar': avatar, if (photo != null) 'photo': base64Encode(photo)});
+
+  @override
+  Future<void> setAvatarLock(String personId, bool locked) => _op('setAvatarLock', {'personId': personId, 'locked': locked});
 
   // ---------------------------------------------------------------- tasks
   @override
@@ -355,16 +435,33 @@ class FirebaseBackend extends Backend {
   Future<void> decideEntry(String compId, String personId, bool approve) =>
       _op('decideEntry', {'compId': compId, 'personId': personId, 'approve': approve});
 
-  // ---------------------------------------------------------------- rewards
+  // ---------------------------------------------------------------- prizes
   @override
-  Future<void> addTier({required String name, required String emoji, required int threshold, required Period period, required Scope scope, String? personId}) =>
-      _op('addTier', {'name': name, 'emoji': emoji, 'threshold': threshold, 'period': period.name, 'scope': scope.name, 'personId': ?personId});
+  Future<void> addPrize({required String name, required String emoji, required Span period, required DateTime awardAt}) =>
+      _op('addPrize', {'name': name, 'emoji': emoji, 'period': period.name, 'awardAt': awardAt.millisecondsSinceEpoch});
 
   @override
-  Future<void> deleteTier(String tierId) => _op('deleteTier', {'tierId': tierId});
+  Future<void> deletePrize(String prizeId) => _op('deletePrize', {'prizeId': prizeId});
 
   @override
-  Future<void> deliver(String tierId, String who, String periodKey) => _op('deliver', {'tierId': tierId, 'who': who, 'periodKey': periodKey});
+  Future<void> tick() => _op('tick');
+
+  @override
+  Future<void> setPrayer({required double lat, required double lng, required int points, required bool enabled}) =>
+      _op('setPrayer', {'lat': lat, 'lng': lng, 'points': points, 'enabled': enabled});
+
+  @override
+  Future<void> setPrayerGrace(String target, Map<String, int?> grace) => _op('setPrayerGrace', {'target': target, 'grace': grace});
+
+  static Map<String, Map<String, int>> _grace(Object? v) => {
+        if (v is Map)
+          for (final e in v.entries)
+            if (e.value is Map)
+              '${e.key}': {
+                for (final g in (e.value as Map).entries)
+                  if (g.value is num) '${g.key}': (g.value as num).toInt(),
+              },
+      };
 
   // ---------------------------------------------------------------- notices
   @override
@@ -372,6 +469,59 @@ class FirebaseBackend extends Backend {
 
   @override
   Future<void> deleteAlert(String noticeId) => _op('deleteAlert', {'noticeId': noticeId});
+
+  @override
+  Future<void> deleteAllAlerts() => _op('deleteAllAlerts');
+
+  // ---------------------------------------------------------------- family trip
+  @override
+  Future<void> tripStart({int hours = 12, int farMeters = 300}) => _op('tripStart', {'hours': hours, 'farMeters': farMeters});
+
+  @override
+  Future<void> tripEnd() => _op('tripEnd');
+
+  @override
+  Future<void> tripPing({required double lat, required double lng, required double acc}) => _op('tripPing', {'lat': lat, 'lng': lng, 'acc': acc});
+
+  @override
+  Future<void> tripShare(String personId, bool on) => _op('tripShare', {'personId': personId, 'on': on});
+
+  @override
+  Future<void> tripMeet({required double lat, required double lng, required String label}) => _op('tripMeet', {'lat': lat, 'lng': lng, 'label': label});
+
+  @override
+  Future<void> tripMeetClear() => _op('tripMeet', {'clear': true});
+
+  @override
+  Future<void> placeSave({required double lat, required double lng, required String label, bool share = false}) =>
+      _op('placeSave', {'lat': lat, 'lng': lng, 'label': label, 'share': share});
+
+  @override
+  Future<void> placeShare(String placeId) => _op('placeShare', {'placeId': placeId});
+
+  @override
+  Future<void> placeDelete(String placeId) => _op('placeDelete', {'placeId': placeId});
+
+  @override
+  Future<void> tripSos({double? lat, double? lng}) => _op('tripSos', {'lat': ?lat, 'lng': ?lng});
+
+  // ---------------------------------------------------------------- plan
+  @override
+  Future<void> syncPlan() => _op('syncPlan');
+
+  @override
+  Future<void> activatePlan(String receipt, {String platform = 'ios'}) => _op('activatePlan', {'receipt': receipt, 'platform': platform});
+
+  // ---------------------------------------------------------------- cycles & violations
+  @override
+  Future<void> newCycle() => _op('newCycle');
+
+  @override
+  Future<void> addViolation({required String personId, required int points, String reason = ''}) =>
+      _op('addViolation', {'personId': personId, 'points': points, 'reason': reason});
+
+  @override
+  Future<void> deleteViolation(String violationId) => _op('deleteViolation', {'violationId': violationId});
 
   // ---------------------------------------------------------------- goals
   @override
@@ -385,7 +535,7 @@ class FirebaseBackend extends Backend {
   Future<void> deleteGoal(String goalId) => _op('deleteGoal', {'goalId': goalId});
 
   @override
-  Future<void> sendReport() => _op('sendReport');
+  Future<void> sendReport({Span span = Span.daily}) => _op('sendReport', {'period': span.name});
 
   @override
   Future<void> markRead() => _op('markRead');
@@ -402,6 +552,9 @@ class FirebaseBackend extends Backend {
     await _op('deleteFamily');
     await _auth.signOut();
   }
+
+  @override
+  Future<void> redeemCode(String code, String deviceId) => _call('redeemCode', {'code': code, 'deviceId': deviceId});
 
   @override
   Future<void> sendFeedback({required String type, required String text, String? email, required String platform}) =>

@@ -88,7 +88,7 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
 ## 5) iPhone — App Store Connect (TestFlight)
 
 1. **App ID**: [developer.apple.com ← Identifiers](https://developer.apple.com/account/resources/identifiers) ← + ← App IDs ← Bundle ID `sa.asraty.app` ← فعّل **Push Notifications**.
-2. **مفتاح الإشعارات (APNs)**: Keys ← + ← فعّل Apple Push Notifications service ← نزّل ملف `.p8`. ثم في Firebase ← Project settings ← Cloud Messaging ← Apple app configuration ← ارفع المفتاح مع Key ID و Team ID.
+2. **مفتاح الإشعارات (APNs)**: Keys ← + ← فعّل Apple Push Notifications service ← **Configure** ← Environment = **Sandbox & Production** (إلزامي: الافتراضي Sandbox فقط، وبه ترفض أبل كل تنبيهات App Store وTestFlight بخطأ `third-party-auth-error`) ← Key Restriction = **Team Scoped (All Topics)** ← نزّل ملف `.p8`. ثم في Firebase ← Project settings ← Cloud Messaging ← Apple app configuration (`sa.asraty.app`) ← ارفع المفتاح في خانة **Production** وخانة **Development** كلتيهما، مع Key ID و Team ID. للتحقق: شغّل `asraty-push-check.yml` (يقرأ فقط)، أو بموافقة المالك مع `family_prefix` ليرسل تنبيهاً تجريبياً واحداً لأسرته ويطبع ردّ FCM لكل جهاز.
 3. **App Store Connect**: [appstoreconnect.apple.com](https://appstoreconnect.apple.com) ← Apps ← + ← New App ← iOS، الاسم «أسرتي»، اللغة Arabic، Bundle ID `sa.asraty.app`، SKU مثل `asraty-001`.
 4. **مفتاح API للبناء**: App Store Connect ← Users and Access ← Integrations ← App Store Connect API ← + ← الدور **Admin** (مطلوب للتوقيع التلقائي) ← نزّل `.p8`.
 5. أسرار GitHub:
@@ -116,7 +116,7 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
 | «تعذّر الاتصال» عند طلب الكود | تأكد أن الخادم منشور (الخطوة 3) وأن `SERVER_URL` صحيح في `app/env.prod.json`. |
 | يصل الكود لكن التحقق يفشل بخطأ عام | تأكد أن `FIREBASE_SERVICE_ACCOUNT_JSON` من نفس مشروع Firebase، ثم أعد تشغيل «deploy backend». |
 | لا يصل البريد | تحقق من كلمة مرور التطبيق في Gmail (`GMAIL_APP_PASSWORD`) وأن التحقق بخطوتين مفعّل. راجع Netlify ← الموقع ← Logs ← Functions. |
-| لا تصل الإشعارات على iPhone | مفتاح APNs في Firebase (الخطوة 5.2). |
+| لا تصل الإشعارات على iPhone (`third-party-auth-error`) | مفتاح APNs ببيئة Sandbox & Production ومرفوع في خانة Production في Firebase (الخطوة 5.2). |
 | يصل الإشعار بدون نغمة أو نافذة منبثقة على Android | إعدادات الجوال ← التطبيقات ← أسرتي ← الإشعارات ← «تنبيهات أسرتي»: تأكد أنها مفعّلة بصوت وبنافذة منبثقة (وضع «عدم الإزعاج» يكتمها). |
 | فشل بناء iOS في خطوة Archive | تأكد أن مفتاح API بدور Admin وأن App ID موجود بتفعيل Push. |
 
@@ -133,7 +133,7 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
 ## الحالة — 14 أكتوبر 2026
 - App Store: «مهام أسرتي» 1.0 منشور ✅ https://apps.apple.com/app/id6821253597
 - Google Play: الاختبار المغلق (Alpha) عند Google للمراجعة؛ يلزم 12 مختبراً منضماً لمدة 14 يوماً قبل النشر للعامة.
-- لم يُتحقق بعد من وصول الإشعارات على آيفون (مفتاح APNs في Firebase، الخطوة 5.2).
+- ✅ الإشعارات على آيفون تعمل (2026-10-30): وصل تنبيه تجريبي لآيفون المسؤول المفوض بعد مفتاح APNs ببيئة Sandbox & Production في خانتي Firebase.
 
 ## الإصدار 1.0.1 — 15 أكتوبر 2026 (من ملاحظات المختبرين)
 - زر «🚪 خروج» ظاهر في أعلى كل شاشة بجانب اسم المستخدم، مع تأكيد.
@@ -149,3 +149,19 @@ Play Console ← Setup ← API access ← اربط مشروع Google Cloud وأ�
 
 **نص «ما الجديد» للمتجرين:**
 > زر خروج واضح، ودخول أسهل بالبريد فقط مع لصق الكود. لوحة شرف شهرية وسنوية مع أهداف للأسرة. تنبيهات لها مدة تنتهي تلقائياً، ومكافآت خاصة لكل ابن.
+
+## الإصدار 1.0.2 — 20 أكتوبر 2026
+- تقارير الإنجاز: اليوم والأسبوع والشهر والسنة في صفحة واحدة، وزر «إرسال لكل الأعضاء» لكل فترة (لمن لديه صلاحية إرسال التقرير). أُزيل مربع «إرسال ترتيب اليوم» المنفصل.
+- زر «رجوع» بجانب زر «خروج» في الصفحات الداخلية.
+- إشعارات الإنجاز والمسابقات تصل لكل المسؤولين، ولم تعد مقصورة على من لديه صلاحية الموافقة.
+- مهام «مرة واحدة» بجانب اليومية والأسبوعية: تُنجز مرة واحدة وتبقى منجزة، وتوجَّه لعضو واحد أو للجميع.
+- أداة فحص الإشعارات (`asraty-push-check.yml`): تعرض لكل مسؤول هل جهازه مسجّل للإشعارات، وردّ Google على كل جهاز في تجربة لا تُرسل شيئاً.
+
+## مؤجَّل للإصدار 1.0.5 (قرار المالك 30 أكتوبر 2026: يُجمع مع تعديلات الأسبوع القادم)
+- العشاء بنقاطها من الأذان حتى ١١ مساءً بتوقيت الرياض: مدموج في الكود (PR #101)، **لم يُرفع الخادم ولم تُبنَ نسخة بعد**.
+- قبل الرفع: ذكّر المالك، ثم ارفع الخادم (`asraty-backend-deploy.yml`) والنسخة 1.0.5 معاً، لأن الخادم وحده يعطي النقاط والتطبيق القديم يعرض «متأخرة».
+
+## الخريطة في «أنا هنا»
+- الخريطة من OpenStreetMap عبر `flutter_map`: مجانية، بلا مفتاح ولا فوترة ولا إعداد في المتاجر. تظهر عند مشاركة أول مكان.
+- تُعرض حقوق الخريطة «© OpenStreetMap contributors» داخلها (مطلوبة).
+- خادم الخرائط العام `tile.openstreetmap.org` مناسب للاستخدام الخفيف (أسر قليلة). إن كثر المستخدمون يُنتقل إلى مزوّد بلاطات خاص (مثل MapTiler أو Stadia) بتغيير `urlTemplate` في `TripMap` فقط.

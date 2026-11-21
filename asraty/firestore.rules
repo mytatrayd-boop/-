@@ -38,7 +38,7 @@ service cloud.firestore {
       }
     }
 
-    // emailIndex, authCodes, feedback, feedbackRate: server only.
+    // emailIndex, authCodes, feedback, feedbackRate, activationCodes, codeTries: server only.
     match /{document=**} {
       allow read, write: if false;
     }

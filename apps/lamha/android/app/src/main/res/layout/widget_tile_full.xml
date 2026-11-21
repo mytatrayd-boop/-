@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- خانة مربع بعرض ٣ (عريض) في صف الشبكة (الميزة ٥). الحشوة ٤dp من كل جانب = تباعد ٨dp بين
+     المربعات والصفوف كما في المعاينة. يضاف المحتوى إليها بـ addView. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/slot"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="3"
+    android:padding="4dp" />

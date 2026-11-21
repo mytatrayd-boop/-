@@ -1,0 +1,186 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lamha/src/engine/arabic.dart';
+import 'package:lamha/src/engine/schedule.dart';
+import 'package:lamha/src/engine/settings.dart';
+import 'package:lamha/src/engine/weather.dart';
+import 'package:lamha/src/engine/widget_theme.dart';
+
+import '../helpers.dart';
+
+/// جدول اختبار لقطات الودجت على محاكي أندرويد (androidTest/assets)، مولّد من المحرك.
+/// يُعاد توليده بـ: LAMHA_UPDATE_FIXTURES=1 flutter test test/app/android_fixture_test.dart
+const _dir = 'android/app/src/androidTest/assets';
+
+/// اللحظة الثابتة للاختبار (LamhaScreensTest.NOW_MILLIS): ٣:٠٠ ص بتوقيت أبها، قبل الفجر.
+final fixtureNow = DateTime.utc(2026, 10, 19, 0, 0);
+
+String fixture(
+  WidgetTheme theme, {
+  DigitStyle digits = DigitStyle.arabic,
+  Set<String> deposits = const {'salary', 'housing_support', 'citizen_account'},
+  bool floatCompass = false,
+  bool splitDay = false,
+  FloatRect? floatDeposits,
+  FloatRect? frame,
+}) {
+  // قرب أبها، حيث القبلة ٣٢٤° (كلقطة المالك؛ مركز أبها ٣٢٢°).
+  const lat = 18.20, lon = 42.33;
+  final schedule = buildSchedule(
+    fixtureNow,
+    Settings(
+      latitude: lat,
+      longitude: lon,
+      cityName: 'أبها',
+      deposits: deposits,
+      opacity: 80,
+      theme: theme,
+      digits: digits,
+      frame: frame,
+      layout: splitDay
+          ? [
+              for (final t in previousDefaultLayout)
+                if (t.id == WidgetElement.dayWeather)
+                  t.copyWith(visible: false)
+                else if (t.id == WidgetElement.weekday)
+                  t.copyWith(visible: true, rect: () => const GridRect(4, 0, 2, 1))
+                else if (t.id == WidgetElement.cityTemp)
+                  t.copyWith(visible: true, rect: () => const GridRect(4, 1, 2, 1))
+                else
+                  t,
+            ]
+          : floatDeposits != null
+          ? [
+              for (final t in previousDefaultLayout)
+                t.id == WidgetElement.deposit ? t.copyWith(float: () => floatDeposits) : t,
+            ]
+          : floatCompass
+          ? [
+              for (final t in previousDefaultLayout)
+                t.id == WidgetElement.qibla
+                    ? t.copyWith(float: () => const FloatRect(0.04, 0.1, 0.52, 0.3), iconScale: 5.0)
+                    : t.id == WidgetElement.hijri
+                        ? t.copyWith(float: () => const FloatRect(0.05, 0.45, 0.6, 0.07))
+                        : t,
+            ]
+          : previousDefaultLayout,
+    ),
+    loadEngineDataFromFiles(),
+    days: 2,
+    generatedAt: fixtureNow,
+    weather: WeatherReading(
+        temp: 26.2,
+        code: 0,
+        fetchedAt: fixtureNow.subtract(const Duration(minutes: 20)),
+        latitude: lat,
+        longitude: lon),
+  );
+  return '${const JsonEncoder.withIndent('  ').convert(schedule)}\n';
+}
+
+void main() {
+  // الإيداعات الستة (شبكة الإيداعات، طلب المالك): الأسود.
+  test('جدول لقطات أندرويد (six) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_six.json');
+    final json = fixture(WidgetTheme.black,
+        deposits: loadEngineDataFromFiles().deposits.ids);
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final day = (jsonDecode(json)['days'] as List).first as Map;
+    expect((day['deposits'] as List).length, 6);
+  });
+
+  // البوصلة الحرة (DECISIONS ٢٩): الأسود والبوصلة عائمة فوق المربعات بلا مكان في الشجرة.
+  test('جدول لقطات أندرويد (float) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_float.json');
+    final json = fixture(WidgetTheme.black, floatCompass: true);
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    final q = (root['layout'] as List).cast<Map>().firstWhere((t) => t['id'] == 'qibla');
+    expect(q['float'], [0.04, 0.1, 0.52, 0.3]);
+    expect(q['iconScale'], 5.0, reason: 'أقصى الشريط: الدائرة تملأ مربعها');
+    expect(jsonEncode(root['tree']), isNot(contains('qibla')));
+    expect(jsonEncode(root['tree']), isNot(contains('hijri')));
+  });
+
+  // اليوم في مربع والموقع والحرارة في مربع (طلب المالك ١٣ نوفمبر).
+  test('جدول لقطات أندرويد (split) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_split.json');
+    final json = fixture(WidgetTheme.black, splitDay: true);
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    final tree = jsonEncode(root['tree']);
+    expect(tree, contains('weekday'));
+    expect(tree, contains('cityTemp'));
+    expect(tree, isNot(contains('dayWeather')));
+  });
+
+  // الإيداعات عائمة بعرض الودجت كله (بلاغ المالك ١٣ نوفمبر: لا يظهر منها إلا اثنان): ستة إيداعات.
+  test('جدول لقطات أندرويد (floatdep) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_floatdep.json');
+    final json = fixture(WidgetTheme.black,
+        deposits: loadEngineDataFromFiles().deposits.ids,
+        floatDeposits: const FloatRect(0, 0.62, 1.0, 0.24));
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    final d = (root['layout'] as List).cast<Map>().firstWhere((t) => t['id'] == 'deposit');
+    expect(d['float'], [0.0, 0.62, 1.0, 0.24]);
+    expect(jsonEncode(root['tree']), isNot(contains('deposit')));
+  });
+
+  // إطار الخلفية الحر (DECISIONS ٣٠): الأسود والخلفية صغيرة وفي الوسط، والعناصر في مواضعها كما هي.
+  test('جدول لقطات أندرويد (frame) مطابق للمحرك', () {
+    final file = File('$_dir/schedule_frame.json');
+    final json = fixture(WidgetTheme.black, frame: const FloatRect(0.1, 0.2, 0.8, 0.6));
+    if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+      file.writeAsStringSync(json);
+    }
+    expect(file.readAsStringSync(), json);
+    final root = jsonDecode(json) as Map;
+    expect(root['frame'], [0.1, 0.2, 0.8, 0.6]);
+    // العناصر لا تتأثر بالإطار: المستطيلات والشجرة نفسها كما بلا إطار.
+    final plain = jsonDecode(fixture(WidgetTheme.black)) as Map;
+    expect(root['layout'], plain['layout']);
+    expect(root['tree'], plain['tree']);
+    expect(plain.containsKey('frame'), isFalse);
+  });
+
+  // الأسود الافتراضي والذهبي والأزرق، ونسخة بالأرقام الإنجليزية (الميزة ٦).
+  for (final (name, theme, digits) in [
+    ('black', WidgetTheme.black, DigitStyle.arabic),
+    ('gold', WidgetTheme.gold, DigitStyle.arabic),
+    ('blue', WidgetTheme.blue, DigitStyle.arabic),
+    ('latin', WidgetTheme.black, DigitStyle.latin),
+  ]) {
+    test('جدول لقطات أندرويد ($name) مطابق للمحرك', () {
+      final file = File('$_dir/schedule_$name.json');
+      final json = fixture(theme, digits: digits);
+      if (Platform.environment['LAMHA_UPDATE_FIXTURES'] == '1') {
+        file.parent.createSync(recursive: true);
+        file.writeAsStringSync(json);
+      }
+      expect(file.readAsStringSync(), json);
+
+      final day = (jsonDecode(json)['days'] as List).first as Map;
+      expect(day['tradSeason']['name'], 'الوسم');
+      expect(day['season']['name'], 'الخريف');
+      expect(jsonDecode(json)['qibla']['text'],
+          digits == DigitStyle.latin ? '324° شمال غرب' : '٣٢٤° شمال غرب');
+      expect([for (final d in day['deposits'] as List) d['label']],
+          ['الدعم السكني', 'راتب أكتوبر', 'حساب المواطن']);
+    });
+  }
+}

@@ -1,0 +1,1223 @@
+import 'dart:io';
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart' as tz;
+
+import '../../l10n/app_localizations.dart';
+import '../engine/arabic.dart';
+import '../engine/prayer.dart';
+import '../engine/weather.dart';
+import '../engine/widget_layout.dart';
+import '../engine/widget_theme.dart';
+
+part 'widget_preview_tiles.dart';
+
+/// مقاس الودجت الافتراضي ٤×٥ (الميزة ٦، تصميم المالك ٣ طولي).
+const previewWidgetSize = Size(338, 440);
+
+/// ألفا خلفية الودجت من قيمة الشريط (ARCHITECTURE: ألفا = قيمة الشريط).
+double backgroundAlpha(int opacity) => opacity.clamp(0, 100) / 100;
+
+/// اسم مسبوق بلام الجر: «الشتاء» ← «للشتاء»، «سهيل» ← «لسهيل».
+String withLam(String name) =>
+    name.startsWith('ال') ? 'لل${name.substring(2)}' : 'ل$name';
+
+/// ألوان النص التلقائية (DESIGN)؛ التمييز والخلفية من سمة الجدول.
+const _text = Color(0xFFF4EFE6);
+const _muted = Color(0xFFCFC6B8);
+const _dim = Color(0xFFB9B0A2);
+
+/// خلفية الشاشة خلف المعاينة.
+const _wallTop = Color(0xFF34302B);
+const _wallBottom = Color(0xFF0B0A09);
+
+/// أحجام مربعات الساعة والتاريخين والمدينة (الميزة ٣د)، مطابقة لتخطيطاتها في أندرويد، وتُضرب في
+/// معامل الخط. الساعة ٥٢ (و٤٢ في الودجت الضيقة بأندرويد)، وتصغر بقدر عرض مربعها فقط (fitTile).
+const clockSize = 52.0;
+const amPmSize = 18.0;
+const weekdaySize = 18.0;
+const hijriSize = 18.0;
+const gregorianSize = 16.0;
+const cityWeatherSize = 16.0;
+
+/// أعرض نص ممكن للساعة، لتثبيت حجمها طوال اليوم.
+const widestClockText = '١٢:٥٨';
+
+/// ارتفاع أسطر التاريخين والمدينة، وسطر اليوم تحت الساعة.
+const headLineHeight = 1.3;
+const weekdayLineHeight = 1.2;
+
+/// حشوة الودجت، والتباعد بين المربعات والصفوف.
+const widgetPadding = 14.0;
+const tileSpacing = 8.0;
+
+/// معامل حجم الخط العام من الجدول (١ لجدول أقدم بلاه).
+double scheduleFontScale(Map<String, Object?> schedule) =>
+    (schedule['fontScale'] as num?)?.toDouble() ?? 1.0;
+
+/// شكل الأرقام من الجدول (عربية لجدول أقدم بلاه).
+DigitStyle scheduleDigits(Map<String, Object?> schedule) =>
+    DigitStyle.byName(schedule['digits'] as String?);
+
+/// مربع من تخطيط الجدول (الميزة ٥): المعامل رقماً واللونان ARGB أو null (تلقائي).
+typedef ScheduleTile = ({
+  WidgetElement id,
+  bool visible,
+  int span,
+  double fontScale,
+  bool showTitle,
+  bool showSub,
+  int? primary,
+  int? secondary,
+  double iconScale,
+  GridRect? rect,
+  FloatRect? float,
+});
+
+/// تخطيط الجدول بترتيبه. جدول أقدم بلا `layout`: الترتيب الافتراضي والإظهار من `visible`.
+List<ScheduleTile> scheduleLayout(Map<String, Object?> schedule) {
+  final raw = schedule['layout'];
+  final List<TileLayout> base;
+  if (raw is List) {
+    return [
+      for (final t in raw.cast<Map>())
+        if (WidgetElement.values.any((e) => e.name == t['id']))
+          (
+            id: WidgetElement.values.byName(t['id'] as String),
+            visible: t['visible'] as bool? ?? true,
+            span: ((t['span'] as num?)?.toInt() ?? 1).clamp(1, gridColumns),
+            fontScale: (t['fontScale'] as num?)?.toDouble() ?? 1.0,
+            showTitle: t['showTitle'] as bool? ?? true,
+            showSub: t['showSub'] as bool? ?? true,
+            primary: t['primaryColor'] as int?,
+            secondary: t['secondaryColor'] as int?,
+            iconScale: tileIconScale(t['iconScale']),
+            rect: t['rect'] is List ? GridRect.fromJson(t['rect']) : null,
+            float: t['float'] is List ? FloatRect.fromJson(t['float']) : null,
+          ),
+    ];
+  }
+  final v = (schedule['visible'] as Map?)?.cast<String, bool>() ?? const {};
+  base = layoutFromVisible([
+    for (final e in v.entries)
+      if (e.value) e.key,
+  ]);
+  return [
+    for (final t in base)
+      (
+        id: t.id,
+        visible: t.visible,
+        span: t.span,
+        fontScale: t.fontScale,
+        showTitle: true,
+        showSub: true,
+        primary: null,
+        secondary: null,
+        iconScale: 1.0,
+        rect: null,
+        float: null,
+      ),
+  ];
+}
+
+/// شجرة القص من الجدول (DECISIONS ٢٧)؛ جدول أقدم بلاها: تُحسب من التخطيط كما يحسبها الجدول.
+CutNode scheduleTree(Map<String, Object?> schedule, List<ScheduleTile> layout) {
+  final raw = schedule['tree'];
+  if (raw is Map) return CutNode.fromJson(raw);
+  final rects = rectsOf([
+    for (final t in layout)
+      TileLayout(t.id, visible: t.visible, rect: t.rect, float: t.float),
+  ]);
+  return cutTree(rects) ?? const CutNode.empty();
+}
+
+/// حجم خط يجعل نصاً عرضه [widthAtPreferred] بالحجم [preferred] يتسع في [maxWidth]، دون أن ينزل
+/// عن [min]. العرض يتناسب طردياً مع الحجم (fitTextSize في LamhaLogic.kt).
+double fitTextSize(
+  double preferred,
+  double widthAtPreferred,
+  double maxWidth,
+  double min,
+) {
+  if (widthAtPreferred <= 0 || widthAtPreferred <= maxWidth) return preferred;
+  return math.max(min, preferred * maxWidth / widthAtPreferred);
+}
+
+/// أسطر سطر ثانوي أخير بحد [maxLines]: ما يتسع في [remaining] بعد بقية المحتوى، ولا يقل عن ١.
+int fittingLines(double remaining, double lineHeight, int maxLines) {
+  if (lineHeight <= 0) return maxLines;
+  return (1 + (remaining / lineHeight).floor()).clamp(1, maxLines);
+}
+
+/// لونا الودجت من الجدول: ألوان النظام لسمة «ألوان النظام» إن توفرت (أندرويد ١٢+)، وإلا ألوان السمة.
+({Color accent, Color background}) scheduleColors(
+  Map<String, Object?> schedule,
+  SystemColors? system,
+) {
+  final t = (schedule['theme'] as Map?)?.cast<String, Object?>();
+  final theme = WidgetTheme.byName(t?['id'] as String?);
+  final c = theme == WidgetTheme.system && system != null
+      ? system
+      : (
+          accent: (t?['accent'] as int?) ?? theme.accent,
+          background: (t?['background'] as int?) ?? theme.background,
+        );
+  return (accent: Color(c.accent), background: Color(c.background));
+}
+
+/// آخر قراءة طقس في الجدول، أو null.
+WeatherReading? scheduleWeather(Map<String, Object?> schedule) {
+  final w = (schedule['weather'] as Map?)?.cast<String, dynamic>();
+  if (w == null || w['temp'] == null) return null;
+  return WeatherReading.fromJson(w);
+}
+
+/// قياس عرض نص سطراً واحداً.
+double _measure(BuildContext context, String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: DefaultTextStyle.of(context).style.merge(style),
+    ),
+    textDirection: TextDirection.rtl,
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final w = painter.width;
+  painter.dispose();
+  return w;
+}
+
+/// معاينة الودجت الكبيرة، تُبنى من الجدول نفسه الذي يُحفظ للودجت.
+/// هي المرجع لتخطيط ودجت أندرويد (LamhaWidgetReceiver.kt): المربعات من `layout` تُرصّ في صفوف
+/// بـ [packRows]، وارتفاع الصفوف بوزن المحتوى بـ [rowHeights].
+class WidgetPreview extends StatelessWidget {
+  const WidgetPreview({
+    super.key,
+    required this.schedule,
+    required this.now,
+    this.backgroundPath,
+    this.systemColors,
+    this.onTileTap,
+    this.selected,
+    this.overlay,
+    this.floatOverlay,
+  });
+
+  final Map<String, Object?> schedule;
+  final DateTime now;
+
+  /// لقطة الخلفية (آيفون) لتظهر خلف المعاينة.
+  final String? backgroundPath;
+
+  /// ألوان النظام (أندرويد ١٢+) لسمة «ألوان النظام».
+  final SystemColors? systemColors;
+
+  /// الضغط على مربع (شاشة «تخصيص الودجت»)؛ null = بلا ضغط.
+  final ValueChanged<WidgetElement>? onTileTap;
+
+  /// مربع يُبرز بإطار (المفتوحة إعداداته).
+  final WidgetElement? selected;
+
+  /// طبقة فوق شبكة المربعات بمقاسها (محرر التخطيط الحر في شاشة «الودجت»).
+  final Widget Function(Size grid)? overlay;
+
+  /// طبقة فوق الودجت كلها بمقاسها الكامل (محرر البوصلة الحرة).
+  final Widget Function(Size widget)? floatOverlay;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final radius = Theme.of(context).platform == TargetPlatform.iOS
+        ? 22.0
+        : 28.0;
+    final colors = scheduleColors(schedule, systemColors);
+    final accent = colors.accent;
+    final opacity = schedule['opacity']! as int;
+    final alpha = backgroundAlpha(opacity);
+    // ظل للنص إذا زادت الشفافية عن ٦٠٪ (DESIGN).
+    final shadows = alpha < 0.4
+        ? const [Shadow(color: Color(0x99000000), blurRadius: 3)]
+        : null;
+
+    final city = schedule['city']! as Map;
+    final loc = timeZone(city['timeZone'] as String);
+    final local = tz.TZDateTime.from(now, loc);
+    final days = (schedule['days']! as List).cast<Map>();
+    var idx = days.indexWhere((d) => d['date'] == isoDate(local));
+    if (idx < 0) idx = 0;
+    final day = days[idx];
+    final nextDay = idx + 1 < days.length ? days[idx + 1] : null;
+    final digits = scheduleDigits(schedule);
+    final reading = freshWeather(scheduleWeather(schedule), now);
+    final weather =
+        weatherText(reading, now, digits) ?? ltrIsolated(l.weatherUnknown);
+    final global = scheduleFontScale(schedule);
+    final qibla = (schedule['qibla'] as Map?) ?? const {};
+    final qiblaDeg = (qibla['degrees'] as num?)?.toDouble() ?? 0;
+
+    final layout = scheduleLayout(schedule);
+    final byId = {for (final t in layout) t.id: t};
+    final tree = scheduleTree(schedule, layout);
+    final placed = {
+      for (final e in tree.tiles) e.name,
+      for (final t in layout)
+        if (t.visible && t.float != null) t.id.name,
+    };
+    final rectOf = {
+      for (final t in layout)
+        if (t.rect != null) t.id: t.rect!,
+    };
+
+    _Cell tileFor(WidgetElement e, int span) {
+      final t = byId[e]!;
+      final _Cell tile = switch (e) {
+        WidgetElement.clock => _Tile.clock(
+          time: formatDigits(arabicClock(local), digits),
+          amPm: amPm(local),
+          weekday: day['weekday'] as String,
+          accent: accent,
+        ),
+        WidgetElement.dates => _Tile.lines(
+          kind: e,
+          lines: [
+            (
+              text: l.hijriDateText((day['hijri'] as Map)['text'] as String),
+              size: hijriSize,
+              bold: true,
+              key: const Key('preview-hijri'),
+            ),
+            (
+              text: l.gregorianDateText(
+                (day['gregorian'] as Map)['text'] as String,
+              ),
+              size: gregorianSize,
+              bold: false,
+              key: const Key('preview-gregorian'),
+            ),
+          ],
+        ),
+        WidgetElement.weather => _Tile.lines(
+          kind: e,
+          lines: [
+            (
+              text: l.cityWeather(city['name'] as String, weather),
+              size: cityWeatherSize,
+              bold: false,
+              key: const Key('preview-weather'),
+            ),
+          ],
+        ),
+        WidgetElement.prayer => _prayerTile(
+          l,
+          accent,
+          day,
+          nextDay,
+          digits,
+        ),
+        WidgetElement.qibla => _QiblaTile(
+          angle: '${formatDigits(qiblaDeg.round(), digits)}°',
+          sub: l.qiblaTileSub(qibla['direction'] as String? ?? ''),
+          degrees: qiblaDeg,
+          accent: accent,
+          faceAlpha: alpha,
+          span: span,
+          iconScale: t.iconScale,
+        ),
+        WidgetElement.deposit => _depositsTile(day, span),
+        WidgetElement.season => _seasonTile(l, day),
+        WidgetElement.tradSeason => _tradSeasonTile(
+          l,
+          day,
+          withDescription: !placed.contains(WidgetElement.tradPoints.name),
+        ),
+        WidgetElement.dayWeather => _DayWeatherTile(
+          weekday: day['weekday'] as String,
+          city: l.cityIcon(
+            city['name'] as String,
+            reading == null ? '' : weatherCondition(reading.code).emoji,
+          ).trim(),
+          temp: reading == null
+              ? ltrIsolated(l.weatherUnknown)
+              : temperatureText(reading.temp, digits),
+        ),
+        WidgetElement.weekday || WidgetElement.cityTemp => _DayWeatherTile(
+          weekday: day['weekday'] as String,
+          city: l.cityIcon(
+            city['name'] as String,
+            reading == null ? '' : weatherCondition(reading.code).emoji,
+          ).trim(),
+          temp: reading == null
+              ? ltrIsolated(l.weatherUnknown)
+              : temperatureText(reading.temp, digits),
+          part: e == WidgetElement.weekday ? _DayPart.day : _DayPart.place,
+        ),
+        WidgetElement.hijri => _CapsuleTile(
+          kind: e,
+          text: l.hijriDateText((day['hijri'] as Map)['text'] as String),
+        ),
+        WidgetElement.gregorian => _CapsuleTile(
+          kind: e,
+          text: l.gregorianDateText(
+            (day['gregorian'] as Map)['text'] as String,
+          ),
+        ),
+        WidgetElement.prayerTimes => _PrayerTimesTile(
+          items: [
+            for (final p in rotatePrayers(
+              _slots(day),
+              nextDay == null ? null : _slots(nextDay),
+              now,
+            ))
+              (name: p.name, sub: p.text),
+          ],
+          accent: accent,
+        ),
+        WidgetElement.tradPoints => _PointsTile(
+          title: l.tradPointsTitle(
+            ((day['tradSeason'] as Map)['name'] as String),
+          ),
+          points: [
+            for (final p
+                in ((day['tradSeason'] as Map)['points'] as List? ?? const [])
+                    .cast<String>())
+              l.pointText(p),
+          ],
+        ),
+      };
+      return tile.styled(
+        scale: global * t.fontScale,
+        showTitle: t.showTitle,
+        showSub: t.showSub,
+        primary: t.primary == null ? null : Color(t.primary!),
+        secondary: t.secondary == null ? null : Color(t.secondary!),
+      );
+    }
+
+    // التخطيط الحر: الشجرة نفسها التي ترسمها الودجتان، كل جزء بوزنه، وبين المربعات [tileSpacing]
+    // (نصفه حول كل مربع).
+    Widget node(CutNode n) {
+      final e = n.tile;
+      if (e != null) {
+        final span = spanOfWidth(rectOf[e]?.w ?? freeCols);
+        return Padding(
+          padding: const EdgeInsets.all(tileSpacing / 2),
+          child: _tap(e, tileFor(e, span)),
+        );
+      }
+      if (n.children.isEmpty) return const SizedBox.shrink();
+      return Flex(
+        direction: n.vertical ? Axis.vertical : Axis.horizontal,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final ch in n.children) Expanded(flex: ch.weight, child: node(ch.node)),
+        ],
+      );
+    }
+
+    final gridLayer = Padding(
+      padding: const EdgeInsets.all(widgetPadding - tileSpacing / 2),
+      child: DefaultTextStyle.merge(
+        style: TextStyle(shadows: shadows),
+        child: overlay == null
+            ? node(tree)
+            : LayoutBuilder(
+                builder: (context, c) => Stack(
+                  children: [
+                    Positioned.fill(child: node(tree)),
+                    Positioned.fill(child: overlay!(c.biggest)),
+                  ],
+                ),
+              ),
+      ),
+    );
+
+    // المربعات العائمة (DECISIONS ٢٩): فوق المربعات كلها، كل منها بموضعه ومقاسه كنسب من الودجت كلها،
+    // وبحشوة الخانة نفسها (tileSpacing / 2) كمربع الشبكة.
+    final floats = [
+      for (final t in layout)
+        if (t.visible && t.float != null) t,
+    ];
+    Widget floatTile(({WidgetElement id, FloatRect float}) f, Size box) {
+      final p = f.float.within(box.width, box.height);
+      final span = floatSpan(f.float.w);
+      return Positioned(
+        right: p.right,
+        top: p.top,
+        width: p.width,
+        height: p.height,
+        child: Padding(
+          padding: const EdgeInsets.all(tileSpacing / 2),
+          child: _tap(f.id, tileFor(f.id, span)),
+        ),
+      );
+    }
+
+    // إطار الخلفية الحر (DECISIONS ٣٠): لوحة الخلفية وحدها تتحرك وتتغير في المنطقة، والعناصر فوقها تبقى
+    // بمواضعها ومقاساتها كما هي (تُحسب من الودجت كلها لا من الإطار).
+    final frameRaw = schedule['frame'];
+    final frame = frameRaw is List ? FloatRect.fromJson(frameRaw) : null;
+    final backPanel = DecoratedBox(
+      key: const Key('preview-background'),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        color: colors.background.withValues(alpha: alpha),
+      ),
+    );
+    final widgetBox = LayoutBuilder(
+      builder: (context, whole) {
+        final f = frame?.within(whole.maxWidth, whole.maxHeight);
+        return Stack(
+          key: const Key('preview-widget'),
+          children: [
+            if (f == null)
+              Positioned.fill(child: backPanel)
+            else
+              Positioned(right: f.right, top: f.top, width: f.width, height: f.height, child: backPanel),
+            Positioned.fill(child: gridLayer),
+            for (final t in floats) floatTile((id: t.id, float: t.float!), whole.biggest),
+            if (floatOverlay != null) Positioned.fill(child: floatOverlay!(whole.biggest)),
+          ],
+        );
+      },
+    );
+
+    final bg = backgroundPath;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        image: bg != null
+            ? DecorationImage(image: FileImage(File(bg)), fit: BoxFit.cover)
+            : null,
+        gradient: bg == null
+            ? const RadialGradient(
+                center: Alignment(0.4, -0.8),
+                radius: 1.2,
+                colors: [_wallTop, _wallBottom],
+              )
+            : null,
+      ),
+      child: Center(
+        child: FittedBox(
+          child: SizedBox.fromSize(size: previewWidgetSize, child: widgetBox),
+        ),
+      ),
+    );
+  }
+
+  Widget _tap(WidgetElement e, Widget child) {
+    final keyed = KeyedSubtree(key: Key('tile-${e.name}'), child: child);
+    final tap = onTileTap;
+    if (tap == null) return keyed;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => tap(e),
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(tileRadius),
+          border: selected == e
+              ? Border.all(color: Colors.white, width: 2)
+              : null,
+        ),
+        child: keyed,
+      ),
+    );
+  }
+
+  /// صلوات يوم من الجدول (لـ [rotatePrayers]).
+  static List<PrayerSlot> _slots(Map day) => [
+    for (final e in (day['prayers'] as Map).cast<String, Map>().entries)
+      (
+        key: e.key,
+        name: e.value['name'] as String,
+        time: DateTime.parse(e.value['time'] as String),
+        text: e.value['text'] as String,
+      ),
+  ];
+
+  _Tile _prayerTile(
+    AppLocalizations l,
+    Color accent,
+    Map day,
+    Map? nextDay,
+    DigitStyle digits,
+  ) {
+    Map? next;
+    final today = (day['prayers'] as Map).cast<String, Map>();
+    for (final e in today.entries) {
+      if (e.key == PrayerName.sunrise.name) continue;
+      final t = DateTime.parse(e.value['time'] as String);
+      if (t.isAfter(now)) {
+        next = e.value;
+        break;
+      }
+    }
+    if (next == null && nextDay != null) {
+      next = (nextDay['prayers'] as Map)['fajr'] as Map;
+    }
+    // الاسم ثم وقت الصلاة (لا عدّاد تنازلي: حُذف نهائياً بطلب المالك ١٠/١١/٢٠٢٦).
+    return _Tile(
+      kind: WidgetElement.prayer,
+      title: l.tilePrayer,
+      highlight: accent,
+      hideFirstSub: true,
+      value: (next?['name'] as String?) ?? '',
+      subs: [
+        if (next != null)
+          (text: next['text'] as String, lines: 1, compact: null),
+      ],
+    );
+  }
+
+  /// حتى إيداع لكل وحدة عرض، وبعرض ٣ حتى ستة (maxDeposits)، كل منها في مستطيل.
+  _Cell _depositsTile(Map day, int span) {
+    final items = <_ColumnItem>[
+      for (final d in (day['deposits'] as List).cast<Map>().take(
+        maxDeposits(span),
+      ))
+        (name: d['label'] as String, sub: d['daysText'] as String),
+    ];
+    return _DepositsTile(items: items);
+  }
+
+  _Tile _seasonTile(AppLocalizations l, Map day) {
+    final s = day['season'] as Map;
+    return _Tile(
+      kind: WidgetElement.season,
+      title: l.tileSeason,
+      value: s['name'] as String,
+      subs: [
+        (
+          text: l.nextAfter(
+            (s['next'] as Map)['name'] as String,
+            s['afterText'] as String,
+          ),
+          lines: 2,
+          compact: null,
+        ),
+      ],
+    );
+  }
+
+  /// تنسيق المالك (٢٩/١٠/٢٠٢٦): اسم الموسم وبعده بين قوسين الموسم القادم والأيام الباقية،
+  /// وتحته وصف يبدأ باسم الموسم (descriptionLine في الجدول) إن لم يظهر مربع «وصف الموسم».
+  _Tile _tradSeasonTile(
+    AppLocalizations l,
+    Map day, {
+    required bool withDescription,
+  }) {
+    final s = day['tradSeason'] as Map;
+    final description = withDescription
+        ? (s['descriptionLine'] ?? s['description']) as String
+        : '';
+    return _Tile(
+      kind: WidgetElement.tradSeason,
+      title: l.tileTradSeason,
+      value: s['name'] as String,
+      // مسافات غير قابلة للكسر: الملاحظة كتلة واحدة، في سطر الاسم أو تحته كاملة.
+      valueNote: '(${l.nextAfter((s['next'] as Map)['name'] as String, s['afterText'] as String)})'.replaceAll(' ', '\u00A0'),
+      subs: [
+        if (description.isNotEmpty)
+          (text: description, lines: 3, compact: null),
+      ],
+    );
+  }
+}
+
+/// أحجام المربعات (الميزة ٣د، بلا رموز): العنوان ١٣ عريض، والقيمة ٢٠ عريض، والثانوي ١٤، كلها
+/// × معامل الخط، من الأعلى بتباعد ثابت [tileGap]. مطابقة لـ widget_tile_content.xml.
+/// العنوان والقيمة سطر واحد يصغر خطه ليتسع (ثم «…»)، والثانوي بحد أسطر و«…».
+const tileTitleSize = 13.0;
+const tileValueSize = 20.0;
+const tileSubSize = 14.0;
+const tileGap = 2.0;
+const tileLineHeight = 1.25;
+
+/// حشوة المربع الرأسية (٨ + ٨) والأفقية (٩ + ٩).
+const tilePadV = 4.0;
+const tilePadH = 9.0;
+
+/// هامش أمان (بكسل) عند قياس ما يتسع سطراً واحداً، كي لا يُقص بفرق التقريب.
+const fitMargin = 2.0;
+
+/// أدنى حجم للعنوان والقيمة عند تصغيرهما ليتسعا (نسبة من حجمهما).
+const tileMinFit = 0.7;
+
+/// أدنى حجم لسطور التاريخين والمدينة قبل «…».
+const headMinFit = 0.75;
+
+typedef _Line = ({String text, double size, bool bold, Key? key});
+
+/// سطر ثانوي: [lines] حده الأقصى، و[compact] صيغته المختصرة إن كان لا يُختصر بـ«…» (العدّاد).
+typedef _Sub = ({String text, int lines, String? compact});
+
+/// عرض كلمات [text] (للالتفاف عند المسافات فقط) وعرض المسافة بينها، بالحجم [style].
+({List<double> words, double space}) _words(
+  BuildContext context,
+  String text,
+  TextStyle style,
+) {
+  final parts = text.split(' ').where((w) => w.isNotEmpty).toList();
+  final words = [for (final w in parts) _measure(context, w, style)];
+  final sum = words.fold<double>(0, (a, b) => a + b);
+  final space = parts.length > 1
+      ? math.max(0.0, (_measure(context, parts.join(' '), style) - sum)) /
+            (parts.length - 1)
+      : 0.0;
+  return (words: words, space: space);
+}
+
+/// مربع واحد: مربعات المعلومات الخمسة (عنوان وقيمة وثانويات في صندوق)، أو الساعة واليوم، أو
+/// أسطر بلا صندوق (التاريخان، المدينة والطقس) كما كان الصف العلوي.
+/// الحجم المطلوب يُحترم داخل مقاس المربع (fitTile، الميزة ٥ب): تُخفى الأسطر الأقل أولية قبل أي تصغير.
+class _Tile extends _Cell {
+  const _Tile({
+    required this.kind,
+    required this.title,
+    required this.value,
+    this.valueNote,
+    this.subs = const [],
+    this.highlight,
+    this.hideFirstSub = false,
+  }) : lines = const [],
+       time = null,
+       amPmText = null,
+       accent = null,
+       scale = 1,
+       showTitle = true,
+       showSub = true,
+       primary = null,
+       secondary = null;
+
+  const _Tile.clock({
+    required this.time,
+    required String amPm,
+    required String weekday,
+    required this.accent,
+  }) : kind = WidgetElement.clock,
+       amPmText = amPm,
+       value = weekday,
+       valueNote = null,
+       title = null,
+       subs = const [],
+       lines = const [],
+       highlight = null,
+       hideFirstSub = false,
+       scale = 1,
+       showTitle = true,
+       showSub = true,
+       primary = null,
+       secondary = null;
+
+  const _Tile.lines({required this.kind, required this.lines})
+    : title = null,
+      value = '',
+      valueNote = null,
+      subs = const [],
+      highlight = null,
+      hideFirstSub = false,
+      time = null,
+      amPmText = null,
+      accent = null,
+      scale = 1,
+      showTitle = true,
+      showSub = true,
+      primary = null,
+      secondary = null;
+
+  _Tile._copy(
+    _Tile t, {
+    required this.scale,
+    required this.showTitle,
+    required this.showSub,
+    required this.primary,
+    required this.secondary,
+  }) : kind = t.kind,
+       title = t.title,
+       value = t.value,
+       valueNote = t.valueNote,
+       subs = t.subs,
+       highlight = t.highlight,
+       hideFirstSub = t.hideFirstSub,
+       lines = t.lines,
+       time = t.time,
+       amPmText = t.amPmText,
+       accent = t.accent;
+
+  final WidgetElement kind;
+  final String? title;
+
+  /// قيمة المربع، أو اليوم في مربع الساعة.
+  final String value;
+
+  /// نص أصغر بعد القيمة في سطرها، مثل «(المربعانية بعد ٤٠ يوماً)» في مربع الموسم.
+  final String? valueNote;
+
+  /// الثانويات بترتيب عرضها. الأخير ذو الأسطر المتعددة يأخذ ما يتسع منها.
+  final List<_Sub> subs;
+  final Color? highlight;
+
+  /// أولوية الإخفاء عند ضيق الارتفاع: الثانويات تُخفى من الآخر، ومع [hideFirstSub] (الصلاة) يُخفى
+  /// أولها (الوقت) قبل آخرها (العدّاد)، فلا يُخفى العدّاد أبداً قبل غيره.
+  final bool hideFirstSub;
+
+  /// أسطر مربع بلا صندوق: الأول بالخط الرئيسي والبقية بالفرعي.
+  final List<_Line> lines;
+
+  /// مربع الساعة.
+  final String? time;
+  final String? amPmText;
+  final Color? accent;
+
+  /// معامل الخط المطلوب (العام × المربع).
+  final double scale;
+
+  /// مفتاحا «إظهار العنوان» و«إظهار السطر الفرعي».
+  final bool showTitle;
+  final bool showSub;
+
+  /// لونا الخط؛ null = تلقائي.
+  final Color? primary;
+  final Color? secondary;
+
+  @override
+  _Tile styled({
+    required double scale,
+    required bool showTitle,
+    required bool showSub,
+    Color? primary,
+    Color? secondary,
+  }) => _Tile._copy(
+    this,
+    scale: scale,
+    showTitle: showTitle,
+    showSub: showSub,
+    primary: primary,
+    secondary: secondary,
+  );
+
+  /// المربع بالحجم الأساسي وكل أسطره، لحساب مقاس الشبكة (لا يتغير بحجم الخط). والعنوان والسطر
+  /// الفرعي المطفآن لا يأخذان مكاناً (الميزة ٦).
+  @override
+  _Tile get base => _Tile._copy(
+    this,
+    scale: 1,
+    showTitle: showTitle,
+    showSub: showSub,
+    primary: primary,
+    secondary: secondary,
+  );
+
+  /// ارتفاع المربع في عرض [width]: [text] نصه، و[pad] ما لا يتغير (الحشوات، والساعة إن صغّرها
+  /// العرض).
+  @override
+  ({double text, double pad}) heights(BuildContext context, double width) {
+    if (time != null) {
+      final font = clockSize * scale * _clockFit(context, width);
+      final weekday = showSub ? weekdaySize * weekdayLineHeight * scale : 0.0;
+      return font < clockSize * scale
+          ? (text: weekday, pad: font)
+          : (text: font + weekday, pad: 0);
+    }
+    if (lines.isNotEmpty) {
+      return (
+        text:
+            lines
+                .take(showSub ? lines.length : 1)
+                .fold<double>(0, (a, l) => a + l.size) *
+            headLineHeight *
+            scale,
+        pad: 0,
+      );
+    }
+    return (
+      text:
+          ((showTitle ? tileTitleSize : 0) +
+              tileValueSize +
+              (showSub ? _subLines : 0) * tileSubSize) *
+          tileLineHeight *
+          scale,
+      pad: tilePadV * 2 + tileGap * ((showSub ? subs.length : 0) + 1),
+    );
+  }
+
+  /// أسطر الثانويات في المقاس: الثانوي الوحيد ذو السطرين (الفصل والموسم) بسطريه (الميزة ٦).
+  int get _subLines => kind == WidgetElement.prayer
+      ? subs.length
+      : math.max(subs.length, subs.isEmpty ? 0 : 2);
+
+  TextStyle get _clockStyle => TextStyle(
+    fontSize: clockSize * scale,
+    height: 1,
+    fontWeight: FontWeight.w700,
+    color: _primary,
+  );
+
+  /// عرض الساعة (أعرض نص لها) و«ص/م» بجانبها، بالحجم المطلوب.
+  double _clockWidth(BuildContext context) =>
+      _measure(context, widestClockText, _clockStyle) +
+      4 +
+      _measure(context, amPmText!, _amPmStyle);
+
+  /// معامل الساعة ليتسع عرضها في [width] (كلمة واحدة: أدنى تصغير).
+  double _clockFit(BuildContext context, double width) {
+    final w = _clockWidth(context);
+    return w > width - fitMargin ? (width - fitMargin) / w : 1.0;
+  }
+
+  TextStyle get _amPmStyle => TextStyle(
+    fontSize: amPmSize * scale,
+    fontWeight: FontWeight.w700,
+    color: _primary,
+  );
+
+  Color get _primary =>
+      primary ?? (kind == WidgetElement.weather ? _muted : _text);
+
+  Color get _secondary =>
+      secondary ??
+      switch (kind) {
+        WidgetElement.clock => accent ?? _text,
+        WidgetElement.dates => _muted,
+        _ => _dim,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    if (time != null) return _clock(context);
+    if (lines.isNotEmpty) return _lines(context);
+    return _box(context);
+  }
+
+  Widget _clock(BuildContext context) => LayoutBuilder(
+    builder: (context, c) {
+      final weekdayStyle = TextStyle(
+        fontSize: weekdaySize * scale,
+        fontWeight: FontWeight.w700,
+        height: weekdayLineHeight,
+        color: _secondary,
+      );
+      // الساعة كلمة واحدة: تصغر فقط إن لم يتسع عرضها. اليوم يُخفى قبل أن تصغر لضيق الارتفاع.
+      final fit = fitTile(
+        height: c.maxHeight,
+        width: c.maxWidth - fitMargin,
+        valueLineHeight: clockSize * scale,
+        valueWords: [_clockWidth(context)],
+        subs: [
+          if (showSub)
+            (
+              height: weekdaySize * scale * weekdayLineHeight,
+              maxLines: 1,
+              fitWidth: _measure(context, value, weekdayStyle),
+            ),
+        ],
+        minSubFit: headMinFit,
+      );
+      final k = fit.valueScale;
+      return ClipRect(
+        child: OverflowBox(
+          alignment: AlignmentDirectional.centerStart,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Column(
+            key: const Key('preview-clock-column'),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // أمان: إن لم يتسع (فرق قياس) يصغر كله ولا يُقص.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      time!,
+                      key: const Key('preview-clock'),
+                      textAlign: TextAlign.right,
+                      style: _clockStyle.copyWith(
+                        fontSize: clockSize * scale * k,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      amPmText!,
+                      textAlign: TextAlign.right,
+                      style: _amPmStyle.copyWith(
+                        fontSize: amPmSize * scale * k,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (fit.subs.isNotEmpty)
+                Text(
+                  value,
+                  key: const Key('preview-weekday'),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: weekdayStyle.copyWith(
+                    fontSize: weekdaySize * scale * fit.subScales.first,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  /// التاريخان أو المدينة والطقس: الأول قيمة تلتفّ عند المسافات، والميلادي يُخفى إن لم يتسع.
+  Widget _lines(BuildContext context) => LayoutBuilder(
+    builder: (context, c) {
+      TextStyle styleOf(int i) => TextStyle(
+        fontSize: lines[i].size * scale,
+        fontWeight: lines[i].bold ? FontWeight.w700 : FontWeight.w400,
+        color: i == 0 ? _primary : _secondary,
+        height: headLineHeight,
+      );
+      final first = _words(context, lines.first.text, styleOf(0));
+      final fit = fitTile(
+        height: c.maxHeight,
+        width: c.maxWidth - fitMargin,
+        valueLineHeight: lines.first.size * scale * headLineHeight,
+        valueWords: first.words,
+        valueSpace: first.space,
+        subs: [
+          if (showSub)
+            for (var i = 1; i < lines.length; i++)
+              (
+                height: lines[i].size * scale * headLineHeight,
+                maxLines: 1,
+                fitWidth: _measure(context, lines[i].text, styleOf(i)),
+              ),
+        ],
+        minSubFit: headMinFit,
+      );
+      Text line(int i, double factor, int maxLines) => Text(
+        lines[i].text,
+        key: lines[i].key,
+        textAlign: TextAlign.right,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: styleOf(i).copyWith(fontSize: lines[i].size * scale * factor),
+      );
+      return ClipRect(
+        child: OverflowBox(
+          alignment: AlignmentDirectional.centerStart,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              line(0, fit.valueScale, fit.valueLines),
+              for (final (j, i) in fit.subs.indexed)
+                line(i + 1, fit.subScales[j], 1),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  Widget _box(BuildContext context) {
+    final h = highlight;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(tileRadius),
+        // مربع الصلاة: لون التمييز بألفا ثابتة (كـ setImageAlpha في أندرويد)، وغيره رمادي مزرق.
+        color: h?.withValues(alpha: 0.18) ?? tileBoxColor,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          tilePadH,
+          tilePadV,
+          tilePadH,
+          tilePadV,
+        ),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final width = c.maxWidth - fitMargin;
+            final titleStyle = TextStyle(
+              fontSize: tileTitleSize * scale,
+              fontWeight: FontWeight.w700,
+              color: _secondary,
+              height: tileLineHeight,
+            );
+            // العنوان يصغر حتى يتسع سطراً واحداً، وإلا يُخفى.
+            final t = title!;
+            final titleSize = fitTextSize(
+              tileTitleSize * scale,
+              _measure(context, t, titleStyle),
+              width,
+              tileTitleSize * scale * tileMinFit,
+            );
+            final valueStyle = TextStyle(
+              fontSize: tileValueSize * scale,
+              fontWeight: FontWeight.w700,
+              color: _primary,
+              height: tileLineHeight,
+            );
+            final subStyle = TextStyle(
+              fontSize: tileSubSize * scale,
+              color: _secondary,
+              height: tileLineHeight,
+            );
+            final noteStyle = TextStyle(
+              fontSize: tileSubSize * scale,
+              fontWeight: FontWeight.w500,
+              color: _secondary,
+              height: tileLineHeight,
+            );
+            final valueWords = _words(context, value, valueStyle);
+            final titleHeight =
+                // العنوان الذي لا يتسع حتى بأدنى حجم يُخفى (لا «…»).
+                showTitle &&
+                    _measure(
+                          context,
+                          t,
+                          titleStyle.copyWith(fontSize: titleSize),
+                        ) <=
+                        width + 0.5
+                ? titleSize * tileLineHeight
+                : 0.0;
+            TileFit fitWith(
+              ({List<double> words, double space}) vw,
+              List<_Sub> ss,
+              List<String> tx,
+            ) => fitTile(
+              height: c.maxHeight,
+              width: width,
+              titleHeight: titleHeight,
+              valueLineHeight: tileValueSize * scale * tileLineHeight,
+              valueWords: vw.words,
+              valueSpace: vw.space,
+              subs: [
+                if (showSub)
+                  for (final (i, s) in ss.indexed)
+                    (
+                      height: tileSubSize * scale * tileLineHeight,
+                      maxLines: s.lines,
+                      fitWidth: s.compact != null
+                          ? _measure(context, tx[i], subStyle)
+                          : 0,
+                    ),
+              ],
+              hideFromStart: hideFirstSub,
+              gap: tileGap,
+            );
+            // العدّاد بلا «باقي» إن لم يتسع.
+            List<String> textsOf(List<_Sub> ss) => [
+              for (final s in ss)
+                s.compact != null && _measure(context, s.text, subStyle) > width
+                    ? s.compact!
+                    : s.text,
+            ];
+            var shownSubs = subs;
+            var texts = textsOf(shownSubs);
+            var fit = fitWith(valueWords, shownSubs, texts);
+            // الملاحظة في سطر القيمة إن لم تصغّر القيمة، وإلا سطر ثانوي أول تحتها.
+            var inlineNote = false;
+            if (valueNote != null) {
+              final inline = fitWith(
+                (
+                  words: [...valueWords.words, ..._words(context, valueNote!, noteStyle).words],
+                  space: valueWords.space,
+                ),
+                subs,
+                texts,
+              );
+              if (inline.valueScale >= fit.valueScale - 1e-6) {
+                inlineNote = true;
+                fit = inline;
+              } else {
+                shownSubs = [(text: valueNote!, lines: 1, compact: null), ...subs];
+                texts = textsOf(shownSubs);
+                fit = fitWith(valueWords, shownSubs, texts);
+              }
+            }
+            return ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.topCenter,
+                maxHeight: double.infinity,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (fit.title) ...[
+                      Text(
+                        t,
+                        key: const Key('tile-title'),
+                        textAlign: TextAlign.right,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: titleStyle.copyWith(fontSize: titleSize),
+                      ),
+                      const SizedBox(height: tileGap),
+                    ],
+                    if (!inlineNote)
+                      Text(
+                        value,
+                        key: const Key('tile-value'),
+                        textAlign: TextAlign.right,
+                        maxLines: fit.valueLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: valueStyle.copyWith(
+                          fontSize: tileValueSize * scale * fit.valueScale,
+                        ),
+                      )
+                    else
+                      Text.rich(
+                        TextSpan(
+                          text: value,
+                          children: [
+                            TextSpan(
+                              text: ' ${valueNote!}',
+                              style: noteStyle.copyWith(
+                                fontSize: tileSubSize * scale * fit.valueScale,
+                              ),
+                            ),
+                          ],
+                        ),
+                        key: const Key('tile-value'),
+                        textAlign: TextAlign.right,
+                        maxLines: fit.valueLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: valueStyle.copyWith(
+                          fontSize: tileValueSize * scale * fit.valueScale,
+                        ),
+                      ),
+                    for (final (j, i) in fit.subs.indexed) ...[
+                      const SizedBox(height: tileGap),
+                      Text(
+                        texts[i],
+                        key: Key('tile-sub-$j'),
+                        textAlign: TextAlign.right,
+                        // الأخير وحده يأخذ أسطراً إضافية إن اتسعت.
+                        maxLines: j == fit.subs.length - 1
+                            ? fit.lastSubLines
+                            : 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: subStyle.copyWith(
+                          fontSize: tileSubSize * scale * fit.subScales[j],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}

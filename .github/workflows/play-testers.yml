@@ -1,0 +1,59 @@
+name: Google Play testers (Google Group)
+
+# يضيف مجموعة Google Groups مختبرين لمسار اختبار في Google Play لتطبيق من stores/apps.json
+# (أو لكل التطبيقات). قوائم الإيميلات في Play Console لا تتغير. التشغيل يدوي (مدير المتاجر).
+on:
+  workflow_dispatch:
+    inputs:
+      group:
+        description: "إيميل المجموعة (…@googlegroups.com)"
+        required: true
+      app:
+        description: "اسم التطبيق كما في stores/apps.json، أو all لكل التطبيقات"
+        required: true
+        default: all
+      track:
+        description: "المسار"
+        type: choice
+        default: alpha
+        options: [alpha, internal, beta]
+      mode:
+        description: "dry-run يتحقق فقط، apply يضيف"
+        type: choice
+        default: dry-run
+        options: [dry-run, apply]
+
+permissions:
+  contents: read
+
+jobs:
+  testers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add group
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          APP: ${{ inputs.app }}
+          GROUP: ${{ inputs.group }}
+          TRACK: ${{ inputs.track }}
+          FLAG: ${{ inputs.mode == 'dry-run' && '--dry-run' || '' }}
+        run: |
+          [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] || { echo "::error::Missing secret PLAY_SERVICE_ACCOUNT_JSON"; exit 1; }
+          packages=$(python3 - <<'EOF'
+          import json, os, sys
+          apps = json.load(open("stores/apps.json"))
+          want = os.environ["APP"]
+          picked = [a for a in apps if want == "all" or a["name"] == want]
+          if not picked:
+              sys.exit(f"Unknown app {want}; known: {', '.join(a['name'] for a in apps)}")
+          print(" ".join(a["android"] for a in picked))
+          EOF
+          )
+          failed=0
+          for p in $packages; do
+            echo "::group::$p"
+            python3 .github/scripts/play_testers.py "$p" "$TRACK" "$GROUP" $FLAG || failed=1
+            echo "::endgroup::"
+          done
+          exit $failed

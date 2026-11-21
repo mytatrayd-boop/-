@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "note": "الأيام ميلادية. weekendRule: كم يوماً يُزاح الموعد إذا وافق اليوم المذكور (سالب = قبله). الأولوية للجدول الرسمي لكل جهة: الاستثناءات في exceptions (أي تقديم أو تأخير رسمي) مقدَّمة على الحساب لشهر الاستحقاق. المراجع في SOURCES.md.",
+  "deposits": [
+    {
+      "id": "salary",
+      "name": "الرواتب",
+      "monthLabel": "راتب",
+      "day": 27,
+      "weekendRule": {"friday": -1, "saturday": 1}
+    },
+    {
+      "id": "citizen_account",
+      "name": "حساب المواطن",
+      "day": 10,
+      "weekendRule": {"friday": -1, "saturday": 1}
+    },
+    {
+      "id": "social_security",
+      "name": "الضمان الاجتماعي",
+      "day": 1,
+      "weekendRule": {"friday": -1, "saturday": 1}
+    },
+    {
+      "id": "housing_support",
+      "name": "الدعم السكني",
+      "day": 24,
+      "weekendRule": {"friday": -1, "saturday": 1}
+    },
+    {
+      "id": "comprehensive_rehab",
+      "name": "التأهيل الشامل",
+      "day": 26,
+      "weekendRule": {"friday": -1, "saturday": 1},
+      "source": "المالك: يوم ٢٦ من الشهر الميلادي، الجمعة ← الخميس قبله، السبت ← الأحد بعده (SOURCES.md)"
+    },
+    {
+      "id": "retirement",
+      "name": "معاشات المتقاعدين",
+      "day": 1,
+      "weekendRule": {"friday": -1, "saturday": 1},
+      "source": "التأمينات الاجتماعية: الصرف في بداية الشهر الميلادي، وإعلانها هو المرجع النهائي (SOURCES.md)"
+    }
+  ],
+  "exceptions": [
+    {"id": "salary", "month": "2026-05", "date": "2026-05-24", "source": "وزارة المالية — مواعيد صرف الرواتب لعام 2026"}
+  ]
+}

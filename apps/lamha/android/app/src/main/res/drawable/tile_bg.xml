@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- صندوق (الميزة ٦): رمادي مزرق نصف شفاف بزوايا كبيرة (tileBoxColor في widget_preview_tiles.dart). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#4096AAD2" />
+    <corners android:radius="18dp" />
+</shape>

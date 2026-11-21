@@ -111,6 +111,22 @@ test("task → completion → approval → points in summaries", async () => {
   assert.ok(sums.every((s) => s.points === 5 && s.count === 1));
   const ledger = await db.collection(`families/${fid}/ledger`).get();
   assert.equal(ledger.size, 1);
+
+  // A one-time task: one completion ever, keyed "once".
+  await call("api", { op: "addTask", title: "تنظيف السيارة", personId: kid.personId, points: 20, repeat: "once" }, owner.idToken);
+  const once = (await db.collection(`families/${fid}/tasks`).where("title", "==", "تنظيف السيارة").get()).docs[0];
+  assert.equal(once.data().repeat, "once");
+  await call("api", { op: "completeTask", taskId: once.id }, kid.idToken);
+  assert.ok((await db.doc(`families/${fid}/completions/${once.id}_once`).get()).exists);
+  await rejects(call("api", { op: "completeTask", taskId: once.id }, kid.idToken), "already-done");
+
+  // Reports for each period, sent to the family as a notice.
+  for (const [period, title] of [["weekly", "🏆 ترتيب إنجاز الأسبوع"], ["yearly", "🏆 ترتيب إنجاز السنة"]]) {
+    await call("api", { op: "sendReport", period }, owner.idToken);
+    const n = (await db.collection(`families/${fid}/notifications`).where("title", "==", title).get()).docs;
+    assert.equal(n.length, 1, title);
+    assert.match(n[0].data().body, /: 5 نقطة/);
+  }
 });
 
 test("delegated admin only gets granted permissions", async () => {
@@ -199,12 +215,252 @@ test("removed member loses access; account deletion", async () => {
   await rejects(call("api", { op: "deleteAccount" }, owner.idToken), "owner-must-delete-family");
 });
 
+test("password sign-up, login and lockout", async () => {
+  await rejects(call("login", { email: "abu@test.sa", password: "whatever1" }), "no-password");
+  await clearRate();
+  await rejects(call("requestCode", { email: "abu@test.sa", role: "admin", password: "123" }), "weak-password");
+  await call("requestCode", { email: "abu@test.sa", role: "admin", password: "secret123" });
+  await call("verifyCode", { email: "abu@test.sa", code: await lastCode("abu@test.sa") });
+  const ok = await call("login", { email: "abu@test.sa", password: "secret123" });
+  assert.equal(ok.familyId, fid);
+  assert.equal(ok.role, "owner");
+  await rejects(call("login", { email: "nobody@test.sa", password: "secret123" }), "bad-login");
+  for (let i = 0; i < 5; i++) await rejects(call("login", { email: "abu@test.sa", password: "wrong-one" }), "bad-login");
+  await rejects(call("login", { email: "abu@test.sa", password: "secret123" }), "locked");
+  await db.collection("credentials").get().then((s) => Promise.all(s.docs.map((d) => d.ref.update({ lockUntil: null }))));
+});
+
+test("avatar photo, parent lock, monthly tasks", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).toString("base64");
+  await call("api", { op: "setAvatar", personId: kid.personId, avatar: "photo", photo: png }, kid.idToken);
+  const ref = db.doc(`families/${fid}/people/${kid.personId}`);
+  assert.equal((await ref.get()).data().photo, png);
+  await call("api", { op: "setAvatar", personId: kid.personId, avatar: "girl_rose" }, kid.idToken);
+  assert.equal((await ref.get()).data().photo, undefined, "choosing a portrait drops the photo");
+  await rejects(call("api", { op: "setAvatarLock", personId: kid.personId, locked: true }, kid.idToken), "no-permission");
+  await call("api", { op: "setAvatarLock", personId: kid.personId, locked: true }, owner.idToken);
+  await rejects(call("api", { op: "setAvatar", personId: kid.personId, avatar: "girl_pink" }, kid.idToken), "avatar-locked");
+  await call("api", { op: "setAvatar", personId: kid.personId, avatar: "girl_pink" }, owner.idToken);
+
+  await call("api", { op: "addTask", title: "تنظيف الغرفة", personId: kid.personId, points: 30, repeat: "monthly" }, owner.idToken);
+  const t = (await db.collection(`families/${fid}/tasks`).where("title", "==", "تنظيف الغرفة").get()).docs[0];
+  assert.equal(t.data().repeat, "monthly");
+  await call("api", { op: "completeTask", taskId: t.id }, kid.idToken);
+  const c = (await db.collection(`families/${fid}/completions`).where("taskId", "==", t.id).get()).docs[0];
+  assert.match(c.data().periodKey, /^m\d{4}-\d{2}$/);
+  await call("api", { op: "decideCompletion", completionId: c.id, approve: true }, owner.idToken);
+  const day = (await db.collection(`families/${fid}/summaries`).where("personId", "==", kid.personId).get()).docs.map((d) => d.data()).find((x) => /^\d/.test(x.periodKey));
+  assert.equal(day.tasks, 1, "reports count done tasks apart from prayers and competitions");
+});
+
+test("prayer tasks only for the running prayer; late ones are worth no points", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  await rejects(call("api", { op: "setPrayer", lat: 24.7, lng: 46.7 }, kid.idToken), "no-permission");
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
+  const { currentPrayer, prayerPoints } = await import("../build/src/prayer.js");
+  const now = currentPrayer(24.7136, 46.6753, Date.now());
+  const other = now.key === "fajr" ? "dhuhr" : "fajr";
+  await rejects(call("api", { op: "completeTask", taskId: `prayer-${other}-${kid.personId}` }, kid.idToken), "prayer-over");
+  await rejects(call("api", { op: "completeTask", taskId: `prayer-${now.key}-${owner.personId}` }, kid.idToken), "task-not-found");
+  await call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken);
+  const c = await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).get();
+  // Half an hour after the adhan it is still a task, but worth no points.
+  assert.equal(c.data().points, prayerPoints(now, 4, Date.now()));
+  assert.equal(c.data().kind, "prayer");
+
+  // An old hand-made prayer task is hidden and refused while the automatic prayers are on, but other tasks work.
+  await call("api", { op: "addTask", title: "صلاة الفجر", personId: kid.personId, points: 10, repeat: "daily" }, owner.idToken);
+  const old = (await db.collection(`families/${fid}/tasks`).where("title", "==", "صلاة الفجر").get()).docs[0];
+  await rejects(call("api", { op: "completeTask", taskId: old.id }, kid.idToken), "task-not-found");
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4, enabled: false }, owner.idToken);
+  await call("api", { op: "completeTask", taskId: old.id }, kid.idToken); // reminders off: it is an ordinary task again
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4, enabled: true }, owner.idToken);
+});
+
+test("مهلة أداء الصلاة: للجميع أو لفرد، وتحدد نقاط الصلاة، ولا يمسحها تغيير الموقع", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
+  await rejects(call("api", { op: "setPrayerGrace", target: "all", grace: { fajr: 60 } }, kid.idToken), "no-permission");
+  await rejects(call("api", { op: "setPrayerGrace", target: "all", grace: { fajr: 1 } }, owner.idToken), "bad-number");
+  await rejects(call("api", { op: "setPrayerGrace", target: owner.personId, grace: { fajr: 60 } }, owner.idToken), "person-not-found");
+  const { currentPrayer, prayerPoints } = await import("../build/src/prayer.js");
+  const now = currentPrayer(24.7136, 46.6753, Date.now());
+  await call("api", { op: "setPrayerGrace", target: "all", grace: { [now.key]: 60, fajr: 45 } }, owner.idToken);
+  await call("api", { op: "setPrayerGrace", target: kid.personId, grace: { [now.key]: 240 } }, owner.idToken);
+  let g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g.all.fajr, 45);
+  assert.equal(g[kid.personId][now.key], 240);
+  // تغيير الموقع أو النقاط لا يمسح المهلة.
+  await call("api", { op: "setPrayer", lat: 24.7136, lng: 46.6753, points: 4 }, owner.idToken);
+  g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g[kid.personId][now.key], 240);
+  // النقاط بمهلة الفرد (٢٤٠ دقيقة).
+  await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).delete();
+  await call("api", { op: "completeTask", taskId: `prayer-${now.key}-${kid.personId}` }, kid.idToken);
+  const c = await db.doc(`families/${fid}/completions/prayer-${now.key}-${kid.personId}_${now.dayKey}`).get();
+  assert.equal(c.data().points, prayerPoints(now, 4, Date.now(), 240));
+  // «الكل» يمسح قيمة الفرد، وnull يعيد الافتراضي.
+  await call("api", { op: "setPrayerGrace", target: "all", grace: { [now.key]: 30 } }, owner.idToken);
+  g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g[kid.personId]?.[now.key], undefined);
+  await call("api", { op: "setPrayerGrace", target: "all", grace: { [now.key]: null, fajr: null } }, owner.idToken);
+  g = (await db.doc(`families/${fid}`).get()).data().prayer.grace;
+  assert.equal(g.all?.[now.key], undefined);
+});
+
+test("prizes: reminder an hour before, then the top member wins with a card for all", async () => {
+  await rejects(call("api", { op: "addPrize", name: "x", period: "daily", awardAt: Date.now() - 1000 }, owner.idToken), "bad-time");
+  await call("api", { op: "addPrize", name: "رحلة", emoji: "🏆", period: "daily", awardAt: Date.now() + 30 * 60000 }, owner.idToken);
+  const prize = (await db.collection(`families/${fid}/prizes`).get()).docs[0];
+  await call("api", { op: "tick" }, owner.idToken);
+  assert.equal((await prize.ref.get()).data().reminded, true);
+  assert.equal((await db.collection(`families/${fid}/notifications`).where("title", "==", "⏰ باقي ساعة على الجائزة").get()).size, 1);
+  // Time's up: the member with today's most points wins.
+  await prize.ref.update({ awardAt: new Date(Date.now() - 1000) });
+  await call("api", { op: "tick" }, owner.idToken);
+  const done = (await prize.ref.get()).data();
+  assert.equal(done.status, "awarded");
+  assert.ok(done.winnerId);
+  const card = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "prize").get()).docs;
+  assert.equal(card.length, 1);
+  assert.equal(card[0].data().to, "all");
+  await call("api", { op: "tick" }, owner.idToken);
+  assert.equal((await db.collection(`families/${fid}/notifications`).where("kind", "==", "prize").get()).size, 1, "handed over once");
+});
+
 test("feedback works before sign-in", async () => {
   await call("sendFeedback", { type: "suggestion", text: "أتمنى إضافة مهام خاصة برمضان", platform: "test" });
   const fb = await db.collection("feedback").get();
   assert.equal(fb.size, 1);
   const mail = await db.collection("devMail").where("to", "==", "asraty200@gmail.com").get();
   assert.equal(mail.size, 1);
+});
+
+test("violations take points and give them back; a new cycle wipes all points", async () => {
+  await clearRate();
+  const kid = await login("aseel@test.sa", "member");
+  const sum = async () => (await db.collection(`families/${fid}/summaries`).where("personId", "==", kid.personId).get()).docs.map((d) => d.data()).find((x) => /^\d/.test(x.periodKey));
+  const before = await sum();
+  await rejects(call("api", { op: "addViolation", personId: kid.personId, points: 3 }, kid.idToken), "no-permission");
+  const r = await call("api", { op: "addViolation", personId: kid.personId, points: 3, reason: "رفع الصوت" }, owner.idToken);
+  const after = await sum();
+  assert.equal(after.points, before.points - 3);
+  assert.equal(after.count, before.count, "a violation is not an achievement");
+  const notes = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "violation").get()).docs;
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].data().to, kid.personId);
+  assert.equal(notes[0].data().points, 3);
+  await call("api", { op: "deleteViolation", violationId: r.violationId }, owner.idToken);
+  assert.equal((await sum()).points, before.points);
+  assert.equal((await db.collection(`families/${fid}/notifications`).where("kind", "==", "violation").get()).size, 0);
+
+  await rejects(call("api", { op: "newCycle" }, kid.idToken), "no-permission");
+  await call("api", { op: "newCycle" }, owner.idToken);
+  assert.equal((await db.collection(`families/${fid}/summaries`).get()).size, 0);
+  assert.equal((await db.collection(`families/${fid}/ledger`).get()).size, 0);
+  assert.ok((await db.doc(`families/${fid}`).get()).data().cycleStartedAt);
+});
+
+test("an activation code works on one device only", async () => {
+  const { codeRef } = await import("../build/src/activation.js");
+  await codeRef("ASR-TEST-0001").set({ deviceId: null, usedAt: null, disabled: false });
+  await call("redeemCode", { code: "asr-test-0001", deviceId: "device-aaaa-1" });
+  await call("redeemCode", { code: "ASR-TEST-0001", deviceId: "device-aaaa-1" });
+  await rejects(call("redeemCode", { code: "ASR-TEST-0001", deviceId: "device-bbbb-2" }), "code-used");
+  await rejects(call("redeemCode", { code: "ASR-NOPE-0000", deviceId: "device-aaaa-1" }), "code-invalid");
+});
+
+test("«لمحة» codes are separate: a لمحة code works in لمحة only, on one device", async () => {
+  const { codeRef } = await import("../build/src/activation.js");
+  await codeRef("LAM-TEST-0001", "lamha").set({ deviceId: null, usedAt: null, disabled: false });
+  await rejects(call("redeemCode", { code: "LAM-TEST-0001", deviceId: "device-cccc-3" }), "code-invalid");
+  await rejects(call("lamhaRedeem", { code: "ASR-TEST-0001", deviceId: "device-aaaa-1" }), "code-invalid");
+  await call("lamhaRedeem", { code: "lam-test-0001", deviceId: "device-cccc-3" });
+  await call("lamhaRedeem", { code: "LAM-TEST-0001", deviceId: "device-cccc-3" });
+  await rejects(call("lamhaRedeem", { code: "LAM-TEST-0001", deviceId: "device-dddd-4" }), "code-used");
+});
+
+test("family trip and saved places: only trip admins pick places; sharing only notifies; locations vanish at the end", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  // Saving or sharing a place needs no trip, but needs the trip permission.
+  await rejects(call("api", { op: "placeSave", lat: 24.7, lng: 46.7, label: "بوابة ٣" }, kid.idToken), "no-permission");
+  await rejects(call("api", { op: "placeSave", lat: 99, lng: 46.7 }, owner.idToken), "bad-location");
+  const saved = await call("api", { op: "placeSave", lat: 24.7136, lng: 46.6753, label: "بوابة ٣", share: true }, owner.idToken);
+  const place = (await db.doc(`families/${fid}/places/${saved.placeId}`).get()).data();
+  assert.equal(place.label, "بوابة ٣");
+  const note = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "place").get()).docs[0].data();
+  assert.equal(note.to, "all");
+  assert.equal(note.lat, 24.7136, "the notice carries the place so the app can open it");
+  assert.equal(note.lng, 46.6753);
+  assert.match(note.body, /maps\.google\.com\/\?q=24\.713600,46\.675300/);
+  await rejects(call("api", { op: "placeDelete", placeId: saved.placeId }, kid.idToken), "no-permission");
+
+  // The SOS works even without a trip, and carries the spot.
+  await call("api", { op: "tripSos", lat: 24.7, lng: 46.7 }, kid.idToken);
+  const sos = (await db.collection(`families/${fid}/notifications`).where("kind", "==", "sos").get()).docs[0].data();
+  assert.equal(sos.to, "all");
+  assert.equal(sos.lat, 24.7);
+
+  // The trip: pings need a live trip; the child's place is stored, then wiped when it ends.
+  await rejects(call("api", { op: "tripPing", lat: 24.7, lng: 46.7 }, kid.idToken), "no-trip");
+  await rejects(call("api", { op: "tripStart", hours: 2 }, kid.idToken), "no-permission");
+  await call("api", { op: "tripStart", hours: 2, farMeters: 200 }, owner.idToken);
+  await call("api", { op: "placeShare", placeId: saved.placeId }, owner.idToken);
+  assert.equal((await db.doc(`families/${fid}/trip/state`).get()).data().meet.label, "بوابة ٣", "sharing during a trip sets the meeting point");
+  await call("api", { op: "tripPing", lat: 24.7136, lng: 46.6753, acc: 5 }, owner.idToken);
+  await call("api", { op: "tripPing", lat: 24.72, lng: 46.68, acc: 9 }, kid.idToken);
+  assert.equal((await db.collection(`families/${fid}/locations`).get()).size, 2);
+  await rejects(call("api", { op: "tripShare", personId: kid.personId, on: false }, kid.idToken), "no-permission");
+  await call("api", { op: "tripShare", personId: kid.personId, on: false }, owner.idToken);
+  assert.equal((await db.doc(`families/${fid}/locations/${kid.personId}`).get()).exists, false, "pausing wipes the place");
+  assert.deepEqual(await call("api", { op: "tripPing", lat: 24.72, lng: 46.68 }, kid.idToken), { paused: true });
+  await call("api", { op: "tripEnd" }, owner.idToken);
+  assert.equal((await db.collection(`families/${fid}/locations`).get()).size, 0);
+  await rejects(call("api", { op: "tripPing", lat: 24.7, lng: 46.7 }, owner.idToken), "no-trip");
+  await call("api", { op: "placeDelete", placeId: saved.placeId }, owner.idToken);
+  assert.equal((await db.doc(`families/${fid}/places/${saved.placeId}`).get()).exists, false);
+});
+
+test("plan: five members are free, more need a bigger subscription tier; adults are not counted", async () => {
+  await clearRate();
+  const members = (await db.collection(`families/${fid}/people`).where("role", "==", "member").get()).size;
+  // Fill up to the free five with members.
+  for (let i = members; i < 5; i++) await call("api", { op: "addPerson", role: "member", name: `طفل${i}`, email: `kid-plan${i}@test.sa`, avatar: "boy_shemagh" }, owner.idToken);
+  await rejects(call("api", { op: "addPerson", role: "member", name: "السادس", email: "kid-plan6@test.sa", avatar: "boy_shemagh" }, owner.idToken), "member-limit");
+  // An adult admin is not a "member": still allowed.
+  await call("api", { op: "addPerson", role: "admin", name: "مسؤول إضافي", email: "adm-plan@test.sa", avatar: "mom_black", perms: {} }, owner.idToken);
+  // A subscription tier of 10 raises the limit (the receipt check itself is unit-tested; here the family plan is set directly).
+  await db.doc(`families/${fid}`).update({ plan: { source: "apple", tier: 10, until: Date.now() + 86400e3, productId: "asraty.m10" } });
+  await call("api", { op: "addPerson", role: "member", name: "السادس", email: "kid-plan6@test.sa", avatar: "boy_shemagh" }, owner.idToken);
+  // When it ends, new members are refused again (the existing ones stay).
+  await db.doc(`families/${fid}`).update({ plan: { source: "apple", tier: 10, until: Date.now() - 1000, productId: "asraty.m10" } });
+  await rejects(call("api", { op: "addPerson", role: "member", name: "السابع", email: "kid-plan7@test.sa", avatar: "boy_shemagh" }, owner.idToken), "member-limit");
+  // The server never trusts the phone: without Apple's shared secret nothing is activated; only the owner may ask.
+  await rejects(call("api", { op: "activatePlan", receipt: "x".repeat(40) }, owner.idToken), "plan-unavailable");
+  const kid = await login("kid1@test.sa", "member");
+  await rejects(call("api", { op: "activatePlan", receipt: "x".repeat(40) }, kid.idToken), "no-permission");
+  await rejects(call("api", { op: "syncPlan" }, kid.idToken), "no-permission");
+  // A family made before the paywall is marked legacy.
+  await db.doc(`families/${fid}`).update({ plan: null });
+  const synced = await call("api", { op: "syncPlan" }, owner.idToken);
+  assert.equal(synced.plan?.source ?? "none", (await db.doc(`families/${fid}`).get()).data().createdAt.toMillis() < Date.UTC(2026, 10, 4) ? "legacy" : "none");
+});
+
+test("the owner can clear every alert at once; nobody else", async () => {
+  await clearRate();
+  const kid = await login("kid1@test.sa", "member");
+  await call("api", { op: "sendAlert", to: "all", body: "تنبيه ١" }, owner.idToken);
+  await call("api", { op: "sendAlert", to: "all", body: "تنبيه ٢" }, owner.idToken);
+  assert.ok((await db.collection(`families/${fid}/notifications`).get()).size >= 2);
+  await rejects(call("api", { op: "deleteAllAlerts" }, kid.idToken), "no-permission");
+  const r = await call("api", { op: "deleteAllAlerts" }, owner.idToken);
+  assert.ok(r.deleted >= 2);
+  assert.equal((await db.collection(`families/${fid}/notifications`).get()).size, 0);
 });
 
 test("owner deletes the whole family", async () => {

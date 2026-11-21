@@ -1,0 +1,330 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lamha/main.dart';
+import 'dart:async';
+
+import 'package:lamha/src/app/adhan_service.dart';
+import 'package:lamha/src/app/update_service.dart';
+import 'package:lamha/src/app/app_settings.dart';
+import 'package:lamha/src/app/cities.dart';
+import 'package:lamha/src/engine/widget_layout.dart';
+import 'package:lamha/src/engine/adhan.dart';
+import 'package:lamha/src/app/places.dart';
+import 'package:lamha/src/app/providers.dart';
+import 'package:lamha/src/app/services.dart';
+import 'package:lamha/src/engine/weather.dart';
+import 'package:lamha/src/engine/widget_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../helpers.dart';
+
+class FakeBridge implements WidgetBridge {
+  final saved = <String>[];
+  var updates = 0;
+
+  /// آخر شفافية مرّرت مع الجدول (مفتاح App Group المنفصل).
+  int? lastOpacity;
+
+  Map<String, dynamic> get last => jsonDecode(saved.last) as Map<String, dynamic>;
+
+  @override
+  Future<void> saveSchedule(String json, {int? opacity}) async {
+    saved.add(json);
+    lastOpacity = opacity;
+  }
+
+  @override
+  Future<void> requestUpdate() async => updates++;
+}
+
+/// الأذان وهمي: يسجّل ما طُلب جدولته وما جُرّب، ولا يلمس إشعارات النظام.
+class FakeAdhanNotifier implements AdhanNotifier {
+  FakeAdhanNotifier({this.permission = const AdhanPermissionResult(notifications: true, exactAlarms: true)});
+
+  /// ما يعيده طلب الأذونات.
+  AdhanPermissionResult permission;
+
+  /// كل استدعاء لـ apply: التنبيهات والصوت والمدينة.
+  final applied = <({List<AdhanEvent> events, AdhanSound sound, String city})>[];
+  var permissionRequests = 0;
+  final tested = <AdhanSound>[];
+
+  /// ما يعيده lastError.
+  String? error;
+
+  List<AdhanEvent> get lastEvents => applied.last.events;
+
+  @override
+  Future<void> apply(List<AdhanEvent> events, AdhanSound sound, String city) async =>
+      applied.add((events: events, sound: sound, city: city));
+
+  @override
+  Future<String?> lastError() async => error;
+
+  @override
+  Future<AdhanPermissionResult> requestPermissions() async {
+    permissionRequests++;
+    return permission;
+  }
+
+  @override
+  Future<void> test(AdhanSound sound) async => tested.add(sound);
+
+  final _testing = ValueNotifier<bool>(false);
+
+  @override
+  ValueListenable<bool> get testing => _testing;
+
+  @override
+  Future<void> stopTest() async => _testing.value = false;
+}
+
+class FakeDeclination implements DeclinationSource {
+  @override
+  Future<double> at(double latitude, double longitude) async => 0;
+}
+
+class FakeLocation implements LocationService {
+  FakeLocation(this.result);
+
+  final ({double latitude, double longitude})? result;
+
+  @override
+  Future<({double latitude, double longitude})?> currentPosition() async =>
+      result;
+}
+
+/// تتبّع موقع وهمي: [controller] يرسل المواضع الجديدة.
+class FakeLocationUpdates implements LocationUpdates {
+  FakeLocationUpdates({this.isGranted = true});
+
+  /// هل الإذن ممنوح مسبقاً (للتحديث الصامت).
+  bool isGranted;
+  final controller =
+      StreamController<({double latitude, double longitude})>.broadcast();
+
+  @override
+  Stream<({double latitude, double longitude})> updates() => controller.stream;
+
+  @override
+  Future<bool> granted() async => isGranted;
+}
+
+/// حاوية App Group وهمية: [picked] صورة المعرض (لقطة ٧٥٠×١٣٣٤ افتراضياً)، وتحفظ ولا تلمس القرص.
+class FakeBackgroundStore implements BackgroundStore {
+  FakeBackgroundStore([this.picked = const _DefaultShot(), this.error]);
+
+  /// ‏_DefaultShot = ‏لقطة رمادية بمقاس آيفون SE تُولَّد عند الطلب.
+  final Object? picked;
+  final Object? error;
+  var picks = 0;
+  final saved = <Uint8List>[];
+
+  @override
+  Future<Uint8List?> pick() async {
+    picks++;
+    if (error != null) throw error!;
+    final p = picked;
+    if (p is _DefaultShot) return seShot;
+    return p as Uint8List?;
+  }
+
+  @override
+  Future<String> save(Uint8List png) async {
+    saved.add(png);
+    return 'wallpaper.png';
+  }
+
+  @override
+  Future<String?> resolve(String fileName) async => null;
+}
+
+class _DefaultShot {
+  const _DefaultShot();
+}
+
+/// لقطة PNG ‏٧٥٠×١٣٣٤ (آيفون SE) بلون واحد.
+final seShot = File('test/fixtures/se_shot.png').readAsBytesSync();
+
+/// geocoding وهمي: اسم ثابت أو خطأ (لا إنترنت).
+class FakeGeocoder implements PlaceGeocoder {
+  FakeGeocoder({this.name, this.results = const [], this.error});
+
+  final String? name;
+  final List<Place> results;
+  final Object? error;
+  final queries = <String>[];
+
+  @override
+  Future<String?> placeName(double latitude, double longitude) async {
+    if (error != null) throw error!;
+    return name;
+  }
+
+  @override
+  Future<List<Place>> search(String query) async {
+    queries.add(query);
+    if (error != null) throw error!;
+    return results;
+  }
+}
+
+/// حساس بوصلة وهمي: [controller] يرسل القراءات، و[available] = false بلا حساس.
+class FakeCompass implements CompassSource {
+  FakeCompass({this.available = true});
+
+  final bool available;
+  final controller = StreamController<CompassReading>.broadcast();
+
+  @override
+  Stream<CompassReading>? readings() => available ? controller.stream : null;
+}
+
+/// فتح التطبيق من الودجت (وهمي).
+class FakeLaunch implements WidgetLaunch {
+  FakeLaunch([this.initialUri]);
+
+  final Uri? initialUri;
+  final controller = StreamController<Uri?>.broadcast();
+
+  @override
+  Future<Uri?> initial() async => initialUri;
+
+  @override
+  Stream<Uri?> get clicks => controller.stream;
+}
+
+/// طقس وهمي: قراءة ثابتة لأي مكان، أو خطأ (لا إنترنت).
+class FakeWeather implements WeatherService {
+  FakeWeather({this.temp = 31, this.code = 0, this.error, DateTime? at})
+      : at = at ?? testNow;
+
+  final double temp;
+  final int code;
+  final Object? error;
+  final DateTime at;
+  final calls = <({double latitude, double longitude})>[];
+
+  @override
+  Future<WeatherReading> current(double latitude, double longitude) async {
+    calls.add((latitude: latitude, longitude: longitude));
+    if (error != null) throw error!;
+    return WeatherReading(
+        temp: temp, code: code, fetchedAt: at, latitude: latitude, longitude: longitude);
+  }
+}
+
+class FakeSystemColors implements SystemColorsSource {
+  FakeSystemColors([this.colors]);
+
+  final SystemColors? colors;
+
+  @override
+  Future<SystemColors?> read() async => colors;
+}
+
+class FakeVibration implements Vibration {
+  var pulses = 0;
+
+  @override
+  Future<void> alignedPulse() async => pulses++;
+}
+
+class FakePermission implements NotificationPermission {
+  FakePermission([this.granted = true]);
+
+  final bool granted;
+  var requests = 0;
+
+  @override
+  Future<bool> request() async {
+    requests++;
+    return granted;
+  }
+}
+
+final testNow = DateTime.utc(2026, 10, 19, 9);
+final _data = loadEngineDataFromFiles();
+final _cities = parseCities(readAsset('assets/cities.json'));
+
+/// true = يبدأ التطبيق من الترتيب الافتراضي الجديد (لقطات المتجر)؛ الافتراضي false لاختبارات الآليات.
+bool pumpWithNewDefault = false;
+
+/// يشغّل التطبيق بطبقات وهمية ويعيد طبقة الودجت.
+Future<FakeBridge> pumpApp(
+  WidgetTester tester, {
+  FakeBridge? bridge,
+  LocationService? location,
+  LocationUpdates? locationUpdates,
+  BackgroundStore? background,
+  PlaceGeocoder? geocoder,
+  CompassSource? compass,
+  WidgetLaunch? launch,
+  WeatherService? weather,
+  SystemColorsSource? systemColors,
+  NotificationPermission? permission,
+  Vibration? vibration,
+  AdhanNotifier? adhan,
+  Map<String, Object> prefs = const {},
+}) async {
+  tester.view.physicalSize = const Size(1000, 3200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  // اختبارات آليات الشاشة (سحب، حجم، ألوان…) تبدأ من الترتيب السابق؛ الافتراضي الجديد له اختباراته
+  // (new_default_layout_test). الفرق في عنصر مخفي يمنع الترحيل التلقائي إلى الافتراضي الجديد.
+  SharedPreferences.setMockInitialValues({
+    if (!pumpWithNewDefault && !prefs.containsKey(LamhaSettings.prefsKey))
+      LamhaSettings.prefsKey: LamhaSettings.defaults(_cities.first, _data.deposits.defaultIds)
+          .copyWith(layout: [
+            ...previousDefaultLayout.take(previousDefaultLayout.length - 1),
+            previousDefaultLayout.last.copyWith(span: 2),
+          ])
+          .encode(),
+    ...prefs,
+  });
+  final b = bridge ?? FakeBridge();
+  await tester.pumpWidget(ProviderScope(
+    overrides: [
+      engineDataProvider.overrideWith((ref) async => _data),
+      citiesProvider.overrideWith((ref) async => _cities),
+      clockProvider.overrideWithValue(() => testNow),
+      widgetBridgeProvider.overrideWithValue(b),
+      locationServiceProvider.overrideWithValue(location ?? FakeLocation(null)),
+      locationUpdatesProvider
+          .overrideWithValue(locationUpdates ?? FakeLocationUpdates()),
+      backgroundStoreProvider
+          .overrideWithValue(background ?? FakeBackgroundStore()),
+      placeGeocoderProvider.overrideWithValue(geocoder ?? FakeGeocoder()),
+      compassSourceProvider.overrideWithValue(compass ?? FakeCompass()),
+      widgetLaunchProvider.overrideWithValue(launch ?? FakeLaunch()),
+      weatherServiceProvider
+          .overrideWithValue(weather ?? FakeWeather(error: 'offline')),
+      systemColorsProvider.overrideWithValue(systemColors ?? FakeSystemColors()),
+      notificationPermissionProvider
+          .overrideWithValue(permission ?? FakePermission()),
+      vibrationProvider.overrideWithValue(vibration ?? FakeVibration()),
+      declinationProvider.overrideWithValue(FakeDeclination()),
+      adhanNotifierProvider.overrideWithValue(adhan ?? FakeAdhanNotifier()),
+      updateCheckerProvider.overrideWithValue(NoopUpdateChecker()),
+    ],
+    child: const LamhaApp(),
+  ));
+  await tester.pumpAndSettle();
+  return b;
+}
+
+/// يحمّل صور الأصول الظاهرة (أيقونة القبلة) قبل لقطات golden؛ فك الصور غير متزامن ولا ينتظره
+/// pumpAndSettle.
+Future<void> loadImages(WidgetTester tester) async {
+  await tester.runAsync(() async {
+    for (final e in find.byType(Image).evaluate()) {
+      await precacheImage((e.widget as Image).image, e);
+    }
+  });
+  await tester.pumpAndSettle();
+}

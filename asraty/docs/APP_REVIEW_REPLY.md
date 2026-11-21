@@ -21,3 +21,7 @@ Hello, thank you for reviewing our app.
 6. Regulated industry: not applicable. There is no protected third-party material. User content (tasks, optional completion photos) is private. Only members of the same family can see it, and it is never shown publicly. Only the family admin can add or remove members.
 
 Thank you.
+
+## الموقع في الخلفية («أنا هنا») — نص لملاحظات المراجعة
+
+> Location is used only by the optional family-trip feature "أنا هنا" (I'm here). A parent (family admin) starts a trip; each family member then taps "I'm here" to share their live location with their own family circle, so parents can find children and elderly relatives in crowded places: the Grand Mosque (Haram) during Umrah and Hajj, shopping malls, and crowded open areas such as parks, markets and events. Background location is required because the phone is usually in a pocket or locked during a trip; without it the family would stop seeing each other as soon as the screen locks. The blue location indicator is shown while sharing, sharing stops when the trip ends (the stored locations are then deleted), and nothing is collected before the user taps the button. Location is never used for ads, analytics or tracking, and is shared only with the user's own family. To test: sign in with the demo family ("تجربة سريعة"), open the dashboard → «أنا هنا» → start a trip → tap «أنا هنا».
