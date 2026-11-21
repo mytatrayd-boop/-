@@ -773,7 +773,7 @@ function bankSelection(items) {
     const order = skillIdsFor(bpState.subject, currentGrade());
     const LV = ['know', 'apply', 'reason'];
     return items.filter((q) => bpState.skills.has(q.skill) && bpState.levels.has(q.level))
-        .sort((a, b) => order.indexOf(a.skill) - order.indexOf(b.skill) || LV.indexOf(a.level) - LV.indexOf(b.level));
+        .sort((a, b) => (a.passage ?? '').localeCompare(b.passage ?? '') || order.indexOf(a.skill) - order.indexOf(b.skill) || LV.indexOf(a.level) - LV.indexOf(b.level));
 }
 
 function updateBankCount(items) {
@@ -792,7 +792,11 @@ async function createBankTest(button) {
         batch.set(ref, {
             teacherUid: teacher.uid, title: `بنك نافس — ${SUBJECTS[bpState.subject].name} (${skills.length} مؤشراً)`, className: teacher.className, grade, subject: bpState.subject,
             source: 'nafs-bank', passage: '',
-            questions: items.map((q) => ({ skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: `bank-official/${q.img}`, iw: q.w, ih: q.h })),
+            questions: items.map((q, i) => ({
+                skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: `bank-official/${q.img}`, iw: q.w, ih: q.h,
+                // يظهر النص مرة واحدة قبل أول سؤال من كل نص
+                ...(q.passage && q.passage !== items[i - 1]?.passage ? { passageImage: `bank-official/${q.passage}`, pw: q.pw, ph: q.ph } : {}),
+            })),
             skills, status: 'draft', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
         });
         batch.set(doc(db, 'testKeys', ref.id), { teacherUid: teacher.uid, answers: items.map((q) => q.answer) });

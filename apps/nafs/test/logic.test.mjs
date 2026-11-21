@@ -205,9 +205,9 @@ test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا �
 });
 
 test('بنك نافس الرسمي: كل سؤال بمؤشر صحيح وصورة موجودة ومفتاح 0-3', () => {
-    for (const [key, subject, grade] of [['math3', 'math', 3], ['math6', 'math', 6], ['math9', 'math', 9], ['science6', 'science', 6], ['science9', 'science', 9]]) {
+    for (const [key, subject, grade] of [['math3', 'math', 3], ['math6', 'math', 6], ['math9', 'math', 9], ['science6', 'science', 6], ['science9', 'science', 9], ['reading3', 'reading', 3], ['reading6', 'reading', 6], ['reading9', 'reading', 9]]) {
         const items = JSON.parse(readFileSync(new URL(`../public/bank-official/${key}.json`, import.meta.url), 'utf8'));
-        assert.ok(items.length > 50, key);
+        assert.ok(items.length > 30, key);
         const ids = new Set();
         for (const q of items) {
             assert.ok(!ids.has(q.id), q.id); ids.add(q.id);
@@ -216,6 +216,7 @@ test('بنك نافس الرسمي: كل سؤال بمؤشر صحيح وصورة
             assert.ok(['know', 'apply', 'reason'].includes(q.level), q.id);
             assert.ok([0, 1, 2, 3].includes(q.answer), q.id);
             assert.ok(existsSync(new URL(`../public/bank-official/${q.img}`, import.meta.url)), q.img);
+            if (q.passage) assert.ok(existsSync(new URL(`../public/bank-official/${q.passage}`, import.meta.url)), q.passage);
         }
     }
 });
