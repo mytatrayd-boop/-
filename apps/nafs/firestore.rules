@@ -105,5 +105,24 @@ service cloud.firestore {
         && studentDoc(request.resource.data.studentId).teacherUid == request.resource.data.teacherUid
         && studentDoc(request.resource.data.studentId).className == request.resource.data.className;
     }
+
+    // بنك الأسئلة: سؤال لكل مهارة ومستوى. المولَّد لا يُستخدم قبل اعتماده، والاعتماد لصاحب البنك فقط.
+    match /bank/{qid} {
+      allow read, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow create, update: if isTeacher()
+        && request.resource.data.teacherUid == request.auth.uid
+        && (resource == null || resource.data.teacherUid == request.auth.uid)
+        && request.resource.data.keys().hasOnly(['teacherUid', 'skill', 'level', 'text', 'options', 'answer', 'explanation', 'source', 'passageId', 'reason', 'status', 'version', 'createdAt', 'updatedAt'])
+        && text(request.resource.data.skill, 40)
+        && request.resource.data.level in ['know', 'apply', 'reason']
+        && request.resource.data.status in ['generated', 'approved', 'rejected', 'na']
+        && request.resource.data.source in ['ai', 'manual']
+        && request.resource.data.version is int && request.resource.data.version >= 1
+        && (request.resource.data.status == 'na'
+            || (request.resource.data.text is string && request.resource.data.text.size() <= 600
+                && request.resource.data.options is list && request.resource.data.options.size() == 4
+                && request.resource.data.answer is int && request.resource.data.answer >= 0 && request.resource.data.answer < 4))
+        && (resource == null || request.resource.data.version >= resource.data.version);
+    }
   }
 }

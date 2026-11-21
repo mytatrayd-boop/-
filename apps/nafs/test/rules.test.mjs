@@ -152,3 +152,21 @@ test('حذف طالب: صاحبه فقط', async () => {
     await assertFails(updateDoc(doc(teacherDb(T1), 'students/1111111111'), { teacherUid: T2 }));
     await assertSucceeds(deleteDoc(doc(teacherDb(T1), 'students/1111111111')));
 });
+
+test('بنك الأسئلة: لصاحبه فقط، بحالات وإصدارات صحيحة، وأربعة خيارات', async () => {
+    const q = { teacherUid: T1, skill: '3-1.1', level: 'know', text: 'ما مرادف كلمة «سعيد»؟', options: ['حزين', 'فرِح', 'غاضب', 'متعب'], answer: 1, explanation: 'سعيد = فرِح', source: 'ai', status: 'generated', version: 1 };
+    await assertSucceeds(setDoc(doc(teacherDb(T1), 'bank/B1'), q));
+    await assertSucceeds(setDoc(doc(teacherDb(T1), 'bank/B1'), { ...q, status: 'approved' }));
+    await assertFails(setDoc(doc(teacherDb(T1), 'bank/B1'), { ...q, version: 0 }));
+    await assertFails(setDoc(doc(teacherDb(T2), 'bank/B1'), q));
+    await assertFails(setDoc(doc(teacherDb(T1), 'bank/B2'), { ...q, options: ['أ', 'ب'] }));
+    await assertFails(setDoc(doc(teacherDb(T1), 'bank/B3'), { ...q, level: 'x' }));
+    await assertFails(setDoc(doc(teacherDb(T1), 'bank/B4'), { ...q, status: 'live' }));
+    await assertFails(setDoc(doc(teacherDb(T1), 'bank/B5'), { ...q, extra: 1 }));
+    await assertSucceeds(setDoc(doc(teacherDb(T1), 'bank/NA1'), { teacherUid: T1, skill: '3-1.1', level: 'reason', status: 'na', reason: 'لا يناسب المؤشر', source: 'ai', version: 1 }));
+    await assertFails(getDoc(doc(studentDb(), 'bank/B1')));
+    await assertFails(getDoc(doc(teacherDb(T2), 'bank/B1')));
+    await assertSucceeds(getDocs(query(collection(teacherDb(T1), 'bank'), where('teacherUid', '==', T1))));
+    await assertFails(deleteDoc(doc(teacherDb(T2), 'bank/B1')));
+    await assertSucceeds(deleteDoc(doc(teacherDb(T1), 'bank/B1')));
+});

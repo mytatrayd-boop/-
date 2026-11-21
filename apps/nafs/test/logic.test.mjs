@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseStudentRows, isCivilId, gradeAttempt, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError } from '../src/logic.js';
+import { buildPrompt, parseResult } from '../functions/generate.js';
+import { canTransition, qualityIssues, usableInTest, isDuplicate, fromGeneration } from '../src/bank.js';
 import { GRADES, SUBJECTS, gradeOfClass, skillById, groupsFor, skillIdsFor, subjectsOfGrade } from '../src/skills.js';
 import { FORMS } from '../src/forms-data.js';
 import { existsSync, statSync } from 'node:fs';
@@ -170,4 +172,31 @@ test('النماذج الجاهزة: ست رسمية وتدريبيان، كل �
             assert.equal(passages, subject === 'reading' ? 1 : 0, `${f.id} ${subject} passage`);
         }
     }
+});
+
+test('البنك: فحص الجودة والمسار والتوليد مع «غير منطبق»', () => {
+    const good = { skill: '3-1.1', level: 'know', text: 'ما مرادف كلمة «سعيد» في الجملة السابقة؟', options: ['حزين', 'فرِح', 'غاضب', 'متعب'], answer: 1, explanation: 'سعيد بمعنى فرِح.' };
+    assert.deepEqual(qualityIssues(good), []);
+    assert.ok(qualityIssues({ ...good, options: ['أ', 'أ', 'ب', 'ج'] }).some((m) => m.includes('مكررة')));
+    assert.ok(qualityIssues({ ...good, options: ['حزين', 'فرِح', 'كل ما سبق', 'متعب'] }).some((m) => m.includes('كل ما سبق')));
+    assert.ok(qualityIssues({ ...good, explanation: '' }).length);
+    assert.ok(qualityIssues({ ...good, skill: 'zzz' }).length);
+    assert.ok(qualityIssues({ ...good, options: ['ص', 'فرِح بما حدث له اليوم في المدرسة مع أصدقائه الكثيرين', 'ع', 'ق'] }).some((m) => m.includes('تفاوت')));
+    assert.ok(canTransition('generated', 'approved') && !canTransition('na', 'approved') && !canTransition('generated', 'generated'));
+    assert.ok(usableInTest({ status: 'approved' }) && !usableInTest({ status: 'generated' }));
+    assert.ok(isDuplicate(good, [{ ...good, text: ' ما مرادف  كلمة «سعيد» في الجملة السابقة؟ ' }]));
+    const recs = fromGeneration('3-1.1', { know: { text: good.text, options: good.options, answer: 1, explanation: 'ش' }, apply: { applicable: false, reason: 'لا يناسب' } });
+    assert.deepEqual(recs.map((r) => r.status), ['generated', 'na', 'na']);
+    assert.equal(recs[1].reason, 'لا يناسب');
+    assert.equal(recs[2].reason, 'لم يحدَّد سبب');
+});
+
+test('التوليد: المطالبة تتضمن المؤشر، والرد يُفحص شكله ويقبل «غير منطبق»', () => {
+    assert.match(buildPrompt({ subject: 'math', grade: 6, outcome: 'ن', indicator: 'مؤشر س' }), /مؤشر س[\s\S]*السادس الابتدائي|السادس الابتدائي[\s\S]*مؤشر س/);
+    const q = { text: 'سؤال', options: ['1', '2', '3', '4'], answer: 2, explanation: 'ش' };
+    const ok = parseResult('```json\n' + JSON.stringify({ know: q, apply: q, reason: { applicable: false, reason: 'لا يناسب' } }) + '\n```');
+    assert.equal(ok.reason.applicable, false);
+    assert.equal(ok.know.answer, 2);
+    assert.throws(() => parseResult(JSON.stringify({ know: { ...q, options: ['1'] }, apply: q, reason: q })));
+    assert.throws(() => parseResult('لا json'));
 });
