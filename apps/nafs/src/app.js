@@ -681,7 +681,7 @@ async function showOfficial() {
         list.append(section);
     }
     // الاختبارات المحاكية، ثم نماذج حلّها الموقع (مفاتيحها غير رسمية)
-    for (const [file, prefix, title] of [['mocks', 'mock', 'الاختبارات المحاكية — مكتب تعليم السلي 1446هـ'], ['solved', 'sol', 'نماذج تدريبية بمفتاح الموقع (غير رسمي) — راجع المفتاح قبل النشر']]) {
+    for (const [file, prefix, title] of [['mocks', 'mock', 'الاختبارات المحاكية (مفتاح رسمي: مظلَّل في ملف المصدر، من جهة غير الهيئة)'], ['solved', 'sol', 'نماذج تدريبية بمفتاح الموقع (غير رسمي) — راجع المفتاح قبل النشر']]) {
         let forms = [];
         try { const r = await fetch(`/bank-official/${file}.json`); forms = r.ok ? (await r.json()).filter((m) => m.grade === grade) : []; } catch { forms = []; }
         if (!forms.length) continue;
