@@ -192,7 +192,7 @@ test('البنك: فحص الجودة والمسار والتوليد مع «غ�
 });
 
 test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا ملاحظات جودة، ولكل مؤشر ثلاثة مستويات', () => {
-    const rows = JSON.parse(readFileSync(new URL('../bank-drafts/reading-3.json', import.meta.url), 'utf8'));
+    const rows = JSON.parse(readFileSync(new URL('../public/bank-drafts/reading-3.json', import.meta.url), 'utf8'));
     for (const r of rows) {
         assert.equal(skillById(r.skill)?.grade, 3, r.skill);
         if (r.applicable === false) assert.ok(r.reason, r.skill);

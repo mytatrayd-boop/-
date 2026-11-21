@@ -420,6 +420,21 @@
                         <button data-action="bank-new" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ إدخال سؤال يدوي</button>
                     </div>
                 </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-bold text-slate-800 text-sm">مسودات جاهزة لمؤشرات المادة والصف المختارين</h3>
+                        <button data-action="draft-toggle" class="text-xs font-bold text-emerald-700">عرض / إخفاء</button>
+                    </div>
+                    <div id="draftPanel" class="hidden space-y-3">
+                        <p class="text-xs text-slate-500">اختر ما يناسبك من الأسئلة ثم اضغط «اعتماد المحدد». الأسئلة المعتمدة تصير في بنكك وتظهر لك في «من البنك» عند بناء الاختبار. اعتمادك هو قرارك أنت، ويمكنك تعديل أي سؤال لاحقاً.</p>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button data-action="draft-all" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100">تحديد كل المعروض</button>
+                            <button data-action="draft-none" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100">إلغاء التحديد</button>
+                            <button data-action="draft-approve" class="text-xs font-bold px-4 py-1.5 rounded-lg bg-emerald-600 text-white">✅ اعتماد المحدد (<span id="draftSel">0</span>)</button>
+                        </div>
+                        <div id="draftList" class="space-y-2"></div>
+                    </div>
+                </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="text-xs font-bold text-slate-600">عرض:</span>
                     <select id="bankFilter" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">

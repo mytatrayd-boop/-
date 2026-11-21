@@ -1195,6 +1195,7 @@ function renderBank() {
     if (bankEditing === 'new') box.append(bankEditor({ skill: $('bankSkill').value }));
     if (!list.length && bankEditing !== 'new') box.append(el('p', 'text-sm text-slate-400 text-center py-8', 'لا أسئلة هنا بعد. اختر مؤشراً ثم ولّد مسودات أو أدخل سؤالاً.'));
     for (const q of list) box.append(bankEditing === q.id ? bankEditor(q) : bankCard(q));
+    renderDrafts();
 }
 
 function bankData(q, over = {}) {
@@ -1202,6 +1203,64 @@ function bankData(q, over = {}) {
     const data = { ...rest, teacherUid: teacher.uid, updatedAt: serverTimestamp() };
     for (const k of Object.keys(data)) if (data[k] === undefined || (k === 'passageId' && data[k] === null)) delete data[k];
     return data;
+}
+
+// ---------- مسودات جاهزة: يختار المعلم أو مقدم الدعم ويعتمد بنفسه ----------
+
+let drafts = [];            // مسودات المادة والصف الحاليين (من الملف)
+const draftPick = new Set();
+
+async function loadDrafts() {
+    const subject = $('bankSubject').value;
+    const grade = gradeOfClass(teacher.className);
+    try {
+        const res = await fetch(`/bank-drafts/${subject}-${grade}.json`);
+        drafts = res.ok ? await res.json() : [];
+    } catch { drafts = []; }
+    draftPick.clear();
+    renderDrafts();
+}
+
+function draftKey(r) { return `${r.skill}|${r.level}`; }
+
+function renderDrafts() {
+    const box = $('draftList');
+    if (!box) return;
+    const skill = $('bankSkill').value;
+    const mine = new Set(bank.filter((q) => q.status !== 'rejected').map((q) => draftKey(q)));
+    const list = drafts.filter((r) => r.applicable !== false && r.skill === skill && !mine.has(draftKey(r)));
+    box.replaceChildren();
+    if (!list.length) box.append(el('p', 'text-xs text-slate-400 text-center py-3', drafts.length ? 'لا مسودات جديدة لهذا المؤشر (أضفتَها من قبل أو لا توجد بعد).' : 'لا مسودات جاهزة لهذه المادة والصف بعد.'));
+    for (const r of list) {
+        const row = el('label', 'flex gap-3 items-start bg-slate-50 border border-slate-200 rounded-xl p-3 cursor-pointer');
+        const cb = el('input', 'mt-1 accent-emerald-600'); cb.type = 'checkbox'; cb.dataset.draft = draftKey(r); cb.checked = draftPick.has(draftKey(r));
+        const body = el('div', 'space-y-1 min-w-0');
+        body.append(el('p', 'text-[11px] text-teal-800 font-bold', LEVELS.find((l) => l.id === r.level)?.name ?? r.level), el('p', 'text-sm font-bold text-slate-800', r.text));
+        const ol = el('div', 'grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs');
+        r.options.forEach((o, i) => ol.append(el('span', `rounded-lg px-2 py-1 ${i === r.answer ? 'bg-emerald-50 text-emerald-800 font-bold' : 'bg-white text-slate-600'}`, `${'أبجد'[i]}) ${o}`)));
+        body.append(ol, el('p', 'text-[11px] text-slate-500', `التفسير: ${r.explanation}`));
+        row.append(cb, body);
+        box.append(row);
+    }
+    $('draftSel').textContent = draftPick.size;
+}
+
+async function approveDrafts(button) {
+    const chosen = drafts.filter((r) => draftPick.has(draftKey(r)));
+    if (!chosen.length) return showAlert('حدّد سؤالاً واحداً على الأقل.', 'لا تحديد');
+    await busy(button, async () => {
+        let n = 0;
+        const have = [...bank];
+        for (const r of chosen) {
+            const rec = { ...newBankQuestion({ skill: r.skill, level: r.level, text: r.text, options: r.options, answer: r.answer, explanation: r.explanation, source: 'ai' }), status: 'approved' };
+            if (qualityIssues(rec).length || isDuplicate(rec, have)) continue;
+            await addDoc(collection(db, 'bank'), { ...bankData(rec), createdAt: serverTimestamp() });
+            have.push(rec); n++;
+        }
+        draftPick.clear();
+        await loadBank();
+        showAlert(`اعتُمد ${n} سؤالاً وأُضيف إلى بنكك.`, 'تم الاعتماد');
+    });
 }
 
 // استيراد مسودات من ملف JSON: [{skill, level, text, options, answer, explanation} | {skill, level, applicable:false, reason}]
@@ -1302,7 +1361,9 @@ function bindEvents() {
     $('dashClass').addEventListener('change', changeClass);
     $('bankImport').addEventListener('change', importBank);
     $('bankFilter').addEventListener('change', renderBank);
-    $('bankSubject').addEventListener('change', renderBank);
+    $('bankSubject').addEventListener('change', () => { renderBank(); if (!$('draftPanel').classList.contains('hidden')) loadDrafts(); });
+    $('bankSkill').addEventListener('change', renderDrafts);
+    $('draftList').addEventListener('change', (e) => { const k = e.target.dataset.draft; if (k) { e.target.checked ? draftPick.add(k) : draftPick.delete(k); $('draftSel').textContent = draftPick.size; } });
     $('modalOk').addEventListener('click', () => closeModal(true));
     $('modalCancel').addEventListener('click', () => closeModal(false));
     $('testBuilder').addEventListener('input', builderInput);
@@ -1334,6 +1395,10 @@ function bindEvents() {
             case 'show-official': showOfficial(); break;
             case 'hide-official': $('officialPanel').classList.add('hidden'); break;
             case 'add-official': addOfficial(id, el); break;
+            case 'draft-toggle': $('draftPanel').classList.toggle('hidden'); if (!$('draftPanel').classList.contains('hidden')) loadDrafts(); break;
+            case 'draft-all': document.querySelectorAll('#draftList input[data-draft]').forEach((c) => { c.checked = true; draftPick.add(c.dataset.draft); }); $('draftSel').textContent = draftPick.size; break;
+            case 'draft-none': draftPick.clear(); renderDrafts(); break;
+            case 'draft-approve': approveDrafts(el); break;
             case 'bank-new': bankEditing = 'new'; renderBank(); break;
             case 'bank-edit': bankEditing = id; renderBank(); break;
             case 'bank-cancel': bankEditing = null; renderBank(); break;
