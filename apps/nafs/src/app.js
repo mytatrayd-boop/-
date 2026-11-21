@@ -24,6 +24,8 @@ let bankEditing = null;   // id السؤال قيد التحرير ('new' لسؤ
 let teacher = null;        // {uid, name, civilId, school, schoolNo, className, email}
 let teacherClasses = [];   // الفصول المسندة للمعلم من كشف مدرسته
 let principal = null;      // {uid, name, civilId, email, schoolNo}
+let provider = null;       // مقدم خدمات التميز {uid, name, civilId, email}
+let providerSchools = [];  // مدارس المقدم: {no, schoolName, principalName, incoming}
 let school = null;         // مدرسة المدير (مستند schools)
 let roster = [];           // كشف معلمي المدرسة
 let transferIn = null;     // طلب نقل وارد لمدرستي من مدير جديد
@@ -80,7 +82,7 @@ async function start() {
 }
 
 async function handleAuthChange(user) {
-    if (!user) { if (activating) return; teacher = null; principal = null; school = null; showScreen(activeStudent ? 'studentLoginScreen' : 'roleSelectionScreen'); return; }
+    if (!user) { if (activating) return; teacher = null; principal = null; provider = null; school = null; showScreen(activeStudent ? 'studentLoginScreen' : 'roleSelectionScreen'); return; }
     if (user.isAnonymous) {
         // جلسة الطالب لا تُستعاد بعد تحديث الصفحة.
         if (!activeStudent) await signOut(auth);
@@ -99,6 +101,11 @@ async function handleAuthChange(user) {
             principal = { uid: user.uid, ...ps.data() };
             return await openPrincipalDashboard();
         }
+        const vs = await getDoc(doc(db, 'providers', user.uid));
+        if (vs.exists()) {
+            provider = { uid: user.uid, ...vs.data() };
+            return await openProviderDashboard();
+        }
         // حساب بلا ملف (تسجيل لم يكتمل أو معلم لم يُضَف): لا دخول.
         await signOut(auth);
         showAlert('لم يتعرّف النظام على هذا الحساب. المعلم يُفعّل حسابه بعد أن يضيفه مدير مدرسته، والمدير يسجّل مدرسته من بوابة المدير.', 'لا يوجد حساب');
@@ -115,6 +122,7 @@ function showScreen(id) {
     $('userInfoHeader').classList.toggle('hidden', !isTeacher && !isPrincipal);
     if (isTeacher) $('headerTeacherName').textContent = teacher.name;
     if (isPrincipal) $('headerTeacherName').textContent = principal.name;
+    if (id === 'providerDashboardScreen') { $('userInfoHeader').classList.remove('hidden'); $('headerTeacherName').textContent = provider.name; }
 }
 
 function setAuthMode(mode) {
@@ -1629,6 +1637,125 @@ async function addRosterTeacher(e) {
     });
 }
 
+// ---------- مقدم خدمات التميز ----------
+
+function setProviderTab(tab) {
+    $('providerLoginForm').classList.toggle('hidden', tab !== 'login');
+    $('providerSignupForm').classList.toggle('hidden', tab !== 'signup');
+    $('vTabLogin').className = tab === 'login' ? 'flex-1 py-2 rounded-lg bg-white shadow text-rose-700' : 'flex-1 py-2 rounded-lg text-slate-500';
+    $('vTabSignup').className = tab === 'signup' ? 'flex-1 py-2 rounded-lg bg-white shadow text-rose-700' : 'flex-1 py-2 rounded-lg text-slate-500';
+}
+
+async function providerLogin(e) {
+    e.preventDefault();
+    await busy(e.submitter, async () => { await signInWithEmailAndPassword(auth, $('vLoginEmail').value.trim(), $('vLoginPassword').value); $('vLoginPassword').value = ''; });
+}
+
+async function providerReset() {
+    const email = $('vLoginEmail').value.trim();
+    if (!email) return showAlert('اكتب بريدك الإلكتروني أولاً ثم اضغط «نسيت كلمة المرور».', 'تنبيه');
+    try { await sendPasswordResetEmail(auth, email); showAlert('أرسلنا رابط تغيير كلمة المرور إلى بريدك (إن كان مسجلاً).', 'تم الإرسال'); } catch (err) { reportError(err); }
+}
+
+async function providerSignup(e) {
+    e.preventDefault();
+    const p = { name: $('vName').value.trim(), civilId: $('vCivil').value.trim(), email: $('vSignupEmail').value.trim() };
+    if (!isCivilId(p.civilId)) return showAlert('السجل المدني يجب أن يكون مكوناً من 10 أرقام.', 'تنبيه خطأ');
+    await busy(e.submitter, async () => {
+        activating = true;
+        let user;
+        try {
+            user = (await createUserWithEmailAndPassword(auth, p.email, $('vSignupPassword').value)).user;
+            await setDoc(doc(db, 'providers', user.uid), { ...p, createdAt: serverTimestamp() });
+            $('vSignupPassword').value = '';
+            provider = { uid: user.uid, ...p };
+            activating = false;
+            await openProviderDashboard();
+        } catch (err) {
+            if (user) { await user.delete().catch(() => {}); await signOut(auth).catch(() => {}); }
+            throw err;
+        } finally { setTimeout(() => { activating = false; }, 600); }
+    });
+}
+
+async function openProviderDashboard() {
+    const q = await getDocs(query(collection(db, 'providerLinks'), where('providerUid', '==', provider.uid)));
+    providerSchools = await Promise.all(q.docs.map(async (d) => {
+        const no = d.id;
+        const sc = await getDoc(doc(db, 'schools', no)).catch(() => null);
+        const rq = await getDoc(doc(db, 'providerRequests', no)).catch(() => null);
+        return { no, schoolName: sc?.exists() ? sc.data().name : '—', principalName: sc?.exists() ? sc.data().principalName : '—', incoming: rq?.exists() ? rq.data() : null };
+    }));
+    showScreen('providerDashboardScreen');
+    renderProvider();
+}
+
+function renderProvider() {
+    $('pvTitle').textContent = `مرحباً بك: ${provider.name}`;
+    const body = $('pvBody');
+    body.replaceChildren();
+    const add = el('form', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3'); add.id = 'pvAddForm';
+    add.append(el('h3', 'font-black text-slate-800', 'إضافة مدرسة تابعة لك'), el('p', 'text-xs text-slate-500', 'اكتب الرقم الإحصائي للمدرسة بعد أن يسجّلها مديرها في الموقع.'));
+    const row = el('div', 'flex flex-wrap gap-3');
+    const no = el('input', 'px-4 py-2.5 border border-slate-200 rounded-xl text-sm'); no.id = 'pvSchoolNo'; no.placeholder = 'الرقم الإحصائي (أرقام فقط)'; no.required = true; no.pattern = '[0-9]{3,12}'; no.maxLength = 12; no.inputMode = 'numeric'; no.dir = 'ltr';
+    const go = el('button', 'bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs', 'إضافة المدرسة'); go.type = 'submit';
+    row.append(no, go); add.append(row);
+    add.addEventListener('submit', addProviderSchool);
+    body.append(add);
+    const list = el('section', 'space-y-3');
+    list.append(el('h3', 'font-black text-slate-800', `مدارسي (${providerSchools.length})`));
+    if (!providerSchools.length) list.append(el('p', 'text-sm text-slate-400', 'لم تضف مدارس بعد.'));
+    for (const s of providerSchools) {
+        const card = el('div', 'bg-white border border-slate-200 rounded-2xl p-4 text-sm space-y-2');
+        card.append(el('p', 'font-bold text-slate-800', `${s.schoolName} — ${s.no}`), el('p', 'text-xs text-slate-500', `مدير المدرسة: ${s.principalName}`));
+        if (s.incoming) {
+            const n = el('div', 'bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs space-y-2');
+            n.append(el('p', 'font-bold text-amber-900', `تنبيه: المقدم ${s.incoming.requesterName} يطلب أن تُضاف هذه المدرسة إليه.`));
+            const r = el('div', 'flex gap-3 font-bold');
+            r.append(actionButton('حذف المدرسة من عندي', 'pv-approve', s.no, 'bg-red-600 text-white px-4 py-2 rounded-lg'), actionButton('رفض', 'pv-reject', s.no, 'text-slate-700'));
+            n.append(r); card.append(n);
+        }
+        card.append(actionButton('إزالة المدرسة من عندي', 'pv-remove', s.no, 'text-xs font-bold text-red-500 hover:text-red-700'));
+        list.append(card);
+    }
+    body.append(list);
+}
+
+async function addProviderSchool(e) {
+    e.preventDefault();
+    const no = $('pvSchoolNo').value.trim();
+    await busy(e.submitter, async () => {
+        const sc = await getDoc(doc(db, 'schools', no));
+        if (!sc.exists()) return showAlert('لا توجد مدرسة بهذا الرقم الإحصائي. يسجّلها مديرها أولاً من بوابة المدير.', 'غير مسجّلة');
+        const link = await getDoc(doc(db, 'providerLinks', no));
+        if (link.exists() && link.data().providerUid === provider.uid) return showAlert('هذه المدرسة في قائمتك بالفعل.', 'تنبيه');
+        if (link.exists()) {
+            if (!(await confirmDialog(`المدرسة «${sc.data().name}» تتبع حالياً مقدم الخدمة: ${link.data().providerName}. نرسل له تنبيهاً ليحذفها من عنده فتُضاف إليك؟`, 'نعم، أرسل التنبيه'))) return;
+            await setDoc(doc(db, 'providerRequests', no), { schoolNo: no, requesterUid: provider.uid, requesterName: provider.name, createdAt: serverTimestamp() });
+            return showAlert(`أُرسل التنبيه إلى ${link.data().providerName}. تُضاف المدرسة إليك بعد موافقته، فأعد إضافتها عندئذٍ أو حدّث الصفحة.`, 'تم الإرسال');
+        }
+        await setDoc(doc(db, 'providerLinks', no), { schoolNo: no, providerUid: provider.uid, providerName: provider.name, createdAt: serverTimestamp() });
+        await openProviderDashboard();
+        showAlert(`أُضيفت المدرسة «${sc.data().name}» إلى مدارسك.`, 'تمت الإضافة');
+    });
+}
+
+async function approveProviderTransfer(no) {
+    const s = providerSchools.find((x) => x.no === no);
+    if (!s?.incoming || !(await confirmDialog(`حذف المدرسة «${s.schoolName}» من عندك ونقلها إلى ${s.incoming.requesterName}؟`, 'نعم، احذفها من عندي'))) return;
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'providerLinks', no), { providerUid: s.incoming.requesterUid, providerName: s.incoming.requesterName });
+    batch.delete(doc(db, 'providerRequests', no));
+    await batch.commit();
+    await openProviderDashboard();
+}
+
+async function removeProviderSchool(no) {
+    if (!(await confirmDialog('إزالة هذه المدرسة من قائمة مدارسك؟', 'نعم، أزلها'))) return;
+    await deleteDoc(doc(db, 'providerLinks', no));
+    await openProviderDashboard();
+}
+
 // ---------- كيف يعمل الموقع (إنفوجرافيك) ----------
 let howFrom = 'roleSelectionScreen';
 function showHow() {
@@ -1971,6 +2098,8 @@ function bindEvents() {
     $('teacherLoginForm').addEventListener('submit', teacherLogin);
     $('teacherSignupForm').addEventListener('submit', teacherSignup);
     $('principalLoginForm').addEventListener('submit', principalLogin);
+    $('providerLoginForm').addEventListener('submit', providerLogin);
+    $('providerSignupForm').addEventListener('submit', providerSignup);
     $('principalSignupForm').addEventListener('submit', principalSignup);
     $('addStudentForm').addEventListener('submit', addStudent);
     $('studentLoginForm').addEventListener('submit', studentLogin);
@@ -1998,6 +2127,12 @@ function bindEvents() {
         const { action, id, tab, publish } = el.dataset;
         switch (action) {
             case 'show-teacher-login': showScreen('teacherLoginScreen'); setAuthMode('login'); break;
+            case 'show-provider-login': showScreen('providerAuthScreen'); setProviderTab('login'); break;
+            case 'v-auth-tab': setProviderTab(tab); break;
+            case 'v-reset-password': providerReset(); break;
+            case 'pv-approve': approveProviderTransfer(id); break;
+            case 'pv-reject': deleteDoc(doc(db, 'providerRequests', id)).then(openProviderDashboard); break;
+            case 'pv-remove': removeProviderSchool(id); break;
             case 'show-principal-login': showScreen('principalAuthScreen'); setPrincipalTab('login'); break;
             case 'p-auth-tab': setPrincipalTab(tab); break;
             case 'p-reset-password': principalReset(); break;

@@ -135,6 +135,46 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
         await c2.close();
     }
 
+    // مقدم خدمات التميز: يضيف المدرسة بالرقم الإحصائي، ومقدم آخر يطلبها فيتنازل الأول
+    {
+        const reg = async (ctx, name, civil) => {
+            const vp = await ctx.newPage();
+            vp.on('pageerror', (e) => errors.push(e.message));
+            await vp.goto(URL_);
+            await vp.click('[data-action="show-provider-login"]');
+            await vp.click('#vTabSignup');
+            await vp.fill('#vName', name);
+            await vp.fill('#vCivil', civil);
+            await vp.fill('#vSignupEmail', `v${civil}${Date.now()}@example.com`);
+            await vp.fill('#vSignupPassword', 'secret123');
+            await vp.click('#providerSignupForm button[type=submit]');
+            await vp.locator('#providerDashboardScreen').waitFor();
+            return vp;
+        };
+        const ca = await browser.newContext(), cb = await browser.newContext();
+        const va = await reg(ca, 'مقدم أول', '1000000301');
+        await va.fill('#pvSchoolNo', '999999');
+        await va.click('#pvAddForm button[type=submit]');
+        await closeModal(va, 'لا توجد مدرسة');
+        await va.fill('#pvSchoolNo', schoolNo);
+        await va.click('#pvAddForm button[type=submit]');
+        await closeModal(va, 'أُضيفت المدرسة');
+        assert.match(await va.textContent('#pvBody'), new RegExp(`${schoolNo}`));
+        const vb = await reg(cb, 'مقدم ثان', '1000000302');
+        await vb.fill('#pvSchoolNo', schoolNo);
+        await vb.click('#pvAddForm button[type=submit]');
+        assert.match(await closeModal(vb, 'مقدم الخدمة'), /مقدم أول/);                // تنبيه التبعية لمقدم آخر (تأكيد)
+        await closeModal(vb, 'أُرسل التنبيه');
+        await va.reload();
+        await va.locator('[data-action="pv-approve"]').waitFor();
+        await va.click('[data-action="pv-approve"]');
+        await va.click('#modalOk');
+        await va.waitForFunction(() => document.getElementById('pvBody').textContent.includes('لم تضف مدارس بعد'));
+        await vb.reload();
+        await vb.locator('#pvBody').getByText(schoolNo).waitFor();
+        await ca.close(); await cb.close();
+    }
+
     // إضافة طالب يدوياً
     await page.fill('#newStudentName', 'خالد سعد');
     await page.fill('#newStudentId', '2000000003');

@@ -68,6 +68,44 @@ service cloud.firestore {
       allow delete: if isTeacher() && (resource.data.requesterUid == request.auth.uid || isPrincipalOf(no));
     }
 
+    // مقدم خدمات التميز: يسجّل نفسه، ثم يضيف مدارس برقمها الإحصائي بعد أن يسجّلها مديرها (رابط لكل مدرسة).
+    match /providers/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'civilId', 'email', 'createdAt'])
+        && text(request.resource.data.name, 100)
+        && civilId(request.resource.data.civilId);
+    }
+    function isProvider() { return isTeacher() && exists(/databases/$(database)/documents/providers/$(request.auth.uid)); }
+    function linkDoc(no) { return get(/databases/$(database)/documents/providerLinks/$(no)).data; }
+    match /providerLinks/{no} {
+      allow get: if signedIn() && schoolNo(no);
+      allow list: if isTeacher() && resource.data.providerUid == request.auth.uid;
+      allow create: if isProvider() && schoolNo(no)
+        && exists(/databases/$(database)/documents/schools/$(no))
+        && request.resource.data.keys().hasOnly(['schoolNo', 'providerUid', 'providerName', 'createdAt'])
+        && request.resource.data.schoolNo == no
+        && request.resource.data.providerUid == request.auth.uid
+        && text(request.resource.data.providerName, 100);
+      allow delete: if isTeacher() && resource.data.providerUid == request.auth.uid;
+      // المقدم الحالي ينقل المدرسة لصاحب الطلب («حذف المدرسة من عندي»)
+      allow update: if isTeacher() && resource.data.providerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['providerUid', 'providerName'])
+        && request.resource.data.providerUid == get(/databases/$(database)/documents/providerRequests/$(no)).data.requesterUid
+        && request.resource.data.providerName == get(/databases/$(database)/documents/providerRequests/$(no)).data.requesterName;
+    }
+    match /providerRequests/{no} {
+      allow get: if signedIn() && schoolNo(no)
+        && (resource == null || resource.data.requesterUid == request.auth.uid || linkDoc(no).providerUid == request.auth.uid);
+      allow create: if isProvider() && schoolNo(no)
+        && linkDoc(no).providerUid != request.auth.uid
+        && request.resource.data.keys().hasOnly(['schoolNo', 'requesterUid', 'requesterName', 'createdAt'])
+        && request.resource.data.schoolNo == no
+        && request.resource.data.requesterUid == request.auth.uid
+        && text(request.resource.data.requesterName, 100);
+      allow delete: if isTeacher() && (resource.data.requesterUid == request.auth.uid || linkDoc(no).providerUid == request.auth.uid);
+    }
+
     // كشف المعلمين: مستند لكل معلم معرّفه رقم سجله المدني. يضيفه المدير؛ ثم يُفعّله المعلم نفسه بإنشاء حسابه.
     match /teacherRoster/{cid} {
       allow list: if isTeacher() && isPrincipalOf(resource.data.schoolNo);

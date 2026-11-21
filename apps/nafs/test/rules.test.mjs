@@ -305,3 +305,36 @@ test('طلب النقل: يلغيه صاحبه أو يرفضه المدير ال
     await assertFails(deleteDoc(doc(teacherDbNew('thief'), 'schoolTransfers/123456')));
     await assertSucceeds(deleteDoc(doc(p2, 'schoolTransfers/123456')));  // إلغاء
 });
+
+test('مقدم خدمات التميز: يضيف المدارس المسجّلة بالرقم الإحصائي، ويتنازل المقدم السابق عند الطلب', async () => {
+    const v1 = teacherDbNew('prov1'), v2 = teacherDbNew('prov2');
+    const pr = (n) => ({ name: `مقدم ${n}`, civilId: `100000030${n}`, email: `v${n}@x.com`, createdAt: serverTimestamp() });
+    await assertSucceeds(setDoc(doc(v1, 'providers', 'prov1'), pr(1)));
+    await assertSucceeds(setDoc(doc(v2, 'providers', 'prov2'), pr(2)));
+    await assertFails(setDoc(doc(v1, 'providers', 'prov2'), pr(2)));
+    const link = (uid, name) => ({ schoolNo: '123456', providerUid: uid, providerName: name, createdAt: serverTimestamp() });
+    await assertFails(setDoc(doc(v1, 'providerLinks/999999'), { ...link('prov1', 'مقدم 1'), schoolNo: '999999' })); // مدرسة لم يسجلها مديرها
+    await assertFails(setDoc(doc(teacherDbNew('nobody'), 'providerLinks/123456'), link('nobody', 'x')));            // ليس مقدماً مسجلاً
+    await assertFails(setDoc(doc(v1, 'providerLinks/123456'), link('prov2', 'مقدم 2')));
+    await assertSucceeds(setDoc(doc(v1, 'providerLinks/123456'), link('prov1', 'مقدم 1')));
+    await assertFails(setDoc(doc(v2, 'providerLinks/123456'), link('prov2', 'مقدم 2')));                           // مأخوذة
+    await assertSucceeds(getDoc(doc(v2, 'providerLinks/123456')));                                                  // يرى اسم المقدم الحالي
+    await assertSucceeds(getDocs(query(collection(v1, 'providerLinks'), where('providerUid', '==', 'prov1'))));
+    await assertFails(getDocs(query(collection(v2, 'providerLinks'), where('providerUid', '==', 'prov1'))));
+    // تنبيه المقدم السابق
+    const rq = { schoolNo: '123456', requesterUid: 'prov2', requesterName: 'مقدم 2', createdAt: serverTimestamp() };
+    await assertFails(setDoc(doc(v1, 'providerRequests/123456'), { ...rq, requesterUid: 'prov1', requesterName: 'مقدم 1' })); // الحالي لا يطلب لنفسه
+    await assertSucceeds(setDoc(doc(v2, 'providerRequests/123456'), rq));
+    await assertSucceeds(getDoc(doc(v1, 'providerRequests/123456')));
+    await assertFails(getDoc(doc(teacherDbNew('thief'), 'providerRequests/123456')));
+    await assertFails(updateDoc(doc(v2, 'providerLinks/123456'), { providerUid: 'prov2', providerName: 'مقدم 2' }));  // لا يستولي بنفسه
+    await assertFails(updateDoc(doc(v1, 'providerLinks/123456'), { providerUid: 'thief', providerName: 'x' }));
+    const { writeBatch } = await import('firebase/firestore');
+    const b = writeBatch(v1);
+    b.update(doc(v1, 'providerLinks/123456'), { providerUid: 'prov2', providerName: 'مقدم 2' });
+    b.delete(doc(v1, 'providerRequests/123456'));
+    await assertSucceeds(b.commit());
+    await assertSucceeds(getDocs(query(collection(v2, 'providerLinks'), where('providerUid', '==', 'prov2'))));
+    await assertSucceeds(deleteDoc(doc(v2, 'providerLinks/123456')));                                               // يحذفها من عنده
+    await assertFails(deleteDoc(doc(v1, 'providerLinks/123456')));
+});
