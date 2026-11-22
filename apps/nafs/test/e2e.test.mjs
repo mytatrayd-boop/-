@@ -75,6 +75,9 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await pp.check('[data-pd-class="الثالث المتوسط - أ"]');
     await pp.click('[data-action="pd-save-classes"]');
     await closeModal(pp, 'حُفظت');
+    // بعد الحفظ تُطوى القائمة، ويفتح المدير قائمة المعلمين: يفتح ← يحدد ← يحفظ
+    assert.equal(await pp.locator('[data-pd-class]').first().isVisible(), false);
+    await pp.click('summary:has-text("المعلمون وإسنادهم")');
     await pp.fill('#pdTName', 'أحمد محمد القحطاني');
     await pp.fill('#pdTCivil', '1000000009');
     await pp.check('[data-pd-t-class="الثالث الابتدائي - أ"]');
@@ -88,7 +91,9 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.match(await pp.textContent('#pdBody'), /التخصص: .*الرياضيات/);
     // انتهى إسناد كل الفصول: تظهر التقارير، وتختفي الفصول والمعلمون في قوائم منسدلة
     assert.match(await pp.textContent('#pdBody'), /تقارير المدرسة/);
-    await pp.waitForFunction(() => document.querySelector('#pdBody table'), null, { timeout: 15000 }); // جدول الفصول بعد تحميل التقرير
+    assert.equal(await pp.locator('#pdTeacherForm button[type=submit]').isVisible(), false); // طُويت بعد الحفظ
+    await pp.click('summary:has-text("تقارير المدرسة")');
+    await pp.waitForFunction(() => document.querySelector('#pdBody details[open] table'), null, { timeout: 15000 }); // جدول الفصول بعد تحميل التقرير
     assert.doesNotMatch(await pp.textContent('#pdBody'), /تعذّر تحميل التقارير/);
     assert.equal(await pp.locator('[data-action="pd-save-classes"]').isVisible(), false);
     assert.equal(await pp.locator('#pdTeacherForm button[type=submit]').isVisible(), false);

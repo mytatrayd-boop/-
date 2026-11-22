@@ -111,7 +111,7 @@ async function handleAuthChange(user) {
         const ps = await getDoc(doc(db, 'principals', user.uid));
         if (ps.exists()) {
             principal = { uid: user.uid, ...ps.data() };
-            return await openPrincipalDashboard();
+            return await openPrincipalDashboard(true);
         }
         const vs = await getDoc(doc(db, 'providers', user.uid));
         if (vs.exists()) {
@@ -1570,7 +1570,7 @@ async function principalSignup(e) {
             $('pSignupPassword').value = '';
             principal = { uid: user.uid, ...p };
             activating = false;
-            await openPrincipalDashboard();
+            await openPrincipalDashboard(true);
             showAlert(vacant ? `تسلّمتَ مدرسة «${existing.data().name}» بفصولها واختباراتها ونتائجها المؤرشفة.` : existing.exists() ? `رقم المدرسة ${p.schoolNo} مسجّل لمدير آخر (${existing.data().principalName}). سُجّل حسابك، ويمكنك من لوحتك طلب نقل تبعية المدرسة إليك.` : 'تم تسجيل مدرستك. أضف الفصول ثم المعلمين.', 'تم التسجيل');
         } catch (err) {
             if (user) { await user.delete().catch(() => {}); await signOut(auth).catch(() => {}); }
@@ -1579,7 +1579,9 @@ async function principalSignup(e) {
     });
 }
 
-async function openPrincipalDashboard() {
+let pdOpen; // القسم المفتوح في لوحة المدير (undefined = أول عرض، null = الكل مغلق)
+async function openPrincipalDashboard(fresh = false) {
+    if (fresh) pdOpen = undefined;
     school = null; roster = []; transferIn = null; otherSchool = null; transferOut = null;
     const sc = await getDoc(doc(db, 'schools', principal.schoolNo));
     const tr = await getDoc(doc(db, 'schoolTransfers', principal.schoolNo)).catch(() => null);
@@ -1636,10 +1638,24 @@ function renderPrincipal() {
     const needed = school.classes.flatMap((c) => subjectsOfGrade(gradeOfClass(c)).map((sub) => [c, sub]));
     const uncovered = needed.filter(([c, sub]) => !holders(c, sub).length);
     const stage = !school.classes.length ? 'classes' : uncovered.length || !roster.length ? 'assign' : 'reports';
-    const fold = (title, node, open = false) => {
-        const d = el('details', 'bg-white rounded-3xl shadow-sm border border-slate-100 group');
-        if (open) d.open = true;
-        d.append(el('summary', 'cursor-pointer select-none px-6 py-4 font-bold text-slate-700 text-sm flex items-center justify-between', title), node);
+    // كل قسم قائمة منسدلة، يُفتح واحد في كل مرة: افتح ← حدّد ← احفظ فيُطوى
+    const nextStep = stage === 'classes' ? 'classes' : stage === 'assign' ? 'teachers' : null;
+    if (pdOpen === undefined) pdOpen = nextStep ?? 'reports';
+    const sections = {};
+    const fold = (key, title, node) => {
+        const d = el('details', 'bg-white rounded-3xl shadow-sm border border-slate-100'); d.dataset.pdSection = key;
+        d.open = pdOpen === key;
+        const sm = el('summary', 'cursor-pointer select-none px-6 py-4 font-bold text-slate-800 text-sm flex items-center justify-between gap-3');
+        sm.append(el('span', '', title), key === nextStep ? el('span', 'text-xs font-bold bg-amber-100 text-amber-800 rounded-full px-3 py-1', 'الخطوة التالية') : el('span', 'text-slate-400 text-xs', '▾'));
+        d.append(sm, node);
+        d.addEventListener('toggle', () => {
+            if (d.open) {
+                pdOpen = key;
+                for (const [k, o] of Object.entries(sections)) if (k !== key && o.open) o.open = false;
+                if (key === 'reports' && !d.dataset.loaded) { d.dataset.loaded = '1'; loadPrincipalReport(repBody); }
+            } else if (pdOpen === key) pdOpen = null;
+        });
+        sections[key] = d;
         return d;
     };
     const panel = (cls = 'p-6 space-y-4') => el('div', cls);
@@ -1737,13 +1753,13 @@ function renderPrincipal() {
         archList.textContent = rows.length ? rows.map(([y, n]) => `${y}: ${n} اختبار`).join(' ، ') : 'لا توجد اختبارات مؤرشفة بعد.';
     }).catch(() => { archList.textContent = 'تعذّر تحميل الأرشيف.'; });
 
-    // الترتيب: الواجهة الظاهرة للمرحلة الحالية، ثم القوائم المنسدلة لما انتهى
-    const card = (node) => { const d = el('section', 'bg-white rounded-3xl shadow-sm border border-slate-100'); d.append(node); return d; };
-    if (stage === 'classes') body.append(card(classes));
-    else if (stage === 'assign') { body.append(card(t)); body.append(fold('الصفوف والفصول (تعديل)', classes)); }
-    else { body.append(card(rep)); body.append(fold(`المعلمون وإسنادهم (${roster.length} معلماً — الإسناد مكتمل ✓)`, t)); body.append(fold('الصفوف والفصول (تعديل)', classes)); }
-    body.append(fold('أرشفة العام الدراسي', yr));
-    if (stage === 'reports') loadPrincipalReport(repBody);
+    body.append(
+        fold('classes', `الصفوف والفصول — ${school.classes.length ? `${school.classes.length} مختارة` : 'لم تُختر بعد'}`, classes),
+        fold('teachers', `المعلمون وإسنادهم — ${roster.length} معلماً · ${needed.length - uncovered.length}/${needed.length} خانة${stage === 'reports' ? ' ✓' : ''}`, t),
+        fold('reports', 'تقارير المدرسة', rep),
+        fold('archive', 'أرشفة العام الدراسي', yr),
+    );
+    if (pdOpen === 'reports') { sections.reports.dataset.loaded = '1'; loadPrincipalReport(repBody); }
 }
 
 // تقرير المدرسة: لكل فصل ومادة متوسط النسبة وعدد من اختبروا، من اختبارات المعلمين المفعّلين في العام الحالي
@@ -1841,6 +1857,7 @@ async function savePrincipalClasses(btn) {
     await busy(btn, async () => {
         await updateDoc(doc(db, 'schools', school.no), { classes });
         school.classes = classes;
+        pdOpen = null;
         renderPrincipal();
         showAlert('حُفظت فصول المدرسة.', 'تم الحفظ');
     });
@@ -1862,6 +1879,7 @@ async function addRosterTeacher(e) {
             try { await setDoc(doc(db, 'teacherRoster', cid), { schoolNo: school.no, name, classes, subjects, uid: null, createdAt: serverTimestamp() }); }
             catch (err) { if (err?.code === 'permission-denied') return showAlert('هذا السجل المدني مسجّل لمعلم في مدرسة أخرى. يلزم أن يحذفه مدير تلك المدرسة أولاً.', 'تعذّرت الإضافة'); throw err; }
         }
+        pdOpen = null;
         await openPrincipalDashboard();
         showAlert(`أُضيف المعلم ${name}. يدخل من بوابة المعلم ← «تفعيل حسابي» برقم سجله المدني، فينشئ كلمة مروره.`, 'تمت الإضافة');
     });
