@@ -1630,8 +1630,11 @@ function renderPrincipal() {
 
     // مراحل لوحة المدير: ١) اختيار الفصول ← ٢) إسناد المعلمين لفصولهم وتخصصاتهم ← ٣) التقارير.
     // ما انتهى منه يختفي إلى قائمة منسدلة، وتبقى الواجهة لما يلي.
-    const covered = new Set(roster.flatMap((r) => r.classes));
-    const uncovered = school.classes.filter((c) => !covered.has(c));
+    // الإسناد يكتمل حين يكون لكل فصل معلم لكل مادة من مواد صفه (الثالث: لغتي ورياضيات، والسادس والمتوسط: الثلاث)
+    const ALL_SUBJ = ['reading', 'math', 'science'];
+    const holders = (c, sub) => roster.filter((r) => r.classes.includes(c) && (r.subjects ?? ALL_SUBJ).includes(sub));
+    const needed = school.classes.flatMap((c) => subjectsOfGrade(gradeOfClass(c)).map((sub) => [c, sub]));
+    const uncovered = needed.filter(([c, sub]) => !holders(c, sub).length);
     const stage = !school.classes.length ? 'classes' : uncovered.length || !roster.length ? 'assign' : 'reports';
     const fold = (title, node, open = false) => {
         const d = el('details', 'bg-white rounded-3xl shadow-sm border border-slate-100 group');
@@ -1656,7 +1659,25 @@ function renderPrincipal() {
     // المعلمون: الإسناد بالفصول والتخصص
     const t = panel();
     t.append(el('h3', 'font-black text-slate-800', 'المعلمون وإسنادهم للفصول والتخصصات'));
-    if (stage === 'assign' && uncovered.length) t.append(el('p', 'text-sm text-amber-700 font-bold', `فصول لم يُسند لها معلم بعد: ${uncovered.join('، ')}`));
+    if (school.classes.length) {
+        t.append(el('p', `text-sm font-bold ${uncovered.length ? 'text-amber-700' : 'text-emerald-700'}`,
+            `أضفتَ ${roster.length} معلماً · أُسند ${needed.length - uncovered.length} من ${needed.length} خانة (فصل × مادة)${uncovered.length ? ' — أكمل الخانات الناقصة أدناه.' : ' — الإسناد مكتمل ✓'}`));
+        const m = el('table', 'w-full text-right text-xs border border-slate-100 rounded-xl overflow-hidden');
+        const h = el('tr', 'bg-slate-50 text-slate-500');
+        ['الفصل', 'لغتي', 'الرياضيات', 'العلوم'].forEach((x) => h.append(el('th', 'p-2', x)));
+        m.append(h);
+        for (const c of school.classes) {
+            const tr = el('tr', 'border-t border-slate-100');
+            tr.append(el('td', 'p-2 font-bold text-slate-800', c));
+            for (const sub of ALL_SUBJ) {
+                if (!subjectsOfGrade(gradeOfClass(c)).includes(sub)) { tr.append(el('td', 'p-2 text-slate-300', '—')); continue; }
+                const hs = holders(c, sub);
+                tr.append(el('td', `p-2 ${hs.length ? 'text-emerald-800' : 'text-amber-700 font-bold'}`, hs.length ? hs.map((x) => x.name).join('، ') : 'لم يُسند'));
+            }
+            m.append(tr);
+        }
+        t.append(m);
+    }
     if (school.classes.length) {
         const f = el('form', 'space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-100'); f.id = 'pdTeacherForm';
         const row = el('div', 'grid grid-cols-1 md:grid-cols-2 gap-3');
@@ -1720,7 +1741,7 @@ function renderPrincipal() {
     const card = (node) => { const d = el('section', 'bg-white rounded-3xl shadow-sm border border-slate-100'); d.append(node); return d; };
     if (stage === 'classes') body.append(card(classes));
     else if (stage === 'assign') { body.append(card(t)); body.append(fold('الصفوف والفصول (تعديل)', classes)); }
-    else { body.append(card(rep)); body.append(fold('المعلمون وإسنادهم (تعديل)', t)); body.append(fold('الصفوف والفصول (تعديل)', classes)); }
+    else { body.append(card(rep)); body.append(fold(`المعلمون وإسنادهم (${roster.length} معلماً — الإسناد مكتمل ✓)`, t)); body.append(fold('الصفوف والفصول (تعديل)', classes)); }
     body.append(fold('أرشفة العام الدراسي', yr));
     if (stage === 'reports') loadPrincipalReport(repBody);
 }
