@@ -94,8 +94,9 @@ async function start() {
     onAuthStateChanged(auth, handleAuthChange);
 }
 
+let loginRole = null; // البوابة التي يُدخل منها الآن: teacher | principal | provider
 async function handleAuthChange(user) {
-    if (!user) { if (activating) return; teacher = null; principal = null; provider = null; school = null; showScreen(activeStudent ? 'studentLoginScreen' : 'roleSelectionScreen'); return; }
+    if (!user) { if (activating) return; try { sessionStorage.removeItem('nafs-role'); } catch { /* */ } teacher = null; principal = null; provider = null; school = null; showScreen(activeStudent ? 'studentLoginScreen' : 'roleSelectionScreen'); return; }
     if (user.isAnonymous) {
         // جلسة الطالب لا تُستعاد بعد تحديث الصفحة.
         if (!activeStudent) await signOut(auth);
@@ -103,25 +104,43 @@ async function handleAuthChange(user) {
     }
     if (activating) return; // تفعيل معلم أو تسجيل مدير جارٍ: ينهيه مسار التسجيل نفسه
     try {
-        const snap = await getDoc(doc(db, 'teachers', user.uid));
-        if (snap.exists()) {
-            teacher = { uid: user.uid, ...snap.data() };
+        // الدخول مرتبط بالبوابة: من دخل من بوابة يُفتح له حساب ذلك الدور فقط (حتى لو ملأ المتصفح بريد حساب آخر تلقائياً)
+        const ROLE_NAME = { teacher: 'معلم', principal: 'مدير مدرسة', provider: 'مقدم خدمات الدعم' };
+        const COL = { teacher: 'teachers', principal: 'principals', provider: 'providers' };
+        let saved = null; try { saved = sessionStorage.getItem('nafs-role'); } catch { /* */ }
+        const wanted = loginRole ?? (COL[saved] ? saved : null);
+        const order = wanted ? [wanted, ...Object.keys(COL).filter((r) => r !== wanted)] : ['teacher', 'principal', 'provider'];
+        const docs = {};
+        for (const r of order) {
+            const d = await getDoc(doc(db, COL[r], user.uid));
+            if (d.exists()) { docs[r] = d.data(); if (!loginRole) break; }
+            if (loginRole) break; // من بوابة محددة: لا نفتح دوراً آخر
+        }
+        const role = Object.keys(docs)[0];
+        if (loginRole && !role) {
+            const others = [];
+            for (const r of Object.keys(COL)) if (r !== loginRole && (await getDoc(doc(db, COL[r], user.uid))).exists()) others.push(ROLE_NAME[r]);
+            loginRole = null;
+            await signOut(auth);
+            return showAlert(others.length
+                ? `هذا البريد مسجّل حساب ${others.join(' و')}، وليس حساب ${ROLE_NAME[wanted]}. ادخل من بوابة ${others[0]}، أو تأكد من البريد (قد يملؤه المتصفح تلقائياً ببريد حساب آخر).`
+                : 'لم يتعرّف النظام على هذا الحساب. المعلم يُفعّل حسابه بعد أن يضيفه مدير مدرسته، والمدير يسجّل مدرسته من بوابة المدير.', 'بوابة غير مطابقة');
+        }
+        loginRole = null;
+        if (!role) {
+            // حساب بلا ملف (تسجيل لم يكتمل أو معلم لم يُضَف): لا دخول.
+            await signOut(auth);
+            return showAlert('لم يتعرّف النظام على هذا الحساب. المعلم يُفعّل حسابه بعد أن يضيفه مدير مدرسته، والمدير يسجّل مدرسته من بوابة المدير.', 'لا يوجد حساب');
+        }
+        try { sessionStorage.setItem('nafs-role', role); } catch { /* */ }
+        if (role === 'teacher') {
+            teacher = { uid: user.uid, ...docs.teacher };
             if (!teacher.schoolNo) return linkLegacyTeacher(user); // حساب قديم: يُربط بكشف مدرسته أو يُمنع
             return await openTeacherDashboard();
         }
-        const ps = await getDoc(doc(db, 'principals', user.uid));
-        if (ps.exists()) {
-            principal = { uid: user.uid, ...ps.data() };
-            return await openPrincipalDashboard(true);
-        }
-        const vs = await getDoc(doc(db, 'providers', user.uid));
-        if (vs.exists()) {
-            provider = { uid: user.uid, ...vs.data() };
-            return await openProviderDashboard();
-        }
-        // حساب بلا ملف (تسجيل لم يكتمل أو معلم لم يُضَف): لا دخول.
-        await signOut(auth);
-        showAlert('لم يتعرّف النظام على هذا الحساب. المعلم يُفعّل حسابه بعد أن يضيفه مدير مدرسته، والمدير يسجّل مدرسته من بوابة المدير.', 'لا يوجد حساب');
+        if (role === 'principal') { principal = { uid: user.uid, ...docs.principal }; return await openPrincipalDashboard(true); }
+        provider = { uid: user.uid, ...docs.provider };
+        return await openProviderDashboard();
     } catch (err) {
         reportError(err);
     }
@@ -189,6 +208,7 @@ function fillClassSelects() {
 async function teacherLogin(e) {
     e.preventDefault();
     await busy(e.submitter, async () => {
+        loginRole = 'teacher';
         await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPassword').value);
         $('loginPassword').value = '';
     });
@@ -294,6 +314,7 @@ async function loadTeacherClasses() {
 }
 
 async function openTeacherDashboard() {
+    try { sessionStorage.setItem('nafs-role', 'teacher'); } catch { /* */ }
     await loadTeacherClasses();
     await loadSchoolYears();
     showScreen('teacherDashboardScreen');
@@ -1800,6 +1821,7 @@ function setPrincipalTab(tab) {
 async function principalLogin(e) {
     e.preventDefault();
     await busy(e.submitter, async () => {
+        loginRole = 'principal';
         await signInWithEmailAndPassword(auth, $('pLoginEmail').value.trim(), $('pLoginPassword').value);
         $('pLoginPassword').value = '';
     });
@@ -1849,6 +1871,7 @@ let pdEditing = null; // سجل المعلم الذي يعدّله المدير 
 let pdEditClasses = false; // تعديل الفصول بعد حفظها (يُفتح بزر «تعديل» من قسم المعلمين)
 let pdOpen; // القسم المفتوح في لوحة المدير (undefined = أول عرض، null = الكل مغلق)
 async function openPrincipalDashboard(fresh = false) {
+    try { sessionStorage.setItem('nafs-role', 'principal'); } catch { /* */ }
     schoolDataCache.clear();
     if (fresh) { pdOpen = undefined; pdEditClasses = false; }
     school = null; roster = []; transferIn = null; otherSchool = null; transferOut = null;
@@ -2242,7 +2265,7 @@ function setProviderTab(tab) {
 
 async function providerLogin(e) {
     e.preventDefault();
-    await busy(e.submitter, async () => { await signInWithEmailAndPassword(auth, $('vLoginEmail').value.trim(), $('vLoginPassword').value); $('vLoginPassword').value = ''; });
+    await busy(e.submitter, async () => { loginRole = 'provider'; await signInWithEmailAndPassword(auth, $('vLoginEmail').value.trim(), $('vLoginPassword').value); $('vLoginPassword').value = ''; });
 }
 
 async function providerReset() {
@@ -2273,6 +2296,7 @@ async function providerSignup(e) {
 }
 
 async function openProviderDashboard() {
+    try { sessionStorage.setItem('nafs-role', 'provider'); } catch { /* */ }
     schoolDataCache.clear();
     const q = await getDocs(query(collection(db, 'providerLinks'), where('providerUid', '==', provider.uid)));
     providerSchools = await Promise.all(q.docs.map(async (d) => {
