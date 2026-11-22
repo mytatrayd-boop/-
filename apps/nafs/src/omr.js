@@ -46,6 +46,11 @@ h1{position:absolute;left:0;right:0;top:9mm;margin:0;text-align:center;font-size
 .qn{position:absolute;width:7mm;height:5mm;margin:-2.5mm 0 0 -3.5mm;text-align:center;font-weight:800;font-size:9pt;border:1px solid #000;border-radius:1mm;line-height:4.6mm}
 .ft{position:absolute;bottom:9mm;left:0;right:0;text-align:center;font-size:8pt}
 .note{position:absolute;left:8mm;right:8mm;top:243mm;font-size:8.5pt;text-align:center;line-height:1.8}
+.kp{width:194mm;margin:0 auto}
+.kt{margin:0 0 2mm;text-align:center;font-size:16pt}
+.ks{text-align:center;font-size:10pt;font-weight:700;margin-bottom:5mm}
+.key{table-layout:fixed}
+.key th{background:#eee}
 .key td,.key th{border:1px solid #000;padding:1mm 2mm;text-align:center;font-size:11pt}
 .key{border-collapse:collapse;width:100%;margin-top:3mm}
 `;
@@ -91,7 +96,7 @@ export function omrKeyHtml({ title, className = '', answers }) {
         for (let j = i; j < Math.min(i + 10, answers.length); j++) td += `<td>${LETTERS[answers[j]] ?? '؟'}</td>`;
         rows.push(`<tr>${tr}</tr><tr>${td}</tr>`);
     }
-    return wrap(`مفتاح التصحيح — ${title}`, `<section class="page"><h1>مفتاح التصحيح — ${esc(title)}</h1><div class="sub">${esc(className)} · للمعلم فقط</div><table class="key">${rows.join('')}</table></section>`);
+    return wrap(`مفتاح التصحيح — ${title}`, `<section class="kp"><h2 class="kt">مفتاح التصحيح — ${esc(title)}</h2><div class="ks">${esc(className)} · للمعلم فقط</div><table class="key">${rows.join('')}</table></section>`);
 }
 
 function wrap(title, body) {
