@@ -134,7 +134,7 @@ function runCounters() {
     const tick = (now) => {
         if (run !== countersRun) return;
         const p = still ? 1 : Math.min(1, (now - t0) / dur), ease = 1 - (1 - p) ** 3;
-        for (const n of nodes) n.textContent = fmt.format(Math.round(value(n.dataset.count) * ease));
+        for (const n of nodes) n.textContent = (n.hasAttribute('data-plus') ? '+' : '') + fmt.format(Math.round(value(n.dataset.count) * ease));
         if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -143,7 +143,7 @@ function runCounters() {
 let statsObserver;
 function watchCounters() {
     const box = $('statsSection');
-    document.querySelectorAll('[data-count]').forEach((n) => { n.textContent = '0'; });
+    document.querySelectorAll('[data-count]').forEach((n) => { n.textContent = n.hasAttribute('data-plus') ? '+0' : '0'; });
     statsObserver?.disconnect();
     if (!box || !('IntersectionObserver' in window)) return runCounters();
     statsObserver = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { statsObserver.disconnect(); runCounters(); } }, { threshold: 0.3 });
