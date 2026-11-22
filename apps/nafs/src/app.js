@@ -1769,9 +1769,9 @@ function renderPrincipal() {
 }
 
 // تقرير المدرسة: لكل فصل ومادة متوسط النسبة وعدد من اختبروا، من اختبارات المعلمين المفعّلين في العام الحالي
-async function loadPrincipalReport(box) {
+async function loadSchoolReport(box, sc = school, rows = roster) {
     try {
-        const uids = [...new Set(roster.filter((r) => r.uid).map((r) => r.uid))];
+        const uids = [...new Set(rows.filter((r) => r.uid).map((r) => r.uid))];
         const mine = (name, uid) => getDocs(query(collection(db, name), where('teacherUid', '==', uid)));
         const got = await Promise.all(uids.map((u) => Promise.all(['students', 'tests', 'testKeys', 'attempts'].map((n) => mine(n, u)))));
         const stu = [], tst = {}, key = {}, att = [];
@@ -1781,13 +1781,13 @@ async function loadPrincipalReport(box) {
             c.docs.forEach((x) => { key[x.id] = x.data().answers; });
             d.docs.forEach((x) => att.push({ id: x.id, ...x.data(), submittedAt: ms(x.data().submittedAt) }));
         }
-        const years = school.years?.length ? school.years : [{ label: school.year, start: 0 }];
-        const cur = Object.fromEntries(Object.entries(tst).filter(([, t]) => (t.year ?? yearOf(years, ms(t.createdAt))) === school.year));
+        const years = sc.years?.length ? sc.years : [{ label: sc.year, start: 0 }];
+        const cur = Object.fromEntries(Object.entries(tst).filter(([, t]) => (t.year ?? yearOf(years, ms(t.createdAt))) === sc.year));
         const table = el('table', 'w-full text-right text-xs');
         const head = el('tr', 'bg-slate-50 text-slate-500');
         ['الفصل', 'الطلاب', 'لغتي', 'الرياضيات', 'العلوم'].forEach((h) => head.append(el('th', 'p-2', h)));
         table.append(head);
-        for (const c of school.classes) {
+        for (const c of sc.classes) {
             const sc = stu.filter((x) => x.className === c);
             const tr = el('tr', 'border-t border-slate-100');
             tr.append(el('td', 'p-2 font-bold text-slate-800', c), el('td', 'p-2', String(sc.length)));
@@ -1799,9 +1799,11 @@ async function loadPrincipalReport(box) {
             }
             table.append(tr);
         }
-        box.replaceChildren(el('p', 'text-xs text-slate-500', `العام الدراسي ${school.year}: متوسط نسبة الإتقان لكل فصل ومادة.`), table);
+        box.replaceChildren(el('p', 'text-xs text-slate-500', `العام الدراسي ${sc.year}: متوسط نسبة الإتقان لكل فصل ومادة.`), table);
     } catch (err) { box.textContent = 'تعذّر تحميل التقارير.'; reportError(err); }
 }
+
+const loadPrincipalReport = (box) => loadSchoolReport(box, school, roster);
 
 async function openNewYear(btn) {
     const next = nextYearLabel(school.year);
@@ -1943,7 +1945,9 @@ async function openProviderDashboard() {
         const no = d.id;
         const sc = await getDoc(doc(db, 'schools', no)).catch(() => null);
         const rq = await getDoc(doc(db, 'providerRequests', no)).catch(() => null);
-        return { no, schoolName: sc?.exists() ? sc.data().name : '—', principalName: sc?.exists() ? sc.data().principalName : '—', incoming: rq?.exists() ? rq.data() : null };
+        const rr = await getDocs(query(collection(db, 'teacherRoster'), where('schoolNo', '==', no))).catch(() => null);
+        const sd = sc?.exists() ? sc.data() : null;
+        return { no, schoolName: sd ? sd.name : '—', principalName: sd ? (sd.principalName ?? 'لا مدير حالياً') : '—', classes: sd?.classes ?? [], year: sd?.year ?? '', years: sd?.years ?? [], roster: rr ? rr.docs.map((x) => ({ id: x.id, ...x.data() })) : [], incoming: rq?.exists() ? rq.data() : null };
     }));
     showScreen('providerDashboardScreen');
     renderProvider();
@@ -1974,6 +1978,19 @@ function renderProvider() {
             r.append(actionButton('حذف المدرسة من عندي', 'pv-approve', s.no, 'bg-red-600 text-white px-4 py-2 rounded-lg'), actionButton('رفض', 'pv-reject', s.no, 'text-slate-700'));
             n.append(r); card.append(n);
         }
+        // ملخص الإسناد + تقرير النتائج (قائمة منسدلة تُحمَّل عند فتحها)
+        const ALL = ['reading', 'math', 'science'];
+        const need = s.classes.flatMap((c) => subjectsOfGrade(gradeOfClass(c)).map((sub) => [c, sub]));
+        const miss = need.filter(([c, sub]) => !s.roster.some((r) => r.classes.includes(c) && (r.subjects ?? ALL).includes(sub)));
+        card.append(el('p', 'text-xs text-slate-600', s.classes.length
+            ? `الفصول: ${s.classes.length} · المعلمون: ${s.roster.length} (المفعّلون ${s.roster.filter((r) => r.uid).length}) · الإسناد ${need.length - miss.length}/${need.length}`
+            : 'لم يحدد المدير فصول المدرسة بعد.'));
+        const det = el('details', 'border border-slate-200 rounded-xl');
+        det.append(el('summary', 'cursor-pointer select-none px-4 py-2.5 text-xs font-bold text-rose-700', 'تقرير المدرسة: نتائج الفصول والمواد'));
+        const rb = el('div', 'p-4 text-sm text-slate-600', 'جارٍ تحميل النتائج...');
+        det.append(rb);
+        det.addEventListener('toggle', () => { if (det.open && !det.dataset.loaded) { det.dataset.loaded = '1'; loadSchoolReport(rb, s, s.roster); } });
+        card.append(det);
         card.append(actionButton('إزالة المدرسة من عندي', 'pv-remove', s.no, 'text-xs font-bold text-red-500 hover:text-red-700'));
         list.append(card);
     }

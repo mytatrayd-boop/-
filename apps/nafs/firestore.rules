@@ -16,10 +16,16 @@ service cloud.firestore {
     function schoolNo(v) { return v is string && v.matches('^[0-9]{3,12}$'); }
     function schoolDoc(no) { return get(/databases/$(database)/documents/schools/$(no)).data; }
     function isPrincipalOf(no) { return isTeacher() && schoolNo(no) && schoolDoc(no).principalUid == request.auth.uid; }
-    // مدير مدرسة المعلم صاحب المستند: يقرأ طلابه واختباراته ومفاتيحه ونتائجه لعرض تقارير المدرسة
+    // مقدم خدمات الدعم المرتبطة به المدرسة (رابط providerLinks)
+    function isProviderOf(no) {
+      return isTeacher() && schoolNo(no) && exists(/databases/$(database)/documents/providerLinks/$(no))
+        && get(/databases/$(database)/documents/providerLinks/$(no)).data.providerUid == request.auth.uid;
+    }
+    // مدير مدرسة المعلم صاحب المستند أو مقدم الدعم المرتبط بها: يقرأ طلابه واختباراته ومفاتيحه ونتائجه لعرض تقارير المدرسة
     function principalOfTeacher(tuid) {
       return isTeacher() && tuid is string && exists(/databases/$(database)/documents/teachers/$(tuid))
-        && isPrincipalOf(get(/databases/$(database)/documents/teachers/$(tuid)).data.schoolNo);
+        && (isPrincipalOf(get(/databases/$(database)/documents/teachers/$(tuid)).data.schoolNo)
+            || isProviderOf(get(/databases/$(database)/documents/teachers/$(tuid)).data.schoolNo));
     }
     function subjectList(v) { return v is list && v.size() > 0 && v.size() <= 3 && v.hasOnly(['reading', 'math', 'science']); }
     function rosterDoc(id) { return get(/databases/$(database)/documents/teacherRoster/$(id)).data; }
@@ -122,7 +128,7 @@ service cloud.firestore {
 
     // كشف المعلمين: مستند لكل معلم معرّفه رقم سجله المدني. يضيفه المدير؛ ثم يُفعّله المعلم نفسه بإنشاء حسابه.
     match /teacherRoster/{cid} {
-      allow list: if isTeacher() && isPrincipalOf(resource.data.schoolNo);
+      allow list: if isTeacher() && (isPrincipalOf(resource.data.schoolNo) || isProviderOf(resource.data.schoolNo));
       allow get: if isTeacher() && civilId(cid)
         && (isPrincipalOf(resource.data.schoolNo) || resource.data.uid == request.auth.uid || resource.data.uid == null);
       allow create: if isPrincipalOf(request.resource.data.schoolNo) && civilId(cid)

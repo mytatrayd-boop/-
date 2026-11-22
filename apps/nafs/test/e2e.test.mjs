@@ -206,6 +206,11 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
         await va.click('#pvAddForm button[type=submit]');
         await closeModal(va, 'أُضيفت المدرسة');
         assert.match(await va.textContent('#pvBody'), new RegExp(`${schoolNo}`));
+        // تقرير المدرسة لمقدم الدعم: الإسناد وجدول النتائج بالفصول والمواد
+        assert.match(await va.textContent('#pvBody'), /المعلمون: 1 .*الإسناد/);
+        await va.click('summary:has-text("تقرير المدرسة")');
+        await va.waitForFunction(() => document.querySelector('#pvBody details[open] table'), null, { timeout: 15000 });
+        assert.doesNotMatch(await va.textContent('#pvBody'), /تعذّر تحميل التقارير/);
         const vb = await reg(cb, 'مقدم ثان', '1000000302');
         await vb.fill('#pvSchoolNo', schoolNo);
         await vb.click('#pvAddForm button[type=submit]');

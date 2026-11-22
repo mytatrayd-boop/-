@@ -418,3 +418,23 @@ test('المدير يعدّل فصول معلم مفعّل وتخصصه (ثلا�
     await assertFails(updateDoc(doc(p2, 'teacherRoster/1000000001'), { classes: three, subjects: ['reading'] }));     // ليس مدير مدرسته
     await assertSucceeds(setDoc(doc(p1, 'teacherRoster/1000000077'), { schoolNo: '123456', name: 'ثلاثة فصول', classes: three, subjects: ['reading'], uid: null, createdAt: serverTimestamp() }));
 });
+
+test('تقارير مقدم الدعم: يقرأ كشف مدرسته المرتبطة به وطلاب معلميها ونتائجهم فقط', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore();
+        await setDoc(doc(f, 'teachers', T1), { ...profile, createdAt: new Date() });
+        await setDoc(doc(f, 'providerLinks/123456'), { schoolNo: '123456', providerUid: 'prov1', providerName: 'مقدم', createdAt: new Date() });
+        await setDoc(doc(f, 'tests/PT1'), { teacherUid: T1, title: 'اختبار', className: 'الثالث الابتدائي - أ', status: 'draft', questions: [], createdAt: new Date() });
+        await setDoc(doc(f, 'testKeys/PT1'), { teacherUid: T1, answers: [0] });
+        await setDoc(doc(f, 'attempts/PT1_1111111111'), { testId: 'PT1', studentId: '1111111111', teacherUid: T1, className: 'الثالث الابتدائي - أ', answers: [0], submittedAt: new Date() });
+    });
+    const prov = teacherDbNew('prov1'), other = teacherDbNew('prov2');
+    await assertSucceeds(getDocs(query(collection(prov, 'teacherRoster'), where('schoolNo', '==', '123456'))));
+    await assertFails(getDocs(query(collection(other, 'teacherRoster'), where('schoolNo', '==', '123456'))));
+    for (const name of ['students', 'tests', 'testKeys', 'attempts']) {
+        await assertSucceeds(getDocs(query(collection(prov, name), where('teacherUid', '==', T1))));
+        await assertFails(getDocs(query(collection(other, name), where('teacherUid', '==', T1))));
+    }
+    await assertSucceeds(getDoc(doc(prov, 'testKeys/PT1')));
+    await assertFails(getDoc(doc(other, 'testKeys/PT1')));
+});
