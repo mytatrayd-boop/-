@@ -1956,7 +1956,7 @@ function renderProvider() {
     const add = el('form', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3'); add.id = 'pvAddForm';
     add.append(el('h3', 'font-black text-slate-800', 'إضافة مدرسة تابعة لك'), el('p', 'text-xs text-slate-500', 'اكتب الرقم الإحصائي للمدرسة بعد أن يسجّلها مديرها في الموقع.'));
     const row = el('div', 'flex flex-wrap gap-3');
-    const no = el('input', 'px-4 py-2.5 border border-slate-200 rounded-xl text-sm'); no.id = 'pvSchoolNo'; no.placeholder = 'الرقم الإحصائي (أرقام فقط)'; no.required = true; no.pattern = '[0-9]{3,12}'; no.maxLength = 12; no.inputMode = 'numeric'; no.dir = 'ltr';
+    const no = el('input', 'flex-1 min-w-0 w-full sm:w-auto px-4 py-2.5 border border-slate-200 rounded-xl text-sm'); no.id = 'pvSchoolNo'; no.placeholder = 'الرقم الإحصائي (أرقام فقط)'; no.required = true; no.pattern = '[0-9]{3,12}'; no.maxLength = 12; no.inputMode = 'numeric'; no.dir = 'ltr';
     const go = el('button', 'bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs', 'إضافة المدرسة'); go.type = 'submit';
     row.append(no, go); add.append(row);
     add.addEventListener('submit', addProviderSchool);
