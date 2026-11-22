@@ -53,98 +53,42 @@ struct LamhaProvider: TimelineProvider {
 
 // MARK: - العناصر
 
-/// مربع القبلة (صورة المالك، drawQiblaDial في أندرويد وQiblaTileDialPainter في Dart): بوصلة سوداء
-/// بتدريج أبيض وحروف N وE وS وW، ونجمة داكنة، وسهم أحمر من المركز ثم خط منقّط إلى الكعبة على المحيط
-/// بزاوية القبلة. الأبعاد نسبةً للضلع كما في widget_preview_tiles.dart. [dark] لم يعد يُستخدم.
+/// مربع القبلة بتصميم المالك (DECISIONS ٣٦، drawQiblaDial في أندرويد وqibla_screen.dart): صورة القرص الكحلي الثابتة،
+/// وفوقها الإبرة الذهبية بالياقوتة تدور حول مركز القرص بزاوية القبلة من الشمال والكعبة على رأسها. صور فقط
+/// (compass_disc وcompass_arrow في Assets.xcassets، نفس صور أندرويد)، لا حساب. الثوابت نفسها في LamhaWidgetReceiver.kt.
+/// [dark] و[faceOpacity] لم يعودا يُستعملان: القرص صورة معتمة.
 struct QiblaIcon: View {
     let degrees: Double
     let dark: Color
-    /// القرص الأسود يتبع شفافية خلفية الودجت، والتدريج والسهم يبقيان.
     var faceOpacity: Double = 1
+
+    /// نصف قطر القرص نسبةً لضلع المربع، ونسبة ارتفاع صورته لعرضها (٦٥١/٦٤٠).
+    private static let discRadius: CGFloat = 0.49
+    private static let discAspect: CGFloat = 651.0 / 640.0
+    /// ارتفاع صورة الإبرة نسبةً للضلع، ونسبة عرضها لارتفاعها، ونقطة ارتكازها (مركز الياقوتة) نسبةً لمقاس صورتها.
+    private static let needleHeight: CGFloat = 0.74
+    private static let needleAspect: CGFloat = 566.0 / 760.0
+    private static let pivot = UnitPoint(x: 0.4915, y: 0.5605)
+
     var body: some View {
         GeometryReader { g in
             let side = min(g.size.width, g.size.height)
-            let a = degrees * .pi / 180
+            let discW = side * Self.discRadius * 2
+            let needleH = side * Self.needleHeight
+            let needleW = needleH * Self.needleAspect
             ZStack {
-                Circle().fill(Color.black.opacity(faceOpacity)).frame(width: side * 0.98, height: side * 0.98)
-                QiblaTicks(side: side).frame(width: side, height: side)
-                ForEach(Array([(0.0, "N"), (90.0, "E"), (180.0, "S"), (270.0, "W")].enumerated()), id: \.offset) { _, item in
-                    let r = item.0 * .pi / 180
-                    Text(item.1)
-                        .font(.system(size: side * 0.13, weight: .bold))
-                        .foregroundStyle(Color.white)
-                        .offset(x: sin(r) * side * 0.36, y: -cos(r) * side * 0.36)
-                }
-                QiblaStar(side: side).fill(Color(white: 0.23)).frame(width: side, height: side)
-                QiblaArrow(side: side)
-                    .fill(Color(red: 229.0 / 255, green: 57.0 / 255, blue: 53.0 / 255))
-                    .frame(width: side, height: side)
-                    .rotationEffect(.degrees(degrees))
-                Image("kaaba").resizable().aspectRatio(1, contentMode: .fit).frame(width: side * 0.18)
-                    .offset(x: sin(a) * side * 0.36, y: -cos(a) * side * 0.36)
+                Image("compass_disc").resizable().frame(width: discW, height: discW * Self.discAspect)
+                Image("compass_arrow").resizable()
+                    .frame(width: needleW, height: needleH)
+                    .rotationEffect(.degrees(degrees), anchor: Self.pivot)
+                    // الياقوتة (نقطة الارتكاز) في مركز المربع.
+                    .offset(x: (0.5 - Self.pivot.x) * needleW, y: (0.5 - Self.pivot.y) * needleH)
             }
             .frame(width: side, height: side)
             .position(x: g.size.width / 2, y: g.size.height / 2)
         }
         .aspectRatio(1, contentMode: .fit)
         .environment(\.layoutDirection, .leftToRight)
-    }
-}
-
-/// التدريج: كل ١٠° (أطول كل ٣٠°)، بلا خطوط عند الجهات الأربع (مكان الحروف).
-struct QiblaTicks: View {
-    let side: CGFloat
-    var body: some View {
-        Canvas { ctx, size in
-            let c = CGPoint(x: size.width / 2, y: size.height / 2)
-            for d in stride(from: 0, to: 360, by: 10) where d % 90 != 0 {
-                let a = Double(d) * .pi / 180
-                let long = d % 30 == 0
-                let inner = side * (long ? 0.38 : 0.41), outer = side * 0.46
-                var p = Path()
-                p.move(to: CGPoint(x: c.x + sin(a) * inner, y: c.y - cos(a) * inner))
-                p.addLine(to: CGPoint(x: c.x + sin(a) * outer, y: c.y - cos(a) * outer))
-                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: side * (long ? 0.022 : 0.014), lineCap: .round))
-            }
-        }
-    }
-}
-
-/// نجمة ثمانية الرؤوس في الوسط (الطويلة للجهات الأربع).
-struct QiblaStar: Shape {
-    let side: CGFloat
-    func path(in rect: CGRect) -> Path {
-        let c = CGPoint(x: rect.midX, y: rect.midY)
-        var p = Path()
-        for i in 0..<8 {
-            let a = Double(i) * .pi / 4
-            let len = side * 0.2 * (i % 2 == 0 ? 1 : 0.6), w = side * 0.035
-            p.move(to: CGPoint(x: c.x + cos(a) * w, y: c.y + sin(a) * w))
-            p.addLine(to: CGPoint(x: c.x + sin(a) * len, y: c.y - cos(a) * len))
-            p.addLine(to: CGPoint(x: c.x - cos(a) * w, y: c.y - sin(a) * w))
-            p.closeSubpath()
-        }
-        return p
-    }
-}
-
-/// السهم الأحمر متجهاً للأعلى من المركز، ثم نقاط حتى الكعبة.
-struct QiblaArrow: Shape {
-    let side: CGFloat
-    func path(in rect: CGRect) -> Path {
-        let c = CGPoint(x: rect.midX, y: rect.midY)
-        var p = Path()
-        p.move(to: CGPoint(x: c.x, y: c.y - side * 0.24))
-        p.addLine(to: CGPoint(x: c.x + side * 0.07, y: c.y + side * 0.03))
-        p.addLine(to: CGPoint(x: c.x, y: c.y - side * 0.02))
-        p.addLine(to: CGPoint(x: c.x - side * 0.07, y: c.y + side * 0.03))
-        p.closeSubpath()
-        var t: CGFloat = 0.26
-        while t < 0.36 - 0.18 / 2.6 {
-            p.addEllipse(in: CGRect(x: c.x - side * 0.009, y: c.y - side * (t + 0.012), width: side * 0.018, height: side * 0.018))
-            t += 0.035
-        }
-        return p
     }
 }
 
