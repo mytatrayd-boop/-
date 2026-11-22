@@ -1,1 +1,3 @@
-module.exports = { content: ['./src/**/*.{html,js}'], theme: { extend: {} }, plugins: [] };
+// الألوان: أخضر «نافس» (#1B8354) بدل الزمردي الافتراضي ليتناسق الموقع كله مع هويته.
+const emerald = { 50: '#EAF6EF', 100: '#D3EDDF', 200: '#A9DBC0', 300: '#78C49C', 400: '#3FA46F', 500: '#239162', 600: '#1B8354', 700: '#166A45', 800: '#104631', 900: '#0B3324', 950: '#062218' };
+module.exports = { content: ['./src/**/*.{html,js}'], theme: { extend: { colors: { emerald } } }, plugins: [] };

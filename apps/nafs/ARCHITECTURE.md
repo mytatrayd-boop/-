@@ -8,7 +8,7 @@
 | `src/app.js` | الدخول، القراءة والكتابة في Firestore، رفع الأكسل |
 | `src/logic.js` | منطق نقي: قراءة صفوف الأكسل، تصحيح المحاولات، تقرير المهارات والتقدّم، CSV |
 | `src/skills.js` | مهارات القراءة، ويجمع مع الرياضيات والعلوم: `SUBJECTS`، `groupsFor(مادة، صف)`، `skillById` |
-| `src/skills-math.js`، `src/skills-science.js` | مهارات الرياضيات والعلوم (ناتج تعلم = مهارة) من وثيقة 2026 |
+| `src/skills-math.js`، `src/skills-science.js` | مهارات الرياضيات والعلوم (المهارة = مؤشر داخل ناتج التعلم) من وثيقة 2026 |
 | `src/templates.js` | نموذج قراءة نصي جاهز لكل صف |
 | `src/forms-data.js` | نماذج نافس الرسمية: صور الأسئلة، المهارة والمستوى ومفتاح الإجابة (يُحمَّل عند المعلم فقط) |
 | `public/` | الشعار والأيقونة وصور النماذج (`public/forms/<نموذج>/q01.webp` وp.webp للنص) — تُنسخ إلى `dist/` |
@@ -17,7 +17,13 @@
 | `scripts/deploy.mjs` | ينشر القواعد والموقع عبر REST بمفتاح حساب الخدمة، ثم يفحص جاهزية المشروع |
 
 ## البيانات
-- `teachers/{uid}`: name, civilId, school, className, email, createdAt
+- `principals/{uid}`: name, civilId, email, schoolNo (مدير يسجّل نفسه بحرّية)
+- `schools/{الرقم الإحصائي}`: no, name, principalUid, principalName, classes[], year, createdAt
+- `schoolTransfers/{الرقم}`: طلب نقل تبعية مدرسة لمدير جديد (requesterUid, requesterName)
+- `providers/{uid}`، `providerLinks/{الرقم}` (مدرسة ↔ مقدم خدمات التميز)، `providerRequests/{الرقم}`
+- `schools/{no}.years[]`: [{label, start}] أعوام المدرسة؛ عام الاختبار من تاريخ إنشائه — لا حذف ولا إعادة كتابة
+- `teacherRoster/{civilId}`: schoolNo, name, classes[] (الفصول المسندة)، uid (فارغ حتى يفعّل المعلم حسابه)، email، activatedAt — يضيفه المدير ولا يدخل معلم لم يُضَف
+- `teachers/{uid}`: name, civilId, school, schoolNo, className (من فصوله المسندة)، email, createdAt
 - `teachers/{uid}/uploads/{id}`: name, size, type, data (base64), className, added, createdAt
 - `students/{civilId}`: name, teacherUid, className, school, status, createdAt
 - `tests/{id}`: teacherUid, title, className, grade (3|6|9), subject (reading|math|science؛ الغائب = reading)، source (مثل a3-math للنماذج الرسمية)، passage, questions [{skill, level, text, options, image?, iw?, ih?, passageImage?, pw?, ph?}], skills, status (draft|published), createdAt, updatedAt

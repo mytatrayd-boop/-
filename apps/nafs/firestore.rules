@@ -12,14 +12,166 @@ service cloud.firestore {
     function text(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
     function civilId(v) { return v is string && v.matches('^[0-9]{10}$'); }
 
+    // ----- المدارس والمديرون وكشف المعلمين (يضيفهم المدير ولا يدخل معلم لم يُضَف) -----
+    function schoolNo(v) { return v is string && v.matches('^[0-9]{3,12}$'); }
+    function schoolDoc(no) { return get(/databases/$(database)/documents/schools/$(no)).data; }
+    function isPrincipalOf(no) { return isTeacher() && schoolNo(no) && schoolDoc(no).principalUid == request.auth.uid; }
+    // مقدم خدمات الدعم المرتبطة به المدرسة (رابط providerLinks)
+    function isProviderOf(no) {
+      return isTeacher() && schoolNo(no) && exists(/databases/$(database)/documents/providerLinks/$(no))
+        && get(/databases/$(database)/documents/providerLinks/$(no)).data.providerUid == request.auth.uid;
+    }
+    // مدير مدرسة المعلم صاحب المستند أو مقدم الدعم المرتبط بها: يقرأ طلابه واختباراته ومفاتيحه ونتائجه لعرض تقارير المدرسة
+    function principalOfTeacher(tuid) {
+      return isTeacher() && tuid is string && exists(/databases/$(database)/documents/teachers/$(tuid))
+        && (isPrincipalOf(get(/databases/$(database)/documents/teachers/$(tuid)).data.schoolNo)
+            || isProviderOf(get(/databases/$(database)/documents/teachers/$(tuid)).data.schoolNo));
+    }
+    function subjectList(v) { return v is list && v.size() > 0 && v.size() <= 3 && v.hasOnly(['reading', 'math', 'science']); }
+    function rosterDoc(id) { return get(/databases/$(database)/documents/teacherRoster/$(id)).data; }
+    function rosterAfter(id) { return getAfter(/databases/$(database)/documents/teacherRoster/$(id)).data; }
+    function classList(v) { return v is list && v.size() <= 9 && v.size() > 0; }
+
+    // المدير يسجّل نفسه بحرّية (بلا اعتماد) ببريد وكلمة مرور؛ ثم يُنشئ مدرسته برقمها الإحصائي (أرقام فقط).
+    match /principals/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'civilId', 'email', 'schoolNo', 'createdAt'])
+        && text(request.resource.data.name, 100)
+        && civilId(request.resource.data.civilId)
+        && schoolNo(request.resource.data.schoolNo);
+    }
+
+    match /schools/{no} {
+      // قراءة مدرسة برقمها (لا قائمة): يحتاجها مدير جديد ليرى تبعيتها لمدير سابق، ومقدم الدعم.
+      allow get: if signedIn() && schoolNo(no);
+      allow create: if isTeacher() && schoolNo(no)
+        && existsAfter(/databases/$(database)/documents/principals/$(request.auth.uid))
+        && request.resource.data.keys().hasOnly(['no', 'name', 'principalUid', 'principalName', 'classes', 'year', 'years', 'createdAt'])
+        && request.resource.data.no == no
+        && request.resource.data.principalUid == request.auth.uid
+        && text(request.resource.data.name, 120)
+        && text(request.resource.data.principalName, 100)
+        && request.resource.data.classes is list
+        && text(request.resource.data.year, 20);
+      allow update: if isPrincipalOf(no)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'year', 'years'])
+        && text(request.resource.data.name, 120)
+        && request.resource.data.classes is list
+        && (!('years' in request.resource.data) || (request.resource.data.years is list && request.resource.data.years.size() <= 80));
+
+      // مدرسة بلا مدير (بعد بداية عام جديد): يتسلّمها أول مدير مسجّل برقمها
+      allow update: if isTeacher() && resource.data.principalUid == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['principalUid', 'principalName'])
+        && request.resource.data.principalUid == request.auth.uid
+        && get(/databases/$(database)/documents/principals/$(request.auth.uid)).data.schoolNo == no
+        && text(request.resource.data.principalName, 100);
+
+      // المدير الحالي ينقل التبعية لصاحب طلب النقل («حذف المدرسة من عندي»)
+      allow update: if isPrincipalOf(no)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['principalUid', 'principalName'])
+        && request.resource.data.principalUid == get(/databases/$(database)/documents/schoolTransfers/$(no)).data.requesterUid
+        && request.resource.data.principalName == get(/databases/$(database)/documents/schoolTransfers/$(no)).data.requesterName;
+    }
+
+    // نقل تبعية مدرسة: مدير جديد (سجّل بالرقم الإحصائي نفسه) يرسل تنبيهاً للمدير الحالي، فيحذفها من عنده لتصير للجديد.
+    match /schoolTransfers/{no} {
+      allow get: if signedIn() && schoolNo(no)
+        && (resource == null || resource.data.requesterUid == request.auth.uid || isPrincipalOf(no));
+      allow create: if isTeacher() && schoolNo(no)
+        && get(/databases/$(database)/documents/principals/$(request.auth.uid)).data.schoolNo == no
+        && schoolDoc(no).principalUid != request.auth.uid
+        && request.resource.data.keys().hasOnly(['schoolNo', 'requesterUid', 'requesterName', 'createdAt'])
+        && request.resource.data.schoolNo == no
+        && request.resource.data.requesterUid == request.auth.uid
+        && text(request.resource.data.requesterName, 100);
+      allow delete: if isTeacher() && (resource.data.requesterUid == request.auth.uid || isPrincipalOf(no));
+    }
+
+    // مقدم خدمات التميز: يسجّل نفسه، ثم يضيف مدارس برقمها الإحصائي بعد أن يسجّلها مديرها (رابط لكل مدرسة).
+    match /providers/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'civilId', 'email', 'createdAt'])
+        && text(request.resource.data.name, 100)
+        && civilId(request.resource.data.civilId);
+    }
+    function isProvider() { return isTeacher() && exists(/databases/$(database)/documents/providers/$(request.auth.uid)); }
+    function linkDoc(no) { return get(/databases/$(database)/documents/providerLinks/$(no)).data; }
+    match /providerLinks/{no} {
+      allow get: if signedIn() && schoolNo(no);
+      allow list: if isTeacher() && resource.data.providerUid == request.auth.uid;
+      allow create: if isProvider() && schoolNo(no)
+        && exists(/databases/$(database)/documents/schools/$(no))
+        && request.resource.data.keys().hasOnly(['schoolNo', 'providerUid', 'providerName', 'createdAt'])
+        && request.resource.data.schoolNo == no
+        && request.resource.data.providerUid == request.auth.uid
+        && text(request.resource.data.providerName, 100);
+      allow delete: if isTeacher() && resource.data.providerUid == request.auth.uid;
+      // المقدم الحالي ينقل المدرسة لصاحب الطلب («حذف المدرسة من عندي»)
+      allow update: if isTeacher() && resource.data.providerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['providerUid', 'providerName'])
+        && request.resource.data.providerUid == get(/databases/$(database)/documents/providerRequests/$(no)).data.requesterUid
+        && request.resource.data.providerName == get(/databases/$(database)/documents/providerRequests/$(no)).data.requesterName;
+    }
+    match /providerRequests/{no} {
+      allow get: if signedIn() && schoolNo(no)
+        && (resource == null || resource.data.requesterUid == request.auth.uid || linkDoc(no).providerUid == request.auth.uid);
+      allow create: if isProvider() && schoolNo(no)
+        && linkDoc(no).providerUid != request.auth.uid
+        && request.resource.data.keys().hasOnly(['schoolNo', 'requesterUid', 'requesterName', 'createdAt'])
+        && request.resource.data.schoolNo == no
+        && request.resource.data.requesterUid == request.auth.uid
+        && text(request.resource.data.requesterName, 100);
+      allow delete: if isTeacher() && (resource.data.requesterUid == request.auth.uid || linkDoc(no).providerUid == request.auth.uid);
+    }
+
+    // كشف المعلمين: مستند لكل معلم معرّفه رقم سجله المدني. يضيفه المدير؛ ثم يُفعّله المعلم نفسه بإنشاء حسابه.
+    match /teacherRoster/{cid} {
+      allow list: if isTeacher() && (isPrincipalOf(resource.data.schoolNo) || isProviderOf(resource.data.schoolNo));
+      allow get: if isTeacher() && civilId(cid)
+        && (isPrincipalOf(resource.data.schoolNo) || resource.data.uid == request.auth.uid || resource.data.uid == null);
+      allow create: if isPrincipalOf(request.resource.data.schoolNo) && civilId(cid)
+        && request.resource.data.keys().hasOnly(['schoolNo', 'name', 'classes', 'subjects', 'uid', 'email', 'createdAt', 'activatedAt'])
+        && text(request.resource.data.name, 100)
+        && classList(request.resource.data.classes)
+        && subjectList(request.resource.data.subjects)
+        && request.resource.data.uid == null;
+      // المدير: يعدّل الاسم والفصول، ويعيد ضبط التفعيل (uid = null)
+      allow update: if isPrincipalOf(resource.data.schoolNo)
+        && request.resource.data.schoolNo == resource.data.schoolNo
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'subjects', 'uid', 'email', 'activatedAt'])
+        && request.resource.data.uid == null
+        && classList(request.resource.data.classes)
+        && (!('subjects' in request.resource.data) || subjectList(request.resource.data.subjects)); // كشف قديم بلا تخصص يبقى قابلاً لإعادة الضبط
+      // المدير: يعدّل اسم المعلم وفصوله وتخصصه ولو كان حسابه مفعّلاً (لا يمس التفعيل)
+      allow update: if isPrincipalOf(resource.data.schoolNo)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'subjects'])
+        && text(request.resource.data.name, 100)
+        && classList(request.resource.data.classes)
+        && subjectList(request.resource.data.subjects);
+      // المعلم: يفعّل حسابه مرة واحدة (uid كان فارغاً)
+      allow update: if isTeacher() && resource.data.uid == null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'email', 'activatedAt'])
+        && text(request.resource.data.email, 200);
+      allow delete: if isPrincipalOf(resource.data.schoolNo);
+    }
+
+    // ملف المعلم: لا يُنشأ إلا لمن فعّله كشف مدرسته، وفصله من الفصول المسندة له.
     match /teachers/{uid} {
       allow read, delete: if isOwner(uid);
       allow create, update: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['name', 'civilId', 'school', 'className', 'email', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'civilId', 'school', 'schoolNo', 'className', 'subjects', 'email', 'createdAt'])
+        && request.resource.data.get('subjects', []) == rosterAfter(request.resource.data.civilId).get('subjects', [])
         && text(request.resource.data.name, 100)
         && civilId(request.resource.data.civilId)
         && text(request.resource.data.school, 120)
-        && text(request.resource.data.className, 60);
+        && schoolNo(request.resource.data.schoolNo)
+        && text(request.resource.data.className, 60)
+        && rosterAfter(request.resource.data.civilId).uid == request.auth.uid
+        && rosterAfter(request.resource.data.civilId).schoolNo == request.resource.data.schoolNo
+        && rosterAfter(request.resource.data.civilId).classes.hasAny([request.resource.data.className]);
 
       // الملفات المرفوعة (أكسل) محفوظة كنص base64 داخل المستند (الحد ~700KB للملف).
       match /uploads/{fileId} {
@@ -34,10 +186,41 @@ service cloud.firestore {
       }
     }
 
+    // كلمة مرور الطالب (6 أرقام يولّدها الموقع بعد إضافته): يقرؤها معلمه فقط. الطالب يُثبت معرفته بها بكتابة جلسة باسم حسابه
+    // لا تُقبل إلا إن طابقت الكلمة؛ وبدون جلسة صالحة لا يقرأ سجله ولا يرفع محاولة.
+    function hasSession(sid) {
+      return exists(/databases/$(database)/documents/studentSessions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/studentSessions/$(request.auth.uid)).data.studentId == sid;
+    }
+    match /studentPins/{sid} {
+      allow read, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow create: if isTeacher() && civilId(sid)
+        && request.resource.data.keys().hasOnly(['teacherUid', 'pin', 'createdAt'])
+        && request.resource.data.teacherUid == request.auth.uid
+        && request.resource.data.pin is string && request.resource.data.pin.matches('^[0-9]{6}$')
+        && getAfter(/databases/$(database)/documents/students/$(sid)).data.teacherUid == request.auth.uid;
+      allow update: if isTeacher() && resource.data.teacherUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['teacherUid', 'pin', 'createdAt'])
+        && request.resource.data.teacherUid == request.auth.uid
+        && request.resource.data.pin is string && request.resource.data.pin.matches('^[0-9]{6}$');
+    }
+    function studentSubmitted(testId) {
+      return exists(/databases/$(database)/documents/studentSessions/$(request.auth.uid))
+        && exists(/databases/$(database)/documents/attempts/$(testId + '_' + get(/databases/$(database)/documents/studentSessions/$(request.auth.uid)).data.studentId));
+    }
+    match /studentSessions/{uid} {
+      allow create, update: if isStudentSession() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['studentId', 'pin'])
+        && civilId(request.resource.data.studentId)
+        && exists(/databases/$(database)/documents/studentPins/$(request.resource.data.studentId))
+        && get(/databases/$(database)/documents/studentPins/$(request.resource.data.studentId)).data.pin == request.resource.data.pin;
+      allow delete: if isStudentSession() && request.auth.uid == uid;
+    }
+
     // مستند لكل طالب، معرّفه رقم السجل المدني. الطالب مسجل عند معلم واحد فقط.
     match /students/{sid} {
-      allow get: if signedIn();
-      allow list: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow get: if isTeacher() || (isStudentSession() && hasSession(sid));
+      allow list: if isTeacher() && (resource.data.teacherUid == request.auth.uid || principalOfTeacher(resource.data.teacherUid));
 
       allow create: if isTeacher() && civilId(sid)
         && request.resource.data.keys().hasOnly(['name', 'teacherUid', 'className', 'school', 'status', 'createdAt'])
@@ -60,12 +243,17 @@ service cloud.firestore {
     // اختبار يبنيه المعلم: نص + أسئلة مربوطة بالمهارات، بدون الإجابات الصحيحة.
     match /tests/{testId} {
       allow read: if (isTeacher() && resource.data.teacherUid == request.auth.uid)
-        || (signedIn() && resource.data.status == 'published');
+        || (signedIn() && resource.data.status == 'published')
+        || (isTeacher() && isPrincipalOf(resource.data.get('schoolNo', 'x'))) // أرشيف بعد بداية العام
+        || principalOfTeacher(resource.data.teacherUid);
       allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
       allow create, update: if isTeacher()
         && request.resource.data.teacherUid == request.auth.uid
         && (resource == null || resource.data.teacherUid == request.auth.uid)
-        && request.resource.data.keys().hasOnly(['teacherUid', 'title', 'className', 'grade', 'subject', 'source', 'passage', 'questions', 'skills', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['teacherUid', 'title', 'className', 'grade', 'subject', 'source', 'passage', 'questions', 'skills', 'status', 'createdAt', 'updatedAt', 'audience', 'audienceName'])
+        // مجموعة مستهدفة اختيارية (سجلات طلاب)؛ بدونها الاختبار لكل الفصل
+        && (!('audience' in request.resource.data) || (request.resource.data.audience is list && request.resource.data.audience.size() > 0 && request.resource.data.audience.size() <= 300))
+        && (!('audienceName' in request.resource.data) || text(request.resource.data.audienceName, 80))
         && text(request.resource.data.title, 120)
         && text(request.resource.data.className, 60)
         && request.resource.data.grade in [3, 6, 9]
@@ -80,7 +268,10 @@ service cloud.firestore {
 
     // الإجابات الصحيحة — للمعلم فقط.
     match /testKeys/{testId} {
-      allow read, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow read: if isTeacher() && (resource.data.teacherUid == request.auth.uid || principalOfTeacher(resource.data.teacherUid));
+      // الطالب يقرأ مفتاح اختبار أرسل إجاباته عليه فقط (لعرض نتيجته التفصيلية)، لا قبل الإرسال
+      allow get: if isStudentSession() && studentSubmitted(testId);
+      allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
       allow create, update: if isTeacher()
         && request.resource.data.teacherUid == request.auth.uid
         && (resource == null || resource.data.teacherUid == request.auth.uid)
@@ -91,8 +282,30 @@ service cloud.firestore {
     // محاولة طالب: معرّفها testId_studentId، تُكتب مرة واحدة، ويصححها المعلم بمفتاح الإجابات.
     match /attempts/{attemptId} {
       allow get: if signedIn() && (isStudentSession() || resource.data.teacherUid == request.auth.uid);
-      allow list, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow list: if isTeacher() && (resource.data.teacherUid == request.auth.uid || isPrincipalOf(resource.data.get('schoolNo', 'x')) || principalOfTeacher(resource.data.teacherUid));
+      // محاولة ورقية: يرفعها المعلم بعد المسح الضوئي لورقة الإجابة (source == 'paper')؛ ويجوز له استبدال الورقية فقط، لا الإلكترونية.
+      function paperAttempt() {
+        let d = request.resource.data;
+        return isTeacher()
+          && d.keys().hasOnly(['testId', 'studentId', 'teacherUid', 'className', 'answers', 'submittedAt', 'source'])
+          && d.source == 'paper'
+          && d.teacherUid == request.auth.uid
+          && attemptId == d.testId + '_' + d.studentId
+          && civilId(d.studentId)
+          && d.submittedAt == request.time
+          && d.answers is list
+          && testDoc(d.testId).teacherUid == request.auth.uid
+          && testDoc(d.testId).className == d.className
+          && d.answers.size() == testDoc(d.testId).questions.size()
+          && studentDoc(d.studentId).teacherUid == request.auth.uid
+          && studentDoc(d.studentId).className == d.className;
+      }
+      allow update: if paperAttempt() && resource.data.get('source', '') == 'paper';
+      allow create: if paperAttempt();
       allow create: if isStudentSession()
+        && hasSession(request.resource.data.studentId)
+        && (testDoc(request.resource.data.testId).get('audience', null) == null || request.resource.data.studentId in testDoc(request.resource.data.testId).audience)
         && request.resource.data.keys().hasOnly(['testId', 'studentId', 'teacherUid', 'className', 'answers', 'submittedAt'])
         && attemptId == request.resource.data.testId + '_' + request.resource.data.studentId
         && civilId(request.resource.data.studentId)
@@ -104,6 +317,25 @@ service cloud.firestore {
         && request.resource.data.answers.size() == testDoc(request.resource.data.testId).questions.size()
         && studentDoc(request.resource.data.studentId).teacherUid == request.resource.data.teacherUid
         && studentDoc(request.resource.data.studentId).className == request.resource.data.className;
+    }
+
+    // بنك الأسئلة: سؤال لكل مهارة ومستوى. المولَّد لا يُستخدم قبل اعتماده، والاعتماد لصاحب البنك فقط.
+    match /bank/{qid} {
+      allow read, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow create, update: if isTeacher()
+        && request.resource.data.teacherUid == request.auth.uid
+        && (resource == null || resource.data.teacherUid == request.auth.uid)
+        && request.resource.data.keys().hasOnly(['teacherUid', 'skill', 'level', 'text', 'options', 'answer', 'explanation', 'source', 'passageId', 'reason', 'status', 'version', 'createdAt', 'updatedAt'])
+        && text(request.resource.data.skill, 40)
+        && request.resource.data.level in ['know', 'apply', 'reason']
+        && request.resource.data.status in ['generated', 'approved', 'rejected', 'na']
+        && request.resource.data.source in ['ai', 'manual']
+        && request.resource.data.version is int && request.resource.data.version >= 1
+        && (request.resource.data.status == 'na'
+            || (request.resource.data.text is string && request.resource.data.text.size() <= 600
+                && request.resource.data.options is list && request.resource.data.options.size() == 4
+                && request.resource.data.answer is int && request.resource.data.answer >= 0 && request.resource.data.answer < 4))
+        && (resource == null || request.resource.data.version >= resource.data.version);
     }
   }
 }

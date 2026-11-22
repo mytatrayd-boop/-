@@ -1,4 +1,4 @@
-# مهارات القراءة لاختبارات نافس — عقل المشروع
+# مهارات اختبارات نافس — عقل المشروع
 
 - موقع ويب ثابت (ليس Flutter) على Firebase: Hosting + Auth + Firestore. انظر ARCHITECTURE.md وDECISIONS.md.
 - الواجهة عربية RTL، والتصميم يطابق `design/original.html`.

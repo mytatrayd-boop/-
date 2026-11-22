@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseStudentRows, isCivilId, gradeAttempt, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError } from '../src/logic.js';
+import { canTransition, qualityIssues, usableInTest, isDuplicate, fromGeneration } from '../src/bank.js';
 import { GRADES, SUBJECTS, gradeOfClass, skillById, groupsFor, skillIdsFor, subjectsOfGrade } from '../src/skills.js';
 import { FORMS } from '../src/forms-data.js';
 import { existsSync, statSync } from 'node:fs';
@@ -125,8 +127,8 @@ test('المواد: العلوم للسادس والتاسع فقط، ومعرّ
             const groups = groupsFor(subject, grade);
             assert.ok(groups.length > 0, `${subject} ${grade}`);
             for (const g of groups) {
-                assert.ok(g.domain && g.title && g.skills.length, `${subject} ${grade} ${g.title}`);
-                for (const sk of g.skills) {
+                assert.ok(g.domain && g.outcomes.length, `${subject} ${grade} ${g.title}`);
+                for (const sk of g.outcomes.flatMap((o) => o.skills)) {
                     assert.ok(sk.id && sk.name && sk.desc, sk.id);
                     assert.ok(!seen.has(sk.id), 'معرّف مكرر ' + sk.id);
                     seen.add(sk.id);
@@ -134,25 +136,26 @@ test('المواد: العلوم للسادس والتاسع فقط، ومعرّ
                     assert.equal(skillById(sk.id).subject, subject);
                 }
             }
-            assert.deepEqual(skillIdsFor(subject, grade), groups.flatMap((g) => g.skills.map((sk) => sk.id)));
+            assert.deepEqual(skillIdsFor(subject, grade), groups.flatMap((g) => g.outcomes.flatMap((o) => o.skills.map((sk) => sk.id))));
         }
     }
-    assert.equal(skillIdsFor('math', 3).length, 13);
-    assert.equal(skillIdsFor('math', 6).length, 21);
-    assert.equal(skillIdsFor('math', 9).length, 25);
-    assert.equal(skillIdsFor('science', 6).length, 33);
-    assert.equal(skillIdsFor('science', 9).length, 48);
+    assert.equal(skillIdsFor('math', 3).length, 45);
+    assert.equal(skillIdsFor('math', 6).length, 81);
+    assert.equal(skillIdsFor('math', 9).length, 95);
+    assert.equal(skillIdsFor('science', 6).length, 110);
+    assert.equal(skillIdsFor('science', 9).length, 159);
     assert.deepEqual(groupsFor('science', 3), []);
 });
 
-test('نماذج نافس الرسمية: ست نماذج، كل سؤال مربوط بمهارة من صفه ومادته، وصوره موجودة', () => {
-    assert.deepEqual(FORMS.map((f) => f.id), ['a3', 'b3', 'a6', 'b6', 'a9', 'b9']);
-    const expected = { a3: [13, 8], b3: [13, 8], a6: [28, 10], b6: [27, 10], a9: [26, 10], b9: [27, 10] };
+test('النماذج الجاهزة: ست رسمية وتدريبيان، كل سؤال مربوط بمهارة من صفه ومادته، وصوره موجودة', () => {
+    assert.deepEqual(FORMS.map((f) => f.id), ['a3', 'b3', 'a6', 'b6', 'a9', 'b9', 't1', 't2']);
+    assert.deepEqual(FORMS.map((f) => f.kind), ['official', 'official', 'official', 'official', 'official', 'official', 'training', 'training']);
+    const expected = { a3: [13, 8], b3: [13, 8], a6: [28, 10], b6: [27, 10], a9: [26, 10], b9: [27, 10], t1: [12, 0], t2: [12, 0] };
     for (const f of FORMS) {
         const total = Object.values(f.subjects).reduce((n, qs) => n + qs.length, 0);
         assert.equal(total, expected[f.id][0], f.id);
-        assert.equal(f.subjects.math.length, expected[f.id][1], f.id + ' math');
-        assert.equal(Boolean(f.subjects.science), f.grade !== 3, f.id + ' science');
+        assert.equal((f.subjects.math ?? []).length, expected[f.id][1], f.id + ' math');
+        if (f.kind === 'official') assert.equal(Boolean(f.subjects.science), f.grade !== 3, f.id + ' science');
         for (const [subject, qs] of Object.entries(f.subjects)) {
             let passages = 0;
             for (const q of qs) {
@@ -169,4 +172,128 @@ test('نماذج نافس الرسمية: ست نماذج، كل سؤال مرب
             assert.equal(passages, subject === 'reading' ? 1 : 0, `${f.id} ${subject} passage`);
         }
     }
+});
+
+test('البنك: فحص الجودة والمسار والتوليد مع «غير منطبق»', () => {
+    const good = { skill: '3-1.1', level: 'know', text: 'ما مرادف كلمة «سعيد» في الجملة السابقة؟', options: ['حزين', 'فرِح', 'غاضب', 'متعب'], answer: 1, explanation: 'سعيد بمعنى فرِح.' };
+    assert.deepEqual(qualityIssues(good), []);
+    assert.ok(qualityIssues({ ...good, options: ['أ', 'أ', 'ب', 'ج'] }).some((m) => m.includes('مكررة')));
+    assert.ok(qualityIssues({ ...good, options: ['حزين', 'فرِح', 'كل ما سبق', 'متعب'] }).some((m) => m.includes('كل ما سبق')));
+    assert.ok(qualityIssues({ ...good, explanation: '' }).length);
+    assert.ok(qualityIssues({ ...good, skill: 'zzz' }).length);
+    assert.ok(qualityIssues({ ...good, options: ['ص', 'فرِح بما حدث له اليوم في المدرسة مع أصدقائه الكثيرين', 'ع', 'ق'] }).some((m) => m.includes('تفاوت')));
+    assert.ok(canTransition('generated', 'approved') && !canTransition('na', 'approved') && !canTransition('generated', 'generated'));
+    assert.ok(usableInTest({ status: 'approved' }) && !usableInTest({ status: 'generated' }));
+    assert.ok(isDuplicate(good, [{ ...good, text: ' ما مرادف  كلمة «سعيد» في الجملة السابقة؟ ' }]));
+    const recs = fromGeneration('3-1.1', { know: { text: good.text, options: good.options, answer: 1, explanation: 'ش' }, apply: { applicable: false, reason: 'لا يناسب' } });
+    assert.deepEqual(recs.map((r) => r.status), ['generated', 'na', 'na']);
+    assert.equal(recs[1].reason, 'لا يناسب');
+    assert.equal(recs[2].reason, 'لم يحدَّد سبب');
+});
+
+test('مسودات البنك الجاهزة: مؤشرات صحيحة، بلا ملاحظات جودة، ولكل مؤشر ثلاثة مستويات', () => {
+    for (const [file, subject, grade] of [['reading-3', 'reading', 3], ['reading-6', 'reading', 6], ['reading-9', 'reading', 9]]) {
+        const rows = JSON.parse(readFileSync(new URL(`../public/bank-drafts/${file}.json`, import.meta.url), 'utf8'));
+        for (const r of rows) {
+            assert.equal(skillById(r.skill)?.grade, grade, r.skill);
+            assert.equal(skillById(r.skill)?.subject, subject, r.skill);
+            if (r.applicable === false) assert.ok(r.reason, r.skill);
+            else assert.deepEqual(qualityIssues(r), [], `${r.skill} ${r.level}`);
+        }
+        for (const id of skillIdsFor(subject, grade)) assert.deepEqual(rows.filter((r) => r.skill === id).map((r) => r.level).sort(), ['apply', 'know', 'reason'], id);
+    }
+});
+
+test('بنك نافس الرسمي: كل سؤال بمؤشر صحيح وصورة موجودة ومفتاح 0-3', () => {
+    for (const [key, subject, grade] of [['math3', 'math', 3], ['math6', 'math', 6], ['math9', 'math', 9], ['science6', 'science', 6], ['science9', 'science', 9], ['reading3', 'reading', 3], ['reading6', 'reading', 6], ['reading9', 'reading', 9]]) {
+        const items = JSON.parse(readFileSync(new URL(`../public/bank-official/${key}.json`, import.meta.url), 'utf8'));
+        assert.ok(items.length > 30, key);
+        const ids = new Set();
+        for (const q of items) {
+            assert.ok(!ids.has(q.id), q.id); ids.add(q.id);
+            const sk = skillById(q.skill);
+            assert.ok(sk && sk.grade === grade && sk.subject === subject, `${q.id} ${q.skill}`);
+            assert.ok(['know', 'apply', 'reason'].includes(q.level), q.id);
+            assert.ok([0, 1, 2, 3].includes(q.answer), q.id);
+            assert.ok(existsSync(new URL(`../public/bank-official/${q.img}`, import.meta.url)), q.img);
+            if (q.passage) assert.ok(existsSync(new URL(`../public/bank-official/${q.passage}`, import.meta.url)), q.passage);
+        }
+    }
+});
+
+test('الاختبارات المحاكية: مؤشرات صحيحة وصور موجودة ومفاتيح 0-3', () => {
+    const mocks = JSON.parse(readFileSync(new URL('../public/bank-official/mocks.json', import.meta.url), 'utf8'));
+    assert.equal(mocks.length, 6);
+    let n = 0;
+    for (const m of mocks) {
+        for (const [subject, qs] of Object.entries(m.subjects)) {
+            for (const q of qs) {
+                n++;
+                const sk = skillById(q.skill);
+                assert.ok(sk && sk.grade === m.grade && sk.subject === subject, `${m.id} ${q.skill}`);
+                assert.ok(['know', 'apply', 'reason'].includes(q.level) && [0, 1, 2, 3].includes(q.answer), m.id);
+                for (const f of [q.img, q.passage].filter(Boolean)) assert.ok(existsSync(new URL(`../public/bank-official/${f}`, import.meta.url)), f);
+            }
+        }
+    }
+    assert.ok(n > 280, String(n));
+});
+
+test('نماذج حلّها الموقع: مؤشرات صحيحة وصور موجودة ومفاتيح 0-3', () => {
+    const forms = JSON.parse(readFileSync(new URL('../public/bank-official/solved.json', import.meta.url), 'utf8'));
+    assert.equal(forms.length, 0); // قرار المالك: الموقع بالمفاتيح الرسمية فقط (الأرشيف في tools/bank-import/archive-site-key)
+    for (const m of forms) {
+        for (const [subject, qs] of Object.entries(m.subjects)) {
+            for (const q of qs) {
+                const sk = skillById(q.skill);
+                assert.ok(sk && sk.grade === m.grade && sk.subject === subject, `${m.id} ${q.skill}`);
+                assert.ok(['know', 'apply', 'reason'].includes(q.level) && [0, 1, 2, 3].includes(q.answer), m.id);
+                for (const f of [q.img, q.passage].filter(Boolean)) assert.ok(existsSync(new URL(`../public/bank-official/${f}`, import.meta.url)), f);
+            }
+        }
+    }
+});
+
+test('ورقة الإجابة (التظليل اليدوي): عدد الأسئلة والدوائر وتهريب النص ومفتاح التصحيح', async () => {
+    const { omrSheetHtml, omrKeyHtml, OMR_PER_PAGE, MARKS } = await import('../src/omr.js');
+    const h = omrSheetHtml({ title: '<img src=x onerror=alert(1)>', className: 'السادس - أ', subjectName: 'رياضيات', count: 25 });
+    assert.equal((h.match(/class="qn"/g) || []).length, 25);
+    assert.equal((h.match(/class="b"/g) || []).length, 25 * 4);          // أربع دوائر لكل سؤال
+    assert.equal((h.match(/class="b bd"/g) || []).length, 100);          // رقم السجل: 10×10
+    assert.equal((h.match(/class="mk"/g) || []).length, MARKS.length);
+    assert.ok(!h.includes('<img src=x'), 'العنوان يُهرَّب');
+    const big = omrSheetHtml({ title: 'ت', count: 500 });
+    assert.equal((big.match(/class="qn"/g) || []).length, OMR_PER_PAGE); // صفحة واحدة بحد أقصى 60
+    const k = omrKeyHtml({ title: 'ت', answers: [0, 1, 2, 3] });
+    assert.ok(k.includes('<td>أ</td><td>ب</td><td>ج</td><td>د</td>'));
+});
+
+test('كتيّب الأسئلة المطبوع: ترقيم، نص مشترك مرة واحدة، صور مطلقة، تهريب', async () => {
+    const { bookletHtml } = await import('../src/omr.js');
+    const h = bookletHtml({
+        title: '<b>x</b>', className: 'ص', baseUrl: 'https://example.com/',
+        questions: [
+            { image: 'bank-official/a.webp', passageImage: 'bank-official/p.webp' },
+            { image: 'bank-official/b.webp', passageImage: 'bank-official/p.webp' },
+            { text: 'سؤال <i>نصي</i>', options: ['١', '٢', '٣', '٤'] },
+        ],
+    });
+    assert.equal((h.match(/class="n"/g) || []).length, 3);
+    assert.equal((h.match(/alt="نص القراءة"/g) || []).length, 1);
+    assert.ok(h.includes('https://example.com/bank-official/a.webp'));
+    assert.ok(!h.includes('<b>x</b>') && !h.includes('<i>نصي</i>'));
+    assert.ok(h.includes('<b>د.</b> ٤'));
+});
+
+test('أرقام الصفحة الرئيسية تطابق محتوى البنك والنماذج', async () => {
+    const { SITE_STATS } = await import('../src/site-stats.js');
+    const { FORMS } = await import('../src/forms-data.js');
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const D = new URL('../public/bank-official/', import.meta.url);
+    const c = { math: 0, science: 0, reading: 0 };
+    for (const f of readdirSync(D).filter((x) => /^(math|science|reading)\d\.json$/.test(x))) c[f.match(/[a-z]+/)[0]] += JSON.parse(readFileSync(new URL(f, D))).length;
+    for (const m of JSON.parse(readFileSync(new URL('mocks.json', D)))) for (const [s, a] of Object.entries(m.subjects)) c[s] += a.length;
+    for (const f of FORMS) for (const [s, a] of Object.entries(f.subjects)) c[s] += Array.isArray(a) ? a.length : a.questions.length;
+    assert.deepEqual(SITE_STATS.subjects, c);
+    assert.equal(SITE_STATS.questions, c.math + c.science + c.reading);
 });

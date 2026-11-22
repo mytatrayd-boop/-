@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مهارات القراءة لاختبارات نافس</title>
+    <title>مهارات اختبارات نافس</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="app.css">
     <script type="module" src="app.js"></script>
 </head>
 <body class="min-h-screen flex flex-col text-slate-800">
 
-    <header class="bg-gradient-to-r from-emerald-700 to-teal-800 text-white shadow-md">
+    <header class="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="h-14 w-auto rounded-2xl shadow-md ring-1 ring-white/20">
                 <div>
-                    <h1 class="text-2xl font-black tracking-wide">مهارات القراءة لاختبارات نافس</h1>
-                    <p class="text-xs text-emerald-200">قراءة · رياضيات · علوم — القياس والتحليل والتدريب المستمر</p>
+                    <h1 class="text-2xl font-black tracking-wide">مهارات اختبارات نافس</h1>
+                    <p class="text-xs text-emerald-200">القراءة والعلوم والرياضيات — القياس والتحليل والتدريب المستمر</p>
                 </div>
             </div>
-            <button data-action="show-about" class="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition">عن اختبارات نافس · دليل الطالب وولي الأمر</button>
+            <button id="headerAbout" data-action="show-about" class="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition">عن اختبارات نافس · دليل الطالب وولي الأمر</button>
             <div id="userInfoHeader" class="hidden flex items-center gap-4 bg-emerald-900/40 px-4 py-2 rounded-xl border border-emerald-600/30">
                 <span id="headerTeacherName" class="text-sm font-semibold"></span>
                 <button data-action="logout" class="text-xs bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">خروج</button>
@@ -48,28 +48,159 @@
         <div id="loadingScreen" class="screen text-center my-24 text-slate-500 font-semibold">جاري التحميل…</div>
 
         <!-- اختيار البوابة -->
-        <div id="roleSelectionScreen" class="screen hidden max-w-2xl mx-auto my-12 bg-white rounded-3xl shadow-xl border border-slate-100 p-8 text-center">
-            <h2 class="text-3xl font-black text-slate-800 mb-4">أهلاً بك في مهارات القراءة لاختبارات نافس</h2>
-            <p class="text-slate-500 mb-8">اختر صفحتك للبدء في العملية التعليمية وتتبع مستويات الطلاب</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <button data-action="show-teacher-login" class="group p-8 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition flex flex-col items-center">
-                    <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition">👨‍🏫</div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة المعلم</h3>
-                    <p class="text-xs text-slate-500 text-center">إدارة الطلاب، بناء الاختبارات حسب المهارات، والتقارير</p>
+        <div id="roleSelectionScreen" class="screen hidden max-w-5xl mx-auto my-6 md:my-8 space-y-8">
+            <!-- البداية: تعريف + رسم ورقة التظليل -->
+            <section class="relative overflow-hidden rounded-3xl bg-white border border-emerald-100 shadow-sm hero-in">
+                <div class="grid md:grid-cols-5 items-center">
+                    <div class="md:col-span-3 p-7 md:p-12 relative">
+                        <span class="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1 mb-4"><span class="bubble-row"><i class="on"></i><i></i><i></i></span> منصة تدريبية مساندة</span>
+                        <h2 class="text-3xl md:text-[2.75rem] font-bold text-slate-900 leading-tight mb-4 text-balance">تدرّب على اختبارات «نافس» <span class="text-emerald-600 whitespace-nowrap">سؤالاً بعد سؤال</span></h2>
+                        <p class="text-slate-600 leading-relaxed md:text-lg mb-6 text-pretty">أسئلة في القراءة والعلوم والرياضيات لكل سؤال مفتاح إجابته، واختبارات إلكترونية أو ورقية تُصحَّح بالمسح الضوئي، وتقارير بمستوى كل طالب في كل مهارة.</p>
+                        <div class="flex flex-wrap gap-3">
+                            <button data-action="show-student-login" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-lg shadow-emerald-600/20 transition">ابدأ كطالب</button>
+                            <button data-action="show-how" class="bg-white hover:bg-emerald-50 text-emerald-800 font-bold px-6 py-3 rounded-xl text-sm border border-emerald-200 transition">كيف يعمل الموقع؟</button>
+                        </div>
+                    </div>
+                    <!-- رسم توضيحي: ورقة تظليل مصغّرة (توقيع الموقع البصري) -->
+                    <div class="hidden md:flex md:col-span-2 h-full items-center justify-center bg-emerald-50/60 border-r border-emerald-100 p-8 relative" aria-hidden="true">
+                        <div class="bubbles absolute inset-0 opacity-60"></div>
+                        <div class="relative bg-white rounded-2xl shadow-lg border border-slate-200 p-5 w-60 rotate-[-3deg]">
+                            <div class="flex items-center justify-between mb-4"><span class="text-xs font-bold text-slate-700">ورقة الإجابة</span><span class="w-3 h-3 bg-slate-900 rounded-sm"></span></div>
+                            <div class="space-y-2.5 text-[11px] text-slate-500" dir="ltr">
+                                <div class="flex items-center gap-2"><span class="w-4 text-left">1</span><span class="bubble-row"><i></i><i class="on"></i><i></i><i></i></span></div>
+                                <div class="flex items-center gap-2"><span class="w-4 text-left">2</span><span class="bubble-row"><i class="on"></i><i></i><i></i><i></i></span></div>
+                                <div class="flex items-center gap-2"><span class="w-4 text-left">3</span><span class="bubble-row"><i></i><i></i><i></i><i class="on"></i></span></div>
+                                <div class="flex items-center gap-2"><span class="w-4 text-left">4</span><span class="bubble-row"><i></i><i></i><i class="on"></i><i></i></span></div>
+                                <div class="flex items-center gap-2"><span class="w-4 text-left">5</span><span class="bubble-row"><i></i><i class="on"></i><i></i><i></i></span></div>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-dashed border-slate-200 flex items-center justify-between"><span class="text-[11px] text-slate-500">النتيجة</span><span class="text-xs font-bold bg-emerald-100 text-emerald-800 rounded-full px-2.5 py-1">92% · متقن</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- البوابات -->
+            <section aria-labelledby="portalsTitle">
+                <div class="flex items-end justify-between gap-4 mb-4">
+                    <div>
+                        <h2 id="portalsTitle" class="text-xl md:text-2xl font-bold text-slate-900">اختر بوابتك</h2>
+                        <p class="text-sm text-slate-500 mt-1">لكل دور صفحته: الطالب يتدرّب، والمعلم يبني ويتابع، والمدير ومقدم الدعم يتابعان المدرسة.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <button data-action="show-student-login" class="group text-right bg-white rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 transition p-4 md:p-5 flex flex-col gap-3">
+                        <span class="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center text-2xl">🎓</span>
+                        <span class="block font-bold text-slate-900 text-base md:text-lg">بوابة الطالب</span>
+                        <span class="block text-xs text-slate-500 leading-relaxed flex-grow">الدخول بالسجل المدني وكلمة المرور للتدريب والاختبار ومعرفة مستواك</span>
+                        <span class="text-xs font-bold text-emerald-700 group-hover:text-emerald-800">دخول ←</span>
+                    </button>
+                    <button data-action="show-teacher-login" class="group text-right bg-white rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 transition p-4 md:p-5 flex flex-col gap-3">
+                        <span class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-2xl">👨‍🏫</span>
+                        <span class="block font-bold text-slate-900 text-base md:text-lg">بوابة المعلم</span>
+                        <span class="block text-xs text-slate-500 leading-relaxed flex-grow">إدارة الطلاب، بناء الاختبارات حسب المهارات، والتقارير</span>
+                        <span class="text-xs font-bold text-emerald-700 group-hover:text-emerald-800">دخول ←</span>
+                    </button>
+                    <button data-action="show-principal-login" class="group text-right bg-white rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 transition p-4 md:p-5 flex flex-col gap-3">
+                        <span class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-2xl">🏫</span>
+                        <span class="block font-bold text-slate-900 text-base md:text-lg">بوابة المدير</span>
+                        <span class="block text-xs text-slate-500 leading-relaxed flex-grow">تسجيل المدرسة والفصول وإسناد المعلمين وتقارير المدرسة</span>
+                        <span class="text-xs font-bold text-emerald-700 group-hover:text-emerald-800">دخول ←</span>
+                    </button>
+                    <button data-action="show-provider-login" class="group text-right bg-white rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 transition p-4 md:p-5 flex flex-col gap-3">
+                        <span class="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-2xl">🎯</span>
+                        <span class="block font-bold text-slate-900 text-base md:text-lg">مقدم خدمات التميز</span>
+                        <span class="block text-xs text-slate-500 leading-relaxed flex-grow">متابعة المدارس التابعة لك بالرقم الإحصائي وتقاريرها</span>
+                        <span class="text-xs font-bold text-emerald-700 group-hover:text-emerald-800">دخول ←</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- الأدلة -->
+            <section class="grid md:grid-cols-2 gap-3 md:gap-4">
+                <button data-action="show-about" class="group text-right bg-white rounded-2xl border border-slate-200 hover:border-amber-300 hover:shadow-md transition p-4 flex items-center gap-4">
+                    <img src="logo-nafs.png" alt="" width="58" height="50" class="h-12 w-auto rounded-xl shrink-0">
+                    <span class="flex-grow min-w-0">
+                        <span class="block font-bold text-slate-800">تعرّف على منصة التدريب للاختبارات الوطنية «نافس»</span>
+                        <span class="block text-xs text-slate-500 mt-1">دليل الطالب ودليل ولي الأمر: المواد، شكل الاختبار، وإرشادات الاستعداد</span>
+                    </span>
+                    <span class="text-slate-300 group-hover:text-amber-500 text-xl shrink-0">‹</span>
                 </button>
-                <button data-action="show-student-login" class="group p-8 rounded-2xl border-2 border-teal-100 hover:border-teal-500 bg-teal-50/50 hover:bg-teal-50 transition flex flex-col items-center">
-                    <div class="w-16 h-16 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 shadow-lg shadow-teal-600/30 group-hover:scale-110 transition">🎓</div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-1">بوابة الطالب</h3>
-                    <p class="text-xs text-slate-500 text-center">الدخول برقم السجل المدني للتدريب والاختبار</p>
+                <button data-action="show-how" class="group text-right bg-white rounded-2xl border border-slate-200 hover:border-emerald-300 hover:shadow-md transition p-4 flex items-center gap-4">
+                    <span class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-2xl shrink-0">🧭</span>
+                    <span class="flex-grow min-w-0">
+                        <span class="block font-bold text-slate-800">كيف يعمل الموقع؟ خطوات الاستخدام</span>
+                        <span class="block text-xs text-slate-500 mt-1">مدير المدرسة ← المعلم ← الطالب: ماذا يفعل كل منهم</span>
+                    </span>
+                    <span class="text-slate-300 group-hover:text-emerald-600 text-xl shrink-0">‹</span>
                 </button>
+            </section>
+
+            <section id="statsSection" class="rounded-3xl bg-emerald-50 border border-emerald-100 p-6 md:p-8" aria-labelledby="statsTitle">
+                <h2 id="statsTitle" class="text-xl md:text-2xl font-bold text-slate-900 mb-6">نافس في أرقام</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                    <div><span class="bubble-row mb-3"><i class="on"></i><i></i><i></i><i></i></span><div class="stat-num text-4xl md:text-5xl font-bold text-emerald-700" data-count="questions" data-plus dir="ltr">0</div><div class="text-sm text-slate-600 mt-1">سؤال بمفتاح إجابة</div></div>
+                    <div><span class="bubble-row mb-3"><i></i><i class="on"></i><i></i><i></i></span><div class="stat-num text-4xl md:text-5xl font-bold text-emerald-700" data-count="math" data-plus dir="ltr">0</div><div class="text-sm text-slate-600 mt-1">سؤال رياضيات</div></div>
+                    <div><span class="bubble-row mb-3"><i></i><i></i><i class="on"></i><i></i></span><div class="stat-num text-4xl md:text-5xl font-bold text-emerald-700" data-count="science" data-plus dir="ltr">0</div><div class="text-sm text-slate-600 mt-1">سؤال علوم</div></div>
+                    <div><span class="bubble-row mb-3"><i></i><i></i><i></i><i class="on"></i></span><div class="stat-num text-4xl md:text-5xl font-bold text-emerald-700" data-count="reading" data-plus dir="ltr">0</div><div class="text-sm text-slate-600 mt-1">سؤال قراءة</div></div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-emerald-200 text-center">
+                    <div><div class="stat-num text-3xl font-bold text-emerald-700" data-count="grades">0</div><div class="text-xs md:text-sm text-slate-600 mt-1">صفوف: الثالث والسادس الابتدائي والثالث المتوسط</div></div>
+                    <div><div class="stat-num text-3xl font-bold text-emerald-700" data-count="methods">0</div><div class="text-xs md:text-sm text-slate-600 mt-1">طريقتان للاختبار: إلكتروني وورقي بالمسح الضوئي</div></div>
+                    <div><div class="stat-num text-3xl font-bold text-emerald-700" data-count="portals">0</div><div class="text-xs md:text-sm text-slate-600 mt-1">بوابات: طالب ومعلم ومدير ومقدم خدمات</div></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- كيف يعمل الموقع: إنفوجرافيك الاستخدام -->
+        <div id="howScreen" class="screen hidden max-w-5xl mx-auto space-y-6">
+            <button data-action="back-from-how" class="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+            <div class="rounded-3xl bg-gradient-to-br from-emerald-900 to-teal-700 text-white p-6 md:p-8 text-center shadow-lg">
+                <h2 class="text-3xl md:text-4xl font-black">كيف يعمل «مهارات اختبارات نافس»؟</h2>
+                <p class="text-base md:text-lg mt-2 text-emerald-100 font-semibold">ثلاث بوابات تعمل معاً: المدير يهيّئ، والمعلم يُدخل الطلاب ويختبر، والطالب يتدرّب ويعرف مستواه</p>
             </div>
-            <button data-action="show-about" class="mt-6 w-full p-5 rounded-2xl border-2 border-amber-100 hover:border-amber-400 bg-amber-50/50 hover:bg-amber-50 transition flex items-center justify-center gap-4 text-right">
-                <img src="logo-nafs.png" alt="" width="58" height="50" class="h-12 w-auto rounded-xl">
-                <span>
-                    <span class="block font-bold text-slate-800">تعرّف على الاختبارات الوطنية «نافس»</span>
-                    <span class="block text-xs text-slate-500 mt-1">دليل الطالب ودليل ولي الأمر: المواد، شكل الاختبار، وإرشادات الاستعداد</span>
-                </span>
-            </button>
+            <div class="grid md:grid-cols-3 gap-5 items-stretch">
+                <section class="rounded-3xl bg-white border-2 border-indigo-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="bg-indigo-600 text-white p-4 text-center">
+                        <div class="text-5xl">🏫</div>
+                        <h3 class="text-2xl font-black mt-1"><span class="bg-white text-indigo-700 rounded-full w-9 h-9 inline-flex items-center justify-center text-xl ml-2">1</span>مدير المدرسة</h3>
+                    </div>
+                    <ol class="p-5 space-y-3 text-base font-semibold text-slate-800 flex-1">
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">أ</span><span>يدخل ببوابة المدير</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">ب</span><span>يضيف مدرسته: <b>الاسم</b> و<b>الرقم الإحصائي</b> (أرقام فقط، دون حروف)</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">ج</span><span>يضيف <b>الصفوف والفصول</b></span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">د</span><span>يضيف <b>المعلم</b> باسمه ورقم سجله المدني، ويُسنده إلى فصوله</span></li>
+                    </ol>
+                </section>
+                <section class="rounded-3xl bg-white border-2 border-emerald-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="bg-emerald-600 text-white p-4 text-center">
+                        <div class="text-5xl">👨‍🏫</div>
+                        <h3 class="text-2xl font-black mt-1"><span class="bg-white text-emerald-700 rounded-full w-9 h-9 inline-flex items-center justify-center text-xl ml-2">2</span>المعلم</h3>
+                    </div>
+                    <ol class="p-5 space-y-3 text-base font-semibold text-slate-800 flex-1">
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">أ</span><span>يدخل برقم سجله المدني فيتعرّف عليه النظام</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">ب</span><span>أول مرة: ينشئ <b>كلمة مرور</b> ويكتب <b>بريداً إلكترونياً</b> لاستعادتها</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">ج</span><span>يرفع ملف <b>أكسل من «نور»</b> لطلاب كل فصل (الاسم + السجل المدني)</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">د</span><span>يولّد النظام <b>كلمات مرور سهلة</b> للطلاب، ويوزّعها المعلم عليهم</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">هـ</span><span>ينشئ الاختبار (إلكترونياً أو ورقياً بالمسح الضوئي) ويتابع التقارير</span></li>
+                    </ol>
+                </section>
+                <section class="rounded-3xl bg-white border-2 border-teal-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="bg-teal-600 text-white p-4 text-center">
+                        <div class="text-5xl">🧑‍🎓</div>
+                        <h3 class="text-2xl font-black mt-1"><span class="bg-white text-teal-700 rounded-full w-9 h-9 inline-flex items-center justify-center text-xl ml-2">3</span>الطالب</h3>
+                    </div>
+                    <ol class="p-5 space-y-3 text-base font-semibold text-slate-800 flex-1">
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center">أ</span><span>يدخل برقم سجله المدني وكلمة المرور التي أعطاه إياها معلمه</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center">ب</span><span>يعرف <b>مستوى تحصيله</b> في كل مهارة</span></li>
+                        <li class="flex gap-3"><span class="shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center">ج</span><span>أو ينجز <b>اختباراً إلكترونياً</b> نشره معلمه</span></li>
+                    </ol>
+                    <div class="mx-5 mb-5 rounded-2xl bg-teal-50 border border-teal-100 p-3 text-sm text-teal-900 font-semibold text-center">النتيجة تصل معلمه تلقائياً، وتظهر في تقارير الفصل</div>
+                </section>
+            </div>
+            <div class="rounded-3xl bg-amber-50 border-2 border-amber-300 p-5 flex gap-4 items-start">
+                <div class="text-4xl">🔒</div>
+                <div class="text-base md:text-lg font-bold text-amber-900 leading-relaxed">لا يُقبل دخول أي معلم ما لم يتعرّف عليه النظام برقم سجله المدني، أي أن يكون مديره قد أضافه. وكل معلم يرى طلاب فصوله فقط، وكل مدير يرى مدرسته فقط.</div>
+            </div>
         </div>
 
         <!-- عن اختبارات نافس: دليل الطالب وولي الأمر -->
@@ -81,7 +212,7 @@
                 <div class="text-center md:text-right">
                     <h2 class="text-2xl md:text-3xl font-black">الاختبارات الوطنية «نافس»</h2>
                     <p class="mt-2 text-emerald-100 leading-relaxed">اختبارات تقيس مستوى تحصيل الطلاب في القراءة والرياضيات والعلوم وفق نواتج التعلم، تعدّها هيئة تقويم التعليم والتدريب وتُطبَّق سنوياً في مدارس المملكة.</p>
-                    <p class="mt-3 text-xs text-emerald-200">الخلاصة هنا من دليل الطالب الإرشادي ودليل ولي الأمر (1447هـ/2026م). المرجع الرسمي: <span dir="ltr" class="font-bold">nafs.etec.gov.sa</span></p>
+                    <p class="mt-3 text-xs text-emerald-200">الخلاصة هنا من دليل الطالب الإرشادي ودليل ولي الأمر (1447هـ/2026م). المرجع: <span dir="ltr" class="font-bold">nafs.etec.gov.sa</span></p>
                 </div>
             </div>
 
@@ -119,7 +250,7 @@
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                     <h3 class="font-black text-slate-800 mb-3">كيف تتدرّب على هذه المنصة؟</h3>
-                    <p class="text-sm text-slate-600 leading-loose">ادخل من «بوابة الطالب» برقم سجلك المدني. ستجد اختبارات فصلك التي نشرها معلمك، ومنها نماذج التهيئة الرسمية. أجب عن الأسئلة وأرسلها، وسيرى معلمك مستواك في كل مهارة ويتابع تقدّمك.</p>
+                    <p class="text-sm text-slate-600 leading-loose">ادخل من «بوابة الطالب» برقم سجلك المدني. ستجد اختبارات فصلك التي نشرها معلمك، ومنها نماذج التهيئة. أجب عن الأسئلة وأرسلها، وسيرى معلمك مستواك في كل مهارة ويتابع تقدّمك.</p>
                 </div>
             </div>
 
@@ -193,7 +324,7 @@
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                     <h3 class="font-black text-slate-800 mb-2">كيف يرتبط هذا بمنصتنا؟</h3>
-                    <p class="text-sm text-slate-700 leading-loose">أسئلة المنصة مربوطة بمهارات «وثيقة نواتج التعلم للاختبارات الوطنية 2026». يبني المعلم اختباراً من المهارات التي يختارها، أو يضيف نماذج التهيئة الرسمية الجاهزة، ثم يقرأ في التقارير مستوى طلابه في كل مهارة وتقدّمهم عبر الاختبارات.</p>
+                    <p class="text-sm text-slate-700 leading-loose">أسئلة المنصة مربوطة بمهارات «وثيقة نواتج التعلم للاختبارات الوطنية 2026». يبني المعلم اختباراً من المهارات التي يختارها، أو يضيف نماذج التهيئة الجاهزة، ثم يقرأ في التقارير مستوى طلابه في كل مهارة وتقدّمهم عبر الاختبارات.</p>
                 </div>
             </div>
         </div>
@@ -204,7 +335,7 @@
 
             <div class="flex bg-slate-100 rounded-xl p-1 mb-6 text-sm font-bold">
                 <button data-action="auth-tab" data-tab="login" id="authTabLogin" class="flex-1 py-2 rounded-lg bg-white shadow text-emerald-700">تسجيل الدخول</button>
-                <button data-action="auth-tab" data-tab="signup" id="authTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">حساب جديد</button>
+                <button data-action="auth-tab" data-tab="signup" id="authTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">تفعيل حسابي (أول مرة)</button>
             </div>
 
             <form id="teacherLoginForm" class="space-y-4">
@@ -223,35 +354,105 @@
             </form>
 
             <form id="teacherSignupForm" class="hidden space-y-4">
-                <h2 class="text-2xl font-black text-slate-800">حساب معلم جديد</h2>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tName">اسم المعلم الثلاثي</label>
-                    <input type="text" id="tName" required maxlength="100" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="مثال: أحمد محمد القحطاني">
-                </div>
+                <h2 class="text-2xl font-black text-slate-800">تفعيل حساب المعلم</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">يتعرّف عليك النظام برقم سجلك المدني إذا كان <b>مدير مدرستك قد أضافك</b>. ثم تنشئ كلمة مرور وتكتب بريداً إلكترونياً لاستعادتها. ولا يُقبل دخول معلم لم يُضَف.</p>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1" for="tId">السجل المدني للمعلم</label>
-                    <input type="text" id="tId" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="10 أرقام">
+                    <input type="text" id="tId" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tSchool">المدرسة</label>
-                    <input type="text" id="tSchool" required maxlength="120" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="اسم المدرسة">
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupEmail">البريد الإلكتروني (لاستعادة كلمة المرور)</label>
+                    <input type="email" id="signupEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="tClass">الصف والفصل</label>
-                    <select id="tClass" required class="class-select w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                        <option value="">اختر الصف والفصل</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupEmail">البريد الإلكتروني</label>
-                    <input type="email" id="signupEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-right">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupPassword">كلمة المرور (6 أحرف على الأقل)</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="signupPassword">أنشئ كلمة مرور (6 أحرف فأكثر)</label>
                     <input type="password" id="signupPassword" required minlength="6" autocomplete="new-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">إنشاء الحساب والدخول</button>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20">تفعيل الحساب</button>
             </form>
+        </div>
+
+        <!-- بوابة مقدم خدمات التميز -->
+        <div id="providerAuthScreen" class="screen hidden max-w-md mx-auto my-8 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <button data-action="back" class="text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+            <div class="flex bg-slate-100 rounded-xl p-1 mb-6 text-sm font-bold">
+                <button data-action="v-auth-tab" data-tab="login" id="vTabLogin" class="flex-1 py-2 rounded-lg bg-white shadow text-rose-700">تسجيل الدخول</button>
+                <button data-action="v-auth-tab" data-tab="signup" id="vTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">تسجيل مقدم خدمة</button>
+            </div>
+            <form id="providerLoginForm" class="space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">دخول مقدم خدمات التميز</h2>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="vLoginEmail">البريد الإلكتروني</label>
+                    <input id="vLoginEmail" required type="email" dir="ltr" autocomplete="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="vLoginPassword">كلمة المرور</label>
+                    <input id="vLoginPassword" required type="password" autocomplete="current-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"></div>
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl transition">دخول</button>
+                <button type="button" data-action="v-reset-password" class="w-full text-xs text-slate-500 hover:text-rose-700 font-semibold">نسيت كلمة المرور؟</button>
+            </form>
+            <form id="providerSignupForm" class="hidden space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">تسجيل مقدم خدمات التميز</h2>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="vName">الاسم الثلاثي</label>
+                    <input id="vName" required type="text" maxlength="100" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="vCivil">السجل المدني</label>
+                    <input id="vCivil" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="vSignupEmail">البريد الإلكتروني (لاستعادة كلمة المرور)</label>
+                    <input id="vSignupEmail" required type="email" dir="ltr" autocomplete="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="vSignupPassword">كلمة المرور (6 أحرف فأكثر)</label>
+                    <input id="vSignupPassword" required type="password" minlength="6" autocomplete="new-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"></div>
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl transition">تسجيل</button>
+            </form>
+        </div>
+
+        <div id="providerDashboardScreen" class="screen hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <span class="text-xs bg-rose-100 text-rose-800 font-bold px-3 py-1 rounded-full">لوحة مقدم خدمات التميز</span>
+                <h2 id="pvTitle" class="text-xl font-bold text-slate-800 mt-2"></h2>
+            </div>
+            <div id="pvBody" class="space-y-6"></div>
+        </div>
+
+        <!-- بوابة المدير: دخول أو تسجيل مدير ومدرسته -->
+        <div id="principalAuthScreen" class="screen hidden max-w-md mx-auto my-8 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <button data-action="back" class="text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 text-sm font-semibold">← رجوع</button>
+            <div class="flex bg-slate-100 rounded-xl p-1 mb-6 text-sm font-bold">
+                <button data-action="p-auth-tab" data-tab="login" id="pTabLogin" class="flex-1 py-2 rounded-lg bg-white shadow text-indigo-700">تسجيل الدخول</button>
+                <button data-action="p-auth-tab" data-tab="signup" id="pTabSignup" class="flex-1 py-2 rounded-lg text-slate-500">تسجيل مدير ومدرسة</button>
+            </div>
+            <form id="principalLoginForm" class="space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">دخول مدير المدرسة</h2>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pLoginEmail">البريد الإلكتروني</label>
+                    <input type="email" id="pLoginEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pLoginPassword">كلمة المرور</label>
+                    <input type="password" id="pLoginPassword" required autocomplete="current-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">دخول</button>
+                <button type="button" data-action="p-reset-password" class="w-full text-xs text-slate-500 hover:text-indigo-700 font-semibold">نسيت كلمة المرور؟</button>
+            </form>
+            <form id="principalSignupForm" class="hidden space-y-4">
+                <h2 class="text-2xl font-black text-slate-800">تسجيل مدير ومدرسة</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">أدخل بيانات مدرستك ورقمها الإحصائي (أرقام فقط) وبريداً إلكترونياً لاستعادة كلمة المرور.</p>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pName">اسم المدير الثلاثي</label>
+                    <input type="text" id="pName" required maxlength="100" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pCivil">السجل المدني للمدير</label>
+                    <input type="text" id="pCivil" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSchool">اسم المدرسة</label>
+                    <input type="text" id="pSchool" required maxlength="120" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSchoolNo">الرقم الإحصائي للمدرسة (أرقام فقط)</label>
+                    <input type="text" id="pSchoolNo" required pattern="[0-9]{3,12}" maxlength="12" inputmode="numeric" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSignupEmail">البريد الإلكتروني (لاستعادة كلمة المرور)</label>
+                    <input type="email" id="pSignupEmail" required autocomplete="email" dir="ltr" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-700 mb-1" for="pSignupPassword">كلمة المرور (6 أحرف فأكثر)</label>
+                    <input type="password" id="pSignupPassword" required minlength="6" autocomplete="new-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">تسجيل المدرسة</button>
+            </form>
+        </div>
+
+        <!-- لوحة المدير -->
+        <div id="principalDashboardScreen" class="screen hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-full">لوحة مدير المدرسة</span>
+                <h2 id="pdTitle" class="text-xl font-bold text-slate-800 mt-2"></h2>
+                <p id="pdMeta" class="text-xs text-slate-500 mt-0.5"></p>
+            </div>
+            <div id="pdBody" class="space-y-6"></div>
         </div>
 
         <!-- لوحة المعلم -->
@@ -264,13 +465,18 @@
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
                     <select id="dashClass" class="class-select px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+                    <select id="yearSel" aria-label="العام الدراسي" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700"></select>
+                    <button data-action="show-perf" class="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-4 py-2.5 rounded-xl text-xs transition border border-amber-200 flex items-center gap-2">🎯 مستويات الأداء</button>
                     <button data-action="export" class="bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-4 py-2.5 rounded-xl text-xs transition border border-teal-200 flex items-center gap-2">📊 تصدير تقرير الأداء</button>
                 </div>
             </div>
 
+            <div id="teacherStart" class="hidden"></div>
+
             <div class="flex border-b border-slate-200 gap-6 overflow-x-auto">
                 <button data-action="teacher-tab" data-tab="students" id="tabBtnStudents" class="pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition whitespace-nowrap">إدارة الطلاب واستيراد الأكسل</button>
                 <button data-action="teacher-tab" data-tab="tests" id="tabBtnTests" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">بناء الاختبارات</button>
+                <button data-action="teacher-tab" data-tab="bank" id="tabBtnBank" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">بنك الأسئلة</button>
                 <button data-action="teacher-tab" data-tab="reports" id="tabBtnReports" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">متابعة المستويات والتقارير</button>
             </div>
 
@@ -310,7 +516,12 @@
                 <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-bold text-slate-800 text-sm">قائمة طلاب الصف المسجلين (<span id="studentCount">0</span>)</h3>
-                        <button data-action="clear-all" class="text-xs text-red-500 hover:text-red-700 font-semibold">حذف الكل</button>
+                        <div class="flex gap-3 items-center">
+                            <button data-action="gen-pins" class="text-xs text-teal-700 hover:text-teal-900 font-semibold">🔑 توليد كلمات المرور الناقصة</button>
+                            <button data-action="print-roster" class="text-xs text-teal-700 hover:text-teal-900 font-semibold">📋 طباعة بيان الطلاب</button>
+                            <button data-action="print-cards" class="text-xs text-teal-700 hover:text-teal-900 font-semibold">🖨️ طباعة بطاقات الدخول</button>
+                            <button data-action="clear-all" class="text-xs text-red-500 hover:text-red-700 font-semibold">حذف الكل</button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto flex-grow">
                         <table class="w-full text-right text-xs">
@@ -319,7 +530,8 @@
                                     <th class="p-3 rounded-r-xl">م</th>
                                     <th class="p-3">اسم الطالب الكامل</th>
                                     <th class="p-3">رقم السجل المدني</th>
-                                    <th class="p-3">مستوى القراءة</th>
+                                    <th class="p-3 whitespace-nowrap">كلمة المرور <button type="button" data-action="toggle-pins" id="pinToggle" class="mr-1 text-[11px] font-bold text-teal-700 hover:text-teal-900 underline">إظهار</button></th>
+                                    <th class="p-3">المستوى العام</th>
                                     <th class="p-3 rounded-l-xl text-center">إجراءات</th>
                                 </tr>
                             </thead>
@@ -338,19 +550,36 @@
                             <p class="text-xs text-slate-500 mt-1">ابنِ اختباراً من المهارات التي تختارها حسب وثيقة نواتج التعلم (<span id="testsGradeName"></span>).</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button data-action="show-official" class="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-5 py-3 rounded-xl text-xs transition border border-amber-200">📥 نماذج نافس الرسمية الجاهزة</button>
+                            <button data-action="show-official" class="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-5 py-3 rounded-xl text-xs transition border border-amber-200">📥 نماذج نافس الجاهزة</button>
+                            <button data-action="show-bankpanel" class="bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold px-5 py-3 rounded-xl text-xs transition border border-teal-200">📚 اختبار من بنك نافس للأسئلة</button>
                             <button data-action="new-test" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">➕ بناء اختبار جديد</button>
+                        </div>
+                    </div>
+                    <div id="bankPanel" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-teal-200 space-y-4">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">اختبار من بنك نافس للأسئلة</h3>
+                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">أسئلة «بنك نافس للأسئلة والاختبارات المحاكية» (من جهة غير الهيئة، 1446هـ) بصورها الأصلية ومفاتيحها المظلَّلة في الملف المصدر. وكل سؤال في الموقع إما بمفتاح من المصدر أو بمفتاح الموقع، ويُعلَن ذلك عند إضافته. اختر المؤشرات والمستويات ثم أنشئ اختباراً مسودة. <b>ربط السؤال بالمؤشر اجتهاد من الموقع.</b></p>
+                            </div>
+                            <button data-action="hide-bankpanel" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2"><span class="text-xs font-bold text-slate-600">المادة:</span><div id="bpSubject" class="flex flex-wrap gap-2"></div></div>
+                        <div class="flex flex-wrap items-center gap-3 text-xs" id="bpLevels"></div>
+                        <div id="bpSkills" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button data-action="bp-create" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs">إنشاء اختبار مسودة (<span id="bpCount">0</span> سؤالاً)</button>
+                            <span class="text-[11px] text-slate-500">الحد الأقصى 60 سؤالاً للاختبار.</span>
                         </div>
                     </div>
                     <div id="officialPanel" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-amber-200 space-y-4">
                         <div class="flex items-start justify-between gap-4">
                             <div>
-                                <h3 class="font-bold text-slate-800 text-sm">نماذج التهيئة الرسمية — الاختبارات الوطنية (نافس) 2026</h3>
-                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">نموذجان (أ) و(ب) لكل مادة في صف فصلك، بأسئلتها الأصلية ومفاتيح إجاباتها الرسمية. تُضاف مسودة، ثم تنشرها لطلابك. أسئلتها مربوطة بالمهارات، فتظهر في التقارير. <b>الربط بالمهارات اجتهاد من الموقع وليس من الهيئة.</b></p>
+                                <h3 class="font-bold text-slate-800 text-sm">نماذج جاهزة لفصلك</h3>
+                                <p class="text-xs text-slate-500 mt-1 leading-relaxed"><b>نماذج التهيئة</b> (الاختبارات الوطنية «نافس» 2026): نموذجان (أ) و(ب) لكل مادة، بأسئلتها الأصلية ومفاتيح إجاباتها. و<b>النماذج التدريبية</b>: نصوص قرائية بأسئلتها ومفاتيح إجاباتها. تُضاف مسودة ثم تنشرها لطلابك، وأسئلتها مربوطة بالمهارات فتظهر في التقارير. <b>الربط بالمهارات اجتهاد من الموقع وليس من الهيئة.</b></p>
                             </div>
                             <button data-action="hide-official" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
                         </div>
-                        <div id="officialList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        <div id="officialList" class="space-y-4"></div>
                     </div>
                     <div id="testsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
@@ -363,7 +592,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1" for="tbTitle">عنوان الاختبار</label>
-                            <input type="text" id="tbTitle" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مثال: اختبار الفهم القرائي ١">
+                            <input type="text" id="tbTitle" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مثال: اختبار الوحدة الأولى">
                         </div>
                         <div>
                             <span class="block text-xs font-bold text-slate-700 mb-2">المادة</span>
@@ -387,8 +616,12 @@
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="font-bold text-slate-800 text-sm">٣. الأسئلة (<span id="tbCount">0</span>)</h3>
-                            <button data-action="add-question" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ سؤال</button>
+                            <div class="flex gap-2">
+                                <button data-action="add-from-bank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs">📚 من البنك</button>
+                                <button data-action="add-question" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ سؤال</button>
+                            </div>
                         </div>
+                        <div id="bankPicker" class="hidden space-y-2 mb-4 border border-emerald-200 bg-emerald-50/40 rounded-2xl p-3"></div>
                         <div id="tbQuestions" class="space-y-4"></div>
                     </div>
 
@@ -399,6 +632,45 @@
                         <button data-action="cancel-test" class="sm:w-32 text-slate-500 hover:text-slate-800 font-bold py-3.5 text-sm">إلغاء</button>
                     </div>
                 </div>
+            </div>
+
+            <!-- بنك الأسئلة -->
+            <div id="teacherTabBank" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <h3 class="font-bold text-slate-800 text-sm">إضافة أسئلة إلى البنك (معرفة · تطبيق · استدلال)</h3>
+                    <p class="text-xs text-slate-500">أدخل سؤالاً يدوياً، أو استورد ملف مسودات جاهزاً (JSON). كل سؤال مستورد يبقى «بانتظار المراجعة» ولا يظهر في اختبار قبل أن تعتمده. يمكن أن يكون مستوى «غير منطبق» مع ذكر السبب.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <select id="bankSubject" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></select>
+                        <select id="bankSkill" class="md:col-span-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></select>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">📥 استيراد مسودات (JSON)<input type="file" id="bankImport" accept=".json,application/json" class="hidden"></label>
+                        <button data-action="bank-new" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs">➕ إدخال سؤال يدوي</button>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-bold text-slate-800 text-sm">مسودات جاهزة لمؤشرات المادة والصف المختارين</h3>
+                        <button data-action="draft-toggle" class="text-xs font-bold text-emerald-700">عرض / إخفاء</button>
+                    </div>
+                    <div id="draftPanel" class="hidden space-y-3">
+                        <p class="text-xs text-slate-500">اختر ما يناسبك من الأسئلة ثم اضغط «اعتماد المحدد». الأسئلة المعتمدة تصير في بنكك وتظهر لك في «من البنك» عند بناء الاختبار. اعتمادك هو قرارك أنت، ويمكنك تعديل أي سؤال لاحقاً.</p>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button data-action="draft-all" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100">تحديد كل المعروض</button>
+                            <button data-action="draft-none" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100">إلغاء التحديد</button>
+                            <button data-action="draft-approve" class="text-xs font-bold px-4 py-1.5 rounded-lg bg-emerald-600 text-white">✅ اعتماد المحدد (<span id="draftSel">0</span>)</button>
+                        </div>
+                        <div id="draftList" class="space-y-2"></div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-slate-600">عرض:</span>
+                    <select id="bankFilter" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                        <option value="all">كل الحالات</option><option value="generated">بانتظار المراجعة</option><option value="approved">المعتمدة</option><option value="rejected">المرفوضة</option><option value="na">غير منطبق</option>
+                    </select>
+                    <span class="text-xs text-slate-500">(<span id="bankCount">0</span>)</span>
+                </div>
+                <div id="bankList" class="space-y-3"></div>
             </div>
 
             <!-- التقارير -->
@@ -460,6 +732,41 @@
             </div>
         </div>
 
+        <!-- مستويات الأداء -->
+        <div id="perfModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-start justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-6 my-8 space-y-4">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <h3 id="perfTitle" class="text-lg font-black text-slate-800"></h3>
+                        <p class="text-xs text-slate-500 mt-1">المصدر: هيئة تقويم التعليم والتدريب — «مستويات الأداء للاختبارات الوطنية (نافس)». تصف ما يُتوقع من الطالب في كل مستوى (مرتفع، متوسط، منخفض، منخفض جداً).</p>
+                    </div>
+                    <button data-action="close-perf" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
+                </div>
+                <div id="perfBody" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- مسح أوراق الإجابة وتصحيحها آلياً -->
+        <div id="omrModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-start justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-6 my-8 space-y-4">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <h3 id="omrTitle" class="text-lg font-black text-slate-800"></h3>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">صوّر ورقة الإجابة المطبوعة من الموقع (ورقة واحدة في كل صورة، كاملة ومستقيمة وبإضاءة جيدة وعلامات الزوايا السوداء ظاهرة، واسم الاختبار في الأعلى). يقرأ الموقع رقم السجل والتظليل ويصحّح، وأنت تراجع ثم تعتمد.</p>
+                    </div>
+                    <button data-action="close-omr" class="text-slate-400 hover:text-slate-700 text-2xl leading-none" aria-label="إغلاق">×</button>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input id="omrFiles" type="file" accept="image/*" multiple class="text-xs">
+                    <span id="omrStatus" class="text-xs text-slate-500"></span>
+                </div>
+                <div id="omrResults" class="space-y-2"></div>
+                <div class="flex flex-wrap gap-3 justify-end">
+                    <button data-action="approve-omr" id="omrApprove" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs disabled:opacity-40" disabled>اعتماد النتائج المحددة</button>
+                </div>
+            </div>
+        </div>
+
         <!-- تفاصيل طالب -->
         <div id="studentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-start justify-center p-4 overflow-y-auto">
             <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 my-8 space-y-5">
@@ -491,6 +798,10 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1" for="sIdInput">رقم السجل المدني للطالب</label>
                     <input type="text" id="sIdInput" required pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="أدخل 10 أرقام لسجلك المدني">
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1" for="sPinInput">كلمة المرور (6 أرقام من معلمك)</label>
+                    <input type="text" id="sPinInput" required pattern="[0-9]{6}" maxlength="6" inputmode="numeric" autocomplete="off" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="6 أرقام">
+                </div>
                 <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-teal-600/20">دخول المنصة</button>
             </form>
         </div>
@@ -507,8 +818,24 @@
             </div>
 
             <div id="studentTestsView" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 text-base mb-4">📖 اختبارات القراءة</h3>
+                <h3 class="font-bold text-slate-800 text-base mb-4">📖 اختبارات فصلك (القراءة والرياضيات والعلوم)</h3>
                 <div id="studentTestsList" class="space-y-3"></div>
+            </div>
+
+            <div id="studentPracticeView" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4 gap-4">
+                    <h3 id="spTitle" class="font-bold text-slate-800 text-base"></h3>
+                    <button data-action="back-to-tests" class="text-xs text-slate-500 hover:text-slate-800 font-bold">← الاختبارات</button>
+                </div>
+                <div id="spBody" class="space-y-5"></div>
+            </div>
+
+            <div id="studentResultView" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4 gap-4">
+                    <h3 id="srTitle" class="font-bold text-slate-800 text-base"></h3>
+                    <button data-action="back-to-tests" class="text-xs text-slate-500 hover:text-slate-800 font-bold">← الاختبارات</button>
+                </div>
+                <div id="srBody" class="space-y-6"></div>
             </div>
 
             <div id="studentTestView" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
@@ -526,10 +853,12 @@
 
     <footer class="bg-slate-900 text-slate-300 py-6 mt-12 border-t border-slate-800 text-center text-sm">
         <div class="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center gap-2">
-            <p class="font-bold tracking-wide">مشرف دعم التميز المدرسي</p>
-            <p class="font-semibold">جابر عبدالله ال الغبشه</p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
+                <div><p class="text-xs text-slate-400">مقدم خدمات دعم التميز</p><p class="font-semibold">جابر عبدالله ال الغبشه</p></div>
+                <div><p class="text-xs text-slate-400">مقدم خدمات دعم التميز</p><p class="font-semibold">ضيف الله عبده طوهري</p></div>
+            </div>
             <p class="text-slate-400">قطاع تعليم محايل عسير</p>
-            <p class="text-xs text-slate-500 mt-3 max-w-2xl leading-relaxed">منصة تدريبية مساندة غير تابعة لهيئة تقويم التعليم والتدريب. المحتوى مبني على وثائقها المنشورة: وثيقة نواتج التعلم 2026، ونماذج التهيئة، ودليلا الطالب وولي الأمر. الموقع الرسمي: nafs.etec.gov.sa</p>
+            <p class="text-xs text-slate-500 mt-3 max-w-2xl leading-relaxed">منصة تدريبية مساندة غير تابعة لهيئة تقويم التعليم والتدريب. المحتوى مبني على وثائقها المنشورة: وثيقة نواتج التعلم 2026، ونماذج التهيئة، ودليلا الطالب وولي الأمر. الموقع: nafs.etec.gov.sa</p>
         </div>
     </footer>
 </body>

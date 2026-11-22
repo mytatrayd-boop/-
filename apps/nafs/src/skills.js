@@ -114,22 +114,29 @@ export const SUBJECTS = {
 // الصف الثالث: القراءة والرياضيات فقط. السادس والتاسع: الثلاثة.
 export const subjectsOfGrade = (grade) => (grade === 3 ? ['reading', 'math'] : ['reading', 'math', 'science']);
 
-// مجموعات المهارات لمادة وصف: [{domain, title, text?, skills:[{id,name,desc}]}]
+// مجموعات المهارات لمادة وصف: [{domain, title, outcomes: [{id, name, desc, skills: [{id, name, desc}]}]}]
+// المهارة = مؤشر من مؤشرات ناتج التعلم في الوثيقة (للمواد الثلاث)
 export function groupsFor(subject, grade) {
     if (subject === 'math') return MATH[grade] ?? [];
     if (subject === 'science') return SCIENCE[grade] ?? [];
-    return GRADES[grade].outcomes.map((o) => ({ domain: DOMAINS[o.domain], title: o.text, skills: o.indicators }));
+    return GRADES[grade].outcomes.map((o) => ({
+        domain: DOMAINS[o.domain], title: '',
+        outcomes: [{ id: o.id, name: DOMAINS[o.domain], desc: o.text, skills: o.indicators }],
+    }));
 }
 
-export const skillIdsFor = (subject, grade) => groupsFor(subject, grade).flatMap((g) => g.skills.map((s) => s.id));
+export const outcomesFor = (subject, grade) => groupsFor(subject, grade).flatMap((g) => g.outcomes);
+export const skillsFor = (subject, grade) => outcomesFor(subject, grade).flatMap((o) => o.skills);
+export const skillIdsFor = (subject, grade) => skillsFor(subject, grade).map((s) => s.id);
 
 const SKILL_INDEX = {};
-for (const [grade, g] of Object.entries(GRADES)) {
-    for (const o of g.outcomes) for (const ind of o.indicators) SKILL_INDEX[ind.id] = { ...ind, grade: Number(grade), subject: 'reading', outcome: o };
-}
-for (const [subject, table] of [['math', MATH], ['science', SCIENCE]]) {
-    for (const [grade, groups] of Object.entries(table)) {
-        for (const group of groups) for (const sk of group.skills) SKILL_INDEX[sk.id] = { ...sk, grade: Number(grade), subject, group };
+for (const subject of ['reading', 'math', 'science']) {
+    for (const grade of [3, 6, 9]) {
+        for (const g of groupsFor(subject, grade)) {
+            for (const o of g.outcomes) {
+                for (const sk of o.skills) SKILL_INDEX[sk.id] = { ...sk, grade, subject, outcome: { id: o.id, name: o.name, desc: o.desc }, group: { domain: g.domain, title: g.title } };
+            }
+        }
     }
 }
 export const skillById = (id) => SKILL_INDEX[id];
