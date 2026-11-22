@@ -16,6 +16,12 @@ service cloud.firestore {
     function schoolNo(v) { return v is string && v.matches('^[0-9]{3,12}$'); }
     function schoolDoc(no) { return get(/databases/$(database)/documents/schools/$(no)).data; }
     function isPrincipalOf(no) { return isTeacher() && schoolNo(no) && schoolDoc(no).principalUid == request.auth.uid; }
+    // مدير مدرسة المعلم صاحب المستند: يقرأ طلابه واختباراته ومفاتيحه ونتائجه لعرض تقارير المدرسة
+    function principalOfTeacher(tuid) {
+      return isTeacher() && tuid is string && exists(/databases/$(database)/documents/teachers/$(tuid))
+        && isPrincipalOf(get(/databases/$(database)/documents/teachers/$(tuid)).data.schoolNo);
+    }
+    function subjectList(v) { return v is list && v.size() > 0 && v.size() <= 3 && v.hasOnly(['reading', 'math', 'science']); }
     function rosterDoc(id) { return get(/databases/$(database)/documents/teacherRoster/$(id)).data; }
     function rosterAfter(id) { return getAfter(/databases/$(database)/documents/teacherRoster/$(id)).data; }
     function classList(v) { return v is list && v.size() <= 9 && v.size() > 0; }
@@ -120,16 +126,18 @@ service cloud.firestore {
       allow get: if isTeacher() && civilId(cid)
         && (isPrincipalOf(resource.data.schoolNo) || resource.data.uid == request.auth.uid || resource.data.uid == null);
       allow create: if isPrincipalOf(request.resource.data.schoolNo) && civilId(cid)
-        && request.resource.data.keys().hasOnly(['schoolNo', 'name', 'classes', 'uid', 'email', 'createdAt', 'activatedAt'])
+        && request.resource.data.keys().hasOnly(['schoolNo', 'name', 'classes', 'subjects', 'uid', 'email', 'createdAt', 'activatedAt'])
         && text(request.resource.data.name, 100)
         && classList(request.resource.data.classes)
+        && subjectList(request.resource.data.subjects)
         && request.resource.data.uid == null;
       // المدير: يعدّل الاسم والفصول، ويعيد ضبط التفعيل (uid = null)
       allow update: if isPrincipalOf(resource.data.schoolNo)
         && request.resource.data.schoolNo == resource.data.schoolNo
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'uid', 'email', 'activatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'subjects', 'uid', 'email', 'activatedAt'])
         && request.resource.data.uid == null
-        && classList(request.resource.data.classes);
+        && classList(request.resource.data.classes)
+        && (!('subjects' in request.resource.data) || subjectList(request.resource.data.subjects)); // كشف قديم بلا تخصص يبقى قابلاً لإعادة الضبط
       // المعلم: يفعّل حسابه مرة واحدة (uid كان فارغاً)
       allow update: if isTeacher() && resource.data.uid == null
         && request.resource.data.uid == request.auth.uid
@@ -142,7 +150,8 @@ service cloud.firestore {
     match /teachers/{uid} {
       allow read, delete: if isOwner(uid);
       allow create, update: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['name', 'civilId', 'school', 'schoolNo', 'className', 'email', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'civilId', 'school', 'schoolNo', 'className', 'subjects', 'email', 'createdAt'])
+        && request.resource.data.get('subjects', []) == rosterAfter(request.resource.data.civilId).get('subjects', [])
         && text(request.resource.data.name, 100)
         && civilId(request.resource.data.civilId)
         && text(request.resource.data.school, 120)
@@ -195,7 +204,7 @@ service cloud.firestore {
     // مستند لكل طالب، معرّفه رقم السجل المدني. الطالب مسجل عند معلم واحد فقط.
     match /students/{sid} {
       allow get: if isTeacher() || (isStudentSession() && hasSession(sid));
-      allow list: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow list: if isTeacher() && (resource.data.teacherUid == request.auth.uid || principalOfTeacher(resource.data.teacherUid));
 
       allow create: if isTeacher() && civilId(sid)
         && request.resource.data.keys().hasOnly(['name', 'teacherUid', 'className', 'school', 'status', 'createdAt'])
@@ -219,7 +228,8 @@ service cloud.firestore {
     match /tests/{testId} {
       allow read: if (isTeacher() && resource.data.teacherUid == request.auth.uid)
         || (signedIn() && resource.data.status == 'published')
-        || (isTeacher() && isPrincipalOf(resource.data.get('schoolNo', 'x'))); // أرشيف بعد بداية العام
+        || (isTeacher() && isPrincipalOf(resource.data.get('schoolNo', 'x'))) // أرشيف بعد بداية العام
+        || principalOfTeacher(resource.data.teacherUid);
       allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
       allow create, update: if isTeacher()
         && request.resource.data.teacherUid == request.auth.uid
@@ -239,7 +249,8 @@ service cloud.firestore {
 
     // الإجابات الصحيحة — للمعلم فقط.
     match /testKeys/{testId} {
-      allow read, delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
+      allow read: if isTeacher() && (resource.data.teacherUid == request.auth.uid || principalOfTeacher(resource.data.teacherUid));
+      allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
       allow create, update: if isTeacher()
         && request.resource.data.teacherUid == request.auth.uid
         && (resource == null || resource.data.teacherUid == request.auth.uid)
@@ -251,7 +262,7 @@ service cloud.firestore {
     match /attempts/{attemptId} {
       allow get: if signedIn() && (isStudentSession() || resource.data.teacherUid == request.auth.uid);
       allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
-      allow list: if isTeacher() && (resource.data.teacherUid == request.auth.uid || isPrincipalOf(resource.data.get('schoolNo', 'x')));
+      allow list: if isTeacher() && (resource.data.teacherUid == request.auth.uid || isPrincipalOf(resource.data.get('schoolNo', 'x')) || principalOfTeacher(resource.data.teacherUid));
       // محاولة ورقية: يرفعها المعلم بعد المسح الضوئي لورقة الإجابة (source == 'paper')؛ ويجوز له استبدال الورقية فقط، لا الإلكترونية.
       function paperAttempt() {
         let d = request.resource.data;

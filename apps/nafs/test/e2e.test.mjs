@@ -80,8 +80,18 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await pp.check('[data-pd-t-class="الثالث الابتدائي - أ"]');
     await pp.check('[data-pd-t-class="الثالث المتوسط - أ"]');
     await pp.click('#pdTeacherForm button[type=submit]');
+    assert.match(await closeModal(pp, 'حدّد تخصص'), /تخصص المعلم/); // التخصص إلزامي
+    for (const sub of ['reading', 'math', 'science']) await pp.check(`[data-pd-t-subject="${sub}"]`);
+    await pp.click('#pdTeacherForm button[type=submit]');
     assert.match(await closeModal(pp, 'أُضيف المعلم'), /تفعيل حسابي/);
     assert.match(await pp.textContent('#pdBody'), /لم يُفعّل حسابه/);
+    assert.match(await pp.textContent('#pdBody'), /التخصص: .*الرياضيات/);
+    // انتهى إسناد كل الفصول: تظهر التقارير، وتختفي الفصول والمعلمون في قوائم منسدلة
+    assert.match(await pp.textContent('#pdBody'), /تقارير المدرسة/);
+    await pp.waitForFunction(() => document.querySelector('#pdBody table'), null, { timeout: 15000 }); // جدول الفصول بعد تحميل التقرير
+    assert.doesNotMatch(await pp.textContent('#pdBody'), /تعذّر تحميل التقارير/);
+    assert.equal(await pp.locator('[data-action="pd-save-classes"]').isVisible(), false);
+    assert.equal(await pp.locator('#pdTeacherForm button[type=submit]').isVisible(), false);
 
     // معلم لم يضفه المدير: لا يُقبل ولا يبقى له حساب
     await page.click('[data-action="show-teacher-login"]');
@@ -134,6 +144,11 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
         assert.match(await np.textContent('#pdBody'), /أحمد محمد القحطاني/); // معلمو المدرسة انتقلوا معها
         // نهاية العام: يُؤرشف العام ويُفتح عام جديد بتاريخه، ويراه المعلم في قائمة الأعوام
         const before = (await np.textContent('#pdMeta')).match(/العام الدراسي: (\S+ · \S+)/)[1];
+        // الأرشفة في قائمة منسدلة مغلقة، والفصول والمعلمون الذين انتهى إسنادهم في قوائم منسدلة أيضاً
+        assert.equal(await np.locator('[data-action="pd-new-year"]').isVisible(), false);
+        assert.equal(await np.locator('[data-action="pd-save-classes"]').isVisible(), false);
+        assert.equal(await np.locator('#pdTeacherForm button[type=submit]').isVisible(), false);
+        await np.click('summary:has-text("أرشفة العام الدراسي")');
         await np.click('[data-action="pd-new-year"]');
         await np.click('#modalOk');
         await closeModal(np, 'فُتح العام');

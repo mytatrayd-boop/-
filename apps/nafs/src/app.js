@@ -15,7 +15,7 @@ import { TEMPLATES } from './templates.js';
 import { omrSheetHtml, omrKeyHtml, bookletHtml, esc, OMR_PER_PAGE } from './omr.js';
 import { scanSheet } from './omr-scan.js';
 import { SITE_STATS } from './site-stats.js';
-import { academicYear, nextYearLabel } from './years.js';
+import { academicYear, nextYearLabel, yearOf } from './years.js';
 import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, newBankQuestion } from './bank.js';
 
 const $ = (id) => document.getElementById(id);
@@ -24,6 +24,7 @@ let auth, db;
 let bank = [];            // بنك أسئلة المعلم
 let bankEditing = null;   // id السؤال قيد التحرير ('new' لسؤال جديد)
 let teacher = null;        // {uid, name, civilId, school, schoolNo, className, email}
+let teacherSubjects = null; // تخصصات المعلم من كشف مدرسته (null = كل المواد)
 let teacherClasses = [];   // الفصول المسندة للمعلم من كشف مدرسته
 let principal = null;      // {uid, name, civilId, email, schoolNo}
 let provider = null;       // مقدم خدمات التميز {uid, name, civilId, email}
@@ -53,6 +54,11 @@ let repSubject = 'reading'; // مادة تقرير المعلم الحالية
 let aboutFrom = 'roleSelectionScreen';
 
 const testSubject = (t) => t.subject ?? 'reading'; // الاختبارات القديمة بلا مادة = قراءة
+// مواد الصف التي يدرّسها المعلم (تخصصه من كشف المدرسة)؛ بلا تخصص مسجّل أو بلا تقاطع ⇒ كل مواد الصف
+const mySubjects = (grade) => {
+    const all = subjectsOfGrade(grade), mine = teacherSubjects ? all.filter((x) => teacherSubjects.includes(x)) : all;
+    return mine.length ? mine : all;
+};
 const isImageTest = (t) => t.questions.some((q) => q.image);
 
 // ---------- الإعداد ----------
@@ -205,7 +211,7 @@ async function teacherSignup(e) {
             }
             const r = row.data();
             const sc = (await getDoc(doc(db, 'schools', r.schoolNo))).data();
-            const profile = { name: r.name, civilId, school: sc.name, schoolNo: r.schoolNo, className: r.classes[0], email };
+            const profile = { name: r.name, civilId, school: sc.name, schoolNo: r.schoolNo, className: r.classes[0], email, ...(r.subjects ? { subjects: r.subjects } : {}) };
             const batch = writeBatch(db);
             batch.update(doc(db, 'teacherRoster', civilId), { uid: user.uid, email, activatedAt: serverTimestamp() });
             batch.set(doc(db, 'teachers', user.uid), { ...profile, createdAt: serverTimestamp() });
@@ -213,7 +219,7 @@ async function teacherSignup(e) {
             $('signupPassword').value = '';
             teacher = { uid: user.uid, ...profile };
             authMode = 'login';
-            teacherClasses = r.classes;
+            teacherClasses = r.classes; teacherSubjects = r.subjects ?? null;
             activating = false;
             await openTeacherDashboard();
             showAlert('تم تفعيل حسابك. تجد بياناتك من أي جهاز، وتدخل لاحقاً ببريدك وكلمة مرورك.', 'تم إنشاء حسابك');
@@ -232,13 +238,13 @@ async function linkLegacyTeacher(user) {
             const r = row.data();
             const sc = (await getDoc(doc(db, 'schools', r.schoolNo))).data();
             const className = r.classes.includes(teacher.className) ? teacher.className : r.classes[0];
-            const profile = { name: teacher.name, civilId: teacher.civilId, school: sc.name, schoolNo: r.schoolNo, className, email: teacher.email };
+            const profile = { name: teacher.name, civilId: teacher.civilId, school: sc.name, schoolNo: r.schoolNo, className, email: teacher.email, ...(r.subjects ? { subjects: r.subjects } : {}) };
             const batch = writeBatch(db);
             batch.update(doc(db, 'teacherRoster', teacher.civilId), { uid: user.uid, email: teacher.email || user.email, activatedAt: serverTimestamp() });
             batch.set(doc(db, 'teachers', user.uid), { ...profile, createdAt: serverTimestamp() });
             await batch.commit();
             teacher = { uid: user.uid, ...profile };
-            teacherClasses = r.classes;
+            teacherClasses = r.classes; teacherSubjects = r.subjects ?? null;
             return await openTeacherDashboard();
         }
     } catch { /* نمنع الدخول أدناه */ }
@@ -278,7 +284,7 @@ async function loadSchoolYears() {
 async function loadTeacherClasses() {
     try {
         const r = await getDoc(doc(db, 'teacherRoster', teacher.civilId));
-        if (r.exists() && r.data().uid === teacher.uid) teacherClasses = r.data().classes;
+        if (r.exists() && r.data().uid === teacher.uid) { teacherClasses = r.data().classes; teacherSubjects = r.data().subjects ?? null; }
     } catch { /* نبقي الفصل الحالي فقط */ }
     if (!teacherClasses.includes(teacher.className)) teacherClasses = [teacher.className, ...teacherClasses];
     const sel = $('dashClass');
@@ -296,7 +302,7 @@ async function openTeacherDashboard() {
 }
 
 function renderMeta() {
-    $('dashMeta').textContent = `المدرسة: ${teacher.school} | الفصل: ${teacher.className}`;
+    $('dashMeta').textContent = `المدرسة: ${teacher.school} | الفصل: ${teacher.className}` + (teacherSubjects ? ` | التخصص: ${teacherSubjects.map((x) => SUBJECTS[x].name).join('، ')}` : '');
 }
 
 async function changeClass() {
@@ -304,7 +310,7 @@ async function changeClass() {
     try {
         await updateDoc(doc(db, 'teachers', teacher.uid), { className });
         teacher.className = className;
-        if (!subjectsOfGrade(currentGrade()).includes(repSubject)) repSubject = 'reading';
+        if (!mySubjects(currentGrade()).includes(repSubject)) repSubject = mySubjects(currentGrade())[0];
         $('officialPanel').classList.add('hidden');
         $('bankPanel').classList.add('hidden');
         renderMeta();
@@ -453,8 +459,8 @@ function subjectChips(box, subjects, current, action) {
 
 function renderReports(report) {
     const grade = currentGrade();
-    if (!subjectsOfGrade(grade).includes(repSubject)) repSubject = 'reading';
-    subjectChips($('repSubject'), subjectsOfGrade(grade), repSubject, 'rep-subject');
+    if (!mySubjects(grade).includes(repSubject)) repSubject = mySubjects(grade)[0];
+    subjectChips($('repSubject'), mySubjects(grade), repSubject, 'rep-subject');
     $('repTotalStudents').textContent = report.students.length;
     $('repTests').textContent = classTests().filter((t) => testSubject(t) === repSubject && t.status === 'published').length;
     $('repCompletedCount').textContent = report.tested;
@@ -752,7 +758,8 @@ function renderBuilder() {
     $('tbPassage').value = draft.passage;
     $('tbClass').textContent = draft.className;
     $('tbGrade').textContent = GRADES[draft.grade].name;
-    subjectChips($('tbSubject'), subjectsOfGrade(draft.grade), draft.subject, 'tb-subject');
+    if (!mySubjects(draft.grade).includes(draft.subject)) draft.subject = mySubjects(draft.grade)[0];
+    subjectChips($('tbSubject'), mySubjects(draft.grade), draft.subject, 'tb-subject');
     const reading = draft.subject === 'reading';
     $('tbPassageTitle').textContent = reading ? '٢. نص القراءة' : '٢. نص أو معطيات (اختياري)';
     $('tbPassageHint').classList.toggle('hidden', reading);
@@ -934,7 +941,7 @@ async function showOfficial() {
         for (const form of forms) {
             const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3');
             card.append(el('h4', 'font-bold text-slate-800 text-sm', form.name));
-            for (const subject of subjectsOfGrade(grade)) {
+            for (const subject of mySubjects(grade)) {
                 const qs = form.subjects[subject];
                 if (!qs) continue;
                 const source = `${form.id}-${subject}`;
@@ -961,7 +968,7 @@ async function showOfficial() {
         for (const m of forms) {
             const card = el('div', 'border border-slate-200 rounded-2xl p-4 space-y-3');
             card.append(el('h4', 'font-bold text-slate-800 text-sm', m.name));
-            for (const subject of subjectsOfGrade(grade)) {
+            for (const subject of mySubjects(grade)) {
                 const qs = m.subjects[subject];
                 if (!qs) continue;
                 const source = `${prefix}-${m.id}-${subject}`;
@@ -1049,7 +1056,7 @@ async function loadBankOfficial(subject, grade) {
 
 async function showBankPanel() {
     const grade = currentGrade();
-    const subjects = subjectsOfGrade(grade);
+    const subjects = mySubjects(grade);
     if (!subjects.includes(bpState.subject)) bpState.subject = subjects[0];
     bpState.skills.clear();
     $('officialPanel').classList.add('hidden');
@@ -1061,7 +1068,7 @@ async function renderBankPanel() {
     const grade = currentGrade();
     const subj = $('bpSubject');
     subj.replaceChildren();
-    for (const s of subjectsOfGrade(grade)) {
+    for (const s of mySubjects(grade)) {
         const b = actionButton(SUBJECTS[s].name, 'bp-subject', s, `px-3 py-1.5 rounded-lg text-xs font-bold border ${s === bpState.subject ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200'}`);
         subj.append(b);
     }
@@ -1621,8 +1628,21 @@ function renderPrincipal() {
     }
     $('pdMeta').textContent = `${school.name} · الرقم الإحصائي: ${school.no} · العام الدراسي: ${school.year}`;
 
+    // مراحل لوحة المدير: ١) اختيار الفصول ← ٢) إسناد المعلمين لفصولهم وتخصصاتهم ← ٣) التقارير.
+    // ما انتهى منه يختفي إلى قائمة منسدلة، وتبقى الواجهة لما يلي.
+    const covered = new Set(roster.flatMap((r) => r.classes));
+    const uncovered = school.classes.filter((c) => !covered.has(c));
+    const stage = !school.classes.length ? 'classes' : uncovered.length || !roster.length ? 'assign' : 'reports';
+    const fold = (title, node, open = false) => {
+        const d = el('details', 'bg-white rounded-3xl shadow-sm border border-slate-100 group');
+        if (open) d.open = true;
+        d.append(el('summary', 'cursor-pointer select-none px-6 py-4 font-bold text-slate-700 text-sm flex items-center justify-between', title), node);
+        return d;
+    };
+    const panel = (cls = 'p-6 space-y-4') => el('div', cls);
+
     // الفصول
-    const classes = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4');
+    const classes = panel();
     classes.append(el('h3', 'font-black text-slate-800', 'الصفوف والفصول في مدرستك'), el('p', 'text-xs text-slate-500', 'اختر الفصول المستهدفة باختبارات نافس (الثالث الابتدائي، السادس الابتدائي، الثالث المتوسط).'));
     const grid = el('div', 'grid grid-cols-1 sm:grid-cols-3 gap-2');
     for (const c of CLASSES) {
@@ -1631,46 +1651,32 @@ function renderPrincipal() {
         lab.append(cb, el('span', '', c));
         grid.append(lab);
     }
-    const save = actionButton('حفظ الفصول', 'pd-save-classes', '', 'bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl');
-    classes.append(grid, save);
-    body.append(classes);
+    classes.append(grid, actionButton('حفظ الفصول', 'pd-save-classes', '', 'bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl'));
 
-    // العام الدراسي والأرشيف
-    const yr = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3');
-    yr.append(el('h3', 'font-black text-slate-800', 'العام الدراسي والأرشيف'), el('p', 'text-sm text-slate-600 leading-relaxed', `العام الحالي: ${school.year}. عند نهاية العام يُؤرشف بما فيه من اختبارات ونتائج ولا يُحذف شيء، ويُفتح عام جديد بتاريخه. يرى المعلمون الأعوام السابقة للاطلاع.`));
-    const ys = (school.years?.length ? school.years : [{ label: school.year }]).map((y) => y.label);
-    yr.append(el('p', 'text-xs text-slate-500', `الأعوام المحفوظة: ${ys.join(' ، ')}`), actionButton('إنهاء العام الدراسي وفتح عام جديد', 'pd-new-year', '', 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl'));
-    body.append(yr);
-    const arch = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-2');
-    arch.append(el('h3', 'font-black text-slate-800', 'أرشيف الاختبارات والنتائج'));
-    const archList = el('p', 'text-sm text-slate-600', 'جارٍ التحميل...');
-    arch.append(archList);
-    body.append(arch);
-    getDocs(query(collection(db, 'tests'), where('schoolNo', '==', school.no))).then((snap) => {
-        const byYear = {};
-        snap.docs.forEach((d) => { const y = d.data().year || 'بلا عام'; byYear[y] = (byYear[y] || 0) + 1; });
-        const rows = Object.entries(byYear);
-        archList.textContent = rows.length ? rows.map(([y, n]) => `${y}: ${n} اختبار`).join(' ، ') : 'لا توجد اختبارات مؤرشفة بعد.';
-    }).catch(() => { archList.textContent = 'تعذّر تحميل الأرشيف.'; });
-
-    // المعلمون
-    const t = el('section', 'bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4');
-    t.append(el('h3', 'font-black text-slate-800', 'المعلمون وإسنادهم للفصول'));
-    if (!school.classes.length) t.append(el('p', 'text-sm text-amber-700 font-bold', 'احفظ الفصول أولاً ثم أضف المعلمين.'));
-    else {
+    // المعلمون: الإسناد بالفصول والتخصص
+    const t = panel();
+    t.append(el('h3', 'font-black text-slate-800', 'المعلمون وإسنادهم للفصول والتخصصات'));
+    if (stage === 'assign' && uncovered.length) t.append(el('p', 'text-sm text-amber-700 font-bold', `فصول لم يُسند لها معلم بعد: ${uncovered.join('، ')}`));
+    if (school.classes.length) {
         const f = el('form', 'space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-100'); f.id = 'pdTeacherForm';
         const row = el('div', 'grid grid-cols-1 md:grid-cols-2 gap-3');
         const name = el('input', 'px-3 py-2.5 border border-slate-200 rounded-xl text-sm'); name.id = 'pdTName'; name.placeholder = 'اسم المعلم الثلاثي'; name.required = true; name.maxLength = 100;
         const cid = el('input', 'px-3 py-2.5 border border-slate-200 rounded-xl text-sm'); cid.id = 'pdTCivil'; cid.placeholder = 'السجل المدني (10 أرقام)'; cid.required = true; cid.pattern = '[0-9]{10}'; cid.maxLength = 10; cid.inputMode = 'numeric';
         row.append(name, cid);
-        const cl = el('div', 'flex flex-wrap gap-2 text-xs');
-        for (const c of school.classes) {
-            const lab = el('label', 'flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5');
-            const cb = el('input', ''); cb.type = 'checkbox'; cb.value = c; cb.dataset.pdTClass = c;
-            lab.append(cb, el('span', '', c)); cl.append(lab);
-        }
+        const checks = (items, attr, label) => {
+            const box = el('div', 'flex flex-wrap gap-2 text-xs');
+            for (const [value, text] of items) {
+                const lab = el('label', 'flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5');
+                const cb = el('input', ''); cb.type = 'checkbox'; cb.value = value; cb.dataset[attr] = value;
+                lab.append(cb, el('span', '', text)); box.append(lab);
+            }
+            return [el('p', 'text-xs font-bold text-slate-600', label), box];
+        };
         const add = el('button', 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs', 'إضافة المعلم'); add.type = 'submit';
-        f.append(row, el('p', 'text-xs font-bold text-slate-600', 'الفصول المسندة له:'), cl, add);
+        f.append(row,
+            ...checks(school.classes.map((c) => [c, c]), 'pdTClass', 'الفصول المسندة له:'),
+            ...checks([['reading', 'لغتي (القراءة)'], ['math', 'الرياضيات'], ['science', 'العلوم']], 'pdTSubject', 'تخصصه (المواد التي يدرّسها):'),
+            add);
         f.addEventListener('submit', addRosterTeacher);
         t.append(f);
     }
@@ -1679,7 +1685,8 @@ function renderPrincipal() {
     for (const r of roster) {
         const card = el('div', 'border border-slate-200 rounded-2xl p-3 text-xs flex flex-wrap items-center gap-3 justify-between');
         const info = el('div', 'space-y-1');
-        info.append(el('p', 'font-bold text-slate-800 text-sm', `${r.name} — ${r.id}`), el('p', 'text-slate-500', r.classes.join('، ')));
+        const subs = (r.subjects ?? []).map((x) => SUBJECTS[x].name).join('، ') || 'كل المواد (لم يُحدَّد تخصصه)';
+        info.append(el('p', 'font-bold text-slate-800 text-sm', `${r.name} — ${r.id}`), el('p', 'text-slate-500', `الفصول: ${r.classes.join('، ')}`), el('p', 'text-emerald-700 font-semibold', `التخصص: ${subs}`));
         const btns = el('div', 'flex flex-wrap items-center gap-3 font-bold');
         btns.append(el('span', `px-2.5 py-1 rounded-full ${r.uid ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`, r.uid ? 'مفعّل' : 'لم يُفعّل حسابه'));
         if (r.uid) btns.append(actionButton('إعادة ضبط التفعيل', 'pd-reset-teacher', r.id, 'text-amber-700 hover:text-amber-900'));
@@ -1688,7 +1695,69 @@ function renderPrincipal() {
         list.append(card);
     }
     t.append(list);
-    body.append(t);
+
+    // التقارير
+    const rep = panel();
+    rep.append(el('h3', 'font-black text-slate-800', 'تقارير المدرسة'));
+    const repBody = el('div', 'space-y-3 text-sm text-slate-600', 'جارٍ تحميل نتائج الفصول...');
+    rep.append(repBody);
+
+    // أرشفة العام الدراسي: قائمة منسدلة بعيدة عن العرض الدائم
+    const yr = panel('p-6 space-y-3');
+    yr.append(el('p', 'text-sm text-slate-600 leading-relaxed', `العام الحالي: ${school.year}. عند نهاية العام يُؤرشف بما فيه من اختبارات ونتائج ولا يُحذف شيء، ويُفتح عام جديد بتاريخه. يرى المعلمون الأعوام السابقة للاطلاع.`));
+    const ys = (school.years?.length ? school.years : [{ label: school.year }]).map((y) => y.label);
+    yr.append(el('p', 'text-xs text-slate-500', `الأعوام المحفوظة: ${ys.join(' ، ')}`), actionButton('إنهاء العام الدراسي وفتح عام جديد', 'pd-new-year', '', 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl'));
+    const archList = el('p', 'text-sm text-slate-600 pt-2 border-t border-slate-100', 'جارٍ تحميل الأرشيف...');
+    yr.append(el('h4', 'font-bold text-slate-700 text-sm', 'أرشيف الاختبارات والنتائج'), archList);
+    getDocs(query(collection(db, 'tests'), where('schoolNo', '==', school.no))).then((snap) => {
+        const byYear = {};
+        snap.docs.forEach((d) => { const y = d.data().year || 'بلا عام'; byYear[y] = (byYear[y] || 0) + 1; });
+        const rows = Object.entries(byYear);
+        archList.textContent = rows.length ? rows.map(([y, n]) => `${y}: ${n} اختبار`).join(' ، ') : 'لا توجد اختبارات مؤرشفة بعد.';
+    }).catch(() => { archList.textContent = 'تعذّر تحميل الأرشيف.'; });
+
+    // الترتيب: الواجهة الظاهرة للمرحلة الحالية، ثم القوائم المنسدلة لما انتهى
+    const card = (node) => { const d = el('section', 'bg-white rounded-3xl shadow-sm border border-slate-100'); d.append(node); return d; };
+    if (stage === 'classes') body.append(card(classes));
+    else if (stage === 'assign') { body.append(card(t)); body.append(fold('الصفوف والفصول (تعديل)', classes)); }
+    else { body.append(card(rep)); body.append(fold('المعلمون وإسنادهم (تعديل)', t)); body.append(fold('الصفوف والفصول (تعديل)', classes)); }
+    body.append(fold('أرشفة العام الدراسي', yr));
+    if (stage === 'reports') loadPrincipalReport(repBody);
+}
+
+// تقرير المدرسة: لكل فصل ومادة متوسط النسبة وعدد من اختبروا، من اختبارات المعلمين المفعّلين في العام الحالي
+async function loadPrincipalReport(box) {
+    try {
+        const uids = [...new Set(roster.filter((r) => r.uid).map((r) => r.uid))];
+        const mine = (name, uid) => getDocs(query(collection(db, name), where('teacherUid', '==', uid)));
+        const got = await Promise.all(uids.map((u) => Promise.all(['students', 'tests', 'testKeys', 'attempts'].map((n) => mine(n, u)))));
+        const stu = [], tst = {}, key = {}, att = [];
+        for (const [a, b, c, d] of got) {
+            a.docs.forEach((x) => stu.push({ id: x.id, ...x.data() }));
+            b.docs.forEach((x) => { tst[x.id] = { id: x.id, ...x.data() }; });
+            c.docs.forEach((x) => { key[x.id] = x.data().answers; });
+            d.docs.forEach((x) => att.push({ id: x.id, ...x.data(), submittedAt: ms(x.data().submittedAt) }));
+        }
+        const years = school.years?.length ? school.years : [{ label: school.year, start: 0 }];
+        const cur = Object.fromEntries(Object.entries(tst).filter(([, t]) => (t.year ?? yearOf(years, ms(t.createdAt))) === school.year));
+        const table = el('table', 'w-full text-right text-xs');
+        const head = el('tr', 'bg-slate-50 text-slate-500');
+        ['الفصل', 'الطلاب', 'لغتي', 'الرياضيات', 'العلوم'].forEach((h) => head.append(el('th', 'p-2', h)));
+        table.append(head);
+        for (const c of school.classes) {
+            const sc = stu.filter((x) => x.className === c);
+            const tr = el('tr', 'border-t border-slate-100');
+            tr.append(el('td', 'p-2 font-bold text-slate-800', c), el('td', 'p-2', String(sc.length)));
+            for (const sub of ['reading', 'math', 'science']) {
+                const ts = Object.fromEntries(Object.entries(cur).filter(([, t]) => testSubject(t) === sub && t.className === c));
+                if (!Object.keys(ts).length) { tr.append(el('td', 'p-2 text-slate-300', '—')); continue; }
+                const r = buildReport(sc, att.filter((a) => ts[a.testId]), ts, key);
+                tr.append(el('td', 'p-2', r.avg === null ? 'لا نتائج' : `${r.avg}% (${r.tested} طالباً)`));
+            }
+            table.append(tr);
+        }
+        box.replaceChildren(el('p', 'text-xs text-slate-500', `العام الدراسي ${school.year}: متوسط نسبة الإتقان لكل فصل ومادة.`), table);
+    } catch (err) { box.textContent = 'تعذّر تحميل التقارير.'; reportError(err); }
 }
 
 async function openNewYear(btn) {
@@ -1761,13 +1830,15 @@ async function addRosterTeacher(e) {
     const name = $('pdTName').value.trim(), cid = $('pdTCivil').value.trim();
     const classes = [...document.querySelectorAll('[data-pd-t-class]')].filter((c) => c.checked).map((c) => c.dataset.pdTClass);
     if (!isCivilId(cid)) return showAlert('السجل المدني يجب أن يكون مكوناً من 10 أرقام.', 'تنبيه خطأ');
+    const subjects = [...document.querySelectorAll('[data-pd-t-subject]')].filter((c) => c.checked).map((c) => c.dataset.pdTSubject);
     if (!classes.length) return showAlert('اختر فصلاً واحداً على الأقل للمعلم.', 'تنبيه');
+    if (!subjects.length) return showAlert('حدّد تخصص المعلم: لغتي أو رياضيات أو علوم (واحداً على الأقل).', 'تنبيه');
     await busy(e.submitter, async () => {
         const prior = await getDoc(doc(db, 'teacherRoster', cid)).catch(() => null);
         if (prior?.exists() && prior.data().schoolNo === school.no) {
-            await updateDoc(doc(db, 'teacherRoster', cid), { name, classes, uid: prior.data().uid ?? null, email: prior.data().email ?? null, activatedAt: prior.data().activatedAt ?? null });
+            await updateDoc(doc(db, 'teacherRoster', cid), { name, classes, subjects, uid: prior.data().uid ?? null, email: prior.data().email ?? null, activatedAt: prior.data().activatedAt ?? null });
         } else {
-            try { await setDoc(doc(db, 'teacherRoster', cid), { schoolNo: school.no, name, classes, uid: null, createdAt: serverTimestamp() }); }
+            try { await setDoc(doc(db, 'teacherRoster', cid), { schoolNo: school.no, name, classes, subjects, uid: null, createdAt: serverTimestamp() }); }
             catch (err) { if (err?.code === 'permission-denied') return showAlert('هذا السجل المدني مسجّل لمعلم في مدرسة أخرى. يلزم أن يحذفه مدير تلك المدرسة أولاً.', 'تعذّرت الإضافة'); throw err; }
         }
         await openPrincipalDashboard();
@@ -2004,7 +2075,7 @@ async function loadBank() {
 function bankSkillOptions() {
     const grade = gradeOfClass(teacher.className);
     const subSel = $('bankSubject');
-    const subjects = subjectsOfGrade(grade);
+    const subjects = mySubjects(grade);
     if (subSel.options.length !== subjects.length) {
         subSel.replaceChildren(...subjects.map((s) => new Option(SUBJECTS[s].name, s)));
     }
