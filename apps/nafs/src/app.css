@@ -26,3 +26,6 @@ h1, h2, h3, h4 { font-weight: 700; }
 /* الحقول لا تتجاوز عرض بطاقتها على الجوال */
 input, select, textarea { max-width: 100%; min-width: 0; }
 html, body { overflow-x: clip; }
+
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }
