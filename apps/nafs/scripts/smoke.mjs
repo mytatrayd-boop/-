@@ -69,6 +69,9 @@ export async function smokeTest(url) {
             await page.click('[data-action="submit-test"]');
             await page.click('#modalOk');
             await ok(page, 'تم إرسال');
+            await page.locator('#studentResultView').waitFor({ state: 'visible', timeout: 30000 }); // نتيجة الطالب التفصيلية
+            if (!/\d+%/.test(await page.textContent('#srBody'))) throw new Error('نتيجة الطالب بلا نسبة');
+            await page.click('#studentResultView [data-action="back-to-tests"]');
             return { n, imgs };
         };
         const math = await answerAll('الرياضيات');
