@@ -1731,7 +1731,7 @@ function renderPrincipal() {
         const btns = el('div', 'flex flex-wrap items-center gap-3 font-bold');
         btns.append(el('span', `px-2.5 py-1 rounded-full ${r.uid ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`, r.uid ? 'مفعّل' : 'لم يُفعّل حسابه'));
         if (r.uid) btns.append(actionButton('إعادة ضبط التفعيل', 'pd-reset-teacher', r.id, 'text-amber-700 hover:text-amber-900'));
-        btns.append(actionButton('حذف', 'pd-del-teacher', r.id, 'text-red-500 hover:text-red-700'));
+        btns.append(actionButton('تعديل الإسناد', 'pd-edit-teacher', r.id, 'text-indigo-700 hover:text-indigo-900'), actionButton('حذف', 'pd-del-teacher', r.id, 'text-red-500 hover:text-red-700'));
         card.append(info, btns);
         list.append(card);
     }
@@ -1879,13 +1879,15 @@ async function addRosterTeacher(e) {
     await busy(e.submitter, async () => {
         const prior = await getDoc(doc(db, 'teacherRoster', cid)).catch(() => null);
         if (prior?.exists() && prior.data().schoolNo === school.no) {
-            await updateDoc(doc(db, 'teacherRoster', cid), { name, classes, subjects, uid: prior.data().uid ?? null, email: prior.data().email ?? null, activatedAt: prior.data().activatedAt ?? null });
+            // معلم مضاف سابقاً: يُحدَّث اسمه وفصوله وتخصصه فقط (التفعيل لا يُمسّ)
+            await updateDoc(doc(db, 'teacherRoster', cid), { name, classes, subjects });
         } else {
             try { await setDoc(doc(db, 'teacherRoster', cid), { schoolNo: school.no, name, classes, subjects, uid: null, createdAt: serverTimestamp() }); }
             catch (err) { if (err?.code === 'permission-denied') return showAlert('هذا السجل المدني مسجّل لمعلم في مدرسة أخرى. يلزم أن يحذفه مدير تلك المدرسة أولاً.', 'تعذّرت الإضافة'); throw err; }
         }
         pdOpen = null;
         await openPrincipalDashboard();
+        if (prior?.exists() && prior.data().schoolNo === school.no) return showAlert(`حُدّث إسناد المعلم ${name}: ${classes.length} فصول، والتخصص: ${subjects.map((x) => SUBJECTS[x].name).join('، ')}.`, 'تم التحديث');
         showAlert(`أُضيف المعلم ${name}. يدخل من بوابة المعلم ← «تفعيل حسابي» برقم سجله المدني، فينشئ كلمة مروره.`, 'تمت الإضافة');
     });
 }
@@ -2399,6 +2401,15 @@ function bindEvents() {
             case 'pd-reject-transfer': rejectTransfer(); break;
             case 'pd-refresh': openPrincipalDashboard(); break;
             case 'pd-del-teacher': deleteRosterTeacher(id); break;
+            case 'pd-edit-teacher': {
+                const r = roster.find((x) => x.id === id);
+                if (!r) break;
+                $('pdTName').value = r.name; $('pdTCivil').value = r.id;
+                document.querySelectorAll('[data-pd-t-class]').forEach((c) => { c.checked = r.classes.includes(c.value); });
+                document.querySelectorAll('[data-pd-t-subject]').forEach((c) => { c.checked = (r.subjects ?? []).includes(c.value); });
+                $('pdTeacherForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                break;
+            }
             case 'pd-reset-teacher': resetRosterTeacher(id); break;
             case 'show-student-login': showScreen('studentLoginScreen'); break;
             case 'back': showScreen('roleSelectionScreen'); break;

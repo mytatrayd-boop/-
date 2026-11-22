@@ -408,3 +408,13 @@ test('تقارير المدير: يقرأ طلاب معلمي مدرسته وا�
     await assertFails(getDoc(doc(teacherDb(T2), 'testKeys/RT1')));
     await assertFails(getDoc(doc(studentDb(), 'testKeys/RT1')));
 });
+
+test('المدير يعدّل فصول معلم مفعّل وتخصصه (ثلاثة فصول فأكثر) دون أن يمس التفعيل', async () => {
+    const p1 = teacherDbNew(P1), p2 = teacherDbNew(P2);
+    const three = ['الثالث الابتدائي - أ', 'الثالث الابتدائي - ب', 'الثالث الابتدائي - ج'];
+    await assertSucceeds(updateDoc(doc(p1, 'teacherRoster/1000000001'), { classes: three, subjects: ['reading'] })); // مفعّل لـ T1
+    await assertFails(updateDoc(doc(p1, 'teacherRoster/1000000001'), { classes: three, uid: 'other' }));              // لا يغيّر التفعيل
+    await assertFails(updateDoc(doc(p1, 'teacherRoster/1000000001'), { classes: three, subjects: ['art'] }));
+    await assertFails(updateDoc(doc(p2, 'teacherRoster/1000000001'), { classes: three, subjects: ['reading'] }));     // ليس مدير مدرسته
+    await assertSucceeds(setDoc(doc(p1, 'teacherRoster/1000000077'), { schoolNo: '123456', name: 'ثلاثة فصول', classes: three, subjects: ['reading'], uid: null, createdAt: serverTimestamp() }));
+});

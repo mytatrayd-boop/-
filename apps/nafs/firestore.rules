@@ -138,6 +138,12 @@ service cloud.firestore {
         && request.resource.data.uid == null
         && classList(request.resource.data.classes)
         && (!('subjects' in request.resource.data) || subjectList(request.resource.data.subjects)); // كشف قديم بلا تخصص يبقى قابلاً لإعادة الضبط
+      // المدير: يعدّل اسم المعلم وفصوله وتخصصه ولو كان حسابه مفعّلاً (لا يمس التفعيل)
+      allow update: if isPrincipalOf(resource.data.schoolNo)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'classes', 'subjects'])
+        && text(request.resource.data.name, 100)
+        && classList(request.resource.data.classes)
+        && subjectList(request.resource.data.subjects);
       // المعلم: يفعّل حسابه مرة واحدة (uid كان فارغاً)
       allow update: if isTeacher() && resource.data.uid == null
         && request.resource.data.uid == request.auth.uid
