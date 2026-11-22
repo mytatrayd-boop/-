@@ -328,6 +328,13 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page.click('[data-action="submit-test"]');
     await page.click('#modalOk'); // تأكيد الإرسال
     assert.match(await closeModal(page, 'تم إرسال'), /تم إرسال إجاباتك/);
+    // نتيجة الطالب التفصيلية تظهر بعد الإرسال: النسبة والمستوى والمهارات ومراجعة الأسئلة
+    await page.locator('#studentResultView').waitFor({ state: 'visible' });
+    const res = await page.textContent('#srBody');
+    assert.match(res, /\d+%/);
+    assert.match(res, /مستواك في كل مهارة/);
+    assert.match(res, /مراجعة أسئلتك/);
+    await page.click('#studentResultView [data-action="back-to-tests"]');
     await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 2);
 
     await page.locator('#studentTestsList > div', { hasText: 'النخلة الصغيرة' }).locator('[data-action="open-test"]').click();
@@ -336,6 +343,8 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page.click('[data-action="submit-test"]');
     await page.click('#modalOk');
     await closeModal(page, 'تم إرسال');
+    await page.locator('#studentResultView').waitFor({ state: 'visible' });
+    await page.click('#studentResultView [data-action="back-to-tests"]');
     await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 1);
 
     // النموذج الرسمي: أسئلته صور وخياراته أ ب ج د
@@ -351,6 +360,8 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await page.click('[data-action="submit-test"]');
     await page.click('#modalOk');
     await closeModal(page, 'تم إرسال');
+    await page.locator('#studentResultView').waitFor({ state: 'visible' });
+    await page.click('#studentResultView [data-action="back-to-tests"]');
     await page.waitForFunction(() => document.querySelectorAll('#studentTestsList [data-action="open-test"]').length === 0);
 
     // جهاز ثانٍ: المعلم يدخل ويرى المستوى لكل مهارة

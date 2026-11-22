@@ -406,7 +406,11 @@ test('تقارير المدير: يقرأ طلاب معلمي مدرسته وا�
     }
     await assertSucceeds(getDoc(doc(teacherDb(P1), 'testKeys/RT1')));
     await assertFails(getDoc(doc(teacherDb(T2), 'testKeys/RT1')));
-    await assertFails(getDoc(doc(studentDb(), 'testKeys/RT1')));
+    // الطالب: مفتاح اختبار أرسل إجاباته (RT1) نعم، وغيره (RT2 لم يرسله) لا
+    await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'testKeys/RT2'), { teacherUid: T1, answers: [1] }); });
+    await assertSucceeds(getDoc(doc(studentDb(), 'testKeys/RT1')));
+    await assertFails(getDoc(doc(studentDb(), 'testKeys/RT2')));
+    await assertFails(getDoc(doc(env.authenticatedContext('anon9', { firebase: { sign_in_provider: 'anonymous' } }).firestore(), 'testKeys/RT1'))); // بلا جلسة
 });
 
 test('المدير يعدّل فصول معلم مفعّل وتخصصه (ثلاثة فصول فأكثر) دون أن يمس التفعيل', async () => {

@@ -204,6 +204,10 @@ service cloud.firestore {
         && request.resource.data.teacherUid == request.auth.uid
         && request.resource.data.pin is string && request.resource.data.pin.matches('^[0-9]{6}$');
     }
+    function studentSubmitted(testId) {
+      return exists(/databases/$(database)/documents/studentSessions/$(request.auth.uid))
+        && exists(/databases/$(database)/documents/attempts/$(testId + '_' + get(/databases/$(database)/documents/studentSessions/$(request.auth.uid)).data.studentId));
+    }
     match /studentSessions/{uid} {
       allow create, update: if isStudentSession() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['studentId', 'pin'])
@@ -262,6 +266,8 @@ service cloud.firestore {
     // الإجابات الصحيحة — للمعلم فقط.
     match /testKeys/{testId} {
       allow read: if isTeacher() && (resource.data.teacherUid == request.auth.uid || principalOfTeacher(resource.data.teacherUid));
+      // الطالب يقرأ مفتاح اختبار أرسل إجاباته عليه فقط (لعرض نتيجته التفصيلية)، لا قبل الإرسال
+      allow get: if isStudentSession() && studentSubmitted(testId);
       allow delete: if isTeacher() && resource.data.teacherUid == request.auth.uid;
       allow create, update: if isTeacher()
         && request.resource.data.teacherUid == request.auth.uid

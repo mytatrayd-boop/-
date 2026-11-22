@@ -8,7 +8,7 @@ import {
     collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, orderBy,
 } from 'firebase/firestore';
 import {
-    CLASSES, MAX_UPLOAD_BYTES, isCivilId, parseStudentRows, buildReport, masteryLevel, reportCsv, shuffleOptions, questionError,
+    CLASSES, MAX_UPLOAD_BYTES, isCivilId, parseStudentRows, buildReport, gradeAttempt, masteryLevel, reportCsv, shuffleOptions, questionError,
 } from './logic.js';
 import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skillsFor, skillIdsFor, gradeOfClass, skillById } from './skills.js';
 import { TEMPLATES } from './templates.js';
@@ -1424,6 +1424,7 @@ function renderStudentTests() {
     openTest = null;
     $('studentTestsView').classList.remove('hidden');
     $('studentTestView').classList.add('hidden');
+    $('studentResultView').classList.add('hidden');
     const box = $('studentTestsList');
     box.replaceChildren();
     if (!studentTests.length) box.append(el('p', 'text-sm text-slate-400 text-center py-8', 'لا توجد اختبارات منشورة لفصلك حالياً.'));
@@ -1431,7 +1432,9 @@ function renderStudentTests() {
         const row = el('div', 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border ' + (t.done ? 'border-slate-200 bg-slate-50' : 'border-teal-200 bg-teal-50/40'));
         const info = el('div');
         info.append(el('p', 'font-bold text-slate-800', t.title), el('p', 'text-xs text-slate-500 mt-1', `${SUBJECTS[testSubject(t)].name} · ${t.questions.length} سؤالاً`));
-        row.append(info, t.done ? el('span', 'text-xs font-bold text-emerald-700', '✓ تم الإرسال')
+        const doneBox = el('div', 'flex items-center gap-3');
+        doneBox.append(el('span', 'text-xs font-bold text-emerald-700', '✓ تم الإرسال'), actionButton('📊 نتيجتي التفصيلية', 'view-result', t.id, 'bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-xl text-xs'));
+        row.append(info, t.done ? doneBox
             : actionButton('ابدأ الاختبار ➔', 'open-test', t.id, 'bg-teal-600 hover:bg-teal-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs'));
         box.append(row);
     }
@@ -1507,10 +1510,62 @@ async function submitTest(e) {
             if (err?.code === 'permission-denied') return showAlert('سبق أن أرسلت هذا الاختبار، أو أوقف المعلم نشره.', 'تنبيه');
             throw err;
         }
+        const sent = openTest;
         openTest.done = true;
         renderStudentTests();
-        showAlert('أحسنت! تم إرسال إجاباتك، وسيطّلع معلمك على نتيجتك ومستواك في كل مهارة.', 'تم الإرسال');
+        showAlert('أحسنت! تم إرسال إجاباتك. اضغط «نتيجتي التفصيلية» لترى مستواك في كل مهارة.', 'تم الإرسال');
+        await showStudentResult(sent.id);
     });
+}
+
+// نتيجة الطالب التفصيلية بعد الإرسال: النسبة العامة والمستوى، ثم مستوى كل مهارة، ثم مراجعة أسئلته
+async function showStudentResult(testId) {
+    const t = studentTests.find((x) => x.id === testId);
+    if (!t) return;
+    let attempt, key;
+    try {
+        const [a, k] = await Promise.all([getDoc(doc(db, 'attempts', `${testId}_${activeStudent.id}`)), getDoc(doc(db, 'testKeys', testId))]);
+        if (!a.exists() || !k.exists()) return showAlert('تعذّر عرض النتيجة الآن. حاول لاحقاً أو اسأل معلمك.', 'تنبيه');
+        attempt = a.data(); key = k.data().answers;
+    } catch (err) { return reportError(err); }
+    const g = gradeAttempt(t.questions, key, attempt.answers);
+    const m = masteryLevel(g.pct);
+    $('studentTestsView').classList.add('hidden');
+    $('studentTestView').classList.add('hidden');
+    $('studentResultView').classList.remove('hidden');
+    $('srTitle').textContent = `نتيجتي: ${t.title}`;
+    const body = $('srBody');
+    body.replaceChildren();
+    const top = el('div', 'rounded-2xl p-6 text-center space-y-2 ' + { good: 'bg-emerald-50', mid: 'bg-amber-50', low: 'bg-red-50', none: 'bg-slate-50' }[m.tone]);
+    top.append(el('p', 'text-5xl font-black text-slate-800', `${g.pct}%`), el('p', 'text-sm text-slate-600', `أجبتَ ${g.c} إجابة صحيحة من ${g.t} (${SUBJECTS[testSubject(t)].name})`));
+    top.append(badge(g.pct));
+    body.append(top);
+
+    const lv = el('section', 'space-y-3');
+    lv.append(el('h4', 'font-bold text-slate-800 text-sm', 'مستواك في مستويات التفكير'));
+    for (const l of LEVELS) if (g.levels[l.id]) lv.append(statRow(l.name, { ...g.levels[l.id], pct: Math.round((g.levels[l.id].c / g.levels[l.id].t) * 100) }));
+    body.append(lv);
+
+    const sk = el('section', 'space-y-3');
+    sk.append(el('h4', 'font-bold text-slate-800 text-sm', 'مستواك في كل مهارة'));
+    const rows = Object.entries(g.skills).map(([id, v]) => ({ id, ...v, pct: Math.round((v.c / v.t) * 100) })).sort((x, y) => x.pct - y.pct);
+    for (const r of rows) sk.append(statRow(skillById(r.id)?.name ?? r.id, r, skillById(r.id)?.outcome?.name ?? ''));
+    const weak = rows.filter((r) => r.pct < 50);
+    if (weak.length) sk.append(el('p', 'text-xs font-semibold text-red-700 bg-red-50 border border-red-100 rounded-xl p-3', `ركّز في تدريبك على: ${weak.map((r) => skillById(r.id)?.name ?? r.id).join('، ')}`));
+    body.append(sk);
+
+    const rv = el('section', 'space-y-2');
+    rv.append(el('h4', 'font-bold text-slate-800 text-sm', 'مراجعة أسئلتك'));
+    const letters = ['أ', 'ب', 'ج', 'د'];
+    const grid = el('div', 'grid grid-cols-5 sm:grid-cols-10 gap-2 text-center text-xs');
+    t.questions.forEach((_, i) => {
+        const a = attempt.answers[i], ok = a === key[i];
+        const cell = el('div', `rounded-xl p-2 border ${ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`);
+        cell.append(el('p', 'font-black', String(i + 1)), el('p', '', ok ? '✓' : `${a >= 0 && a <= 3 ? letters[a] : 'لا إجابة'} ← ${letters[key[i]] ?? '؟'}`));
+        grid.append(cell);
+    });
+    rv.append(grid, el('p', 'text-[11px] text-slate-400', 'الخطأ يظهر بإجابتك ثم الإجابة الصحيحة.'));
+    body.append(rv);
 }
 
 async function studentLogout(message = 'تم تسجيل خروج الطالب.', title = 'إشعار') {
@@ -2498,6 +2553,7 @@ function bindEvents() {
             case 'close-student': $('studentModal').classList.add('hidden'); break;
             case 'open-test': openStudentTest(id); break;
             case 'back-to-tests': renderStudentTests(); break;
+            case 'view-result': showStudentResult(id); break;
             case 'submit-test': submitTest(e); break;
             case 'student-logout': studentLogout(); break;
         }
