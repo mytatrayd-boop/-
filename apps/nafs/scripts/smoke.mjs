@@ -7,11 +7,18 @@ import { getFirestore } from 'firebase-admin/firestore';
 export async function smokeTest(url) {
     const email = `smoke-${Date.now()}@nafs-test.invalid`;
     const studentId = '0' + String(Math.floor(Math.random() * 1e9)).padStart(9, '0'); // السجلات الحقيقية تبدأ بـ 1 أو 2
+    const schoolNo = '0' + String(Math.floor(Math.random() * 1e8)).padStart(8, '0'); // مدرسة تجريبية تُحذف في النهاية
+    const teacherCivil = '0' + String(Math.floor(Math.random() * 1e9)).padStart(9, '0');
+    const db0 = getFirestore();
+    await db0.doc(`schools/${schoolNo}`).set({ no: schoolNo, name: 'تجربة النشر', principalUid: null, principalName: null, classes: ['الثالث الابتدائي - أ'], year: '1448هـ · 2026-2027', years: [{ label: '1448هـ · 2026-2027', start: 0 }], createdAt: new Date() });
+    await db0.doc(`teacherRoster/${teacherCivil}`).set({ schoolNo, name: 'معلم تجريبي', classes: ['الثالث الابتدائي - أ'], uid: null, createdAt: new Date() });
     const browser = await chromium.launch({ channel: process.env.CHROME_PATH ? undefined : 'chrome', executablePath: process.env.CHROME_PATH });
     const errors = [];
     const ok = async (page, text) => {
         await page.waitForFunction((t) => !document.getElementById('customModal').classList.contains('hidden')
-            && document.getElementById('modalMessage').textContent.includes(t), text, { timeout: 30000 });
+            && document.getElementById('modalMessage').textContent.includes(t), text, { timeout: 30000 }).catch(async (e) => {
+            throw new Error(`${e.message} — الرسالة الظاهرة: «${await page.textContent('#modalMessage').catch(() => '')}» ${errors.join(' | ')}`);
+        });
         await page.click('#modalOk');
     };
     try {
@@ -20,14 +27,11 @@ export async function smokeTest(url) {
         await page.goto(url);
         await page.click('[data-action="show-teacher-login"]');
         await page.click('#authTabSignup');
-        await page.fill('#tName', 'معلم تجريبي');
-        await page.fill('#tId', '1000000000');
-        await page.fill('#tSchool', 'تجربة النشر');
-        await page.selectOption('#tClass', { index: 1 });
+        await page.fill('#tId', teacherCivil);
         await page.fill('#signupEmail', email);
         await page.fill('#signupPassword', 'smoke-' + Math.random().toString(36).slice(2));
         await page.click('#teacherSignupForm button[type=submit]');
-        await ok(page, 'تم إنشاء حسابك');
+        await ok(page, 'تم تفعيل حسابك'); // تفعيل حساب معلم أضافه مدير المدرسة
         await page.fill('#newStudentName', 'طالب تجريبي');
         await page.fill('#newStudentId', studentId);
         await page.click('#addStudentForm button[type=submit]');
@@ -50,6 +54,7 @@ export async function smokeTest(url) {
 
         await page.click('[data-action="show-student-login"]');
         await page.fill('#sIdInput', studentId);
+        await page.fill('#sPinInput', (await db0.doc(`studentPins/${studentId}`).get()).get('pin'));
         await page.click('#studentLoginForm button[type=submit]');
         const answerAll = async (title) => {
             await page.locator('#studentTestsList > div', { hasText: title }).locator('[data-action="open-test"]').click({ timeout: 30000 });
@@ -77,6 +82,11 @@ export async function smokeTest(url) {
         await browser.close();
         const db = getFirestore();
         await db.doc(`students/${studentId}`).delete().catch(() => {});
+        await db.doc(`studentPins/${studentId}`).delete().catch(() => {});
+        const sess = await db.collection('studentSessions').where('studentId', '==', studentId).get().catch(() => ({ docs: [] }));
+        await Promise.all(sess.docs.map((d) => d.ref.delete()));
+        await db.doc(`teacherRoster/${teacherCivil}`).delete().catch(() => {});
+        await db.doc(`schools/${schoolNo}`).delete().catch(() => {});
         const user = await getAuth().getUserByEmail(email).catch(() => null);
         if (user) {
             for (const name of ['tests', 'testKeys', 'attempts']) {
