@@ -14,6 +14,7 @@ import { GRADES, LEVELS, SUBJECTS, subjectsOfGrade, groupsFor, outcomesFor, skil
 import { TEMPLATES } from './templates.js';
 import { omrSheetHtml, omrKeyHtml, bookletHtml, esc, OMR_PER_PAGE } from './omr.js';
 import { scanSheet } from './omr-scan.js';
+import { SITE_STATS } from './site-stats.js';
 import { academicYear, nextYearLabel } from './years.js';
 import { BANK_STATUS, canTransition, qualityIssues, usableInTest, isDuplicate, newBankQuestion } from './bank.js';
 
@@ -121,7 +122,26 @@ async function handleAuthChange(user) {
 
 // ---------- التنقل ----------
 
+// أرقام الصفحة الرئيسية: تعدّ من الصفر إلى قيمتها عند ظهور الصفحة (وتظهر نهائية فوراً لمن يفضّل تقليل الحركة)
+let countersRun = 0;
+function runCounters() {
+    const run = ++countersRun;
+    const value = (k) => SITE_STATS[k] ?? SITE_STATS.subjects[k];
+    const nodes = [...document.querySelectorAll('[data-count]')];
+    const fmt = new Intl.NumberFormat('en-US');
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const t0 = performance.now(), dur = 1600;
+    const tick = (now) => {
+        if (run !== countersRun) return;
+        const p = still ? 1 : Math.min(1, (now - t0) / dur), ease = 1 - (1 - p) ** 3;
+        for (const n of nodes) n.textContent = fmt.format(Math.round(value(n.dataset.count) * ease));
+        if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+}
+
 function showScreen(id) {
+    if (id === 'roleSelectionScreen') runCounters();
     document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('hidden', el.id !== id));
     const isTeacher = id === 'teacherDashboardScreen', isPrincipal = id === 'principalDashboardScreen';
     $('userInfoHeader').classList.toggle('hidden', !isTeacher && !isPrincipal);

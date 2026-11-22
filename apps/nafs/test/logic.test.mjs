@@ -284,3 +284,16 @@ test('كتيّب الأسئلة المطبوع: ترقيم، نص مشترك م�
     assert.ok(!h.includes('<b>x</b>') && !h.includes('<i>نصي</i>'));
     assert.ok(h.includes('<b>د.</b> ٤'));
 });
+
+test('أرقام الصفحة الرئيسية تطابق محتوى البنك والنماذج', async () => {
+    const { SITE_STATS } = await import('../src/site-stats.js');
+    const { FORMS } = await import('../src/forms-data.js');
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const D = new URL('../public/bank-official/', import.meta.url);
+    const c = { math: 0, science: 0, reading: 0 };
+    for (const f of readdirSync(D).filter((x) => /^(math|science|reading)\d\.json$/.test(x))) c[f.match(/[a-z]+/)[0]] += JSON.parse(readFileSync(new URL(f, D))).length;
+    for (const m of JSON.parse(readFileSync(new URL('mocks.json', D)))) for (const [s, a] of Object.entries(m.subjects)) c[s] += a.length;
+    for (const f of FORMS) for (const [s, a] of Object.entries(f.subjects)) c[s] += Array.isArray(a) ? a.length : a.questions.length;
+    assert.deepEqual(SITE_STATS.subjects, c);
+    assert.equal(SITE_STATS.questions, c.math + c.science + c.reading);
+});

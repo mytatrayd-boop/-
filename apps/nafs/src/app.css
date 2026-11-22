@@ -2,4 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
+body { font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif; background-color: #f6f9f7; color: #161616; }
+h1, h2, h3, h4 { font-weight: 700; }
+.font-black { font-weight: 700; }
+
+/* توقيع «نافس» البصري: دوائر ورقة التظليل (OMR) — خلفية منقّطة تتخللها دوائر مظلَّلة */
+.bubbles {
+    background-image: radial-gradient(circle at center, transparent 5px, #b7dcc8 5.5px, #b7dcc8 6.5px, transparent 7px);
+    background-size: 28px 28px;
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,.9), rgba(0,0,0,0) 75%);
+    mask-image: linear-gradient(to left, rgba(0,0,0,.9), rgba(0,0,0,0) 75%);
+}
+.bubble-row { display: inline-flex; gap: 6px; direction: ltr; }
+.bubble-row i { width: 13px; height: 13px; border-radius: 9999px; border: 1.5px solid #1B8354; display: block; }
+.bubble-row i.on { background: #1B8354; }
+.stat-num { font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.stage-card { border-width: 1.5px; }
+@media (prefers-reduced-motion: no-preference) {
+    .hero-in { animation: heroIn .7s ease both; }
+    @keyframes heroIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+}
