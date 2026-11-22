@@ -139,9 +139,19 @@ function runCounters() {
     };
     requestAnimationFrame(tick);
 }
+// الأرقام في أسفل الصفحة: يبدأ العدّ حين تظهر على الشاشة
+let statsObserver;
+function watchCounters() {
+    const box = $('statsSection');
+    document.querySelectorAll('[data-count]').forEach((n) => { n.textContent = '0'; });
+    statsObserver?.disconnect();
+    if (!box || !('IntersectionObserver' in window)) return runCounters();
+    statsObserver = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { statsObserver.disconnect(); runCounters(); } }, { threshold: 0.3 });
+    statsObserver.observe(box);
+}
 
 function showScreen(id) {
-    if (id === 'roleSelectionScreen') runCounters();
+    if (id === 'roleSelectionScreen') watchCounters();
     document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('hidden', el.id !== id));
     const isTeacher = id === 'teacherDashboardScreen', isPrincipal = id === 'principalDashboardScreen';
     $('userInfoHeader').classList.toggle('hidden', !isTeacher && !isPrincipal);
