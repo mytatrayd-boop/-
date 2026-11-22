@@ -925,7 +925,7 @@ async function showOfficial() {
     const grade = currentGrade();
     const list = $('officialList');
     list.replaceChildren();
-    for (const [kind, title] of [['official', 'نماذج التهيئة الرسمية — نافس 2026'], ['training', 'نماذج تدريبية']]) {
+    for (const [kind, title] of [['official', 'نماذج التهيئة — نافس 2026'], ['training', 'نماذج تدريبية']]) {
         const forms = FORMS.filter((f) => f.grade === grade && f.kind === kind);
         if (!forms.length) continue;
         const section = el('div', 'space-y-3');
@@ -951,7 +951,7 @@ async function showOfficial() {
         list.append(section);
     }
     // الاختبارات المحاكية، ثم نماذج حلّها الموقع (مفاتيحها غير رسمية)
-    for (const [file, prefix, title] of [['mocks', 'mock', 'الاختبارات المحاكية (مفتاح رسمي: مظلَّل في ملف المصدر، من جهة غير الهيئة)'], ['solved', 'sol', 'نماذج تدريبية بمفتاح الموقع (غير رسمي) — راجع المفتاح قبل النشر']]) {
+    for (const [file, prefix, title] of [['mocks', 'mock', 'الاختبارات المحاكية (مفتاحها مظلَّل في ملف المصدر، من جهة غير الهيئة)'], ['solved', 'sol', 'نماذج تدريبية بمفتاح الموقع — راجع المفتاح قبل النشر']]) {
         let forms = [];
         try { const r = await fetch(`/bank-official/${file}.json`); forms = r.ok ? (await r.json()).filter((m) => m.grade === grade) : []; } catch { forms = []; }
         if (!forms.length) continue;
@@ -1004,7 +1004,7 @@ async function addMock(source, button) {
         await batch.commit();
         await loadTeacherTests();
         await showOfficial();
-        showAlert(prefix === 'sol' ? 'أُضيف النموذج كمسودة. مفتاحه من حلّ الموقع وليس رسمياً، فراجعه قبل أن تنشره لطلابك.' : 'أُضيف الاختبار المحاكي إلى اختبارات فصلك كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.', 'تمت الإضافة');
+        showAlert(prefix === 'sol' ? 'أُضيف النموذج كمسودة. مفتاحه من حلّ الموقع فراجعه قبل أن تنشره لطلابك.' : 'أُضيف الاختبار المحاكي إلى اختبارات فصلك كمسودة. اضغط «نشر للطلاب» عندما تريد أن يحلّه طلابك.', 'تمت الإضافة');
     });
 }
 
@@ -1970,7 +1970,7 @@ async function busy(button, fn) {
     try { await fn(); } catch (err) { reportError(err); } finally { if (button) button.disabled = false; }
 }
 
-// ---------- مستويات الأداء الرسمية (هيئة تقويم التعليم والتدريب) ----------
+// ---------- مستويات الأداء (هيئة تقويم التعليم والتدريب) ----------
 
 const PERF_PAGES = {
     reading3: [2, 3], reading6: [4], reading9: [5], math3: [6], math6: [7], math9: [8], science6: [9, 10], science9: [11, 12],
@@ -1979,13 +1979,13 @@ const PERF_PAGES = {
 function showPerf() {
     const grade = currentGrade();
     const pages = PERF_PAGES[`${repSubject}${grade}`] ?? [];
-    $('perfTitle').textContent = `مستويات الأداء الرسمية — ${SUBJECTS[repSubject].name} (${GRADES[grade].name})`;
+    $('perfTitle').textContent = `مستويات الأداء — ${SUBJECTS[repSubject].name} (${GRADES[grade].name})`;
     const body = $('perfBody');
     body.replaceChildren();
-    if (!pages.length) body.append(el('p', 'text-sm text-slate-500', 'لا يتوفر وصف رسمي لهذه المادة والصف.'));
+    if (!pages.length) body.append(el('p', 'text-sm text-slate-500', 'لا يتوفر وصف لهذه المادة والصف.'));
     for (const n of pages) {
         const img = el('img', 'w-full rounded-xl border border-slate-200');
-        img.src = `performance/p${n}.webp`; img.alt = 'مستويات الأداء الرسمية'; img.loading = 'lazy';
+        img.src = `performance/p${n}.webp`; img.alt = 'مستويات الأداء'; img.loading = 'lazy';
         body.append(img);
     }
     $('perfModal').classList.remove('hidden');
