@@ -103,7 +103,8 @@ class PaywallScreen extends StatelessWidget {
         : switch (err) {
             'store-unavailable' => t.paywallUnavailable,
             'not-active' => android ? t.paywallNotActiveAndroid : t.paywallNotActive,
-            _ => t.paywallVerifyFailed,
+            // الرمز بعد الرسالة (مثل receipt-invalid 21004) ليُعرف سبب الفشل من لقطة الشاشة.
+            _ => '${t.paywallVerifyFailed}\n($err)',
           };
     return Scaffold(
       body: SafeArea(

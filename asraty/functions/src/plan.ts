@@ -3,8 +3,8 @@
 // The store is the only source of truth for a subscription: the owner's app sends the App Store receipt
 // (iPhone) or the Google Play purchase token (Android), the server checks it with Apple (needs
 // APPLE_SHARED_SECRET) or Google (needs GOOGLE_PLAY_SA_B64) and records the tier on the family.
-import { createHash, createSign } from "node:crypto";
-import { fail } from "./db";
+import { X509Certificate, createHash, createSign, verify as cryptoVerify } from "node:crypto";
+import { ApiError, fail } from "./db";
 
 /** Members every family may have, subscribed or using a free code. */
 export const FREE_MEMBERS = 5;
@@ -65,8 +65,51 @@ export type Post = (url: string, body: unknown) => Promise<{ status?: number; la
 
 const post: Post = async (url, body) => (await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json() as never;
 
-/** Asks Apple about a receipt: production first, sandbox when Apple says it is a TestFlight/sandbox one (21007). */
+/** SHA-256 of Apple's «Apple Root CA - G3» (https://www.apple.com/certificateauthority/): the only root a signed transaction may chain to. */
+export const APPLE_ROOT_G3_SHA256 = "63:34:3A:BF:B8:9A:6A:03:EB:B5:7E:9B:3F:5F:A7:BE:7C:4F:5C:75:6F:30:17:B3:A8:C4:88:C3:65:3E:91:79";
+
+/** DER of Apple's marker extensions: 1.2.840.113635.100.6.11.1 (receipt-signing leaf) and 1.2.840.113635.100.6.2.1 (the intermediate that issues them). */
+const LEAF_OID = Buffer.from("060a2a864886f76364060b01", "hex");
+const INTERMEDIATE_OID = Buffer.from("060a2a864886f76364060201", "hex");
+
+/** StoreKit 2 hands the app a signed transaction (JWS: three base64url parts, the header starts with «eyJ»), not the old base64 receipt. */
+export const looksLikeJws = (s: string) => /^eyJ[\w-]*\.[\w-]+\.[\w-]+$/.test(s);
+
+/**
+ * Checks a StoreKit 2 signed transaction on the server (no call to Apple needed): the ES256 signature must be by the leaf
+ * certificate in the header, the certificates must chain leaf → … → the pinned Apple root (each signed by the next, all valid
+ * when Apple signed it), and then its payload is the truth. Returns the same lines as the receipt check.
+ */
+export function verifyJws(jws: string, rootSha256 = APPLE_ROOT_G3_SHA256, now = Date.now(), needOids = true): ReceiptLine[] {
+  const bad = (n: number): never => fail("receipt-invalid", { status: n }, "invalid-argument");
+  try {
+    const [h, p, sig] = jws.split(".");
+    const header = JSON.parse(Buffer.from(h, "base64url").toString("utf8"));
+    const payload = JSON.parse(Buffer.from(p, "base64url").toString("utf8"));
+    if (header.alg !== "ES256" || !Array.isArray(header.x5c) || header.x5c.length < 2) return bad(-10);
+    const certs = (header.x5c as string[]).map((c) => new X509Certificate(Buffer.from(c, "base64")));
+    // Only Apple's receipt-signing leaf under Apple's marked intermediate counts: an ordinary developer certificate chains to the same root.
+    if (needOids && (!certs[0].raw.includes(LEAF_OID) || !certs[1].raw.includes(INTERMEDIATE_OID))) return bad(-16);
+    const root = certs[certs.length - 1];
+    if (root.fingerprint256 !== rootSha256 || !root.verify(root.publicKey)) return bad(-11);
+    for (let i = 0; i < certs.length - 1; i++) if (!certs[i].verify(certs[i + 1].publicKey)) return bad(-12);
+    const signedAt = Number(payload.signedDate) || now;
+    for (const c of certs) if (signedAt < Date.parse(c.validFrom) || signedAt > Date.parse(c.validTo)) return bad(-13);
+    const ok = cryptoVerify("sha256", Buffer.from(`${h}.${p}`), { key: certs[0].publicKey, dsaEncoding: "ieee-p1363" }, Buffer.from(sig, "base64url"));
+    if (!ok) return bad(-14);
+    if (typeof payload.productId !== "string" || payload.originalTransactionId == null) return bad(-15);
+    // A refunded or revoked purchase gives nothing.
+    const ends = payload.revocationDate ? 0 : Number(payload.expiresDate) || 0;
+    return [{ product_id: payload.productId, expires_date_ms: ends, original_transaction_id: String(payload.originalTransactionId) }];
+  } catch (e) {
+    if (e instanceof ApiError) throw e; // our own bad(...) above
+    return bad(-1);
+  }
+}
+
+/** Asks Apple about a receipt: production first, sandbox when Apple says it is a TestFlight/sandbox one (21007). A StoreKit 2 signed transaction is checked here instead. */
 export async function verifyReceipt(receipt: string, secret: string, send: Post = post): Promise<ReceiptLine[]> {
+  if (looksLikeJws(receipt)) return verifyJws(receipt);
   const body = { "receipt-data": receipt, password: secret, "exclude-old-transactions": true };
   let r = await send("https://buy.itunes.apple.com/verifyReceipt", body);
   if (r.status === 21007) r = await send("https://sandbox.itunes.apple.com/verifyReceipt", body);

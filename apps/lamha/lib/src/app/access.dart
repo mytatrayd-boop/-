@@ -81,10 +81,16 @@ abstract interface class ReceiptChecker {
 
 /// A failed check ([code] is the server's error code, e.g. plan-unavailable).
 class ReceiptCheckError implements Exception {
-  ReceiptCheckError(this.code);
+  ReceiptCheckError(this.code, [this.detail]);
   final String code;
+
+  /// A store status the server passed along (e.g. Apple's 21004 = wrong shared secret), shown to help diagnose.
+  final String? detail;
+
+  /// «code» or «code status»: what the subscription screen shows after its message.
+  String get label => detail == null ? code : '$code $detail';
   @override
-  String toString() => 'ReceiptCheckError($code)';
+  String toString() => 'ReceiptCheckError($label)';
 }
 
 /// One call to the server (the Firebase callable protocol): the `result`, or a [ReceiptCheckError] with its code.
@@ -99,7 +105,10 @@ Future<Object?> _callServer(String name, Map<String, Object?> data) async {
     final err = body['error'];
     if (err is Map) {
       final d = err['details'];
-      throw ReceiptCheckError(d is Map && d['code'] is String ? d['code'] as String : '${err['message'] ?? 'failed'}');
+      throw ReceiptCheckError(
+        d is Map && d['code'] is String ? d['code'] as String : '${err['message'] ?? 'failed'}',
+        d is Map && d['status'] != null ? '${d['status']}' : null,
+      );
     }
     return body['result'];
   } on ReceiptCheckError {
@@ -223,7 +232,7 @@ class LamhaStore {
               error = 'not-active'; // an old, ended subscription
             }
           } catch (e) {
-            error = e is ReceiptCheckError ? e.code : '$e';
+            error = e is ReceiptCheckError ? e.label : '$e';
             finish = false; // keep the purchase open: it is delivered again and checked again
           }
           checking = false;
