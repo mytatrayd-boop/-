@@ -277,6 +277,10 @@ def main(mode: str):
                 "relationships": {"group": {"data": {"type": "subscriptionGroups", "id": group["id"]}}}}},
                 f"create {pid}")
             print(f"[{pid}] created")
+        a = sub.get("attributes", {})
+        st, shot = request("GET", f"/subscriptions/{sub['id']}/appStoreReviewScreenshot")
+        shot_state = ((shot or {}).get("data") or {}).get("attributes", {}).get("assetDeliveryState", {}).get("state") if st < 300 else None
+        print(f"[{pid}] state: {a.get('state')} | level: {a.get('groupLevel')} | review screenshot: {shot_state or 'missing'}")
         ok = ensure(sub, item, mode) and ok
     if not ok:
         sys.exit(1)
