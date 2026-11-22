@@ -76,7 +76,13 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await pp.click('[data-action="pd-save-classes"]');
     await closeModal(pp, 'حُفظت');
     // بعد الحفظ تُطوى القائمة، ويفتح المدير قائمة المعلمين: يفتح ← يحدد ← يحفظ
-    assert.equal(await pp.locator('[data-pd-class]').first().isVisible(), false);
+    assert.equal(await pp.locator('[data-pd-class]').count(), 0); // قائمة الفصول اختفت بعد حفظها
+    await pp.click('summary:has-text("المعلمون وإسنادهم")');
+    await pp.click('[data-action="pd-edit-classes"]'); // التعديل متاح عند الحاجة فقط
+    await pp.locator('[data-pd-class]').first().waitFor();
+    await pp.click('[data-action="pd-save-classes"]');
+    await closeModal(pp, 'حُفظت');
+    assert.equal(await pp.locator('[data-pd-class]').count(), 0);
     await pp.click('summary:has-text("المعلمون وإسنادهم")');
     await pp.fill('#pdTName', 'أحمد محمد القحطاني');
     await pp.fill('#pdTCivil', '1000000009');

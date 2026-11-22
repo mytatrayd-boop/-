@@ -1579,9 +1579,10 @@ async function principalSignup(e) {
     });
 }
 
+let pdEditClasses = false; // تعديل الفصول بعد حفظها (يُفتح بزر «تعديل» من قسم المعلمين)
 let pdOpen; // القسم المفتوح في لوحة المدير (undefined = أول عرض، null = الكل مغلق)
 async function openPrincipalDashboard(fresh = false) {
-    if (fresh) pdOpen = undefined;
+    if (fresh) { pdOpen = undefined; pdEditClasses = false; }
     school = null; roster = []; transferIn = null; otherSchool = null; transferOut = null;
     const sc = await getDoc(doc(db, 'schools', principal.schoolNo));
     const tr = await getDoc(doc(db, 'schoolTransfers', principal.schoolNo)).catch(() => null);
@@ -1676,6 +1677,9 @@ function renderPrincipal() {
     const t = panel();
     t.append(el('h3', 'font-black text-slate-800', 'المعلمون وإسنادهم للفصول والتخصصات'));
     if (school.classes.length) {
+        const cl = el('div', 'flex flex-wrap items-center gap-3 text-xs bg-slate-50 rounded-xl p-3 border border-slate-100');
+        cl.append(el('span', 'text-slate-600', `الفصول المعتمدة: ${school.classes.join('، ')}`), actionButton('تعديل الفصول', 'pd-edit-classes', '', 'text-indigo-700 hover:text-indigo-900 font-bold'));
+        t.append(cl);
         t.append(el('p', `text-sm font-bold ${uncovered.length ? 'text-amber-700' : 'text-emerald-700'}`,
             `أضفتَ ${roster.length} معلماً · أُسند ${needed.length - uncovered.length} من ${needed.length} خانة (فصل × مادة)${uncovered.length ? ' — أكمل الخانات الناقصة أدناه.' : ' — الإسناد مكتمل ✓'}`));
         const m = el('table', 'w-full text-right text-xs border border-slate-100 rounded-xl overflow-hidden');
@@ -1754,7 +1758,7 @@ function renderPrincipal() {
     }).catch(() => { archList.textContent = 'تعذّر تحميل الأرشيف.'; });
 
     body.append(
-        fold('classes', `الصفوف والفصول — ${school.classes.length ? `${school.classes.length} مختارة` : 'لم تُختر بعد'}`, classes),
+        ...(!school.classes.length || pdEditClasses ? [fold('classes', 'الصفوف والفصول — ' + (school.classes.length ? 'تعديل' : 'لم تُختر بعد'), classes)] : []),
         fold('teachers', `المعلمون وإسنادهم — ${roster.length} معلماً · ${needed.length - uncovered.length}/${needed.length} خانة${stage === 'reports' ? ' ✓' : ''}`, t),
         fold('reports', 'تقارير المدرسة', rep),
         fold('archive', 'أرشفة العام الدراسي', yr),
@@ -1857,6 +1861,7 @@ async function savePrincipalClasses(btn) {
     await busy(btn, async () => {
         await updateDoc(doc(db, 'schools', school.no), { classes });
         school.classes = classes;
+        pdEditClasses = false;
         pdOpen = null;
         renderPrincipal();
         showAlert('حُفظت فصول المدرسة.', 'تم الحفظ');
@@ -2386,6 +2391,7 @@ function bindEvents() {
             case 'p-auth-tab': setPrincipalTab(tab); break;
             case 'p-reset-password': principalReset(); break;
             case 'pd-save-classes': savePrincipalClasses(el); break;
+            case 'pd-edit-classes': pdEditClasses = true; pdOpen = 'classes'; renderPrincipal(); break;
             case 'pd-new-year': openNewYear(el); break;
             case 'pd-request-transfer': requestTransfer(el); break;
             case 'pd-cancel-transfer': cancelTransfer(); break;
