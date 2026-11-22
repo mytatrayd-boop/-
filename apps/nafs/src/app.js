@@ -1579,6 +1579,7 @@ async function principalSignup(e) {
     });
 }
 
+let pdEditing = null; // سجل المعلم الذي يعدّله المدير من بطاقته (يستبدل إسناده)؛ غيره: إضافة فصول إلى إسناده السابق
 let pdEditClasses = false; // تعديل الفصول بعد حفظها (يُفتح بزر «تعديل» من قسم المعلمين)
 let pdOpen; // القسم المفتوح في لوحة المدير (undefined = أول عرض، null = الكل مغلق)
 async function openPrincipalDashboard(fresh = false) {
@@ -1717,6 +1718,7 @@ function renderPrincipal() {
         f.append(row,
             ...checks(school.classes.map((c) => [c, c]), 'pdTClass', 'الفصول المسندة له:'),
             ...checks([['reading', 'لغتي (القراءة)'], ['math', 'الرياضيات'], ['science', 'العلوم']], 'pdTSubject', 'تخصصه (المواد التي يدرّسها):'),
+            el('p', 'text-xs text-slate-500', 'إن كان المعلم مضافاً من قبل فتُضاف هذه الفصول إلى فصوله السابقة دون حذف شيء. لتغيير إسناده أو حذف فصل منه استعمل «تعديل الإسناد» في بطاقته.'),
             add);
         f.addEventListener('submit', addRosterTeacher);
         t.append(f);
@@ -1871,23 +1873,25 @@ async function savePrincipalClasses(btn) {
 async function addRosterTeacher(e) {
     e.preventDefault();
     const name = $('pdTName').value.trim(), cid = $('pdTCivil').value.trim();
-    const classes = [...document.querySelectorAll('[data-pd-t-class]')].filter((c) => c.checked).map((c) => c.dataset.pdTClass);
+    let classes = [...document.querySelectorAll('[data-pd-t-class]')].filter((c) => c.checked).map((c) => c.dataset.pdTClass);
     if (!isCivilId(cid)) return showAlert('السجل المدني يجب أن يكون مكوناً من 10 أرقام.', 'تنبيه خطأ');
-    const subjects = [...document.querySelectorAll('[data-pd-t-subject]')].filter((c) => c.checked).map((c) => c.dataset.pdTSubject);
+    let subjects = [...document.querySelectorAll('[data-pd-t-subject]')].filter((c) => c.checked).map((c) => c.dataset.pdTSubject);
     if (!classes.length) return showAlert('اختر فصلاً واحداً على الأقل للمعلم.', 'تنبيه');
     if (!subjects.length) return showAlert('حدّد تخصص المعلم: لغتي أو رياضيات أو علوم (واحداً على الأقل).', 'تنبيه');
     await busy(e.submitter, async () => {
         const prior = await getDoc(doc(db, 'teacherRoster', cid)).catch(() => null);
         if (prior?.exists() && prior.data().schoolNo === school.no) {
-            // معلم مضاف سابقاً: يُحدَّث اسمه وفصوله وتخصصه فقط (التفعيل لا يُمسّ)
+            // معلم مضاف سابقاً: من «تعديل الإسناد» يُستبدل إسناده بما حُدِّد، وإلا تُضاف الفصول والمواد الجديدة إلى إسناده السابق (التفعيل لا يُمسّ)
+            const old = prior.data(), replace = pdEditing === cid;
+            if (!replace) { classes = [...new Set([...old.classes, ...classes])]; subjects = [...new Set([...(old.subjects ?? []), ...subjects])]; }
             await updateDoc(doc(db, 'teacherRoster', cid), { name, classes, subjects });
         } else {
             try { await setDoc(doc(db, 'teacherRoster', cid), { schoolNo: school.no, name, classes, subjects, uid: null, createdAt: serverTimestamp() }); }
             catch (err) { if (err?.code === 'permission-denied') return showAlert('هذا السجل المدني مسجّل لمعلم في مدرسة أخرى. يلزم أن يحذفه مدير تلك المدرسة أولاً.', 'تعذّرت الإضافة'); throw err; }
         }
-        pdOpen = null;
+        pdOpen = null; pdEditing = null;
         await openPrincipalDashboard();
-        if (prior?.exists() && prior.data().schoolNo === school.no) return showAlert(`حُدّث إسناد المعلم ${name}: ${classes.length} فصول، والتخصص: ${subjects.map((x) => SUBJECTS[x].name).join('، ')}.`, 'تم التحديث');
+        if (prior?.exists() && prior.data().schoolNo === school.no) return showAlert(`حُدّث إسناد المعلم ${name}: فصوله الآن ${classes.join('، ')}، وتخصصه: ${subjects.map((x) => SUBJECTS[x].name).join('، ')}.`, 'تم التحديث');
         showAlert(`أُضيف المعلم ${name}. يدخل من بوابة المعلم ← «تفعيل حسابي» برقم سجله المدني، فينشئ كلمة مروره.`, 'تمت الإضافة');
     });
 }
@@ -2404,6 +2408,7 @@ function bindEvents() {
             case 'pd-edit-teacher': {
                 const r = roster.find((x) => x.id === id);
                 if (!r) break;
+                pdEditing = id;
                 $('pdTName').value = r.name; $('pdTCivil').value = r.id;
                 document.querySelectorAll('[data-pd-t-class]').forEach((c) => { c.checked = r.classes.includes(c.value); });
                 document.querySelectorAll('[data-pd-t-subject]').forEach((c) => { c.checked = (r.subjects ?? []).includes(c.value); });

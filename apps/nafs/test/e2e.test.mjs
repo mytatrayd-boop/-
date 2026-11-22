@@ -94,6 +94,14 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     await pp.click('#pdTeacherForm button[type=submit]');
     assert.match(await closeModal(pp, 'أُضيف المعلم'), /تفعيل حسابي/);
     assert.match(await pp.textContent('#pdBody'), /لم يُفعّل حسابه/);
+    // إضافة المعلم نفسه لفصل آخر تُضاف إلى فصوله ولا تستبدلها (الفصلان معاً يبقيان)
+    await pp.click('summary:has-text("المعلمون وإسنادهم")');
+    await pp.fill('#pdTName', 'أحمد محمد القحطاني');
+    await pp.fill('#pdTCivil', '1000000009');
+    await pp.check('[data-pd-t-class="الثالث الابتدائي - أ"]');
+    await pp.check('[data-pd-t-subject="reading"]');
+    await pp.click('#pdTeacherForm button[type=submit]');
+    assert.match(await closeModal(pp, 'حُدّث إسناد'), /الثالث الابتدائي - أ، الثالث المتوسط - أ/);
     assert.match(await pp.textContent('#pdBody'), /التخصص: .*الرياضيات/);
     // انتهى إسناد كل الفصول: تظهر التقارير، وتختفي الفصول والمعلمون في قوائم منسدلة
     assert.match(await pp.textContent('#pdBody'), /تقارير المدرسة/);
