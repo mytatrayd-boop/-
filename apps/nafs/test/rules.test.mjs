@@ -442,3 +442,15 @@ test('تقارير مقدم الدعم: يقرأ كشف مدرسته المرت�
     await assertSucceeds(getDoc(doc(prov, 'testKeys/PT1')));
     await assertFails(getDoc(doc(other, 'testKeys/PT1')));
 });
+
+test('اختبار لمجموعة مستهدفة: لا يحلّه إلا طلابها', async () => {
+    const t = teacherDb(T1);
+    const base = { teacherUid: T1, title: 'علاجي', className: 'الثالث الابتدائي - أ', grade: 3, subject: 'reading', source: 'nafs-bank', passage: '', questions: [{ skill: '3-1.1', level: 'know', text: '', options: ['أ', 'ب', 'ج', 'د'] }], skills: ['3-1.1'], status: 'published', createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(t, 'tests/AUD1'), { ...base, audience: ['2222222222'], audienceName: 'أولوية' }));
+    await assertFails(setDoc(doc(t, 'tests/AUD2'), { ...base, audience: [] }));                       // مجموعة فارغة مرفوضة
+    await assertSucceeds(setDoc(doc(t, 'tests/AUD3'), { ...base, audience: ['1111111111'], audienceName: 'أولوية' }));
+    await env.withSecurityRulesDisabled(async (ctx) => { for (const id of ['AUD1', 'AUD3']) await setDoc(doc(ctx.firestore(), 'testKeys', id), { teacherUid: T1, answers: [0] }); });
+    const att = (testId) => ({ testId, studentId: '1111111111', teacherUid: T1, className: 'الثالث الابتدائي - أ', answers: [0], submittedAt: serverTimestamp() });
+    await assertFails(setDoc(doc(studentDb(), 'attempts/AUD1_1111111111'), att('AUD1')));             // ليس في المجموعة
+    await assertSucceeds(setDoc(doc(studentDb(), 'attempts/AUD3_1111111111'), att('AUD3')));          // في المجموعة
+});

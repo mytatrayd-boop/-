@@ -5,7 +5,7 @@ import {
 } from 'firebase/auth';
 import {
     getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc, deleteDoc,
-    collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, orderBy,
+    collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, orderBy, deleteField,
 } from 'firebase/firestore';
 import {
     CLASSES, MAX_UPLOAD_BYTES, isCivilId, parseStudentRows, buildReport, gradeAttempt, masteryLevel, reportCsv, shuffleOptions, questionError,
@@ -484,7 +484,11 @@ function renderReports(report) {
             }
             const sub = el('div', 'space-y-2 pr-3 border-r-2 border-emerald-100');
             sub.append(el('p', 'text-xs font-black text-slate-700', o.name));
-            for (const sk of done) sub.append(statRow(sk.name, report.skills[sk.id], sk.desc));
+            for (const sk of done) {
+                sub.append(statRow(sk.name, report.skills[sk.id], sk.desc));
+                const weak = report.students.filter((x) => x.skills[sk.id] && x.skills[sk.id].pct < 50).length;
+                if (weak) sub.append(actionButton(`🎯 اختبار علاجي لـ ${weak} ${weak > 2 && weak < 11 ? 'طلاب' : 'طالباً'} دون 50%`, 'remedial', sk.id, 'text-[11px] font-bold text-amber-700 hover:text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1'));
+            }
             group.append(sub);
         }
         if (shown) skillsBox.append(group);
@@ -566,10 +570,11 @@ function renderTestsTab() {
     const box = $('testsList');
     box.replaceChildren();
     const list = classTests();
-    const total = classStudents().length;
     if (!list.length) box.append(el('p', 'text-sm text-slate-400 bg-white rounded-3xl border border-slate-100 p-8 text-center md:col-span-2', 'لا توجد اختبارات لهذا الفصل بعد. اضغط «بناء اختبار جديد».'));
     for (const t of list) {
         const done = attempts.filter((a) => a.testId === t.id).length;
+        const aud = t.audience ? t.audience.filter((id) => classStudents().some((x) => x.id === id)) : null;
+        const total = aud ? aud.length : classStudents().length;
         const card = el('div', 'bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3');
         const head = el('div', 'flex justify-between items-start gap-3');
         head.append(el('h4', 'font-bold text-slate-800', t.title),
@@ -583,7 +588,10 @@ function renderTestsTab() {
         if (!isImageTest(t)) btns.append(actionButton(done ? 'نسخ كاختبار جديد' : 'تعديل', 'edit-test', t.id, 'text-slate-700 hover:text-slate-900'));
         btns.append(actionButton('🖨️ ورقة إجابة (تظليل يدوي)', 'print-omr', t.id, 'text-teal-700 hover:text-teal-900'), actionButton('كتيّب الأسئلة', 'print-book', t.id, 'text-teal-700 hover:text-teal-900'), actionButton('📷 مسح الأوراق وتصحيحها', 'scan-omr', t.id, 'text-indigo-700 hover:text-indigo-900'), actionButton('مفتاح التصحيح', 'print-key', t.id, 'text-teal-700 hover:text-teal-900'));
         btns.append(actionButton('حذف', 'delete-test', t.id, 'text-red-500 hover:text-red-700'));
-        card.append(head, meta, chips, btns);
+        const audRow = el('div', 'flex flex-wrap items-center gap-2 text-xs');
+        audRow.append(el('span', `font-bold rounded-full px-2.5 py-1 ${aud ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`, aud ? `🎯 ${t.audienceName || 'مجموعة مختارة'} (${aud.length} طلاب)` : '👥 لكل الفصل'),
+            actionButton(aud ? 'تعديل المجموعة' : 'استهداف مجموعة', 'set-audience', t.id, 'font-bold text-amber-700 hover:text-amber-900'));
+        card.append(head, meta, audRow, chips, btns);
         box.append(card);
     }
 }
@@ -1138,6 +1146,102 @@ async function createBankTest(button) {
     });
 }
 
+// ---------- استهداف مجموعة من الطلاب ----------
+// نافذة اختيار الطلاب: ترجع {ids, name} أو 'all' (كل الفصل) أو null (إلغاء)
+function audienceDialog({ title, hint = '', preselect = [], name = '', allowAll = true, okLabel = 'حفظ المجموعة' }) {
+    return new Promise((resolve) => {
+        const ov = el('div', 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4');
+        const box = el('div', 'bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto');
+        box.append(el('h3', 'text-lg font-bold text-slate-800', title));
+        if (hint) box.append(el('p', 'text-xs text-slate-500 leading-relaxed', hint));
+        const nm = el('input', 'w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm'); nm.placeholder = 'اسم المجموعة (مثلاً: أولوية — المترادفات)'; nm.maxLength = 80; nm.value = name;
+        box.append(nm);
+        const tools = el('div', 'flex gap-3 text-xs font-bold');
+        const list = el('div', 'grid grid-cols-1 sm:grid-cols-2 gap-1.5');
+        const all = el('button', 'text-emerald-700', 'تحديد الكل'), none = el('button', 'text-slate-500', 'إلغاء التحديد');
+        all.type = none.type = 'button';
+        tools.append(all, none);
+        for (const st of classStudents()) {
+            const lab = el('label', 'flex items-center gap-2 text-sm bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5');
+            const cb = el('input', 'accent-amber-600'); cb.type = 'checkbox'; cb.value = st.id; cb.checked = preselect.includes(st.id);
+            lab.append(cb, el('span', 'truncate', st.name)); list.append(lab);
+        }
+        const boxes = () => [...list.querySelectorAll('input')];
+        all.onclick = () => boxes().forEach((c) => { c.checked = true; });
+        none.onclick = () => boxes().forEach((c) => { c.checked = false; });
+        const row = el('div', 'flex flex-wrap gap-2 pt-2');
+        const ok = el('button', 'flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-sm', okLabel);
+        const toAll = el('button', 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-sm', 'لكل الفصل');
+        const cancel = el('button', 'text-slate-500 font-bold px-4 py-2.5 text-sm', 'إلغاء');
+        const done = (v) => { ov.remove(); resolve(v); };
+        ok.onclick = () => {
+            const ids = boxes().filter((c) => c.checked).map((c) => c.value);
+            if (!ids.length) return showAlert('اختر طالباً واحداً على الأقل، أو اضغط «لكل الفصل».', 'تنبيه');
+            done({ ids, name: nm.value.trim() || 'مجموعة مختارة' });
+        };
+        toAll.onclick = () => done('all');
+        cancel.onclick = () => done(null);
+        row.append(ok, ...(allowAll ? [toAll] : []), cancel);
+        box.append(tools, list, row);
+        ov.append(box);
+        document.body.append(ov);
+    });
+}
+
+async function setAudience(id) {
+    const t = tests.find((x) => x.id === id);
+    if (!t) return;
+    const r = await audienceDialog({ title: `من يرى «${t.title}»؟`, hint: 'لا يرى الاختبار ولا يستطيع حلّه إلا الطلاب المحددون. اختر «لكل الفصل» لإلغاء الاستهداف.', preselect: t.audience ?? [], name: t.audienceName ?? '' });
+    if (!r) return;
+    try {
+        await updateDoc(doc(db, 'tests', id), r === 'all' ? { audience: deleteField(), audienceName: deleteField(), updatedAt: serverTimestamp() } : { audience: r.ids, audienceName: r.name, updatedAt: serverTimestamp() });
+        await loadTeacherTests();
+        showAlert(r === 'all' ? 'صار الاختبار لكل طلاب الفصل.' : `صار الاختبار للمجموعة «${r.name}» (${r.ids.length} طلاب) فقط.`, 'تم الحفظ');
+    } catch (err) { reportError(err); }
+}
+
+// اختبار علاجي لمهارة: يقترح الطلاب الذين نسبتهم فيها دون 50%، ويبني مسودة من بنك نافس على المهارة نفسها
+async function createRemedial(skillId) {
+    const sk = skillById(skillId);
+    const grade = currentGrade();
+    const report = classReport(repSubject);
+    const weak = report.students.filter((x) => x.skills[skillId] && x.skills[skillId].pct < 50).map((x) => x.id);
+    const bank = (await loadBankOfficial(repSubject, grade)).filter((q) => q.skill === skillId);
+    if (!bank.length) return showAlert(`لا توجد في بنك نافس أسئلة لمهارة «${sk?.name ?? skillId}» لهذا الصف. يمكنك بناء اختبار بنفسك ثم استهداف المجموعة من بطاقته («استهداف مجموعة»).`, 'لا أسئلة في البنك');
+    const r = await audienceDialog({
+        title: `اختبار علاجي: ${sk?.name ?? skillId}`,
+        hint: `اقترحنا الطلاب الذين نسبتهم في هذه المهارة دون 50% (${weak.length}). أضف أو احذف، ثم يُنشأ اختبار من ${Math.min(10, bank.length)} أسئلة من بنك نافس كمسودة تراجعها وتنشرها.`,
+        preselect: weak, name: `أولوية — ${sk?.name ?? ''}`.slice(0, 80), allowAll: false, okLabel: 'إنشاء الاختبار العلاجي',
+    });
+    if (!r) return;
+    const LV = ['know', 'apply', 'reason'];
+    const items = bank.slice().sort((a, b) => (a.passage ?? '').localeCompare(b.passage ?? '') || LV.indexOf(a.level) - LV.indexOf(b.level)).slice(0, 10);
+    try {
+        await saveBankTest(items, repSubject, grade, `اختبار علاجي: ${sk?.name ?? skillId}`.slice(0, 120), { audience: r.ids, audienceName: r.name });
+        await loadTeacherTests();
+        switchTeacherTab('tests');
+        showAlert(`أُنشئ «اختبار علاجي» من ${items.length} أسئلة للمجموعة «${r.name}» (${r.ids.length} طلاب) كمسودة. راجعه ثم اضغط «نشر للطلاب».`, 'تم الإنشاء');
+    } catch (err) { reportError(err); }
+}
+
+// يحفظ اختباراً من أسئلة بنك نافس (صور) مع مفتاحه
+async function saveBankTest(items, subject, grade, title, extra = {}) {
+    const ref = doc(collection(db, 'tests'));
+    const batch = writeBatch(db);
+    const skills = skillIdsFor(subject, grade).filter((id) => items.some((q) => q.skill === id));
+    batch.set(ref, {
+        teacherUid: teacher.uid, title, className: teacher.className, grade, subject, source: 'nafs-bank', passage: '',
+        questions: items.map((q, i) => ({
+            skill: q.skill, level: q.level, text: '', options: ['أ', 'ب', 'ج', 'د'], image: `bank-official/${q.img}`, iw: q.w, ih: q.h,
+            ...(q.passage && q.passage !== items[i - 1]?.passage ? { passageImage: `bank-official/${q.passage}`, pw: q.pw, ph: q.ph } : {}),
+        })),
+        skills, status: 'draft', createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra,
+    });
+    batch.set(doc(db, 'testKeys', ref.id), { teacherUid: teacher.uid, answers: items.map((q) => q.answer) });
+    await batch.commit();
+    return ref.id;
+}
+
 async function togglePublish(id) {
     const t = tests.find((x) => x.id === id);
     try {
@@ -1414,7 +1518,7 @@ async function studentLogin(e) {
 async function loadStudentTests() {
     const snap = await getDocs(query(collection(db, 'tests'),
         where('teacherUid', '==', activeStudent.teacherUid), where('className', '==', activeStudent.className), where('status', '==', 'published')));
-    studentTests = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((x, y) => ms(y.createdAt) - ms(x.createdAt));
+    studentTests = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((t) => !t.audience || t.audience.includes(activeStudent.id)).sort((x, y) => ms(y.createdAt) - ms(x.createdAt));
     const done = await Promise.all(studentTests.map((t) => getDoc(doc(db, 'attempts', `${t.id}_${activeStudent.id}`)).then((x) => x.exists())));
     studentTests.forEach((t, i) => { t.done = done[i]; });
     renderStudentTests();
@@ -2542,6 +2646,8 @@ function bindEvents() {
             case 'remove-question': draft.questions.splice(Number(id), 1); renderQuestions(); break;
             case 'save-test': saveTest(el, publish === '1'); break;
             case 'toggle-publish': togglePublish(id); break;
+            case 'set-audience': setAudience(id); break;
+            case 'remedial': createRemedial(id); break;
             case 'delete-test': deleteTest(id); break;
             case 'print-omr': case 'print-key': case 'print-book': printOmr(id, action); break;
             case 'scan-omr': openOmrScan(id); break;

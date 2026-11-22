@@ -11,6 +11,8 @@ const db = getFirestore(app), auth = getAuth(app);
 const quiet = () => {};
 
 test('بداية العام: حذف الأشخاص وبقاء المدرسة ونتائجها', async () => {
+    // المحاكي مشترك مع اختبارات القواعد: نبدأ من قاعدة فارغة
+    for (const c of await db.listCollections()) await db.recursiveDelete(c);
     const t0 = Timestamp.fromMillis(Date.UTC(2026, 8, 1));
     const tUser = await auth.createUser({ email: 'rt@example.com', password: 'abcdef1' });
     const pUser = await auth.createUser({ email: 'rp@example.com', password: 'abcdef1' });

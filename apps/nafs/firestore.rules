@@ -250,7 +250,10 @@ service cloud.firestore {
       allow create, update: if isTeacher()
         && request.resource.data.teacherUid == request.auth.uid
         && (resource == null || resource.data.teacherUid == request.auth.uid)
-        && request.resource.data.keys().hasOnly(['teacherUid', 'title', 'className', 'grade', 'subject', 'source', 'passage', 'questions', 'skills', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['teacherUid', 'title', 'className', 'grade', 'subject', 'source', 'passage', 'questions', 'skills', 'status', 'createdAt', 'updatedAt', 'audience', 'audienceName'])
+        // مجموعة مستهدفة اختيارية (سجلات طلاب)؛ بدونها الاختبار لكل الفصل
+        && (!('audience' in request.resource.data) || (request.resource.data.audience is list && request.resource.data.audience.size() > 0 && request.resource.data.audience.size() <= 300))
+        && (!('audienceName' in request.resource.data) || text(request.resource.data.audienceName, 80))
         && text(request.resource.data.title, 120)
         && text(request.resource.data.className, 60)
         && request.resource.data.grade in [3, 6, 9]
@@ -302,6 +305,7 @@ service cloud.firestore {
       allow create: if paperAttempt();
       allow create: if isStudentSession()
         && hasSession(request.resource.data.studentId)
+        && (testDoc(request.resource.data.testId).get('audience', null) == null || request.resource.data.studentId in testDoc(request.resource.data.testId).audience)
         && request.resource.data.keys().hasOnly(['testId', 'studentId', 'teacherUid', 'className', 'answers', 'submittedAt'])
         && attemptId == request.resource.data.testId + '_' + request.resource.data.studentId
         && civilId(request.resource.data.studentId)
