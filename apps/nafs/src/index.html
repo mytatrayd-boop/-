@@ -21,7 +21,7 @@
                     <p class="text-xs text-emerald-200">القراءة والعلوم والرياضيات — القياس والتحليل والتدريب المستمر</p>
                 </div>
             </div>
-            <button data-action="show-about" class="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition">عن اختبارات نافس · دليل الطالب وولي الأمر</button>
+            <button id="headerAbout" data-action="show-about" class="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition">عن اختبارات نافس · دليل الطالب وولي الأمر</button>
             <div id="userInfoHeader" class="hidden flex items-center gap-4 bg-emerald-900/40 px-4 py-2 rounded-xl border border-emerald-600/30">
                 <span id="headerTeacherName" class="text-sm font-semibold"></span>
                 <button data-action="logout" class="text-xs bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">خروج</button>
@@ -471,6 +471,8 @@
                 </div>
             </div>
 
+            <div id="teacherStart" class="hidden"></div>
+
             <div class="flex border-b border-slate-200 gap-6 overflow-x-auto">
                 <button data-action="teacher-tab" data-tab="students" id="tabBtnStudents" class="pb-3 border-b-2 border-emerald-600 font-bold text-emerald-700 text-sm transition whitespace-nowrap">إدارة الطلاب واستيراد الأكسل</button>
                 <button data-action="teacher-tab" data-tab="tests" id="tabBtnTests" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold text-sm transition whitespace-nowrap">بناء الاختبارات</button>
@@ -528,7 +530,7 @@
                                     <th class="p-3 rounded-r-xl">م</th>
                                     <th class="p-3">اسم الطالب الكامل</th>
                                     <th class="p-3">رقم السجل المدني</th>
-                                    <th class="p-3">كلمة المرور</th>
+                                    <th class="p-3 whitespace-nowrap">كلمة المرور <button type="button" data-action="toggle-pins" id="pinToggle" class="mr-1 text-[11px] font-bold text-teal-700 hover:text-teal-900 underline">إظهار</button></th>
                                     <th class="p-3">المستوى العام</th>
                                     <th class="p-3 rounded-l-xl text-center">إجراءات</th>
                                 </tr>
@@ -818,6 +820,14 @@
             <div id="studentTestsView" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <h3 class="font-bold text-slate-800 text-base mb-4">📖 اختبارات فصلك (القراءة والرياضيات والعلوم)</h3>
                 <div id="studentTestsList" class="space-y-3"></div>
+            </div>
+
+            <div id="studentPracticeView" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4 gap-4">
+                    <h3 id="spTitle" class="font-bold text-slate-800 text-base"></h3>
+                    <button data-action="back-to-tests" class="text-xs text-slate-500 hover:text-slate-800 font-bold">← الاختبارات</button>
+                </div>
+                <div id="spBody" class="space-y-5"></div>
             </div>
 
             <div id="studentResultView" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">

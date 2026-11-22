@@ -296,6 +296,9 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
     assert.equal(await page.locator('#testsList > div', { hasText: 'الرياضيات' }).locator('[data-action="edit-test"]').count(), 0);
 
     // كلمة مرور الطالب وُلّدت عند إضافته (6 أرقام) وتظهر للمعلم
+    assert.match(await page.locator('#studentsTableBody tr', { hasText: '2000000001' }).locator('td').nth(3).textContent(), /•{6}/); // مخفية افتراضياً
+    await page.click('#tabBtnStudents');
+    await page.click('[data-action="toggle-pins"]');
     const pin = (await page.locator('#studentsTableBody tr', { hasText: '2000000001' }).locator('td').nth(3).textContent()).trim();
     assert.match(pin, /^\d{6}$/);
 
