@@ -197,6 +197,17 @@ test('المعلم يسجل ويرفع أكسل، الطالب يختبر، وا
             await vp.locator('#providerDashboardScreen').waitFor();
             return vp;
         };
+        // بريد معلم في بوابة مقدم الدعم: لا يُفتح حساب المعلم، وتظهر رسالة توضّح البوابة الصحيحة
+        {
+            const wp = await (await browser.newContext()).newPage();
+            await wp.goto(URL_);
+            await wp.click('[data-action="show-provider-login"]');
+            await wp.fill('#vLoginEmail', email);
+            await wp.fill('#vLoginPassword', 'secret123');
+            await wp.click('#providerLoginForm button[type=submit]');
+            assert.match(await closeModal(wp, 'ليس حساب'), /حساب معلم، وليس حساب مقدم خدمات الدعم/);
+            assert.equal(await wp.locator('#teacherDashboardScreen').isVisible(), false);
+        }
         const ca = await browser.newContext(), cb = await browser.newContext();
         const va = await reg(ca, 'مقدم أول', '1000000301');
         await va.fill('#pvSchoolNo', '999999');
