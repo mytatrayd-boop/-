@@ -1697,7 +1697,8 @@ function renderPrincipal() {
             }
             m.append(tr);
         }
-        t.append(m);
+        const mw = el('div', 'overflow-x-auto'); m.classList.add('min-w-[22rem]'); mw.append(m);
+        t.append(mw);
     }
     if (school.classes.length) {
         const f = el('form', 'space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-100'); f.id = 'pdTeacherForm';
@@ -1799,7 +1800,8 @@ async function loadSchoolReport(box, sc = school, rows = roster) {
             }
             table.append(tr);
         }
-        box.replaceChildren(el('p', 'text-xs text-slate-500', `العام الدراسي ${sc.year}: متوسط نسبة الإتقان لكل فصل ومادة.`), table);
+        const wrap = el('div', 'overflow-x-auto'); table.classList.add('min-w-[26rem]'); wrap.append(table);
+        box.replaceChildren(el('p', 'text-xs text-slate-500', `العام الدراسي ${sc.year}: متوسط نسبة الإتقان لكل فصل ومادة.`), wrap);
     } catch (err) { box.textContent = 'تعذّر تحميل التقارير.'; reportError(err); }
 }
 
@@ -1970,7 +1972,11 @@ function renderProvider() {
     if (!providerSchools.length) list.append(el('p', 'text-sm text-slate-400', 'لم تضف مدارس بعد.'));
     for (const s of providerSchools) {
         const card = el('div', 'bg-white border border-slate-200 rounded-2xl p-4 text-sm space-y-2');
-        card.append(el('p', 'font-bold text-slate-800', `${s.schoolName} — ${s.no}`), el('p', 'text-xs text-slate-500', `مدير المدرسة: ${s.principalName}`));
+        const head = el('div', 'flex items-start justify-between gap-3');
+        const ttl = el('div', 'space-y-1 min-w-0');
+        ttl.append(el('p', 'font-bold text-slate-800', `${s.schoolName} — ${s.no}`), el('p', 'text-xs text-slate-500', `مدير المدرسة: ${s.principalName}`));
+        head.append(ttl, actionButton('إزالة المدرسة', 'pv-remove', s.no, 'shrink-0 text-xs font-bold text-red-500 hover:text-red-700 border border-red-200 rounded-lg px-3 py-1.5'));
+        card.append(head);
         if (s.incoming) {
             const n = el('div', 'bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs space-y-2');
             n.append(el('p', 'font-bold text-amber-900', `تنبيه: المقدم ${s.incoming.requesterName} يطلب أن تُضاف هذه المدرسة إليه.`));
@@ -1991,7 +1997,6 @@ function renderProvider() {
         det.append(rb);
         det.addEventListener('toggle', () => { if (det.open && !det.dataset.loaded) { det.dataset.loaded = '1'; loadSchoolReport(rb, s, s.roster); } });
         card.append(det);
-        card.append(actionButton('إزالة المدرسة من عندي', 'pv-remove', s.no, 'text-xs font-bold text-red-500 hover:text-red-700'));
         list.append(card);
     }
     body.append(list);
