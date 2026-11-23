@@ -1,0 +1,54 @@
+name: App Store availability (countries)
+
+# Takes the EU (and/or China) out of an app's App Store availability, or puts it back, with the App Store Connect
+# API key (same secrets as asraty-ios.yml). dry-run only reads and prints. apply changes the store page,
+# only on the owner's explicit order for this app.
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:
+        description: "iOS bundle id (sa.lamha.lamha or sa.asraty.app)"
+        required: true
+        default: sa.lamha.lamha
+      mode:
+        description: "dry-run = read only, apply = change"
+        type: choice
+        options: [dry-run, apply]
+        default: dry-run
+      eu:
+        description: "the 27 EU member states"
+        type: boolean
+        default: true
+      china:
+        description: "China mainland"
+        type: boolean
+        default: false
+      restore:
+        description: "put them back ON instead of switching OFF"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  availability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run
+        env:
+          KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          for v in KEY ASC_KEY_ID ASC_ISSUER_ID; do [ -n "${!v}" ] || { echo "::error::Missing secret for $v"; exit 1; }; done
+          umask 077
+          printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          flags=""
+          [ "${{ inputs.eu }}" = "true" ] && flags="$flags --eu"
+          [ "${{ inputs.china }}" = "true" ] && flags="$flags --china"
+          [ "${{ inputs.restore }}" = "true" ] && flags="$flags --restore"
+          python3 .github/scripts/asc_availability.py "${{ inputs.bundle_id }}" "${{ inputs.mode }}" $flags
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
