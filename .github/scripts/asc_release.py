@@ -3,6 +3,7 @@
 
   asc_release.py <bundle_id> check     read only: versions waiting for release + every subscription's state
   asc_release.py <bundle_id> submit-subs   send every READY_TO_SUBMIT subscription to App Review
+  asc_release.py <bundle_id> cancel-review   withdraw the submission that waits for review (the version becomes editable again)
   asc_release.py <bundle_id> release   release the version that waits (owner's explicit order only)
 
 release refuses while any subscription is still MISSING_METADATA / READY_TO_SUBMIT / REJECTED /
@@ -29,13 +30,24 @@ def get(path: str):
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "submit-subs"):
+    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "submit-subs", "cancel-review"):
         sys.exit(__doc__)
     bundle, mode = sys.argv[1], sys.argv[2]
     app = get(f"/apps?filter[bundleId]={bundle}")["data"]
     if not app:
         sys.exit(f"::error::no app {bundle}")
     app_id = app[0]["id"]
+    if mode == "cancel-review":
+        subs = get(f"/apps/{app_id}/reviewSubmissions?filter[platform]=IOS&limit=10")["data"]
+        waiting = [x for x in subs if x["attributes"].get("state") in ("WAITING_FOR_REVIEW", "READY_FOR_REVIEW")]
+        if not waiting:
+            sys.exit("::error::no submission waiting for review")
+        for x in waiting:
+            status, res = request("PATCH", f"/reviewSubmissions/{x['id']}", {"data": {
+                "type": "reviewSubmissions", "id": x["id"], "attributes": {"canceled": True}}})
+            detail = "; ".join(e.get("detail") or e.get("title", "") for e in (res or {}).get("errors", []))
+            print(f"cancel {x['id']} ({x['attributes'].get('state')}): {status} {detail}")
+        return
     versions = get(f"/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=20")["data"]
     waiting = [v for v in versions if v["attributes"]["appStoreState"] == "PENDING_DEVELOPER_RELEASE"]
     for v in versions[:5]:
