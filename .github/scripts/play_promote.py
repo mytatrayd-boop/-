@@ -47,6 +47,7 @@ def main():
             av = play.call("GET", play.edit(f"/countryAvailability/{dst}")) or {}
         except SystemExit as e:
             sys.exit(f"::error::cannot read {dst} countries ({e}); set them in Play Console first")
+        print(f"raw {dst} availability response: {av}")
         if not av:
             sys.exit(f"::error::refused: Play returned no country settings for {dst} yet. Open Production > "
                      "Countries/regions in Play Console and choose the countries (Saudi Arabia, India; no EU), "
