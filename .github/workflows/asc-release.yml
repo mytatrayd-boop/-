@@ -1,0 +1,35 @@
+name: App Store release (check / release)
+
+# check يقرأ فقط: الإصدارات المنتظرة للإطلاق وحالة كل اشتراك. release يُطلق الإصدار المعتمد
+# (Pending Developer Release) للعامة، بأمر المالك الصريح فقط، ويرفض إن كانت الاشتراكات غير جاهزة.
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:
+        description: "iOS bundle id (sa.lamha.lamha or sa.asraty.app)"
+        required: true
+      mode:
+        type: choice
+        options: [check, release]
+        default: check
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run
+        env:
+          KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          for v in KEY ASC_KEY_ID ASC_ISSUER_ID; do [ -n "${!v}" ] || { echo "::error::Missing secret for $v"; exit 1; }; done
+          umask 077
+          printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          python3 .github/scripts/asc_release.py "${{ inputs.bundle_id }}" "${{ inputs.mode }}"
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
