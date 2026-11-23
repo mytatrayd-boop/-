@@ -25,7 +25,7 @@ EU = set("AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO S
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags = dict(a[2:].partition("=")[::2] for a in sys.argv[1:] if a.startswith("--"))
-    if len(args) != 1 or set(flags) - {"from", "to", "apply"}:
+    if len(args) != 1 or set(flags) - {"from", "to", "apply", "draft"}:
         sys.exit(__doc__)
     package, src, dst = args[0], flags.get("from") or "alpha", flags.get("to") or "production"
     if not os.environ.get("PLAY_SERVICE_ACCOUNT_JSON"):
@@ -48,27 +48,30 @@ def main():
         except SystemExit as e:
             sys.exit(f"::error::cannot read {dst} countries ({e}); set them in Play Console first")
         print(f"raw {dst} availability response: {av}")
-        if not av:
+        if not av and "draft" in flags:
+            print("No country settings readable for this track yet: only a DRAFT release will be created (not live).")
+        elif not av:
             sys.exit(f"::error::refused: Play returned no country settings for {dst} yet. Open Production > "
                      "Countries/regions in Play Console and choose the countries (Saudi Arabia, India; no EU), "
                      "then rerun.")
         codes = {c["countryCode"] for c in av.get("countries", [])}
         print(f"{dst} countries: {', '.join(sorted(codes)) or '-'}; rest of world: {av.get('restOfWorld')}; "
               f"sync with Play: {av.get('syncWithPlay')}")
-        if av.get("restOfWorld") or av.get("syncWithPlay") or codes & EU or not codes:
+        if av and (av.get("restOfWorld") or av.get("syncWithPlay") or codes & EU or not codes):
             sys.exit(f"::error::refused: {dst} is not limited to the intended countries "
                      f"(EU in set: {sorted(codes & EU)}). Fix Production > Countries/regions in Play Console, then rerun.")
 
         body = {"track": dst, "releases": [{
-            "versionCodes": rel["versionCodes"], "status": "completed",
+            "versionCodes": rel["versionCodes"], "status": "draft" if "draft" in flags else "completed",
             "releaseNotes": rel.get("releaseNotes", [])}]}
         play.call("PUT", play.edit(f"/tracks/{dst}"), body)
         if "apply" in flags:
             play.finish(":commit")
             committed = True
-            print("Committed: the release is now on", dst)
+            print("Committed:", "a DRAFT release (not live)" if "draft" in flags else "the release is now live", "on", dst)
         else:
             play.finish(":validate")
+            committed = True  # validate consumes the edit; nothing to delete
             print("Dry run: valid; nothing changed (pass --apply to commit).")
     finally:
         if not committed:
