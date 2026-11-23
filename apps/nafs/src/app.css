@@ -30,31 +30,14 @@ html, body { overflow-x: clip; }
 .text-balance { text-wrap: balance; }
 .text-pretty { text-wrap: pretty; }
 
-/* ترويسة بإيحاء ورقة الإجابة: أبيض مع أخضر فاتح */
-.omr-head { background-image: linear-gradient(to left, #ffffff 35%, #eaf6ef); }
-.omr-grid {
-    background-image: radial-gradient(circle at center, transparent 5px, #b9dcc8 5.5px, #b9dcc8 6.6px, transparent 7.1px);
-    background-size: 24px 24px;
-    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,.9), rgba(0,0,0,0) 60%);
-    mask-image: linear-gradient(to right, rgba(0,0,0,.9), rgba(0,0,0,0) 60%);
-}
-.omr-photo {
-    width: 52%;
-    background: url('header-hand.jpg') 62% 58% / cover no-repeat;
-    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,.9) 0%, rgba(0,0,0,.6) 50%, rgba(0,0,0,0) 100%);
-    mask-image: linear-gradient(to right, rgba(0,0,0,.9) 0%, rgba(0,0,0,.6) 50%, rgba(0,0,0,0) 100%);
-}
-@media (min-width: 768px) { .omr-photo { width: 48%; } }
-.omr-mark { position: absolute; z-index: 1; width: 8px; height: 8px; background: #4fae7f; border-radius: 1px; }
+/* الترويسة: صورة ورقة الإجابة أثناء الحل، وبطاقة زجاجية فوقها */
+.omr-cover { background: url('header-photo.jpg') 40% 45% / cover no-repeat; }
+.omr-cover::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0) 40%, rgba(234,246,239,.55)); }
+.omr-glass { background: rgba(255,255,255,.74); -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px); border: 1px solid rgba(255,255,255,.85); border-radius: 1.25rem; box-shadow: 0 8px 24px rgba(16,70,49,.10); }
 .omr-opt { display: inline-flex; align-items: center; gap: 5px; }
-.omr-opt i { width: 11px; height: 11px; border-radius: 9999px; background: #4fae7f; box-shadow: 0 0 0 2px #e3f3ea; display: block; }
-.omr-btn { background: rgba(234,246,239,.92); border: 1px dashed #78c49c; backdrop-filter: blur(2px); }
+.omr-opt i { width: 10px; height: 10px; border-radius: 9999px; background: #4fae7f; box-shadow: 0 0 0 2px #e3f3ea; display: block; }
+.omr-btn { background: rgba(234,246,239,.9); border: 1px dashed #78c49c; color: rgba(18,92,60,.85); }
 .omr-btn:hover { background: #d3eddf; }
-.omr-mini { display: inline-flex; gap: 3px; direction: ltr; }
-.omr-mini i { width: 8px; height: 8px; border-radius: 9999px; border: 1.3px solid #1b8354; display: block; }
-.omr-mini i.on { background: #1b8354; }
-
-/* ألوان أخف للشعار والعنوان (طلب المالك: الأخضر داكن جداً) */
-.omr-logo { opacity: .9; filter: saturate(.85) brightness(1.18); }
-.omr-title { color: #2f8f62; }
-.omr-btn { color: #2f8f62; }
+.omr-logo { filter: saturate(.62) brightness(1.04); opacity: .9; }
+.omr-title { color: rgba(18,92,60,.82); }
+@media (min-width: 768px) { .omr-cover { background: url('header-photo-wide.jpg') 60% 56% / cover no-repeat; } }

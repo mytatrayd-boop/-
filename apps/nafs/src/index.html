@@ -13,14 +13,13 @@
 <body class="min-h-screen flex flex-col text-slate-800">
 
     <!-- الترويسة بإيحاء ورقة الإجابة: علامات الزوايا الأربع، وشبكة دوائر التظليل، والمواد كخيارات مظلَّلة -->
-    <header class="omr-head relative overflow-hidden bg-white text-emerald-900 border-b-4 border-emerald-100 shadow-sm">
-        <!-- صورة حقيقية: يد وقلم تظلّل ورقة الإجابة (Pexels، رخصة حرة) تتلاشى في الأبيض -->
-        <div class="omr-photo absolute inset-y-0 left-0 pointer-events-none" aria-hidden="true"></div>
-        <span class="omr-mark top-2 right-2" aria-hidden="true"></span><span class="omr-mark top-2 left-2" aria-hidden="true"></span>
-        <span class="omr-mark bottom-2 right-2" aria-hidden="true"></span><span class="omr-mark bottom-2 left-2" aria-hidden="true"></span>
-        <div class="relative max-w-7xl mx-auto px-5 md:px-6 py-4 md:py-5 flex flex-row justify-between items-center gap-3 md:gap-4">
+    <!-- الترويسة: صورة طالب يظلّل ورقة الإجابة (الشعارات في الصورة مطموسة)، وفوقها بطاقة زجاجية بيضاء شفافة -->
+    <header class="omr-head relative overflow-hidden text-emerald-900 border-b-4 border-emerald-100">
+        <div class="omr-cover absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+        <div class="relative max-w-7xl mx-auto px-3 md:px-6 pt-24 pb-3 md:pt-20 md:pb-4">
+          <div class="omr-glass flex flex-row justify-between items-center gap-3 md:gap-4 px-3 md:px-5 py-2.5 md:py-3">
             <div class="flex items-center gap-3 min-w-0">
-                <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="omr-logo h-11 md:h-14 w-auto rounded-2xl shadow-sm ring-1 ring-emerald-100 shrink-0">
+                <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="omr-logo h-11 md:h-14 w-auto rounded-xl ring-2 ring-white shrink-0">
                 <div class="min-w-0">
                     <h1 class="text-lg md:text-2xl font-black tracking-wide leading-tight whitespace-nowrap omr-title">مهارات اختبارات نافس</h1>
                     <!-- المواد كخيارات في ورقة الإجابة: دائرة مظلَّلة لكل مادة -->
@@ -35,6 +34,7 @@
                 <span id="headerTeacherName" class="hidden sm:inline text-sm font-semibold"></span>
                 <button data-action="logout" class="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">خروج</button>
             </div>
+          </div>
         </div>
     </header>
 
