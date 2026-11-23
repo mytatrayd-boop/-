@@ -1,0 +1,43 @@
+name: Asraty — subscription review screenshot
+
+# يرسم شاشة الاشتراك الحقيقية للتطبيق (الأسعار الحقيقية للمنتجات الستة) بلقطة 1242×2208 بـ widget test،
+# ويرفعها لقطة مراجعة لكل منتج اشتراك في App Store Connect (تلزم قبل ربط المنتجات بالإصدار).
+# dry-run يرسم ويقرأ فقط.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [dry-run, apply]
+        default: dry-run
+
+permissions:
+  contents: read
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: asraty/app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, flutter-version: '3.47.9', cache: true }
+      - run: flutter pub get
+      - name: Render the paywall
+        run: REVIEW_SHOT_OUT="$RUNNER_TEMP/paywall.png" flutter test test/review_shot_test.dart
+      - uses: actions/upload-artifact@v4
+        with: { name: asraty-paywall, path: "${{ runner.temp }}/paywall.png" }
+      - name: Upload to App Store Connect
+        working-directory: .
+        env:
+          KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          for v in KEY ASC_KEY_ID ASC_ISSUER_ID; do [ -n "${!v}" ] || { echo "::error::Missing secret for $v"; exit 1; }; done
+          umask 077
+          printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          flag=""; [ "${{ inputs.mode }}" = "dry-run" ] && flag="--dry-run"
+          python3 .github/scripts/asc_review_screenshot.py sa.asraty.app "$RUNNER_TEMP/paywall.png" $flag
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
