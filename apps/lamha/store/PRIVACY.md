@@ -18,6 +18,8 @@
 
 **الاشتراك:** «لمحة» باشتراك شهري أو سنوي (تجربة مجانية ٧ أيام) عبر App Store. الدفع تتولاه Apple ولا نرى بطاقتك ولا اسمك. لنعرف أن اشتراكك فعّال يرسل التطبيق **إيصال الشراء** فقط إلى خادم يسأل Apple عن مدة الاشتراك ثم يردّ بها، ولا يُخزَّن الإيصال ولا يُربط بهويتك. يمكنك إلغاء الاشتراك في أي وقت من إعدادات حسابك على Apple.
 
+**كود التفعيل (اختياري):** إن أدخلت كود تفعيل أعطاك إياه المطوّر، يرسل التطبيق الكود مع **معرّف عشوائي لجهازك** إلى خادمنا ليربط الكود بجوالك (كود واحد لجهاز واحد)، ولا يُجمع معه اسمك ولا بريدك ولا موقعك.
+
 **الأطفال:** التطبيق غير موجّه للأطفال ولا يجمع بياناتهم.
 
 **التواصل:** https://github.com/mytatrayd-boop/-/issues
@@ -35,5 +37,6 @@ Lamha is a home-screen widget showing the time, Hijri and Gregorian dates, weath
 - Settings are stored only on your device and are removed when you uninstall the app.
 - The optional lock-screen notification is local.
 - Subscription: Lamha is sold as a monthly or yearly App Store subscription (7-day free trial). Apple handles payment; we never see your card or name. To know your subscription is active, the app sends only the purchase receipt to a server that asks Apple how long it lasts and replies; the receipt is not stored or linked to your identity. You can cancel any time in your Apple account settings.
+- Activation code (optional): if you enter an activation code given to you by the developer, the app sends the code with a random identifier of your device to our server to bind the code to your phone (one code, one device). Your name, email and location are not collected with it.
 - Not directed to children.
 - Contact: https://github.com/mytatrayd-boop/-/issues
