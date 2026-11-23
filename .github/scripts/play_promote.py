@@ -44,9 +44,14 @@ def main():
 
         # Country availability of the target track: must not include the EU or the rest of the world.
         try:
-            av = play.call("GET", play.edit(f"/countryAvailability/{dst}"))
+            av = play.call("GET", play.edit(f"/countryAvailability/{dst}")) or {}
         except SystemExit as e:
             sys.exit(f"::error::cannot read {dst} countries ({e}); set them in Play Console first")
+        print(f"raw {dst} availability response: {av}")
+        if not av:
+            sys.exit(f"::error::refused: Play returned no country settings for {dst} yet. Open Production > "
+                     "Countries/regions in Play Console and choose the countries (Saudi Arabia, India; no EU), "
+                     "then rerun.")
         codes = {c["countryCode"] for c in av.get("countries", [])}
         print(f"{dst} countries: {', '.join(sorted(codes)) or '-'}; rest of world: {av.get('restOfWorld')}; "
               f"sync with Play: {av.get('syncWithPlay')}")

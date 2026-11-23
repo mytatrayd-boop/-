@@ -8,6 +8,9 @@ on:
       package:
         description: "اسم الحزمة (sa.lamha.lamha أو sa.asraty.app)"
         required: true
+      to:
+        description: "المسار الهدف (production؛ alpha للفحص فقط)"
+        default: production
       apply:
         description: "نفّذ فعلاً (طرح عام)؛ دونه تجربة جافة"
         type: boolean
@@ -26,6 +29,7 @@ jobs:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           PACKAGE: ${{ inputs.package }}
           APPLY: ${{ inputs.apply && '--apply' || '' }}
+          TO: ${{ inputs.to }}
         run: |
           [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] || { echo "::error::Missing secret PLAY_SERVICE_ACCOUNT_JSON"; exit 1; }
-          python3 .github/scripts/play_promote.py "$PACKAGE" $APPLY
+          python3 .github/scripts/play_promote.py "$PACKAGE" --to="$TO" $APPLY
