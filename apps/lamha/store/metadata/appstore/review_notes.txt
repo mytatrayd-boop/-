@@ -1,1 +1,9 @@
-No account or login. The app configures a home-screen and lock-screen widget (add it from the Home Screen: long-press › Edit › Add Widget › Lamha). Payout dates are computed on-device from published rules; the app is independent and not affiliated with any government entity. Weather is fetched from Open-Meteo using the chosen city's coordinates.
+Lamha is an Arabic home-screen and lock-screen widget app: Hijri and Gregorian dates, prayer times, Qibla compass, and payment dates for salaries and benefits. No account or login is required.
+
+Subscriptions: monthly (lamha.monthly) and yearly (lamha.yearly), both with a 7-day free trial, in one subscription group. The subscription screen appears on first launch. Tap "Start free trial" and complete the sandbox purchase; the app then unlocks. "Restore purchases" and the privacy policy link are on the same screen. The app verifies the signed transaction on its server.
+
+The subscription screen also has an optional "I have an activation code" entry. These codes are given personally by the developer to a few acquaintances and testers; reviewers do not need one.
+
+To see the widget: long-press the Home Screen, tap "+" (or Edit > Add Widget), then choose Lamha.
+
+Payout dates are computed on-device from published rules; the app is independent and not affiliated with any government entity. Weather is fetched from Open-Meteo using the chosen city's coordinates.
