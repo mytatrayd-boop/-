@@ -19,7 +19,7 @@ on:
         description: "مسار Play"
         default: internal
         type: choice
-        options: [internal, alpha, beta]
+        options: [internal, alpha, beta, production]
 
 permissions:
   contents: read

@@ -10,7 +10,7 @@ on:
         description: "Play track"
         default: internal
         type: choice
-        options: [internal, alpha, beta]
+        options: [internal, alpha, beta, production]
       paywall:
         description: "Turn the subscription gate on in this build (needs the products in Play Console)"
         default: false
