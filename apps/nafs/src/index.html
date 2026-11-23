@@ -14,10 +14,11 @@
 
     <!-- الترويسة بإيحاء ورقة الإجابة: علامات الزوايا الأربع، وشبكة دوائر التظليل، والمواد كخيارات مظلَّلة -->
     <!-- الترويسة: صورة طالب يظلّل ورقة الإجابة (الشعارات في الصورة مطموسة)، وفوقها بطاقة زجاجية بيضاء شفافة -->
-    <header class="omr-head relative overflow-hidden text-emerald-900 border-b-4 border-emerald-100">
-        <div class="omr-cover absolute inset-0 pointer-events-none" aria-hidden="true"></div>
-        <div class="relative max-w-7xl mx-auto px-3 md:px-6 pt-24 pb-3 md:pt-20 md:pb-4">
-          <div class="omr-glass flex flex-row justify-between items-center gap-3 md:gap-4 px-3 md:px-5 py-2.5 md:py-3">
+    <header class="omr-head relative overflow-hidden bg-white text-emerald-900 border-b-4 border-emerald-100">
+        <!-- الصورة في شريط مستقل أعلى الترويسة، والشعار والعنوان تحتها دون أن يغطيا الصورة -->
+        <div class="omr-cover h-28 md:h-36" aria-hidden="true"></div>
+        <div class="relative max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
+          <div class="flex flex-row justify-between items-center gap-3 md:gap-4">
             <div class="flex items-center gap-3 min-w-0">
                 <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="omr-logo h-11 md:h-14 w-auto rounded-xl ring-2 ring-white shrink-0">
                 <div class="min-w-0">
