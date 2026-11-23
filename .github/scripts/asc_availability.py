@@ -77,7 +77,7 @@ def main():
     rows = territory_rows(app_id)
     on = [r["territory"] for r in rows if r["available"]]
     print(f"{bundle}: {len(on)} of {len(rows)} territories available")
-    target = not ("--restore" in flags)
+    target = "--restore" in flags  # switch OFF by default; --restore switches ON
     todo = [r for r in rows if r["territory"] in want and r["available"] != target]
     print(f"to switch {'ON' if target else 'OFF'}: {len(todo)} of {len(want)} -> {', '.join(r['territory'] for r in todo) or '-'}")
     if mode == "dry-run":
