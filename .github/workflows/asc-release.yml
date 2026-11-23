@@ -10,7 +10,7 @@ on:
         required: true
       mode:
         type: choice
-        options: [check, release]
+        options: [check, submit-subs, release]
         default: check
 
 permissions:

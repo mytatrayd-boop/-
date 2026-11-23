@@ -2,6 +2,7 @@
 """Check and release an approved App Store version (release type MANUAL = "Pending Developer Release").
 
   asc_release.py <bundle_id> check     read only: versions waiting for release + every subscription's state
+  asc_release.py <bundle_id> submit-subs   send every READY_TO_SUBMIT subscription to App Review
   asc_release.py <bundle_id> release   release the version that waits (owner's explicit order only)
 
 release refuses while any subscription is still MISSING_METADATA / READY_TO_SUBMIT / REJECTED /
@@ -28,7 +29,7 @@ def get(path: str):
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release"):
+    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "submit-subs"):
         sys.exit(__doc__)
     bundle, mode = sys.argv[1], sys.argv[2]
     app = get(f"/apps?filter[bundleId]={bundle}")["data"]
@@ -42,13 +43,25 @@ def main():
         print(f"Version {a['versionString']}: {a['appStoreState']} (release {a.get('releaseType')})")
 
     bad = []
+    ready = []
     for g in get(f"/apps/{app_id}/subscriptionGroups?limit=50")["data"]:
         for s in get(f"/subscriptionGroups/{g['id']}/subscriptions?limit=50")["data"]:
             st = s["attributes"].get("state")
             print(f"  subscription {s['attributes']['productId']}: {st}")
+            if st == "READY_TO_SUBMIT":
+                ready.append(s)
             if st not in OK_STATES:
                 bad.append(f"{s['attributes']['productId']}={st}")
 
+    if mode == "submit-subs":
+        for s in ready:
+            status, res = request("POST", "/subscriptionSubmissions", {"data": {
+                "type": "subscriptionSubmissions",
+                "relationships": {"subscription": {"data": {"type": "subscriptions", "id": s["id"]}}}}})
+            detail = "; ".join(e.get("detail") or e.get("title", "") for e in (res or {}).get("errors", []))
+            print(f"  submit {s['attributes']['productId']}: {status} {detail}")
+        print("submitted:", len(ready), "(states update after Apple processes them; run check again)")
+        return
     if mode == "check":
         print("waiting for release:", [v["attributes"]["versionString"] for v in waiting] or "none")
         return
