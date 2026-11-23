@@ -1,0 +1,41 @@
+name: App Store subscription review screenshot
+
+# Uploads one App Review screenshot to every subscription product of an app (needed before a product can be added
+# to a version). Same secrets as asraty-ios.yml. dry-run only reads.
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:
+        description: "iOS bundle id"
+        required: true
+        default: sa.lamha.lamha
+      image:
+        description: "PNG path in the repo"
+        required: true
+        default: apps/lamha/store/review/paywall.png
+      mode:
+        type: choice
+        options: [dry-run, apply]
+        default: dry-run
+
+permissions:
+  contents: read
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run
+        env:
+          KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          for v in KEY ASC_KEY_ID ASC_ISSUER_ID; do [ -n "${!v}" ] || { echo "::error::Missing secret for $v"; exit 1; }; done
+          umask 077
+          printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          flag=""; [ "${{ inputs.mode }}" = "dry-run" ] && flag="--dry-run"
+          python3 .github/scripts/asc_review_screenshot.py "${{ inputs.bundle_id }}" "${{ inputs.image }}" $flag
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
