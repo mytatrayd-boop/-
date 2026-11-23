@@ -18,11 +18,11 @@
         <div class="omr-photo absolute inset-y-0 left-0 pointer-events-none" aria-hidden="true"></div>
         <span class="omr-mark top-2 right-2" aria-hidden="true"></span><span class="omr-mark top-2 left-2" aria-hidden="true"></span>
         <span class="omr-mark bottom-2 right-2" aria-hidden="true"></span><span class="omr-mark bottom-2 left-2" aria-hidden="true"></span>
-        <div class="relative max-w-7xl mx-auto px-6 py-4 md:py-5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 md:gap-4">
-            <div class="flex items-center gap-3">
-                <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="h-12 md:h-14 w-auto rounded-2xl shadow-sm ring-1 ring-emerald-100 shrink-0">
+        <div class="relative max-w-7xl mx-auto px-5 md:px-6 py-4 md:py-5 flex flex-row justify-between items-center gap-3 md:gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <img src="logo-nafs.png" alt="شعار الاختبارات الوطنية نافس" width="70" height="60" class="omr-logo h-11 md:h-14 w-auto rounded-2xl shadow-sm ring-1 ring-emerald-100 shrink-0">
                 <div class="min-w-0">
-                    <h1 class="text-xl md:text-2xl font-black tracking-wide leading-tight whitespace-nowrap text-emerald-800">مهارات اختبارات نافس</h1>
+                    <h1 class="text-lg md:text-2xl font-black tracking-wide leading-tight whitespace-nowrap omr-title">مهارات اختبارات نافس</h1>
                     <!-- المواد كخيارات في ورقة الإجابة: دائرة مظلَّلة لكل مادة -->
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] md:text-xs font-semibold text-slate-600">
                         <span class="omr-opt"><i></i>القراءة</span><span class="omr-opt"><i></i>العلوم</span><span class="omr-opt"><i></i>الرياضيات</span>
@@ -30,9 +30,9 @@
                     <p class="hidden md:block text-[11px] text-slate-400 mt-1">القياس والتحليل والتدريب المستمر</p>
                 </div>
             </div>
-            <button id="headerAbout" data-action="show-about" class="omr-btn text-xs font-semibold text-emerald-800 px-4 py-2 rounded-xl transition flex items-center justify-center gap-2"><span class="omr-mini" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i></span>عن اختبارات نافس · دليل الطالب وولي الأمر</button>
-            <div id="userInfoHeader" class="hidden flex items-center justify-between gap-4 bg-emerald-50 text-emerald-900 px-4 py-2 rounded-xl border border-emerald-200">
-                <span id="headerTeacherName" class="text-sm font-semibold"></span>
+            <button id="headerAbout" data-action="show-about" title="عن اختبارات نافس · دليل الطالب وولي الأمر" class="omr-btn shrink-0 self-start md:self-center text-[11px] md:text-xs font-semibold px-2.5 md:px-4 py-1.5 md:py-2 rounded-full md:rounded-xl transition flex items-center gap-1.5"><span aria-hidden="true">📖</span><span class="md:hidden">الدليل</span><span class="hidden md:inline">عن اختبارات نافس · دليل الطالب وولي الأمر</span></button>
+            <div id="userInfoHeader" class="hidden shrink-0 flex items-center justify-between gap-2 md:gap-4 bg-emerald-50 text-emerald-900 px-4 py-2 rounded-xl border border-emerald-200">
+                <span id="headerTeacherName" class="hidden sm:inline text-sm font-semibold"></span>
                 <button data-action="logout" class="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">خروج</button>
             </div>
         </div>

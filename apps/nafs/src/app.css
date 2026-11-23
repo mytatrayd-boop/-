@@ -45,11 +45,16 @@ html, body { overflow-x: clip; }
     mask-image: linear-gradient(to right, rgba(0,0,0,.9) 0%, rgba(0,0,0,.6) 50%, rgba(0,0,0,0) 100%);
 }
 @media (min-width: 768px) { .omr-photo { width: 48%; } }
-.omr-mark { position: absolute; z-index: 1; width: 9px; height: 9px; background: #166a45; border-radius: 1px; }
+.omr-mark { position: absolute; z-index: 1; width: 8px; height: 8px; background: #4fae7f; border-radius: 1px; }
 .omr-opt { display: inline-flex; align-items: center; gap: 5px; }
-.omr-opt i { width: 11px; height: 11px; border-radius: 9999px; background: #1b8354; box-shadow: 0 0 0 2px #d3eddf; display: block; }
+.omr-opt i { width: 11px; height: 11px; border-radius: 9999px; background: #4fae7f; box-shadow: 0 0 0 2px #e3f3ea; display: block; }
 .omr-btn { background: rgba(234,246,239,.92); border: 1px dashed #78c49c; backdrop-filter: blur(2px); }
 .omr-btn:hover { background: #d3eddf; }
 .omr-mini { display: inline-flex; gap: 3px; direction: ltr; }
 .omr-mini i { width: 8px; height: 8px; border-radius: 9999px; border: 1.3px solid #1b8354; display: block; }
 .omr-mini i.on { background: #1b8354; }
+
+/* ألوان أخف للشعار والعنوان (طلب المالك: الأخضر داكن جداً) */
+.omr-logo { opacity: .9; filter: saturate(.85) brightness(1.18); }
+.omr-title { color: #2f8f62; }
+.omr-btn { color: #2f8f62; }
