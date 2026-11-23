@@ -1,0 +1,31 @@
+name: Google Play promote (alpha to production)
+
+# يرقّي الإصدار المختبر نفسه من مسار alpha إلى production دون إعادة بناء. يرفض إن كانت دول الإنتاج
+# تشمل الاتحاد الأوروبي أو بقية العالم. الافتراضي تجربة جافة؛ apply يطرح للعامة (بموافقة المالك فقط).
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "اسم الحزمة (sa.lamha.lamha أو sa.asraty.app)"
+        required: true
+      apply:
+        description: "نفّذ فعلاً (طرح عام)؛ دونه تجربة جافة"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Promote
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PACKAGE: ${{ inputs.package }}
+          APPLY: ${{ inputs.apply && '--apply' || '' }}
+        run: |
+          [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] || { echo "::error::Missing secret PLAY_SERVICE_ACCOUNT_JSON"; exit 1; }
+          python3 .github/scripts/play_promote.py "$PACKAGE" $APPLY
