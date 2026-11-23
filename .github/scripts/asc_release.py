@@ -47,7 +47,20 @@ def main():
     for g in get(f"/apps/{app_id}/subscriptionGroups?limit=50")["data"]:
         for s in get(f"/subscriptionGroups/{g['id']}/subscriptions?limit=50")["data"]:
             st = s["attributes"].get("state")
-            print(f"  subscription {s['attributes']['productId']}: {st}")
+            a = s["attributes"]
+            print(f"  subscription {a['productId']}: {st}; period {a.get('subscriptionPeriod')}; "
+                  f"group level {a.get('groupLevel')}; review note {'yes' if a.get('reviewNote') else 'no'}")
+            sid = s["id"]
+            shot_status, shot = request("GET", f"/subscriptions/{sid}/appStoreReviewScreenshot")
+            sd = (shot or {}).get("data")
+            print("    review screenshot:", (sd or {}).get("attributes", {}).get("assetDeliveryState", {}).get("state")
+                  if sd else f"none ({shot_status})")
+            for loc in get(f"/subscriptions/{sid}/subscriptionLocalizations?limit=20")["data"]:
+                la = loc["attributes"]
+                print(f"    localization {la.get('locale')}: {la.get('state')}; name '{la.get('name')}'")
+            print("    prices:", len(get(f"/subscriptions/{sid}/prices?limit=200")["data"]))
+            st_av, av = request("GET", f"/subscriptions/{sid}/subscriptionAvailability")
+            print("    availability:", st_av)
             if st == "READY_TO_SUBMIT":
                 ready.append(s)
             if st not in OK_STATES:
