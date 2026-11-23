@@ -1,0 +1,13 @@
+"Asraty" (مهام أسرتي) is an Arabic family-tasks app: a parent (family admin) creates a family and assigns household tasks with points; children complete them, the parent approves, and members earn points and rewards the parent defines.
+
+QUICK LOOK, no account: on the first screen tap "تجربة سريعة بأسرة جاهزة" (Quick demo with a sample family). Demo data stays on the device. The demo never shows the subscription screen.
+
+SUBSCRIPTION SCREEN: tap "مسؤول الأسرة" (Family admin), enter a family name, your name and any email address you can access; a one-time 6-digit code is sent to that email (no password). After signing in, the family admin sees the subscription screen. Six auto-renewable subscriptions in one group: asraty.monthly / asraty.yearly (up to 5 members), asraty.m10 / asraty.y10 (up to 10), asraty.m20 / asraty.y20 (up to 20), each with a 7-day free trial. Only the family admin pays; other members and delegated admins join a paid family without a subscription. "Restore purchases", the Terms of Use (Apple standard EULA) and the privacy policy link are on the same screen. The app verifies the signed StoreKit 2 transaction on our server.
+
+The subscription screen also has an optional "I have an activation code" entry. These codes are given personally by the developer to a few acquaintances and testers; reviewers do not need one.
+
+Account deletion: Settings > "حذف الأسرة كاملة" (family owner) or "حذف حسابي" (other members).
+
+Location is used only by the optional family-trip feature "أنا هنا": a parent starts a trip and each member taps "I'm here" to share live location with their own family, to find each other in crowded places (the Grand Mosque, malls, parks). Background location is needed because the phone is usually locked in a pocket; the system location indicator is shown, sharing stops when the trip ends and stored locations are deleted. Nothing is collected before the user taps the button; no ads, analytics or tracking. To test: use the quick demo, open the dashboard > "أنا هنا" > start a trip > tap "أنا هنا".
+
+External services: Google Firebase (Authentication, Firestore, Cloud Messaging), our own backend API, and Gmail SMTP for sign-in codes. No ads, no analytics SDK.
