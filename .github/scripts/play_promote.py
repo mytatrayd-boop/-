@@ -25,7 +25,7 @@ EU = set("AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO S
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags = dict(a[2:].partition("=")[::2] for a in sys.argv[1:] if a.startswith("--"))
-    if len(args) != 1 or set(flags) - {"from", "to", "apply", "draft"}:
+    if len(args) != 1 or set(flags) - {"from", "to", "apply", "draft", "owner-confirmed-countries"}:
         sys.exit(__doc__)
     package, src, dst = args[0], flags.get("from") or "alpha", flags.get("to") or "production"
     if not os.environ.get("PLAY_SERVICE_ACCOUNT_JSON"):
@@ -48,7 +48,10 @@ def main():
         except SystemExit as e:
             sys.exit(f"::error::cannot read {dst} countries ({e}); set them in Play Console first")
         print(f"raw {dst} availability response: {av}")
-        if not av and "draft" in flags:
+        if not av and "owner-confirmed-countries" in flags:
+            print("Play does not expose production countries through the API; proceeding on the owner's "
+                  "explicit confirmation that Production > Countries/regions is set (Saudi Arabia, India; no EU).")
+        elif not av and "draft" in flags:
             print("No country settings readable for this track yet: only a DRAFT release will be created (not live).")
         elif not av:
             sys.exit(f"::error::refused: Play returned no country settings for {dst} yet. Open Production > "
