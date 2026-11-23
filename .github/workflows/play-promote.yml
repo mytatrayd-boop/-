@@ -11,6 +11,10 @@ on:
       to:
         description: "المسار الهدف (production؛ alpha للفحص فقط)"
         default: production
+      draft:
+        description: "أنشئ مسودة إصدار فقط (لا تُطرح) لتظهر دول المسار للفحص"
+        type: boolean
+        default: false
       apply:
         description: "نفّذ فعلاً (طرح عام)؛ دونه تجربة جافة"
         type: boolean
@@ -30,6 +34,7 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           APPLY: ${{ inputs.apply && '--apply' || '' }}
           TO: ${{ inputs.to }}
+          DRAFT: ${{ inputs.draft && '--draft' || '' }}
         run: |
           [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] || { echo "::error::Missing secret PLAY_SERVICE_ACCOUNT_JSON"; exit 1; }
-          python3 .github/scripts/play_promote.py "$PACKAGE" --to="$TO" $APPLY
+          python3 .github/scripts/play_promote.py "$PACKAGE" --to="$TO" $DRAFT $APPLY
