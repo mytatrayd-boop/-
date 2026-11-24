@@ -19,6 +19,9 @@ on:
         description: "المالك أكّد أنه ضبط دول الإنتاج في Play Console (الواجهة لا تكشفها)"
         type: boolean
         default: false
+      countries:
+        description: "دول إصدار الإنتاج (رموز ISO مفصولة بفواصل؛ بلا الاتحاد الأوروبي)"
+        default: "SA,IN"
       apply:
         description: "نفّذ فعلاً (طرح عام)؛ دونه تجربة جافة"
         type: boolean
@@ -38,8 +41,9 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           APPLY: ${{ inputs.apply && '--apply' || '' }}
           TO: ${{ inputs.to }}
+          COUNTRIES: ${{ inputs.countries }}
           CONFIRMED: ${{ inputs.countries_confirmed && '--owner-confirmed-countries' || '' }}
           DRAFT: ${{ inputs.draft && '--draft' || '' }}
         run: |
           [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] || { echo "::error::Missing secret PLAY_SERVICE_ACCOUNT_JSON"; exit 1; }
-          python3 .github/scripts/play_promote.py "$PACKAGE" --to="$TO" $DRAFT $CONFIRMED $APPLY
+          python3 .github/scripts/play_promote.py "$PACKAGE" --to="$TO" --countries="$COUNTRIES" $DRAFT $CONFIRMED $APPLY
