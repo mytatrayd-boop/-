@@ -10,7 +10,7 @@ on:
         required: true
       mode:
         type: choice
-        options: [check, submit-subs, submit-with-subs, cancel-review, release, release-force]
+        options: [check, submit-subs, submit-with-subs, cancel-review, clear-drafts, release, release-force]
         default: check
 
 permissions:
