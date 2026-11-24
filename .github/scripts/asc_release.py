@@ -33,13 +33,26 @@ def get(path: str):
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review", "submit-with-subs"):
+    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review", "submit-with-subs", "clear-drafts"):
         sys.exit(__doc__)
     bundle, mode = sys.argv[1], sys.argv[2]
     app = get(f"/apps?filter[bundleId]={bundle}")["data"]
     if not app:
         sys.exit(f"::error::no app {bundle}")
     app_id = app[0]["id"]
+    if mode == "clear-drafts":
+        # Empties and cancels the draft review submissions this API key made (items first: a draft with items resists cancel).
+        for x in get(f"/apps/{app_id}/reviewSubmissions?filter[platform]=IOS&limit=20")["data"]:
+            if x["attributes"].get("state") != "READY_FOR_REVIEW":
+                continue
+            items = get(f"/reviewSubmissions/{x['id']}/items?limit=50")["data"]
+            for it in items:
+                st, r = request("DELETE", f"/reviewSubmissionItems/{it['id']}")
+                print(f"  delete item {it['id']}: {st}")
+            st, r = request("PATCH", f"/reviewSubmissions/{x['id']}", {"data": {
+                "type": "reviewSubmissions", "id": x["id"], "attributes": {"canceled": True}}})
+            print(f"draft {x['id']}: items {len(items)}; cancel -> {st} {json.dumps(r, ensure_ascii=False)[:300] if st >= 300 else ''}")
+        return
     if mode == "submit-with-subs":
         vers = [v for v in get(f"/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=10")["data"]
                 if v["attributes"]["appStoreState"] in ("PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED")]
