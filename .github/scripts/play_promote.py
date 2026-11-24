@@ -72,6 +72,10 @@ def main():
             if set(wanted) & EU:
                 sys.exit("::error::refused: the EU is excluded by the owner")
             release["countryTargeting"] = {"countries": wanted, "includeRestOfWorld": False}
+            if release["status"] == "completed":
+                # Play accepts country targeting only on a staged release: roll out to 99% (the closest to full).
+                release["status"] = "inProgress"
+                release["userFraction"] = 0.99
             print("countryTargeting:", release["countryTargeting"])
         body = {"track": dst, "releases": [release]}
         play.call("PUT", play.edit(f"/tracks/{dst}"), body)
