@@ -92,6 +92,8 @@ def main():
                 "relationships": {"subscription": {"data": {"type": "subscriptions", "id": s["id"]}}}}})
             detail = "; ".join(e.get("detail") or e.get("title", "") for e in (res or {}).get("errors", []))
             print(f"  submit {s['attributes']['productId']}: {status} {detail}")
+            if status >= 300:
+                print("    raw:", json.dumps(res, ensure_ascii=False)[:3000])
         print("submitted:", len(ready), "(states update after Apple processes them; run check again)")
         return
     if mode == "check":
