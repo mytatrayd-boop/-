@@ -33,7 +33,7 @@ def get(path: str):
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review", "submit-with-subs", "clear-drafts"):
+    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review", "submit-with-subs", "clear-drafts", "submit-with-group"):
         sys.exit(__doc__)
     bundle, mode = sys.argv[1], sys.argv[2]
     app = get(f"/apps?filter[bundleId]={bundle}")["data"]
@@ -52,6 +52,34 @@ def main():
             st, r = request("PATCH", f"/reviewSubmissions/{x['id']}", {"data": {
                 "type": "reviewSubmissions", "id": x["id"], "attributes": {"canceled": True}}})
             print(f"draft {x['id']}: items {len(items)}; cancel -> {st} {json.dumps(r, ensure_ascii=False)[:300] if st >= 300 else ''}")
+        return
+    if mode == "submit-with-group":
+        # Like the App Store Connect page: one review submission holding the editable version AND the subscription group.
+        vers = [v for v in get(f"/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=10")["data"]
+                if v["attributes"]["appStoreState"] in ("PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED")]
+        if len(vers) != 1:
+            sys.exit(f"::error::expected exactly one editable version, found {len(vers)}")
+        groups = get(f"/apps/{app_id}/subscriptionGroups?limit=50")["data"]
+        st, r = request("POST", "/reviewSubmissions", {"data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
+                        "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}})
+        if st >= 300:
+            sys.exit(f"::error::reviewSubmissions -> {st}: {json.dumps(r)[:800]}")
+        sub_id = r["data"]["id"]
+        def add(rel_name, rel_type, rid):
+            st, r = request("POST", "/reviewSubmissionItems", {"data": {"type": "reviewSubmissionItems", "relationships": {
+                "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub_id}},
+                rel_name: {"data": {"type": rel_type, "id": rid}}}}})
+            print(f"  add {rel_name} {rid}: {st}" + (f" {json.dumps(r, ensure_ascii=False)[:700]}" if st >= 300 else ""))
+            return st < 300
+        ok = add("appStoreVersion", "appStoreVersions", vers[0]["id"])
+        for g in groups:
+            ok = add("subscriptionGroup", "subscriptionGroups", g["id"]) and ok
+        if not ok:
+            sys.exit("::error::an item was refused; the draft was left unsent (check the lines above)")
+        st, r = request("PATCH", f"/reviewSubmissions/{sub_id}", {"data": {"type": "reviewSubmissions", "id": sub_id, "attributes": {"submitted": True}}})
+        if st >= 300:
+            sys.exit(f"::error::submit -> {st}: {json.dumps(r, ensure_ascii=False)[:900]}")
+        print("Submitted the version with the subscription group for App Review.")
         return
     if mode == "submit-with-subs":
         vers = [v for v in get(f"/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=10")["data"]
