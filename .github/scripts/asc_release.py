@@ -33,7 +33,7 @@ def get(path: str):
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review", "submit-with-subs", "clear-drafts", "submit-with-group"):
+    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review", "submit-with-subs", "clear-drafts", "submit-with-group", "free-version"):
         sys.exit(__doc__)
     bundle, mode = sys.argv[1], sys.argv[2]
     app = get(f"/apps?filter[bundleId]={bundle}")["data"]
@@ -52,6 +52,20 @@ def main():
             st, r = request("PATCH", f"/reviewSubmissions/{x['id']}", {"data": {
                 "type": "reviewSubmissions", "id": x["id"], "attributes": {"canceled": True}}})
             print(f"draft {x['id']}: items {len(items)}; cancel -> {st} {json.dumps(r, ensure_ascii=False)[:300] if st >= 300 else ''}")
+        return
+    if mode == "free-version":
+        # Takes the editable version out of draft submissions that hold ONLY that version (an API leftover).
+        # A draft that also holds a subscription group (made in the web page) is never touched.
+        for x in get(f"/apps/{app_id}/reviewSubmissions?filter[platform]=IOS&limit=20")["data"]:
+            if x["attributes"].get("state") != "READY_FOR_REVIEW":
+                continue
+            items = get(f"/reviewSubmissions/{x['id']}/items?include=appStoreVersion&limit=50")
+            data = items["data"]
+            kinds = [((it.get("relationships") or {}).get("appStoreVersion") or {}).get("data") for it in data]
+            print(f"draft {x['id']}: {len(data)} item(s); version items {sum(1 for k in kinds if k)}")
+            if len(data) == 1 and kinds[0]:
+                st, r = request("DELETE", f"/reviewSubmissionItems/{data[0]['id']}")
+                print(f"  removed the lone version item: {st}")
         return
     if mode == "submit-with-group":
         # Like the App Store Connect page: one review submission holding the editable version AND the subscription group.
