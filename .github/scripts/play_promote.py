@@ -25,7 +25,7 @@ EU = set("AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO S
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags = dict(a[2:].partition("=")[::2] for a in sys.argv[1:] if a.startswith("--"))
-    if len(args) != 1 or set(flags) - {"from", "to", "apply", "draft", "owner-confirmed-countries"}:
+    if len(args) != 1 or set(flags) - {"from", "to", "apply", "draft", "owner-confirmed-countries", "countries"}:
         sys.exit(__doc__)
     package, src, dst = args[0], flags.get("from") or "alpha", flags.get("to") or "production"
     if not os.environ.get("PLAY_SERVICE_ACCOUNT_JSON"):
@@ -64,9 +64,16 @@ def main():
             sys.exit(f"::error::refused: {dst} is not limited to the intended countries "
                      f"(EU in set: {sorted(codes & EU)}). Fix Production > Countries/regions in Play Console, then rerun.")
 
-        body = {"track": dst, "releases": [{
-            "versionCodes": rel["versionCodes"], "status": "draft" if "draft" in flags else "completed",
-            "releaseNotes": rel.get("releaseNotes", [])}]}
+        release = {"versionCodes": rel["versionCodes"], "status": "draft" if "draft" in flags else "completed",
+                   "releaseNotes": rel.get("releaseNotes", [])}
+        if flags.get("countries"):
+            # The release itself is limited to these countries (no rest of world): the API way to set the production countries.
+            wanted = [c.strip().upper() for c in flags["countries"].split(",") if c.strip()]
+            if set(wanted) & EU:
+                sys.exit("::error::refused: the EU is excluded by the owner")
+            release["countryTargeting"] = {"countries": wanted, "includeRestOfWorld": False}
+            print("countryTargeting:", release["countryTargeting"])
+        body = {"track": dst, "releases": [release]}
         play.call("PUT", play.edit(f"/tracks/{dst}"), body)
         if "apply" in flags:
             play.finish(":commit")
