@@ -66,7 +66,7 @@ def main():
 
         release = {"versionCodes": rel["versionCodes"], "status": "draft" if "draft" in flags else "completed",
                    "releaseNotes": rel.get("releaseNotes", [])}
-        if flags.get("countries"):
+        if flags.get("countries") not in (None, "", "-"):
             # The release itself is limited to these countries (no rest of world): the API way to set the production countries.
             wanted = [c.strip().upper() for c in flags["countries"].split(",") if c.strip()]
             if set(wanted) & EU:
