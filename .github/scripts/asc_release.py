@@ -4,6 +4,7 @@
   asc_release.py <bundle_id> check     read only: versions waiting for release + every subscription's state
   asc_release.py <bundle_id> submit-subs   send every READY_TO_SUBMIT subscription to App Review
   asc_release.py <bundle_id> cancel-review   withdraw the submission that waits for review (the version becomes editable again)
+  asc_release.py <bundle_id> release-force   release even if subscriptions are not approved (owner's explicit order)
   asc_release.py <bundle_id> release   release the version that waits (owner's explicit order only)
 
 release refuses while any subscription is still MISSING_METADATA / READY_TO_SUBMIT / REJECTED /
@@ -30,7 +31,7 @@ def get(path: str):
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "submit-subs", "cancel-review"):
+    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review"):
         sys.exit(__doc__)
     bundle, mode = sys.argv[1], sys.argv[2]
     app = get(f"/apps?filter[bundleId]={bundle}")["data"]
@@ -101,7 +102,9 @@ def main():
         return
     if len(waiting) != 1:
         sys.exit(f"::error::expected exactly one version waiting for release, found {len(waiting)}")
-    if bad:
+    if bad and mode == "release-force":
+        print("OWNER OVERRIDE: releasing although subscriptions are not approved: " + ", ".join(bad))
+    elif bad:
         sys.exit("::error::refused: subscriptions not attached/approved: " + ", ".join(bad)
                  + ". Add them to the version in App Store Connect first.")
     vid = waiting[0]["id"]
