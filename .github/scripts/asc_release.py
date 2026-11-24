@@ -57,6 +57,13 @@ def main():
     bad = []
     ready = []
     for g in get(f"/apps/{app_id}/subscriptionGroups?limit=50")["data"]:
+        print(f"group {g['attributes'].get('referenceName')}:")
+        glocs = get(f"/subscriptionGroups/{g['id']}/subscriptionGroupLocalizations?limit=20")["data"]
+        if not glocs:
+            print("  GROUP LOCALIZATION: none (the group needs a display name per language)")
+        for gl in glocs:
+            ga = gl["attributes"]
+            print(f"  group localization {ga.get('locale')}: {ga.get('state')}; name '{ga.get('name')}'; custom app name '{ga.get('customAppName')}'")
         for s in get(f"/subscriptionGroups/{g['id']}/subscriptions?limit=50")["data"]:
             st = s["attributes"].get("state")
             a = s["attributes"]
