@@ -3,6 +3,8 @@
 
   asc_release.py <bundle_id> check     read only: versions waiting for release + every subscription's state
   asc_release.py <bundle_id> submit-subs   send every READY_TO_SUBMIT subscription to App Review
+  asc_release.py <bundle_id> submit-with-subs   submit the editable version together with every READY_TO_SUBMIT subscription
+                                                (Apple: the first subscription must go in with an app version)
   asc_release.py <bundle_id> cancel-review   withdraw the submission that waits for review (the version becomes editable again)
   asc_release.py <bundle_id> release-force   release even if subscriptions are not approved (owner's explicit order)
   asc_release.py <bundle_id> release   release the version that waits (owner's explicit order only)
@@ -31,13 +33,55 @@ def get(path: str):
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review"):
+    if len(sys.argv) != 3 or sys.argv[2] not in ("check", "release", "release-force", "submit-subs", "cancel-review", "submit-with-subs"):
         sys.exit(__doc__)
     bundle, mode = sys.argv[1], sys.argv[2]
     app = get(f"/apps?filter[bundleId]={bundle}")["data"]
     if not app:
         sys.exit(f"::error::no app {bundle}")
     app_id = app[0]["id"]
+    if mode == "submit-with-subs":
+        vers = [v for v in get(f"/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=10")["data"]
+                if v["attributes"]["appStoreState"] in ("PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED")]
+        if len(vers) != 1:
+            sys.exit(f"::error::expected exactly one editable version, found {len(vers)}")
+        vid = vers[0]["id"]
+        subs = []
+        for g in get(f"/apps/{app_id}/subscriptionGroups?limit=50")["data"]:
+            subs += [x for x in get(f"/subscriptionGroups/{g['id']}/subscriptions?limit=50")["data"]
+                     if x["attributes"].get("state") == "READY_TO_SUBMIT"]
+        print(f"version {vers[0]['attributes']['versionString']} + {len(subs)} subscriptions")
+        status, res = request("POST", "/reviewSubmissions", {"data": {
+            "type": "reviewSubmissions", "attributes": {"platform": "IOS"},
+            "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}})
+        if status >= 300:
+            sys.exit(f"::error::reviewSubmissions -> {status}: {json.dumps(res)[:800]}")
+        sub_id = res["data"]["id"]
+        status, res = request("POST", "/reviewSubmissionItems", {"data": {
+            "type": "reviewSubmissionItems",
+            "relationships": {"reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub_id}},
+                              "appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}})
+        if status >= 300:
+            request("PATCH", f"/reviewSubmissions/{sub_id}", {"data": {"type": "reviewSubmissions", "id": sub_id, "attributes": {"canceled": True}}})
+            sys.exit(f"::error::reviewSubmissionItems -> {status}: {json.dumps(res)[:800]}")
+        failed = 0
+        for x in subs:
+            st, r = request("POST", "/subscriptionSubmissions", {"data": {
+                "type": "subscriptionSubmissions",
+                "relationships": {"subscription": {"data": {"type": "subscriptions", "id": x["id"]}}}}})
+            print(f"  subscription {x['attributes']['productId']}: {st}")
+            if st >= 300:
+                failed += 1
+                print("    raw:", json.dumps(r, ensure_ascii=False)[:1500])
+        if failed:
+            request("PATCH", f"/reviewSubmissions/{sub_id}", {"data": {"type": "reviewSubmissions", "id": sub_id, "attributes": {"canceled": True}}})
+            sys.exit(f"::error::{failed} subscription(s) refused; the version submission was withdrawn (nothing was sent)")
+        st, r = request("PATCH", f"/reviewSubmissions/{sub_id}", {"data": {
+            "type": "reviewSubmissions", "id": sub_id, "attributes": {"submitted": True}}})
+        if st >= 300:
+            sys.exit(f"::error::submit -> {st}: {json.dumps(r)[:800]}")
+        print("Submitted the version with its subscriptions for App Review.")
+        return
     if mode == "cancel-review":
         subs = get(f"/apps/{app_id}/reviewSubmissions?filter[platform]=IOS&limit=10")["data"]
         waiting = [x for x in subs if x["attributes"].get("state") in ("WAITING_FOR_REVIEW", "READY_FOR_REVIEW")]
