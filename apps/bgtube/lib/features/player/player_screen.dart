@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -5,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/app_failure.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../domain/incoming_link.dart';
 import '../../domain/models/now_playing.dart';
 import '../../domain/ports/playback_controller.dart';
 import '../../domain/youtube_link_parser.dart';
@@ -24,16 +27,37 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   final _text = TextEditingController();
   AppFailure? _linkFailure;
 
+  StreamSubscription<String>? _incomingSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final source = ref.read(incomingLinkSourceProvider);
+    // أثناء التشغيل.
+    _incomingSub = source.texts.listen(_handleIncoming);
+    // بدء بارد.
+    source.initialText().then((t) {
+      if (t != null && mounted) _handleIncoming(t);
+    });
+  }
+
+  Future<void> _handleIncoming(String shared) async {
+    if (!mounted) return;
+    _text.text = shared;
+    await _submit(shared, shared: true);
+  }
+
   @override
   void dispose() {
+    _incomingSub?.cancel();
     _text.dispose();
     super.dispose();
   }
 
-  Future<void> _submit(String raw) async {
+  Future<void> _submit(String raw, {bool shared = false}) async {
     final controller = ref.read(playbackControllerProvider);
     try {
-      final link = parseYoutubeLink(raw);
+      final link = shared ? parseSharedText(raw) : parseYoutubeLink(raw);
       final id = link.videoId;
       if (id == null) throw const AppFailure(FailureKind.playlistNotSupported);
       setState(() => _linkFailure = null);

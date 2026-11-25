@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'audio/audio_init.dart';
 import 'core/providers.dart';
+import 'data/incoming/receive_sharing_link_source.dart';
 import 'data/extractor/youtube_explode_resolver.dart';
 
 Future<void> main() async {
@@ -11,7 +12,10 @@ Future<void> main() async {
   // الربط الوحيد لتنفيذ الاستخراج (D4).
   final handler = await initAudioHandler(YoutubeExplodeResolver());
   runApp(ProviderScope(
-    overrides: [playbackControllerProvider.overrideWithValue(handler)],
+    overrides: [
+      playbackControllerProvider.overrideWithValue(handler),
+      incomingLinkSourceProvider.overrideWithValue(ReceiveSharingLinkSource()),
+    ],
     child: const BgtubeApp(),
   ));
 }

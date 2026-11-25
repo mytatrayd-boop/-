@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# الجذر يتجاهل data/؛ نعيد تتبع lib/data (طبقة البيانات)
+!lib/data/
+!lib/data/**
