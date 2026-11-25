@@ -22,5 +22,14 @@
   "errorExtraction": "Could not extract audio from this video. Try again.",
   "errorNetwork": "Could not connect to the internet. Check your network and retry.",
   "errorRateLimited": "YouTube is rate-limiting requests from your network. Wait a while and retry.",
-  "errorPlayback": "Could not play the audio. Please retry."
+  "errorPlayback": "Could not play the audio. Please retry.",
+  "settings": "Settings",
+  "settingsLanguage": "Language",
+  "settingsLanguageHint": "Applied immediately and remembered.",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "settingsAbout": "About",
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {"placeholders": {"version": {"type": "String"}}},
+  "settingsPersonalUse": "For personal use only; not for distribution."
 }

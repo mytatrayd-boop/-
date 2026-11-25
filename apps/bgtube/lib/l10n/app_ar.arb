@@ -22,5 +22,14 @@
   "errorExtraction": "تعذّر استخراج الصوت من هذا الفيديو. جرّب مرة أخرى.",
   "errorNetwork": "تعذّر الاتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.",
   "errorRateLimited": "يوتيوب يقيّد الطلبات من شبكتك الآن. انتظر قليلاً ثم أعد المحاولة.",
-  "errorPlayback": "تعذّر تشغيل الصوت. أعد المحاولة."
+  "errorPlayback": "تعذّر تشغيل الصوت. أعد المحاولة.",
+  "settings": "الإعدادات",
+  "settingsLanguage": "اللغة",
+  "settingsLanguageHint": "تُطبَّق فوراً وتبقى محفوظة.",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "settingsAbout": "حول",
+  "settingsVersion": "الإصدار {version}",
+  "@settingsVersion": {"placeholders": {"version": {"type": "String"}}},
+  "settingsPersonalUse": "تطبيق للاستخدام الشخصي فقط، وليس للنشر."
 }

@@ -223,6 +223,54 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر تشغيل الصوت. أعد المحاولة.'**
   String get errorPlayback;
+
+  /// No description provided for @settings.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settings;
+
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللغة'**
+  String get settingsLanguage;
+
+  /// No description provided for @settingsLanguageHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُطبَّق فوراً وتبقى محفوظة.'**
+  String get settingsLanguageHint;
+
+  /// No description provided for @languageArabic.
+  ///
+  /// In ar, this message translates to:
+  /// **'العربية'**
+  String get languageArabic;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In ar, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @settingsAbout.
+  ///
+  /// In ar, this message translates to:
+  /// **'حول'**
+  String get settingsAbout;
+
+  /// No description provided for @settingsVersion.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار {version}'**
+  String settingsVersion(String version);
+
+  /// No description provided for @settingsPersonalUse.
+  ///
+  /// In ar, this message translates to:
+  /// **'تطبيق للاستخدام الشخصي فقط، وليس للنشر.'**
+  String get settingsPersonalUse;
 }
 
 class _AppLocalizationsDelegate

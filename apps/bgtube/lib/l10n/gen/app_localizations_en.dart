@@ -80,4 +80,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorPlayback => 'Could not play the audio. Please retry.';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageHint => 'Applied immediately and remembered.';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String settingsVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get settingsPersonalUse =>
+      'For personal use only; not for distribution.';
 }

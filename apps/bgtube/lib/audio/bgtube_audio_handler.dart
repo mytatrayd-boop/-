@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' show ProcessingState;
 
@@ -112,6 +113,14 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   Timer? _sleepTimer;
   Duration _sleepLeft = Duration.zero;
 
+  /// وقت الانتهاء المطلق؛ المتبقي يُحسب منه عند كل نبضة فلا يطول المؤقت
+  /// إن تأخرت النبضات (Doze/ازدحام).
+  DateTime _sleepEnd = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// انتهى المؤقت أثناء تحميل فيديو (playing ما زال false): لا نبدأ التشغيل
+  /// بعد اكتمال التحميل.
+  bool _sleepExpiredWhileLoading = false;
+
   /// مؤقت النوم يعمل هنا داخل المعالج (خدمة مقدّمة) فيستمر والشاشة مغلقة.
   /// العدّ بعدد النبضات لا بالساعة. يبقى فعّالاً عند تبديل الفيديو أو الإيقاف
   /// المؤقت اليدوي، ويُلغى عند stop() أو cancelSleepTimer().
@@ -119,6 +128,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   void startSleepTimer(Duration duration) {
     if (duration <= Duration.zero) return;
     _sleepTimer?.cancel();
+    _sleepExpiredWhileLoading = false;
+    _sleepEnd = clock.now().add(duration);
     _sleepLeft = duration;
     _publishSleepRemaining();
     _sleepTimer = Timer.periodic(_sleepTick, (_) => _onSleepTick());
@@ -140,7 +151,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   }
 
   void _onSleepTick() {
-    _sleepLeft -= _sleepTick;
+    _sleepLeft = _sleepEnd.difference(clock.now());
     if (_sleepLeft <= Duration.zero) {
       _finishSleep();
       return;
@@ -155,6 +166,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     _sleepTimer?.cancel();
     _sleepTimer = null;
     sleepRemaining.value = null;
+    if (resolving.value) _sleepExpiredWhileLoading = true;
     try {
       if (_player.playing) await _player.pause();
       await _savePosition();
@@ -184,6 +196,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   @override
   Future<void> playVideo(String videoId) async {
     _autoRetried = false;
+    _sleepExpiredWhileLoading = false; // طلب تشغيل جديد من المستخدم
     _resumeFrom = Duration.zero;
     final token = _token;
     await _savePosition(); // موضع الفيديو السابق قبل استبداله
@@ -244,6 +257,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     final id = _videoId;
     if (id == null) return Future.value();
     _autoRetried = false;
+    _sleepExpiredWhileLoading = false;
     _captureResume();
     return _load(id);
   }
@@ -288,6 +302,12 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       if (token != _token) return;
       _loaded = true;
       resolving.value = false;
+      if (_sleepExpiredWhileLoading) {
+        // انتهى مؤقت النوم أثناء التحميل: يبقى محمّلاً ومتوقفاً (الاستئناف يدوي).
+        _sleepExpiredWhileLoading = false;
+        await _player.setVolume(1.0);
+        return;
+      }
       await _player.play();
     } on AppFailure catch (e) {
       if (token == _token) await _fail(e);
@@ -339,6 +359,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   @override
   Future<void> stop() async {
     _token++; // أولاً: يُبطل أي playVideo ينتظر حفظ الفيديو السابق
+    _sleepExpiredWhileLoading = false;
     cancelSleepTimer();
     await _savePosition(); // قبل تصفير الحالة
     _videoId = null;

@@ -80,4 +80,30 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get errorPlayback => 'تعذّر تشغيل الصوت. أعد المحاولة.';
+
+  @override
+  String get settings => 'الإعدادات';
+
+  @override
+  String get settingsLanguage => 'اللغة';
+
+  @override
+  String get settingsLanguageHint => 'تُطبَّق فوراً وتبقى محفوظة.';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get settingsAbout => 'حول';
+
+  @override
+  String settingsVersion(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
+  String get settingsPersonalUse => 'تطبيق للاستخدام الشخصي فقط، وليس للنشر.';
 }

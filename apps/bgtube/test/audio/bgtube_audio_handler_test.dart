@@ -8,6 +8,7 @@ import 'package:bgtube/domain/models/resolved_audio.dart';
 import 'package:bgtube/domain/ports/audio_source_resolver.dart';
 import 'package:bgtube/domain/ports/position_repository.dart';
 import 'package:bgtube/domain/ports/speed_store.dart';
+import 'package:clock/clock.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
@@ -738,6 +739,63 @@ void main() {
         expect(engine.volumes.last, 1.0);
         fa.elapse(const Duration(minutes: 1));
         expect(engine.playing, isTrue); // لا مؤقت ثانٍ
+      });
+    });
+
+    test('late ticks do not stretch the timer: remaining comes from absolute end time', () {
+      fakeAsync((fa) {
+        // ساعة قابلة للتقديم تُحاكي نبضات فائتة (الساعة تتقدم دون إطلاق المؤقتات).
+        var skew = Duration.zero;
+        final skewed = Clock(() => DateTime(2026).add(fa.elapsed + skew));
+        withClock(skewed, () => t.startSleepTimer(const Duration(minutes: 15)));
+        expect(t.sleepRemaining.value, const Duration(minutes: 15));
+        skew = const Duration(minutes: 5); // ٥ دقائق مرّت دون أي نبضة
+        fa.elapse(const Duration(milliseconds: 250)); // أول نبضة بعد التأخر
+        // خصم 250ms لكل نبضة كان سيُظهر ١٥:٠٠ تقريباً؛ المطلق يُظهر ١٠:٠٠.
+        expect(t.sleepRemaining.value, const Duration(minutes: 10));
+        skew = const Duration(minutes: 15);
+        fa.elapse(const Duration(milliseconds: 250));
+        expect(t.sleepRemaining.value, isNull); // انتهى في وقته لا بعده
+        t.cancelSleepTimer();
+      });
+    });
+
+    test('timer expiring while a new video is still loading: no play() after load', () {
+      fakeAsync((fa) {
+        resolver.immediate = null;
+        unawaited(t.playVideo('BBBBBBBBBBB'));
+        fa.flushMicrotasks();
+        expect(t.resolving.value, isTrue);
+        expect(engine.playing, isFalse);
+        t.startSleepTimer(const Duration(seconds: 12));
+        fa.elapse(const Duration(seconds: 13)); // انتهى والتحميل لم يكتمل
+        expect(t.sleepRemaining.value, isNull);
+        resolver.pending['BBBBBBBBBBB']!.single.complete(audio('BBBBBBBBBBB'));
+        fa.flushMicrotasks();
+        expect(engine.log.contains('play'), isFalse);
+        expect(engine.playing, isFalse);
+        expect(engine.volumes.last, 1.0);
+        expect(t.resolving.value, isFalse);
+        // الاستئناف اليدوي يعمل بعدها.
+        unawaited(t.play());
+        fa.flushMicrotasks();
+        expect(engine.playing, isTrue);
+      });
+    });
+
+    test('a new user request after the timer expired plays normally', () {
+      fakeAsync((fa) {
+        resolver.immediate = null;
+        unawaited(t.playVideo('BBBBBBBBBBB'));
+        fa.flushMicrotasks();
+        t.startSleepTimer(const Duration(seconds: 12));
+        fa.elapse(const Duration(seconds: 13));
+        resolver.pending['BBBBBBBBBBB']!.single.complete(audio('BBBBBBBBBBB'));
+        fa.flushMicrotasks();
+        resolver.immediate = (id) async => audio(id);
+        unawaited(t.playVideo(a));
+        fa.flushMicrotasks();
+        expect(engine.playing, isTrue);
       });
     });
 

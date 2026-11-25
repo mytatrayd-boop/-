@@ -15,6 +15,7 @@ import '../../domain/sleep_timer.dart';
 import '../../domain/ports/playback_controller.dart';
 import '../../domain/youtube_link_parser.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../settings/settings_screen.dart';
 import 'failure_message.dart';
 import 'format_duration.dart';
 import 'text_direction.dart';
@@ -92,7 +93,18 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     final controller = ref.watch(playbackControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.appTitle), backgroundColor: AppColors.background),
+      appBar: AppBar(
+        title: Text(l.appTitle),
+        backgroundColor: AppColors.background,
+        actions: [
+          IconButton(
+            tooltip: l.settings,
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen())),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsetsDirectional.all(16),

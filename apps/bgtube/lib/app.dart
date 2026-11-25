@@ -1,22 +1,25 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'core/theme.dart';
 import 'features/player/player_screen.dart';
+import 'features/settings/locale_controller.dart';
 import 'l10n/gen/app_localizations.dart';
 
-class BgtubeApp extends StatelessWidget {
+class BgtubeApp extends ConsumerWidget {
   const BgtubeApp({super.key, this.locale});
 
-  /// null = لغة الجهاز (العربية افتراضياً إن لم تُدعم لغة الجهاز).
+  /// تجاوز صريح (للاختبارات). الأصل: اللغة المحفوظة من الإعدادات، وإلا لغة
+  /// الجهاز، وإلا العربية.
   final Locale? locale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       onGenerateTitle: (c) => AppLocalizations.of(c).appTitle,
       theme: buildDarkTheme(),
       themeMode: ThemeMode.dark,
-      locale: locale,
+      locale: locale ?? ref.watch(localeProvider),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: [
         AppLocalizations.delegate,
