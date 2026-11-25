@@ -53,7 +53,7 @@ apps/bgtube/
 
 ## الحساب وYouTube Data API v3
 - الدخول عبر `google_sign_in` الرسمي (شاشة جوجل؛ لا نلمس كلمة المرور). النطاقات: `youtube.readonly` للقراءة، و`youtube` فقط لعمليات الكتابة (إعجاب، إضافة/حذف من قائمة). تُطلب الكتابة عند أول استخدام فقط.
-- `AuthService`: `signIn`, `signOut`, `getAccessToken` (يُجدَّد عبر Play Services)، حالة `Stream`. انتهاء الصلاحية → `AuthExpired` → رسالة "سجّل الدخول من جديد".
+- `AuthService`: `signIn`, `signOut`, `getAccessToken` (يُجدَّد عبر Play Services)، حالة `Stream`. مشروع OAuth في In production بدون توثيق (D7) فلا انتهاء أسبوعي؛ تجديد صامت عبر Play Services. السحب أو الإبطال → `AuthExpired` → رسالة "سجّل الدخول من جديد".
 - `YouTubeApi` يستخدم `dio` مع Interceptor يضيف الرمز؛ كل الطلبات من التطبيق مباشرة (لا خادم وسيط).
 - تكلفة الحصة (10,000/يوم): `search.list` ≈ 100؛ القراءات (`playlists`, `playlistItems`, `subscriptions`, `videos.list?myRating=like`, `videos`) = 1؛ الكتابة (`videos.rate`, `playlistItems.insert/delete`) ≈ 50.
   - فيديوهات قناة: عبر قائمة الرفع (`playlistItems`، 1 وحدة) بدل البحث (100).
