@@ -35,4 +35,23 @@ void main() {
     expect(() => parseSharedText('https://example.com/x'), throwsA(isA<AppFailure>()));
     expect(() => parseSharedText(''), throwsA(isA<AppFailure>()));
   });
+
+  group('trailing punctuation', () {
+    const id = 'dQw4w9WgXcQ';
+    for (final t in [
+      'شاهد https://youtu.be/$id.',
+      'https://youtu.be/$id!',
+      '(https://www.youtube.com/watch?v=$id)',
+      'https://www.youtube.com/watch?v=$id، رائع',
+      'https://www.youtube.com/watch?v=$id؟',
+      '"https://youtu.be/$id".',
+      'https://youtu.be/$id?si=abc,',
+    ]) {
+      test(t, () => expect(parseSharedText(t).videoId, id));
+    }
+
+    test('playlist id is not damaged by trailing dot', () {
+      expect(parseSharedText('https://www.youtube.com/playlist?list=PL123.').playlistId, 'PL123');
+    });
+  });
 }

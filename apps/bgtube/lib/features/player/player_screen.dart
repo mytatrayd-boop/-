@@ -38,6 +38,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     // بدء بارد.
     source.initialText().then((t) {
       if (t != null && mounted) _handleIncoming(t);
+    }).catchError((Object _) {
+      // فشل قراءة نية البدء لا يجب أن يُسقط التطبيق؛ يبدأ فارغاً.
     });
   }
 

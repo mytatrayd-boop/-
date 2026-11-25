@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:bgtube/audio/audio_engine.dart';
 import 'package:bgtube/audio/bgtube_audio_handler.dart';
 import 'package:bgtube/core/app_failure.dart';
+import 'package:bgtube/domain/models/playback_position.dart';
 import 'package:bgtube/domain/models/resolved_audio.dart';
 import 'package:bgtube/domain/ports/audio_source_resolver.dart';
+import 'package:bgtube/domain/ports/position_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -84,6 +86,28 @@ ResolvedAudio audio(String id) => ResolvedAudio(
       author: 'A',
       duration: const Duration(minutes: 3),
     );
+
+class FakeRepo implements PositionRepository {
+  final store = <String, PlaybackPosition>{};
+  bool failing = false;
+  @override
+  Future<PlaybackPosition?> get(String id) async {
+    if (failing) throw StateError('db');
+    return store[id];
+  }
+
+  @override
+  Future<void> save(PlaybackPosition p) async {
+    if (failing) throw StateError('db');
+    store[p.videoId] = p;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    if (failing) throw StateError('db');
+    store.remove(id);
+  }
+}
 
 Future<void> settle() => Future<void>.delayed(Duration.zero);
 
@@ -277,5 +301,132 @@ void main() {
     await settle();
     expect(resolver.calls.length, 1);
     expect(h.failure.value, isNull);
+  });
+
+  group('position saving', () {
+    late FakeRepo repo;
+    late BgtubeAudioHandler p;
+    const a = 'AAAAAAAAAAA';
+    const b = 'BBBBBBBBBBB';
+
+    setUp(() {
+      repo = FakeRepo();
+      resolver.immediate = (id) async => audio(id);
+      p = BgtubeAudioHandler(
+        resolver: resolver,
+        engine: engine,
+        positions: repo,
+        saveInterval: const Duration(milliseconds: 20),
+      );
+    });
+
+    Future<void> start(String id) async {
+      await p.playVideo(id);
+      engine.emitReady();
+      engine.playingCtl.add(true);
+      await settle();
+    }
+
+    test('stopping mid-video then reopening resumes from the saved spot (1:30)', () async {
+      await start(a);
+      engine.position = const Duration(
+        minutes: 1,
+        seconds: 30,
+      ); // مدة الصوت 3 دقائق
+      await p.stop();
+      expect(repo.store[a]!.position, const Duration(seconds: 90));
+      await p.playVideo(a);
+      expect(engine.setUrls.last.start, const Duration(seconds: 90));
+    });
+
+    test('pause saves the position', () async {
+      await start(a);
+      engine.position = const Duration(seconds: 45);
+      engine.playingCtl.add(false);
+      await settle();
+      expect(repo.store[a]!.position, const Duration(seconds: 45));
+    });
+
+    test('periodic save while playing', () async {
+      await start(a);
+      engine.position = const Duration(seconds: 20);
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(repo.store[a]!.position, const Duration(seconds: 20));
+      await p.stop();
+    });
+
+    test('under 10 seconds is not saved', () async {
+      await start(a);
+      engine.position = const Duration(seconds: 9);
+      await p.stop();
+      expect(repo.store, isEmpty);
+    });
+
+    test('near the end deletes the saved position', () async {
+      repo.store[a] = PlaybackPosition(
+        videoId: a,
+        position: const Duration(seconds: 60),
+        duration: const Duration(minutes: 3),
+        updatedAt: DateTime.utc(2026),
+      );
+      await start(a);
+      engine.position = const Duration(minutes: 2, seconds: 55);
+      await p.stop();
+      expect(repo.store, isEmpty);
+    });
+
+    test('completion deletes the saved position', () async {
+      await start(a);
+      engine.position = const Duration(seconds: 60);
+      engine.playingCtl.add(false);
+      await settle();
+      expect(repo.store[a], isNotNull);
+      engine.events.add(
+        PlaybackEvent(processingState: ProcessingState.completed),
+      );
+      await settle();
+      expect(repo.store[a], isNull);
+    });
+
+    test('switching video saves the old one and starts the new one from its own saved spot', () async {
+      repo.store[b] = PlaybackPosition(
+        videoId: b,
+        position: const Duration(seconds: 33),
+        duration: const Duration(minutes: 3),
+        updatedAt: DateTime.utc(2026),
+      );
+      await start(a);
+      engine.position = const Duration(seconds: 70);
+      await p.playVideo(b);
+      expect(repo.store[a]!.position, const Duration(seconds: 70));
+      expect(engine.setUrls.last.start, const Duration(seconds: 33));
+    });
+
+    test('video with nothing saved starts from zero', () async {
+      await start(a);
+      expect(engine.setUrls.last.start, Duration.zero);
+    });
+
+    test('storage failures never break playback', () async {
+      repo.failing = true;
+      await start(a);
+      expect(engine.setUrls.last.start, Duration.zero);
+      engine.position = const Duration(seconds: 50);
+      await p.stop();
+      expect(p.failure.value, isNull);
+      await p.playVideo(b);
+      expect(p.failure.value, isNull);
+      expect(engine.setUrls.last.url.path, '/$b');
+    });
+
+    test('nothing is saved while a video failed to load', () async {
+      resolver.immediate = (_) async =>
+          throw const AppFailure(FailureKind.network);
+      await p.playVideo(a);
+      engine.position = const Duration(seconds: 50);
+      engine.playingCtl.add(false);
+      await settle();
+      expect(repo.store, isEmpty);
+    });
   });
 }

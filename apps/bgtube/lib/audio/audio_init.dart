@@ -2,14 +2,18 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 
 import '../domain/ports/audio_source_resolver.dart';
+import '../domain/ports/position_repository.dart';
 import 'bgtube_audio_handler.dart';
 
 /// يهيّئ جلسة الصوت (مقاطعات المكالمات) وخدمة الخلفية.
-Future<BgtubeAudioHandler> initAudioHandler(AudioSourceResolver resolver) async {
+Future<BgtubeAudioHandler> initAudioHandler(
+  AudioSourceResolver resolver, {
+  PositionRepository? positions,
+}) async {
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
   return AudioService.init(
-    builder: () => BgtubeAudioHandler(resolver: resolver),
+    builder: () => BgtubeAudioHandler(resolver: resolver, positions: positions),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.bgtube.bgtube.playback',
       androidNotificationChannelName: 'BGTube',

@@ -1,22 +1,32 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' show ProcessingState;
 
 import '../core/app_failure.dart';
 import '../domain/models/now_playing.dart';
+import '../domain/models/playback_position.dart';
+import '../domain/position_policy.dart';
 import '../domain/ports/audio_source_resolver.dart';
 import '../domain/ports/playback_controller.dart';
+import '../domain/ports/position_repository.dart';
 import 'audio_engine.dart';
 import 'playback_state_mapper.dart';
 
 /// معالج الصوت: يلفّ المشغّل ويعرضه عبر audio_service
 /// (خدمة مقدّمة + إشعار + شاشة قفل). يعتمد على المنفذ `AudioSourceResolver` فقط.
 class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements PlaybackController {
-  BgtubeAudioHandler({required this._resolver, AudioEngine? engine})
-      : _player = engine ?? JustAudioEngine() {
+  BgtubeAudioHandler({
+    required this._resolver,
+    AudioEngine? engine,
+    this._positions,
+    this._saveInterval = const Duration(seconds: 5),
+  }) : _player = engine ?? JustAudioEngine() {
     _player.playbackEventStream.listen(
       (event) {
         if (event.processingState == ProcessingState.ready) _autoRetried = false;
+        if (event.processingState == ProcessingState.completed) _onCompleted();
         playbackState.add(toPlaybackState(
           event: event,
           playing: _player.playing,
@@ -25,8 +35,21 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       },
       onError: _onPlayerError,
     );
-    _player.playingStream.listen((p) => playing.value = p);
+    _player.playingStream.listen((p) {
+      playing.value = p;
+      if (p) {
+        _saveTimer ??= Timer.periodic(_saveInterval, (_) => _savePosition());
+      } else {
+        _saveTimer?.cancel();
+        _saveTimer = null;
+        _savePosition(); // إيقاف مؤقت/مقاطعة
+      }
+    });
   }
+
+  final PositionRepository? _positions;
+  final Duration _saveInterval;
+  Timer? _saveTimer;
 
   final AudioSourceResolver _resolver;
   final AudioEngine _player;
@@ -57,10 +80,55 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   /// يبدأ تشغيل فيديو. الفشل لا يُرمى؛ يُنشر في [failure].
   @override
-  Future<void> playVideo(String videoId) {
+  Future<void> playVideo(String videoId) async {
     _autoRetried = false;
     _resumeFrom = Duration.zero;
-    return _load(videoId);
+    await _savePosition(); // موضع الفيديو السابق قبل استبداله
+    return _load(videoId, resumeSaved: true);
+  }
+
+  /// يحفظ/يحذف موضع الفيديو الحالي حسب [PositionPolicy]. لا يرمي أبداً:
+  /// فشل التخزين لا يكسر التشغيل.
+  Future<void> _savePosition() async {
+    final repo = _positions;
+    final id = _videoId;
+    if (repo == null || id == null || !_loaded) return;
+    final position = _player.position;
+    final duration = nowPlaying.value?.duration;
+    try {
+      switch (PositionPolicy.decide(position, duration)) {
+        case PositionAction.save:
+          await repo.save(PlaybackPosition(
+            videoId: id,
+            position: position,
+            duration: duration ?? Duration.zero,
+            updatedAt: DateTime.now(),
+          ));
+        case PositionAction.delete:
+          await repo.delete(id);
+        case PositionAction.skip:
+          break;
+      }
+    } catch (e) {
+      debugPrint('position save failed: ${e.runtimeType}');
+    }
+  }
+
+  /// انتهى الفيديو: لا استئناف في المرة القادمة.
+  void _onCompleted() {
+    final repo = _positions;
+    final id = _videoId;
+    if (repo == null || id == null) return;
+    repo.delete(id).catchError((Object _) {});
+  }
+
+  Future<Duration> _savedPosition(String videoId) async {
+    try {
+      final saved = await _positions?.get(videoId);
+      return saved?.position ?? Duration.zero;
+    } catch (_) {
+      return Duration.zero;
+    }
   }
 
   /// يعيد المحاولة لآخر فيديو (يحافظ على الموضع إن كان قد بدأ).
@@ -78,7 +146,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     if (_loaded) _resumeFrom = _player.position;
   }
 
-  Future<void> _load(String videoId) async {
+  Future<void> _load(String videoId, {bool resumeSaved = false}) async {
     final token = ++_token;
     _videoId = videoId;
     _loaded = false;
@@ -87,6 +155,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     // أوقف الصوت القديم فوراً قبل حلّ الجديد.
     await _player.stop();
     if (token != _token) return;
+    if (resumeSaved) {
+      _resumeFrom = await _savedPosition(videoId);
+      if (token != _token) return;
+    }
     try {
       final audio = await _resolver.resolve(videoId);
       if (token != _token) return; // طلب أحدث حلّ محلّه
@@ -117,6 +189,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   }
 
   Future<void> _fail(AppFailure f) async {
+    await _savePosition();
     _captureResume();
     _token++; // أي نتيجة متأخرة تُتجاهل
     resolving.value = false;
@@ -156,6 +229,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   @override
   Future<void> stop() async {
+    await _savePosition(); // قبل تصفير الحالة
     _token++;
     _videoId = null;
     _loaded = false;
@@ -170,6 +244,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   Stream<Duration> get positionStream => _player.positionStream;
 
   Future<void> dispose() async {
+    _saveTimer?.cancel();
     await _player.dispose();
   }
 }

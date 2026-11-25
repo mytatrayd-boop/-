@@ -50,3 +50,7 @@ app.*.map.json
 # الجذر يتجاهل data/؛ نعيد تتبع lib/data (طبقة البيانات)
 !lib/data/
 !lib/data/**
+
+# اختبارات طبقة البيانات (الجذر يتجاهل data/)
+!test/data/
+!test/data/**
