@@ -1,0 +1,103 @@
+# ARCHITECTURE — BGTube
+
+أندرويد فقط (MVP). Flutter بدون Firebase؛ كل التخزين محلي على الجهاز (انظر DECISIONS.md: D1، D2).
+
+## الحزم (مستقرة ومشهورة فقط؛ تُثبَّت إصداراتها عند أول `pub get` وتُراجع قبل الاعتماد)
+| الغرض | الحزمة |
+|---|---|
+| التشغيل | `just_audio` (المحرك، يدعم السرعة مع حفظ النغمة) |
+| الخلفية والإشعار وشاشة القفل | `audio_service` (خدمة مقدّمة + MediaSession) |
+| مقاطعات الصوت (مكالمة/تطبيق آخر) | `audio_session` |
+| استخراج الصوت (غير رسمي) | `youtube_explode_dart` خلف واجهة (D4) |
+| تسجيل الدخول الرسمي | `google_sign_in` |
+| طلبات الشبكة | `dio` |
+| الحالة | `flutter_riverpod` |
+| التنقل | `go_router` |
+| قاعدة محلية | `drift` (SQLite) + `sqlite3_flutter_libs` |
+| الإعدادات البسيطة | `shared_preferences` |
+| التخزين الآمن | `flutter_secure_storage` (Keystore) |
+| المفاتيح من .env | `flutter_dotenv` (D6) |
+| المشاركة من يوتيوب | `receive_sharing_intent` (يُتحقق من صيانتها قبل الاعتماد؛ البديل MethodChannel بسيط) |
+| اللغة | `flutter_localizations` + `intl` (ملفات ARB: ar أولاً ثم en) |
+| الاختبار | `flutter_test`, `mocktail`, `drift` في الذاكرة |
+
+## هيكل المجلدات
+```
+apps/bgtube/
+  .env.example        قالب بدون قيم (الحقيقي .env مستثنى من git)
+  lib/
+    main.dart, app.dart
+    core/             ثوابت، ثيم داكن، أخطاء موحّدة (AppFailure)، أدوات
+    l10n/             app_ar.arb, app_en.arb
+    domain/           نماذج صرفة وواجهات (لا تعتمد على أي حزمة خارجية)
+      models/         Video, Playlist, Channel, PlaybackPosition
+      ports/          AudioSourceResolver, AuthService, YouTubeApi, repositories
+    data/
+      extractor/      تنفيذ AudioSourceResolver (الوحيد الذي يعرف youtube_explode)
+      auth/           تنفيذ AuthService (google_sign_in + التخزين الآمن)
+      youtube_api/    عميل Data API v3 + الذاكرة المؤقتة + عدّاد الحصة
+      local/          drift: favorites, history, positions, api_cache, quota
+    audio/            AudioHandler (audio_service) + مؤقت النوم + حفظ الموضع
+    features/         player, search, library, playlists, subscriptions,
+                      favorites, history, settings, login   (شاشة + مزوّد حالة لكل ميزة)
+  test/               مرآة lib/ ؛ unit + widget
+  android/            AndroidManifest: INTERNET, FOREGROUND_SERVICE(+MEDIA_PLAYBACK), WAKE_LOCK, intent-filter للمشاركة
+```
+قاعدة الاعتماد: `features` و`audio` تعتمد على `domain` فقط؛ `data` تنفّذ `domain`؛ الربط في مزوّدات Riverpod عند `app.dart`.
+
+## عزل الاستخراج (الأهم)
+- واجهة واحدة `AudioSourceResolver`: مدخلها `videoId` فقط (نص)، ومخرجها `ResolvedAudio { url, انتهاء الصلاحية, مدة, عنوان }` أو `AppFailure`.
+- لا تستقبل أي رمز دخول أو كوكي أو معرّف حساب، ولا يُمرَّر لها `AuthService`. هذا يُفرَض بالتصميم (التوقيع) وباختبار يتأكد أن التنفيذ لا يعتمد على طبقة auth.
+- المعالج الصوتي يطلب الرابط عند كل تشغيل، ويعيد الطلب تلقائياً مرة عند انتهاء الرابط؛ الفشل يظهر رسالة عربية + "إعادة المحاولة".
+- الاستبدال (مثلاً yt-dlp أو خدمة أخرى) = تنفيذ جديد للواجهة وتغيير سطر ربط واحد.
+
+## الحساب وYouTube Data API v3
+- الدخول عبر `google_sign_in` الرسمي (شاشة جوجل؛ لا نلمس كلمة المرور). النطاقات: `youtube.readonly` للقراءة، و`youtube` فقط لعمليات الكتابة (إعجاب، إضافة/حذف من قائمة). تُطلب الكتابة عند أول استخدام فقط.
+- `AuthService`: `signIn`, `signOut`, `getAccessToken` (يُجدَّد عبر Play Services)، حالة `Stream`. انتهاء الصلاحية → `AuthExpired` → رسالة "سجّل الدخول من جديد".
+- `YouTubeApi` يستخدم `dio` مع Interceptor يضيف الرمز؛ كل الطلبات من التطبيق مباشرة (لا خادم وسيط).
+- تكلفة الحصة (10,000/يوم): `search.list` ≈ 100؛ القراءات (`playlists`, `playlistItems`, `subscriptions`, `videos.list?myRating=like`, `videos`) = 1؛ الكتابة (`videos.rate`, `playlistItems.insert/delete`) ≈ 50.
+  - فيديوهات قناة: عبر قائمة الرفع (`playlistItems`، 1 وحدة) بدل البحث (100).
+  - تفاصيل المدة تُجلب دفعة واحدة `videos.list` (حتى 50 معرّفاً).
+  - `fields=` لأقل الحقول، و`maxResults` معتدل.
+- الذاكرة المؤقتة (جدول `api_cache` بمفتاح = الطلب المطبَّع): مدة صلاحية: بحث 6 ساعات، قوائم/إعجابات/اشتراكات 15 دقيقة، تفاصيل فيديو 24 ساعة؛ يُبطَل مباشرة بعد أي عملية كتابة على المورد نفسه. التحديث يدوي (سحب للتحديث)، لا تحديث تلقائي.
+- عدّاد الحصة: جدول `quota` يجمع التكلفة التقديرية لليوم (يُصفَّر عند منتصف الليل بتوقيت المحيط الهادئ). عند تجاوز 95% أو عند ردّ 403 `quotaExceeded`: تظهر "انتهت حصة البحث اليوم" ويُخدَم المخزَّن فقط.
+- التزامن: الكتابة تتم فوراً على يوتيوب ثم يُبطَل الكاش. السجل والمفضلة محليان فقط (D5).
+
+## التخزين الآمن للرموز
+- لا نحفظ رمز وصول طويل الأمد بأنفسنا: Play Services يدير الجلسة ويصدر رموز وصول قصيرة العمر عند الطلب.
+- `flutter_secure_storage` (Android Keystore) لما نحتاجه فقط: معرّف الحساب/البريد للعرض وحالة "مسجّل". `signOut` يمسحها ويمسح `api_cache` للبيانات الخاصة.
+- ممنوع: تسجيل الرموز في السجلات، أو وضعها في shared_preferences/drift/ملفات، أو إرسالها لغير `googleapis.com`.
+- `android:allowBackup="false"` لمنع نسخ البيانات للسحابة.
+
+## الصوت والخلفية
+- `AudioHandler` يمتد من `BaseAudioHandler` ويلفّ `just_audio`؛ إشعار تحكم + شاشة قفل (تشغيل/إيقاف/التالي/السابق).
+- `audio_session` بإعداد "music/speech": إيقاف مؤقت عند مكالمة، واستئناف بعدها؛ خفض الصوت عند إشعارات قصيرة.
+- السرعة 0.75–2 عبر `setSpeed` (نغمة ثابتة)، وتُحفظ لكل تشغيل لاحق في الإعدادات.
+- مؤقت النوم (15/30/60): مؤقت داخل المعالج (لا في واجهة المستخدم) يخفّض الصوت تدريجياً ثم يوقف؛ يعرض الوقت المتبقي عبر Stream.
+- حفظ الموضع: كل ~5 ثوانٍ وعند الإيقاف/الخروج، في جدول `positions`؛ لا يُحفظ إن كانت المشاهدة < 10 ثوانٍ؛ يُحذف عند الاقتراب من النهاية.
+- طابور: قائمة تشغيل بالترتيب؛ تُحلّ الروابط كسولاً (الحالي والتالي فقط).
+- بطارية: تنبيه إرشادي لاستثناء التطبيق من تحسين البطارية.
+
+## نموذج البيانات المحلي (drift)
+- `favorites(videoId PK, title, channel, thumbUrl, durationSec, addedAt)`
+- `history(id PK, videoId, title, channel, thumbUrl, playedAt)` — حد أقصى 500 سجل.
+- `positions(videoId PK, positionMs, durationMs, updatedAt)`
+- `api_cache(key PK, json, fetchedAt, ttlSec, private)`
+- `quota(dayPT PK, units)`
+- الإعدادات (shared_preferences): اللغة، السرعة، آخر مؤقت.
+
+## الأمان والخصوصية
+- لا مفاتيح في الكود ولا في git. `.env` (مستثنى في .gitignore الجذري) يحوي: `GOOGLE_OAUTH_CLIENT_ID` (عميل الويب/الخادم المطلوب لـgoogle_sign_in إن لزم) و`YOUTUBE_API_KEY` للطلبات العامة إن اخترنا ذلك. يُنشأ `.env.example` بأسماء فقط. تنبيه صريح: ما يُحزَّم في APK يمكن استخراجه؛ لذلك مفتاح API يُقيَّد في Google Cloud باسم الحزمة وبصمة SHA-1، ولا نعدّه سرّاً قوياً. بدون أي مفتاح يعمل التطبيق بوضع تجريبي (لصق رابط وتشغيل فقط).
+- OAuth client من نوع Android مربوط باسم الحزمة وبصمة التوقيع (لا يحوي سرّاً).
+- أقل بيانات: لا Firebase ولا تحليلات ولا تقارير أعطال خارجية ولا إعلانات. لا شيء يغادر الجهاز إلا طلبات googleapis.com ومحتوى يوتيوب.
+- كل HTTPS؛ لا `usesCleartextTraffic`.
+- مسح كامل عند تسجيل الخروج للبيانات الخاصة.
+
+## الاختبارات
+- Unit: محلّل الروابط (watch/youtu.be/shorts/playlist/غير صالح)، سياسة الكاش وTTL والإبطال، عدّاد الحصة وإعادة التصفير، مؤقت النوم (بساعة وهمية)، قاعدة حفظ الموضع (<10 ثوانٍ)، تحويل ردود API إلى النماذج (JSON ثابتة).
+- Unit بـmocktail: `YouTubeApi` مع `dio` وهمي (401 → AuthExpired، 403 quota → رسالة الحصة).
+- اختبار معماري: لا استيراد من `data/extractor` خارج ربط المزوّدات، ولا يعتمد التنفيذ على `auth`.
+- Widget: الشاشات بالعربية RTL (لا overflow)، الحالات الفارغة والخطأ و"إعادة المحاولة"، مع تنفيذات وهمية للمنافذ.
+- drift في الذاكرة لاختبار المستودعات.
+- يدوي على جهاز حقيقي (لا يغطيه الآلي): شاشة مغلقة 10 دقائق، مكالمة، إشعار/قفل، مشاركة من يوتيوب، تزامن الإعجاب خلال دقيقة، انتهاء رمز الدخول، قتل البطارية للخدمة.
+- أوامر الجودة: `flutter analyze` و`flutter test` بلا أخطاء قبل أي تسليم.
