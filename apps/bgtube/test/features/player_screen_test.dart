@@ -2,6 +2,7 @@ import 'package:bgtube/app.dart';
 import 'package:bgtube/core/app_failure.dart';
 import 'package:bgtube/core/providers.dart';
 import 'package:bgtube/domain/models/now_playing.dart';
+import 'package:bgtube/features/player/format_duration.dart';
 import 'package:bgtube/domain/ports/playback_controller.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +22,17 @@ class FakeController implements PlaybackController {
   Stream<Duration> get positionStream => const Stream.empty();
   @override
   final ValueNotifier<double> speed = ValueNotifier(1.0);
+  @override
+  final ValueNotifier<Duration?> sleepRemaining = ValueNotifier(null);
+  final sleeps = <Duration>[];
+  @override
+  void startSleepTimer(Duration d) {
+    sleeps.add(d);
+    sleepRemaining.value = d;
+  }
+
+  @override
+  void cancelSleepTimer() => sleepRemaining.value = null;
   final speeds = <double>[];
   @override
   Future<void> setSpeed(double s) async {
@@ -194,6 +206,32 @@ void main() {
     await t.tap(find.byKey(const Key('speedButton')));
     await t.pumpAndSettle();
     expect(find.text('سرعة التشغيل'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('sleep timer: choose, see remaining, cancel (Arabic RTL)', (t) async {
+    final c = FakeController();
+    await pump(t, c);
+    c.nowPlaying.value = const NowPlaying(
+        videoId: 'dQw4w9WgXcQ', title: 'T', duration: Duration(minutes: 1));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('sleepButton')));
+    await t.pumpAndSettle();
+    expect(find.text('مؤقت النوم'), findsOneWidget);
+    expect(find.byKey(const Key('sleepCancel')), findsNothing);
+    for (final m in [15, 30, 60]) {
+      expect(find.byKey(Key('sleep_$m')), findsOneWidget);
+    }
+    await t.tap(find.byKey(const Key('sleep_30')));
+    await t.pumpAndSettle();
+    expect(c.sleeps, [const Duration(minutes: 30)]);
+    expect(find.text(formatDuration(const Duration(minutes: 30), 'ar')), findsOneWidget); // العدّاد ظاهر على الزر
+    await t.tap(find.byKey(const Key('sleepButton')));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('sleepCancel')));
+    await t.pumpAndSettle();
+    expect(c.sleepRemaining.value, isNull);
+    expect(find.text(formatDuration(const Duration(minutes: 30), 'ar')), findsNothing);
     expect(t.takeException(), isNull);
   });
 }

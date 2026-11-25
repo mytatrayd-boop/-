@@ -9,6 +9,7 @@ import '../domain/models/now_playing.dart';
 import '../domain/models/playback_position.dart';
 import '../domain/playback_speed.dart';
 import '../domain/position_policy.dart';
+import '../domain/sleep_timer.dart';
 import '../domain/ports/audio_source_resolver.dart';
 import '../domain/ports/playback_controller.dart';
 import '../domain/ports/position_repository.dart';
@@ -101,6 +102,65 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       await _speedStore?.save(s);
     } catch (e) {
       debugPrint('speed save failed: ${e.runtimeType}');
+    }
+  }
+
+  @override
+  final ValueNotifier<Duration?> sleepRemaining = ValueNotifier(null);
+
+  static const _sleepTick = Duration(milliseconds: 250);
+  Timer? _sleepTimer;
+  Duration _sleepLeft = Duration.zero;
+
+  /// مؤقت النوم يعمل هنا داخل المعالج (خدمة مقدّمة) فيستمر والشاشة مغلقة.
+  /// العدّ بعدد النبضات لا بالساعة. يبقى فعّالاً عند تبديل الفيديو أو الإيقاف
+  /// المؤقت اليدوي، ويُلغى عند stop() أو cancelSleepTimer().
+  @override
+  void startSleepTimer(Duration duration) {
+    if (duration <= Duration.zero) return;
+    _sleepTimer?.cancel();
+    _sleepLeft = duration;
+    _publishSleepRemaining();
+    _sleepTimer = Timer.periodic(_sleepTick, (_) => _onSleepTick());
+    _player.setVolume(1.0);
+  }
+
+  @override
+  void cancelSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    sleepRemaining.value = null;
+    _player.setVolume(1.0); // يلغي أي تلاشٍ جارٍ
+  }
+
+  void _publishSleepRemaining() {
+    final secs = (_sleepLeft.inMilliseconds / 1000).ceil();
+    final d = Duration(seconds: secs);
+    if (sleepRemaining.value != d) sleepRemaining.value = d;
+  }
+
+  void _onSleepTick() {
+    _sleepLeft -= _sleepTick;
+    if (_sleepLeft <= Duration.zero) {
+      _finishSleep();
+      return;
+    }
+    _publishSleepRemaining();
+    if (_sleepLeft <= sleepFadeDuration) {
+      _player.setVolume(_sleepLeft.inMilliseconds / sleepFadeDuration.inMilliseconds);
+    }
+  }
+
+  Future<void> _finishSleep() async {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    sleepRemaining.value = null;
+    try {
+      if (_player.playing) await _player.pause();
+      await _savePosition();
+    } finally {
+      // الصوت يعود كاملاً ليعمل الاستئناف اليدوي بصوت عادي.
+      await _player.setVolume(1.0);
     }
   }
 
@@ -279,6 +339,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   @override
   Future<void> stop() async {
     _token++; // أولاً: يُبطل أي playVideo ينتظر حفظ الفيديو السابق
+    cancelSleepTimer();
     await _savePosition(); // قبل تصفير الحالة
     _videoId = null;
     _loaded = false;
@@ -294,6 +355,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   Future<void> dispose() async {
     _saveTimer?.cancel();
+    _sleepTimer?.cancel();
     await _player.dispose();
   }
 }

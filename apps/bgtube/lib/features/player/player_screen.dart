@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../../domain/incoming_link.dart';
 import '../../domain/models/now_playing.dart';
 import '../../domain/playback_speed.dart';
+import '../../domain/sleep_timer.dart';
 import '../../domain/ports/playback_controller.dart';
 import '../../domain/youtube_link_parser.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -312,6 +313,7 @@ class _PlayerPanel extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             _SpeedButton(controller: controller),
+            _SleepButton(controller: controller),
           ],
         ),
       ],
@@ -361,6 +363,67 @@ class _SpeedButton extends StatelessWidget {
                 trailing: controller.speed.value == s ? const Icon(Icons.check) : null,
                 onTap: () {
                   controller.setSpeed(s);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SleepButton extends StatelessWidget {
+  const _SleepButton({required this.controller});
+
+  final PlaybackController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    return ValueListenableBuilder<Duration?>(
+      valueListenable: controller.sleepRemaining,
+      builder: (context, remaining, _) => TextButton(
+        key: const Key('sleepButton'),
+        style: TextButton.styleFrom(minimumSize: const Size(56, 56)),
+        onPressed: () => _showSheet(context, l, locale),
+        child: remaining == null
+            ? const Icon(Icons.bedtime_outlined)
+            : Text(formatDuration(remaining, locale)),
+      ),
+    );
+  }
+
+  void _showSheet(BuildContext context, AppLocalizations l, String locale) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.all(16),
+              child: Text(l.sleepTimer, style: Theme.of(sheetContext).textTheme.titleMedium),
+            ),
+            for (final d in sleepTimerOptions)
+              ListTile(
+                key: Key('sleep_${d.inMinutes}'),
+                minTileHeight: 56,
+                title: Text(l.sleepMinutes(NumberFormat.decimalPattern(locale).format(d.inMinutes))),
+                onTap: () {
+                  controller.startSleepTimer(d);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+            if (controller.sleepRemaining.value != null)
+              ListTile(
+                key: const Key('sleepCancel'),
+                minTileHeight: 56,
+                leading: const Icon(Icons.close),
+                title: Text(l.sleepCancel),
+                onTap: () {
+                  controller.cancelSleepTimer();
                   Navigator.of(sheetContext).pop();
                 },
               ),

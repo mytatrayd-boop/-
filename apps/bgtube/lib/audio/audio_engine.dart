@@ -15,6 +15,7 @@ abstract interface class AudioEngine {
   Future<void> stop();
   Future<void> seek(Duration position);
   Future<void> setSpeed(double speed);
+  Future<void> setVolume(double volume);
   Future<void> dispose();
 }
 
@@ -50,6 +51,8 @@ class JustAudioEngine implements AudioEngine {
   Future<void> seek(Duration position) => _p.seek(position);
   @override
   Future<void> setSpeed(double speed) => _p.setSpeed(speed);
+  @override
+  Future<void> setVolume(double volume) => _p.setVolume(volume);
   @override
   Future<void> dispose() => _p.dispose();
 }

@@ -14,6 +14,13 @@ abstract interface class PlaybackController {
   /// السرعة الحالية (تبقى للفيديو التالي).
   ValueListenable<double> get speed;
 
+  /// الوقت المتبقي لمؤقت النوم (null = لا مؤقت).
+  ValueListenable<Duration?> get sleepRemaining;
+
+  /// يبدأ مؤقت النوم (يستبدل أي مؤقت قائم).
+  void startSleepTimer(Duration duration);
+  void cancelSleepTimer();
+
   Future<void> playVideo(String videoId);
   Future<void> retry();
   Future<void> play();

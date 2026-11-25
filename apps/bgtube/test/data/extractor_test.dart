@@ -68,6 +68,20 @@ void main() {
       }
     });
 
+    test('only data/settings imports shared_preferences (main.dart may)', () {
+      for (final f in dartFiles('lib')) {
+        if (f.path.contains('data/settings') ||
+            f.path.endsWith('lib/main.dart')) {
+          continue;
+        }
+        expect(
+          f.readAsStringSync(),
+          isNot(contains('package:shared_preferences')),
+          reason: f.path,
+        );
+      }
+    });
+
     test('only data/incoming imports receive_sharing_intent', () {
       for (final f in dartFiles('lib')) {
         if (f.path.contains('data/incoming')) continue;

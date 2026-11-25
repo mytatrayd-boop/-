@@ -34,6 +34,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speed => 'Playback speed';
 
   @override
+  String get sleepTimer => 'Sleep timer';
+
+  @override
+  String sleepMinutes(String minutes) {
+    return '$minutes minutes';
+  }
+
+  @override
+  String get sleepCancel => 'Cancel timer';
+
+  @override
   String speedValue(String value) {
     return '$value×';
   }

@@ -8,6 +8,7 @@ import 'package:bgtube/domain/models/resolved_audio.dart';
 import 'package:bgtube/domain/ports/audio_source_resolver.dart';
 import 'package:bgtube/domain/ports/position_repository.dart';
 import 'package:bgtube/domain/ports/speed_store.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -46,7 +47,10 @@ class FakeEngine implements AudioEngine {
   }
 
   @override
-  Future<void> pause() async => log.add('pause');
+  Future<void> pause() async {
+    log.add('pause');
+    playing = false;
+  }
   @override
   Future<void> stop() async {
     log.add('stop');
@@ -55,6 +59,9 @@ class FakeEngine implements AudioEngine {
 
   @override
   Future<void> seek(Duration position) async {}
+  final volumes = <double>[];
+  @override
+  Future<void> setVolume(double v) async => volumes.add(v);
   final speedCalls = <double>[];
   @override
   Future<void> setSpeed(double s) async {
@@ -600,6 +607,149 @@ void main() {
       await s.setSpeed(1.25);
       expect(engine.speed, 1.25);
       expect(s.speed.value, 1.25);
+    });
+  });
+
+  group('sleep timer (fake clock)', () {
+    const a = 'AAAAAAAAAAA';
+    late FakeRepo repo;
+    late BgtubeAudioHandler t;
+
+    // يبدأ فيديو ويعتبره يعمل (play استُدعي في المحرّك الوهمي).
+    Future<void> startPlaying(FakeAsync fa) async {
+      unawaited(t.playVideo(a));
+      fa.flushMicrotasks();
+      fa.flushTimers(flushPeriodicTimers: false);
+      fa.flushMicrotasks();
+      engine.emitReady();
+      fa.flushMicrotasks();
+    }
+
+    setUp(() {
+      repo = FakeRepo();
+      resolver.immediate = (id) async => audio(id);
+      t = BgtubeAudioHandler(resolver: resolver, engine: engine, positions: repo);
+    });
+
+    test('start shows remaining and counts down', () {
+      fakeAsync((fa) {
+        t.startSleepTimer(const Duration(minutes: 15));
+        expect(t.sleepRemaining.value, const Duration(minutes: 15));
+        fa.elapse(const Duration(minutes: 1));
+        expect(t.sleepRemaining.value, const Duration(minutes: 14));
+        t.cancelSleepTimer();
+      });
+    });
+
+    test('fades gradually over the last 10s, then pauses and saves position', () {
+      fakeAsync((fa) {
+        startPlaying(fa);
+        engine.position = const Duration(minutes: 1);
+        engine.volumes.clear();
+        t.startSleepTimer(const Duration(seconds: 30));
+        fa.elapse(const Duration(seconds: 19));
+        expect(engine.volumes.where((v) => v < 1), isEmpty); // لا تلاشي قبل آخر ١٠ ث
+        fa.elapse(const Duration(seconds: 5)); // متبقٍ ٦ ث
+        final mid = engine.volumes.last;
+        expect(mid, inInclusiveRange(0.5, 0.7));
+        expect(engine.log.contains('pause'), isFalse);
+        fa.elapse(const Duration(seconds: 7));
+        final fade = engine.volumes.where((v) => v < 1).toList();
+        for (var i = 1; i < fade.length; i++) {
+          expect(fade[i], lessThanOrEqualTo(fade[i - 1])); // تنازلي
+        }
+        expect(engine.log.last == 'pause' || engine.log.contains('pause'), isTrue);
+        expect(engine.playing, isFalse);
+        expect(engine.volumes.last, 1.0); // يعود الصوت بعد الإيقاف
+        expect(t.sleepRemaining.value, isNull);
+        expect(repo.store[a]!.position, const Duration(minutes: 1));
+      });
+    });
+
+    test('cancel stops the countdown, restores volume, never pauses', () {
+      fakeAsync((fa) {
+        startPlaying(fa);
+        t.startSleepTimer(const Duration(seconds: 30));
+        fa.elapse(const Duration(seconds: 25)); // داخل التلاشي
+        t.cancelSleepTimer();
+        expect(t.sleepRemaining.value, isNull);
+        expect(engine.volumes.last, 1.0);
+        fa.elapse(const Duration(minutes: 5));
+        expect(engine.log.contains('pause'), isFalse);
+        expect(engine.playing, isTrue);
+      });
+    });
+
+    test('switching video keeps the timer running and it still stops playback', () {
+      fakeAsync((fa) {
+        startPlaying(fa);
+        t.startSleepTimer(const Duration(seconds: 30));
+        fa.elapse(const Duration(seconds: 10));
+        unawaited(t.playVideo('BBBBBBBBBBB'));
+        fa.flushMicrotasks();
+        engine.emitReady();
+        fa.flushMicrotasks();
+        expect(engine.playing, isTrue);
+        expect(t.sleepRemaining.value, const Duration(seconds: 20));
+        fa.elapse(const Duration(seconds: 21));
+        expect(engine.playing, isFalse);
+        expect(t.sleepRemaining.value, isNull);
+      });
+    });
+
+    test('manual pause during timer: timer keeps going and ends cleanly', () {
+      fakeAsync((fa) {
+        startPlaying(fa);
+        t.startSleepTimer(const Duration(seconds: 30));
+        fa.elapse(const Duration(seconds: 5));
+        unawaited(t.pause());
+        fa.flushMicrotasks();
+        final pauses = engine.log.where((e) => e == 'pause').length;
+        expect(t.sleepRemaining.value, const Duration(seconds: 25));
+        fa.elapse(const Duration(seconds: 26));
+        expect(t.sleepRemaining.value, isNull);
+        // لم يُرسَل إيقاف ثانٍ لأن المحرّك متوقف أصلاً
+        expect(engine.log.where((e) => e == 'pause').length, pauses);
+        expect(engine.volumes.last, 1.0);
+      });
+    });
+
+    test('manual stop cancels the timer', () {
+      fakeAsync((fa) {
+        startPlaying(fa);
+        t.startSleepTimer(const Duration(seconds: 30));
+        unawaited(t.stop());
+        fa.flushMicrotasks();
+        expect(t.sleepRemaining.value, isNull);
+        fa.elapse(const Duration(minutes: 1));
+        expect(engine.volumes.last, 1.0);
+      });
+    });
+
+    test('playback can be resumed after the timer ends, at full volume', () {
+      fakeAsync((fa) {
+        startPlaying(fa);
+        t.startSleepTimer(const Duration(seconds: 12));
+        fa.elapse(const Duration(seconds: 13));
+        expect(engine.playing, isFalse);
+        unawaited(t.play());
+        fa.flushMicrotasks();
+        expect(engine.playing, isTrue);
+        expect(engine.volumes.last, 1.0);
+        fa.elapse(const Duration(minutes: 1));
+        expect(engine.playing, isTrue); // لا مؤقت ثانٍ
+      });
+    });
+
+    test('starting a new timer replaces the old one', () {
+      fakeAsync((fa) {
+        t.startSleepTimer(const Duration(minutes: 15));
+        t.startSleepTimer(const Duration(minutes: 60));
+        expect(t.sleepRemaining.value, const Duration(minutes: 60));
+        fa.elapse(const Duration(minutes: 16));
+        expect(t.sleepRemaining.value, const Duration(minutes: 44));
+        t.cancelSleepTimer();
+      });
     });
   });
 }

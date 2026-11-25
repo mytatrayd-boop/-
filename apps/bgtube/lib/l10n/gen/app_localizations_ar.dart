@@ -34,6 +34,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get speed => 'سرعة التشغيل';
 
   @override
+  String get sleepTimer => 'مؤقت النوم';
+
+  @override
+  String sleepMinutes(String minutes) {
+    return '$minutes دقيقة';
+  }
+
+  @override
+  String get sleepCancel => 'إلغاء المؤقت';
+
+  @override
   String speedValue(String value) {
     return '$value×';
   }

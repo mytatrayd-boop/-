@@ -146,6 +146,24 @@ abstract class AppLocalizations {
   /// **'سرعة التشغيل'**
   String get speed;
 
+  /// No description provided for @sleepTimer.
+  ///
+  /// In ar, this message translates to:
+  /// **'مؤقت النوم'**
+  String get sleepTimer;
+
+  /// No description provided for @sleepMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{minutes} دقيقة'**
+  String sleepMinutes(String minutes);
+
+  /// No description provided for @sleepCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء المؤقت'**
+  String get sleepCancel;
+
   /// No description provided for @speedValue.
   ///
   /// In ar, this message translates to:
