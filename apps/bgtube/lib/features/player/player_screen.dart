@@ -11,6 +11,7 @@ import '../../domain/youtube_link_parser.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'failure_message.dart';
 import 'format_duration.dart';
+import 'text_direction.dart';
 
 class PlayerScreen extends ConsumerStatefulWidget {
   const PlayerScreen({super.key});
@@ -211,12 +212,16 @@ class _PlayerPanel extends StatelessWidget {
       children: [
         Text(
           now.title,
+          textDirection: textDirectionFor(now.title),
+          textAlign: TextAlign.start,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
         ),
         if (now.author != null)
           Text(now.author!,
+              textDirection: textDirectionFor(now.author!),
+              textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),

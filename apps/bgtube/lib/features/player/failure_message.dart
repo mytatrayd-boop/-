@@ -6,5 +6,6 @@ String failureMessage(AppLocalizations l, AppFailure f) => switch (f.kind) {
       FailureKind.playlistNotSupported => l.errorPlaylistNotSupported,
       FailureKind.extractionFailed => l.errorExtraction,
       FailureKind.network => l.errorNetwork,
+      FailureKind.rateLimited => l.errorRateLimited,
       FailureKind.playbackFailed => l.errorPlayback,
     };

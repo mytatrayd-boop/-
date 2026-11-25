@@ -138,4 +138,23 @@ void main() {
     expect(c.pauses, 1);
     expect(t.takeException(), isNull);
   });
+
+  testWidgets('title and channel get automatic text direction', (t) async {
+    final c = FakeController();
+    await pump(t, c);
+    c.nowPlaying.value = const NowPlaying(
+        videoId: 'dQw4w9WgXcQ', title: 'English Title', author: 'قناة عربية', duration: Duration(minutes: 1));
+    await t.pumpAndSettle();
+    expect(t.widget<Text>(find.text('English Title')).textDirection, TextDirection.ltr);
+    expect(t.widget<Text>(find.text('قناة عربية')).textDirection, TextDirection.rtl);
+  });
+
+  testWidgets('rate limit failure has its own message', (t) async {
+    final c = FakeController();
+    await pump(t, c);
+    c.failure.value = const AppFailure(FailureKind.rateLimited);
+    await t.pumpAndSettle();
+    expect(find.textContaining('يقيّد الطلبات'), findsOneWidget);
+    expect(find.text('إعادة المحاولة'), findsOneWidget);
+  });
 }

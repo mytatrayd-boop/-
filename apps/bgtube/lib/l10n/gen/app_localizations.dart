@@ -182,6 +182,12 @@ abstract class AppLocalizations {
   /// **'تعذّر الاتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.'**
   String get errorNetwork;
 
+  /// No description provided for @errorRateLimited.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوتيوب يقيّد الطلبات من شبكتك الآن. انتظر قليلاً ثم أعد المحاولة.'**
+  String get errorRateLimited;
+
   /// No description provided for @errorPlayback.
   ///
   /// In ar, this message translates to:

@@ -4,6 +4,7 @@ enum FailureKind {
   playlistNotSupported,
   extractionFailed,
   network,
+  rateLimited,
   playbackFailed,
 }
 

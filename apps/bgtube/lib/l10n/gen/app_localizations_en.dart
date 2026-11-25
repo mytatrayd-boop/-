@@ -56,5 +56,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not connect to the internet. Check your network and retry.';
 
   @override
+  String get errorRateLimited =>
+      'YouTube is rate-limiting requests from your network. Wait a while and retry.';
+
+  @override
   String get errorPlayback => 'Could not play the audio. Please retry.';
 }

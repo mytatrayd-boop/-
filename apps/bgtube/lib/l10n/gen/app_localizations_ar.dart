@@ -56,5 +56,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذّر الاتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.';
 
   @override
+  String get errorRateLimited =>
+      'يوتيوب يقيّد الطلبات من شبكتك الآن. انتظر قليلاً ثم أعد المحاولة.';
+
+  @override
   String get errorPlayback => 'تعذّر تشغيل الصوت. أعد المحاولة.';
 }
