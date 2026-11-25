@@ -11,10 +11,14 @@ abstract interface class PlaybackController {
   ValueListenable<NowPlaying?> get nowPlaying;
   Stream<Duration> get positionStream;
 
+  /// السرعة الحالية (تبقى للفيديو التالي).
+  ValueListenable<double> get speed;
+
   Future<void> playVideo(String videoId);
   Future<void> retry();
   Future<void> play();
   Future<void> pause();
   Future<void> stop();
   Future<void> seek(Duration position);
+  Future<void> setSpeed(double speed);
 }

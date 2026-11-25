@@ -7,10 +7,12 @@ import 'package:just_audio/just_audio.dart' show ProcessingState;
 import '../core/app_failure.dart';
 import '../domain/models/now_playing.dart';
 import '../domain/models/playback_position.dart';
+import '../domain/playback_speed.dart';
 import '../domain/position_policy.dart';
 import '../domain/ports/audio_source_resolver.dart';
 import '../domain/ports/playback_controller.dart';
 import '../domain/ports/position_repository.dart';
+import '../domain/ports/speed_store.dart';
 import 'audio_engine.dart';
 import 'playback_state_mapper.dart';
 
@@ -21,8 +23,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     required this._resolver,
     AudioEngine? engine,
     this._positions,
+    this._speedStore,
     this._saveInterval = const Duration(seconds: 5),
   }) : _player = engine ?? JustAudioEngine() {
+    _restoreSpeed();
     _player.playbackEventStream.listen(
       (event) {
         if (event.processingState == ProcessingState.ready) _autoRetried = false;
@@ -48,6 +52,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   }
 
   final PositionRepository? _positions;
+  final SpeedStore? _speedStore;
   final Duration _saveInterval;
   Timer? _saveTimer;
 
@@ -61,6 +66,43 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   /// true أثناء حلّ الرابط وتحميله.
   @override
   final ValueNotifier<bool> resolving = ValueNotifier(false);
+
+  @override
+  final ValueNotifier<double> speed = ValueNotifier(defaultPlaybackSpeed);
+
+  /// true بعد أن اختار المستخدم سرعة؛ يمنع قراءة التخزين المتأخرة من تجاوز اختياره.
+  bool _speedTouched = false;
+
+  Future<void> _restoreSpeed() async {
+    try {
+      final saved = normalizeSpeed(await _speedStore?.load());
+      if (_speedTouched) return;
+      await _applySpeed(saved);
+    } catch (e) {
+      debugPrint('speed restore failed: ${e.runtimeType}');
+    }
+  }
+
+  Future<void> _applySpeed(double s) async {
+    speed.value = s;
+    await _player.setSpeed(s);
+    // انعكاس فوري على الإشعار وشاشة القفل.
+    playbackState.add(playbackState.value.copyWith(speed: s));
+  }
+
+  /// يغيّر السرعة (تعمل في الخلفية وتنعكس على الإشعار) ويحفظها للفيديو التالي.
+  /// قيمة غير مسموحة تُقرَّب إلى المسموح. فشل الحفظ لا يمنع التطبيق.
+  @override
+  Future<void> setSpeed(double value) async {
+    final s = normalizeSpeed(value);
+    _speedTouched = true;
+    await _applySpeed(s);
+    try {
+      await _speedStore?.save(s);
+    } catch (e) {
+      debugPrint('speed save failed: ${e.runtimeType}');
+    }
+  }
 
   @override
   final ValueNotifier<bool> playing = ValueNotifier(false);
@@ -83,7 +125,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   Future<void> playVideo(String videoId) async {
     _autoRetried = false;
     _resumeFrom = Duration.zero;
+    final token = _token;
     await _savePosition(); // موضع الفيديو السابق قبل استبداله
+    // stop() (أو طلب أحدث) أثناء الحفظ: لا نبدأ تشغيلاً بعد إيقاف المستخدم.
+    if (token != _token) return;
     return _load(videoId, resumeSaved: true);
   }
 
@@ -116,6 +161,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   /// انتهى الفيديو: لا استئناف في المرة القادمة.
   void _onCompleted() {
+    _saveTimer?.cancel(); // لا حفظ دوري بعد الانتهاء
+    _saveTimer = null;
     final repo = _positions;
     final id = _videoId;
     if (repo == null || id == null) return;
@@ -177,6 +224,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       ));
       await _player.setUrl(audio.url, initialPosition: _resumeFrom);
       if (token != _token) return;
+      await _player.setSpeed(speed.value); // السرعة المختارة للفيديو الجديد
+      if (token != _token) return;
       _loaded = true;
       resolving.value = false;
       await _player.play();
@@ -229,8 +278,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   @override
   Future<void> stop() async {
+    _token++; // أولاً: يُبطل أي playVideo ينتظر حفظ الفيديو السابق
     await _savePosition(); // قبل تصفير الحالة
-    _token++;
     _videoId = null;
     _loaded = false;
     resolving.value = false;

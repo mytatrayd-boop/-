@@ -19,6 +19,14 @@ class FakeController implements PlaybackController {
   final ValueNotifier<NowPlaying?> nowPlaying = ValueNotifier(null);
   @override
   Stream<Duration> get positionStream => const Stream.empty();
+  @override
+  final ValueNotifier<double> speed = ValueNotifier(1.0);
+  final speeds = <double>[];
+  @override
+  Future<void> setSpeed(double s) async {
+    speeds.add(s);
+    speed.value = s;
+  }
 
   final played = <String>[];
   int retries = 0;
@@ -156,5 +164,36 @@ void main() {
     await t.pumpAndSettle();
     expect(find.textContaining('يقيّد الطلبات'), findsOneWidget);
     expect(find.text('إعادة المحاولة'), findsOneWidget);
+  });
+
+  testWidgets('speed sheet lists the five options and applies the choice', (t) async {
+    final c = FakeController();
+    await pump(t, c, locale: const Locale('en'));
+    c.nowPlaying.value = const NowPlaying(
+        videoId: 'dQw4w9WgXcQ', title: 'T', duration: Duration(minutes: 1));
+    await t.pumpAndSettle();
+    expect(find.text('1×'), findsOneWidget);
+    await t.tap(find.byKey(const Key('speedButton')));
+    await t.pumpAndSettle();
+    for (final label in ['0.75×', '1×', '1.25×', '1.5×', '2×']) {
+      expect(find.text(label), findsWidgets);
+    }
+    await t.tap(find.byKey(const Key('speed_1.5')));
+    await t.pumpAndSettle();
+    expect(c.speeds, [1.5]);
+    expect(find.text('1.5×'), findsOneWidget); // الزر يعرض القيمة الحالية
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('speed sheet works in Arabic RTL without errors', (t) async {
+    final c = FakeController();
+    await pump(t, c);
+    c.nowPlaying.value = const NowPlaying(
+        videoId: 'dQw4w9WgXcQ', title: 'T', duration: Duration(minutes: 1));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('speedButton')));
+    await t.pumpAndSettle();
+    expect(find.text('سرعة التشغيل'), findsOneWidget);
+    expect(t.takeException(), isNull);
   });
 }

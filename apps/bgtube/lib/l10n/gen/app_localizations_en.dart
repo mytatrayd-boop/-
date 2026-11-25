@@ -31,6 +31,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stop => 'Stop';
 
   @override
+  String get speed => 'Playback speed';
+
+  @override
+  String speedValue(String value) {
+    return '$value×';
+  }
+
+  @override
   String get retry => 'Retry';
 
   @override

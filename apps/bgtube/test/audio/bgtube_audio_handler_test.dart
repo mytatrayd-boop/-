@@ -7,6 +7,7 @@ import 'package:bgtube/domain/models/playback_position.dart';
 import 'package:bgtube/domain/models/resolved_audio.dart';
 import 'package:bgtube/domain/ports/audio_source_resolver.dart';
 import 'package:bgtube/domain/ports/position_repository.dart';
+import 'package:bgtube/domain/ports/speed_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -54,6 +55,13 @@ class FakeEngine implements AudioEngine {
 
   @override
   Future<void> seek(Duration position) async {}
+  final speedCalls = <double>[];
+  @override
+  Future<void> setSpeed(double s) async {
+    speed = s;
+    speedCalls.add(s);
+  }
+
   @override
   Future<void> dispose() async {}
 
@@ -87,9 +95,31 @@ ResolvedAudio audio(String id) => ResolvedAudio(
       duration: const Duration(minutes: 3),
     );
 
+class FakeSpeedStore implements SpeedStore {
+  double? stored;
+  bool failing = false;
+  Completer<void>? loadGate;
+  @override
+  Future<double?> load() async {
+    await loadGate?.future;
+    if (failing) throw StateError('prefs');
+    return stored;
+  }
+
+  @override
+  Future<void> save(double s) async {
+    if (failing) throw StateError('prefs');
+    stored = s;
+  }
+}
+
 class FakeRepo implements PositionRepository {
   final store = <String, PlaybackPosition>{};
   bool failing = false;
+  int writes = 0;
+
+  /// إن وُجد ينتظر الحفظ حتى يكتمل (لاختبار السباقات).
+  Completer<void>? saveGate;
   @override
   Future<PlaybackPosition?> get(String id) async {
     if (failing) throw StateError('db');
@@ -98,12 +128,15 @@ class FakeRepo implements PositionRepository {
 
   @override
   Future<void> save(PlaybackPosition p) async {
+    writes++;
+    await saveGate?.future;
     if (failing) throw StateError('db');
     store[p.videoId] = p;
   }
 
   @override
   Future<void> delete(String id) async {
+    writes++;
     if (failing) throw StateError('db');
     store.remove(id);
   }
@@ -427,6 +460,146 @@ void main() {
       engine.playingCtl.add(false);
       await settle();
       expect(repo.store, isEmpty);
+    });
+
+    test('stop() while the previous video save is pending does not start the new video', () async {
+      await start(a);
+      engine.position = const Duration(seconds: 50);
+      repo.saveGate = Completer<void>();
+      final playing = p.playVideo(b); // ينتظر حفظ A
+      await settle();
+      final stopping = p.stop();
+      await settle();
+      repo.saveGate!.complete();
+      await playing;
+      await stopping;
+      expect(resolver.calls, [a], reason: 'B must never be resolved');
+      expect(engine.setUrls.length, 1);
+      expect(engine.playing, isFalse);
+      expect(p.nowPlaying.value, isNull);
+      expect(p.resolving.value, isFalse);
+    });
+
+    test('periodic save timer is cancelled on completion', () async {
+      await start(a);
+      engine.position = const Duration(seconds: 60);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      engine.events.add(PlaybackEvent(processingState: ProcessingState.completed));
+      await settle();
+      final writesAfterCompletion = repo.writes;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(repo.writes, writesAfterCompletion);
+      expect(repo.store[a], isNull);
+    });
+
+    test('returning to under 10s leaves the saved 5:00 untouched (D17)', () async {
+      repo.store[a] = PlaybackPosition(
+        videoId: a,
+        position: const Duration(minutes: 5),
+        duration: const Duration(minutes: 20),
+        updatedAt: DateTime.utc(2026),
+      );
+      resolver.immediate = (id) async => ResolvedAudio(
+            url: Uri.parse('https://example.com/$id'),
+            title: 'T',
+            duration: const Duration(minutes: 20),
+          );
+      await start(a);
+      engine.position = const Duration(seconds: 4); // المستخدم رجع للبداية
+      engine.playingCtl.add(false);
+      await settle();
+      await p.stop();
+      expect(repo.store[a]!.position, const Duration(minutes: 5));
+    });
+  });
+
+  group('speed', () {
+    late FakeSpeedStore store;
+    late BgtubeAudioHandler s;
+    setUp(() {
+      store = FakeSpeedStore();
+      resolver.immediate = (id) async => audio(id);
+      s = BgtubeAudioHandler(resolver: resolver, engine: engine, speedStore: store);
+    });
+
+    test('defaults to 1x when nothing is stored', () async {
+      await settle();
+      expect(s.speed.value, 1.0);
+    });
+
+    test('setSpeed applies to engine, notification state, and storage', () async {
+      await s.setSpeed(1.5);
+      expect(engine.speed, 1.5);
+      expect(s.speed.value, 1.5);
+      expect(s.playbackState.value.speed, 1.5);
+      expect(store.stored, 1.5);
+    });
+
+    test('all five options are accepted', () async {
+      for (final v in [0.75, 1.0, 1.25, 1.5, 2.0]) {
+        await s.setSpeed(v);
+        expect(engine.speed, v);
+        expect(store.stored, v);
+      }
+    });
+
+    test('invalid value falls back to 1x', () async {
+      await s.setSpeed(7);
+      expect(s.speed.value, 1.0);
+      expect(engine.speed, 1.0);
+    });
+
+    test('stored speed is restored on startup', () async {
+      store.stored = 1.25;
+      final s2 = BgtubeAudioHandler(resolver: resolver, engine: engine, speedStore: store);
+      await settle();
+      await settle();
+      expect(s2.speed.value, 1.25);
+      expect(engine.speed, 1.25);
+    });
+
+    test('corrupt stored value falls back to 1x', () async {
+      store.stored = 3.3;
+      final s2 = BgtubeAudioHandler(resolver: resolver, engine: engine, speedStore: store);
+      await settle();
+      await settle();
+      expect(s2.speed.value, 1.0);
+    });
+
+    test('user choice is not overwritten by a late storage read', () async {
+      store.stored = 2.0;
+      store.loadGate = Completer<void>();
+      final s2 = BgtubeAudioHandler(resolver: resolver, engine: engine, speedStore: store);
+      await s2.setSpeed(0.75);
+      store.loadGate!.complete();
+      await settle();
+      await settle();
+      expect(s2.speed.value, 0.75);
+      expect(engine.speed, 0.75);
+    });
+
+    test('speed persists to the next video and is applied after loading it', () async {
+      await s.setSpeed(1.5);
+      await s.playVideo('AAAAAAAAAAA');
+      expect(engine.speedCalls.last, 1.5);
+      expect(engine.log.indexOf('setUrl'), lessThan(engine.log.length));
+      engine.speed = 1.0; // المحرك أُعيد ضبطه
+      await s.playVideo('BBBBBBBBBBB');
+      expect(engine.speed, 1.5);
+      expect(s.speed.value, 1.5);
+    });
+
+    test('speed change while paused is also reflected in the notification', () async {
+      await s.playVideo('AAAAAAAAAAA');
+      await s.setSpeed(2.0);
+      expect(s.playbackState.value.speed, 2.0);
+    });
+
+    test('storage failure does not break changing speed', () async {
+      store.failing = true;
+      await s.setSpeed(1.25);
+      expect(engine.speed, 1.25);
+      expect(s.speed.value, 1.25);
     });
   });
 }

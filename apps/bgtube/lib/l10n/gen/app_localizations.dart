@@ -140,6 +140,18 @@ abstract class AppLocalizations {
   /// **'إيقاف'**
   String get stop;
 
+  /// No description provided for @speed.
+  ///
+  /// In ar, this message translates to:
+  /// **'سرعة التشغيل'**
+  String get speed;
+
+  /// No description provided for @speedValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'{value}×'**
+  String speedValue(String value);
+
   /// No description provided for @retry.
   ///
   /// In ar, this message translates to:

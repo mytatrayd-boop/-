@@ -31,6 +31,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get stop => 'إيقاف';
 
   @override
+  String get speed => 'سرعة التشغيل';
+
+  @override
+  String speedValue(String value) {
+    return '$value×';
+  }
+
+  @override
   String get retry => 'إعادة المحاولة';
 
   @override

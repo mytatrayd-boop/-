@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart' show NumberFormat;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -9,6 +10,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../domain/incoming_link.dart';
 import '../../domain/models/now_playing.dart';
+import '../../domain/playback_speed.dart';
 import '../../domain/ports/playback_controller.dart';
 import '../../domain/youtube_link_parser.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -308,9 +310,63 @@ class _PlayerPanel extends StatelessWidget {
                 icon: Icon(playing ? Icons.pause : Icons.play_arrow),
               ),
             ),
+            const SizedBox(width: 16),
+            _SpeedButton(controller: controller),
           ],
         ),
       ],
+    );
+  }
+}
+
+String speedText(AppLocalizations l, String locale, double s) =>
+    l.speedValue(NumberFormat('0.##', locale).format(s));
+
+class _SpeedButton extends StatelessWidget {
+  const _SpeedButton({required this.controller});
+
+  final PlaybackController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    return ValueListenableBuilder<double>(
+      valueListenable: controller.speed,
+      builder: (context, speed, _) => TextButton(
+        key: const Key('speedButton'),
+        style: TextButton.styleFrom(minimumSize: const Size(56, 56)),
+        onPressed: () => _showSheet(context, l, locale),
+        child: Text(speedText(l, locale, speed)),
+      ),
+    );
+  }
+
+  void _showSheet(BuildContext context, AppLocalizations l, String locale) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.all(16),
+              child: Text(l.speed, style: Theme.of(sheetContext).textTheme.titleMedium),
+            ),
+            for (final s in playbackSpeeds)
+              ListTile(
+                key: Key('speed_$s'),
+                minTileHeight: 56,
+                title: Text(speedText(l, locale, s)),
+                trailing: controller.speed.value == s ? const Icon(Icons.check) : null,
+                onTap: () {
+                  controller.setSpeed(s);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
