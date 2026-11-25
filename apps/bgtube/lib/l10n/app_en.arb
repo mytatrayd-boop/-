@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "appTitle": "BGTube",
+  "emptyTitle": "Paste a YouTube link to play it",
+  "linkHint": "YouTube link",
+  "pasteAndPlay": "Paste and play",
+  "play": "Play",
+  "pause": "Pause",
+  "stop": "Stop",
+  "retry": "Retry",
+  "resolving": "Preparing…",
+  "clipboardEmpty": "No YouTube link in the clipboard",
+  "errorInvalidLink": "The link is not valid. Make sure it is a YouTube video link.",
+  "errorPlaylistNotSupported": "Playlist links are not supported yet. Paste a single video link.",
+  "errorExtraction": "Could not extract audio from this video. Try again.",
+  "errorNetwork": "Could not connect to the internet. Check your network and retry.",
+  "errorPlayback": "Could not play the audio. Please retry."
+}
