@@ -101,3 +101,25 @@ ARB: ar افتراضي (RTL) وen، ثيم داكن فقط في MVP.
 - سلّم الخطوط: 22/700، 16/600، 14/400، 12/400، ارتفاع سطر 1.5.
 - الإعدادات الآن: اللغة وحول (الإصدار من package_info_plus في main فقط، وملاحظة الاستخدام الشخصي). مؤجَّل لحين ميزاته: الحساب، حصة البحث، تحسين البطارية، السرعة الافتراضية (السرعة تُحفظ أصلاً من الميزة 7 وتُغيَّر من المشغّل). المدخل: أيقونة الإعدادات في شريط التطبيق لأن التنقل السفلي لم يُبنَ بعد.
 - التباين: قيس بصيغة WCAG في test/core/theme_contrast_test.dart: كل أزواج DESIGN.md تحقق الحد (أدنى نص عادي 6.63:1، أدنى أيقونة/أساسي 6.17:1). الحد الفاصل 1.51:1 (زخرفي فقط، لا يُعتمد عليه وحده لحدود عنصر تفاعلي). أُضيف success/warning إلى AppColors.
+
+## D22. مشروع Google Cloud (حقائق من المالك، 2026-11-26)
+- مشروع Google Cloud مخصص: YouTube Data API v3 مفعّل.
+- شاشة موافقة OAuth: External، نطاق واحد `https://www.googleapis.com/auth/youtube.readonly`، منشورة **In production** وغير موثّقة (يتحقق شرط D7؛ تحذير "غير موثّق" مرة واحدة).
+- عميل OAuth واحد من نوع **Android**: الحزمة `com.bgtube.bgtube`، وبصمة SHA-1 لمفتاح توقيع الإصدار (مفتاح CI): `21:FA:F9:87:57:42:30:B7:2B:45:4B:A0:98:9A:07:F5:DB:A5:E1:C4`.
+- لا يوجد عميل web/server ولا client secret ولا مفتاح API. لا شيء من ذلك في الكود ولا في `.env` (لا حاجة له الآن).
+- صفحة الخصوصية: https://bgtube.pages.dev/privacy
+- الأثر: الدخول يعمل فقط في APK موقَّع بمفتاح CI. نسخ debug أو release محلية بلا `key.properties` (توقيع debug) تفشل بخطأ إعداد (DEVELOPER_ERROR) فيظهر "الدخول غير مفعّل بعد في هذه النسخة". لاختبارها محلياً يلزم إضافة بصمة debug كعميل Android ثانٍ (قرار المالك).
+
+## D23. تنفيذ الميزة 4: الدخول والخروج (2026-11-26)
+- الحزمة: `google_sign_in` 7.2.0 (أحدث إصدار على pub.dev، 2025-09-17) و`google_sign_in_android` 7.2.19. فُحص المصدر: `authenticate()`/`attemptLightweightAuthentication()` على أندرويد تمر بـ Credential Manager وتتطلب `serverClientId` (عميل **ويب**) وإلا ترمي "serverClientId must be provided on Android". لا نملكه، فلا نستعملهما.
+- المستعمل: التفويض فقط عبر `GoogleSignIn.instance.authorizationClient` بلا حساب: `authorizeScopes([youtube.readonly])` للدخول (يفتح اختيار الحساب والموافقة من Play Services)، و`authorizationForScopes` صامتاً لرمز الوصول، و`clearAuthorizationToken` لإبطال رمز مرفوض. هذا المسار (`AuthorizationClient`) يحتاج عميل Android فقط، و`initialize()` بلا clientId/serverClientId. لم يُجرَّب على جهاز.
+- **تعارض مع DESIGN.md (لم أخمّن)**: الإعدادات تذكر "الاسم والبريد" للحساب، لكن مسار التفويض لا يعيد أي هوية (لا اسم ولا بريد)، والحصول عليها يحتاج أحد أمرين: (أ) عميل ويب كـ serverClientId لاستعمال `authenticate()`، أو (ب) طلب `channels.list?mine=true` (وحدة حصة واحدة) لعرض اسم القناة عند بناء طبقة API. حالياً يعرض صف الحساب "متصل بحساب جوجل" فقط. يحتاج قراراً.
+- المنفذ `AuthService` في domain (`status`/`statusChanges`/`restore`/`signIn`/`accessToken`/`invalidateAccessToken`/`signOut`)، والتنفيذ `GoogleAuthService` في `lib/data/auth/` فوق غلاف `GoogleAuthGateway` (قابل للاستبدال في الاختبار). منفّذ وهمي `FakeAuthService` في test/fakes.
+- الحالات: `signedOut`، `signedIn`، `expired`. رمز صامت فارغ بعد جلسة = `expired` + `AuthExpired` → حوار "انتهت جلستك، سجّل الدخول من جديد" وزر الدخول، وفي الإعدادات نفس الجملة بلون التحذير.
+- تصنيف الأخطاء (تقديري، من مصدر الحزمة): الحزمة توصل إلغاء شاشة التفويض كـ `unknownError` بوصف ApiException "16:"، والرفض كرمز فارغ ("Platform returned null")؛ كلاهما = إلغاء بلا خطأ. "7:" = شبكة. "10:" أو أخطاء الإعداد = "الدخول غير مفعّل بعد في هذه النسخة". غيرها = "تعذّر تسجيل الدخول…". يلزم تأكيد على جهاز.
+- التخزين: لا رموز ولا بريد ولا اسم. علامة واحدة `auth_session=1` في `flutter_secure_storage` (10.3.4؛ 11.x يتعارض مع `package_info_plus` 9 عبر win32) لمعرفة هل نستعيد الجلسة صامتاً عند الإقلاع وهل نعرض "انتهت جلستك". رمز الوصول في الذاكرة فقط (لمسحه عند الخروج) ولا يُسجَّل؛ تفاصيل الأخطاء تحمل اسم الرمز البرمجي فقط.
+- الإقلاع: `restore()` بلا انتظار (لا يؤخر التشغيل). بلا علامة: لا يُلمس المكوّن. بعلامة: `signedIn` ثم تحقق صامت؛ فشل شبكة يبقي الجلسة.
+- الخروج (بتأكيد): يمسح العلامة أولاً (إن فشل: "تعذّر تسجيل الخروج" وتبقى الحالة)، ثم `clearAuthorizationToken` لآخر رمز و`signOut()` بأفضل جهد. لا `disconnect()`: على أندرويد يحتاج بريد الحساب (غير متاح لنا)، فالإذن يبقى ممنوحاً عند جوجل حتى يسحبه المالك من حسابه؛ لذلك قد يتم الدخول التالي دون شاشة موافقة. لا يوجد بعد كاش API خاص لمسحه؛ طبقة API عند بنائها يجب أن تمسح `api_cache` الخاص عند الخروج.
+- إقرار D10: حوار مرة واحدة قبل أول دخول (نص الخطر + تنبيه "غير موثّق" من D7)، يُحفظ في `shared_preferences` (`risk_ack_d10`، ليس سرّاً) خلف منفذ `RiskAckStore`، ولا يُمسح عند الخروج. الإلغاء لا يبدأ الدخول.
+- قواعد معمارية جديدة (اختبارات في test/data/extractor_test.dart): `data/auth` لا يستورده إلا `main.dart` و`data/youtube_api` (لاحقاً)؛ `google_sign_in` و`flutter_secure_storage` داخل `data/auth` فقط؛ المستخرج وطبقة الصوت ومنفذا `AudioSourceResolver`/`PlaybackController` لا يستوردون auth ولا يذكرون `AuthService`/`accessToken`.
+- الواجهة: شاشة دخول (DESIGN §5) من صف الحساب في الإعدادات (لا مدخل آخر حتى تُبنى المكتبة). أُضيفت أنواع فشل: `authExpired`، `notSignedIn`، `signInFailed`، `signInUnavailable`، `signOutFailed`.

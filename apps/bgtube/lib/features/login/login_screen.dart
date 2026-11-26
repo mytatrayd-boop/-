@@ -24,16 +24,20 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _busy = false;
+  bool _asking = false;
   AppFailure? _failure;
 
   Future<void> _continue() async {
-    if (_busy) return;
+    if (_busy || _asking) return;
+    _asking = true;
+    final acknowledged = await _ensureRiskAcknowledged();
+    _asking = false;
+    if (!acknowledged || !mounted) return;
     setState(() {
       _busy = true;
       _failure = null;
     });
     try {
-      if (!await _ensureRiskAcknowledged()) return;
       final outcome = await ref.read(authServiceProvider).signIn();
       if (!mounted) return;
       if (outcome == SignInOutcome.signedIn) {

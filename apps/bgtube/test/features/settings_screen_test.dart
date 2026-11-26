@@ -45,7 +45,7 @@ Future<void> openSettings(WidgetTester t) async {
 }
 
 void main() {
-  testWidgets('Arabic RTL settings screen shows language and about, no account sections', (t) async {
+  testWidgets('Arabic RTL settings screen shows account, language and about', (t) async {
     await pumpApp(t, MemStore());
     await openSettings(t);
     expect(find.text('الإعدادات'), findsOneWidget);
@@ -53,7 +53,8 @@ void main() {
     expect(find.text('حول'), findsOneWidget);
     expect(find.text('الإصدار 1.2.3'), findsOneWidget);
     expect(Directionality.of(t.element(find.byType(Scaffold))), TextDirection.rtl);
-    expect(find.textContaining('الحساب'), findsNothing);
+    expect(find.text('الحساب'), findsOneWidget);
+    expect(find.text('غير مسجّل الدخول'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 

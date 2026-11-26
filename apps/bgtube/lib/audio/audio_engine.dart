@@ -9,7 +9,8 @@ abstract interface class AudioEngine {
   double get speed;
   Duration get position;
 
-  Future<void> setUrl(Uri url, {required Duration initialPosition});
+  /// [headers] تُرسل أصلياً مع طلبات ExoPlayer (بلا وكيل محلي).
+  Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}});
   Future<void> play();
   Future<void> pause();
   Future<void> stop();
@@ -20,7 +21,9 @@ abstract interface class AudioEngine {
 }
 
 class JustAudioEngine implements AudioEngine {
-  JustAudioEngine([AudioPlayer? player]) : _p = player ?? AudioPlayer();
+  // useProxyForRequestHeaders: false: الترويسات تمر عبر DefaultHttpDataSource
+  // مباشرة؛ الوكيل المحلي يتطلب cleartext إلى 127.0.0.1 المحظور افتراضياً (D22).
+  JustAudioEngine([AudioPlayer? player]) : _p = player ?? AudioPlayer(useProxyForRequestHeaders: false);
   final AudioPlayer _p;
 
   @override
@@ -37,8 +40,11 @@ class JustAudioEngine implements AudioEngine {
   Duration get position => _p.position;
 
   @override
-  Future<void> setUrl(Uri url, {required Duration initialPosition}) async {
-    await _p.setAudioSource(AudioSource.uri(url), initialPosition: initialPosition);
+  Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
+    await _p.setAudioSource(
+      AudioSource.uri(url, headers: headers.isEmpty ? null : headers),
+      initialPosition: initialPosition,
+    );
   }
 
   @override

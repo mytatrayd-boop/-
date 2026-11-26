@@ -52,7 +52,7 @@ apps/bgtube/
 - الاستبدال (مثلاً yt-dlp أو خدمة أخرى) = تنفيذ جديد للواجهة وتغيير سطر ربط واحد.
 
 ## الحساب وYouTube Data API v3
-- الدخول عبر `google_sign_in` الرسمي (شاشة جوجل؛ لا نلمس كلمة المرور). النطاقات: `youtube.readonly` للقراءة، و`youtube` فقط لعمليات الكتابة (إعجاب، إضافة/حذف من قائمة). تُطلب الكتابة عند أول استخدام فقط.
+- الدخول عبر `google_sign_in` الرسمي (شاشة جوجل؛ لا نلمس كلمة المرور). الإصدار 7.x: التفويض فقط عبر `authorizationClient` بعميل Android وبلا serverClientId (D23). النطاقات: `youtube.readonly` للقراءة، و`youtube` فقط لعمليات الكتابة (إعجاب، إضافة/حذف من قائمة). تُطلب الكتابة عند أول استخدام فقط.
 - `AuthService`: `signIn`, `signOut`, `getAccessToken` (يُجدَّد عبر Play Services)، حالة `Stream`. مشروع OAuth في In production بدون توثيق (D7) فلا انتهاء أسبوعي؛ تجديد صامت عبر Play Services. السحب أو الإبطال → `AuthExpired` → رسالة "سجّل الدخول من جديد".
 - `YouTubeApi` يستخدم `dio` مع Interceptor يضيف الرمز؛ كل الطلبات من التطبيق مباشرة (لا خادم وسيط).
 - تكلفة الحصة (10,000/يوم): `search.list` ≈ 100؛ القراءات (`playlists`, `playlistItems`, `subscriptions`, `videos.list?myRating=like`, `videos`) = 1؛ الكتابة (`videos.rate`, `playlistItems.insert/delete`) ≈ 50.
@@ -65,7 +65,8 @@ apps/bgtube/
 
 ## التخزين الآمن للرموز
 - لا نحفظ رمز وصول طويل الأمد بأنفسنا: Play Services يدير الجلسة ويصدر رموز وصول قصيرة العمر عند الطلب.
-- `flutter_secure_storage` (Android Keystore) لما نحتاجه فقط: معرّف الحساب/البريد للعرض وحالة "مسجّل". `signOut` يمسحها ويمسح `api_cache` للبيانات الخاصة.
+- `flutter_secure_storage` (Android Keystore) لما نحتاجه فقط: علامة "توجد جلسة" وحدها (لا بريد ولا اسم ولا رموز، D23). `signOut` يمسحها ويمسح `api_cache` للبيانات الخاصة (عند بناء طبقة API).
+- قاعدة: `data/auth` لا يستورده إلا `main.dart` وطبقة `data/youtube_api`؛ المستخرج وطبقة الصوت لا يعرفان auth (اختبار معماري).
 - ممنوع: تسجيل الرموز في السجلات، أو وضعها في shared_preferences/drift/ملفات، أو إرسالها لغير `googleapis.com`.
 - `android:allowBackup="false"` لمنع نسخ البيانات للسحابة.
 
@@ -87,7 +88,7 @@ apps/bgtube/
 - الإعدادات (shared_preferences): اللغة، السرعة، آخر مؤقت.
 
 ## الأمان والخصوصية
-- لا مفاتيح في الكود ولا في git. `.env` (مستثنى في .gitignore الجذري) يحوي: `GOOGLE_OAUTH_CLIENT_ID` (عميل الويب/الخادم المطلوب لـgoogle_sign_in إن لزم) و`YOUTUBE_API_KEY` للطلبات العامة إن اخترنا ذلك. يُنشأ `.env.example` بأسماء فقط. تنبيه صريح: ما يُحزَّم في APK يمكن استخراجه؛ لذلك مفتاح API يُقيَّد في Google Cloud باسم الحزمة وبصمة SHA-1، ولا نعدّه سرّاً قوياً. بدون أي مفتاح يعمل التطبيق بوضع تجريبي (لصق رابط وتشغيل فقط).
+- لا مفاتيح في الكود ولا في git. `.env` (مستثنى في .gitignore الجذري) يحوي عند الحاجة فقط (لا شيء الآن، D22): `GOOGLE_OAUTH_CLIENT_ID` (عميل ويب، غير موجود وغير مطلوب لمسار التفويض) و`YOUTUBE_API_KEY` للطلبات العامة إن اخترنا ذلك. يُنشأ `.env.example` بأسماء فقط. تنبيه صريح: ما يُحزَّم في APK يمكن استخراجه؛ لذلك مفتاح API يُقيَّد في Google Cloud باسم الحزمة وبصمة SHA-1، ولا نعدّه سرّاً قوياً. بدون أي مفتاح يعمل التطبيق بوضع تجريبي (لصق رابط وتشغيل فقط).
 - OAuth client من نوع Android مربوط باسم الحزمة وبصمة التوقيع (لا يحوي سرّاً).
 - أقل بيانات: لا Firebase ولا تحليلات ولا تقارير أعطال خارجية ولا إعلانات. لا شيء يغادر الجهاز إلا طلبات googleapis.com ومحتوى يوتيوب.
 - كل HTTPS؛ لا `usesCleartextTraffic`.
