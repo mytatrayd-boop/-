@@ -5,8 +5,6 @@ name: Rased — Nightly Spike Scan
 # ويرجع lab/results/spikes-today.json للفرع — التطبيق يقرأه من raw.githubusercontent بدون أي مفتاح.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '30 21 * * 1-5'
 
 permissions:
   contents: write

@@ -6,8 +6,6 @@ name: Rased — Trend + Spike Lab
 # الإيداع في وظيفة منفصلة بمجموعة تزامن مشتركة مع rased-spikes.yml حتى لا يتصارع الاثنان على الدفع.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 6 * * 6' # كل سبت 06:00 UTC
   push:
     paths: ['lab/**', '!lab/research/**', 'server/trend.js', 'server/spike.js', 'server/yahoo.js', '.github/workflows/rased-lab.yml']
 

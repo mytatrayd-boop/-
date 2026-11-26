@@ -5,8 +5,6 @@ name: Rased — Strategy Research
 # الكاش lab/data/research يُحفظ دائمًا (حتى لو فشل/انتهى الوقت) فالتنزيل الأول الطويل يُستأنف في التشغيل التالي.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '13 4 * * 0' # كل أحد 04:13 UTC
   push:
     paths: ['lab/research/**', '.github/workflows/rased-research.yml']
 
