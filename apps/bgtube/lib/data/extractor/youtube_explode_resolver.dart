@@ -44,6 +44,8 @@ class YoutubeExplodeResolver implements AudioSourceResolver, AlternateSourceReso
     List<List<YoutubeApiClient>?>? strategies,
     this.retryWindow = const Duration(minutes: 2),
     this.metadataGrace = const Duration(seconds: 3),
+    this.alternateTimeout = const Duration(seconds: 18),
+    this.alternateClientTimeout = const Duration(seconds: 8),
     DateTime Function()? now,
   })  : _yt = client ?? YoutubeExplode(),
         _strategies = strategies ?? defaultClientStrategies,
@@ -56,6 +58,10 @@ class YoutubeExplodeResolver implements AudioSourceResolver, AlternateSourceReso
   /// أقصى انتظار للبيانات الوصفية بعد جاهزية الصوت؛ بعده يبدأ التشغيل بالمعرّف
   /// عنواناً (صفحة المشاهدة قد تتعثر بإعادة المحاولات عند تقييد المعدّل).
   final Duration metadataGrace;
+
+  /// سقف إجمالي لـ[resolveAlternate] (وإلا جمّد المسح تشغيلاً فاشلاً) وسقف لكل عميل.
+  final Duration alternateTimeout;
+  final Duration alternateClientTimeout;
   final List<List<YoutubeApiClient>?> _strategies;
   final DateTime Function() _now;
 
@@ -99,12 +105,16 @@ class YoutubeExplodeResolver implements AudioSourceResolver, AlternateSourceReso
     String? itag,
   }) async {
     final skip = {...excludedClients};
+    final clock = Stopwatch()..start();
     for (final strategy in _strategies) {
+      final remaining = alternateTimeout - clock.elapsed;
+      if (remaining <= Duration.zero) return null;
       final label = clientLabel(strategy);
       if (skip.contains(label)) continue;
       skip.add(label);
       try {
-        final audio = await _resolve(videoId, strategy, metadata: false, fallback: false, itag: itag).timeout(timeout);
+        final audio = await _resolve(videoId, strategy, metadata: false, fallback: false, itag: itag)
+            .timeout(remaining < alternateClientTimeout ? remaining : alternateClientTimeout);
         final actual = audio.url.queryParameters['c'] ?? label;
         // المكتبة قد ترجع لعميل آخر (tv عند فراغ الافتراضي): لا نكرر مستبعَداً.
         if (excludedClients.contains(actual)) continue;

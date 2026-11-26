@@ -7,7 +7,7 @@ import 'package:bgtube/audio/local_stream_proxy.dart';
 import 'package:bgtube/audio/range_fetcher.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'chunked_origin_test.dart' show byteAt, fetchAndVerify;
+import 'chunked_origin_test.dart' show byteAt, endOf, fetchAndVerify, startOf;
 
 const mib = 1024 * 1024;
 
@@ -240,20 +240,124 @@ void main() {
       expect(s.lastError, isA<OriginStatusException>());
     });
 
-    test('a different total length from the new client fails explicitly (never mixes two files)', () async {
+    test('a client with a different total length is skipped: the next client (within the cap) finishes with intact bytes', () async {
       await setUp0({
         'A': ClientBehavior(cap: mib, size: 5 * mib),
         'B': ClientBehavior(size: 5 * mib + 123),
+        'C': ClientBehavior(size: 5 * mib),
       });
-      final f = failoverOver(['A', 'B']);
+      final f = failoverOver(['A', 'B', 'C']);
       final s = proxy.register(origin.urlFor('A'), const {}, failover: f.cb);
       expect((await fetchAndVerify(s.localUri, 'bytes=0-99', 0)).status, 206); // الطول الكلي 5MiB معروف
+      final r = await fetchAndVerify(s.localUri, 'bytes=${2 * mib}-', 2 * mib);
+      expect(r.status, 206);
+      expect(r.intact, isTrue);
+      expect(r.length, 3 * mib);
+      expect(s.client, 'C');
+      expect(s.switches, 2);
+      expect(f.calls, [
+        {'A'},
+        {'A', 'B'}
+      ]);
+    });
+
+    test('every alternative has another length: explicit 502 (never mixes two files)', () async {
+      await setUp0({
+        'A': ClientBehavior(cap: mib, size: 5 * mib),
+        'B': ClientBehavior(size: 5 * mib + 123),
+        'C': ClientBehavior(size: 5 * mib + 456),
+      });
+      final f = failoverOver(['A', 'B', 'C']);
+      final s = proxy.register(origin.urlFor('A'), const {}, failover: f.cb);
+      await fetchAndVerify(s.localUri, 'bytes=0-99', 0);
       final r = await fetchAndVerify(s.localUri, 'bytes=${2 * mib}-${2 * mib + 99}', 2 * mib);
       expect(r.status, 502);
       expect(s.lastError, isA<OriginLengthMismatchException>());
-      expect(s.lastFailure!.client, 'B');
       expect(origin.open, 0);
       await waitFor(() => s.activeCount == 0);
+    });
+
+    test('once the callback returned null it is never called again for this source', () async {
+      await setUp0({'A': ClientBehavior(cap: mib)});
+      final f = failoverOver(['A']);
+      final s = proxy.register(origin.urlFor('A'), const {}, failover: f.cb);
+      for (var i = 0; i < 4; i++) {
+        final r = await fetchAndVerify(s.localUri, 'bytes=${(2 + i) * mib}-${(2 + i) * mib + 9}', (2 + i) * mib);
+        expect(r.status, 403);
+      }
+      expect(f.calls.length, 1);
+    });
+
+    test('a throwing callback is not called again either', () async {
+      await setUp0({'A': ClientBehavior(cap: mib)});
+      var n = 0;
+      final s = proxy.register(origin.urlFor('A'), const {}, failover: (_) async {
+        n++;
+        throw StateError('boom');
+      });
+      for (var i = 0; i < 3; i++) {
+        await fetchAndVerify(s.localUri, 'bytes=${2 * mib}-${2 * mib + 9}', 2 * mib);
+      }
+      expect(n, 1);
+    });
+
+    test('a 416 or 2xx never records a failure', () async {
+      await setUp0({'A': ClientBehavior()});
+      final s = proxy.register(origin.urlFor('A'), const {});
+      await fetchAndVerify(s.localUri, 'bytes=0-99', 0);
+      expect(s.lastFailure, isNull);
+      final r = await fetchAndVerify(s.localUri, 'bytes=${6 * mib}-', 0);
+      expect(r.status, 416);
+      expect(s.lastFailure, isNull);
+    });
+
+    test('a late 403 from the replaced client is not blamed on the new one (its chunk size stays 8MiB)', () async {
+      final heldA = Completer<void>();
+      final bRanges = <String>[];
+      var aCalls = 0;
+      RangeFetchResult res(int status, int start, int end) => RangeFetchResult(
+            statusCode: status,
+            offset: start,
+            contentLength: status == 206 ? 100 : 0,
+            sourceLength: 5 * mib,
+            contentType: 'audio/mp4',
+            body: Stream.value(List<int>.filled(100, 1)),
+            cancel: () {},
+          );
+      Future<RangeFetchResult> fake(Uri url, Map<String, String> h, {int? start, int? end}) async {
+        final c = url.queryParameters['c'];
+        if (c == 'B') {
+          bRanges.add(originRangeHeader(start!, end));
+          return res(206, start, end!);
+        }
+        aCalls++;
+        if (aCalls == 1) await heldA.future; // طلب قديم يتأخر رفضه
+        return res(403, start!, end!);
+      }
+
+      proxy = LocalStreamProxy(fetch: fake);
+      origin = MultiClientOrigin({});
+      await origin.start();
+      await proxy.start();
+      final f = Completer<void>();
+      final s = proxy.register(Uri.parse('http://x/v?c=A'), const {}, failover: (tried) async {
+        f.complete();
+        return (url: Uri.parse('http://x/v?c=B'), headers: const <String, String>{}, client: 'B');
+      });
+      final r1 = fetchAndVerify(s.localUri, 'bytes=${2 * mib}-', 2 * mib).then<int>((r) => r.status, onError: (_) => -1);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final r2 = fetchAndVerify(s.localUri, 'bytes=${2 * mib}-', 2 * mib).then<int>((r) => r.status, onError: (_) => -1);
+      await f.future; // التبديل جرى بطلب 2
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      heldA.complete(); // الآن يصل 403 القديم
+      await Future.wait([r1, r2]);
+      expect(s.client, 'B');
+      expect(s.chunkBytes, originChunkBytes);
+      expect(bRanges, isNotEmpty);
+      for (final h in bRanges) {
+        // لا 1MiB: لم يُخفَّض حجم قطعة B.
+        expect(endOf(h) - startOf(h) + 1, isNot(originRetryChunkBytes), reason: h);
+      }
     });
 
     test('a failing callback is treated as no alternative', () async {

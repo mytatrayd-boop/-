@@ -243,6 +243,10 @@ class ProxiedStream {
   int? _knownTotal;
   Future<bool>? _switching;
 
+  /// لا بديل بعد الآن (أعاد callback null أو رمى): لا استدعاء آخر له لهذا المصدر،
+  /// فلا يتكرر مسح العملاء مع كل محاولة من ExoPlayer.
+  bool _noAlternates = false;
+
   /// رابط/ترويسات العميل الحالي (يتغيران بعد التبديل).
   Uri get url => _url;
   Map<String, String> get headers => _headers;
@@ -317,42 +321,48 @@ class ProxiedStream {
   /// حتى [maxClientSwitches] تبديلات، ثم يُمرَّر الـ403 للمشغّل. يرمي
   /// [OriginLengthMismatchException] إن اختلف الطول الكلي بعد التبديل.
   Future<RangeFetchResult> _fetchChunk(int pos, int? limitEx) async {
-    RangeFetchResult r;
     try {
-      r = await _originFetch(pos, limitEx);
-      while (r.statusCode == HttpStatus.forbidden) {
+      while (true) {
+        // الجيل قبل الطلب لا بعده: 403 متأخر من عميل قديم بعد اكتمال التبديل
+        // يجب ألا يُنسب للجديد (فيُخفَّض حجم قطعته).
         final gen = _gen;
-        r.cancel();
-        if (!_downgraded) {
-          _downgraded = true;
-          _chunkBytes = originRetryChunkBytes;
-          r = await _originFetch(pos, limitEx);
+        final r = await _originFetch(pos, limitEx);
+        if (r.statusCode == HttpStatus.forbidden) {
+          r.cancel();
+          if (gen != _gen) continue; // رفضٌ من العميل المستبدَل: أعد بالجديد
+          if (!_downgraded) {
+            _downgraded = true;
+            _chunkBytes = originRetryChunkBytes;
+            continue;
+          }
+          _recordFailure(pos, HttpStatus.forbidden);
+          if (!await _failoverFrom(gen) || _closed) return r; // 403 يصل للمشغّل
           continue;
         }
-        _recordFailure(pos, HttpStatus.forbidden);
-        if (!await _failoverFrom(gen) || _closed) return r; // 403 يصل للمشغّل
-        r = await _originFetch(pos, limitEx);
+        if (!r.ok) {
+          // 416 (بعد النهاية) ليس فشلاً؛ والبقية غير 2xx تُسجَّل.
+          if (r.statusCode != HttpStatus.requestedRangeNotSatisfiable) _recordFailure(pos, r.statusCode);
+          return r;
+        }
+        final total = r.sourceLength;
+        if (total != null) {
+          final known = _knownTotal;
+          if (known == null) {
+            _knownTotal = total;
+          } else if (known != total && _switches > 0) {
+            // ملف مختلف: لا نخلط بايتاته. نجرّب عميلاً آخر ضمن الحد، وإلا نفشل صراحةً.
+            r.cancel();
+            if (gen != _gen) continue;
+            if (!await _failoverFrom(gen) || _closed) throw const OriginLengthMismatchException();
+            continue;
+          }
+        }
+        return r;
       }
     } on RangeFetchNetworkException {
       _recordFailure(pos, 0);
       rethrow;
     }
-    if (!r.ok) {
-      _recordFailure(pos, r.statusCode);
-      return r;
-    }
-    final total = r.sourceLength;
-    if (total != null) {
-      final known = _knownTotal;
-      if (known == null) {
-        _knownTotal = total;
-      } else if (known != total && _switches > 0) {
-        r.cancel();
-        _recordFailure(pos, r.statusCode);
-        throw const OriginLengthMismatchException();
-      }
-    }
-    return r;
   }
 
   /// يبدّل العميل بعد 403 رُفض فيه الجيل [gen]. true = جرى تبديل (أو بدّله طلب
@@ -364,13 +374,14 @@ class ProxiedStream {
 
   Future<bool> _switchClient() async {
     final cb = _failover;
-    if (cb == null || _switches >= maxClientSwitches || _closed) return false;
+    if (cb == null || _noAlternates || _switches >= maxClientSwitches || _closed) return false;
     AlternateOrigin? alt;
     try {
       alt = await cb(Set.of(_tried));
     } catch (_) {
       alt = null;
     }
+    if (alt == null) _noAlternates = true;
     if (alt == null || _closed) return false;
     _switches++;
     _gen++;

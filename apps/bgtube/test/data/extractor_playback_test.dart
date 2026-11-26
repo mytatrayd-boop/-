@@ -302,6 +302,24 @@ void main() {
         expect(calls.length, 1);
       });
 
+      test('overall cap: slow clients do not hold the search beyond alternateTimeout (null)', () async {
+        when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
+            .thenAnswer((inv) {
+          calls.add(inv.namedArguments[#ytClients] as List<YoutubeApiClient>?);
+          return Completer<StreamManifest>().future; // لا يكتمل أبداً
+        });
+        final r = YoutubeExplodeResolver(
+          client: yt,
+          now: () => now,
+          alternateTimeout: const Duration(milliseconds: 150),
+          alternateClientTimeout: const Duration(milliseconds: 60),
+        );
+        final sw = Stopwatch()..start();
+        expect(await r.resolveAlternate('dQw4w9WgXcQ', excludedClients: {'ANDROID_VR'}, itag: '140'), isNull);
+        expect(sw.elapsedMilliseconds, lessThan(1000));
+        expect(calls.length, lessThanOrEqualTo(3));
+      });
+
       test('does not disturb the rotation of resolve()', () async {
         manifestByClient();
         final r = resolver();
