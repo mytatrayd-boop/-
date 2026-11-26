@@ -69,4 +69,4 @@ class JustAudioEngine implements AudioEngine {
 /// مصدر يمر دائماً عبر الوكيل المحلي: just_audio يستعمل الوكيل فقط إن كانت
 /// headers غير null، فنمرّر خريطة (ولو فارغة) دائماً لروابط http(s).
 UriAudioSource proxiedSource(Uri url, Map<String, String> headers) =>
-    AudioSource.uri(url, headers: Map<String, String>.of(headers)) as UriAudioSource;
+    AudioSource.uri(url, headers: Map<String, String>.of(headers));
