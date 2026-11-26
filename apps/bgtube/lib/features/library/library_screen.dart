@@ -95,24 +95,26 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           preferredSize: const Size.fromHeight(56),
           child: SizedBox(
             height: 56,
-            child: ListView(
+            child: SingleChildScrollView(
               key: const Key('libraryChips'),
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 8),
-              children: [
-                for (final s in LibrarySection.values)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: ChoiceChip(
-                      key: Key('libraryChip_${s.name}'),
-                      label: Text(_label(l, s)),
-                      selected: _section == s,
-                      shape: const StadiumBorder(),
-                      showCheckmark: false,
-                      onSelected: (_) => setState(() => _section = s),
+              child: Row(
+                children: [
+                  for (final s in LibrarySection.values)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 8),
+                      child: ChoiceChip(
+                        key: Key('libraryChip_${s.name}'),
+                        label: Text(_label(l, s)),
+                        selected: _section == s,
+                        shape: const StadiumBorder(),
+                        showCheckmark: false,
+                        onSelected: (_) => setState(() => _section = s),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

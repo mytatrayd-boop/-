@@ -30,13 +30,13 @@ void main() {
 
   test('stops at the limit (queue room) without fetching further pages', () async {
     final log = <String?>[];
-    final r = await fetchAllPages(pages(5000), limit: 501, log: log);
+    final r = await fetchAllPages(pages(5000, log: log), limit: 501);
     expect(r.items, hasLength(501));
     expect(log, hasLength(11));
   });
 
   test('a failure in the middle keeps what was fetched and the page to resume from', () async {
-    final r = await fetchAllPages(pages(200), limit: 500, failAt: 2);
+    final r = await fetchAllPages(pages(200, failAt: 2), limit: 500);
     expect(r.items, hasLength(100));
     expect(r.failure?.kind, FailureKind.network);
     expect(r.resumeToken, '2');

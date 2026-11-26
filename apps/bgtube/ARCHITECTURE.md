@@ -56,6 +56,7 @@ apps/bgtube/
 - `AuthService`: `signIn`, `signOut`, `getAccessToken` (يُجدَّد عبر Play Services)، حالة `Stream`. مشروع OAuth في In production بدون توثيق (D7) فلا انتهاء أسبوعي؛ تجديد صامت عبر Play Services. السحب أو الإبطال → `AuthExpired` → رسالة "سجّل الدخول من جديد".
 - `YouTubeApi` (منفذ في domain) ينفّذه `YouTubeDataApi` في `data/youtube_api` فوق `http.Client` محقون؛ يطلب الرمز من `AuthService` لكل طلب ويضعه في ترويسة Authorization فقط (لا مفتاح API)، و401 يُبطل الرمز ويعيد مرة ثم `AuthExpired`. كل الطلبات من التطبيق مباشرة (لا خادم وسيط). التفاصيل والتكلفة في D29.
 - الحصة وعاءان منذ 1 يونيو 2026 (توثيق search.list وسجل المراجعات، D29): `search.list` في وعاء «Search Queries» مستقل بحد 100 طلب يومياً وتكلفة 1 لكل طلب (كل صفحة طلب)؛ وباقي الطرق في الوعاء العام (10,000/يوم): القراءات (`playlists`, `playlistItems`, `subscriptions`, `videos.list?myRating=like`, `videos`) = 1؛ الكتابة (`videos.rate`, `playlistItems.insert/delete`) ≈ 50.
+  - المكتبة (D30): `playlists.list?mine=true`، و`playlistItems` لعناصر القائمة، والإعجابات من `relatedPlaylists.likes` ثم `videos.list?myRating=like` عند عدم إتاحتها، و`subscriptions.list?mine=true`؛ كلها وحدة لكل 50.
   - فيديوهات قناة: عبر قائمة الرفع (`playlistItems`، 1 وحدة من الوعاء العام) بدل البحث (وعاء الـ100 طلب).
   - تفاصيل المدة تُجلب دفعة واحدة `videos.list` (حتى 50 معرّفاً).
   - `fields=` لأقل الحقول، و`maxResults` معتدل.
@@ -87,13 +88,13 @@ apps/bgtube/
 - بطارية: تنبيه إرشادي لاستثناء التطبيق من تحسين البطارية.
 
 ## نموذج البيانات المحلي (drift)
-- `favorites(videoId PK, title, channel, thumbUrl, durationSec, addedAt)`
-- `history(id PK, videoId, title, channel, thumbUrl, playedAt)` — حد أقصى 500 سجل.
+- `favorites(videoId PK, title?, author?, durationMs?, thumbUrl?, addedAt)` (v4، D30).
+- `history(id PK auto, videoId UNIQUE, title?, author?, durationMs?, thumbUrl?, playedAt)` — صف لكل مقطع، حد أقصى 500 (v4، D30). يملؤه المعالج عبر منفذ `PlayHistoryRecorder` فقط. المفضلة والسجل لا يُمسحان عند الخروج (محليان، D5/D30).
 - `positions(videoId PK, positionMs, durationMs, updatedAt)`
 - `api_cache(key PK, json, fetchedAt, ttlSec, private)` و`quota(dayPt, bucket, units, PK(dayPt, bucket))` (v3، D29). الكاش كله يُمسح عند الخروج وعند الإقلاع دون جلسة وعند الدخول بعد انتهاء الجلسة.
 - `queue_entries(key PK, ord, videoId, title?, author?, durationMs?, thumbUrl?, failed)`، و`queue_state(id=0 PK, currentKey?, updatedAt)`. موضع الحالي مصدره `positions` وحده.
 - `local_playlists(id PK auto, name 1..100, createdAt, updatedAt)`، و`local_playlist_items(playlistId FK cascade, ord, videoId, title?, author?, durationMs?, thumbUrl?, PK(playlistId, ord))`. محلية فقط ولا تُرسل إلى يوتيوب.
-- الإصدارات: v1 = `positions`، وv2 تضيف جداول الطابور والقوائم المحلية (`onUpgrade from<2`، و`PRAGMA foreign_keys=ON` في beforeOpen). المخططات تُصدَّر إلى `drift_schemas/` مع اختبارات ترحيل مولَّدة.
+- الإصدارات: v1 = `positions`، وv2 تضيف جداول الطابور والقوائم المحلية (`onUpgrade from<2`، و`PRAGMA foreign_keys=ON` في beforeOpen)، وv3 الكاش والحصة (D29)، وv4 المفضلة والسجل (D30). المخططات تُصدَّر إلى `drift_schemas/` مع اختبارات ترحيل مولَّدة.
 - الإعدادات (shared_preferences): اللغة، السرعة، آخر مؤقت.
 
 ## الأمان والخصوصية
