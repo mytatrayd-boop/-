@@ -10,10 +10,22 @@
   "speed": "سرعة التشغيل",
   "sleepTimer": "مؤقت النوم",
   "sleepMinutes": "{minutes} دقيقة",
-  "@sleepMinutes": {"placeholders": {"minutes": {"type": "String"}}},
+  "@sleepMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
   "sleepCancel": "إلغاء المؤقت",
   "speedValue": "{value}×",
-  "@speedValue": {"placeholders": {"value": {"type": "String"}}},
+  "@speedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "retry": "إعادة المحاولة",
   "resolving": "جارٍ التحضير…",
   "clipboardEmpty": "لا يوجد رابط يوتيوب في الحافظة",
@@ -30,6 +42,32 @@
   "languageEnglish": "English",
   "settingsAbout": "حول",
   "settingsVersion": "الإصدار {version}",
-  "@settingsVersion": {"placeholders": {"version": {"type": "String"}}},
-  "settingsPersonalUse": "تطبيق للاستخدام الشخصي فقط، وليس للنشر."
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPersonalUse": "تطبيق للاستخدام الشخصي فقط، وليس للنشر.",
+  "accountTitle": "الحساب",
+  "accountSignedOut": "غير مسجّل الدخول",
+  "accountSignedIn": "متصل بحساب جوجل",
+  "signIn": "تسجيل الدخول",
+  "signOut": "تسجيل الخروج",
+  "signOutConfirmTitle": "تسجيل الخروج؟",
+  "signOutConfirmBody": "ستُمسح بيانات الدخول من هذا الجهاز.",
+  "cancel": "إلغاء",
+  "loginExplain": "سجّل الدخول لعرض قوائمك واشتراكاتك وإعجاباتك",
+  "loginContinue": "المتابعة بحساب جوجل",
+  "loginNotNow": "ليس الآن",
+  "loginNoPassword": "التطبيق لا يرى كلمة مرورك",
+  "sessionExpired": "انتهت جلستك، سجّل الدخول من جديد",
+  "errorNotSignedIn": "سجّل الدخول لعرض حسابك",
+  "errorSignIn": "تعذّر تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى",
+  "errorSignInUnavailable": "الدخول غير مفعّل بعد في هذه النسخة",
+  "errorSignOut": "تعذّر تسجيل الخروج. حاول مرة أخرى",
+  "riskTitle": "قبل أول دخول",
+  "riskBody": "هذا التطبيق يستخرج صوت يوتيوب بطريقة غير رسمية تخالف شروط يوتيوب. قد يؤدي ذلك إلى حجب شبكتك أو تقييد حسابك أو مشروع Google Cloud. الاستخراج منفصل عن حسابك ولا يتلقى أي رمز دخول، لكن الخطر يبقى قائماً.\n\nاستخدمه شخصياً فقط، ويُنصح بحساب لا تعتمد عليه في عمل حرج.\n\nستعرض جوجل تحذير «تطبيق غير موثّق»: اختر «متقدم» ثم «المتابعة».",
+  "riskAccept": "أقرّ وأتابع"
 }

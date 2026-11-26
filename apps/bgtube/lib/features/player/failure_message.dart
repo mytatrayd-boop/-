@@ -8,4 +8,9 @@ String failureMessage(AppLocalizations l, AppFailure f) => switch (f.kind) {
       FailureKind.network => l.errorNetwork,
       FailureKind.rateLimited => l.errorRateLimited,
       FailureKind.playbackFailed => l.errorPlayback,
+      FailureKind.authExpired => l.sessionExpired,
+      FailureKind.notSignedIn => l.errorNotSignedIn,
+      FailureKind.signInFailed => l.errorSignIn,
+      FailureKind.signInUnavailable => l.errorSignInUnavailable,
+      FailureKind.signOutFailed => l.errorSignOut,
     };

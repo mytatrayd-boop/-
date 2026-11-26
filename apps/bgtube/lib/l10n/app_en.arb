@@ -10,10 +10,22 @@
   "speed": "Playback speed",
   "sleepTimer": "Sleep timer",
   "sleepMinutes": "{minutes} minutes",
-  "@sleepMinutes": {"placeholders": {"minutes": {"type": "String"}}},
+  "@sleepMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
   "sleepCancel": "Cancel timer",
   "speedValue": "{value}×",
-  "@speedValue": {"placeholders": {"value": {"type": "String"}}},
+  "@speedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "retry": "Retry",
   "resolving": "Preparing…",
   "clipboardEmpty": "No YouTube link in the clipboard",
@@ -30,6 +42,32 @@
   "languageEnglish": "English",
   "settingsAbout": "About",
   "settingsVersion": "Version {version}",
-  "@settingsVersion": {"placeholders": {"version": {"type": "String"}}},
-  "settingsPersonalUse": "For personal use only; not for distribution."
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPersonalUse": "For personal use only; not for distribution.",
+  "accountTitle": "Account",
+  "accountSignedOut": "Not signed in",
+  "accountSignedIn": "Connected to a Google account",
+  "signIn": "Sign in",
+  "signOut": "Sign out",
+  "signOutConfirmTitle": "Sign out?",
+  "signOutConfirmBody": "Your sign-in data will be removed from this device.",
+  "cancel": "Cancel",
+  "loginExplain": "Sign in to see your playlists, subscriptions and likes",
+  "loginContinue": "Continue with Google",
+  "loginNotNow": "Not now",
+  "loginNoPassword": "The app never sees your password",
+  "sessionExpired": "Your session has ended. Please sign in again",
+  "errorNotSignedIn": "Sign in to see your account",
+  "errorSignIn": "Couldn't sign in. Check your connection and try again",
+  "errorSignInUnavailable": "Sign-in isn't enabled in this build yet",
+  "errorSignOut": "Couldn't sign out. Please try again",
+  "riskTitle": "Before your first sign-in",
+  "riskBody": "This app extracts YouTube audio in an unofficial way that breaks YouTube's terms. This may get your network blocked or your account or Google Cloud project restricted. Extraction is kept separate from your account and never receives a sign-in token, but the risk remains.\n\nUse it personally only, ideally with an account you don't rely on for critical work.\n\nGoogle will show an \"unverified app\" warning: choose \"Advanced\", then \"Continue\".",
+  "riskAccept": "I understand, continue"
 }
