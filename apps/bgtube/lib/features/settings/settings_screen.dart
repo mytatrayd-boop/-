@@ -6,13 +6,14 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../domain/ports/auth_service.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../browse/api_providers.dart';
 import '../login/auth_status_provider.dart';
 import '../login/login_screen.dart';
 import '../player/failure_message.dart';
 import 'locale_controller.dart';
 
-/// إعدادات بسيطة بما هو متاح الآن: الحساب واللغة وحول. (الحصة وتحسين البطارية
-/// تأتي مع ميزاتها.)
+/// إعدادات بسيطة بما هو متاح الآن: الحساب واللغة وحصة البحث وحول. (تحسين
+/// البطارية يأتي مع ميزته.)
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -31,6 +32,8 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 8),
           children: [
             const _AccountSection(),
+            const Divider(),
+            const _QuotaSection(),
             const Divider(),
             ConstrainedBox(
               constraints: const BoxConstraints(minHeight: rowHeight),
@@ -131,8 +134,10 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final status = ref.watch(authStatusProvider);
+    // اسم القناة إن توفّر (قرار D23/D29)، وإلا «متصل بحساب جوجل».
+    final channel = status == AuthStatus.signedIn ? ref.watch(myChannelTitleProvider).value : null;
     final (subtitle, color) = switch (status) {
-      AuthStatus.signedIn => (l.accountSignedIn, AppColors.success),
+      AuthStatus.signedIn => (channel == null ? l.accountSignedIn : l.accountSignedInAs(channel), AppColors.success),
       AuthStatus.signedOut => (l.accountSignedOut, AppColors.textSecondary),
       AuthStatus.expired => (l.sessionExpired, AppColors.warning),
     };
@@ -176,6 +181,43 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// حصة البحث: تقدير الاستخدام اليومي، وسطر «انتهت حصة البحث اليوم» عند النفاد.
+class _QuotaSection extends ConsumerWidget {
+  const _QuotaSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final quota = ref.watch(quotaTodayProvider);
+    const secondary = TextStyle(color: AppColors.textSecondary);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SettingsScreen.rowHeight),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.settingsQuota, style: theme.textTheme.titleMedium),
+            ...switch (quota) {
+              AsyncData(:final value) => [
+                  Text(
+                    value.exhausted ? l.errorQuotaExceeded : l.quotaSearchesLeft(value.searchesLeft),
+                    key: const Key('quotaStatus'),
+                    style: TextStyle(color: value.exhausted ? AppColors.warning : AppColors.textPrimary),
+                  ),
+                  Text(l.quotaUnits(value.used, value.limit), style: secondary),
+                ],
+              AsyncError() => [Text(l.quotaUnavailable, key: const Key('quotaStatus'), style: secondary)],
+              _ => const <Widget>[],
+            },
           ],
         ),
       ),

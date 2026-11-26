@@ -7,7 +7,7 @@
 IDEA.md، ANSWERS.md، SPEC.md (المطلوب)، ARCHITECTURE.md (التصميم)، DECISIONS.md (القرارات والمخاطر).
 
 ## التقنية
-Flutter (أندرويد فقط الآن). بلا Firebase؛ تخزين محلي (drift). التشغيل: just_audio + audio_service + audio_session. الحالة: Riverpod. التنقل: go_router. الدخول: google_sign_in. API: YouTube Data API v3 عبر dio.
+Flutter (أندرويد فقط الآن). بلا Firebase؛ تخزين محلي (drift). التشغيل: just_audio + audio_service + audio_session. الحالة: Riverpod. التنقل: go_router. الدخول: google_sign_in. API: YouTube Data API v3 عبر حزمة http (D29).
 
 ## الأوامر (بعد إنشاء المشروع بـ `flutter create`)
 - تشغيل: `flutter run` (جهاز أندرويد حقيقي مفضّل للاختبار الخلفي)

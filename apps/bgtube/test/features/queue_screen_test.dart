@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bgtube/app.dart';
+import 'package:bgtube/features/player/player_screen.dart';
 import 'package:bgtube/core/providers.dart';
 import 'package:bgtube/domain/models/local_playlist.dart';
 import 'package:bgtube/domain/models/now_playing.dart';
@@ -93,13 +94,15 @@ VideoRef v(int i, {Duration? d}) => VideoRef(
 
 String formatCountFor(String locale, int n) => NumberFormat.decimalPattern(locale).format(n);
 
-Future<void> pumpApp(WidgetTester t, FakeController c, FakePlaylists p, {Locale locale = const Locale('ar')}) async {
+/// [shell]: الهيكل الكامل (الشريط السفلي والرئيسية)، وإلا المشغّل الكامل وحده.
+Future<void> pumpApp(WidgetTester t, FakeController c, FakePlaylists p,
+    {Locale locale = const Locale('ar'), bool shell = false}) async {
   await t.pumpWidget(ProviderScope(
     overrides: [
       playbackControllerProvider.overrideWithValue(c),
       localPlaylistRepositoryProvider.overrideWithValue(p),
     ],
-    child: BgtubeApp(locale: locale),
+    child: BgtubeApp(locale: locale, home: shell ? null : const PlayerScreen()),
   ));
   await t.pumpAndSettle();
 }
@@ -150,7 +153,7 @@ void main() {
 
     testWidgets('a skipped failure shows a short message', (t) async {
       playing(c, 2);
-      await pumpApp(t, c, p);
+      await pumpApp(t, c, p, shell: true);
       c.skipped.add(v(7));
       await t.pump();
       await t.pump(const Duration(milliseconds: 300));
@@ -169,8 +172,8 @@ void main() {
 
     testWidgets('empty queue: plays directly, no sheet', (t) async {
       clipboard(t, 'https://youtu.be/dQw4w9WgXcQ');
-      await pumpApp(t, c, p);
-      await t.tap(find.text('لصق وتشغيل'));
+      await pumpApp(t, c, p, shell: true);
+      await t.tap(find.byKey(const Key('pasteButton')));
       await t.pumpAndSettle();
       expect(find.byKey(const Key('placement_playNow')), findsNothing);
       expect(c.played, ['dQw4w9WgXcQ']);
@@ -179,8 +182,8 @@ void main() {
     testWidgets('queue not empty: three choices; play next shows a confirmation with undo', (t) async {
       clipboard(t, 'https://youtu.be/dQw4w9WgXcQ');
       playing(c, 2);
-      await pumpApp(t, c, p);
-      await t.tap(find.text('لصق وتشغيل'));
+      await pumpApp(t, c, p, shell: true);
+      await t.tap(find.byKey(const Key('pasteButton')));
       await t.pumpAndSettle();
       expect(find.text('شغّل الآن'), findsOneWidget);
       expect(find.text('شغّل التالي'), findsOneWidget);
@@ -198,8 +201,8 @@ void main() {
     testWidgets('add to end and play now choices', (t) async {
       clipboard(t, 'https://youtu.be/dQw4w9WgXcQ');
       playing(c, 2);
-      await pumpApp(t, c, p);
-      await t.tap(find.text('لصق وتشغيل'));
+      await pumpApp(t, c, p, shell: true);
+      await t.tap(find.byKey(const Key('pasteButton')));
       await t.pumpAndSettle();
       await t.tap(find.byKey(const Key('placement_addToEnd')));
       await t.pumpAndSettle();
@@ -207,7 +210,7 @@ void main() {
       expect(find.text('أُضيف إلى نهاية الطابور'), findsOneWidget);
       await t.pump(const Duration(seconds: 5)); // تختفي الرسالة (٤ ث)
       await t.pumpAndSettle();
-      await t.tap(find.text('لصق وتشغيل'));
+      await t.tap(find.byKey(const Key('pasteButton')));
       await t.pumpAndSettle();
       await t.tap(find.byKey(const Key('placement_playNow')));
       await t.pumpAndSettle();
@@ -385,12 +388,12 @@ void main() {
 
   group('local playlists', () {
     Future<void> openPlaylists(WidgetTester t) async {
-      await t.tap(find.byKey(const Key('openLocalPlaylists')));
+      await t.tap(find.byKey(const Key('navLibrary')));
       await t.pumpAndSettle();
     }
 
-    testWidgets('reachable from the player bar; empty state; create a new playlist', (t) async {
-      await pumpApp(t, c, p);
+    testWidgets('reachable from the library tab; empty state; create a new playlist', (t) async {
+      await pumpApp(t, c, p, shell: true);
       await openPlaylists(t);
       expect(find.text('قوائمي المحلية'), findsOneWidget);
       expect(find.text('لم تنشئ قوائم بعد. احفظ الطابور أو أنشئ قائمة'), findsOneWidget);
@@ -408,7 +411,7 @@ void main() {
     testWidgets('row menu: play next / add to end go through enqueue; rename; delete with confirm', (t) async {
       await p.create('قائمتي', [v(5), v(6)]);
       playing(c, 1);
-      await pumpApp(t, c, p);
+      await pumpApp(t, c, p, shell: true);
       await openPlaylists(t);
       expect(find.textContaining('مقطعان'), findsOneWidget);
       final id = p.names.keys.single;
@@ -442,7 +445,7 @@ void main() {
 
     testWidgets('storage error shows a retry card', (t) async {
       p.failing = true;
-      await pumpApp(t, c, p);
+      await pumpApp(t, c, p, shell: true);
       await openPlaylists(t);
       expect(find.text('تعذّر فتح القوائم المحلية'), findsOneWidget);
       p.failing = false;
@@ -453,7 +456,7 @@ void main() {
 
     testWidgets('playlist detail: play all, add whole list with two choices, swipe delete with undo', (t) async {
       await p.create('قائمتي', [v(5), v(6), v(7)]);
-      await pumpApp(t, c, p);
+      await pumpApp(t, c, p, shell: true);
       await openPlaylists(t);
       await t.tap(find.text('قائمتي'));
       await t.pumpAndSettle();
@@ -482,7 +485,7 @@ void main() {
 
     testWidgets('empty playlist shows a friendly text', (t) async {
       await p.create('فارغة', []);
-      await pumpApp(t, c, p);
+      await pumpApp(t, c, p, shell: true);
       await openPlaylists(t);
       await t.tap(find.text('فارغة'));
       await t.pumpAndSettle();

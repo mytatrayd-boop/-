@@ -435,4 +435,115 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveFailed => 'تعذّر الحفظ. حاول مرة أخرى';
+
+  @override
+  String get navHome => 'الرئيسية';
+
+  @override
+  String get navLibrary => 'المكتبة';
+
+  @override
+  String get searchHint => 'ابحث أو الصق رابطاً';
+
+  @override
+  String get searchAction => 'بحث';
+
+  @override
+  String get homeStartHint => 'ابدأ بالبحث أو الصق رابطاً';
+
+  @override
+  String get guestSignInPrompt =>
+      'سجّل الدخول لترى أحدث فيديوهات اشتراكاتك وتبحث في يوتيوب';
+
+  @override
+  String get searchNeedsSignIn =>
+      'سجّل الدخول للبحث في يوتيوب. يمكنك لصق رابط دون دخول.';
+
+  @override
+  String get feedTitle => 'أحدث فيديوهات اشتراكاتك';
+
+  @override
+  String get feedEmpty =>
+      'لا شيء هنا بعد. فيديوهات القنوات التي تشترك فيها تظهر هنا.';
+
+  @override
+  String searchResultsFor(String query) {
+    return 'نتائج «$query»';
+  }
+
+  @override
+  String searchNoResults(String query) {
+    return 'لا نتائج لـ «$query». جرّب كلمات أخرى';
+  }
+
+  @override
+  String get closeSearch => 'إغلاق البحث';
+
+  @override
+  String get staleBanner => 'هذه نسخة محفوظة';
+
+  @override
+  String get errorQuotaExceeded =>
+      'انتهت حصة البحث اليوم. تتجدد غداً. يمكنك لصق رابط أو تشغيل المكتبة.';
+
+  @override
+  String get errorApi => 'تعذّر تحميل البيانات من يوتيوب. حاول مرة أخرى.';
+
+  @override
+  String get pasteLinkAction => 'الصق رابطاً';
+
+  @override
+  String get channelKind => 'قناة';
+
+  @override
+  String get channelEmpty => 'لا شيء هنا بعد';
+
+  @override
+  String get miniPlaybackFailed => 'تعذّر التشغيل';
+
+  @override
+  String get openPlayer => 'فتح المشغّل';
+
+  @override
+  String accountSignedInAs(String name) {
+    return 'متصل: $name';
+  }
+
+  @override
+  String get settingsQuota => 'حصة البحث';
+
+  @override
+  String quotaSearchesLeft(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString عملية بحث متبقية اليوم',
+      many: '$countString عملية بحث متبقية اليوم',
+      few: '$countString عمليات بحث متبقية اليوم',
+      two: 'بحثان متبقيان اليوم',
+      one: 'بحث واحد متبقٍ اليوم',
+      zero: 'لا بحث متبقٍ اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String quotaUnits(int used, int limit) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat limitNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String limitString = limitNumberFormat.format(limit);
+
+    return '$usedString من $limitString وحدة مستعملة (تُصفَّر عند منتصف ليل المحيط الهادئ)';
+  }
+
+  @override
+  String get quotaUnavailable => 'غير متاح';
 }

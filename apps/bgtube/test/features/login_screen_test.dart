@@ -86,7 +86,7 @@ void main() {
     expect(auth.signInCalls, 1);
     expect(ack.value, isTrue);
     expect(find.byKey(const Key('loginContinue')), findsNothing); // عاد للإعدادات
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsWidgets); // العنوان والشريط السفلي
     expect(statusText(t).data, 'متصل بحساب جوجل');
     expect(find.text('تسجيل الخروج'), findsOneWidget);
   });
@@ -214,8 +214,8 @@ void main() {
     final auth = FakeAuthService(AuthStatus.expired);
     await pumpApp(t, auth);
     expect(find.byKey(const Key('sessionExpiredDialog')), findsOneWidget);
-    expect(find.text('انتهت جلستك، سجّل الدخول من جديد'), findsOneWidget);
-    await t.tap(find.text('تسجيل الدخول'));
+    expect(find.descendant(of: find.byKey(const Key('sessionExpiredDialog')), matching: find.text('انتهت جلستك، سجّل الدخول من جديد')), findsOneWidget);
+    await t.tap(find.descendant(of: find.byKey(const Key('sessionExpiredDialog')), matching: find.text('تسجيل الدخول')));
     await t.pumpAndSettle();
     expect(find.text('المتابعة بحساب جوجل'), findsOneWidget);
   });

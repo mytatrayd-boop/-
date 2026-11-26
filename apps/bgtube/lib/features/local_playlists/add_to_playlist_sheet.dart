@@ -24,6 +24,8 @@ Future<void> showAddToPlaylistSheet(BuildContext context, LocalPlaylistRepositor
   var createNew = false;
   await showModalBottomSheet<void>(
     context: context,
+    // فوق الشريط السفلي والمصغّر: لا تُحشر داخل متصفّح الوجهة (D29).
+    useRootNavigator: true,
     isScrollControlled: true,
     builder: (sheet) => SafeArea(
       child: ConstrainedBox(

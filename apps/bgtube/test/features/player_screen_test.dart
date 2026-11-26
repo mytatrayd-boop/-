@@ -1,4 +1,5 @@
 import 'package:bgtube/app.dart';
+import 'package:bgtube/features/player/player_screen.dart';
 import 'package:bgtube/core/app_failure.dart';
 import 'package:bgtube/core/providers.dart';
 import 'package:bgtube/domain/models/now_playing.dart';
@@ -131,8 +132,23 @@ QueueSnapshot clearUpcomingOf(QueueSnapshot s) => clearUpcoming(s);
 Future<void> pump(WidgetTester t, FakeController c, {Locale locale = const Locale('ar')}) async {
   await t.pumpWidget(ProviderScope(
     overrides: [playbackControllerProvider.overrideWithValue(c)],
+    child: BgtubeApp(locale: locale, home: const PlayerScreen()),
+  ));
+  await t.pumpAndSettle();
+}
+
+/// الهيكل الكامل: حقل البحث/الرابط وزر اللصق في الرئيسية (D29).
+Future<void> pumpShell(WidgetTester t, FakeController c, {Locale locale = const Locale('ar')}) async {
+  await t.pumpWidget(ProviderScope(
+    overrides: [playbackControllerProvider.overrideWithValue(c)],
     child: BgtubeApp(locale: locale),
   ));
+  await t.pumpAndSettle();
+}
+
+Future<void> submitText(WidgetTester t, String text) async {
+  await t.enterText(find.byKey(const Key('searchField')), text);
+  await t.testTextInput.receiveAction(TextInputAction.search);
   await t.pumpAndSettle();
 }
 
@@ -152,19 +168,16 @@ void main() {
 
   testWidgets('valid link submitted starts playback', (t) async {
     final c = FakeController();
-    await pump(t, c);
-    await t.enterText(find.byType(TextField), 'https://youtu.be/dQw4w9WgXcQ');
-    await t.testTextInput.receiveAction(TextInputAction.go);
-    await t.pumpAndSettle();
+    await pumpShell(t, c);
+    await submitText(t, 'https://youtu.be/dQw4w9WgXcQ');
     expect(c.played, ['dQw4w9WgXcQ']);
   });
 
   testWidgets('invalid link shows Arabic error without crash', (t) async {
     final c = FakeController();
-    await pump(t, c);
-    await t.enterText(find.byType(TextField), 'not a link');
-    await t.testTextInput.receiveAction(TextInputAction.go);
-    await t.pumpAndSettle();
+    await pumpShell(t, c);
+    // يبدو رابطاً لكنه ليس من يوتيوب (النص العادي يصير بحثاً).
+    await submitText(t, 'https://example.com/watch?v=x');
     expect(find.textContaining('الرابط غير صالح'), findsOneWidget);
     expect(find.text('إعادة المحاولة'), findsNothing);
     expect(c.played, isEmpty);
@@ -172,10 +185,8 @@ void main() {
 
   testWidgets('playlist link shows unsupported message', (t) async {
     final c = FakeController();
-    await pump(t, c);
-    await t.enterText(find.byType(TextField), 'https://www.youtube.com/playlist?list=PL1');
-    await t.testTextInput.receiveAction(TextInputAction.go);
-    await t.pumpAndSettle();
+    await pumpShell(t, c);
+    await submitText(t, 'https://www.youtube.com/playlist?list=PL1');
     expect(find.textContaining('القوائم غير مدعومة'), findsOneWidget);
     expect(c.played, isEmpty);
   });
@@ -220,8 +231,8 @@ void main() {
       return null;
     });
     addTearDown(() => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
-    await pump(t, c);
-    await t.tap(find.text('لصق وتشغيل'));
+    await pumpShell(t, c);
+    await t.tap(find.byTooltip('لصق وتشغيل'));
     await t.pumpAndSettle();
     expect(c.played, ['dQw4w9WgXcQ']);
   });
@@ -233,8 +244,8 @@ void main() {
       return null;
     });
     addTearDown(() => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
-    await pump(t, c);
-    await t.tap(find.text('لصق وتشغيل'));
+    await pumpShell(t, c);
+    await t.tap(find.byTooltip('لصق وتشغيل'));
     await t.pumpAndSettle();
     expect(find.text('لا يوجد رابط يوتيوب في الحافظة'), findsOneWidget);
   });

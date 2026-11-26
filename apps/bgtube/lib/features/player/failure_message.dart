@@ -14,4 +14,6 @@ String failureMessage(AppLocalizations l, AppFailure f) => switch (f.kind) {
       FailureKind.signInFailed => l.errorSignIn,
       FailureKind.signInUnavailable => l.errorSignInUnavailable,
       FailureKind.signOutFailed => l.errorSignOut,
+      FailureKind.quotaExceeded => l.errorQuotaExceeded,
+      FailureKind.apiFailed => l.errorApi,
     };

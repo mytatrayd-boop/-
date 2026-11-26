@@ -1,4 +1,4 @@
-// اختبار ترحيل مولَّد (drift_dev make-migrations) ومعدَّل: v1→v2 يحفظ positions.
+// اختبار ترحيل مولَّد (drift_dev make-migrations) ومعدَّل: v1→v2 يحفظ positions، وv2→v3 يحفظ الطابور.
 // ignore_for_file: unused_local_variable, unused_import
 import 'package:drift/drift.dart';
 import 'package:drift_dev/api/migrations_native.dart';
@@ -9,6 +9,7 @@ import 'generated/schema.dart';
 
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
+import 'generated/schema_v3.dart' as v3;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -89,5 +90,30 @@ void main() {
     await db.delete(db.localPlaylists).go();
     expect(await db.select(db.localPlaylistItems).get(), isEmpty);
     await db.close();
+  });
+
+  test('migration from v2 to v3 keeps the queue, playlists and positions; adds empty cache and quota', () async {
+    final updated = DateTime.utc(2026, 11, 26).millisecondsSinceEpoch ~/ 1000;
+    await verifier.testWithDataIntegrity(
+      oldVersion: 2,
+      newVersion: 3,
+      createOld: v2.DatabaseAtV2.new,
+      createNew: v3.DatabaseAtV3.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.positions, [
+          v2.PositionsData(videoId: 'AAAAAAAAAAA', positionMs: 1000, durationMs: 2000, updatedAt: updated),
+        ]);
+        batch.insertAll(oldDb.queueEntries, [
+          v2.QueueEntriesData(key: 1, ord: 0, videoId: 'AAAAAAAAAAA', failed: 0),
+        ]);
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.positions).get(), hasLength(1));
+        expect(await newDb.select(newDb.queueEntries).get(), hasLength(1));
+        expect(await newDb.select(newDb.apiCache).get(), isEmpty);
+        expect(await newDb.select(newDb.quota).get(), isEmpty);
+      },
+    );
   });
 }

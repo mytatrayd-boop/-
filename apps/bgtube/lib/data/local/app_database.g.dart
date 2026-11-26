@@ -1860,6 +1860,571 @@ class LocalPlaylistItemsCompanion
   }
 }
 
+class $ApiCacheTable extends ApiCache
+    with TableInfo<$ApiCacheTable, ApiCacheRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ApiCacheTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _jsonMeta = const VerificationMeta('json');
+  @override
+  late final GeneratedColumn<String> json = GeneratedColumn<String>(
+    'json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ttlSecMeta = const VerificationMeta('ttlSec');
+  @override
+  late final GeneratedColumn<int> ttlSec = GeneratedColumn<int>(
+    'ttl_sec',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _privateMeta = const VerificationMeta(
+    'private',
+  );
+  @override
+  late final GeneratedColumn<bool> private = GeneratedColumn<bool>(
+    'private',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("private" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, json, fetchedAt, ttlSec, private];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'api_cache';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ApiCacheRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('json')) {
+      context.handle(
+        _jsonMeta,
+        json.isAcceptableOrUnknown(data['json']!, _jsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_jsonMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    if (data.containsKey('ttl_sec')) {
+      context.handle(
+        _ttlSecMeta,
+        ttlSec.isAcceptableOrUnknown(data['ttl_sec']!, _ttlSecMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ttlSecMeta);
+    }
+    if (data.containsKey('private')) {
+      context.handle(
+        _privateMeta,
+        private.isAcceptableOrUnknown(data['private']!, _privateMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  ApiCacheRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ApiCacheRow(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      json: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}json'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+      ttlSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ttl_sec'],
+      )!,
+      private: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}private'],
+      )!,
+    );
+  }
+
+  @override
+  $ApiCacheTable createAlias(String alias) {
+    return $ApiCacheTable(attachedDatabase, alias);
+  }
+}
+
+class ApiCacheRow extends DataClass implements Insertable<ApiCacheRow> {
+  final String key;
+  final String json;
+  final DateTime fetchedAt;
+  final int ttlSec;
+
+  /// بيانات الحساب: تُمسح عند تسجيل الخروج.
+  final bool private;
+  const ApiCacheRow({
+    required this.key,
+    required this.json,
+    required this.fetchedAt,
+    required this.ttlSec,
+    required this.private,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['json'] = Variable<String>(json);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    map['ttl_sec'] = Variable<int>(ttlSec);
+    map['private'] = Variable<bool>(private);
+    return map;
+  }
+
+  ApiCacheCompanion toCompanion(bool nullToAbsent) {
+    return ApiCacheCompanion(
+      key: Value(key),
+      json: Value(json),
+      fetchedAt: Value(fetchedAt),
+      ttlSec: Value(ttlSec),
+      private: Value(private),
+    );
+  }
+
+  factory ApiCacheRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ApiCacheRow(
+      key: serializer.fromJson<String>(json['key']),
+      json: serializer.fromJson<String>(json['json']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+      ttlSec: serializer.fromJson<int>(json['ttlSec']),
+      private: serializer.fromJson<bool>(json['private']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'json': serializer.toJson<String>(json),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+      'ttlSec': serializer.toJson<int>(ttlSec),
+      'private': serializer.toJson<bool>(private),
+    };
+  }
+
+  ApiCacheRow copyWith({
+    String? key,
+    String? json,
+    DateTime? fetchedAt,
+    int? ttlSec,
+    bool? private,
+  }) => ApiCacheRow(
+    key: key ?? this.key,
+    json: json ?? this.json,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+    ttlSec: ttlSec ?? this.ttlSec,
+    private: private ?? this.private,
+  );
+  ApiCacheRow copyWithCompanion(ApiCacheCompanion data) {
+    return ApiCacheRow(
+      key: data.key.present ? data.key.value : this.key,
+      json: data.json.present ? data.json.value : this.json,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+      ttlSec: data.ttlSec.present ? data.ttlSec.value : this.ttlSec,
+      private: data.private.present ? data.private.value : this.private,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ApiCacheRow(')
+          ..write('key: $key, ')
+          ..write('json: $json, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('ttlSec: $ttlSec, ')
+          ..write('private: $private')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, json, fetchedAt, ttlSec, private);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ApiCacheRow &&
+          other.key == this.key &&
+          other.json == this.json &&
+          other.fetchedAt == this.fetchedAt &&
+          other.ttlSec == this.ttlSec &&
+          other.private == this.private);
+}
+
+class ApiCacheCompanion extends UpdateCompanion<ApiCacheRow> {
+  final Value<String> key;
+  final Value<String> json;
+  final Value<DateTime> fetchedAt;
+  final Value<int> ttlSec;
+  final Value<bool> private;
+  final Value<int> rowid;
+  const ApiCacheCompanion({
+    this.key = const Value.absent(),
+    this.json = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.ttlSec = const Value.absent(),
+    this.private = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ApiCacheCompanion.insert({
+    required String key,
+    required String json,
+    required DateTime fetchedAt,
+    required int ttlSec,
+    this.private = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       json = Value(json),
+       fetchedAt = Value(fetchedAt),
+       ttlSec = Value(ttlSec);
+  static Insertable<ApiCacheRow> custom({
+    Expression<String>? key,
+    Expression<String>? json,
+    Expression<DateTime>? fetchedAt,
+    Expression<int>? ttlSec,
+    Expression<bool>? private,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (json != null) 'json': json,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (ttlSec != null) 'ttl_sec': ttlSec,
+      if (private != null) 'private': private,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ApiCacheCompanion copyWith({
+    Value<String>? key,
+    Value<String>? json,
+    Value<DateTime>? fetchedAt,
+    Value<int>? ttlSec,
+    Value<bool>? private,
+    Value<int>? rowid,
+  }) {
+    return ApiCacheCompanion(
+      key: key ?? this.key,
+      json: json ?? this.json,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      ttlSec: ttlSec ?? this.ttlSec,
+      private: private ?? this.private,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (json.present) {
+      map['json'] = Variable<String>(json.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    if (ttlSec.present) {
+      map['ttl_sec'] = Variable<int>(ttlSec.value);
+    }
+    if (private.present) {
+      map['private'] = Variable<bool>(private.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ApiCacheCompanion(')
+          ..write('key: $key, ')
+          ..write('json: $json, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('ttlSec: $ttlSec, ')
+          ..write('private: $private, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuotaTable extends Quota with TableInfo<$QuotaTable, QuotaRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuotaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dayPtMeta = const VerificationMeta('dayPt');
+  @override
+  late final GeneratedColumn<String> dayPt = GeneratedColumn<String>(
+    'day_pt',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitsMeta = const VerificationMeta('units');
+  @override
+  late final GeneratedColumn<int> units = GeneratedColumn<int>(
+    'units',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [dayPt, units];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quota';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuotaRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('day_pt')) {
+      context.handle(
+        _dayPtMeta,
+        dayPt.isAcceptableOrUnknown(data['day_pt']!, _dayPtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayPtMeta);
+    }
+    if (data.containsKey('units')) {
+      context.handle(
+        _unitsMeta,
+        units.isAcceptableOrUnknown(data['units']!, _unitsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_unitsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {dayPt};
+  @override
+  QuotaRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuotaRow(
+      dayPt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_pt'],
+      )!,
+      units: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}units'],
+      )!,
+    );
+  }
+
+  @override
+  $QuotaTable createAlias(String alias) {
+    return $QuotaTable(attachedDatabase, alias);
+  }
+}
+
+class QuotaRow extends DataClass implements Insertable<QuotaRow> {
+  final String dayPt;
+  final int units;
+  const QuotaRow({required this.dayPt, required this.units});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['day_pt'] = Variable<String>(dayPt);
+    map['units'] = Variable<int>(units);
+    return map;
+  }
+
+  QuotaCompanion toCompanion(bool nullToAbsent) {
+    return QuotaCompanion(dayPt: Value(dayPt), units: Value(units));
+  }
+
+  factory QuotaRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuotaRow(
+      dayPt: serializer.fromJson<String>(json['dayPt']),
+      units: serializer.fromJson<int>(json['units']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'dayPt': serializer.toJson<String>(dayPt),
+      'units': serializer.toJson<int>(units),
+    };
+  }
+
+  QuotaRow copyWith({String? dayPt, int? units}) =>
+      QuotaRow(dayPt: dayPt ?? this.dayPt, units: units ?? this.units);
+  QuotaRow copyWithCompanion(QuotaCompanion data) {
+    return QuotaRow(
+      dayPt: data.dayPt.present ? data.dayPt.value : this.dayPt,
+      units: data.units.present ? data.units.value : this.units,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuotaRow(')
+          ..write('dayPt: $dayPt, ')
+          ..write('units: $units')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(dayPt, units);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuotaRow &&
+          other.dayPt == this.dayPt &&
+          other.units == this.units);
+}
+
+class QuotaCompanion extends UpdateCompanion<QuotaRow> {
+  final Value<String> dayPt;
+  final Value<int> units;
+  final Value<int> rowid;
+  const QuotaCompanion({
+    this.dayPt = const Value.absent(),
+    this.units = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuotaCompanion.insert({
+    required String dayPt,
+    required int units,
+    this.rowid = const Value.absent(),
+  }) : dayPt = Value(dayPt),
+       units = Value(units);
+  static Insertable<QuotaRow> custom({
+    Expression<String>? dayPt,
+    Expression<int>? units,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (dayPt != null) 'day_pt': dayPt,
+      if (units != null) 'units': units,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuotaCompanion copyWith({
+    Value<String>? dayPt,
+    Value<int>? units,
+    Value<int>? rowid,
+  }) {
+    return QuotaCompanion(
+      dayPt: dayPt ?? this.dayPt,
+      units: units ?? this.units,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (dayPt.present) {
+      map['day_pt'] = Variable<String>(dayPt.value);
+    }
+    if (units.present) {
+      map['units'] = Variable<int>(units.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuotaCompanion(')
+          ..write('dayPt: $dayPt, ')
+          ..write('units: $units, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1869,6 +2434,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalPlaylistsTable localPlaylists = $LocalPlaylistsTable(this);
   late final $LocalPlaylistItemsTable localPlaylistItems =
       $LocalPlaylistItemsTable(this);
+  late final $ApiCacheTable apiCache = $ApiCacheTable(this);
+  late final $QuotaTable quota = $QuotaTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1879,6 +2446,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     queueState,
     localPlaylists,
     localPlaylistItems,
+    apiCache,
+    quota,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3170,6 +3739,343 @@ typedef $$LocalPlaylistItemsTableProcessedTableManager =
       LocalPlaylistItemRow,
       PrefetchHooks Function({bool playlistId})
     >;
+typedef $$ApiCacheTableCreateCompanionBuilder = ApiCacheCompanion Function({
+  required String key,
+  required String json,
+  required DateTime fetchedAt,
+  required int ttlSec,
+  Value<bool> private,
+  Value<int> rowid,
+});
+typedef $$ApiCacheTableUpdateCompanionBuilder = ApiCacheCompanion Function({
+  Value<String> key,
+  Value<String> json,
+  Value<DateTime> fetchedAt,
+  Value<int> ttlSec,
+  Value<bool> private,
+  Value<int> rowid,
+});
+
+class $$ApiCacheTableFilterComposer
+    extends Composer<_$AppDatabase, $ApiCacheTable> {
+  $$ApiCacheTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get json => $composableBuilder(
+    column: $table.json,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ttlSec => $composableBuilder(
+    column: $table.ttlSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get private => $composableBuilder(
+    column: $table.private,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ApiCacheTableOrderingComposer
+    extends Composer<_$AppDatabase, $ApiCacheTable> {
+  $$ApiCacheTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get json => $composableBuilder(
+    column: $table.json,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ttlSec => $composableBuilder(
+    column: $table.ttlSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get private => $composableBuilder(
+    column: $table.private,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ApiCacheTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ApiCacheTable> {
+  $$ApiCacheTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get json =>
+      $composableBuilder(column: $table.json, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get ttlSec =>
+      $composableBuilder(column: $table.ttlSec, builder: (column) => column);
+
+  GeneratedColumn<bool> get private =>
+      $composableBuilder(column: $table.private, builder: (column) => column);
+}
+
+class $$ApiCacheTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ApiCacheTable,
+          ApiCacheRow,
+          $$ApiCacheTableFilterComposer,
+          $$ApiCacheTableOrderingComposer,
+          $$ApiCacheTableAnnotationComposer,
+          $$ApiCacheTableCreateCompanionBuilder,
+          $$ApiCacheTableUpdateCompanionBuilder,
+          (
+            ApiCacheRow,
+            BaseReferences<_$AppDatabase, $ApiCacheTable, ApiCacheRow>,
+          ),
+          ApiCacheRow,
+          PrefetchHooks Function()
+        > {
+  $$ApiCacheTableTableManager(_$AppDatabase db, $ApiCacheTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ApiCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ApiCacheTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ApiCacheTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> json = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<int> ttlSec = const Value.absent(),
+                Value<bool> private = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ApiCacheCompanion(
+                key: key,
+                json: json,
+                fetchedAt: fetchedAt,
+                ttlSec: ttlSec,
+                private: private,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String json,
+                required DateTime fetchedAt,
+                required int ttlSec,
+                Value<bool> private = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ApiCacheCompanion.insert(
+                key: key,
+                json: json,
+                fetchedAt: fetchedAt,
+                ttlSec: ttlSec,
+                private: private,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ApiCacheTable, ApiCacheRow>(table),
+                  BaseReferences<_$AppDatabase, $ApiCacheTable, ApiCacheRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ApiCacheTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ApiCacheTable,
+      ApiCacheRow,
+      $$ApiCacheTableFilterComposer,
+      $$ApiCacheTableOrderingComposer,
+      $$ApiCacheTableAnnotationComposer,
+      $$ApiCacheTableCreateCompanionBuilder,
+      $$ApiCacheTableUpdateCompanionBuilder,
+      (ApiCacheRow, BaseReferences<_$AppDatabase, $ApiCacheTable, ApiCacheRow>),
+      ApiCacheRow,
+      PrefetchHooks Function()
+    >;
+typedef $$QuotaTableCreateCompanionBuilder = QuotaCompanion Function({
+  required String dayPt,
+  required int units,
+  Value<int> rowid,
+});
+typedef $$QuotaTableUpdateCompanionBuilder = QuotaCompanion Function({
+  Value<String> dayPt,
+  Value<int> units,
+  Value<int> rowid,
+});
+
+class $$QuotaTableFilterComposer extends Composer<_$AppDatabase, $QuotaTable> {
+  $$QuotaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get dayPt => $composableBuilder(
+    column: $table.dayPt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get units => $composableBuilder(
+    column: $table.units,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$QuotaTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuotaTable> {
+  $$QuotaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get dayPt => $composableBuilder(
+    column: $table.dayPt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get units => $composableBuilder(
+    column: $table.units,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuotaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuotaTable> {
+  $$QuotaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get dayPt =>
+      $composableBuilder(column: $table.dayPt, builder: (column) => column);
+
+  GeneratedColumn<int> get units =>
+      $composableBuilder(column: $table.units, builder: (column) => column);
+}
+
+class $$QuotaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuotaTable,
+          QuotaRow,
+          $$QuotaTableFilterComposer,
+          $$QuotaTableOrderingComposer,
+          $$QuotaTableAnnotationComposer,
+          $$QuotaTableCreateCompanionBuilder,
+          $$QuotaTableUpdateCompanionBuilder,
+          (QuotaRow, BaseReferences<_$AppDatabase, $QuotaTable, QuotaRow>),
+          QuotaRow,
+          PrefetchHooks Function()
+        > {
+  $$QuotaTableTableManager(_$AppDatabase db, $QuotaTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuotaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuotaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuotaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> dayPt = const Value.absent(),
+            Value<int> units = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => QuotaCompanion(dayPt: dayPt, units: units, rowid: rowid),
+          createCompanionCallback: ({
+            required String dayPt,
+            required int units,
+            Value<int> rowid = const Value.absent(),
+          }) => QuotaCompanion.insert(dayPt: dayPt, units: units, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$QuotaTable, QuotaRow>(table),
+                  BaseReferences<_$AppDatabase, $QuotaTable, QuotaRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$QuotaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuotaTable,
+      QuotaRow,
+      $$QuotaTableFilterComposer,
+      $$QuotaTableOrderingComposer,
+      $$QuotaTableAnnotationComposer,
+      $$QuotaTableCreateCompanionBuilder,
+      $$QuotaTableUpdateCompanionBuilder,
+      (QuotaRow, BaseReferences<_$AppDatabase, $QuotaTable, QuotaRow>),
+      QuotaRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3184,4 +4090,8 @@ class $AppDatabaseManager {
       $$LocalPlaylistsTableTableManager(_db, _db.localPlaylists);
   $$LocalPlaylistItemsTableTableManager get localPlaylistItems =>
       $$LocalPlaylistItemsTableTableManager(_db, _db.localPlaylistItems);
+  $$ApiCacheTableTableManager get apiCache =>
+      $$ApiCacheTableTableManager(_db, _db.apiCache);
+  $$QuotaTableTableManager get quota =>
+      $$QuotaTableTableManager(_db, _db.quota);
 }

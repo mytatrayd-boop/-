@@ -1,27 +1,18 @@
-import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../core/app_failure.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
-import '../../domain/incoming_link.dart';
 import '../../domain/models/now_playing.dart';
-import '../../domain/models/video_ref.dart';
 import '../../domain/playback_queue_model.dart';
 import '../../domain/playback_speed.dart';
 import '../../domain/sleep_timer.dart';
 import '../../domain/ports/playback_controller.dart';
 import '../../domain/ports/playback_queue.dart';
-import '../../domain/youtube_link_parser.dart';
 import '../../l10n/gen/app_localizations.dart';
-import '../local_playlists/local_playlists_screen.dart';
 import '../queue/queue_sheet.dart';
 import '../queue/queue_ui.dart';
-import '../settings/settings_screen.dart';
 import 'failure_message.dart';
 import 'format_duration.dart';
 import 'text_direction.dart';
@@ -34,82 +25,6 @@ class PlayerScreen extends ConsumerStatefulWidget {
 }
 
 class _PlayerScreenState extends ConsumerState<PlayerScreen> {
-  final _text = TextEditingController();
-  AppFailure? _linkFailure;
-
-  StreamSubscription<String>? _incomingSub;
-  StreamSubscription<VideoRef>? _skippedSub;
-
-  @override
-  void initState() {
-    super.initState();
-    // مقطع فشل وتُخطّي: رسالة قصيرة (DESIGN 4أ).
-    _skippedSub = ref.read(playbackQueueProvider).skippedFailures.listen((r) {
-      if (!mounted) return;
-      final l = AppLocalizations.of(context);
-      showUndoSnack(ScaffoldMessenger.of(context), l, l.queueSkippedSnack(shortTitle(l, r)));
-    });
-    final source = ref.read(incomingLinkSourceProvider);
-    // أثناء التشغيل.
-    _incomingSub = source.texts.listen(_handleIncoming);
-    // بدء بارد.
-    source.initialText().then((t) {
-      if (t != null && mounted) _handleIncoming(t);
-    }).catchError((Object _) {
-      // فشل قراءة نية البدء لا يجب أن يُسقط التطبيق؛ يبدأ فارغاً.
-    });
-  }
-
-  Future<void> _handleIncoming(String shared) async {
-    if (!mounted) return;
-    _text.text = shared;
-    await _submit(shared, shared: true);
-  }
-
-  @override
-  void dispose() {
-    _incomingSub?.cancel();
-    _skippedSub?.cancel();
-    _text.dispose();
-    super.dispose();
-  }
-
-  /// لصق أو مشاركة: إن كان الطابور فارغاً يبدأ التشغيل مباشرة بلا ورقة، وإلا
-  /// ورقة بثلاثة خيارات: «شغّل الآن» و«شغّل التالي» و«أضف للنهاية» (DESIGN ⋮).
-  Future<void> _submit(String raw, {bool shared = false}) async {
-    final queue = ref.read(playbackQueueProvider);
-    try {
-      final link = shared ? parseSharedText(raw) : parseYoutubeLink(raw);
-      final id = link.videoId;
-      if (id == null) throw const AppFailure(FailureKind.playlistNotSupported);
-      setState(() => _linkFailure = null);
-      FocusScope.of(context).unfocus();
-      final refs = [VideoRef(videoId: id)];
-      if (queue.queueState.value.isEmpty) {
-        await queue.enqueue(refs, QueuePlacement.playNow);
-        return;
-      }
-      final placement = await showPlacementSheet(context, includePlayNow: true);
-      if (placement == null || !mounted) return;
-      await enqueueWithFeedback(context, queue, refs, placement);
-    } on AppFailure catch (f) {
-      setState(() => _linkFailure = f);
-    }
-  }
-
-  Future<void> _pasteAndPlay() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    final text = data?.text?.trim() ?? '';
-    if (!mounted) return;
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).clipboardEmpty)));
-      return;
-    }
-    _text.text = text;
-    await _submit(text);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -133,80 +48,23 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                   )
                 : const SizedBox.shrink(),
           ),
-          // المكتبة لم تُبنَ بعد: «قوائمي المحلية» من هنا (D28).
-          IconButton(
-            key: const Key('openLocalPlaylists'),
-            tooltip: l.localPlaylists,
-            icon: const Icon(Icons.library_music_outlined),
-            onPressed: () => Navigator.of(context)
-                .push(MaterialPageRoute<void>(builder: (_) => const LocalPlaylistsScreen())),
-          ),
-          IconButton(
-            tooltip: l.settings,
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.of(context)
-                .push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen())),
-          ),
         ],
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsetsDirectional.all(16),
-          child: Column(
-            children: [
-              Expanded(child: _NowPlayingArea(controller: controller, queue: queue, linkFailure: _linkFailure)),
-              const SizedBox(height: 16),
-              _InputRow(
-                controller: _text,
-                onSubmit: _submit,
-                onPaste: _pasteAndPlay,
-              ),
-            ],
-          ),
+          child: _NowPlayingArea(controller: controller, queue: queue),
         ),
       ),
     );
   }
 }
 
-class _InputRow extends StatelessWidget {
-  const _InputRow({required this.controller, required this.onSubmit, required this.onPaste});
-
-  final TextEditingController controller;
-  final ValueChanged<String> onSubmit;
-  final VoidCallback onPaste;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          controller: controller,
-          keyboardType: TextInputType.url,
-          textInputAction: TextInputAction.go,
-          textDirection: TextDirection.ltr, // الروابط لاتينية دائماً
-          decoration: InputDecoration(hintText: l.linkHint),
-          onSubmitted: onSubmit,
-        ),
-        const SizedBox(height: 8),
-        FilledButton.icon(
-          onPressed: onPaste,
-          icon: const Icon(Icons.content_paste),
-          label: Text(l.pasteAndPlay),
-        ),
-      ],
-    );
-  }
-}
-
 class _NowPlayingArea extends StatelessWidget {
-  const _NowPlayingArea({required this.controller, required this.queue, required this.linkFailure});
+  const _NowPlayingArea({required this.controller, required this.queue});
 
   final PlaybackController controller;
   final PlaybackQueue queue;
-  final AppFailure? linkFailure;
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +72,7 @@ class _NowPlayingArea extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([controller.failure, controller.resolving, controller.nowPlaying]),
       builder: (context, _) {
-        final failure = linkFailure ?? controller.failure.value;
+        final failure = controller.failure.value;
         final now = controller.nowPlaying.value;
         final resolving = controller.resolving.value;
 
@@ -222,8 +80,7 @@ class _NowPlayingArea extends StatelessWidget {
           return _ErrorView(
             message: failureMessage(l, failure),
             detail: failure.debugDetail,
-            // إعادة المحاولة تخصّ فشل التشغيل لا الرابط غير الصالح.
-            onRetry: linkFailure == null ? controller.retry : null,
+            onRetry: controller.retry,
           );
         }
         if (resolving) {

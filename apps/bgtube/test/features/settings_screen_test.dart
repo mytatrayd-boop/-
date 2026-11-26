@@ -48,11 +48,11 @@ void main() {
   testWidgets('Arabic RTL settings screen shows account, language and about', (t) async {
     await pumpApp(t, MemStore());
     await openSettings(t);
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsWidgets); // العنوان والشريط السفلي
     expect(find.text('اللغة'), findsOneWidget);
     expect(find.text('حول'), findsOneWidget);
     expect(find.text('الإصدار 1.2.3'), findsOneWidget);
-    expect(Directionality.of(t.element(find.byType(Scaffold))), TextDirection.rtl);
+    expect(Directionality.of(t.element(find.byType(Scaffold).first)), TextDirection.rtl);
     expect(find.text('الحساب'), findsOneWidget);
     expect(find.text('غير مسجّل الدخول'), findsOneWidget);
     expect(t.takeException(), isNull);
@@ -64,42 +64,42 @@ void main() {
     await openSettings(t);
     await t.tap(find.text('English'));
     await t.pumpAndSettle();
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Settings'), findsWidgets); // العنوان والشريط السفلي
     expect(find.text('Language'), findsOneWidget);
-    expect(Directionality.of(t.element(find.byType(Scaffold))), TextDirection.ltr);
+    expect(Directionality.of(t.element(find.byType(Scaffold).first)), TextDirection.ltr);
     expect(store.value, 'en');
-    // الرجوع: الشاشة الرئيسية بالإنجليزية أيضاً.
-    await t.pageBack();
+    // الرئيسية بالإنجليزية أيضاً.
+    await t.tap(find.byKey(const Key('navHome')));
     await t.pumpAndSettle();
-    expect(find.text('Paste a YouTube link to play it'), findsOneWidget);
+    expect(find.textContaining('Start by searching or pasting a link'), findsOneWidget);
     // وبالعودة للعربية.
     await openSettings(t);
     await t.tap(find.text('العربية'));
     await t.pumpAndSettle();
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsWidgets); // العنوان والشريط السفلي
     expect(store.value, 'ar');
   });
 
   testWidgets('saved language wins over the device language on startup', (t) async {
     await pumpApp(t, MemStore('en'), device: const Locale('ar'));
-    expect(find.text('Paste a YouTube link to play it'), findsOneWidget);
-    expect(Directionality.of(t.element(find.byType(Scaffold))), TextDirection.ltr);
+    expect(find.textContaining('Start by searching or pasting a link'), findsOneWidget);
+    expect(Directionality.of(t.element(find.byType(Scaffold).first)), TextDirection.ltr);
   });
 
   testWidgets('no saved language: follows the device language (English device)', (t) async {
     await pumpApp(t, MemStore(), device: const Locale('en'));
-    expect(find.text('Paste a YouTube link to play it'), findsOneWidget);
+    expect(find.textContaining('Start by searching or pasting a link'), findsOneWidget);
   });
 
   testWidgets('no saved language and unsupported device language: Arabic', (t) async {
     await pumpApp(t, MemStore(), device: const Locale('fr'));
-    expect(find.text('الصق رابط يوتيوب لتشغيله'), findsOneWidget);
-    expect(Directionality.of(t.element(find.byType(Scaffold))), TextDirection.rtl);
+    expect(find.textContaining('ابدأ بالبحث أو الصق رابطاً'), findsOneWidget);
+    expect(Directionality.of(t.element(find.byType(Scaffold).first)), TextDirection.rtl);
   });
 
   testWidgets('corrupt saved value is ignored (falls back to device/Arabic)', (t) async {
     await pumpApp(t, MemStore('zz'));
-    expect(find.text('الصق رابط يوتيوب لتشغيله'), findsOneWidget);
+    expect(find.textContaining('ابدأ بالبحث أو الصق رابطاً'), findsOneWidget);
   });
 
   testWidgets('a storage failure does not stop the language change', (t) async {
@@ -108,7 +108,7 @@ void main() {
     await openSettings(t);
     await t.tap(find.text('English'));
     await t.pumpAndSettle();
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Settings'), findsWidgets); // العنوان والشريط السفلي
     expect(t.takeException(), isNull);
   });
 

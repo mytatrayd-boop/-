@@ -12,8 +12,8 @@ import '../queue/queue_ui.dart';
 import 'local_playlist_screen.dart';
 import 'playlist_dialogs.dart';
 
-/// «قوائمي المحلية» (DESIGN 4ب). المكتبة لم تُبنَ بعد، فالمدخل الآن أيقونة في
-/// شريط المشغّل (D28).
+/// «قوائمي المحلية» (DESIGN 4ب). المكتبة لم تُبنَ بعد، فوجهة «المكتبة» في الشريط
+/// السفلي تفتح هذه الشاشة الآن (D29).
 class LocalPlaylistsScreen extends ConsumerStatefulWidget {
   const LocalPlaylistsScreen({super.key});
 

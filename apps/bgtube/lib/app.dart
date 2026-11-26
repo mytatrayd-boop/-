@@ -3,16 +3,19 @@ import 'package:material_ui/material_ui.dart';
 
 import 'core/theme.dart';
 import 'features/login/session_expired_listener.dart';
-import 'features/player/player_screen.dart';
+import 'features/shell/app_shell.dart';
 import 'features/settings/locale_controller.dart';
 import 'l10n/gen/app_localizations.dart';
 
 class BgtubeApp extends ConsumerWidget {
-  const BgtubeApp({super.key, this.locale});
+  const BgtubeApp({super.key, this.locale, this.home});
 
   /// تجاوز صريح (للاختبارات). الأصل: اللغة المحفوظة من الإعدادات، وإلا لغة
   /// الجهاز، وإلا العربية.
   final Locale? locale;
+
+  /// للاختبارات: شاشة بعينها بدل الهيكل (مثلاً المشغّل الكامل وحده).
+  final Widget? home;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,7 +36,7 @@ class BgtubeApp extends ConsumerWidget {
         }
         return const Locale('ar');
       },
-      home: const SessionExpiredListener(child: PlayerScreen()),
+      home: SessionExpiredListener(child: home ?? const AppShell()),
     );
   }
 }

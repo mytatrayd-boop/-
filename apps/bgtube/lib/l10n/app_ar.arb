@@ -226,5 +226,71 @@
   },
   "removedFromPlaylist": "حُذف من القائمة",
   "moreActions": "مزيد من الخيارات",
-  "saveFailed": "تعذّر الحفظ. حاول مرة أخرى"
+  "saveFailed": "تعذّر الحفظ. حاول مرة أخرى",
+  "navHome": "الرئيسية",
+  "navLibrary": "المكتبة",
+  "searchHint": "ابحث أو الصق رابطاً",
+  "searchAction": "بحث",
+  "homeStartHint": "ابدأ بالبحث أو الصق رابطاً",
+  "guestSignInPrompt": "سجّل الدخول لترى أحدث فيديوهات اشتراكاتك وتبحث في يوتيوب",
+  "searchNeedsSignIn": "سجّل الدخول للبحث في يوتيوب. يمكنك لصق رابط دون دخول.",
+  "feedTitle": "أحدث فيديوهات اشتراكاتك",
+  "feedEmpty": "لا شيء هنا بعد. فيديوهات القنوات التي تشترك فيها تظهر هنا.",
+  "searchResultsFor": "نتائج «{query}»",
+  "@searchResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoResults": "لا نتائج لـ «{query}». جرّب كلمات أخرى",
+  "@searchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "closeSearch": "إغلاق البحث",
+  "staleBanner": "هذه نسخة محفوظة",
+  "errorQuotaExceeded": "انتهت حصة البحث اليوم. تتجدد غداً. يمكنك لصق رابط أو تشغيل المكتبة.",
+  "errorApi": "تعذّر تحميل البيانات من يوتيوب. حاول مرة أخرى.",
+  "pasteLinkAction": "الصق رابطاً",
+  "channelKind": "قناة",
+  "channelEmpty": "لا شيء هنا بعد",
+  "miniPlaybackFailed": "تعذّر التشغيل",
+  "openPlayer": "فتح المشغّل",
+  "accountSignedInAs": "متصل: {name}",
+  "@accountSignedInAs": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsQuota": "حصة البحث",
+  "quotaSearchesLeft": "{count, plural, =0{لا بحث متبقٍ اليوم} =1{بحث واحد متبقٍ اليوم} =2{بحثان متبقيان اليوم} few{{count} عمليات بحث متبقية اليوم} many{{count} عملية بحث متبقية اليوم} other{{count} عملية بحث متبقية اليوم}}",
+  "@quotaSearchesLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "quotaUnits": "{used} من {limit} وحدة مستعملة (تُصفَّر عند منتصف ليل المحيط الهادئ)",
+  "@quotaUnits": {
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "limit": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "quotaUnavailable": "غير متاح"
 }

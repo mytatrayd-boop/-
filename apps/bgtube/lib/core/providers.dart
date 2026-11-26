@@ -8,6 +8,9 @@ import '../domain/ports/locale_store.dart';
 import '../domain/ports/playback_controller.dart';
 import '../domain/ports/playback_queue.dart';
 import '../domain/ports/risk_ack_store.dart';
+import '../domain/ports/youtube_api.dart';
+import '../domain/models/video_ref.dart';
+import '../domain/models/youtube_content.dart';
 
 /// يُستبدل عند الإقلاع (main) بالمعالج الحقيقي، وفي الاختبارات بتنفيذ وهمي.
 final playbackControllerProvider = Provider<PlaybackController>(
@@ -88,4 +91,25 @@ class _MemoryRiskAckStore implements RiskAckStore {
   Future<bool> isAcknowledged() async => _ack;
   @override
   Future<void> acknowledge() async => _ack = true;
+}
+
+/// YouTube Data API (الميزة 3، D29). يُستبدل في main؛ الافتراضي: كل طلب يحتاج
+/// دخولاً والحصة غير مستعملة.
+final youTubeApiProvider = Provider<YouTubeApi>((ref) => const _NoYouTubeApi());
+
+class _NoYouTubeApi implements YouTubeApi {
+  const _NoYouTubeApi();
+  static const _f = AppFailure(FailureKind.notSignedIn);
+  @override
+  Future<ApiPage<SearchResult>> search(String query, {String? pageToken}) async => throw _f;
+  @override
+  Future<ApiPage<VideoRef>> channelVideos(String channelId, {String? pageToken, bool refresh = false}) async =>
+      throw _f;
+  @override
+  Future<ApiPage<VideoRef>> subscriptionFeed({bool refresh = false}) async => throw _f;
+  @override
+  Future<String?> myChannelTitle() async => throw _f;
+  @override
+  Future<QuotaUsage> quotaToday() async =>
+      const QuotaUsage(used: 0, limit: 10000, exhausted: false, searchesLeft: 95);
 }

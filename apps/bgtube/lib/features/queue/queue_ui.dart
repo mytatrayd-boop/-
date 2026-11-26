@@ -86,6 +86,8 @@ class SheetAction {
 Future<void> showActionSheet(BuildContext context, List<SheetAction> actions, {String? title}) {
   return showModalBottomSheet<void>(
     context: context,
+    // فوق الشريط السفلي والمصغّر: لا تُحشر داخل متصفّح الوجهة (D29).
+    useRootNavigator: true,
     builder: (sheet) => SafeArea(
       child: SingleChildScrollView(
         child: Column(

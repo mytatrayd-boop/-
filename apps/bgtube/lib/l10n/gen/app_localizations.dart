@@ -739,6 +739,156 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر الحفظ. حاول مرة أخرى'**
   String get saveFailed;
+
+  /// No description provided for @navHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرئيسية'**
+  String get navHome;
+
+  /// No description provided for @navLibrary.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكتبة'**
+  String get navLibrary;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث أو الصق رابطاً'**
+  String get searchHint;
+
+  /// No description provided for @searchAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث'**
+  String get searchAction;
+
+  /// No description provided for @homeStartHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بالبحث أو الصق رابطاً'**
+  String get homeStartHint;
+
+  /// No description provided for @guestSignInPrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل الدخول لترى أحدث فيديوهات اشتراكاتك وتبحث في يوتيوب'**
+  String get guestSignInPrompt;
+
+  /// No description provided for @searchNeedsSignIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل الدخول للبحث في يوتيوب. يمكنك لصق رابط دون دخول.'**
+  String get searchNeedsSignIn;
+
+  /// No description provided for @feedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحدث فيديوهات اشتراكاتك'**
+  String get feedTitle;
+
+  /// No description provided for @feedEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا شيء هنا بعد. فيديوهات القنوات التي تشترك فيها تظهر هنا.'**
+  String get feedEmpty;
+
+  /// No description provided for @searchResultsFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'نتائج «{query}»'**
+  String searchResultsFor(String query);
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا نتائج لـ «{query}». جرّب كلمات أخرى'**
+  String searchNoResults(String query);
+
+  /// No description provided for @closeSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق البحث'**
+  String get closeSearch;
+
+  /// No description provided for @staleBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه نسخة محفوظة'**
+  String get staleBanner;
+
+  /// No description provided for @errorQuotaExceeded.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت حصة البحث اليوم. تتجدد غداً. يمكنك لصق رابط أو تشغيل المكتبة.'**
+  String get errorQuotaExceeded;
+
+  /// No description provided for @errorApi.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل البيانات من يوتيوب. حاول مرة أخرى.'**
+  String get errorApi;
+
+  /// No description provided for @pasteLinkAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصق رابطاً'**
+  String get pasteLinkAction;
+
+  /// No description provided for @channelKind.
+  ///
+  /// In ar, this message translates to:
+  /// **'قناة'**
+  String get channelKind;
+
+  /// No description provided for @channelEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا شيء هنا بعد'**
+  String get channelEmpty;
+
+  /// No description provided for @miniPlaybackFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التشغيل'**
+  String get miniPlaybackFailed;
+
+  /// No description provided for @openPlayer.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح المشغّل'**
+  String get openPlayer;
+
+  /// No description provided for @accountSignedInAs.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصل: {name}'**
+  String accountSignedInAs(String name);
+
+  /// No description provided for @settingsQuota.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصة البحث'**
+  String get settingsQuota;
+
+  /// No description provided for @quotaSearchesLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لا بحث متبقٍ اليوم} =1{بحث واحد متبقٍ اليوم} =2{بحثان متبقيان اليوم} few{{count} عمليات بحث متبقية اليوم} many{{count} عملية بحث متبقية اليوم} other{{count} عملية بحث متبقية اليوم}}'**
+  String quotaSearchesLeft(int count);
+
+  /// No description provided for @quotaUnits.
+  ///
+  /// In ar, this message translates to:
+  /// **'{used} من {limit} وحدة مستعملة (تُصفَّر عند منتصف ليل المحيط الهادئ)'**
+  String quotaUnits(int used, int limit);
+
+  /// No description provided for @quotaUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متاح'**
+  String get quotaUnavailable;
 }
 
 class _AppLocalizationsDelegate

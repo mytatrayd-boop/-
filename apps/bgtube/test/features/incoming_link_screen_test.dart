@@ -75,7 +75,7 @@ void main() {
     final c = FakeController();
     await pumpWith(t, c, FakeSource(null, initialError: StateError('boom')));
     expect(c.played, isEmpty);
-    expect(find.text('الصق رابط يوتيوب لتشغيله'), findsOneWidget);
+    expect(find.textContaining('ابدأ بالبحث أو الصق رابطاً'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 

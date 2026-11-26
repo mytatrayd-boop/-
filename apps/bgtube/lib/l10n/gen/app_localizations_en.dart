@@ -429,4 +429,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveFailed => 'Couldn\'t save. Try again';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navLibrary => 'Library';
+
+  @override
+  String get searchHint => 'Search or paste a link';
+
+  @override
+  String get searchAction => 'Search';
+
+  @override
+  String get homeStartHint => 'Start by searching or pasting a link';
+
+  @override
+  String get guestSignInPrompt =>
+      'Sign in to see the latest videos from your subscriptions and search YouTube';
+
+  @override
+  String get searchNeedsSignIn =>
+      'Sign in to search YouTube. You can paste a link without signing in.';
+
+  @override
+  String get feedTitle => 'Latest from your subscriptions';
+
+  @override
+  String get feedEmpty =>
+      'Nothing here yet. Videos from channels you subscribe to appear here.';
+
+  @override
+  String searchResultsFor(String query) {
+    return 'Results for “$query”';
+  }
+
+  @override
+  String searchNoResults(String query) {
+    return 'No results for “$query”. Try other words';
+  }
+
+  @override
+  String get closeSearch => 'Close search';
+
+  @override
+  String get staleBanner => 'This is a saved copy';
+
+  @override
+  String get errorQuotaExceeded =>
+      'Today\'s search quota is used up. It renews tomorrow. You can paste a link or play from your library.';
+
+  @override
+  String get errorApi => 'Couldn\'t load data from YouTube. Try again.';
+
+  @override
+  String get pasteLinkAction => 'Paste a link';
+
+  @override
+  String get channelKind => 'Channel';
+
+  @override
+  String get channelEmpty => 'Nothing here yet';
+
+  @override
+  String get miniPlaybackFailed => 'Couldn\'t play';
+
+  @override
+  String get openPlayer => 'Open player';
+
+  @override
+  String accountSignedInAs(String name) {
+    return 'Signed in: $name';
+  }
+
+  @override
+  String get settingsQuota => 'Search quota';
+
+  @override
+  String quotaSearchesLeft(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString searches left today',
+      one: '1 search left today',
+      zero: 'No searches left today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String quotaUnits(int used, int limit) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat limitNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String limitString = limitNumberFormat.format(limit);
+
+    return '$usedString of $limitString units used (resets at Pacific midnight)';
+  }
+
+  @override
+  String get quotaUnavailable => 'Unavailable';
 }

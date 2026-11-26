@@ -10,7 +10,7 @@
 | مقاطعات الصوت (مكالمة/تطبيق آخر) | `audio_session` |
 | استخراج الصوت (غير رسمي) | `youtube_explode_dart` خلف واجهة (D4) |
 | تسجيل الدخول الرسمي | `google_sign_in` |
-| طلبات الشبكة | `dio` |
+| طلبات الشبكة | `http` (عميل قابل للحقن؛ بدل `dio`، D29) |
 | الحالة | `flutter_riverpod` |
 | التنقل | `go_router` |
 | قاعدة محلية | `drift` (SQLite) + `sqlite3_flutter_libs` |
@@ -54,7 +54,7 @@ apps/bgtube/
 ## الحساب وYouTube Data API v3
 - الدخول عبر `google_sign_in` الرسمي (شاشة جوجل؛ لا نلمس كلمة المرور). الإصدار 7.x: التفويض فقط عبر `authorizationClient` بعميل Android وبلا serverClientId (D23). النطاقات: `youtube.readonly` للقراءة، و`youtube` فقط لعمليات الكتابة (إعجاب، إضافة/حذف من قائمة). تُطلب الكتابة عند أول استخدام فقط.
 - `AuthService`: `signIn`, `signOut`, `getAccessToken` (يُجدَّد عبر Play Services)، حالة `Stream`. مشروع OAuth في In production بدون توثيق (D7) فلا انتهاء أسبوعي؛ تجديد صامت عبر Play Services. السحب أو الإبطال → `AuthExpired` → رسالة "سجّل الدخول من جديد".
-- `YouTubeApi` يستخدم `dio` مع Interceptor يضيف الرمز؛ كل الطلبات من التطبيق مباشرة (لا خادم وسيط).
+- `YouTubeApi` (منفذ في domain) ينفّذه `YouTubeDataApi` في `data/youtube_api` فوق `http.Client` محقون؛ يطلب الرمز من `AuthService` لكل طلب ويضعه في ترويسة Authorization فقط (لا مفتاح API)، و401 يُبطل الرمز ويعيد مرة ثم `AuthExpired`. كل الطلبات من التطبيق مباشرة (لا خادم وسيط). التفاصيل والتكلفة في D29.
 - تكلفة الحصة (10,000/يوم): `search.list` ≈ 100؛ القراءات (`playlists`, `playlistItems`, `subscriptions`, `videos.list?myRating=like`, `videos`) = 1؛ الكتابة (`videos.rate`, `playlistItems.insert/delete`) ≈ 50.
   - فيديوهات قناة: عبر قائمة الرفع (`playlistItems`، 1 وحدة) بدل البحث (100).
   - تفاصيل المدة تُجلب دفعة واحدة `videos.list` (حتى 50 معرّفاً).
@@ -66,7 +66,7 @@ apps/bgtube/
 ## التخزين الآمن للرموز
 - لا نحفظ رمز وصول طويل الأمد بأنفسنا: Play Services يدير الجلسة ويصدر رموز وصول قصيرة العمر عند الطلب.
 - `flutter_secure_storage` (Android Keystore) لما نحتاجه فقط: علامة "توجد جلسة" وحدها (لا بريد ولا اسم ولا رموز، D23). `signOut` يمسحها ويمسح `api_cache` للبيانات الخاصة (عند بناء طبقة API).
-- قاعدة: `data/auth` لا يستورده إلا `main.dart` وطبقة `data/youtube_api`؛ المستخرج وطبقة الصوت لا يعرفان auth (اختبار معماري).
+- قاعدة: `data/auth` لا يستورده إلا `main.dart` وطبقة `data/youtube_api`؛ و`data/youtube_api` لا يستورده إلا `main.dart` ويستعمل منفذ `AuthService` لا تنفيذه؛ المستخرج وطبقة الصوت لا يعرفان auth ولا الواجهة (اختبار معماري).
 - ممنوع: تسجيل الرموز في السجلات، أو وضعها في shared_preferences/drift/ملفات، أو إرسالها لغير `googleapis.com`.
 - `android:allowBackup="false"` لمنع نسخ البيانات للسحابة.
 
@@ -90,8 +90,7 @@ apps/bgtube/
 - `favorites(videoId PK, title, channel, thumbUrl, durationSec, addedAt)`
 - `history(id PK, videoId, title, channel, thumbUrl, playedAt)` — حد أقصى 500 سجل.
 - `positions(videoId PK, positionMs, durationMs, updatedAt)`
-- `api_cache(key PK, json, fetchedAt, ttlSec, private)`
-- `quota(dayPT PK, units)`
+- `api_cache(key PK, json, fetchedAt, ttlSec, private)` و`quota(dayPt PK, units)` (v3، D29).
 - `queue_entries(key PK, ord, videoId, title?, author?, durationMs?, thumbUrl?, failed)`، و`queue_state(id=0 PK, currentKey?, updatedAt)`. موضع الحالي مصدره `positions` وحده.
 - `local_playlists(id PK auto, name 1..100, createdAt, updatedAt)`، و`local_playlist_items(playlistId FK cascade, ord, videoId, title?, author?, durationMs?, thumbUrl?, PK(playlistId, ord))`. محلية فقط ولا تُرسل إلى يوتيوب.
 - الإصدارات: v1 = `positions`، وv2 تضيف جداول الطابور والقوائم المحلية (`onUpgrade from<2`، و`PRAGMA foreign_keys=ON` في beforeOpen). المخططات تُصدَّر إلى `drift_schemas/` مع اختبارات ترحيل مولَّدة.
@@ -106,7 +105,7 @@ apps/bgtube/
 
 ## الاختبارات
 - Unit: محلّل الروابط (watch/youtu.be/shorts/playlist/غير صالح)، سياسة الكاش وTTL والإبطال، عدّاد الحصة وإعادة التصفير، مؤقت النوم (بساعة وهمية)، قاعدة حفظ الموضع (<10 ثوانٍ)، تحويل ردود API إلى النماذج (JSON ثابتة).
-- Unit بـmocktail: `YouTubeApi` مع `dio` وهمي (401 → AuthExpired، 403 quota → رسالة الحصة).
+- Unit: `YouTubeDataApi` مع `MockClient` من `package:http/testing.dart` وdrift في الذاكرة (401 → AuthExpired، 403 quota → رسالة الحصة، الكاش وTTL، الحصة بيوم المحيط الهادئ).
 - اختبار معماري: لا استيراد من `data/extractor` خارج ربط المزوّدات، ولا يعتمد التنفيذ على `auth`.
 - Widget: الشاشات بالعربية RTL (لا overflow)، الحالات الفارغة والخطأ و"إعادة المحاولة"، مع تنفيذات وهمية للمنافذ.
 - drift في الذاكرة لاختبار المستودعات، واختبار ترحيل المخطط (v1→v2 يحفظ `positions`).

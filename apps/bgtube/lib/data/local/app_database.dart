@@ -67,13 +67,38 @@ class LocalPlaylistItems extends Table {
   Set<Column<Object>> get primaryKey => {playlistId, ord};
 }
 
-@DriftDatabase(tables: [Positions, QueueEntries, QueueState, LocalPlaylists, LocalPlaylistItems])
+/// ردود YouTube Data API (v3، D29). المفتاح = الطلب المطبَّع بلا رموز.
+@DataClassName('ApiCacheRow')
+class ApiCache extends Table {
+  TextColumn get key => text()();
+  TextColumn get json => text()();
+  DateTimeColumn get fetchedAt => dateTime()();
+  IntColumn get ttlSec => integer()();
+
+  /// بيانات الحساب: تُمسح عند تسجيل الخروج.
+  BoolColumn get private => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {key};
+}
+
+/// الوحدات المقدّرة لكل يوم بتوقيت المحيط الهادئ (v3، D29).
+@DataClassName('QuotaRow')
+class Quota extends Table {
+  TextColumn get dayPt => text()();
+  IntColumn get units => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {dayPt};
+}
+
+@DriftDatabase(tables: [Positions, QueueEntries, QueueState, LocalPlaylists, LocalPlaylistItems, ApiCache, Quota])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
-  /// v1: positions. v2: الطابور والقوائم المحلية (D27).
+  /// v1: positions. v2: الطابور والقوائم المحلية (D27). v3: كاش الواجهة والحصة (D29).
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,6 +110,10 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(schema.queueState);
             await m.createTable(schema.localPlaylists);
             await m.createTable(schema.localPlaylistItems);
+          },
+          from2To3: (m, schema) async {
+            await m.createTable(schema.apiCache);
+            await m.createTable(schema.quota);
           },
         ),
         beforeOpen: (details) async {

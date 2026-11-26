@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'app.dart';
@@ -15,11 +16,14 @@ import 'data/auth/google_auth_service.dart';
 import 'data/settings/prefs_locale_store.dart';
 import 'data/settings/prefs_risk_ack_store.dart';
 import 'data/settings/prefs_speed_store.dart';
+import 'data/local/drift_api_cache_store.dart';
 import 'data/local/drift_local_playlist_repository.dart';
 import 'data/local/drift_position_repository.dart';
 import 'data/local/drift_queue_repository.dart';
 import 'data/incoming/receive_sharing_link_source.dart';
 import 'data/extractor/youtube_explode_resolver.dart';
+import 'data/youtube_api/quota_meter.dart';
+import 'data/youtube_api/youtube_data_api.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +48,13 @@ Future<void> main() async {
   // الحساب (D7/D22): لا يُمرَّر إلى المستخرج أبداً. الاستعادة صامتة ولا تؤخر الإقلاع.
   final auth = GoogleAuthService(PluginGoogleAuthGateway(), SecureAuthSessionStore());
   unawaited(auth.restore());
+  // الواجهة الرسمية (D29): رمز الحساب يمر هنا فقط، لا إلى المستخرج.
+  final api = YouTubeDataApi(
+    auth: auth,
+    client: http.Client(),
+    cache: DriftApiCacheStore(db),
+    quota: QuotaMeter(DriftQuotaStore(db)),
+  );
   runApp(ProviderScope(
     overrides: [
       localeStoreProvider.overrideWithValue(localeStore),
@@ -54,6 +65,7 @@ Future<void> main() async {
       localPlaylistRepositoryProvider.overrideWithValue(DriftLocalPlaylistRepository(db)),
       incomingLinkSourceProvider.overrideWithValue(ReceiveSharingLinkSource()),
       authServiceProvider.overrideWithValue(auth),
+      youTubeApiProvider.overrideWithValue(api),
       riskAckStoreProvider.overrideWithValue(PrefsRiskAckStore()),
     ],
     child: const BgtubeApp(),

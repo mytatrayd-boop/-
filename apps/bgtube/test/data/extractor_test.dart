@@ -107,7 +107,7 @@ void main() {
       }
     });
 
-    test('only main.dart (and the future API layer) imports data/auth', () {
+    test('only main.dart (and the API layer) imports data/auth', () {
       for (final f in dartFiles('lib')) {
         if (f.path.contains('data/auth') ||
             f.path.contains('data/youtube_api') ||
@@ -115,6 +115,39 @@ void main() {
           continue;
         }
         expect(f.readAsStringSync(), isNot(contains('data/auth')), reason: f.path);
+      }
+    });
+
+    test('only main.dart imports data/youtube_api (D29)', () {
+      for (final f in dartFiles('lib')) {
+        if (f.path.contains('data/youtube_api') || f.path.endsWith('lib/main.dart')) continue;
+        expect(f.readAsStringSync(), isNot(contains('youtube_api/')), reason: f.path);
+      }
+    });
+
+    test('the API layer uses the AuthService port, not the auth implementation, and logs no token', () {
+      for (final f in dartFiles('lib/data/youtube_api')) {
+        final src = f.readAsStringSync();
+        expect(src, isNot(contains('data/auth')), reason: f.path);
+        expect(src, isNot(contains('/auth/')), reason: f.path);
+        expect(src, isNot(contains('package:google_sign_in')), reason: f.path);
+        expect(src, isNot(contains('data/extractor')), reason: f.path);
+        for (final line in src.split('\n')) {
+          if (line.contains('debugPrint') || line.contains('print(') || line.contains('AppFailure(')) {
+            expect(line.toLowerCase(), isNot(contains('token')), reason: '${f.path}: $line');
+          }
+        }
+        // لا مفتاح API ولا طلبات خارج googleapis.com.
+        expect(src, isNot(contains("'key'")), reason: f.path);
+        expect(RegExp(r'https?://(?!www\.googleapis\.com)').hasMatch(src), isFalse, reason: f.path);
+      }
+    });
+
+    test('extractor and audio know nothing about the Data API', () {
+      for (final f in [...dartFiles('lib/data/extractor'), ...dartFiles('lib/audio')]) {
+        final src = f.readAsStringSync();
+        expect(src, isNot(contains('youtube_api')), reason: f.path);
+        expect(src, isNot(contains('YouTubeApi')), reason: f.path);
       }
     });
 
@@ -218,6 +251,9 @@ void main() {
         'lib/domain/models/local_playlist.dart',
         'lib/domain/ports/queue_repository.dart',
         'lib/domain/ports/local_playlist_repository.dart',
+        'lib/domain/models/youtube_content.dart',
+        'lib/domain/ports/youtube_api.dart',
+        'lib/domain/ports/api_cache_store.dart',
       ]) {
         final src = File(path).readAsStringSync();
         expect(src, isNot(contains('package:')), reason: path);

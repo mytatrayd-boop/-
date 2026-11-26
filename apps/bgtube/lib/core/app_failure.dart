@@ -14,6 +14,9 @@ enum FailureKind {
   signInFailed,
   signInUnavailable,
   signOutFailed,
+  // YouTube Data API (الميزة 3)
+  quotaExceeded,
+  apiFailed,
 }
 
 class AppFailure implements Exception {
