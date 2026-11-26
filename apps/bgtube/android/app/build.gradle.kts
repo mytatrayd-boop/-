@@ -1,8 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// توقيع الإصدار (نفس طريقة «لمحة»): android/key.properties محلياً، أو متغيرات البيئة في CI
+// (bgtube-android.yml، أسرار ANDROID_KEYSTORE_*). بدونها يرجع إلى توقيع debug محلياً.
+val keyProps = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun signingValue(prop: String, env: String): String? = keyProps.getProperty(prop) ?: System.getenv(env)
+val hasReleaseSigning = signingValue("storeFile", "ANDROID_KEYSTORE_PATH") != null
 
 android {
     namespace = "com.bgtube.bgtube"
@@ -29,11 +40,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val store = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")
+            if (store != null) {
+                storeFile = file(store)
+                storePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseSigning)
+                signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }
