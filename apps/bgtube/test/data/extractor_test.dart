@@ -152,6 +152,43 @@ void main() {
       }
     });
 
+    test('extractor and audio do not use riverpod or core/providers.dart', () {
+      for (final f in [
+        ...dartFiles('lib/data/extractor'),
+        ...dartFiles('lib/audio'),
+      ]) {
+        final src = f.readAsStringSync();
+        expect(src, isNot(contains('flutter_riverpod')), reason: f.path);
+        expect(src, isNot(contains('package:riverpod')), reason: f.path);
+        expect(src, isNot(contains('core/providers.dart')), reason: f.path);
+      }
+    });
+
+    test('extractor and audio never mention the auth service (any case)', () {
+      for (final f in [
+        ...dartFiles('lib/data/extractor'),
+        ...dartFiles('lib/audio'),
+      ]) {
+        expect(
+          f.readAsStringSync().toLowerCase(),
+          isNot(contains('authservice')),
+          reason: f.path,
+        );
+      }
+    });
+
+    test('playback ports carry no token, bearer or Authorization', () {
+      for (final path in [
+        'lib/domain/ports/audio_source_resolver.dart',
+        'lib/domain/ports/playback_controller.dart',
+      ]) {
+        final src = File(path).readAsStringSync().toLowerCase();
+        for (final word in ['token', 'bearer', 'authorization']) {
+          expect(src, isNot(contains(word)), reason: '$path: $word');
+        }
+      }
+    });
+
     test('features and audio do not import data layer', () {
       for (final f in [
         ...dartFiles('lib/features'),

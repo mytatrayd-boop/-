@@ -89,7 +89,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsetsDirectional.all(16),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: c.maxHeight - 32),
-              child: Column(
+              // DESIGN §5: الزر الأساسي في الثلث السفلي؛ الشرح أعلى والأزرار أسفل.
+              child: IntrinsicHeight(
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 32),
@@ -110,6 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ],
                     ),
+                  const Spacer(),
                   const SizedBox(height: 24),
                   if (!unavailable)
                     SizedBox(
@@ -140,6 +143,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Text(l.loginNoPassword,
                       textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
                 ],
+              ),
               ),
             ),
           ),

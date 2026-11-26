@@ -13,6 +13,16 @@ void main() {
       expect(s, 'Response code: 403 <url> x');
       expect(sanitizeDetail('host rr1---sn.googlevideo.com/v?sig=Z'), 'host <url>');
     });
+    test('removes urls that are not googlevideo', () {
+      expect(sanitizeDetail('failed http://example.org/a?b=c and ftp://h/x'), 'failed <url> and <url>');
+    });
+    test('redacts signed values even without a host', () {
+      final s = sanitizeDetail('bad params ip=2001:db8::1&sig=AbC123 signature=XYZ lsig=Q done');
+      expect(s, 'bad params ip=<redacted>&sig=<redacted> signature=<redacted> lsig=<redacted> done');
+      expect(s, isNot(contains('2001')));
+      expect(s, isNot(contains('AbC123')));
+      expect(s, isNot(contains('XYZ')));
+    });
     test('collapses whitespace and caps the length', () {
       expect(sanitizeDetail('a \n  b'), 'a b');
       final long = sanitizeDetail('x' * 500);

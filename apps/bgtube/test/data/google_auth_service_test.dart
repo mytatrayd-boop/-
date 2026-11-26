@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bgtube/core/app_failure.dart';
 import 'package:bgtube/data/auth/auth_session_store.dart';
 import 'package:bgtube/data/auth/google_auth_gateway.dart';
@@ -21,6 +23,10 @@ class FakeGateway implements GoogleAuthGateway {
   Object? signOutError;
   List<String>? lastScopes;
 
+  /// إن وُجد ينتظره الطلب (لاختبار السباقات والمهلة).
+  Completer<void>? silentGate;
+  Completer<void>? interactiveGate;
+
   @override
   Future<void> initialize() async {
     initCalls++;
@@ -31,6 +37,7 @@ class FakeGateway implements GoogleAuthGateway {
   @override
   Future<String> interactiveToken(List<String> scopes) async {
     lastScopes = scopes;
+    await interactiveGate?.future;
     final r = interactive;
     if (r is String) return r;
     throw r!;
@@ -39,6 +46,7 @@ class FakeGateway implements GoogleAuthGateway {
   @override
   Future<String?> silentToken(List<String> scopes) async {
     lastScopes = scopes;
+    await silentGate?.future;
     final r = silent;
     if (r == null || r is String) return r as String?;
     throw r;
@@ -99,6 +107,7 @@ void main() {
     for (final e in [
       gse(GoogleSignInExceptionCode.canceled),
       gse(GoogleSignInExceptionCode.unknownError, 'SDK reported an exception: 16: Cancelled by user.'),
+      gse(GoogleSignInExceptionCode.unknownError, 'SDK reported an exception: 16: '),
       gse(GoogleSignInExceptionCode.unknownError, 'Platform returned null unexpectedly.'),
     ]) {
       test('cancel/deny is not an error (${e.description ?? e.code.name})', () async {
@@ -115,6 +124,10 @@ void main() {
       (gse(GoogleSignInExceptionCode.clientConfigurationError), FailureKind.signInUnavailable),
       (gse(GoogleSignInExceptionCode.uiUnavailable), FailureKind.signInFailed),
       (gse(GoogleSignInExceptionCode.unknownError, 'Authorization failed: boom'), FailureKind.signInFailed),
+      (
+        gse(GoogleSignInExceptionCode.unknownError, 'Authorization failed: 10: DEVELOPER_ERROR (fingerprint)'),
+        FailureKind.signInUnavailable,
+      ),
     ];
     for (final (e, kind) in cases) {
       test('${e.code.name} "${e.description}" -> $kind', () async {
@@ -124,6 +137,15 @@ void main() {
         expect(session.has, isFalse);
       });
     }
+
+    test('interactive sign-in that never returns times out -> signInFailed', () async {
+      gw.interactiveGate = Completer<void>();
+      final a = GoogleAuthService(gw, session, interactiveTimeout: const Duration(milliseconds: 20));
+      await expectLater(a.signIn(),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.signInFailed)));
+      expect(a.status, AuthStatus.signedOut);
+      expect(session.has, isFalse);
+    });
 
     test('non-plugin error -> signInFailed', () async {
       gw.interactive = StateError('x');
@@ -234,6 +256,30 @@ void main() {
       await expectLater(auth.accessToken(),
           throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.network)));
       expect(auth.status, AuthStatus.signedIn);
+    });
+
+    test('silent token that never returns times out -> network, status unchanged', () async {
+      final a = GoogleAuthService(gw, session, silentTimeout: const Duration(milliseconds: 20));
+      await a.signIn();
+      gw.silentGate = Completer<void>();
+      await expectLater(a.accessToken(),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.network)));
+      expect(a.status, AuthStatus.signedIn);
+    });
+
+    test('sign-out while waiting for the token -> notSignedIn and the token is not kept', () async {
+      await auth.signIn(); // tok-1
+      gw.silentGate = Completer<void>();
+      final pending = auth.accessToken();
+      await auth.signOut();
+      expect(gw.cleared, ['tok-1']);
+      gw.silentGate!.complete(); // يصل tok-2 بعد الخروج
+      await expectLater(pending,
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.notSignedIn)));
+      expect(auth.status, AuthStatus.signedOut);
+      // لو حُفظ tok-2 لمُسح في الخروج التالي.
+      await auth.signOut();
+      expect(gw.cleared, ['tok-1']);
     });
 
     test('invalidateAccessToken clears the token in the system cache', () async {

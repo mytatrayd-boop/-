@@ -19,7 +19,8 @@ class AppFailure implements Exception {
 
   final FailureKind kind;
 
-  /// للتشخيص فقط؛ لا يُعرض للمستخدم ولا يجوز أن يحوي رموزاً.
+  /// تشخيص تقني قصير (نوع الاستثناء، رمز HTTP، العميل/itag) يُعرض بخط صغير
+  /// تحت رسالة الخطأ لتفيد لقطة الشاشة. منقّى: بلا روابط ولا رموز ولا قيم موقّعة.
   final String? debugDetail;
 
   @override

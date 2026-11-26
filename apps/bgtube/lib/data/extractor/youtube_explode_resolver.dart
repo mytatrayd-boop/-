@@ -11,10 +11,15 @@ import '../../domain/ports/audio_source_resolver.dart';
 /// مجموعات العملاء بالترتيب (D24). `null` = إدارة المكتبة الافتراضية
 /// (androidSdkless ثم tv). تُجرَّب المجموعة التالية عند طلب حلّ الفيديو نفسه
 /// مجدداً خلال [YoutubeExplodeResolver.retryWindow] (أي بعد فشل تشغيل).
+///
+/// لا يُصفَّر التدوير عند نجاح التشغيل: المنفذ `AudioSourceResolver` لا يعرف
+/// نتيجة التشغيل (ولا نوسّعه لأجل ذلك). أثره المقبول: إعادة تشغيل الفيديو نفسه
+/// خلال دقيقتين بعد نجاحه تستعمل العميل التالي، وكلها عملاء صالحة؛ وبعد
+/// دقيقتين أو لفيديو آخر يبدأ من الافتراضي.
 final List<List<YoutubeApiClient>?> defaultClientStrategies = [
   null,
-  [YoutubeApiClient.androidVr],
   [YoutubeApiClient.ios],
+  [YoutubeApiClient.androidVr],
 ];
 
 /// التنفيذ الوحيد الذي يعرف youtube_explode_dart (D4).
@@ -125,7 +130,15 @@ Map<String, String> headersForStreamUrl(Uri url) {
 final Map<String, String> _clientUserAgents = {
   for (final c in [YoutubeApiClient.androidSdkless, YoutubeApiClient.ios, YoutubeApiClient.safari, YoutubeApiClient.tv])
     if (_client(c)['userAgent'] is String) _client(c)['clientName'] as String: _client(c)['userAgent'] as String,
+  // تعريف المكتبة لـANDROID_VR بلا userAgent؛ نبنيه بصيغة yt-dlp وبإصدار
+  // العميل نفسه في المكتبة كي يطابق الرابط المُصدَر.
+  'ANDROID_VR': androidVrUserAgent(_client(YoutubeApiClient.androidVr)['clientVersion'] as String),
 };
+
+/// User-Agent تطبيق YouTube VR (Quest) بصيغة yt-dlp.
+String androidVrUserAgent(String clientVersion) =>
+    'com.google.android.apps.youtube.vr.oculus/$clientVersion '
+    '(Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip';
 
 Map<String, dynamic> _client(YoutubeApiClient c) => (c.payload['context'] as Map)['client'] as Map<String, dynamic>;
 

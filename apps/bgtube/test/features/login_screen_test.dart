@@ -237,6 +237,33 @@ void main() {
     expect(find.byKey(const Key('accountSignIn')), findsOneWidget);
   });
 
+  testWidgets('Google button sits in the bottom third of the login screen (DESIGN §5)', (t) async {
+    await pumpApp(t, FakeAuthService());
+    await openLogin(t);
+    final screenH = t.getSize(find.byType(Scaffold).last).height;
+    final top = t.getTopLeft(find.byKey(const Key('loginContinue'))).dy;
+    expect(top, greaterThanOrEqualTo(screenH * 2 / 3));
+    // والشرح يبقى في الأعلى.
+    expect(t.getTopLeft(find.byIcon(Icons.headphones).last).dy, lessThan(screenH / 3));
+  });
+
+  testWidgets('expired session: settings offers both sign in and sign out', (t) async {
+    final auth = FakeAuthService(AuthStatus.expired);
+    await pumpApp(t, auth);
+    await t.tapAt(const Offset(5, 5)); // إغلاق حوار الانتهاء
+    await t.pumpAndSettle();
+    await openSettings(t);
+    expect(find.byKey(const Key('accountSignIn')), findsOneWidget);
+    expect(find.byKey(const Key('accountSignOut')), findsOneWidget);
+    await t.tap(find.byKey(const Key('accountSignOut')));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('signOutConfirm')));
+    await t.pumpAndSettle();
+    expect(auth.signOutCalls, 1);
+    expect(find.byKey(const Key('accountSignOut')), findsNothing);
+    expect(find.byKey(const Key('accountSignIn')), findsOneWidget);
+  });
+
   testWidgets('English strings and LTR', (t) async {
     await pumpApp(t, FakeAuthService(), locale: const Locale('en'));
     await openSettings(t);

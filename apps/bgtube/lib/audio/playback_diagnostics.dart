@@ -45,6 +45,11 @@ String sanitizeDetail(String raw) {
   final s = raw
       .replaceAll(RegExp(r'[a-zA-Z][a-zA-Z0-9+.-]*://\S*'), '<url>')
       .replaceAll(RegExp(r'\S*googlevideo\S*'), '<url>')
+      // قيم موقّعة/معرّفة حتى بلا مضيف: ip= وsig= وsignature= وما شابه.
+      .replaceAllMapped(
+        RegExp(r'\b(ip|sig|lsig|signature|pot|key|token|access_token)=[^\s&]*', caseSensitive: false),
+        (m) => '${m[1]}=<redacted>',
+      )
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
   return s.length <= maxDetailLength ? s : '${s.substring(0, maxDetailLength - 1)}…';

@@ -129,6 +129,8 @@ void main() {
     final detail = t.widget<SelectableText>(find.byKey(const Key('failureDetail')));
     expect(detail.data, 'PlayerException(0) Source error · probe HTTP 403');
     expect(detail.textDirection, TextDirection.ltr);
+    // داخل واجهة عربية RTL، والسطر نفسه LTR.
+    expect(Directionality.of(t.element(find.byKey(const Key('failureDetail')))), TextDirection.rtl);
     expect(detail.style?.fontSize, 11);
     expect(find.text('إعادة المحاولة'), findsOneWidget);
   });

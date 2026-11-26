@@ -152,20 +152,30 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
               ),
             ),
             const SizedBox(width: 8),
-            if (status == AuthStatus.signedIn)
-              OutlinedButton(
-                key: const Key('accountSignOut'),
-                style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
-                onPressed: _busy ? null : _signOut,
-                child: Text(l.signOut),
-              )
-            else
-              FilledButton(
-                key: const Key('accountSignIn'),
-                style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
-                onPressed: _busy ? null : () => openLoginScreen(context),
-                child: Text(l.signIn),
+            // انتهت الجلسة: الدخول من جديد أو الخروج لمسح العلامة المحلية.
+            Flexible(
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  if (status != AuthStatus.signedOut)
+                    OutlinedButton(
+                      key: const Key('accountSignOut'),
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                      onPressed: _busy ? null : _signOut,
+                      child: Text(l.signOut),
+                    ),
+                  if (status != AuthStatus.signedIn)
+                    FilledButton(
+                      key: const Key('accountSignIn'),
+                      style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+                      onPressed: _busy ? null : () => openLoginScreen(context),
+                      child: Text(l.signIn),
+                    ),
+                ],
               ),
+            ),
           ],
         ),
       ),

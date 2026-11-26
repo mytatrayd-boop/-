@@ -86,14 +86,23 @@ void main() {
       final h = headersForStreamUrl(Uri.parse('https://x/v?c=IOS'));
       expect(h['User-Agent'], startsWith('com.google.ios.youtube/'));
     });
+    test('ANDROID_VR url gets the VR user-agent with the library clientVersion', () {
+      expect(headersForStreamUrl(Uri.parse('https://x.googlevideo.com/videoplayback?c=ANDROID_VR')), {
+        'User-Agent': 'com.google.android.apps.youtube.vr.oculus/1.56.21 '
+            '(Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip',
+      });
+    });
     test('unknown or missing client -> no headers (player default)', () {
-      expect(headersForStreamUrl(Uri.parse('https://x/v?c=ANDROID_VR')), isEmpty);
+      expect(headersForStreamUrl(Uri.parse('https://x/v?c=MWEB')), isEmpty);
       expect(headersForStreamUrl(Uri.parse('https://x/v')), isEmpty);
     });
     test('only User-Agent, never cookies or auth', () {
-      for (final c in ['ANDROID', 'IOS', 'WEB', 'TVHTML5']) {
+      for (final c in ['ANDROID', 'IOS', 'WEB', 'TVHTML5', 'ANDROID_VR', 'MWEB', '']) {
         final h = headersForStreamUrl(Uri.parse('https://x/v?c=$c'));
         expect(h.keys.every((k) => k == 'User-Agent'), isTrue, reason: c);
+        final lower = h.keys.map((k) => k.toLowerCase());
+        expect(lower, isNot(contains('authorization')), reason: c);
+        expect(lower, isNot(contains('cookie')), reason: c);
       }
     });
   });
@@ -167,8 +176,8 @@ void main() {
       await r.resolve('dQw4w9WgXcQ');
       expect(calls, [
         null,
-        [YoutubeApiClient.androidVr],
         [YoutubeApiClient.ios],
+        [YoutubeApiClient.androidVr],
         null,
       ]);
     });
@@ -188,13 +197,13 @@ void main() {
       when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'))).thenAnswer((inv) async {
         final c = inv.namedArguments[#ytClients] as List<YoutubeApiClient>?;
         calls.add(c);
-        if (c != null) throw VideoUnavailableException('vr refused');
+        if (c != null) throw VideoUnavailableException('ios refused');
         return StreamManifest([m4a140]);
       });
       final a = await r.resolve('dQw4w9WgXcQ');
       expect(a.url.queryParameters['itag'], '140');
       expect(calls.skip(1), [
-        [YoutubeApiClient.androidVr],
+        [YoutubeApiClient.ios],
         null,
       ]);
     });

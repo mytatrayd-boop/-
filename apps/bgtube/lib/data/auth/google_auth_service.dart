@@ -11,7 +11,18 @@ import 'google_auth_gateway.dart';
 /// تنفيذ [AuthService]. الرمز في الذاكرة فقط (لمسحه من ذاكرة Play Services عند
 /// الخروج)؛ لا يُسجَّل ولا يُخزَّن.
 class GoogleAuthService implements AuthService {
-  GoogleAuthService(this._gateway, this._session);
+  GoogleAuthService(
+    this._gateway,
+    this._session, {
+    this.interactiveTimeout = const Duration(minutes: 3),
+    this.silentTimeout = const Duration(seconds: 20),
+  });
+
+  /// مهلة شاشة الدخول (يتضمّن وقت المستخدم)؛ تجاوزها = signInFailed.
+  final Duration interactiveTimeout;
+
+  /// مهلة الرمز الصامت؛ تجاوزها = network.
+  final Duration silentTimeout;
 
   final GoogleAuthGateway _gateway;
   final AuthSessionStore _session;
@@ -72,7 +83,9 @@ class GoogleAuthService implements AuthService {
     final String token;
     try {
       await _ensureInit();
-      token = await _gateway.interactiveToken(scopes);
+      token = await _gateway.interactiveToken(scopes).timeout(interactiveTimeout);
+    } on TimeoutException {
+      throw const AppFailure(FailureKind.signInFailed, 'timeout');
     } on GoogleSignInException catch (e) {
       final kind = classifySignInError(e);
       if (kind == null) return SignInOutcome.canceled;
@@ -100,7 +113,9 @@ class GoogleAuthService implements AuthService {
     final String? token;
     try {
       await _ensureInit();
-      token = await _gateway.silentToken(scopes);
+      token = await _gateway.silentToken(scopes).timeout(silentTimeout);
+    } on TimeoutException {
+      throw const AppFailure(FailureKind.network, 'timeout');
     } on GoogleSignInException catch (e) {
       final kind = classifySignInError(e);
       throw AppFailure(
