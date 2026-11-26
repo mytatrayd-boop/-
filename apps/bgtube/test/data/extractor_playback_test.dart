@@ -246,6 +246,14 @@ void main() {
       expect((await pending).title, 'Late');
     });
 
+    test('slow metadata does not hold playback beyond the grace period', () async {
+      when(() => videos.get(any())).thenAnswer((_) => Completer<Video>().future);
+      final r = YoutubeExplodeResolver(client: yt, now: () => now, metadataGrace: const Duration(milliseconds: 20));
+      final a = await r.resolve('dQw4w9WgXcQ');
+      expect(a.title, 'dQw4w9WgXcQ');
+      expect(a.url.queryParameters['itag'], '140');
+    });
+
     test('metadata failure alone does not block playback (title falls back to id)', () async {
       when(() => videos.get(any())).thenAnswer((_) async => throw RequestLimitExceededException('429'));
       final a = await resolver().resolve('dQw4w9WgXcQ');

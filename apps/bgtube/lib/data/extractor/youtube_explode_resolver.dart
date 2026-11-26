@@ -30,6 +30,7 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
     this.timeout = const Duration(seconds: 25),
     List<List<YoutubeApiClient>?>? strategies,
     this.retryWindow = const Duration(minutes: 2),
+    this.metadataGrace = const Duration(seconds: 3),
     DateTime Function()? now,
   })  : _yt = client ?? YoutubeExplode(),
         _strategies = strategies ?? defaultClientStrategies,
@@ -38,6 +39,10 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
   final YoutubeExplode _yt;
   final Duration timeout;
   final Duration retryWindow;
+
+  /// أقصى انتظار للبيانات الوصفية بعد جاهزية الصوت؛ بعده يبدأ التشغيل بالمعرّف
+  /// عنواناً (صفحة المشاهدة قد تتعثر بإعادة المحاولات عند تقييد المعدّل).
+  final Duration metadataGrace;
   final List<List<YoutubeApiClient>?> _strategies;
   final DateTime Function() _now;
 
@@ -73,7 +78,8 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
   /// السرعة (D26): البيانات الوصفية والـmanifest بالتوازي لا بالتسلسل، والـmanifest
   /// بلا صفحة المشاهدة (`requireWatchPage: false`): العملاء المستعملون لا يحتاجون
   /// فك توقيع، والمكتبة تجلب الصفحة تلقائياً إن احتاجها عميل (tv). فشل البيانات
-  /// الوصفية وحده لا يمنع التشغيل (العنوان يصير المعرّف).
+  /// الوصفية وحده أو تأخرها أكثر من [metadataGrace] لا يمنع التشغيل (العنوان
+  /// يصير المعرّف).
   Future<ResolvedAudio> _resolve(String videoId, List<YoutubeApiClient>? clients) async {
     final videoFuture = _yt.videos.get(videoId).then<Video?>((v) => v);
     final manifestFuture = _manifest(videoId, clients);
@@ -87,7 +93,7 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
     }
     Video? video;
     try {
-      video = await videoFuture;
+      video = await videoFuture.timeout(metadataGrace);
     } catch (e) {
       video = null;
     }
