@@ -187,18 +187,60 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String queueRemaining(String count) {
-    return '$count متبقية';
+  String queueRemaining(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString متبقٍ',
+      many: '$countString متبقياً',
+      few: '$countString متبقية',
+      two: 'اثنان متبقيان',
+      one: 'واحد متبقٍ',
+      zero: 'لا شيء متبقٍ',
+    );
+    return '$_temp0';
   }
 
   @override
-  String itemsSummary(String count, String duration) {
-    return '$count مقاطع · $duration';
+  String itemsSummary(int count, String duration) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString مقطع',
+      many: '$countString مقطعاً',
+      few: '$countString مقاطع',
+      two: 'مقطعان',
+      one: 'مقطع واحد',
+      zero: 'لا مقاطع',
+    );
+    return '$_temp0 · $duration';
   }
 
   @override
-  String itemsCount(String count) {
-    return '$count مقاطع';
+  String itemsCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString مقطع',
+      many: '$countString مقطعاً',
+      few: '$countString مقاطع',
+      two: 'مقطعان',
+      one: 'مقطع واحد',
+      zero: 'لا مقاطع',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -304,13 +346,37 @@ class AppLocalizationsAr extends AppLocalizations {
   String get snackAddedToEnd => 'أُضيف إلى نهاية الطابور';
 
   @override
-  String snackAddedCount(String count) {
-    return 'أُضيف $count مقطعاً إلى الطابور';
+  String snackAddedCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'أُضيف $countString مقطع إلى الطابور',
+      many: 'أُضيف $countString مقطعاً إلى الطابور',
+      few: 'أُضيف $countString مقاطع إلى الطابور',
+      two: 'أُضيف مقطعان إلى الطابور',
+      one: 'أُضيف مقطع واحد إلى الطابور',
+    );
+    return '$_temp0';
   }
 
   @override
-  String queueTruncated(String max) {
-    return 'الطابور ممتلئ ($max مقطع)؛ لم يُضف الباقي';
+  String queueTruncated(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'الطابور ممتلئ ($countString مقطع)؛ لم يُضف الباقي',
+      many: 'الطابور ممتلئ ($countString مقطعاً)؛ لم يُضف الباقي',
+      few: 'الطابور ممتلئ ($countString مقاطع)؛ لم يُضف الباقي',
+    );
+    return '$_temp0';
   }
 
   @override

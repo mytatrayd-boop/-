@@ -82,30 +82,33 @@
       }
     }
   },
-  "queueRemaining": "{count} متبقية",
+  "queueRemaining": "{count, plural, =0{لا شيء متبقٍ} =1{واحد متبقٍ} =2{اثنان متبقيان} few{{count} متبقية} many{{count} متبقياً} other{{count} متبقٍ}}",
   "@queueRemaining": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
-  "itemsSummary": "{count} مقاطع · {duration}",
+  "itemsSummary": "{count, plural, =0{لا مقاطع} =1{مقطع واحد} =2{مقطعان} few{{count} مقاطع} many{{count} مقطعاً} other{{count} مقطع}} · {duration}",
   "@itemsSummary": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int",
+        "format": "decimalPattern"
       },
       "duration": {
         "type": "String"
       }
     }
   },
-  "itemsCount": "{count} مقاطع",
+  "itemsCount": "{count, plural, =0{لا مقاطع} =1{مقطع واحد} =2{مقطعان} few{{count} مقاطع} many{{count} مقطعاً} other{{count} مقطع}}",
   "@itemsCount": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
@@ -168,19 +171,21 @@
     }
   },
   "snackAddedToEnd": "أُضيف إلى نهاية الطابور",
-  "snackAddedCount": "أُضيف {count} مقطعاً إلى الطابور",
+  "snackAddedCount": "{count, plural, =1{أُضيف مقطع واحد إلى الطابور} =2{أُضيف مقطعان إلى الطابور} few{أُضيف {count} مقاطع إلى الطابور} many{أُضيف {count} مقطعاً إلى الطابور} other{أُضيف {count} مقطع إلى الطابور}}",
   "@snackAddedCount": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },
-  "queueTruncated": "الطابور ممتلئ ({max} مقطع)؛ لم يُضف الباقي",
+  "queueTruncated": "{count, plural, few{الطابور ممتلئ ({count} مقاطع)؛ لم يُضف الباقي} many{الطابور ممتلئ ({count} مقطعاً)؛ لم يُضف الباقي} other{الطابور ممتلئ ({count} مقطع)؛ لم يُضف الباقي}}",
   "@queueTruncated": {
     "placeholders": {
-      "max": {
-        "type": "String"
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
       }
     }
   },

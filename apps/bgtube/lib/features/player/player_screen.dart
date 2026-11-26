@@ -477,7 +477,7 @@ class _QueueButton extends StatelessWidget {
         final n = s.remainingCount;
         return IconButton(
           key: const Key('queueButton'),
-          tooltip: n == 0 ? l.queueTitle : '${l.queueTitle} · ${l.queueRemaining(formatCount(context, n))}',
+          tooltip: n == 0 ? l.queueTitle : '${l.queueTitle} · ${l.queueRemaining(n)}',
           constraints: const BoxConstraints.tightFor(width: 56, height: 56),
           onPressed: () => showQueueSheet(context),
           icon: Badge(

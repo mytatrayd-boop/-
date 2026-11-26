@@ -23,6 +23,7 @@ Future<BgtubeAudioHandler> initAudioHandler(
       positions: positions,
       speedStore: speedStore,
       queueRepo: queueRepository,
+      saveInterval: defaultSaveInterval, // ٣ ث (±٣ ث في SPEC)
       probe: httpStreamProbe,
     ),
     config: const AudioServiceConfig(

@@ -192,18 +192,51 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String queueRemaining(String count) {
-    return '$count left';
+  String queueRemaining(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString left',
+      one: '1 left',
+      zero: 'none left',
+    );
+    return '$_temp0';
   }
 
   @override
-  String itemsSummary(String count, String duration) {
-    return '$count items · $duration';
+  String itemsSummary(int count, String duration) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString items',
+      one: '1 item',
+      zero: 'No items',
+    );
+    return '$_temp0 · $duration';
   }
 
   @override
-  String itemsCount(String count) {
-    return '$count items';
+  String itemsCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString items',
+      one: '1 item',
+      zero: 'No items',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -309,13 +342,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get snackAddedToEnd => 'Added to the end of the queue';
 
   @override
-  String snackAddedCount(String count) {
-    return 'Added $count items to the queue';
+  String snackAddedCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $countString items to the queue',
+      one: 'Added 1 item to the queue',
+    );
+    return '$_temp0';
   }
 
   @override
-  String queueTruncated(String max) {
-    return 'The queue is full ($max items); the rest wasn\'t added';
+  String queueTruncated(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The queue is full ($countString items); the rest wasn\'t added',
+      one: 'The queue is full (1 item); the rest wasn\'t added',
+    );
+    return '$_temp0';
   }
 
   @override

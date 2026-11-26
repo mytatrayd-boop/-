@@ -397,10 +397,77 @@ void main() {
       final c = h.queueState.value.entries[2].key;
       expect(h.prefetchedKeys, {h.queueState.value.entries[1].key});
       await h.moveEntry(c, 1); // صار 2 هو التالي
-      expect(h.prefetchedKeys, isEmpty); // رُمي ناتج 1
+      // رُمي ناتج 1، واستُخرج التالي الجديد (2) مسبقاً.
+      expect(h.prefetchedKeys, {c});
       await h.skipToNext();
       expect(currentId(), vid(2));
       expect(resolver.calls, [vid(0), vid(1), vid(2)]);
+    });
+
+    test('play next after ready: the new next is prefetched, and the transition uses it', () async {
+      await h.enqueue(refs(3), QueuePlacement.addToEnd);
+      await ready();
+      expect(resolver.calls, [vid(0), vid(1)]);
+      await h.enqueue([ref(9)], QueuePlacement.playNext);
+      await pumpAll();
+      expect(resolver.calls, [vid(0), vid(1), vid(9)]);
+      await h.skipToNext();
+      expect(currentId(), vid(9));
+      expect(resolver.calls, [vid(0), vid(1), vid(9)]); // بلا استخراج عند الانتقال
+    });
+
+    test('reorder or removal of the next after ready prefetches the new next', () async {
+      await h.enqueue(refs(4), QueuePlacement.addToEnd);
+      await ready();
+      await h.moveEntry(h.queueState.value.entries[3].key, 1);
+      await pumpAll();
+      expect(resolver.calls, [vid(0), vid(1), vid(3)]);
+      await h.removeEntry(h.queueState.value.entries[1].key); // يحذف 3 فيصير 1 التالي
+      await pumpAll();
+      expect(resolver.calls, [vid(0), vid(1), vid(3), vid(1)]);
+      expect(h.prefetchedKeys, {h.queueState.value.entries[1].key});
+      await h.skipToNext();
+      expect(resolver.calls, hasLength(4));
+    });
+
+    test('no prefetch before the current is ready, and a failed prefetch is not retried on every ready', () async {
+      resolver.immediate = null;
+      unawaited(h.enqueue(refs(3), QueuePlacement.addToEnd));
+      await pumpAll();
+      await h.enqueue([ref(9)], QueuePlacement.playNext);
+      await pumpAll();
+      expect(resolver.calls, [vid(0)]);
+      resolver.pending[vid(0)]!.single.complete(audio(vid(0)));
+      await pumpAll();
+      await ready();
+      expect(resolver.calls, [vid(0), vid(9)]);
+      resolver.pending[vid(9)]!.single.completeError(const AppFailure(FailureKind.extractionFailed));
+      await pumpAll();
+      await ready();
+      await ready();
+      // تعديل لا يغيّر التالي لا يعيد استخراجه الفاشل.
+      await h.moveEntry(h.queueState.value.entries.last.key, 2);
+      await pumpAll();
+      expect(resolver.calls, [vid(0), vid(9)]);
+    });
+
+    test('the automatic advance keeps a failed mark until the item succeeds (not a user jump)', () async {
+      await h.enqueue(refs(2), QueuePlacement.addToEnd);
+      final b = h.queueState.value.entries[1].key;
+      // علامة فشل من مرور سابق.
+      await h.removeEntry(b);
+      await h.restoreEntries([IndexedEntry(1, QueueEntry(key: b, ref: ref(1), failed: true))]);
+      resolver.immediate = null;
+      await ready();
+      await complete();
+      expect(currentId(), vid(1));
+      expect(h.queueState.value.entries[1].failed, isTrue); // ما زال يُحمَّل
+      for (final c in resolver.pending[vid(1)]!) {
+        if (!c.isCompleted) c.complete(audio(vid(1)));
+      }
+      await pumpAll();
+      await ready();
+      expect(h.queueState.value.entries[1].failed, isFalse); // نجح
     });
 
     test('a failed prefetch is swallowed; the real failure shows on transition', () async {
@@ -493,6 +560,74 @@ void main() {
         fa.flushMicrotasks();
         expect(engine.log.where((e) => e == 'play').length, plays);
         expect(engine.playing, isFalse);
+      });
+    });
+
+    test('timer expiring while the automatic transition still saves the old position: the next item stays paused', () {
+      fakeAsync((fa) {
+        h = make();
+        unawaited(h.enqueue(refs(2), QueuePlacement.addToEnd));
+        fa.flushMicrotasks();
+        engine.emitReady();
+        fa.flushMicrotasks();
+        engine.position = const Duration(seconds: 60);
+        h.startSleepTimer(const Duration(seconds: 1));
+        positions.saveGate = Completer<void>();
+        engine.events.add(PlaybackEvent(processingState: ProcessingState.completed));
+        fa.flushMicrotasks();
+        fa.elapse(const Duration(seconds: 2));
+        positions.saveGate!.complete();
+        fa.flushMicrotasks();
+        expect(currentId(), vid(1)); // انتقل وحمّل التالي
+        expect(engine.setUrls.last.url.path, '/${vid(1)}');
+        expect(engine.playing, isFalse); // لكن لم يبدأ تشغيله
+      });
+    });
+
+    test('an automatic skip after a failure keeps the D20 flag (it is not a user request)', () {
+      fakeAsync((fa) {
+        h = make();
+        resolver.immediate = null;
+        unawaited(h.enqueue(refs(2), QueuePlacement.addToEnd));
+        fa.flushMicrotasks();
+        h.startSleepTimer(const Duration(seconds: 1));
+        fa.elapse(const Duration(seconds: 2)); // انتهى والأول ما زال يُستخرج
+        resolver.pending[vid(0)]!.single.completeError(const AppFailure(FailureKind.extractionFailed));
+        fa.flushMicrotasks();
+        expect(currentId(), vid(1)); // تُخطّي تلقائياً
+        resolver.pending[vid(1)]!.single.complete(audio(vid(1)));
+        fa.flushMicrotasks();
+        expect(engine.setUrls.last.url.path, '/${vid(1)}');
+        expect(engine.playing, isFalse);
+        expect(engine.log, isNot(contains('play')));
+      });
+    });
+
+    test('automatic skips do not reset the consecutive-failure count', () async {
+      resolver.immediate = (_) async => throw const AppFailure(FailureKind.extractionFailed);
+      await h.enqueue(refs(6), QueuePlacement.addToEnd);
+      await pumpAll();
+      expect(resolver.calls, hasLength(3));
+      expect(h.failure.value?.kind, FailureKind.queueStopped);
+    });
+
+    test('periodic position save defaults to 3s (±3s after a kill, SPEC 10)', () {
+      expect(defaultSaveInterval, const Duration(seconds: 3));
+      fakeAsync((fa) {
+        h = BgtubeAudioHandler(resolver: resolver, engine: engine, positions: positions);
+        unawaited(h.enqueue([ref(0)], QueuePlacement.addToEnd));
+        fa.flushMicrotasks();
+        engine.playingCtl.add(true);
+        fa.flushMicrotasks();
+        engine.position = const Duration(seconds: 40);
+        fa.elapse(const Duration(seconds: 3));
+        expect(positions.store[vid(0)]!.position, const Duration(seconds: 40));
+        engine.position = const Duration(seconds: 43);
+        fa.elapse(const Duration(seconds: 3));
+        expect(positions.store[vid(0)]!.position, const Duration(seconds: 43));
+        unawaited(h.pause());
+        engine.playingCtl.add(false);
+        fa.flushMicrotasks();
       });
     });
 

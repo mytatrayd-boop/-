@@ -410,7 +410,7 @@ void main() {
       playing(c, 1);
       await pumpApp(t, c, p);
       await openPlaylists(t);
-      expect(find.textContaining('${formatCountFor('ar', 2)} مقاطع'), findsOneWidget);
+      expect(find.textContaining('مقطعان'), findsOneWidget);
       final id = p.names.keys.single;
       await t.tap(find.byKey(Key('playlistMenu_$id')));
       await t.pumpAndSettle();
@@ -418,7 +418,7 @@ void main() {
       await t.pumpAndSettle();
       expect(c.enqueued.last.placement, QueuePlacement.playNext);
       expect(c.enqueued.last.ids, [v(5).videoId, v(6).videoId]);
-      expect(find.text('أُضيف ${formatCountFor('ar', 2)} مقطعاً إلى الطابور'), findsOneWidget);
+      expect(find.text('أُضيف مقطعان إلى الطابور'), findsOneWidget);
 
       await t.tap(find.byKey(Key('playlistMenu_$id')));
       await t.pumpAndSettle();

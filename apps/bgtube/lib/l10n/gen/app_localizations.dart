@@ -425,20 +425,20 @@ abstract class AppLocalizations {
   /// No description provided for @queueRemaining.
   ///
   /// In ar, this message translates to:
-  /// **'{count} متبقية'**
-  String queueRemaining(String count);
+  /// **'{count, plural, =0{لا شيء متبقٍ} =1{واحد متبقٍ} =2{اثنان متبقيان} few{{count} متبقية} many{{count} متبقياً} other{{count} متبقٍ}}'**
+  String queueRemaining(int count);
 
   /// No description provided for @itemsSummary.
   ///
   /// In ar, this message translates to:
-  /// **'{count} مقاطع · {duration}'**
-  String itemsSummary(String count, String duration);
+  /// **'{count, plural, =0{لا مقاطع} =1{مقطع واحد} =2{مقطعان} few{{count} مقاطع} many{{count} مقطعاً} other{{count} مقطع}} · {duration}'**
+  String itemsSummary(int count, String duration);
 
   /// No description provided for @itemsCount.
   ///
   /// In ar, this message translates to:
-  /// **'{count} مقاطع'**
-  String itemsCount(String count);
+  /// **'{count, plural, =0{لا مقاطع} =1{مقطع واحد} =2{مقطعان} few{{count} مقاطع} many{{count} مقطعاً} other{{count} مقطع}}'**
+  String itemsCount(int count);
 
   /// No description provided for @queueNowPlaying.
   ///
@@ -629,14 +629,14 @@ abstract class AppLocalizations {
   /// No description provided for @snackAddedCount.
   ///
   /// In ar, this message translates to:
-  /// **'أُضيف {count} مقطعاً إلى الطابور'**
-  String snackAddedCount(String count);
+  /// **'{count, plural, =1{أُضيف مقطع واحد إلى الطابور} =2{أُضيف مقطعان إلى الطابور} few{أُضيف {count} مقاطع إلى الطابور} many{أُضيف {count} مقطعاً إلى الطابور} other{أُضيف {count} مقطع إلى الطابور}}'**
+  String snackAddedCount(int count);
 
   /// No description provided for @queueTruncated.
   ///
   /// In ar, this message translates to:
-  /// **'الطابور ممتلئ ({max} مقطع)؛ لم يُضف الباقي'**
-  String queueTruncated(String max);
+  /// **'{count, plural, few{الطابور ممتلئ ({count} مقاطع)؛ لم يُضف الباقي} many{الطابور ممتلئ ({count} مقطعاً)؛ لم يُضف الباقي} other{الطابور ممتلئ ({count} مقطع)؛ لم يُضف الباقي}}'**
+  String queueTruncated(int count);
 
   /// No description provided for @untitledVideo.
   ///

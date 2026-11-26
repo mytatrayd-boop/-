@@ -23,9 +23,8 @@ String formatCount(BuildContext context, int n) =>
 /// «{n} مقاطع · {المدة}» (المدة للمعروف فقط، وتُحذف إن كانت صفراً).
 String itemsSummary(BuildContext context, int count, Duration total) {
   final l = AppLocalizations.of(context);
-  final n = formatCount(context, count);
-  if (total <= Duration.zero) return l.itemsCount(n);
-  return l.itemsSummary(n, formatDuration(total, Localizations.localeOf(context).languageCode));
+  if (total <= Duration.zero) return l.itemsCount(count);
+  return l.itemsSummary(count, formatDuration(total, Localizations.localeOf(context).languageCode));
 }
 
 Duration totalDuration(Iterable<VideoRef> refs) =>
@@ -54,18 +53,16 @@ Future<void> enqueueWithFeedback(
   if (refs.isEmpty) return;
   final l = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
-  final countText = formatCount(context, refs.length);
-  final maxText = formatCount(context, PlaybackQueue.maxLength);
   final wasEmpty = queue.queueState.value.isEmpty;
   final r = await queue.enqueue(refs, placement);
-  final truncatedLine = r.truncated ? l.queueTruncated(maxText) : null;
+  final truncatedLine = r.truncated ? l.queueTruncated(PlaybackQueue.maxLength) : null;
   if (wasEmpty || placement == QueuePlacement.playNow || r.count == 0) {
     if (truncatedLine != null) showUndoSnack(messenger, l, truncatedLine);
     return;
   }
   final String msg;
   if (refs.length > 1) {
-    msg = l.snackAddedCount(r.count == refs.length ? countText : NumberFormat.decimalPattern(l.localeName).format(r.count));
+    msg = l.snackAddedCount(r.count);
   } else if (placement == QueuePlacement.playNext) {
     msg = l.snackPlayNext(shortTitle(l, refs.first));
   } else {
