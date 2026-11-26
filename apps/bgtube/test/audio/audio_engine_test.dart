@@ -132,6 +132,26 @@ void main() {
       await e.dispose();
     });
 
+    test('sourceErrorDetail reports the current stream\'s last proxy failure, without the url', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      server.listen((req) async {
+        req.response.statusCode = 403;
+        await req.response.close();
+      });
+      addTearDown(() => server.close(force: true));
+      final e = JustAudioEngine(player: player, proxy: proxy);
+      await e.setUrl(Uri.parse('http://127.0.0.1:${server.port}/v?sig=SECRET'), initialPosition: Duration.zero);
+      expect(e.sourceErrorDetail, isNull);
+      final c = HttpClient();
+      addTearDown(() => c.close(force: true));
+      final res = await (await c.getUrl((loadedSource() as UriAudioSource).uri)).close();
+      await res.drain<void>();
+      expect(res.statusCode, 403);
+      expect(e.sourceErrorDetail, 'proxy OriginStatusException(403)');
+      await e.setUrl(url, initialPosition: Duration.zero);
+      expect(e.sourceErrorDetail, isNull); // مصدر جديد
+    });
+
     test('durationStream comes from the player', () async {
       final ctl = StreamController<Duration?>.broadcast();
       when(() => player.durationStream).thenAnswer((_) => ctl.stream);

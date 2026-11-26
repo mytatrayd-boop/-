@@ -67,12 +67,17 @@ class LocalStreamProxy {
   @visibleForTesting
   int get registeredCount => _streams.length;
 
+  /// آخر منفذ رُبط (للاختبار: التحقق من إغلاقه).
+  @visibleForTesting
+  int? debugBoundPort;
+
   /// يشغّل الخادم مرة واحدة (آمن عند الاستدعاء المتزامن).
   Future<void> start() async {
     if (_closed) throw StateError('proxy closed');
     if (_server != null) return;
     _starting ??= ServerSocket.bind(InternetAddress.loopbackIPv4, 0).then((ss) {
       _socket = ss;
+      debugBoundPort = ss.port;
       // listenOn لا يغلق المقبس عند close: نغلقه نحن في [close].
       return HttpServer.listenOn(SendLimitedServerSocket(ss));
     }).then((s) {
@@ -89,7 +94,11 @@ class LocalStreamProxy {
       _starting = null; // يُعاد المحاولة لاحقاً
       rethrow;
     }
-    if (_closed) throw StateError('proxy closed');
+    if (_closed) {
+      // close() استُدعي أثناء الربط: الخادم والمقبس وُلدا بعده فلم يغلقهما.
+      await _shutdown();
+      throw StateError('proxy closed');
+    }
   }
 
   /// يسجّل مصدراً بعد [start]. الرابط المحلي `http://127.0.0.1:port/<token>`.
@@ -117,6 +126,10 @@ class LocalStreamProxy {
     for (final s in _streams.values.toList()) {
       s.close();
     }
+    await _shutdown();
+  }
+
+  Future<void> _shutdown() async {
     final server = _server;
     final socket = _socket;
     _server = null;
@@ -236,6 +249,10 @@ class ProxiedStream {
     try {
       if (!f.ok) {
         _lastError = OriginStatusException(f.statusCode);
+        // DefaultHttpDataSource يرمي عند 416 بلا `Content-Range: bytes */total`.
+        if (f.statusCode == HttpStatus.requestedRangeNotSatisfiable && f.sourceLength != null) {
+          res.headers.set(HttpHeaders.contentRangeHeader, 'bytes */${f.sourceLength}');
+        }
         await _reply(res, f.statusCode, null);
         return;
       }
@@ -251,10 +268,13 @@ class ProxiedStream {
         return;
       }
       final skip = start - f.offset;
-      final length = contentLength - skip;
+      final endEx = range?.endEx;
+      var length = contentLength - skip;
+      // أصل أعاد أكثر من المطلوب (تجاهل نهاية Range): نقصّ إلى endEx.
+      if (endEx != null && length > endEx - start) length = endEx - start;
       final total = f.sourceLength;
       if (length <= 0) {
-        res.headers.set(HttpHeaders.contentRangeHeader, 'bytes */${total ?? '*'}');
+        if (total != null) res.headers.set(HttpHeaders.contentRangeHeader, 'bytes */$total');
         await _reply(res, HttpStatus.requestedRangeNotSatisfiable, null);
         return;
       }

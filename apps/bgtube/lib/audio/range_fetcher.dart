@@ -97,6 +97,10 @@ Future<RangeFetchResult> fetchRange(
         contentLength = cr.end - cr.start + 1;
         sourceLength = cr.total;
       }
+    } else if (res.statusCode == HttpStatus.requestedRangeNotSatisfiable) {
+      // `bytes */1000`: الطول الكلي يلزم ExoPlayer ليفهم أن الموضع بعد النهاية.
+      sourceLength = parseUnsatisfiedRange(res.headers.value(HttpHeaders.contentRangeHeader));
+      contentLength = null;
     } else if (res.statusCode == HttpStatus.ok) {
       // الخادم تجاهل Range: الجسم من البداية؛ نتخطى حتى from.
       sourceLength = length;
@@ -193,4 +197,11 @@ Future<RangeFetchResult> fetchRange(
   final m = RegExp(r'^bytes\s+(\d+)-(\d+)/(\d+|\*)$').firstMatch(v.trim());
   if (m == null) return null;
   return (start: int.parse(m[1]!), end: int.parse(m[2]!), total: int.tryParse(m[3]!));
+}
+
+/// `bytes */1000` (رد 416) → 1000؛ غير ذلك null.
+int? parseUnsatisfiedRange(String? v) {
+  if (v == null) return null;
+  final m = RegExp(r'^bytes\s+\*/(\d+)$').firstMatch(v.trim());
+  return m == null ? null : int.parse(m[1]!);
 }

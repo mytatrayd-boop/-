@@ -50,15 +50,18 @@ void limitSocketBuffers(Socket s, {int? receive, int? send}) {
 
 /// مصنع اتصالات لـHttpClient يحدّ مخزن الاستقبال قبل أي بيانات، ثم يلفّ TLS
 /// بنفسه لروابط https (كما يفعل HttpClient افتراضياً عبر SecureSocket).
+///
+/// [context] للاختبار فقط (شهادة محلية)؛ الافتراضي جذور النظام كما في HttpClient.
 Future<ConnectionTask<Socket>> Function(Uri, String?, int?) limitedConnectionFactory({
   int receiveBytes = socketBufferBytes,
+  SecurityContext? context,
 }) =>
     (uri, proxyHost, proxyPort) async {
       final task = await Socket.startConnect(proxyHost ?? uri.host, proxyPort ?? uri.port);
       final socket = task.socket.then<Socket>((s) {
         limitSocketBuffers(s, receive: receiveBytes);
         // عبر وكيل HTTP: HttpClient ينشئ النفق وTLS بنفسه على المقبس العادي.
-        if (uri.scheme == 'https' && proxyHost == null) return SecureSocket.secure(s, host: uri.host);
+        if (uri.scheme == 'https' && proxyHost == null) return SecureSocket.secure(s, host: uri.host, context: context);
         return s;
       });
       return ConnectionTask.fromSocket(socket, task.cancel);

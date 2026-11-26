@@ -16,6 +16,10 @@ abstract interface class AudioEngine {
 
   /// يحمّل [url]. كل طلبات البايتات تمر عبر وكيلنا المحلي بترويسات [headers] كما هي (D26).
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}});
+
+  /// آخر فشل داخلي في جلب المصدر الحالي (مثل `proxy UnknownLengthException`)،
+  /// قصير وبلا روابط، لسطر التشخيص. null إن لم يحدث.
+  String? get sourceErrorDetail;
   Future<void> play();
   Future<void> pause();
   Future<void> stop();
@@ -40,6 +44,12 @@ class JustAudioEngine implements AudioEngine {
 
   /// المصدر المحمَّل حالياً في الوكيل (للاختبار والتشخيص).
   ProxiedStream? get currentStream => _current;
+
+  @override
+  String? get sourceErrorDetail => switch (_current?.lastError) {
+        null => null,
+        final e => 'proxy $e',
+      };
 
   @override
   Stream<PlaybackEvent> get playbackEventStream => _p.playbackEventStream;

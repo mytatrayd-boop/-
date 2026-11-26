@@ -40,6 +40,9 @@ class FakeEngine implements AudioEngine {
   final setHeaders = <Map<String, String>>[];
 
   @override
+  String? sourceErrorDetail;
+
+  @override
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
     log.add('setUrl');
     setHeaders.add(headers);
@@ -931,6 +934,18 @@ void main() {
       await settle();
       expect(d.failure.value, isNull);
       expect(e.setUrls.last.url.queryParameters['id'], 'BBBBBBBBBBB');
+    });
+
+    test('the proxy\'s last source error is part of the detail', () async {
+      e.sourceErrorDetail = 'proxy UnknownLengthException';
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitError();
+      await settle();
+      e.emitError();
+      await settle();
+      await settle();
+      expect(d.failure.value!.debugDetail,
+          'PlayerException(0) boom · proxy UnknownLengthException · probe HTTP 403 · ANDROID itag140 mp4a.40.2 ip6');
     });
 
     test('no probe configured -> detail without probe part', () async {

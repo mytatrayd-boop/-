@@ -420,9 +420,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     failure.value = AppFailure(FailureKind.playbackFailed, _playbackDetail(error, audio, result));
   }
 
-  /// تشخيص قصير يظهر تحت رسالة الخطأ: خطأ المشغّل · نتيجة الفحص · المصدر.
+  /// تشخيص قصير يظهر تحت رسالة الخطأ: خطأ المشغّل · فشل الوكيل · نتيجة الفحص · المصدر.
   String _playbackDetail(Object error, ResolvedAudio? audio, String? probeResult) {
     final parts = [playerErrorDetail(error)];
+    if (_player.sourceErrorDetail case final proxy?) parts.add(proxy);
     if (probeResult != null) parts.add(probeResult);
     if (audio?.sourceInfo case final info?) parts.add(info);
     return sanitizeDetail(parts.join(' · '));

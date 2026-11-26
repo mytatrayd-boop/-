@@ -94,7 +94,21 @@ class FakeGoogleVideo {
           res.contentLength = 100000000;
           await trickle(res);
         case '/big':
-          await big(req, res);
+        case '/big16':
+          await big(req, res, req.uri.path == '/big16' ? 16 * 1024 * 1024 : bigSize);
+        case '/late':
+          // يبدأ بعد البايت المطلوب بـ100.
+          final m = RegExp(r'bytes=(\d+)-').firstMatch(req.headers.value('range') ?? '')!;
+          final a = int.parse(m[1]!) + 100;
+          res.statusCode = 206;
+          res.headers.set(HttpHeaders.contentRangeHeader, 'bytes $a-${data.length - 1}/${data.length}');
+          res.contentLength = data.length - a;
+          res.add(data.sublist(a));
+          await res.close();
+        case '/r416':
+          res.statusCode = 416;
+          res.headers.set(HttpHeaders.contentRangeHeader, 'bytes */${data.length}');
+          await res.close();
         case '/hang':
           res.bufferOutput = false;
           res.statusCode = 206;
@@ -127,17 +141,17 @@ class FakeGoogleVideo {
   }
 
   /// 60MB عبر addStream من مولّد: لا يُنتج قطعة جديدة إلا إذا قبلها المقبس.
-  Future<void> big(HttpRequest req, HttpResponse res) async {
+  Future<void> big(HttpRequest req, HttpResponse res, int size) async {
     final m = RegExp(r'bytes=(\d+)-').firstMatch(req.headers.value('range') ?? 'bytes=0-')!;
     final a = int.parse(m[1]!);
     res.statusCode = 206;
-    res.headers.set(HttpHeaders.contentRangeHeader, 'bytes $a-${bigSize - 1}/$bigSize');
-    res.contentLength = bigSize - a;
+    res.headers.set(HttpHeaders.contentRangeHeader, 'bytes $a-${size - 1}/$size');
+    res.contentLength = size - a;
     var gone = false;
     _track(res, () => gone = true);
     final chunk = Uint8List(64 * 1024);
     Stream<List<int>> gen() async* {
-      var left = bigSize - a;
+      var left = size - a;
       while (left > 0 && !gone) {
         final n = min(chunk.length, left);
         bigSent += n;
@@ -512,6 +526,102 @@ void main() {
     });
   });
 
+  group('review of the local proxy', () {
+    test('reader paused longer than the idle timeout: full body over one origin connection', () async {
+      const size = 16 * 1024 * 1024;
+      final errors = await guarded(() async {
+        final p = LocalStreamProxy(
+          fetch: (u, h, {start, end}) =>
+              fetchRange(u, h, start: start, end: end, idleTimeout: const Duration(milliseconds: 300)),
+        );
+        await p.start();
+        final s = p.register(g.url('/big16'), const {});
+        final (client, res) = await open(s.localUri, range: 'bytes=0-');
+        var read = 0;
+        var paused = false;
+        final done = Completer<void>();
+        late final StreamSubscription<List<int>> sub;
+        sub = res.listen((c) {
+          read += c.length;
+          if (!paused && read >= 256 * 1024) {
+            paused = true;
+            sub.pause();
+            // توقف أطول من مهلة الخمول بأربع مرات؛ الجلب موقوف خلاله بالضغط العكسي.
+            Timer(const Duration(milliseconds: 1200), sub.resume);
+          }
+        }, onDone: done.complete, onError: (Object e) => done.completeError(e));
+        await done.future.timeout(const Duration(seconds: 20));
+        expect(read, size);
+        expect(g.seenRange, ['bytes=0-'], reason: 'one origin request, never re-opened');
+        client.close(force: true);
+        await p.close();
+      });
+      expect(errors, isEmpty);
+    }, timeout: const Timeout(Duration(seconds: 40)));
+
+    test('origin starting after the requested byte: 502 "Origin range mismatch"', () async {
+      final s = reg('/late');
+      final r = await get(s.localUri, range: 'bytes=250-');
+      expect(r.status, 502);
+      expect(r.reason, ProxyReason.rangeMismatch);
+      expect(r.body, isEmpty);
+      expect(s.lastError, isA<OriginRangeMismatchException>());
+      expect(s.activeCount, 0);
+    });
+
+    test('an older request whose fetch completes after a newer one gets 503 and frees its origin connection',
+        () async {
+      final gate = Completer<void>();
+      var calls = 0;
+      final p = LocalStreamProxy(fetch: (u, h, {start, end}) async {
+        final first = calls++ == 0;
+        final r = await fetchRange(u, h, start: start, end: end);
+        if (first) await gate.future;
+        return r;
+      });
+      await p.start();
+      addTearDown(p.close);
+      final s = p.register(g.url('/trickle'), const {});
+      final old = get(s.localUri, range: 'bytes=0-');
+      await waitConnections(g, 1);
+      final (c, fresh) = await open(s.localUri, range: 'bytes=500-');
+      expect(fresh.statusCode, 206);
+      gate.complete();
+      final o = await old.timeout(const Duration(seconds: 5));
+      expect(o.status, 503);
+      expect(o.reason, ProxyReason.superseded);
+      await waitConnections(g, 1); // القديم أُغلق، والأحدث وحده باقٍ
+      expect(s.activeCount, 1);
+      c.close(force: true);
+      await waitConnections(g, 0);
+    });
+
+    test('416 from origin is passed on with Content-Range: bytes */total', () async {
+      final s = reg('/r416');
+      final r = await get(s.localUri, range: 'bytes=5000-');
+      expect(r.status, 416);
+      expect(r.headers.value(HttpHeaders.contentRangeHeader), 'bytes */1000');
+    });
+
+    test('origin returning more than the requested end is trimmed to it', () async {
+      final r = await get(reg('/full').localUri, range: 'bytes=100-199');
+      expect(r.status, 206);
+      expect(r.headers.value(HttpHeaders.contentRangeHeader), 'bytes 100-199/1000');
+      expect(r.headers.contentLength, 100);
+      expect(r.body, g.data.sublist(100, 200));
+    });
+
+    test('close() during start(): the bound port is released and start fails', () async {
+      final p = LocalStreamProxy();
+      final f = p.start();
+      await p.close();
+      await expectLater(f, throwsStateError);
+      final port = p.debugBoundPort!;
+      expect(p.port, isNull);
+      await expectLater(Socket.connect(InternetAddress.loopbackIPv4, port), throwsA(isA<SocketException>()));
+    });
+  });
+
   group('_active bookkeeping (review issue 3)', () {
     test('empty after the body completes', () async {
       final s = reg('/ok');
@@ -611,21 +721,6 @@ void main() {
       g.server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     });
 
-    test('idle timeout does not run while the reader is paused', () async {
-      final r = await fetchRange(g.url('/hang'), const {}, idleTimeout: const Duration(milliseconds: 200));
-      var done = false;
-      final first = Completer<void>();
-      final sub = r.body.listen((_) {
-        if (!first.isCompleted) first.complete();
-      }, onDone: () => done = true);
-      await first.future;
-      sub.pause();
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-      expect(done, isFalse, reason: 'paused reader must not trip the idle timeout');
-      sub.resume();
-      await waitFor(() => done, 'idle timeout after resume');
-    });
-
     test('idle timeout default is 10 s', () async {
       final r = await fetchRange(g.url('/hang'), const {});
       final sw = Stopwatch()..start();
@@ -637,22 +732,87 @@ void main() {
 
   group('socket buffers', () {
     test('origin connections get a small receive buffer; local connections a small send buffer', () async {
+      // 48KB: لينكس يضاعفها إلى 98304، وهي تختلف عن الافتراضي هنا (131072 استقبالاً)
+      // فإزالة الضبط تُكتشف. (64KB تُضاعف إلى 131072 نفسها فلا تكشف شيئاً.)
+      const want = 48 * 1024;
       final ss = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-      final limited = SendLimitedServerSocket(ss);
+      final plainAccepted = Completer<Socket>();
+      final plain = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      plain.listen(plainAccepted.complete);
+      final defaultClient = await Socket.connect(InternetAddress.loopbackIPv4, plain.port);
+      final defaults = (
+        receive: readSocketBuffers(defaultClient).receive,
+        send: readSocketBuffers(await plainAccepted.future).send,
+      );
+      expect(defaults.receive, isNot(2 * want));
+      expect(defaults.send, isNot(2 * want));
+
+      final limited = SendLimitedServerSocket(ss, sendBytes: want);
       final accepted = Completer<Socket>();
       limited.listen(accepted.complete);
-      final task = await limitedConnectionFactory()(Uri.parse('http://127.0.0.1:${ss.port}/'), null, null);
+      final task = await limitedConnectionFactory(receiveBytes: want)(Uri.parse('http://127.0.0.1:${ss.port}/'), null, null);
       final client = await task.socket;
       final server = await accepted.future;
-      final rcv = readSocketBuffers(client).receive;
-      final snd = readSocketBuffers(server).send;
-      // لينكس يضاعف القيمة المطلوبة.
-      expect(rcv, inInclusiveRange(socketBufferBytes, 2 * socketBufferBytes));
-      expect(snd, inInclusiveRange(socketBufferBytes, 2 * socketBufferBytes));
+      expect(readSocketBuffers(client).receive, 2 * want);
+      expect(readSocketBuffers(server).send, 2 * want);
+      defaultClient.destroy();
+      await plain.close();
       client.destroy();
       server.destroy();
       await limited.close();
     }, testOn: 'linux');
+  });
+
+  group('TLS through limitedConnectionFactory', () {
+    late Directory dir;
+    late HttpServer tls;
+    late SecurityContext trusted;
+
+    setUpAll(() async {
+      dir = await Directory.systemTemp.createTemp('bgtube_tls');
+      final r = await Process.run('openssl', [
+        'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', //
+        '-keyout', '${dir.path}/key.pem', '-out', '${dir.path}/cert.pem',
+        '-subj', '/CN=127.0.0.1', '-addext', 'subjectAltName=IP:127.0.0.1',
+      ]);
+      expect(r.exitCode, 0, reason: '${r.stderr}');
+      final server = SecurityContext()
+        ..useCertificateChain('${dir.path}/cert.pem')
+        ..usePrivateKey('${dir.path}/key.pem');
+      trusted = SecurityContext(withTrustedRoots: false)..setTrustedCertificates('${dir.path}/cert.pem');
+      tls = await HttpServer.bindSecure(InternetAddress.loopbackIPv4, 0, server);
+      tls.listen((req) async {
+        req.response.statusCode = 206;
+        req.response.headers.set(HttpHeaders.contentRangeHeader, 'bytes 0-2/3');
+        req.response.add([1, 2, 3]);
+        await req.response.close();
+      });
+    });
+    tearDownAll(() async {
+      await tls.close(force: true);
+      await dir.delete(recursive: true);
+    });
+
+    Uri tlsUrl() => Uri.parse('https://127.0.0.1:${tls.port}/v');
+
+    test('a trusted certificate succeeds over TLS (bytes intact, buffer limited)', () async {
+      final c = HttpClient()..connectionFactory = limitedConnectionFactory(context: trusted);
+      addTearDown(() => c.close(force: true));
+      final res = await (await c.getUrl(tlsUrl())).close();
+      expect(res.statusCode, 206);
+      expect([for (final b in await res.toList()) ...b], [1, 2, 3]);
+    });
+
+    test('an untrusted certificate is rejected (default roots), never downgraded to plain HTTP', () async {
+      final c = HttpClient()..connectionFactory = limitedConnectionFactory();
+      addTearDown(() => c.close(force: true));
+      await expectLater(() async => (await c.getUrl(tlsUrl())).close(), throwsA(isA<HandshakeException>()));
+      // ومن fetchRange: خطأ شبكة مغلّف بلا رابط.
+      await expectLater(
+        fetchRange(tlsUrl(), const {}),
+        throwsA(isA<RangeFetchNetworkException>().having((e) => e.cause, 'cause', 'HandshakeException')),
+      );
+    });
   });
 
   group('pure helpers', () {
@@ -662,6 +822,12 @@ void main() {
       expect(parseRangeHeader('bytes=-500'), isNull);
       expect(parseRangeHeader('bytes=9-1'), isNull);
       expect(parseRangeHeader(null), isNull);
+    });
+
+    test('parseUnsatisfiedRange', () {
+      expect(parseUnsatisfiedRange('bytes */1000'), 1000);
+      expect(parseUnsatisfiedRange('bytes 0-1/1000'), isNull);
+      expect(parseUnsatisfiedRange(null), isNull);
     });
 
     test('parseContentRange', () {
