@@ -140,15 +140,17 @@ void main() {
       });
       addTearDown(() => server.close(force: true));
       final e = JustAudioEngine(player: player, proxy: proxy);
-      await e.setUrl(Uri.parse('http://127.0.0.1:${server.port}/v?sig=SECRET'), initialPosition: Duration.zero);
+      await e.setUrl(Uri.parse('http://127.0.0.1:${server.port}/v?c=ANDROID_VR&sig=SECRET'), initialPosition: Duration.zero);
       expect(e.sourceErrorDetail, isNull);
       final c = HttpClient();
       addTearDown(() => c.close(force: true));
       final res = await (await c.getUrl((loadedSource() as UriAudioSource).uri)).close();
       await res.drain<void>();
       expect(res.statusCode, 403);
-      // 403 ثم محاولة واحدة بقطعة 1MiB تفشل أيضاً: التشخيص يحمل Range وحجم القطعة (بلا رابط).
-      expect(e.sourceErrorDetail, 'proxy OriginStatusException(403) bytes=0-1048575 chunk=1048576');
+      // 403 ثم محاولة واحدة بقطعة 1MiB تفشل أيضاً: التشخيص يحمل العميل والبايت ورقم القطعة
+      // والحالة وعدد التبديلات (بلا رابط ولا sig). بلا failover: صفر تبديلات.
+      expect(e.sourceErrorDetail, 'proxy client=ANDROID_VR byte=0 chunk#1 status=403 switches=0');
+      expect(e.sourceErrorDetail, isNot(contains('SECRET')));
       await e.setUrl(url, initialPosition: Duration.zero);
       expect(e.sourceErrorDetail, isNull); // مصدر جديد
     });

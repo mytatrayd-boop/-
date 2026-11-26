@@ -164,24 +164,34 @@ void main() {
       expect(a.httpHeaders, {'User-Agent': androidUa});
       expect(a.sourceInfo, 'ANDROID itag140 mp4a.40.2 ip6');
       expect(a.expiresAt, isNotNull);
-      expect(calls, [null]); // إدارة المكتبة الافتراضية أولاً
+      expect(calls, [
+        [YoutubeApiClient.androidVr]
+      ]); // androidVr أولاً (بلا PO token، D24)
     });
 
     test('re-resolving the same video soon rotates to the next client set', () async {
       final r = resolver();
-      await r.resolve('dQw4w9WgXcQ');
-      now = now.add(const Duration(seconds: 10));
-      await r.resolve('dQw4w9WgXcQ');
-      now = now.add(const Duration(seconds: 10));
-      await r.resolve('dQw4w9WgXcQ');
-      now = now.add(const Duration(seconds: 10));
-      await r.resolve('dQw4w9WgXcQ');
+      for (var i = 0; i < 5; i++) {
+        await r.resolve('dQw4w9WgXcQ');
+        now = now.add(const Duration(seconds: 10));
+      }
       expect(calls, [
-        null,
-        [YoutubeApiClient.ios],
         [YoutubeApiClient.androidVr],
         null,
+        [YoutubeApiClient.ios],
+        [YoutubeApiClient.tv],
+        [YoutubeApiClient.androidVr],
       ]);
+    });
+
+    test('client order: androidVr, library default, ios, tv; labels match the url `c` parameter', () {
+      expect(defaultClientStrategies, [
+        [YoutubeApiClient.androidVr],
+        null,
+        [YoutubeApiClient.ios],
+        [YoutubeApiClient.tv],
+      ]);
+      expect(defaultClientStrategies.map(clientLabel), ['ANDROID_VR', 'ANDROID', 'IOS', 'TVHTML5']);
     });
 
     test('a different video or a late replay starts from the default again', () async {
@@ -190,12 +200,14 @@ void main() {
       await r.resolve('aaaaaaaaaaa');
       now = now.add(const Duration(minutes: 5));
       await r.resolve('aaaaaaaaaaa');
-      expect(calls, [null, null, null]);
+      final vr = [YoutubeApiClient.androidVr];
+      expect(calls, [vr, vr, vr]);
     });
 
     test('alternative client failing falls back to the default once', () async {
       final r = resolver();
-      await r.resolve('dQw4w9WgXcQ');
+      await r.resolve('dQw4w9WgXcQ'); // androidVr
+      await r.resolve('dQw4w9WgXcQ'); // الافتراضي
       when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage'))).thenAnswer((inv) async {
         final c = inv.namedArguments[#ytClients] as List<YoutubeApiClient>?;
         calls.add(c);
@@ -204,7 +216,7 @@ void main() {
       });
       final a = await r.resolve('dQw4w9WgXcQ');
       expect(a.url.queryParameters['itag'], '140');
-      expect(calls.skip(1), [
+      expect(calls.skip(2), [
         [YoutubeApiClient.ios],
         null,
       ]);
@@ -212,7 +224,8 @@ void main() {
 
     test('fallback path is getManifest(videoId, requireWatchPage: false) with the library default', () async {
       final r = resolver();
-      await r.resolve('dQw4w9WgXcQ'); // الأول افتراضي؛ الثاني ios
+      await r.resolve('dQw4w9WgXcQ'); // androidVr
+      await r.resolve('dQw4w9WgXcQ'); // الافتراضي؛ الثالث ios
       final seen = <(Object?, List<YoutubeApiClient>?, bool)>[];
       when(() => streams.getManifest(any(),
           ytClients: any(named: 'ytClients'),
@@ -228,6 +241,76 @@ void main() {
       expect(seen[0].$2, [YoutubeApiClient.ios]);
       expect(seen[0].$3, isFalse);
       expect(seen[1], ('dQw4w9WgXcQ', null, false));
+    });
+
+    group('resolveAlternate (client failover during playback, D24)', () {
+      void manifestByClient({Set<String> failing = const {}, Map<String, List<AudioOnlyStreamInfo>>? streamsBy}) {
+        when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
+            .thenAnswer((inv) async {
+          final c = inv.namedArguments[#ytClients] as List<YoutubeApiClient>?;
+          calls.add(c);
+          final label = clientLabel(c);
+          if (failing.contains(label)) throw VideoUnavailableException('$label refused');
+          return StreamManifest(streamsBy?[label] ?? [stream(251, container: StreamContainer.webM, codec: 'opus', bps: 160000, client: label), stream(140, container: StreamContainer.mp4, codec: 'mp4a.40.2', bps: 130000, client: label)]);
+        });
+      }
+
+      test('returns the first client not excluded, with the same itag, its own user-agent and no metadata request', () async {
+        manifestByClient();
+        clearInteractions(videos);
+        final a = await resolver().resolveAlternate('dQw4w9WgXcQ', excludedClients: {'ANDROID_VR'}, itag: '140');
+        expect(a!.client, 'ANDROID');
+        expect(a.audio.url.queryParameters['itag'], '140');
+        expect(a.audio.url.queryParameters['c'], 'ANDROID');
+        expect(a.audio.httpHeaders, {'User-Agent': androidUa});
+        expect(calls, [null]);
+        verifyNever(() => videos.get(any()));
+      });
+
+      test('skips clients that fail or lack the itag, never falls back to an excluded default', () async {
+        manifestByClient(
+          failing: {'ANDROID'},
+          streamsBy: {
+            'IOS': [stream(251, container: StreamContainer.webM, codec: 'opus', bps: 1, client: 'IOS')],
+          },
+        );
+        final a = await resolver().resolveAlternate('dQw4w9WgXcQ', excludedClients: {'ANDROID_VR'}, itag: '140');
+        expect(a!.client, 'TVHTML5');
+        expect(calls, [
+          null,
+          [YoutubeApiClient.ios],
+          [YoutubeApiClient.tv],
+        ]);
+      });
+
+      test('null when every client is excluded or unusable', () async {
+        manifestByClient(failing: {'ANDROID', 'IOS', 'TVHTML5'});
+        expect(await resolver().resolveAlternate('dQw4w9WgXcQ', excludedClients: {'ANDROID_VR'}, itag: '140'), isNull);
+        expect(
+            await resolver().resolveAlternate('dQw4w9WgXcQ',
+                excludedClients: {'ANDROID_VR', 'ANDROID', 'IOS', 'TVHTML5'}, itag: '140'),
+            isNull);
+      });
+
+      test('rate limiting stops the search (null) instead of hammering the other clients', () async {
+        when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
+            .thenAnswer((inv) async {
+          calls.add(inv.namedArguments[#ytClients] as List<YoutubeApiClient>?);
+          throw RequestLimitExceededException('429');
+        });
+        expect(await resolver().resolveAlternate('dQw4w9WgXcQ', excludedClients: {'ANDROID_VR'}), isNull);
+        expect(calls.length, 1);
+      });
+
+      test('does not disturb the rotation of resolve()', () async {
+        manifestByClient();
+        final r = resolver();
+        await r.resolve('dQw4w9WgXcQ');
+        await r.resolveAlternate('dQw4w9WgXcQ', excludedClients: {'ANDROID_VR'}, itag: '140');
+        calls.clear();
+        await r.resolve('dQw4w9WgXcQ'); // ثاني حلّ للفيديو: الافتراضي
+        expect(calls, [null]);
+      });
     });
 
     test('extraction failure detail has type and HTTP status, no message text', () async {

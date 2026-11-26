@@ -15,7 +15,13 @@ abstract interface class AudioEngine {
   Duration get position;
 
   /// يحمّل [url]. كل طلبات البايتات تمر عبر وكيلنا المحلي بترويسات [headers] كما هي (D26).
-  Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}});
+  /// [failover] (اختياري) يبدّل العميل عند رفض قطعة لاحقة بـ403 دون أن يشعر المشغّل (D24).
+  Future<void> setUrl(
+    Uri url, {
+    required Duration initialPosition,
+    Map<String, String> headers = const {},
+    OriginFailover? failover,
+  });
 
   /// آخر فشل داخلي في جلب المصدر الحالي (مثل `proxy UnknownLengthException`)،
   /// قصير وبلا روابط، لسطر التشخيص. null إن لم يحدث.
@@ -50,6 +56,11 @@ class JustAudioEngine implements AudioEngine {
     final s = _current;
     final e = s?.lastError;
     if (s == null || e == null) return null;
+    final f = s.lastFailure;
+    if (f != null) {
+      // رمز الحالة داخل ProxyFailure: لا نكرر OriginStatusException.
+      return e is OriginStatusException ? 'proxy $f' : 'proxy $e $f';
+    }
     final range = s.lastOriginRange;
     return 'proxy $e${range == null ? '' : ' $range chunk=${s.chunkBytes}'}';
   }
@@ -70,11 +81,16 @@ class JustAudioEngine implements AudioEngine {
   Duration get position => _p.position;
 
   @override
-  Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
+  Future<void> setUrl(
+    Uri url, {
+    required Duration initialPosition,
+    Map<String, String> headers = const {},
+    OriginFailover? failover,
+  }) async {
     await _proxy.start();
     // بعد await: الأحدث يغلق ما قبله، فلا يتسرّب مصدر عند setUrl متزامن.
     _closeCurrent(); // يقطع طلبات المصدر السابق ويُزيل مساره
-    final stream = _proxy.register(url, headers);
+    final stream = _proxy.register(url, headers, failover: failover);
     _current = stream;
     // بلا headers: لا يُفعَّل وكيل just_audio؛ UA العميل يرسله وكيلنا إلى الأصل.
     await _p.setAudioSource(AudioSource.uri(stream.localUri), initialPosition: initialPosition);

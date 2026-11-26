@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:bgtube/audio/audio_engine.dart';
 import 'package:bgtube/audio/bgtube_audio_handler.dart';
+import 'package:bgtube/audio/local_stream_proxy.dart';
 import 'package:bgtube/core/app_failure.dart';
 import 'package:bgtube/domain/models/playback_position.dart';
 import 'package:bgtube/domain/models/resolved_audio.dart';
+import 'package:bgtube/domain/ports/alternate_source_resolver.dart';
 import 'package:bgtube/domain/ports/audio_source_resolver.dart';
 import 'package:bgtube/domain/ports/position_repository.dart';
 import 'package:bgtube/domain/ports/speed_store.dart';
@@ -38,12 +40,15 @@ class FakeEngine implements AudioEngine {
   Stream<Duration?> get durationStream => durationCtl.stream;
 
   final setHeaders = <Map<String, String>>[];
+  final setFailovers = <OriginFailover?>[];
 
   @override
   String? sourceErrorDetail;
 
   @override
-  Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
+  Future<void> setUrl(Uri url,
+      {required Duration initialPosition, Map<String, String> headers = const {}, OriginFailover? failover}) async {
+    setFailovers.add(failover);
     log.add('setUrl');
     setHeaders.add(headers);
     setUrls.add((url: url, start: initialPosition));
@@ -86,6 +91,15 @@ class FakeEngine implements AudioEngine {
 
   void emitReady() => events.add(PlaybackEvent(processingState: ProcessingState.ready));
   void emitError() => events.addError(PlayerException(0, 'boom', null));
+}
+
+class _AltResolver extends FakeResolver implements AlternateSourceResolver {
+  _AltResolver(this._alt);
+  final AlternateSource? Function(String id, Set<String> excluded, String? itag) _alt;
+
+  @override
+  Future<AlternateSource?> resolveAlternate(String videoId, {required Set<String> excludedClients, String? itag}) async =>
+      _alt(videoId, excludedClients, itag);
 }
 
 class FakeResolver implements AudioSourceResolver {
@@ -817,6 +831,47 @@ void main() {
         expect(t.sleepRemaining.value, const Duration(minutes: 44));
         t.cancelSleepTimer();
       });
+    });
+  });
+
+  group('client failover wiring (D24)', () {
+    test('engine gets a failover that asks the alternate resolver with tried clients and the itag', () async {
+      final calls = <({String id, Set<String> excluded, String? itag})>[];
+      final alt = _AltResolver((id, excluded, itag) {
+        calls.add((id: id, excluded: excluded, itag: itag));
+        return AlternateSource(
+          audio: ResolvedAudio(
+            url: Uri.parse('https://rr2.googlevideo.com/videoplayback?itag=140&c=IOS'),
+            title: id,
+            httpHeaders: const {'User-Agent': 'ios'},
+          ),
+          client: 'IOS',
+        );
+      })
+        ..immediate = (id) async => ResolvedAudio(
+              url: Uri.parse('https://rr1.googlevideo.com/videoplayback?itag=140&c=ANDROID_VR'),
+              title: id,
+            );
+      final e = FakeEngine();
+      final d = BgtubeAudioHandler(resolver: alt, engine: e, alternates: alt);
+      await d.playVideo('AAAAAAAAAAA');
+      final f = e.setFailovers.single!;
+      final got = await f({'ANDROID_VR'});
+      expect(calls.length, 1);
+      expect(calls.single.id, 'AAAAAAAAAAA');
+      expect(calls.single.excluded, {'ANDROID_VR'});
+      expect(calls.single.itag, '140');
+      expect(got!.client, 'IOS');
+      expect(got.headers, {'User-Agent': 'ios'});
+      expect(got.url.queryParameters['c'], 'IOS');
+    });
+
+    test('no alternate resolver means no failover', () async {
+      final r = FakeResolver()..immediate = (id) async => audio(id);
+      final e = FakeEngine();
+      final d = BgtubeAudioHandler(resolver: r, engine: e);
+      await d.playVideo('AAAAAAAAAAA');
+      expect(e.setFailovers, [null]);
     });
   });
 

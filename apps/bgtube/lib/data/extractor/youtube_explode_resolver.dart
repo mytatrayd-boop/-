@@ -6,25 +6,38 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import '../../core/app_failure.dart';
 import '../../domain/models/resolved_audio.dart';
+import '../../domain/ports/alternate_source_resolver.dart';
 import '../../domain/ports/audio_source_resolver.dart';
 
 /// مجموعات العملاء بالترتيب (D24). `null` = إدارة المكتبة الافتراضية
-/// (androidSdkless ثم tv). تُجرَّب المجموعة التالية عند طلب حلّ الفيديو نفسه
-/// مجدداً خلال [YoutubeExplodeResolver.retryWindow] (أي بعد فشل تشغيل).
+/// (androidSdkless ثم tv إن فشلت كلها). تُجرَّب المجموعة التالية عند طلب حلّ
+/// الفيديو نفسه مجدداً خلال [YoutubeExplodeResolver.retryWindow] (بعد فشل تشغيل)،
+/// وكذلك عند التبديل أثناء التشغيل ([YoutubeExplodeResolver.resolveAlternate]).
+///
+/// الترتيب حسب عدم حاجة روابط googlevideo إلى PO token (معرفتنا بـyt-dlp، لم
+/// تُثبت على الجهاز): androidVr أولاً (لا يتطلب PO token لغير المقيّدين عمرياً)،
+/// ثم الافتراضي (ANDROID بلا androidSdkVersion)، ثم ios، ثم tv (لا يتطلب لكنه
+/// يحتاج فك توقيع من صفحة المشاهدة فهو أبطأ وأضعف). مستبعَدة عمداً: mweb وsafari
+/// (WEB) وmediaConnect وandroidMusic لأنها تتطلب PO token أو لا تعطي صوتاً
+/// موثوقاً، وwebCreator وtvSimplyEmbedded لأنها مُهمَلة في المكتبة (تطلب دخولاً).
 ///
 /// لا يُصفَّر التدوير عند نجاح التشغيل: المنفذ `AudioSourceResolver` لا يعرف
-/// نتيجة التشغيل (ولا نوسّعه لأجل ذلك). أثره المقبول: إعادة تشغيل الفيديو نفسه
-/// خلال دقيقتين بعد نجاحه تستعمل العميل التالي، وكلها عملاء صالحة؛ وبعد
-/// دقيقتين أو لفيديو آخر يبدأ من الافتراضي.
+/// نتيجة التشغيل. أثره المقبول: إعادة تشغيل الفيديو نفسه خلال دقيقتين بعد
+/// نجاحه تستعمل العميل التالي؛ وبعد دقيقتين أو لفيديو آخر يبدأ من الأول.
 final List<List<YoutubeApiClient>?> defaultClientStrategies = [
+  [YoutubeApiClient.androidVr],
   null,
   [YoutubeApiClient.ios],
-  [YoutubeApiClient.androidVr],
+  [YoutubeApiClient.tv],
 ];
+
+/// اسم العميل (معامل `c` في الرابط) لمجموعة عملاء؛ `null` = ANDROID.
+String clientLabel(List<YoutubeApiClient>? clients) =>
+    clients == null ? 'ANDROID' : _client(clients.first)['clientName'] as String;
 
 /// التنفيذ الوحيد الذي يعرف youtube_explode_dart (D4).
 /// لا يستقبل ولا يستخدم أي رمز دخول أو كوكي.
-class YoutubeExplodeResolver implements AudioSourceResolver {
+class YoutubeExplodeResolver implements AudioSourceResolver, AlternateSourceResolver {
   YoutubeExplodeResolver({
     YoutubeExplode? client,
     this.timeout = const Duration(seconds: 25),
@@ -75,19 +88,55 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
     }
   }
 
+  /// تبديل العميل أثناء التشغيل (D24): يجرّب العملاء بالترتيب متجاوزاً
+  /// [excludedClients]، بلا بيانات وصفية وبلا رجوع للافتراضي، ولا يمسّ تدوير
+  /// [resolve]. يقبل فقط صيغة [itag] نفسها (بايتات متطابقة)؛ عميل يفشل أو لا
+  /// يملكها يُتخطّى إلى التالي. null إن لم يبقَ عميل.
+  @override
+  Future<AlternateSource?> resolveAlternate(
+    String videoId, {
+    required Set<String> excludedClients,
+    String? itag,
+  }) async {
+    final skip = {...excludedClients};
+    for (final strategy in _strategies) {
+      final label = clientLabel(strategy);
+      if (skip.contains(label)) continue;
+      skip.add(label);
+      try {
+        final audio = await _resolve(videoId, strategy, metadata: false, fallback: false, itag: itag).timeout(timeout);
+        final actual = audio.url.queryParameters['c'] ?? label;
+        // المكتبة قد ترجع لعميل آخر (tv عند فراغ الافتراضي): لا نكرر مستبعَداً.
+        if (excludedClients.contains(actual)) continue;
+        return AlternateSource(audio: audio, client: actual);
+      } on RequestLimitExceededException {
+        return null; // تقييد المعدّل: لا فائدة من تجربة عميل آخر الآن
+      } catch (_) {
+        continue;
+      }
+    }
+    return null;
+  }
+
   /// السرعة (D26): البيانات الوصفية والـmanifest بالتوازي لا بالتسلسل، والـmanifest
   /// بلا صفحة المشاهدة (`requireWatchPage: false`): العملاء المستعملون لا يحتاجون
   /// فك توقيع، والمكتبة تجلب الصفحة تلقائياً إن احتاجها عميل (tv). فشل البيانات
   /// الوصفية وحده لا يمنع التشغيل (العنوان يصير المعرّف)، وتأخرها أكثر من
   /// [metadataGrace] لا يؤخره: تصل لاحقاً عبر `lateMetadata`.
-  Future<ResolvedAudio> _resolve(String videoId, List<YoutubeApiClient>? clients) async {
-    final videoFuture = _yt.videos.get(videoId).then<Video?>((v) => v);
-    final manifestFuture = _manifest(videoId, clients);
+  Future<ResolvedAudio> _resolve(
+    String videoId,
+    List<YoutubeApiClient>? clients, {
+    bool metadata = true,
+    bool fallback = true,
+    String? itag,
+  }) async {
+    final videoFuture = metadata ? _yt.videos.get(videoId).then<Video?>((v) => v) : Future<Video?>.value(null);
+    final manifestFuture = _manifest(videoId, clients, fallback: fallback);
     // نمنع خطأً غير ملتقَط إن فشل أحدهما قبل انتظار الآخر.
     videoFuture.ignore();
     manifestFuture.ignore();
     final manifest = await manifestFuture;
-    final stream = pickAudioStream(manifest.audioOnly);
+    final stream = pickAudioStream(itag == null ? manifest.audioOnly : manifest.audioOnly.where((s) => '${s.tag}' == itag));
     if (stream == null) {
       throw const AppFailure(FailureKind.extractionFailed, 'no audio streams');
     }
@@ -125,14 +174,14 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
     );
   }
 
-  Future<StreamManifest> _manifest(String videoId, List<YoutubeApiClient>? clients) async {
+  Future<StreamManifest> _manifest(String videoId, List<YoutubeApiClient>? clients, {bool fallback = true}) async {
     final streams = _yt.videos.streamsClient;
     try {
       return await streams.getManifest(videoId, ytClients: clients, requireWatchPage: false);
     } on RequestLimitExceededException {
       rethrow;
     } catch (_) {
-      if (clients == null) rethrow;
+      if (clients == null || !fallback) rethrow;
       // العميل البديل فشل: نعود لإدارة المكتبة الافتراضية مرة واحدة.
       return streams.getManifest(videoId, requireWatchPage: false);
     }

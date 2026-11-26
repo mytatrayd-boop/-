@@ -31,6 +31,55 @@ class OriginRangeMismatchException implements Exception {
   String toString() => 'OriginRangeMismatchException';
 }
 
+/// المصدر البديل (بعد تبديل العميل) بطول كلي مختلف عن الأصلي: بايتات غير متطابقة،
+/// فنفشل صراحةً بدل أن نخلط ملفين.
+class OriginLengthMismatchException implements Exception {
+  const OriginLengthMismatchException();
+  @override
+  String toString() => 'OriginLengthMismatchException';
+}
+
+/// مصدر بديل يعطيه [OriginFailover]: رابط وترويسات عميل آخر لنفس الصيغة.
+typedef AlternateOrigin = ({Uri url, Map<String, String> headers, String client});
+
+/// يعيد استخراج الفيديو بعميل ليس في [tried] (أسماء العملاء المجرَّبة). null =
+/// لم يبقَ عميل. لا يرمي (الوكيل يلتقط ويعدّه null).
+typedef OriginFailover = Future<AlternateOrigin?> Function(Set<String> tried);
+
+/// أقصى عدد تبديلات للعميل لكل مصدر (ثم فشل صريح).
+const maxClientSwitches = 3;
+
+/// آخر فشل في جلب الأصل، للتشخيص على الجهاز: بلا روابط ولا رموز.
+class ProxyFailure {
+  const ProxyFailure({
+    required this.client,
+    required this.byte,
+    required this.status,
+    required this.chunkSize,
+    required this.switches,
+  });
+
+  /// العميل الذي رُفض (معامل `c`).
+  final String client;
+
+  /// أول بايت في القطعة التي فشلت.
+  final int byte;
+
+  /// رمز الحالة (403...)، أو 0 لخطأ شبكة قبل الرد.
+  final int status;
+  final int chunkSize;
+
+  /// عدد تبديلات العميل التي جُرّبت قبل هذا الفشل.
+  final int switches;
+
+  /// رقم القطعة (من 1) بحجم القطعة وقت الفشل.
+  int get chunkNumber => byte ~/ chunkSize + 1;
+
+  @override
+  String toString() =>
+      'client=$client byte=$byte chunk#$chunkNumber status=${status == 0 ? 'net' : status} switches=$switches';
+}
+
 /// عبارات الحالة التي يرسلها الوكيل لكل فشل داخلي (تظهر في رسالة ExoPlayer).
 abstract final class ProxyReason {
   static const unreachable = 'Origin unreachable';
@@ -38,6 +87,7 @@ abstract final class ProxyReason {
   static const rangeMismatch = 'Origin range mismatch';
   static const superseded = 'Superseded';
   static const notFound = 'Not found';
+  static const lengthChanged = 'Origin length changed';
 }
 
 /// وكيل HTTP محلي صغير خاص بنا (D26): يستمع على 127.0.0.1 بمنفذ عشوائي،
@@ -102,7 +152,7 @@ class LocalStreamProxy {
   }
 
   /// يسجّل مصدراً بعد [start]. الرابط المحلي `http://127.0.0.1:port/<token>`.
-  ProxiedStream register(Uri url, Map<String, String> headers) {
+  ProxiedStream register(Uri url, Map<String, String> headers, {OriginFailover? failover}) {
     final server = _server;
     if (_closed || server == null) throw StateError('proxy not started');
     String token;
@@ -115,6 +165,7 @@ class LocalStreamProxy {
       Uri(scheme: 'http', host: InternetAddress.loopbackIPv4.address, port: server.port, path: '/$token'),
       url,
       Map<String, String>.unmodifiable(headers),
+      failover,
     );
     _streams[token] = s;
     return s;
@@ -170,15 +221,38 @@ class LocalStreamProxy {
 /// يقطع السابق (ExoPlayer يقرأ الملف التقدّمي من اتصال واحد ويغلقه قبل القفز).
 /// لذلك لا preload ولا تشغيل متزامن لنفس المصدر.
 class ProxiedStream {
-  ProxiedStream._(this._proxy, this._token, this.localUri, this.url, this.headers);
+  ProxiedStream._(this._proxy, this._token, this.localUri, this._url, this._headers, this._failover)
+      : _client = _clientOf(_url) {
+    _tried.add(_client);
+  }
+
+  static String _clientOf(Uri u) => u.queryParameters['c'] ?? '?';
 
   final LocalStreamProxy _proxy;
   final String _token;
 
   /// الرابط الذي يُعطى للمشغّل.
   final Uri localUri;
-  final Uri url;
-  final Map<String, String> headers;
+  Uri _url;
+  Map<String, String> _headers;
+  final OriginFailover? _failover;
+  String _client;
+  final _tried = <String>{};
+  int _switches = 0;
+  int _gen = 0;
+  int? _knownTotal;
+  Future<bool>? _switching;
+
+  /// رابط/ترويسات العميل الحالي (يتغيران بعد التبديل).
+  Uri get url => _url;
+  Map<String, String> get headers => _headers;
+
+  /// العميل المستعمل الآن، وعدد التبديلات التي جرت.
+  String get client => _client;
+  int get switches => _switches;
+
+  /// آخر فشل جلب (يبقى بعد توقف المشغّل ما دام المصدر مسجَّلاً).
+  ProxyFailure? lastFailure;
   final _active = <RangeFetchResult>{};
   bool _closed = false;
   int _seq = 0;
@@ -224,21 +298,96 @@ class ProxiedStream {
     final end = limitEx == null ? pos + _chunkBytes : min(limitEx, pos + _chunkBytes);
     _lastReqEnd = end;
     lastOriginRange = originRangeHeader(pos, end);
-    return _proxy._fetch(url, headers, start: pos, end: end);
+    return _proxy._fetch(_url, _headers, start: pos, end: end);
+  }
+
+  void _recordFailure(int pos, int status) {
+    lastFailure = ProxyFailure(
+      client: _client,
+      byte: pos,
+      status: status,
+      chunkSize: _chunkBytes,
+      switches: _switches,
+    );
   }
 
   /// قطعة محدودة من الأصل. أول 403 يُعاد مرة واحدة بقطعة 1MiB (googlevideo يرفض
-  /// Range الكبير/المفتوح لبعض العملاء).
+  /// Range الكبير/المفتوح لبعض العملاء)، وأي 403 بعدها (قطعة لاحقة بعد نجاح
+  /// الأولى مثلاً) يبدّل العميل عبر [OriginFailover] ويكمل من **البايت نفسه**
+  /// حتى [maxClientSwitches] تبديلات، ثم يُمرَّر الـ403 للمشغّل. يرمي
+  /// [OriginLengthMismatchException] إن اختلف الطول الكلي بعد التبديل.
   Future<RangeFetchResult> _fetchChunk(int pos, int? limitEx) async {
-    var r = await _originFetch(pos, limitEx);
-    if (r.statusCode == HttpStatus.forbidden && !_downgraded) {
-      r.cancel();
-      _downgraded = true;
-      _chunkBytes = originRetryChunkBytes;
+    RangeFetchResult r;
+    try {
       r = await _originFetch(pos, limitEx);
+      while (r.statusCode == HttpStatus.forbidden) {
+        final gen = _gen;
+        r.cancel();
+        if (!_downgraded) {
+          _downgraded = true;
+          _chunkBytes = originRetryChunkBytes;
+          r = await _originFetch(pos, limitEx);
+          continue;
+        }
+        _recordFailure(pos, HttpStatus.forbidden);
+        if (!await _failoverFrom(gen) || _closed) return r; // 403 يصل للمشغّل
+        r = await _originFetch(pos, limitEx);
+      }
+    } on RangeFetchNetworkException {
+      _recordFailure(pos, 0);
+      rethrow;
+    }
+    if (!r.ok) {
+      _recordFailure(pos, r.statusCode);
+      return r;
+    }
+    final total = r.sourceLength;
+    if (total != null) {
+      final known = _knownTotal;
+      if (known == null) {
+        _knownTotal = total;
+      } else if (known != total && _switches > 0) {
+        r.cancel();
+        _recordFailure(pos, r.statusCode);
+        throw const OriginLengthMismatchException();
+      }
     }
     return r;
   }
+
+  /// يبدّل العميل بعد 403 رُفض فيه الجيل [gen]. true = جرى تبديل (أو بدّله طلب
+  /// آخر قبلنا) فتُعاد المحاولة؛ false = لا بديل.
+  Future<bool> _failoverFrom(int gen) {
+    if (gen != _gen) return Future.value(true);
+    return _switching ??= _switchClient().whenComplete(() => _switching = null);
+  }
+
+  Future<bool> _switchClient() async {
+    final cb = _failover;
+    if (cb == null || _switches >= maxClientSwitches || _closed) return false;
+    AlternateOrigin? alt;
+    try {
+      alt = await cb(Set.of(_tried));
+    } catch (_) {
+      alt = null;
+    }
+    if (alt == null || _closed) return false;
+    _switches++;
+    _gen++;
+    _url = alt.url;
+    _headers = Map<String, String>.unmodifiable(alt.headers);
+    _client = alt.client;
+    _tried.add(alt.client);
+    // الحدّ الأصغر كان خاصاً بالعميل السابق: جرّب القطعة الكبيرة مع الجديد.
+    _chunkBytes = originChunkBytes;
+    _downgraded = false;
+    return true;
+  }
+
+  static Object _asOriginError(Object e) =>
+      e is RangeFetchNetworkException || e is OriginLengthMismatchException
+          ? e
+          : RangeFetchNetworkException(e.runtimeType.toString());
 
   Future<void> _serve(HttpRequest req) async {
     final res = req.response;
@@ -267,8 +416,9 @@ class ProxiedStream {
     try {
       f = await _fetchChunk(start, range?.endEx);
     } catch (e) {
-      _lastError = e is RangeFetchNetworkException ? e : RangeFetchNetworkException(e.runtimeType.toString());
-      await _reply(res, HttpStatus.badGateway, ProxyReason.unreachable);
+      _lastError = _asOriginError(e);
+      await _reply(
+          res, HttpStatus.badGateway, e is OriginLengthMismatchException ? ProxyReason.lengthChanged : ProxyReason.unreachable);
       return;
     }
     if (stale()) {
@@ -359,7 +509,7 @@ class ProxiedStream {
           try {
             next = await _fetchChunk(pos, end);
           } catch (e) {
-            _lastError = e is RangeFetchNetworkException ? e : RangeFetchNetworkException(e.runtimeType.toString());
+            _lastError = _asOriginError(e);
             return;
           }
           if (stale()) {

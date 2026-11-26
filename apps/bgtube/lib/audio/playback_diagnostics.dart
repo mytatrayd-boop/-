@@ -35,7 +35,8 @@ String playerErrorDetail(Object e) => switch (e) {
       _ => e.runtimeType.toString(),
     };
 
-const maxDetailLength = 140;
+/// يتسع لسطر الفشل الكامل: خطأ المشغّل · الوكيل (عميل/بايت/قطعة/حالة/تبديلات) · الفحص · المصدر.
+const maxDetailLength = 240;
 
 /// يزيل أي رابط ويضغط المسافات ويقصّ الطول: لا روابط موقّعة ولا رموز في الواجهة.
 String sanitizeDetail(String raw) {

@@ -15,6 +15,7 @@ import '../domain/playback_queue_model.dart' as model show clearUpcoming;
 import '../domain/playback_speed.dart';
 import '../domain/position_policy.dart';
 import '../domain/sleep_timer.dart';
+import '../domain/ports/alternate_source_resolver.dart';
 import '../domain/ports/audio_source_resolver.dart';
 import '../domain/ports/play_history.dart';
 import '../domain/ports/playback_controller.dart';
@@ -23,6 +24,7 @@ import '../domain/ports/position_repository.dart';
 import '../domain/ports/queue_repository.dart';
 import '../domain/ports/speed_store.dart';
 import 'audio_engine.dart';
+import 'local_stream_proxy.dart' show OriginFailover;
 import 'playback_diagnostics.dart';
 import 'playback_state_mapper.dart';
 
@@ -53,7 +55,9 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     this._history,
     this._saveInterval = defaultSaveInterval,
     this._probe,
+    this._alternates,
     this._prefetchQuiet = defaultPrefetchQuiet,
+
   }) : _player = engine ?? JustAudioEngine() {
     _restoreSpeed();
     _player.playbackEventStream.listen(
@@ -111,6 +115,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   final AudioSourceResolver _resolver;
   final AudioEngine _player;
+
+  /// مستخرج العميل البديل لتبديل العميل أثناء التشغيل (D24)؛ افتراضياً [_resolver]
+  /// نفسه إن نفّذ المنفذ.
+  final AlternateSourceResolver? _alternates;
 
   /// آخر فشل (null = لا فشل). الواجهة تعرضه مع زر إعادة المحاولة.
   @override
@@ -870,7 +878,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
           if (recorder != null && _historyKey == key && entry != null) _writeHistory(recorder, entry.ref);
         }, onError: (Object _) {}));
       }
-      await _player.setUrl(audio.url, initialPosition: _resumeFrom, headers: audio.httpHeaders);
+      await _player.setUrl(audio.url,
+          initialPosition: _resumeFrom, headers: audio.httpHeaders, failover: _failoverFor(videoId, audio));
       if (token != _token) return;
       await _player.setSpeed(speed.value); // السرعة المختارة لكل عنصر
       if (token != _token) return;
@@ -893,6 +902,19 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       // خطأ من المشغّل أثناء التحميل: يُعالَج هنا لا من تيار الأحداث (انظر _onPlayerError).
       if (token == _token) await _handleEngineError(token, e);
     }
+  }
+
+  /// تبديل العميل أثناء التشغيل (D24): يعيد الاستخراج بعميل لم يُجرَّب بنفس الصيغة
+  /// (itag) ويعطي الوكيلَ رابطه وترويساته فقط. null إن لم يوجد مستخرج بديل.
+  OriginFailover? _failoverFor(String videoId, ResolvedAudio audio) {
+    final alt = _alternates;
+    if (alt == null) return null;
+    final itag = audio.url.queryParameters['itag'];
+    return (tried) async {
+      final a = await alt.resolveAlternate(videoId, excludedClients: tried, itag: itag);
+      if (a == null) return null;
+      return (url: a.audio.url, headers: a.audio.httpHeaders, client: a.client);
+    };
   }
 
   /// يدمج البيانات الوصفية في العنصر (يُحفظ) وفي الواجهة والإشعار. لا يُستبدل
