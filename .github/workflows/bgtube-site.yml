@@ -1,0 +1,32 @@
+name: BGTube — deploy privacy site
+
+# Static home/privacy pages for the BGTube OAuth consent screen (bgtube.pages.dev).
+# Owner approved publishing this page (2026-11-26).
+on:
+  push:
+    branches: [ccr-6f5d04ba-q43hrh]
+    paths: [apps/bgtube/site/**, .github/workflows/bgtube-site.yml]
+  workflow_dispatch:
+
+concurrency: { group: bgtube-site, cancel-in-progress: false }
+permissions: { contents: read }
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx -y wrangler@3.114.0 pages deploy apps/bgtube/site --project-name bgtube --branch main --commit-dirty=true
+      - name: Check pages
+        run: |
+          sleep 20
+          for p in / /privacy; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://bgtube.pages.dev$p")
+            echo "$p -> $code"; [ "$code" = 200 ] || exit 1
+          done
