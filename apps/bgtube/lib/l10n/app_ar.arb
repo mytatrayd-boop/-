@@ -30,7 +30,6 @@
   "resolving": "جارٍ التحضير…",
   "clipboardEmpty": "لا يوجد رابط يوتيوب في الحافظة",
   "errorInvalidLink": "الرابط غير صالح. تأكد أنه رابط فيديو من يوتيوب.",
-  "errorPlaylistNotSupported": "روابط القوائم غير مدعومة بعد. الصق رابط فيديو واحد.",
   "errorExtraction": "تعذّر استخراج الصوت من هذا الفيديو. جرّب مرة أخرى.",
   "errorNetwork": "تعذّر الاتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.",
   "errorRateLimited": "يوتيوب يقيّد الطلبات من شبكتك الآن. انتظر قليلاً ثم أعد المحاولة.",
@@ -310,5 +309,62 @@
       }
     }
   },
-  "quotaResetNote": "تتجدد الحصتان عند منتصف ليل المحيط الهادئ"
+  "quotaResetNote": "تتجدد الحصتان عند منتصف ليل المحيط الهادئ",
+  "errorPlaylistNeedsSignIn": "سجّل الدخول لإضافة قوائم يوتيوب. روابط الفيديو تعمل دون دخول.",
+  "libraryYouTubePlaylists": "قوائم يوتيوب",
+  "libraryLikes": "الإعجابات",
+  "librarySubscriptions": "الاشتراكات",
+  "libraryFavorites": "المفضلة",
+  "libraryHistory": "السجل",
+  "libraryEmpty": "لا شيء هنا بعد",
+  "libraryLocalLoadError": "تعذّر فتح هذا القسم من التخزين",
+  "favoritesEmpty": "لم تضف شيئاً بعد. اضغط ⋮ على أي فيديو",
+  "historyEmpty": "لم تشغّل شيئاً بعد",
+  "addToFavorites": "أضف إلى المفضلة",
+  "removeFromFavorites": "أزل من المفضلة",
+  "addedToFavorites": "أُضيف إلى المفضلة",
+  "removedFromFavorites": "أُزيل من المفضلة",
+  "removeFromHistory": "حذف من السجل",
+  "removedFromHistory": "حُذف من السجل",
+  "clearHistory": "مسح السجل",
+  "clearHistoryConfirmTitle": "مسح السجل؟",
+  "clearHistoryConfirmBody": "سيُحذف سجل التشغيل من هذا الجهاز. لا يؤثر على يوتيوب.",
+  "clearHistoryAction": "مسح",
+  "historyCleared": "مُسح السجل",
+  "playlistAdding": "جارٍ إضافة القائمة…",
+  "playlistAddingProgress": "جارٍ إضافة القائمة… {fetched} من {total}",
+  "@playlistAddingProgress": {
+    "placeholders": {
+      "fetched": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "playlistAddedPartial": "أُضيف {added} من {total}. تعذّر جلب الباقي",
+  "@playlistAddedPartial": {
+    "placeholders": {
+      "added": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "playlistAddedPartialUnknown": "{count, plural, =1{أُضيف مقطع واحد} =2{أُضيف مقطعان} few{أُضيف {count} مقاطع} many{أُضيف {count} مقطعاً} other{أُضيف {count} مقطع}}. تعذّر جلب الباقي",
+  "@playlistAddedPartialUnknown": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  }
 }

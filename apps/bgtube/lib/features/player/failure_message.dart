@@ -3,7 +3,7 @@ import '../../l10n/gen/app_localizations.dart';
 
 String failureMessage(AppLocalizations l, AppFailure f) => switch (f.kind) {
       FailureKind.invalidLink => l.errorInvalidLink,
-      FailureKind.playlistNotSupported => l.errorPlaylistNotSupported,
+      FailureKind.playlistNeedsSignIn => l.errorPlaylistNeedsSignIn,
       FailureKind.extractionFailed => l.errorExtraction,
       FailureKind.network => l.errorNetwork,
       FailureKind.rateLimited => l.errorRateLimited,

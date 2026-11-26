@@ -63,10 +63,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The link is not valid. Make sure it is a YouTube video link.';
 
   @override
-  String get errorPlaylistNotSupported =>
-      'Playlist links are not supported yet. Paste a single video link.';
-
-  @override
   String get errorExtraction =>
       'Could not extract audio from this video. Try again.';
 
@@ -567,4 +563,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quotaResetNote => 'Both quotas renew at midnight Pacific time';
+
+  @override
+  String get errorPlaylistNeedsSignIn =>
+      'Sign in to add YouTube playlists. Video links work without signing in.';
+
+  @override
+  String get libraryYouTubePlaylists => 'YouTube playlists';
+
+  @override
+  String get libraryLikes => 'Liked';
+
+  @override
+  String get librarySubscriptions => 'Subscriptions';
+
+  @override
+  String get libraryFavorites => 'Favorites';
+
+  @override
+  String get libraryHistory => 'History';
+
+  @override
+  String get libraryEmpty => 'Nothing here yet';
+
+  @override
+  String get libraryLocalLoadError =>
+      'Couldn\'t open this section from storage';
+
+  @override
+  String get favoritesEmpty => 'Nothing added yet. Tap ⋮ on any video';
+
+  @override
+  String get historyEmpty => 'You haven\'t played anything yet';
+
+  @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
+  String get addedToFavorites => 'Added to favorites';
+
+  @override
+  String get removedFromFavorites => 'Removed from favorites';
+
+  @override
+  String get removeFromHistory => 'Remove from history';
+
+  @override
+  String get removedFromHistory => 'Removed from history';
+
+  @override
+  String get clearHistory => 'Clear history';
+
+  @override
+  String get clearHistoryConfirmTitle => 'Clear history?';
+
+  @override
+  String get clearHistoryConfirmBody =>
+      'Your play history on this device will be deleted. YouTube is not affected.';
+
+  @override
+  String get clearHistoryAction => 'Clear';
+
+  @override
+  String get historyCleared => 'History cleared';
+
+  @override
+  String get playlistAdding => 'Adding the playlist…';
+
+  @override
+  String playlistAddingProgress(int fetched, int total) {
+    final intl.NumberFormat fetchedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String fetchedString = fetchedNumberFormat.format(fetched);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Adding the playlist… $fetchedString of $totalString';
+  }
+
+  @override
+  String playlistAddedPartial(int added, int total) {
+    final intl.NumberFormat addedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String addedString = addedNumberFormat.format(added);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Added $addedString of $totalString. Couldn\'t fetch the rest';
+  }
+
+  @override
+  String playlistAddedPartialUnknown(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $countString items',
+      one: 'Added 1 item',
+    );
+    return '$_temp0. Couldn\'t fetch the rest';
+  }
 }

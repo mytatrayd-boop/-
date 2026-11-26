@@ -265,9 +265,154 @@ class YouTubeDataApi implements YouTubeApi {
   @override
   Future<QuotaUsage> quotaToday() => _quota.today();
 
+  // ───────────────────────── المكتبة (الميزة 5) ─────────────────────────
+
+  @override
+  Future<ApiPage<PlaylistSummary>> myPlaylists({String? pageToken, bool refresh = false}) => _scoped(() async {
+        final r = await _get(
+          'playlists',
+          {
+            'part': 'snippet,contentDetails',
+            'mine': 'true',
+            'maxResults': '50',
+            'pageToken': ?pageToken,
+            'fields': 'nextPageToken,pageInfo/totalResults,'
+                'items(id,snippet(title,thumbnails(default/url,medium/url)),contentDetails/itemCount)',
+          },
+          cost: QuotaCost.read,
+          ttl: CacheTtl.lists,
+          private: true,
+          refresh: refresh,
+        );
+        return ApiPage(parsePlaylists(r.body), nextPageToken: nextTokenOf(r.body), stale: r.stale, total: totalOf(r.body));
+      });
+
+  @override
+  Future<ApiPage<VideoRef>> playlistVideos(String playlistId, {String? pageToken, bool refresh = false}) =>
+      _scoped(() => _playlistVideosImpl(playlistId, pageToken: pageToken, refresh: refresh));
+
+  /// صفحة من 50 (وحدة) ثم المدد (وحدة). [tokenPrefix] يميّز مصدر صفحات الإعجابات.
+  Future<ApiPage<VideoRef>> _playlistVideosImpl(
+    String playlistId, {
+    String? pageToken,
+    bool refresh = false,
+    String tokenPrefix = '',
+  }) async {
+    final r = await _playlistPage(playlistId,
+        max: 50, pageToken: pageToken, refresh: refresh, withTotal: true, private: true);
+    final videos = parsePlaylistItems(r.body).map((v) => v.ref).toList();
+    final durations = await _durations([for (final v in videos) v.videoId]);
+    final next = nextTokenOf(r.body);
+    return ApiPage(
+      [for (final v in videos) _withDuration(v, durations)],
+      nextPageToken: next == null ? null : '$tokenPrefix$next',
+      stale: r.stale,
+      total: totalOf(r.body),
+    );
+  }
+
+  /// بادئتا رمز الصفحة: قائمة الإعجابات أو `myRating=like`، فتبقى الصفحات التالية
+  /// من المصدر نفسه.
+  static const likesPlaylistPrefix = 'p:';
+  static const likesRatingPrefix = 'r:';
+
+  /// قائمة الإعجابات أولاً (`relatedPlaylists.likes`، موثّقة: الأحدث أولاً)، وإن
+  /// لم تكن قناة أو ردّت 404/403 أو كانت أول صفحة فارغة فـ`videos.list?myRating=like`
+  /// (وحدة لكل 50 بالمدد، وحد 1000 مقطع). D30.
+  @override
+  Future<ApiPage<VideoRef>> likedVideos({String? pageToken, bool refresh = false}) => _scoped(() async {
+        if (pageToken != null && pageToken.startsWith(likesRatingPrefix)) {
+          return _ratedPage(pageToken.substring(likesRatingPrefix.length), refresh: refresh);
+        }
+        final likes = await _likesPlaylistId();
+        if (pageToken != null && pageToken.startsWith(likesPlaylistPrefix)) {
+          if (likes == null) return _ratedPage(null, refresh: refresh);
+          return _playlistVideosImpl(likes,
+              pageToken: pageToken.substring(likesPlaylistPrefix.length),
+              refresh: refresh,
+              tokenPrefix: likesPlaylistPrefix);
+        }
+        if (likes != null) {
+          try {
+            final page =
+                await _playlistVideosImpl(likes, refresh: refresh, tokenPrefix: likesPlaylistPrefix);
+            if (page.items.isNotEmpty) return page;
+          } on _HttpFailure catch (f) {
+            if (f.status != 404 && f.status != 403) rethrow;
+            debugPrint('likes playlist unavailable: HTTP ${f.status}');
+          }
+        }
+        return _ratedPage(null, refresh: refresh);
+      });
+
+  /// معرّف قائمة الإعجابات من قناة المستخدم (وحدة، كاش 24 ساعة). null دون قناة.
+  Future<String?> _likesPlaylistId() async {
+    final r = await _get(
+      'channels',
+      {'part': 'contentDetails', 'mine': 'true', 'fields': 'items(contentDetails/relatedPlaylists/likes)'},
+      cost: QuotaCost.read,
+      ttl: CacheTtl.details,
+      private: true,
+    );
+    return parseLikesPlaylistId(r.body);
+  }
+
+  Future<ApiPage<VideoRef>> _ratedPage(String? pageToken, {bool refresh = false}) async {
+    final r = await _get(
+      'videos',
+      {
+        'part': 'snippet,contentDetails',
+        'myRating': 'like',
+        'maxResults': '50',
+        'pageToken': ?pageToken,
+        'fields': 'nextPageToken,pageInfo/totalResults,'
+            'items(id,snippet(title,channelTitle,thumbnails(default/url,medium/url)),contentDetails/duration)',
+      },
+      cost: QuotaCost.read,
+      ttl: CacheTtl.lists,
+      private: true,
+      refresh: refresh,
+    );
+    final next = nextTokenOf(r.body);
+    return ApiPage(
+      parseRatedVideos(r.body),
+      nextPageToken: next == null ? null : '$likesRatingPrefix$next',
+      stale: r.stale,
+      total: totalOf(r.body),
+    );
+  }
+
+  @override
+  Future<ApiPage<ChannelSummary>> mySubscriptions({String? pageToken, bool refresh = false}) => _scoped(() async {
+        final r = await _get(
+          'subscriptions',
+          {
+            'part': 'snippet',
+            'mine': 'true',
+            'order': 'alphabetical',
+            'maxResults': '50',
+            'pageToken': ?pageToken,
+            'fields': 'nextPageToken,items(snippet(title,resourceId/channelId,thumbnails(default/url,medium/url)))',
+          },
+          cost: QuotaCost.read,
+          ttl: CacheTtl.lists,
+          private: true,
+          refresh: refresh,
+        );
+        return ApiPage(parseSubscriptionChannels(r.body), nextPageToken: nextTokenOf(r.body), stale: r.stale);
+      });
+
   // ───────────────────────── مساعدات مركّبة ─────────────────────────
 
-  Future<_Fetched> _playlistPage(String playlistId, {required int max, String? pageToken, bool refresh = false}) =>
+  /// [withTotal] يطلب `pageInfo/totalResults` (قوائم المكتبة ورسالة «n من m»).
+  Future<_Fetched> _playlistPage(
+    String playlistId, {
+    required int max,
+    String? pageToken,
+    bool refresh = false,
+    bool withTotal = false,
+    bool private = false,
+  }) =>
       _get(
         'playlistItems',
         {
@@ -275,12 +420,13 @@ class YouTubeDataApi implements YouTubeApi {
           'playlistId': playlistId,
           'maxResults': '$max',
           'pageToken': ?pageToken,
-          'fields': 'nextPageToken,items(snippet(title,videoOwnerChannelTitle,resourceId/videoId,'
+          'fields': '${withTotal ? 'pageInfo/totalResults,' : ''}'
+              'nextPageToken,items(snippet(title,videoOwnerChannelTitle,resourceId/videoId,'
               'thumbnails(default/url,medium/url)),contentDetails/videoPublishedAt)',
         },
         cost: QuotaCost.read,
         ttl: CacheTtl.lists,
-        private: false,
+        private: private,
         refresh: refresh,
       );
 
@@ -444,7 +590,7 @@ class YouTubeDataApi implements YouTubeApi {
         reasons.contains('userRateLimitExceeded')) {
       return fallback(AppFailure(FailureKind.rateLimited, detail));
     }
-    return fallback(AppFailure(FailureKind.apiFailed, detail));
+    return fallback(_HttpFailure(FailureKind.apiFailed, detail, response.statusCode));
   }
 
   static Json? _decode(String s) {
@@ -472,6 +618,13 @@ class YouTubeDataApi implements YouTubeApi {
       debugPrint('api cache write failed: ${e.runtimeType}');
     }
   }
+}
+
+/// فشل HTTP بحالته (داخلي): لمعرفة أن قائمة الإعجابات غير متاحة (404/403) دون
+/// تحليل النص التشخيصي.
+class _HttpFailure extends AppFailure {
+  const _HttpFailure(super.kind, super.debugDetail, this.status);
+  final int status;
 }
 
 class _Fetched {

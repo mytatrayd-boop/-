@@ -54,6 +54,40 @@ class FakeApi implements YouTubeApi {
     return onFeed(refresh);
   }
 
+  // ── المكتبة (الميزة 5) ──
+  final playlistsCalls = <({String? token, bool refresh})>[];
+  final playlistVideoCalls = <({String id, String? token, bool refresh})>[];
+  final likedCalls = <({String? token, bool refresh})>[];
+  final subscriptionCalls = <({String? token, bool refresh})>[];
+  FutureOr<ApiPage<PlaylistSummary>> Function(String? token) onPlaylists = (_) => const ApiPage([]);
+  FutureOr<ApiPage<VideoRef>> Function(String id, String? token) onPlaylistVideos = (_, _) => const ApiPage([]);
+  FutureOr<ApiPage<VideoRef>> Function(String? token) onLiked = (_) => const ApiPage([]);
+  FutureOr<ApiPage<ChannelSummary>> Function(String? token) onSubscriptions = (_) => const ApiPage([]);
+
+  @override
+  Future<ApiPage<PlaylistSummary>> myPlaylists({String? pageToken, bool refresh = false}) async {
+    playlistsCalls.add((token: pageToken, refresh: refresh));
+    return onPlaylists(pageToken);
+  }
+
+  @override
+  Future<ApiPage<VideoRef>> playlistVideos(String playlistId, {String? pageToken, bool refresh = false}) async {
+    playlistVideoCalls.add((id: playlistId, token: pageToken, refresh: refresh));
+    return onPlaylistVideos(playlistId, pageToken);
+  }
+
+  @override
+  Future<ApiPage<VideoRef>> likedVideos({String? pageToken, bool refresh = false}) async {
+    likedCalls.add((token: pageToken, refresh: refresh));
+    return onLiked(pageToken);
+  }
+
+  @override
+  Future<ApiPage<ChannelSummary>> mySubscriptions({String? pageToken, bool refresh = false}) async {
+    subscriptionCalls.add((token: pageToken, refresh: refresh));
+    return onSubscriptions(pageToken);
+  }
+
   @override
   Future<String?> myChannelTitle() async {
     titleCalls++;
@@ -134,7 +168,7 @@ void main() {
       expect(field.bottom, lessThanOrEqualTo(t.getRect(find.byKey(const Key('bottomNav'))).top));
     });
 
-    testWidgets('Library is a placeholder that opens My local playlists; Settings tab works', (t) async {
+    testWidgets('Library opens on My local playlists; Settings tab works', (t) async {
       await pumpHome(t, c: c, api: api);
       await t.tap(find.byKey(const Key('navLibrary')));
       await t.pumpAndSettle();

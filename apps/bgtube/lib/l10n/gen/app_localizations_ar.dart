@@ -63,10 +63,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'الرابط غير صالح. تأكد أنه رابط فيديو من يوتيوب.';
 
   @override
-  String get errorPlaylistNotSupported =>
-      'روابط القوائم غير مدعومة بعد. الصق رابط فيديو واحد.';
-
-  @override
   String get errorExtraction =>
       'تعذّر استخراج الصوت من هذا الفيديو. جرّب مرة أخرى.';
 
@@ -576,4 +572,114 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get quotaResetNote => 'تتجدد الحصتان عند منتصف ليل المحيط الهادئ';
+
+  @override
+  String get errorPlaylistNeedsSignIn =>
+      'سجّل الدخول لإضافة قوائم يوتيوب. روابط الفيديو تعمل دون دخول.';
+
+  @override
+  String get libraryYouTubePlaylists => 'قوائم يوتيوب';
+
+  @override
+  String get libraryLikes => 'الإعجابات';
+
+  @override
+  String get librarySubscriptions => 'الاشتراكات';
+
+  @override
+  String get libraryFavorites => 'المفضلة';
+
+  @override
+  String get libraryHistory => 'السجل';
+
+  @override
+  String get libraryEmpty => 'لا شيء هنا بعد';
+
+  @override
+  String get libraryLocalLoadError => 'تعذّر فتح هذا القسم من التخزين';
+
+  @override
+  String get favoritesEmpty => 'لم تضف شيئاً بعد. اضغط ⋮ على أي فيديو';
+
+  @override
+  String get historyEmpty => 'لم تشغّل شيئاً بعد';
+
+  @override
+  String get addToFavorites => 'أضف إلى المفضلة';
+
+  @override
+  String get removeFromFavorites => 'أزل من المفضلة';
+
+  @override
+  String get addedToFavorites => 'أُضيف إلى المفضلة';
+
+  @override
+  String get removedFromFavorites => 'أُزيل من المفضلة';
+
+  @override
+  String get removeFromHistory => 'حذف من السجل';
+
+  @override
+  String get removedFromHistory => 'حُذف من السجل';
+
+  @override
+  String get clearHistory => 'مسح السجل';
+
+  @override
+  String get clearHistoryConfirmTitle => 'مسح السجل؟';
+
+  @override
+  String get clearHistoryConfirmBody =>
+      'سيُحذف سجل التشغيل من هذا الجهاز. لا يؤثر على يوتيوب.';
+
+  @override
+  String get clearHistoryAction => 'مسح';
+
+  @override
+  String get historyCleared => 'مُسح السجل';
+
+  @override
+  String get playlistAdding => 'جارٍ إضافة القائمة…';
+
+  @override
+  String playlistAddingProgress(int fetched, int total) {
+    final intl.NumberFormat fetchedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String fetchedString = fetchedNumberFormat.format(fetched);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'جارٍ إضافة القائمة… $fetchedString من $totalString';
+  }
+
+  @override
+  String playlistAddedPartial(int added, int total) {
+    final intl.NumberFormat addedNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String addedString = addedNumberFormat.format(added);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'أُضيف $addedString من $totalString. تعذّر جلب الباقي';
+  }
+
+  @override
+  String playlistAddedPartialUnknown(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'أُضيف $countString مقطع',
+      many: 'أُضيف $countString مقطعاً',
+      few: 'أُضيف $countString مقاطع',
+      two: 'أُضيف مقطعان',
+      one: 'أُضيف مقطع واحد',
+    );
+    return '$_temp0. تعذّر جلب الباقي';
+  }
 }

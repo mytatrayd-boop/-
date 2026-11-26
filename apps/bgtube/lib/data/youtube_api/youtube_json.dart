@@ -24,6 +24,12 @@ Object? _at(Object? node, List<String> path) {
   return n;
 }
 
+/// `pageInfo.totalResults` إن وُجد.
+int? totalOf(Json body) {
+  final t = _at(body, ['pageInfo', 'totalResults']);
+  return t is int && t >= 0 ? t : null;
+}
+
 String? _str(Object? node, List<String> path) {
   final v = _at(node, path);
   return v is String && v.isNotEmpty ? v : null;
@@ -151,6 +157,61 @@ List<String> parseSubscriptionChannelIds(Json body) => [
 String? parseMyChannelTitle(Json body) {
   final items = itemsOf(body);
   return items.isEmpty ? null : _str(items.first, ['snippet', 'title']);
+}
+
+/// playlists.list?mine=true → قوائم المستخدم.
+List<PlaylistSummary> parsePlaylists(Json body) => [
+      for (final item in itemsOf(body))
+        if (_str(item, ['id']) case final id?)
+          if (_str(item, ['snippet', 'title']) case final title?)
+            PlaylistSummary(
+              id: id,
+              title: unescapeHtml(title),
+              itemCount: switch (_at(item, ['contentDetails', 'itemCount'])) {
+                final int n when n >= 0 => n,
+                _ => null,
+              },
+              thumbUrl: item['snippet'] is Json ? thumbOf(item['snippet'] as Json) : null,
+            ),
+    ];
+
+/// subscriptions.list?mine=true → القنوات (الاسم والصورة والمعرّف).
+List<ChannelSummary> parseSubscriptionChannels(Json body) => [
+      for (final item in itemsOf(body))
+        if (_str(item, ['snippet', 'resourceId', 'channelId']) case final id?)
+          if (_str(item, ['snippet', 'title']) case final title?)
+            ChannelSummary(
+              id: id,
+              title: unescapeHtml(title),
+              thumbUrl: thumbOf(item['snippet'] as Json, prefer: const ['default', 'medium', 'high']),
+            ),
+    ];
+
+/// channels.list?mine=true&part=contentDetails → معرّف قائمة الإعجابات.
+String? parseLikesPlaylistId(Json body) {
+  final items = itemsOf(body);
+  return items.isEmpty ? null : _str(items.first, ['contentDetails', 'relatedPlaylists', 'likes']);
+}
+
+/// videos.list?myRating=like&part=snippet,contentDetails → المقاطع بمددها.
+List<VideoRef> parseRatedVideos(Json body) {
+  final out = <VideoRef>[];
+  for (final item in itemsOf(body)) {
+    final id = _str(item, ['id']);
+    final snippet = item['snippet'];
+    if (id == null || snippet is! Json) continue;
+    final title = _str(snippet, ['title']);
+    if (title == null) continue;
+    final channel = _str(snippet, ['channelTitle']);
+    out.add(VideoRef(
+      videoId: id,
+      title: unescapeHtml(title),
+      author: channel == null ? null : unescapeHtml(channel),
+      duration: parseIsoDuration(_str(item, ['contentDetails', 'duration'])),
+      thumbUrl: thumbOf(snippet),
+    ));
+  }
+  return out;
 }
 
 /// أسباب الخطأ في ردّ الواجهة (`error.errors[].reason`).

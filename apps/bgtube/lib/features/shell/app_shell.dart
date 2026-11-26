@@ -10,7 +10,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../browse/api_providers.dart';
 import '../home/home_screen.dart';
 import '../home/link_intake.dart';
-import '../local_playlists/local_playlists_screen.dart';
+import '../library/library_screen.dart';
 import '../player/mini_player.dart';
 import '../queue/queue_ui.dart';
 import '../settings/settings_screen.dart';
@@ -57,7 +57,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   Future<void> _handleIncoming(String shared) async {
     if (!mounted) return;
-    await submitLink(context, ref.read(playbackQueueProvider), shared, shared: true);
+    await submitLink(context, ref, shared, shared: true);
   }
 
   @override
@@ -113,8 +113,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           index: _index,
           children: [
             _tab(0, const HomeScreen()),
-            // المكتبة عنصر نائب الآن: تفتح «قوائمي المحلية» (الميزة 5 لاحقاً).
-            _tab(1, const LocalPlaylistsScreen()),
+            _tab(1, const LibraryScreen()),
             _tab(2, const SettingsScreen()),
           ],
         ),

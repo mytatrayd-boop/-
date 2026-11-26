@@ -1,7 +1,8 @@
 /// أنواع الفشل الموحّدة. الواجهة تحوّل النوع إلى رسالة مترجمة (لا نص هنا).
 enum FailureKind {
   invalidLink,
-  playlistNotSupported,
+  /// رابط قائمة يوتيوب دون دخول (الإضافة عبر الواجهة الرسمية فقط، D30).
+  playlistNeedsSignIn,
   extractionFailed,
   network,
   rateLimited,

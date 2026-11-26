@@ -95,13 +95,45 @@ class Quota extends Table {
   Set<Column<Object>> get primaryKey => {dayPt, bucket};
 }
 
-@DriftDatabase(tables: [Positions, QueueEntries, QueueState, LocalPlaylists, LocalPlaylistItems, ApiCache, Quota])
+/// المفضلة المحلية (v4، الميزة 5، D5/D30). لا تُرسل إلى يوتيوب ولا تُمسح عند الخروج.
+@DataClassName('FavoriteRow')
+class Favorites extends Table {
+  TextColumn get videoId => text()();
+  TextColumn get title => text().nullable()();
+  TextColumn get author => text().nullable()();
+  IntColumn get durationMs => integer().nullable()();
+  TextColumn get thumbUrl => text().nullable()();
+  DateTimeColumn get addedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {videoId};
+}
+
+/// سجل التشغيل داخل التطبيق (v4، الميزة 5، D5/D30): صف لكل مقطع، بحد 500.
+@DataClassName('HistoryRow')
+class History extends Table {
+  @override
+  String get tableName => 'history';
+
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get videoId => text().unique()();
+  TextColumn get title => text().nullable()();
+  TextColumn get author => text().nullable()();
+  IntColumn get durationMs => integer().nullable()();
+  TextColumn get thumbUrl => text().nullable()();
+  DateTimeColumn get playedAt => dateTime()();
+}
+
+@DriftDatabase(
+  tables: [Positions, QueueEntries, QueueState, LocalPlaylists, LocalPlaylistItems, ApiCache, Quota, Favorites, History],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// v1: positions. v2: الطابور والقوائم المحلية (D27). v3: كاش الواجهة والحصة (D29).
+  /// v4: المفضلة والسجل (D30).
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -117,6 +149,10 @@ class AppDatabase extends _$AppDatabase {
           from2To3: (m, schema) async {
             await m.createTable(schema.apiCache);
             await m.createTable(schema.quota);
+          },
+          from3To4: (m, schema) async {
+            await m.createTable(schema.favorites);
+            await m.createTable(schema.history);
           },
         ),
         beforeOpen: (details) async {

@@ -5,12 +5,14 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../domain/models/now_playing.dart';
+import '../../domain/models/video_ref.dart';
 import '../../domain/playback_queue_model.dart';
 import '../../domain/playback_speed.dart';
 import '../../domain/sleep_timer.dart';
 import '../../domain/ports/playback_controller.dart';
 import '../../domain/ports/playback_queue.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../library/favorites_ui.dart';
 import '../queue/queue_sheet.dart';
 import '../queue/queue_ui.dart';
 import 'failure_message.dart';
@@ -279,12 +281,20 @@ class _PlayerPanel extends StatelessWidget {
             ),
             _SpeedButton(controller: controller),
             _SleepButton(controller: controller),
+            FavoriteButton(video: _currentRef(queue, now)),
             _QueueButton(queue: queue),
           ],
         ),
       ],
     );
   }
+}
+
+/// مرجع الحالي للمفضلة: من الطابور (فيه الصورة) إن طابق، وإلا من NowPlaying.
+VideoRef _currentRef(PlaybackQueue queue, NowPlaying now) {
+  final cur = queue.queueState.value.current?.ref;
+  if (cur != null && cur.videoId == now.videoId) return cur;
+  return VideoRef(videoId: now.videoId, title: now.title, author: now.author, duration: now.duration);
 }
 
 /// «التالي: {العنوان}» (سطر واحد) عند وجود طابور؛ يفتح شاشة الطابور.

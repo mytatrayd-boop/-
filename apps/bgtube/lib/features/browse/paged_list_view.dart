@@ -14,9 +14,19 @@ import 'paged_loader.dart';
 /// الجلسة: زر الدخول. الصلاحية: «امنح الصلاحية» (شاشة التفويض من جوجل). الحصة:
 /// «الصق رابطاً» إن توفّر. غير ذلك: «إعادة المحاولة».
 class ApiErrorView extends ConsumerWidget {
-  const ApiErrorView({super.key, required this.failure, required this.onRetry, this.onPaste, this.compact = false});
+  const ApiErrorView({
+    super.key,
+    required this.failure,
+    required this.onRetry,
+    this.onPaste,
+    this.compact = false,
+    this.signedOutMessage,
+  });
 
   final AppFailure failure;
+
+  /// نص «غير مسجّل» لهذا الموضع (الافتراضي نص البحث).
+  final String? signedOutMessage;
   final VoidCallback onRetry;
   final VoidCallback? onPaste;
 
@@ -72,7 +82,9 @@ class ApiErrorView extends ConsumerWidget {
           FilledButton(key: const Key('apiErrorRetry'), onPressed: onRetry, child: Text(l.retry)),
         ),
     };
-    final message = failure.kind == FailureKind.notSignedIn ? l.searchNeedsSignIn : failureMessage(l, failure);
+    final message = failure.kind == FailureKind.notSignedIn
+        ? (signedOutMessage ?? l.searchNeedsSignIn)
+        : failureMessage(l, failure);
     final color = quota ? AppColors.warning : AppColors.error;
     if (compact) {
       return Padding(
@@ -177,6 +189,7 @@ class PagedListView<T> extends StatelessWidget {
     this.onRefresh,
     this.onPaste,
     this.autoLoadMore = true,
+    this.signedOutMessage,
   });
 
   final PagedLoader<T> loader;
@@ -188,6 +201,9 @@ class PagedListView<T> extends StatelessWidget {
 
   /// false: الصفحة التالية بزر «المزيد» صريح (البحث: كل صفحة طلب من وعاء الـ100).
   final bool autoLoadMore;
+
+  /// نص «غير مسجّل» في موضع القائمة (الافتراضي نص البحث).
+  final String? signedOutMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +217,8 @@ class PagedListView<T> extends StatelessWidget {
           if (loader.loading || (!loader.loaded && loader.failure == null)) {
             body = const SkeletonList();
           } else if (loader.failure != null) {
-            body = ApiErrorView(failure: loader.failure!, onRetry: loader.load, onPaste: onPaste);
+            body = ApiErrorView(
+                failure: loader.failure!, onRetry: loader.load, onPaste: onPaste, signedOutMessage: signedOutMessage);
           } else {
             body = empty;
           }
@@ -230,7 +247,12 @@ class PagedListView<T> extends StatelessWidget {
               child: Text(l.staleBanner, style: const TextStyle(color: AppColors.warning)),
             ),
           if (loader.failure != null)
-            ApiErrorView(failure: loader.failure!, onRetry: loader.load, onPaste: onPaste, compact: true),
+            ApiErrorView(
+                failure: loader.failure!,
+                onRetry: loader.load,
+                onPaste: onPaste,
+                compact: true,
+                signedOutMessage: signedOutMessage),
         ];
         final list = ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),

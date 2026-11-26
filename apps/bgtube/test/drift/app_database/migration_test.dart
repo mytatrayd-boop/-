@@ -10,6 +10,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -113,6 +114,49 @@ void main() {
         expect(await newDb.select(newDb.queueEntries).get(), hasLength(1));
         expect(await newDb.select(newDb.apiCache).get(), isEmpty);
         expect(await newDb.select(newDb.quota).get(), isEmpty);
+      },
+    );
+  });
+
+  test('migration from v3 to v4 keeps everything (positions, queue, playlists, cache, quota) and adds favorites and history', () async {
+    final t = DateTime.utc(2026, 11, 26).millisecondsSinceEpoch ~/ 1000;
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.positions, [
+          v3.PositionsData(videoId: 'AAAAAAAAAAA', positionMs: 300000, durationMs: 1200000, updatedAt: t),
+        ]);
+        batch.insertAll(oldDb.queueEntries, [
+          v3.QueueEntriesData(key: 1, ord: 0, videoId: 'AAAAAAAAAAA', failed: 0),
+        ]);
+        batch.insertAll(oldDb.localPlaylists, [
+          v3.LocalPlaylistsData(id: 1, name: 'قائمتي', createdAt: t, updatedAt: t),
+        ]);
+        batch.insertAll(oldDb.localPlaylistItems, [
+          v3.LocalPlaylistItemsData(playlistId: 1, ord: 0, videoId: 'AAAAAAAAAAA'),
+        ]);
+        batch.insertAll(oldDb.apiCache, [
+          v3.ApiCacheData(key: 'k', json: '{}', fetchedAt: t, ttlSec: 60, private: 1),
+        ]);
+        batch.insertAll(oldDb.quota, [
+          v3.QuotaData(dayPt: '2026-11-26', bucket: 'general', units: 7),
+        ]);
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.positions).get(), [
+          v4.PositionsData(videoId: 'AAAAAAAAAAA', positionMs: 300000, durationMs: 1200000, updatedAt: t),
+        ]);
+        expect(await newDb.select(newDb.queueEntries).get(), hasLength(1));
+        expect(await newDb.select(newDb.localPlaylists).get(), hasLength(1));
+        expect(await newDb.select(newDb.localPlaylistItems).get(), hasLength(1));
+        expect(await newDb.select(newDb.apiCache).get(), hasLength(1));
+        expect((await newDb.select(newDb.quota).getSingle()).units, 7);
+        expect(await newDb.select(newDb.favorites).get(), isEmpty);
+        expect(await newDb.select(newDb.history).get(), isEmpty);
       },
     );
   });

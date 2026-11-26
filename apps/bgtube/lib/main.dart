@@ -17,6 +17,7 @@ import 'data/settings/prefs_locale_store.dart';
 import 'data/settings/prefs_risk_ack_store.dart';
 import 'data/settings/prefs_speed_store.dart';
 import 'data/local/drift_api_cache_store.dart';
+import 'data/local/drift_library_repositories.dart';
 import 'data/local/drift_local_playlist_repository.dart';
 import 'data/local/drift_position_repository.dart';
 import 'data/local/drift_queue_repository.dart';
@@ -29,11 +30,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // الربط الوحيد لتنفيذ الاستخراج (D4).
   final db = AppDatabase(driftDatabase(name: 'bgtube'));
+  // المفضلة والسجل محليان (D5/D30)؛ المعالج يرى السجل عبر منفذ الكتابة فقط.
+  final history = DriftHistoryRepository(db);
+  final favorites = DriftFavoritesRepository(db);
   final handler = await initAudioHandler(
     YoutubeExplodeResolver(),
     positions: DriftPositionRepository(db),
     speedStore: PrefsSpeedStore(),
     queueRepository: DriftQueueRepository(db),
+    history: history,
   );
   // الطابور المحفوظ يظهر دون استخراج ولا تشغيل تلقائي (D27)، ولا يؤخر الإقلاع.
   unawaited(handler.restoreQueue());
@@ -64,6 +69,8 @@ Future<void> main() async {
       playbackControllerProvider.overrideWithValue(handler),
       playbackQueueProvider.overrideWithValue(handler),
       localPlaylistRepositoryProvider.overrideWithValue(DriftLocalPlaylistRepository(db)),
+      favoritesRepositoryProvider.overrideWithValue(favorites),
+      historyRepositoryProvider.overrideWithValue(history),
       incomingLinkSourceProvider.overrideWithValue(ReceiveSharingLinkSource()),
       authServiceProvider.overrideWithValue(auth),
       youTubeApiProvider.overrideWithValue(api),

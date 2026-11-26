@@ -94,6 +94,19 @@ class FakeController implements PlaybackController, PlaybackQueue {
   }
 
   @override
+  Future<EnqueueResult> enqueueAfter(int afterKey, List<VideoRef> refs) async {
+    if (queueState.value.indexOfKey(afterKey) < 0) return enqueue(refs, QueuePlacement.addToEnd);
+    final room = PlaybackQueue.maxLength - queueState.value.entries.length;
+    final take = refs.take(room).toList();
+    final added = [for (final r in take) QueueEntry(key: _key++, ref: r)];
+    enqueuedAfter.add((after: afterKey, ids: [for (final r in take) r.videoId]));
+    queueState.value = insertAfter(queueState.value, afterKey, added);
+    return EnqueueResult([for (final e in added) e.key], truncated: take.length < refs.length);
+  }
+
+  final enqueuedAfter = <({int after, List<String> ids})>[];
+
+  @override
   Future<void> skipToNext() async => nexts++;
   @override
   Future<void> skipToPrevious() async => previouses++;
@@ -183,11 +196,11 @@ void main() {
     expect(c.played, isEmpty);
   });
 
-  testWidgets('playlist link shows unsupported message', (t) async {
+  testWidgets('playlist link shows the sign-in message when signed out (D30)', (t) async {
     final c = FakeController();
     await pumpShell(t, c);
     await submitText(t, 'https://www.youtube.com/playlist?list=PL1');
-    expect(find.textContaining('القوائم غير مدعومة'), findsOneWidget);
+    expect(find.textContaining('سجّل الدخول لإضافة قوائم يوتيوب'), findsOneWidget);
     expect(c.played, isEmpty);
   });
 

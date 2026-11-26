@@ -16,6 +16,20 @@ abstract interface class YouTubeApi {
   /// أحدث فيديوهات اشتراكات المستخدم (الرئيسية). التكلفة في D29.
   Future<ApiPage<VideoRef>> subscriptionFeed({bool refresh = false});
 
+  /// قوائم تشغيل المستخدم (`playlists.list?mine=true`، وحدة لكل صفحة من 50).
+  Future<ApiPage<PlaylistSummary>> myPlaylists({String? pageToken, bool refresh = false});
+
+  /// عناصر قائمة تشغيل (`playlistItems`، وحدة لكل 50) ثم مددها (وحدة). [ApiPage.total]
+  /// من `pageInfo.totalResults`.
+  Future<ApiPage<VideoRef>> playlistVideos(String playlistId, {String? pageToken, bool refresh = false});
+
+  /// الفيديوهات التي أعجب بها المستخدم: قائمة الإعجابات (`relatedPlaylists.likes`)
+  /// عبر playlistItems، وإن لم تتح فـ`videos.list?myRating=like` (D30).
+  Future<ApiPage<VideoRef>> likedVideos({String? pageToken, bool refresh = false});
+
+  /// قنوات اشتراكات المستخدم (`subscriptions.list?mine=true`، وحدة لكل 50).
+  Future<ApiPage<ChannelSummary>> mySubscriptions({String? pageToken, bool refresh = false});
+
   /// اسم قناة المستخدم (`channels.list?mine=true`، وحدة). null إن لم تكن له قناة.
   Future<String?> myChannelTitle();
 

@@ -109,6 +109,16 @@ QueueSnapshot insertNext(QueueSnapshot s, List<QueueEntry> added) {
   return s._with(list, s.currentKey ?? added.first.key);
 }
 
+/// يدرج [added] بعد العنصر [afterKey] بترتيبها (إكمال قائمة يوتيوب بعد ما أُضيف
+/// منها، D30). إن لم يعد موجوداً تُضاف في الآخر.
+QueueSnapshot insertAfter(QueueSnapshot s, int afterKey, List<QueueEntry> added) {
+  if (added.isEmpty) return s;
+  final i = s.indexOfKey(afterKey);
+  if (i < 0) return append(s, added);
+  final list = [...s.entries]..insertAll(i + 1, added);
+  return s._with(list, s.currentKey ?? added.first.key);
+}
+
 /// يضيف [added] في آخر الطابور.
 QueueSnapshot append(QueueSnapshot s, List<QueueEntry> added) {
   if (added.isEmpty) return s;

@@ -16,6 +16,7 @@ import '../domain/playback_speed.dart';
 import '../domain/position_policy.dart';
 import '../domain/sleep_timer.dart';
 import '../domain/ports/audio_source_resolver.dart';
+import '../domain/ports/play_history.dart';
 import '../domain/ports/playback_controller.dart';
 import '../domain/ports/playback_queue.dart';
 import '../domain/ports/position_repository.dart';
@@ -49,6 +50,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     this._positions,
     this._speedStore,
     this._queueRepo,
+    this._history,
     this._saveInterval = defaultSaveInterval,
     this._probe,
     this._prefetchQuiet = defaultPrefetchQuiet,
@@ -76,6 +78,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     });
     _player.playingStream.listen((p) {
       playing.value = p;
+      if (p) _recordHistory();
       if (p) {
         _saveTimer ??= Timer.periodic(_saveInterval, (_) => _savePosition());
       } else {
@@ -89,6 +92,12 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   final PositionRepository? _positions;
   final SpeedStore? _speedStore;
   final QueueRepository? _queueRepo;
+
+  /// السجل المحلي (الميزة 5، D30): المعالج يكتب فقط، عبر منفذ لا يعرف الحساب.
+  final PlayHistoryRecorder? _history;
+
+  /// مفتاح آخر عنصر سُجّل؛ الإيقاف والاستئناف وإعادة المحاولة لا تكرّره.
+  int? _historyKey;
   final Duration _saveInterval;
   final Duration _prefetchQuiet;
 
@@ -554,6 +563,20 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     return EnqueueResult(keys, truncated: truncated);
   }
 
+  @override
+  Future<EnqueueResult> enqueueAfter(int afterKey, List<VideoRef> refs) async {
+    final before = _queue.value;
+    if (before.indexOfKey(afterKey) < 0) return enqueue(refs, QueuePlacement.addToEnd);
+    if (refs.isEmpty) return const EnqueueResult([]);
+    final room = PlaybackQueue.maxLength - before.entries.length;
+    final take = refs.length <= room ? refs : refs.sublist(0, room < 0 ? 0 : room);
+    final truncated = take.length < refs.length;
+    if (take.isEmpty) return EnqueueResult(const [], truncated: truncated);
+    final added = _newEntries(take);
+    _setQueue(insertAfter(before, afterKey, added));
+    return EnqueueResult([for (final e in added) e.key], truncated: truncated);
+  }
+
   /// يبدأ تشغيل فيديو: غلاف لـ`enqueue([ref], playNow)` (D27). الفشل لا يُرمى؛
   /// يُنشر في [failure].
   @override
@@ -712,10 +735,29 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   }
 
   /// انتهى الفيديو: لا استئناف في المرة القادمة، ثم التالي تلقائياً إن وُجد.
+  /// بدأ تشغيل الحالي فعلاً (لا عند التحميل ولا عند الاستعادة): يُسجَّل مرة لكل
+  /// انتقال إليه. الفشل يُبتلع (D30).
+  void _recordHistory() {
+    if (!_loaded || _loadedToken != _token) return;
+    final entry = _queue.value.current;
+    final recorder = _history;
+    if (entry == null || recorder == null || entry.key == _historyKey) return;
+    _historyKey = entry.key;
+    _writeHistory(recorder, entry.ref);
+  }
+
+  void _writeHistory(PlayHistoryRecorder recorder, VideoRef ref) {
+    unawaited(recorder.record(ref).catchError((Object e) {
+      debugPrint('history write failed: ${e.runtimeType}');
+    }));
+  }
+
   void _onCompleted() {
     // completed قديم (من مصدر سابق أثناء انتقال) أو مكرر: يُتجاهل.
     if (!_loaded || _loadedToken != _token || _completedToken == _token) return;
     _completedToken = _token;
+    // إعادة تشغيل المقطع نفسه بعد انتهائه تُسجَّل من جديد.
+    _historyKey = null;
     _saveTimer?.cancel(); // لا حفظ دوري بعد الانتهاء
     _saveTimer = null;
     final repo = _positions;
@@ -822,6 +864,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
               duration: nowPlaying.value?.duration ?? m.duration,
               thumbUrl: m.thumbnailUrl,
               late: true);
+          // سُجّل قبل وصول العنوان (رابط ملصق): يُحدَّث صفه بالبيانات الجديدة.
+          final recorder = _history;
+          final entry = _queue.value.entryByKey(key);
+          if (recorder != null && _historyKey == key && entry != null) _writeHistory(recorder, entry.ref);
         }, onError: (Object _) {}));
       }
       await _player.setUrl(audio.url, initialPosition: _resumeFrom, headers: audio.httpHeaders);
@@ -838,6 +884,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
         return;
       }
       if (!autoplay) return;
+      // «تشغيل» ضُغط أثناء التحضير: playing صار true قبل التحميل فلن يتغيّر الآن.
+      if (_player.playing) _recordHistory();
       await _player.play();
     } on AppFailure catch (e) {
       if (token == _token) await _finalFailure(e);

@@ -12,16 +12,16 @@ import '../queue/queue_ui.dart';
 import 'local_playlist_screen.dart';
 import 'playlist_dialogs.dart';
 
-/// «قوائمي المحلية» (DESIGN 4ب). المكتبة لم تُبنَ بعد، فوجهة «المكتبة» في الشريط
-/// السفلي تفتح هذه الشاشة الآن (D29).
-class LocalPlaylistsScreen extends ConsumerStatefulWidget {
-  const LocalPlaylistsScreen({super.key});
+/// «قوائمي المحلية» (DESIGN 4ب): أول شريحة في المكتبة (الميزة 5). محتوى بلا
+/// Scaffold؛ تفتح القائمة داخل متصفّح وجهة المكتبة.
+class LocalPlaylistsView extends ConsumerStatefulWidget {
+  const LocalPlaylistsView({super.key});
 
   @override
-  ConsumerState<LocalPlaylistsScreen> createState() => _LocalPlaylistsScreenState();
+  ConsumerState<LocalPlaylistsView> createState() => _LocalPlaylistsViewState();
 }
 
-class _LocalPlaylistsScreenState extends ConsumerState<LocalPlaylistsScreen> {
+class _LocalPlaylistsViewState extends ConsumerState<LocalPlaylistsView> {
   late Stream<List<LocalPlaylist>> _stream;
 
   LocalPlaylistRepository get _repo => ref.read(localPlaylistRepositoryProvider);
@@ -113,40 +113,35 @@ class _LocalPlaylistsScreenState extends ConsumerState<LocalPlaylistsScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l.localPlaylists)),
-      body: SafeArea(
-        child: StreamBuilder<List<LocalPlaylist>>(
-          stream: _stream,
-          builder: (context, snap) {
-            if (snap.hasError) {
-              return _ErrorCard(onRetry: () => setState(() => _stream = _repo.watchAll()));
-            }
-            final lists = snap.data;
-            if (lists == null) return const Center(child: CircularProgressIndicator());
-            if (lists.isEmpty) return _Empty(onCreate: _create);
-            return ListView(
-              children: [
-                ListTile(
-                  key: const Key('newPlaylistRow'),
-                  minTileHeight: 56,
-                  leading: const Icon(Icons.add),
-                  title: Text(l.newPlaylist),
-                  onTap: _create,
-                ),
-                for (final p in lists)
-                  _PlaylistRow(
-                    playlist: p,
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                      builder: (_) => LocalPlaylistScreen(playlistId: p.id, initialName: p.name),
-                    )),
-                    onMenu: () => _menu(p),
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
+    return StreamBuilder<List<LocalPlaylist>>(
+      stream: _stream,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return _ErrorCard(onRetry: () => setState(() => _stream = _repo.watchAll()));
+        }
+        final lists = snap.data;
+        if (lists == null) return const Center(child: CircularProgressIndicator());
+        if (lists.isEmpty) return _Empty(onCreate: _create);
+        return ListView(
+          children: [
+            ListTile(
+              key: const Key('newPlaylistRow'),
+              minTileHeight: 56,
+              leading: const Icon(Icons.add),
+              title: Text(l.newPlaylist),
+              onTap: _create,
+            ),
+            for (final p in lists)
+              _PlaylistRow(
+                playlist: p,
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => LocalPlaylistScreen(playlistId: p.id, initialName: p.name),
+                )),
+                onMenu: () => _menu(p),
+              ),
+          ],
+        );
+      },
     );
   }
 }

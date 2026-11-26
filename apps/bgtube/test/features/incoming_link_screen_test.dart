@@ -53,11 +53,11 @@ void main() {
     expect(c.played, ['dQw4w9WgXcQ']);
   });
 
-  testWidgets('shared playlist link is not played and shows unsupported message', (t) async {
+  testWidgets('shared playlist link is not played and shows the sign-in message when signed out (D30)', (t) async {
     final c = FakeController();
     await pumpWith(t, c, FakeSource('https://www.youtube.com/playlist?list=PL123'));
     expect(c.played, isEmpty);
-    expect(find.textContaining('القوائم غير مدعومة'), findsOneWidget);
+    expect(find.textContaining('سجّل الدخول لإضافة قوائم يوتيوب'), findsOneWidget);
   });
 
   testWidgets('invalid shared text shows error and does not crash', (t) async {

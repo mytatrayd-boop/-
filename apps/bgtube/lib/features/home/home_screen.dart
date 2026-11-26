@@ -54,9 +54,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _submit(String raw) {
     final t = raw.trim();
     if (t.isEmpty) return;
-    final queue = ref.read(playbackQueueProvider);
     if (looksLikeLink(t)) {
-      submitLink(context, queue, t);
+      submitLink(context, ref, t);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -78,7 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  void _paste() => pasteLink(context, ref.read(playbackQueueProvider));
+  void _paste() => pasteLink(context, ref);
 
   @override
   Widget build(BuildContext context) {

@@ -7,16 +7,28 @@ import '../../domain/models/video_ref.dart';
 import '../../domain/models/youtube_content.dart';
 import '../../domain/ports/playback_queue.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../library/favorites_ui.dart';
 import '../local_playlists/add_to_playlist_sheet.dart';
 import '../player/format_duration.dart';
 import '../player/text_direction.dart';
 import '../queue/queue_ui.dart';
 
 /// قائمة ⋮ لمقطع من الواجهة: «شغّل التالي» ثم «أضف للنهاية» ثم «أضف إلى قائمة
-/// محلية…» (DESIGN: قائمة إجراءات المقطع). كلها عبر المنفذ [PlaybackQueue].
-Future<void> showVideoActions(BuildContext context, WidgetRef ref, VideoRef video) {
+/// محلية…» ثم المفضلة، ثم [extra] (مثل «حذف من السجل») (DESIGN: قائمة إجراءات
+/// المقطع). الإضافة كلها عبر المنفذ [PlaybackQueue].
+Future<void> showVideoActions(BuildContext context, WidgetRef ref, VideoRef video,
+    {List<SheetAction> extra = const []}) async {
   final l = AppLocalizations.of(context);
   final queue = ref.read(playbackQueueProvider);
+  final favorites = ref.read(favoritesRepositoryProvider);
+  final messenger = ScaffoldMessenger.of(context);
+  var isFavorite = false;
+  try {
+    isFavorite = await favorites.contains(video.videoId);
+  } catch (_) {
+    // قراءة فاشلة: يُعرض «أضف إلى المفضلة»، والإضافة لا تكرّر.
+  }
+  if (!context.mounted) return;
   return showActionSheet(
     context,
     [
@@ -38,6 +50,13 @@ Future<void> showVideoActions(BuildContext context, WidgetRef ref, VideoRef vide
         label: l.actionAddToLocalPlaylist,
         onTap: () => showAddToPlaylistSheet(context, ref.read(localPlaylistRepositoryProvider), video),
       ),
+      SheetAction(
+        key: const Key('videoAction_favorite'),
+        icon: isFavorite ? Icons.star : Icons.star_border,
+        label: isFavorite ? l.removeFromFavorites : l.addToFavorites,
+        onTap: () => toggleFavorite(messenger, l, favorites, video, isFavorite: isFavorite),
+      ),
+      ...extra,
     ],
     title: videoTitle(l, video),
   );
@@ -46,9 +65,12 @@ Future<void> showVideoActions(BuildContext context, WidgetRef ref, VideoRef vide
 /// بطاقة فيديو (صف): صورة 16:9 بعرض 120 على الجهة الأولى، العنوان (سطران) والقناة
 /// والمدة، و⋮ في النهاية. الضغط = تشغيل الآن، والضغط المطوّل = قائمة ⋮.
 class VideoResultRow extends ConsumerWidget {
-  const VideoResultRow({super.key, required this.video});
+  const VideoResultRow({super.key, required this.video, this.extraActions = const []});
 
   final VideoRef video;
+
+  /// إجراءات إضافية في آخر ⋮ (السجل: «حذف من السجل»).
+  final List<SheetAction> extraActions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,7 +86,7 @@ class VideoResultRow extends ConsumerWidget {
       key: Key('video_${video.videoId}'),
       onTap: () => enqueueWithFeedback(
           context, ref.read(playbackQueueProvider), [video], QueuePlacement.playNow),
-      onLongPress: () => showVideoActions(context, ref, video),
+      onLongPress: () => showVideoActions(context, ref, video, extra: extraActions),
       child: Padding(
         padding: const EdgeInsetsDirectional.only(start: 16, top: 8, bottom: 8),
         child: Row(
@@ -101,7 +123,7 @@ class VideoResultRow extends ConsumerWidget {
               key: Key('videoMore_${video.videoId}'),
               tooltip: l.moreActions,
               constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-              onPressed: () => showVideoActions(context, ref, video),
+              onPressed: () => showVideoActions(context, ref, video, extra: extraActions),
               icon: const Icon(Icons.more_vert),
             ),
           ],

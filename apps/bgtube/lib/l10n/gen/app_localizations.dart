@@ -194,12 +194,6 @@ abstract class AppLocalizations {
   /// **'الرابط غير صالح. تأكد أنه رابط فيديو من يوتيوب.'**
   String get errorInvalidLink;
 
-  /// No description provided for @errorPlaylistNotSupported.
-  ///
-  /// In ar, this message translates to:
-  /// **'روابط القوائم غير مدعومة بعد. الصق رابط فيديو واحد.'**
-  String get errorPlaylistNotSupported;
-
   /// No description provided for @errorExtraction.
   ///
   /// In ar, this message translates to:
@@ -925,6 +919,156 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تتجدد الحصتان عند منتصف ليل المحيط الهادئ'**
   String get quotaResetNote;
+
+  /// No description provided for @errorPlaylistNeedsSignIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل الدخول لإضافة قوائم يوتيوب. روابط الفيديو تعمل دون دخول.'**
+  String get errorPlaylistNeedsSignIn;
+
+  /// No description provided for @libraryYouTubePlaylists.
+  ///
+  /// In ar, this message translates to:
+  /// **'قوائم يوتيوب'**
+  String get libraryYouTubePlaylists;
+
+  /// No description provided for @libraryLikes.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعجابات'**
+  String get libraryLikes;
+
+  /// No description provided for @librarySubscriptions.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراكات'**
+  String get librarySubscriptions;
+
+  /// No description provided for @libraryFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'المفضلة'**
+  String get libraryFavorites;
+
+  /// No description provided for @libraryHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'السجل'**
+  String get libraryHistory;
+
+  /// No description provided for @libraryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا شيء هنا بعد'**
+  String get libraryEmpty;
+
+  /// No description provided for @libraryLocalLoadError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح هذا القسم من التخزين'**
+  String get libraryLocalLoadError;
+
+  /// No description provided for @favoritesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تضف شيئاً بعد. اضغط ⋮ على أي فيديو'**
+  String get favoritesEmpty;
+
+  /// No description provided for @historyEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تشغّل شيئاً بعد'**
+  String get historyEmpty;
+
+  /// No description provided for @addToFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف إلى المفضلة'**
+  String get addToFavorites;
+
+  /// No description provided for @removeFromFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أزل من المفضلة'**
+  String get removeFromFavorites;
+
+  /// No description provided for @addedToFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف إلى المفضلة'**
+  String get addedToFavorites;
+
+  /// No description provided for @removedFromFavorites.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُزيل من المفضلة'**
+  String get removedFromFavorites;
+
+  /// No description provided for @removeFromHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف من السجل'**
+  String get removeFromHistory;
+
+  /// No description provided for @removedFromHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذف من السجل'**
+  String get removedFromHistory;
+
+  /// No description provided for @clearHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح السجل'**
+  String get clearHistory;
+
+  /// No description provided for @clearHistoryConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح السجل؟'**
+  String get clearHistoryConfirmTitle;
+
+  /// No description provided for @clearHistoryConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُحذف سجل التشغيل من هذا الجهاز. لا يؤثر على يوتيوب.'**
+  String get clearHistoryConfirmBody;
+
+  /// No description provided for @clearHistoryAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح'**
+  String get clearHistoryAction;
+
+  /// No description provided for @historyCleared.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُسح السجل'**
+  String get historyCleared;
+
+  /// No description provided for @playlistAdding.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ إضافة القائمة…'**
+  String get playlistAdding;
+
+  /// No description provided for @playlistAddingProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ إضافة القائمة… {fetched} من {total}'**
+  String playlistAddingProgress(int fetched, int total);
+
+  /// No description provided for @playlistAddedPartial.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف {added} من {total}. تعذّر جلب الباقي'**
+  String playlistAddedPartial(int added, int total);
+
+  /// No description provided for @playlistAddedPartialUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{أُضيف مقطع واحد} =2{أُضيف مقطعان} few{أُضيف {count} مقاطع} many{أُضيف {count} مقطعاً} other{أُضيف {count} مقطع}}. تعذّر جلب الباقي'**
+  String playlistAddedPartialUnknown(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -25,6 +25,10 @@ abstract interface class PlaybackQueue {
   /// إن كان الطابور فارغاً فأي خيار يبدأ التشغيل فوراً.
   Future<EnqueueResult> enqueue(List<VideoRef> refs, QueuePlacement placement);
 
+  /// يدرج بعد العنصر [afterKey] بترتيبها، دون تغيير الحالي (إكمال قائمة يوتيوب
+  /// بعد انقطاع، D30). إن لم يعد العنصر موجوداً تُضاف للنهاية. الحد نفسه.
+  Future<EnqueueResult> enqueueAfter(int afterKey, List<VideoRef> refs);
+
   Future<void> skipToNext();
 
   /// بعد ٣ ث يعيد المقطع من بدايته، وقبلها يرجع للسابق.
