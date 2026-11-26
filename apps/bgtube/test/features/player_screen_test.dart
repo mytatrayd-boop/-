@@ -351,4 +351,28 @@ void main() {
     expect(find.text(formatDuration(const Duration(minutes: 30), 'ar')), findsNothing);
     expect(t.takeException(), isNull);
   });
+
+  // مراجعة D30: صف الأزرار الثانوي لا يفيض على الهواتف الضيقة مع المؤقت والسرعة.
+  for (final width in [360.0, 320.0]) {
+    for (final loc in ['ar', 'en']) {
+      for (final scale in [1.0, 1.3]) {
+        testWidgets('full player has no overflow at ${width.toInt()}dp, font $scale×, timer + 1.25× ($loc)', (t) async {
+          t.view.devicePixelRatio = 3;
+          t.view.physicalSize = Size(width * 3, 780 * 3);
+          addTearDown(t.view.reset);
+          t.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+          final c = FakeController();
+          c.seed([const VideoRef(videoId: 'dQw4w9WgXcQ', title: 'عنوان طويل جداً للمقطع الذي يعمل الآن ويستمر'), const VideoRef(videoId: 'BBBBBBBBBBB', title: 'Next one')]);
+          c.nowPlaying.value = const NowPlaying(
+              videoId: 'dQw4w9WgXcQ', title: 'عنوان طويل جداً للمقطع الذي يعمل الآن ويستمر', author: 'قناة باسم طويل', duration: Duration(hours: 1, minutes: 2, seconds: 3));
+          c.speed.value = 1.25;
+          c.sleepRemaining.value = const Duration(minutes: 25, seconds: 30);
+          await pump(t, c, locale: Locale(loc));
+          expect(find.byKey(const Key('favoriteButton')), findsOneWidget);
+          expect(t.takeException(), isNull);
+        });
+      }
+    }
+  }
 }

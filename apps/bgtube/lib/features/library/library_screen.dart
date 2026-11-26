@@ -204,6 +204,7 @@ class _LikesSection extends ConsumerWidget {
               : PlayAllBar(
                   queue: ref.read(playbackQueueProvider),
                   fetch: (token) => api.likedVideos(pageToken: token),
+                  cancelOn: ref.read(authServiceProvider).statusChanges,
                 ),
         ),
       ],

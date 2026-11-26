@@ -682,4 +682,12 @@ class AppLocalizationsAr extends AppLocalizations {
     );
     return '$_temp0. تعذّر جلب الباقي';
   }
+
+  @override
+  String get errorPlaylistWatchLater =>
+      'قائمة «المشاهدة لاحقاً» وسجل يوتيوب لا تتيحهما واجهة يوتيوب الرسمية. الصق رابط فيديو أو قائمة عادية.';
+
+  @override
+  String get errorPlaylistMix =>
+      'قوائم المزيج (Mix) يولّدها يوتيوب ولا تتيحها واجهته الرسمية. الصق رابط فيديو منها.';
 }

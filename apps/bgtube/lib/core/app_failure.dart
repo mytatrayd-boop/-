@@ -3,6 +3,10 @@ enum FailureKind {
   invalidLink,
   /// رابط قائمة يوتيوب دون دخول (الإضافة عبر الواجهة الرسمية فقط، D30).
   playlistNeedsSignIn,
+  /// «المشاهدة لاحقاً» أو السجل (WL/HL): لا تتيحهما الواجهة الرسمية.
+  playlistWatchLater,
+  /// قائمة مزيج مولّدة (RD…): لا تتيحها الواجهة الرسمية.
+  playlistMix,
   extractionFailed,
   network,
   rateLimited,

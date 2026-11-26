@@ -284,6 +284,16 @@ void main() {
       expect(page.items.single.videoId, 'RATEDAAAAAA');
     });
 
+    test('a likes page whose items are all private keeps the likes source (no switch to myRating)', () async {
+      server.handlers['channels'] = (_) => ok(likesChannelBody('LL'));
+      server.handlers['playlistItems'] = (_) => ok(playlistBody(const [], next: 'L2'));
+      serveVideos();
+      final page = await api.likedVideos();
+      expect(page.items, isEmpty);
+      expect(page.nextPageToken, '${YouTubeDataApi.likesPlaylistPrefix}L2');
+      expect(server.requests.any((r) => r.url.queryParameters['myRating'] != null), isFalse);
+    });
+
     test('missing permission is not hidden by the fallback', () async {
       server.handlers['channels'] = (_) => ok(likesChannelBody('LL'));
       server.handlers['playlistItems'] = (_) => apiError(403, 'insufficientPermissions');
@@ -361,5 +371,62 @@ void main() {
       await pumpEventQueue();
       expect(await db.select(db.apiCache).get(), isEmpty);
     });
+  });
+
+  group('composite results started before sign-out are not returned (_scoped, review D30)', () {
+    Future<void> signOutWhile(Completer<http.Response> gate, Future<Object?> pending, Object body) async {
+      await pumpEventQueue();
+      auth.status = AuthStatus.signedOut;
+      auth.changes.add(AuthStatus.signedOut);
+      await pumpEventQueue();
+      gate.complete(ok(body));
+      await expectLater(
+          pending, throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.notSignedIn)));
+      await pumpEventQueue();
+      expect(await db.select(db.apiCache).get(), isEmpty);
+    }
+
+    test('playlistVideos: durations pending at sign-out (their failure is swallowed) -> not returned', () async {
+      server.handlers['playlistItems'] = (_) => ok(playlistBody([('VIDAAAAAAAA', '2026-01-01T00:00:00Z')]));
+      final gate = Completer<http.Response>();
+      server.handlers['videos'] = (_) => gate.future;
+      final pending = api.playlistVideos('PLaaa');
+      await pumpEventQueue();
+      expect(server.endpoints, ['playlistItems', 'videos']);
+      await signOutWhile(gate, pending, durationsBody({'VIDAAAAAAAA': 'PT1M'}));
+    });
+
+    test('likedVideos (likes playlist): durations pending at sign-out -> not returned', () async {
+      server.handlers['channels'] = (_) => ok(likesChannelBody('LL'));
+      server.handlers['playlistItems'] = (_) => ok(playlistBody([('LIKEDAAAAAA', '2026-01-01T00:00:00Z')]));
+      final gate = Completer<http.Response>();
+      server.handlers['videos'] = (_) => gate.future;
+      final pending = api.likedVideos();
+      await signOutWhile(gate, pending, durationsBody({'LIKEDAAAAAA': 'PT1M'}));
+    });
+
+    test('myPlaylists: a response after sign-out is not returned', () async {
+      final gate = Completer<http.Response>();
+      server.handlers['playlists'] = (_) => gate.future;
+      await signOutWhile(gate, api.myPlaylists(), playlistsBody());
+    });
+
+    test('mySubscriptions: a response after sign-out is not returned', () async {
+      final gate = Completer<http.Response>();
+      server.handlers['subscriptions'] = (_) => gate.future;
+      await signOutWhile(gate, api.mySubscriptions(), subscriptionsBody());
+    });
+  });
+
+  test('a page whose items were all private/deleted is not an empty response (rawCount)', () async {
+    server.handlers['playlistItems'] = (_) => ok(playlistBody(const [], next: 'N2'));
+    serveVideos();
+    final page = await api.playlistVideos('PLaaa');
+    expect(page.items, isEmpty);
+    expect(page.rawCount, 1);
+    expect(page.emptyResponse, isFalse);
+    expect(page.nextPageToken, 'N2');
+    server.handlers['playlistItems'] = (_) => ok({'items': []});
+    expect((await api.playlistVideos('PLzzz')).emptyResponse, isTrue);
   });
 }

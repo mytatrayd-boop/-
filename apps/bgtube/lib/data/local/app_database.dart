@@ -153,6 +153,14 @@ class AppDatabase extends _$AppDatabase {
           from3To4: (m, schema) async {
             await m.createTable(schema.favorites);
             await m.createTable(schema.history);
+            // دفاعي (مراجعة D30): نسخة v3 مبكرة (92ce52e) لم يكن في `quota` عمود
+            // bucket ولا مفتاح (day_pt, bucket). العدّاد تقدير يومي يُصفَّر بمنتصف ليل
+            // المحيط الهادئ، فيُعاد إنشاؤه فارغاً بدل نقل أرقام بتكلفة البحث القديمة.
+            final cols = await customSelect('PRAGMA table_info(quota)').get();
+            if (!cols.any((c) => c.read<String>('name') == 'bucket')) {
+              await m.deleteTable('quota');
+              await m.createTable(schema.quota);
+            }
           },
         ),
         beforeOpen: (details) async {

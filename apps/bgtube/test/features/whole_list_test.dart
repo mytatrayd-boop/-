@@ -70,4 +70,19 @@ void main() {
     expect(insertAfter(s, 1, added).currentKey, 0);
     expect(insertAfter(s, 42, added).entries.map((e) => e.key), [0, 1, 2, 10, 11]);
   });
+
+  test('a page filtered to nothing (private/deleted) does not end the fetch; the 40-page cap stays', () async {
+    final r = await fetchAllPages((t) async {
+      final page = t == null ? 0 : int.parse(t);
+      if (page == 0) return const ApiPage([], nextPageToken: '1', rawCount: 50);
+      return ApiPage([v(page)], nextPageToken: page < 2 ? '${page + 1}' : null, rawCount: 50);
+    }, limit: 500);
+    expect(r.items, [v(1), v(2)]);
+    final log = <String?>[];
+    await fetchAllPages((t) async {
+      log.add(t);
+      return ApiPage(const [], nextPageToken: '${log.length}', rawCount: 50);
+    }, limit: 500);
+    expect(log, hasLength(40));
+  });
 }

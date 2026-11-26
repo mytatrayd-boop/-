@@ -10,6 +10,32 @@ class ParsedLink {
 
 final _idPattern = RegExp(r'^[A-Za-z0-9_-]{11}$');
 
+/// معرّف قائمة يوتيوب: حروف وأرقام و`_-` (PL…، UU…، OLAK…، LL، WL، RD…).
+final _playlistIdPattern = RegExp(r'^[A-Za-z0-9_-]{2,64}$');
+
+/// نوع قائمة من رابط `list=` (D30): ما لا تتيحه الواجهة الرسمية يُعرف مسبقاً
+/// برسالة واضحة بدل خطأ عام من الخادم.
+enum PlaylistLinkKind {
+  /// قائمة عادية (PL/UU/OLAK/FL…): عبر playlistItems.
+  regular,
+
+  /// إعجابات المستخدم نفسه (LL): عبر الإعجابات.
+  likes,
+
+  /// «المشاهدة لاحقاً» أو السجل (WL/HL): غير متاحين في الواجهة الرسمية.
+  watchLater,
+
+  /// قوائم المزيج المولّدة (RD…): غير متاحة في الواجهة الرسمية.
+  mix,
+}
+
+PlaylistLinkKind classifyPlaylistId(String id) {
+  if (id == 'LL') return PlaylistLinkKind.likes;
+  if (id == 'WL' || id == 'HL') return PlaylistLinkKind.watchLater;
+  if (id.startsWith('RD')) return PlaylistLinkKind.mix;
+  return PlaylistLinkKind.regular;
+}
+
 /// يحلّل رابط يوتيوب (watch / youtu.be / shorts / embed / live / playlist).
 /// يرمي [AppFailure] من نوع invalidLink إن لم يكن الرابط صالحاً.
 ParsedLink parseYoutubeLink(String input) {
@@ -50,6 +76,7 @@ ParsedLink parseYoutubeLink(String input) {
 
   if (videoId != null) return ParsedLink(videoId: videoId, playlistId: playlistId);
   if (segments.isNotEmpty && segments.first == 'playlist' && playlistId != null) {
+    if (!_playlistIdPattern.hasMatch(playlistId)) throw const AppFailure(FailureKind.invalidLink);
     return ParsedLink(playlistId: playlistId);
   }
   throw const AppFailure(FailureKind.invalidLink);

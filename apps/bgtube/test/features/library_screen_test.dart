@@ -479,6 +479,195 @@ void main() {
     });
   });
 
+  group('whole list: review D30', () {
+    Future<void> openPlaylist(WidgetTester t, {PlaylistSummary p = playlist}) async {
+      api.onPlaylists = (_) => ApiPage([p]);
+      await pumpApp(t);
+      await openLibrary(t, 'playlists');
+      await t.tap(find.text(p.title));
+      await t.pumpAndSettle();
+    }
+
+    Future<void> addToEnd(WidgetTester t, {bool settle = true}) async {
+      await t.tap(find.byKey(const Key('addWholeList')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const Key('placement_addToEnd')));
+      if (settle) {
+        await t.pumpAndSettle();
+      } else {
+        await t.pump();
+        await t.pump(const Duration(milliseconds: 300));
+      }
+    }
+
+    testWidgets('"added n of m" with retry stays long enough (10 s later it still completes the list)', (t) async {
+      int? failAt = 1;
+      api.onPlaylistVideos = (id, token) => ytPage(token, 120, failAt: failAt);
+      c.seed([vid(900)]);
+      await openPlaylist(t);
+      await addToEnd(t);
+      expect(find.text('أُضيف 50 من 120. تعذّر جلب الباقي'), findsOneWidget);
+      await t.pump(const Duration(seconds: 10));
+      await t.pump(const Duration(seconds: 1)); // أي إخفاء بدأ يكتمل هنا
+      expect(find.text('إعادة المحاولة'), findsOneWidget);
+      failAt = null;
+      await t.tap(find.text('إعادة المحاولة'));
+      await t.pumpAndSettle();
+      expect(c.queueState.value.entries, hasLength(121));
+      // بعد مدتها تختفي (لا تبقى للأبد).
+      await t.pump(const Duration(seconds: 16));
+      await t.pumpAndSettle();
+      expect(find.text('إعادة المحاولة'), findsNothing);
+    });
+
+    testWidgets('progress after resuming counts what was added before (addedBefore + n)', (t) async {
+      int? failAt = 2;
+      final gate = Completer<void>();
+      api.onPlaylistVideos = (id, token) async {
+        if (failAt == null && token == '3') await gate.future;
+        return ytPage(token, 200, failAt: failAt);
+      };
+      c.seed([vid(900)]);
+      await openPlaylist(t, p: const PlaylistSummary(id: 'PLaaa', title: 'Morning mix', itemCount: 200));
+      await addToEnd(t);
+      expect(find.text('أُضيف 100 من 200. تعذّر جلب الباقي'), findsOneWidget);
+      failAt = null;
+      await t.tap(find.text('إعادة المحاولة'));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 300));
+      expect(find.text('جارٍ إضافة القائمة… 150 من 200'), findsOneWidget);
+      gate.complete();
+      await t.pumpAndSettle();
+      expect(c.queueState.value.entries, hasLength(201));
+    });
+
+    testWidgets('signing out while fetching: nothing is added and no retry is offered', (t) async {
+      final gate = Completer<void>();
+      api.onPlaylistVideos = (id, token) async {
+        if (token == '1') await gate.future;
+        return ytPage(token, 120);
+      };
+      c.seed([vid(900)]);
+      await openPlaylist(t);
+      await addToEnd(t, settle: false);
+      auth.emit(AuthStatus.signedOut);
+      await t.pump();
+      gate.complete();
+      await t.pumpAndSettle();
+      expect(c.enqueued, isEmpty);
+      expect(find.text('إعادة المحاولة'), findsNothing);
+      expect(find.text('سجّل الدخول لعرض حسابك'), findsWidgets);
+    });
+
+    testWidgets('session expired mid-way: the fetched part is not added; "sign in again", no retry', (t) async {
+      api.onPlaylistVideos = (id, token) => token == '1' ? throw const AuthExpired() : ytPage(token, 120);
+      c.seed([vid(900)]);
+      await openPlaylist(t);
+      await addToEnd(t);
+      expect(c.enqueued, isEmpty);
+      expect(find.text('انتهت جلستك، سجّل الدخول من جديد'), findsOneWidget);
+      expect(find.text('إعادة المحاولة'), findsNothing);
+    });
+
+    testWidgets('signing out after a partial add: retry adds nothing (no old session)', (t) async {
+      int? failAt = 1;
+      api.onPlaylistVideos = (id, token) => ytPage(token, 120, failAt: failAt);
+      c.seed([vid(900)]);
+      await openPlaylist(t);
+      await addToEnd(t);
+      expect(find.text('أُضيف 50 من 120. تعذّر جلب الباقي'), findsOneWidget);
+      auth.emit(AuthStatus.signedOut);
+      await t.pump();
+      failAt = null;
+      await t.pumpAndSettle();
+      // الرسالة تبقى ظاهرة فوق المكتبة، لكن زرها لا يجلب ولا يضيف بعد تغيّر الحساب.
+      final calls = api.playlistVideoCalls.length;
+      await t.tap(find.text('إعادة المحاولة'));
+      await t.pumpAndSettle();
+      expect(api.playlistVideoCalls, hasLength(calls));
+      expect(c.enqueuedAfter, isEmpty);
+      expect(c.queueState.value.entries, hasLength(51));
+    });
+
+    testWidgets('the queue fills up while fetching: added up to 500 and "full" is shown', (t) async {
+      final gate = Completer<void>();
+      api.onPlaylistVideos = (id, token) async {
+        if (token == '1') await gate.future;
+        return ytPage(token, 120);
+      };
+      c.seed([vid(900)]);
+      await openPlaylist(t);
+      await addToEnd(t, settle: false);
+      await c.enqueue([for (var i = 0; i < 450; i++) vid(2000 + i)], QueuePlacement.addToEnd);
+      gate.complete();
+      await t.pumpAndSettle();
+      expect(c.queueState.value.entries, hasLength(PlaybackQueue.maxLength));
+      expect(find.textContaining('الطابور ممتلئ'), findsOneWidget);
+    });
+
+    testWidgets('the last added item removed before retry: the rest goes to the end', (t) async {
+      int? failAt = 1;
+      api.onPlaylistVideos = (id, token) => ytPage(token, 60, failAt: failAt);
+      c.seed([vid(900), vid(901)]);
+      await openPlaylist(t);
+      await t.tap(find.byKey(const Key('addWholeList')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const Key('placement_playNext')));
+      await t.pumpAndSettle();
+      final last = c.queueState.value.entries.firstWhere((e) => e.ref.videoId == vid(49).videoId).key;
+      await c.removeEntry(last);
+      failAt = null;
+      await t.tap(find.text('إعادة المحاولة'));
+      await t.pumpAndSettle();
+      final order = [for (final e in c.queueState.value.entries) e.ref.videoId];
+      expect(order.last, vid(59).videoId);
+      expect(order, hasLength(2 + 59));
+    });
+
+    testWidgets('the playlist screen closes when the account changes', (t) async {
+      api.onPlaylistVideos = (id, token) => ytPage(token, 3);
+      await openPlaylist(t);
+      expect(find.text('Video 0'), findsOneWidget);
+      auth.emit(AuthStatus.signedOut);
+      await t.pumpAndSettle();
+      expect(find.text('Video 0'), findsNothing);
+      expect(find.text('سجّل الدخول لعرض حسابك'), findsOneWidget);
+    });
+
+    testWidgets('a playlist whose first page is all private/deleted still shows the next page', (t) async {
+      api.onPlaylistVideos = (id, token) =>
+          token == null ? const ApiPage([], nextPageToken: '1', rawCount: 50) : ApiPage([vid(7)], rawCount: 50);
+      await openPlaylist(t);
+      expect(find.text('Video 7'), findsOneWidget);
+    });
+  });
+
+  group('special playlist links (D30)', () {
+    Future<void> submit(WidgetTester t, String text) async {
+      await t.enterText(find.byKey(const Key('searchField')), text);
+      await t.testTextInput.receiveAction(TextInputAction.search);
+      await t.pumpAndSettle();
+    }
+
+    testWidgets('Watch later (WL) and mixes (RD…) get a clear message without a request', (t) async {
+      await pumpApp(t);
+      await submit(t, 'https://www.youtube.com/playlist?list=WL');
+      expect(find.textContaining('«المشاهدة لاحقاً»'), findsOneWidget);
+      await submit(t, 'https://www.youtube.com/playlist?list=RDdQw4w9WgXcQ');
+      expect(find.textContaining('قوائم المزيج (Mix)'), findsOneWidget);
+      expect(api.playlistVideoCalls, isEmpty);
+    });
+
+    testWidgets('LL (your likes) goes through the likes path', (t) async {
+      api.onLiked = (token) => ytPage(token, 3);
+      await pumpApp(t);
+      await submit(t, 'https://www.youtube.com/playlist?list=LL');
+      expect(api.likedCalls, hasLength(1));
+      expect(api.playlistVideoCalls, isEmpty);
+      expect(c.enqueued.single.ids, hasLength(3));
+    });
+  });
+
   for (final loc in ['ar', 'en']) {
     testWidgets('library sections have no overflow at 1.3x font ($loc)', (t) async {
       t.platformDispatcher.textScaleFactorTestValue = 1.3;

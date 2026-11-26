@@ -31,12 +31,13 @@ Duration totalDuration(Iterable<VideoRef> refs) =>
     refs.fold(Duration.zero, (sum, r) => sum + (r.duration ?? Duration.zero));
 
 /// رسالة قصيرة ٤ ثوانٍ مع «تراجع» على الجهة الأخيرة؛ الجديدة تستبدل السابقة.
-void showUndoSnack(ScaffoldMessengerState messenger, AppLocalizations l, String text, {VoidCallback? onUndo, String? actionLabel}) {
+void showUndoSnack(ScaffoldMessengerState messenger, AppLocalizations l, String text,
+    {VoidCallback? onUndo, String? actionLabel, Duration duration = const Duration(seconds: 4)}) {
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(
       content: Text(text),
-      duration: const Duration(seconds: 4),
+      duration: duration,
       persist: false,
       action: onUndo == null ? null : SnackBarAction(label: actionLabel ?? l.undo, onPressed: onUndo),
     ));

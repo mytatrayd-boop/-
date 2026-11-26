@@ -26,6 +26,24 @@ class PagedLoader<T> extends ChangeNotifier {
 
   bool get hasMore => _next != null;
 
+  /// صفحات متتالية صُفّيت كلها (خاص/محذوف) تُتخطّى بحد أقصى قبل عرض شيء (D30).
+  static const maxSkippedPages = 5;
+
+  /// يجلب من [token] ويتخطّى الصفحات التي صُفّيت كلها حتى يجد عناصر أو نهاية.
+  Future<ApiPage<T>> _fetchSome(String? token, bool refresh, int g) async {
+    var page = await _fetch(token, refresh);
+    var stalePart = page.stale;
+    for (var i = 0;
+        i < maxSkippedPages && page.items.isEmpty && !page.emptyResponse && page.nextPageToken != null;
+        i++) {
+      if (g != _gen) return page;
+      page = await _fetch(page.nextPageToken, false);
+      stalePart = stalePart || page.stale;
+    }
+    return ApiPage(page.items,
+        nextPageToken: page.nextPageToken, stale: stalePart, total: page.total, rawCount: page.rawCount);
+  }
+
   static AppFailure _asFailure(Object e) =>
       e is AppFailure ? e : AppFailure(FailureKind.apiFailed, e.runtimeType.toString());
 
@@ -36,11 +54,12 @@ class PagedLoader<T> extends ChangeNotifier {
     moreFailure = null;
     _notify();
     try {
-      final page = await _fetch(null, refresh);
+      final page = await _fetchSome(null, refresh, g);
       if (g != _gen) return;
       items = List.unmodifiable(page.items);
-      // صفحة فارغة: لا طلب لما بعدها حتى لو أعاد الخادم رمزاً.
-      _next = page.items.isEmpty ? null : page.nextPageToken;
+      // رد فارغ: لا طلب لما بعده حتى لو أعاد الخادم رمزاً. صفحة صُفّيت كلها
+      // (خاص/محذوف) ليست نهاية (D30).
+      _next = page.emptyResponse ? null : page.nextPageToken;
       stale = page.stale;
       loaded = true;
     } catch (e) {
@@ -61,10 +80,10 @@ class PagedLoader<T> extends ChangeNotifier {
     moreFailure = null;
     _notify();
     try {
-      final page = await _fetch(token, false);
+      final page = await _fetchSome(token, false, g);
       if (g != _gen) return;
       items = List.unmodifiable([...items, ...page.items]);
-      _next = page.items.isEmpty ? null : page.nextPageToken;
+      _next = page.emptyResponse ? null : page.nextPageToken;
       stale = stale || page.stale;
     } catch (e) {
       if (g != _gen) return;

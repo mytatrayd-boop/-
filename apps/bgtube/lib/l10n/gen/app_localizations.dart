@@ -1069,6 +1069,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{count, plural, =1{أُضيف مقطع واحد} =2{أُضيف مقطعان} few{أُضيف {count} مقاطع} many{أُضيف {count} مقطعاً} other{أُضيف {count} مقطع}}. تعذّر جلب الباقي'**
   String playlistAddedPartialUnknown(int count);
+
+  /// No description provided for @errorPlaylistWatchLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة «المشاهدة لاحقاً» وسجل يوتيوب لا تتيحهما واجهة يوتيوب الرسمية. الصق رابط فيديو أو قائمة عادية.'**
+  String get errorPlaylistWatchLater;
+
+  /// No description provided for @errorPlaylistMix.
+  ///
+  /// In ar, this message translates to:
+  /// **'قوائم المزيج (Mix) يولّدها يوتيوب ولا تتيحها واجهته الرسمية. الصق رابط فيديو منها.'**
+  String get errorPlaylistMix;
 }
 
 class _AppLocalizationsDelegate

@@ -59,4 +59,27 @@ void main() {
       });
     }
   });
+
+  group('playlist ids (D30)', () {
+    test('classification: LL likes, WL/HL watch later, RD mixes, others regular', () {
+      expect(classifyPlaylistId('LL'), PlaylistLinkKind.likes);
+      expect(classifyPlaylistId('WL'), PlaylistLinkKind.watchLater);
+      expect(classifyPlaylistId('HL'), PlaylistLinkKind.watchLater);
+      expect(classifyPlaylistId('RDdQw4w9WgXcQ'), PlaylistLinkKind.mix);
+      expect(classifyPlaylistId('PLx0sYbCqOb8TBPRdmBHs5Iftvv9TPboYG'), PlaylistLinkKind.regular);
+      expect(classifyPlaylistId('OLAK5uy_abc'), PlaylistLinkKind.regular);
+    });
+
+    test('a playlist link with an invalid list id is an invalid link', () {
+      expect(() => parseYoutubeLink('https://www.youtube.com/playlist?list=PL<script>'),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.invalidLink)));
+      expect(() => parseYoutubeLink('https://www.youtube.com/playlist?list=P'),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.invalidLink)));
+      expect(parseYoutubeLink('https://www.youtube.com/playlist?list=WL').playlistId, 'WL');
+    });
+
+    test('a video link keeps playing the video whatever its list is', () {
+      expect(parseYoutubeLink('https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ').videoId, 'dQw4w9WgXcQ');
+    });
+  });
 }

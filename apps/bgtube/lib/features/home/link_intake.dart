@@ -35,6 +35,9 @@ Future<void> submitLink(BuildContext context, WidgetRef ref, String raw, {bool s
     final id = link.videoId;
     final playlistId = link.playlistId;
     if (id == null && playlistId != null) {
+      final kind = classifyPlaylistId(playlistId);
+      if (kind == PlaylistLinkKind.watchLater) throw const AppFailure(FailureKind.playlistWatchLater);
+      if (kind == PlaylistLinkKind.mix) throw const AppFailure(FailureKind.playlistMix);
       if (ref.read(authStatusProvider) != AuthStatus.signedIn) {
         throw const AppFailure(FailureKind.playlistNeedsSignIn);
       }
@@ -43,7 +46,12 @@ Future<void> submitLink(BuildContext context, WidgetRef ref, String raw, {bool s
           : await showPlacementSheet(context, includePlayNow: true);
       if (placement == null || !context.mounted) return;
       final api = ref.read(youTubeApiProvider);
-      await enqueueWholeList(context, queue, (token) => api.playlistVideos(playlistId, pageToken: token), placement);
+      // LL = إعجابات المستخدم نفسه: عبر مسار الإعجابات (D30).
+      final ListPageFetcher fetch = kind == PlaylistLinkKind.likes
+          ? (token) => api.likedVideos(pageToken: token)
+          : (token) => api.playlistVideos(playlistId, pageToken: token);
+      await enqueueWholeList(context, queue, fetch, placement,
+          cancelOn: ref.read(authServiceProvider).statusChanges);
       return;
     }
     if (id == null) throw const AppFailure(FailureKind.invalidLink);

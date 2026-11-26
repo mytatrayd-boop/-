@@ -5,10 +5,12 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../domain/models/video_ref.dart';
 import '../../domain/models/youtube_content.dart';
+import '../../domain/ports/auth_service.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../browse/paged_list_view.dart';
 import '../browse/paged_loader.dart';
 import '../browse/video_result_row.dart';
+import '../login/auth_status_provider.dart';
 import '../player/text_direction.dart';
 import '../queue/queue_ui.dart';
 import 'whole_list.dart';
@@ -47,6 +49,10 @@ class _YouTubePlaylistScreenState extends ConsumerState<YouTubePlaylistScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final title = widget.playlist.title;
+    // خروج أو انتهاء الجلسة أو حساب آخر: تُغلق القائمة فلا تبقى بيانات الحساب ظاهرة.
+    ref.listen<AuthStatus>(authStatusProvider, (prev, next) {
+      if (prev != next && mounted) Navigator.of(context).maybePop();
+    });
     return Scaffold(
       appBar: AppBar(
         title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, textDirection: textDirectionFor(title)),
@@ -66,6 +72,7 @@ class _YouTubePlaylistScreenState extends ConsumerState<YouTubePlaylistScreen> {
                 queue: ref.read(playbackQueueProvider),
                 fetch: _fetch,
                 total: widget.playlist.itemCount,
+                cancelOn: ref.read(authServiceProvider).statusChanges,
               ),
       ),
     );
@@ -88,6 +95,7 @@ class YouTubePlaylistRow extends ConsumerWidget {
       (token) => api.playlistVideos(playlist.id, pageToken: token),
       placement,
       total: playlist.itemCount,
+      cancelOn: ref.read(authServiceProvider).statusChanges,
     );
   }
 

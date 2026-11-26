@@ -3,6 +3,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:bgtube/data/local/app_database.dart';
+import 'package:bgtube/data/local/drift_api_cache_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'generated/schema.dart';
@@ -159,5 +160,23 @@ void main() {
         expect(await newDb.select(newDb.history).get(), isEmpty);
       },
     );
+  });
+
+  test('an early v3 database (quota without bucket, 92ce52e) is repaired by the v4 migration', () async {
+    final schema = await verifier.schemaAt(3);
+    final raw = schema.rawDatabase;
+    raw.execute('DROP TABLE quota');
+    raw.execute('CREATE TABLE "quota" ("day_pt" TEXT NOT NULL, "units" INTEGER NOT NULL, PRIMARY KEY ("day_pt"))');
+    raw.execute("INSERT INTO quota (day_pt, units) VALUES ('2026-11-26', 4200)");
+    raw.execute("INSERT INTO positions (video_id, position_ms, duration_ms, updated_at) VALUES ('AAAAAAAAAAA', 1000, 2000, 0)");
+    final db = AppDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(db, 4);
+    final store = DriftQuotaStore(db);
+    await store.add('2026-11-26', 'search', 1);
+    await store.add('2026-11-26', 'general', 3);
+    expect(await store.unitsFor('2026-11-26', 'search'), 1);
+    expect(await store.unitsFor('2026-11-26', 'general'), 3);
+    expect(await db.select(db.positions).get(), hasLength(1));
+    await db.close();
   });
 }

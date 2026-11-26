@@ -57,7 +57,7 @@ class ChannelResult extends SearchResult {
 /// صفحة من نتائج الواجهة. [stale] = نسخة محفوظة منتهية الصلاحية خُدمت بدل الشبكة
 /// (نفاد الحصة أو انقطاع)، فتعرض الواجهة «هذه نسخة محفوظة».
 class ApiPage<T> {
-  const ApiPage(this.items, {this.nextPageToken, this.stale = false, this.total});
+  const ApiPage(this.items, {this.nextPageToken, this.stale = false, this.total, this.rawCount});
 
   final List<T> items;
   final String? nextPageToken;
@@ -65,6 +65,13 @@ class ApiPage<T> {
 
   /// العدد الكلي المعلن (`pageInfo.totalResults`) إن عُرف؛ لرسالة «أُضيف n من m».
   final int? total;
+
+  /// عدد العناصر في الرد قبل التصفية (الخاص والمحذوف يُسقطان). null = كعدد [items].
+  /// صفحة صُفّيت كلها (rawCount > 0) ليست نهاية القائمة (مراجعة D30).
+  final int? rawCount;
+
+  /// الرد نفسه بلا عناصر: نهاية القائمة حتى لو أعاد الخادم رمزاً تالياً.
+  bool get emptyResponse => (rawCount ?? items.length) == 0;
 
   bool get hasMore => nextPageToken != null;
 }

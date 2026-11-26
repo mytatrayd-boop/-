@@ -38,4 +38,34 @@ void main() {
     expect(l.items, [1]);
     expect(l.failure?.kind, FailureKind.network);
   });
+
+  test('pages filtered to nothing (private/deleted, rawCount > 0) are skipped, not treated as the end (D30)', () async {
+    final tokens = <String?>[];
+    final l = PagedLoader<int>((token, _) async {
+      tokens.add(token);
+      return switch (token) {
+        null => const ApiPage([], nextPageToken: 'P2', rawCount: 50),
+        'P2' => const ApiPage([7], nextPageToken: 'P3', rawCount: 50),
+        'P3' => const ApiPage([], nextPageToken: 'P4', rawCount: 50),
+        _ => const ApiPage([8], rawCount: 1),
+      };
+    });
+    await l.load();
+    expect(l.items, [7]);
+    expect(l.hasMore, isTrue);
+    await l.loadMore();
+    expect(l.items, [7, 8]);
+    expect(l.hasMore, isFalse);
+    expect(tokens, [null, 'P2', 'P3', 'P4']);
+  });
+
+  test('skipping filtered pages is bounded', () async {
+    var calls = 0;
+    final l = PagedLoader<int>((token, _) async {
+      calls++;
+      return ApiPage(const [], nextPageToken: 'P$calls', rawCount: 50);
+    });
+    await l.load();
+    expect(calls, PagedLoader.maxSkippedPages + 1);
+  });
 }

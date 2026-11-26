@@ -174,21 +174,35 @@ class _PlayerPanel extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          now.title,
-          textDirection: textDirectionFor(now.title),
-          textAlign: TextAlign.start,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+        // النجمة بجوار العنوان (لا في صف الأزرار الثانوي: يفيض على 360dp، D30).
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    now.title,
+                    textDirection: textDirectionFor(now.title),
+                    textAlign: TextAlign.start,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  if (now.author != null)
+                    Text(now.author!,
+                        textDirection: textDirectionFor(now.author!),
+                        textAlign: TextAlign.start,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            FavoriteButton(video: _currentRef(queue, now)),
+          ],
         ),
-        if (now.author != null)
-          Text(now.author!,
-              textDirection: textDirectionFor(now.author!),
-              textAlign: TextAlign.start,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
         const SizedBox(height: 16),
         // شريط التقدم ثابت LTR (DESIGN.md).
         Directionality(
@@ -269,8 +283,10 @@ class _PlayerPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        // Wrap: على 320–360dp مع خط 1.3× ومؤقت يعمل لا يتسع صف واحد (مراجعة D30).
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             IconButton(
               tooltip: l.stop,
@@ -281,7 +297,6 @@ class _PlayerPanel extends StatelessWidget {
             ),
             _SpeedButton(controller: controller),
             _SleepButton(controller: controller),
-            FavoriteButton(video: _currentRef(queue, now)),
             _QueueButton(queue: queue),
           ],
         ),

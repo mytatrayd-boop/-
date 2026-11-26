@@ -176,6 +176,7 @@ class YouTubeDataApi implements YouTubeApi {
       [for (final v in videos) _withDuration(v, durations)],
       nextPageToken: nextTokenOf(r.body),
       stale: r.stale || uploads.stale,
+      rawCount: itemsOf(r.body).length,
     );
   }
 
@@ -284,7 +285,11 @@ class YouTubeDataApi implements YouTubeApi {
           private: true,
           refresh: refresh,
         );
-        return ApiPage(parsePlaylists(r.body), nextPageToken: nextTokenOf(r.body), stale: r.stale, total: totalOf(r.body));
+        return ApiPage(parsePlaylists(r.body),
+            nextPageToken: nextTokenOf(r.body),
+            stale: r.stale,
+            total: totalOf(r.body),
+            rawCount: itemsOf(r.body).length);
       });
 
   @override
@@ -308,6 +313,7 @@ class YouTubeDataApi implements YouTubeApi {
       nextPageToken: next == null ? null : '$tokenPrefix$next',
       stale: r.stale,
       total: totalOf(r.body),
+      rawCount: itemsOf(r.body).length,
     );
   }
 
@@ -336,7 +342,7 @@ class YouTubeDataApi implements YouTubeApi {
           try {
             final page =
                 await _playlistVideosImpl(likes, refresh: refresh, tokenPrefix: likesPlaylistPrefix);
-            if (page.items.isNotEmpty) return page;
+            if (!page.emptyResponse) return page;
           } on _HttpFailure catch (f) {
             if (f.status != 404 && f.status != 403) rethrow;
             debugPrint('likes playlist unavailable: HTTP ${f.status}');
@@ -379,6 +385,7 @@ class YouTubeDataApi implements YouTubeApi {
       nextPageToken: next == null ? null : '$likesRatingPrefix$next',
       stale: r.stale,
       total: totalOf(r.body),
+      rawCount: itemsOf(r.body).length,
     );
   }
 
@@ -399,7 +406,8 @@ class YouTubeDataApi implements YouTubeApi {
           private: true,
           refresh: refresh,
         );
-        return ApiPage(parseSubscriptionChannels(r.body), nextPageToken: nextTokenOf(r.body), stale: r.stale);
+        return ApiPage(parseSubscriptionChannels(r.body),
+            nextPageToken: nextTokenOf(r.body), stale: r.stale, rawCount: itemsOf(r.body).length);
       });
 
   // ───────────────────────── مساعدات مركّبة ─────────────────────────
