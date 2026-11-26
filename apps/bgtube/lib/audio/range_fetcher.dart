@@ -29,6 +29,16 @@ class RangeFetchResult {
   bool get ok => statusCode == HttpStatus.ok || statusCode == HttpStatus.partialContent;
 }
 
+/// حجم القطعة المطلوبة من الأصل (8MiB ≤ 9MB). googlevideo يرفض (403) Range
+/// الكبير أو المفتوح لبعض العملاء، والمكتبات المرجعية تجلب بقطع ~10MB.
+const originChunkBytes = 8 * 1024 * 1024;
+
+/// القطعة بعد أول 403 (محاولة واحدة).
+const originRetryChunkBytes = 1024 * 1024;
+
+/// رأس Range كما يُرسل إلى الأصل لـ[start, end) (end حصري؛ null = مفتوح).
+String originRangeHeader(int start, int? end) => 'bytes=$start-${end == null ? '' : end - 1}';
+
 /// الجالب الوحيد للبايتات: يستعمله المشغّل (عبر LocalStreamProxy) والفحص معاً.
 const RangeFetch defaultRangeFetch = fetchRange;
 
@@ -80,7 +90,7 @@ Future<RangeFetchResult> fetchRange(
   try {
     final req = await client.getUrl(url).timeout(timeout);
     headers.forEach(req.headers.set);
-    req.headers.set(HttpHeaders.rangeHeader, 'bytes=$from-${end == null ? '' : end - 1}');
+    req.headers.set(HttpHeaders.rangeHeader, originRangeHeader(from, end));
     req.headers.set(HttpHeaders.acceptEncodingHeader, 'identity');
     final res = await req.close().timeout(timeout);
     final type = res.headers.contentType?.mimeType ?? 'audio/mp4';

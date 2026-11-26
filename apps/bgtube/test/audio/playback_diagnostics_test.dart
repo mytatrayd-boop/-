@@ -43,7 +43,7 @@ void main() {
   });
 
   group('httpStreamProbe', () {
-    test('uses the player fetch with the same headers and the first two bytes', () async {
+    test('uses the player fetch with the same headers and the first real chunk (same Range as the proxy)', () async {
       final seen = <(Uri, Map<String, String>, int?, int?)>[];
       var cancelled = false;
       Future<RangeFetchResult> fetch(Uri u, Map<String, String> h, {int? start, int? end}) async {
@@ -61,11 +61,11 @@ void main() {
 
       final url = Uri.parse('https://x.googlevideo.com/v?c=ANDROID');
       final r = await httpStreamProbe(url, {'User-Agent': 'UA'}, fetch: fetch);
-      expect(r, 'probe HTTP 403');
+      expect(r, 'probe HTTP 403 bytes=0-8388607');
       final (u, h, start, end) = seen.single;
       expect(u, url);
       expect(h, {'User-Agent': 'UA'});
-      expect((start, end), (0, 2));
+      expect((start, end), (0, originChunkBytes));
       expect(cancelled, isTrue);
     });
 

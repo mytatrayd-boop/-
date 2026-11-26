@@ -147,7 +147,8 @@ void main() {
       final res = await (await c.getUrl((loadedSource() as UriAudioSource).uri)).close();
       await res.drain<void>();
       expect(res.statusCode, 403);
-      expect(e.sourceErrorDetail, 'proxy OriginStatusException(403)');
+      // 403 ثم محاولة واحدة بقطعة 1MiB تفشل أيضاً: التشخيص يحمل Range وحجم القطعة (بلا رابط).
+      expect(e.sourceErrorDetail, 'proxy OriginStatusException(403) bytes=0-1048575 chunk=1048576');
       await e.setUrl(url, initialPosition: Duration.zero);
       expect(e.sourceErrorDetail, isNull); // مصدر جديد
     });

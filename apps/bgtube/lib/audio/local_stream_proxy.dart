@@ -211,6 +211,35 @@ class ProxiedStream {
     }
   }
 
+  /// حجم قطعة الأصل الحالي (8MiB؛ يهبط إلى 1MiB بعد أول 403، ويبقى لبقية المصدر).
+  int _chunkBytes = originChunkBytes;
+  bool _downgraded = false;
+  int _lastReqEnd = 0;
+
+  /// آخر رأس Range أُرسل إلى الأصل، وحجم القطعة المعتمد (للتشخيص؛ بلا روابط).
+  String? lastOriginRange;
+  int get chunkBytes => _chunkBytes;
+
+  Future<RangeFetchResult> _originFetch(int pos, int? limitEx) {
+    final end = limitEx == null ? pos + _chunkBytes : min(limitEx, pos + _chunkBytes);
+    _lastReqEnd = end;
+    lastOriginRange = originRangeHeader(pos, end);
+    return _proxy._fetch(url, headers, start: pos, end: end);
+  }
+
+  /// قطعة محدودة من الأصل. أول 403 يُعاد مرة واحدة بقطعة 1MiB (googlevideo يرفض
+  /// Range الكبير/المفتوح لبعض العملاء).
+  Future<RangeFetchResult> _fetchChunk(int pos, int? limitEx) async {
+    var r = await _originFetch(pos, limitEx);
+    if (r.statusCode == HttpStatus.forbidden && !_downgraded) {
+      r.cancel();
+      _downgraded = true;
+      _chunkBytes = originRetryChunkBytes;
+      r = await _originFetch(pos, limitEx);
+    }
+    return r;
+  }
+
   Future<void> _serve(HttpRequest req) async {
     final res = req.response;
     final range = parseRangeHeader(req.headers.value(HttpHeaders.rangeHeader));
@@ -218,33 +247,36 @@ class ProxiedStream {
     final seq = ++_seq;
     _cancelActive();
 
-    RangeFetchResult? r;
+    // القطعة الحية الآن من هذا الطلب (تتبدّل مع كل قطعة).
+    RangeFetchResult? live;
     var gone = false;
     // انقطاع العميل: dart:io لا يقرأ المقبس أثناء الرد، فيظهر عند أول كتابة فاشلة
     // (تنتهي addStream ثم يُلغى الجلب في finally) أو هنا عبر done. مع أصل صامت لا
     // كتابة ولا تنزيل، فتنظّفه مهلة الخمول (10 ث). onError يمنع وصول الخطأ للـzone.
     unawaited(res.done.then<void>((_) {}, onError: (Object _) {}).whenComplete(() {
       gone = true;
-      final f = r;
+      final f = live;
       if (f != null) {
         _active.remove(f);
         f.cancel();
       }
     }));
+    bool stale() => _closed || seq != _seq || gone;
 
+    RangeFetchResult f;
     try {
-      r = await _proxy._fetch(url, headers, start: start, end: range?.endEx);
+      f = await _fetchChunk(start, range?.endEx);
     } catch (e) {
       _lastError = e is RangeFetchNetworkException ? e : RangeFetchNetworkException(e.runtimeType.toString());
       await _reply(res, HttpStatus.badGateway, ProxyReason.unreachable);
       return;
     }
-    final f = r;
-    if (_closed || seq != _seq || gone) {
+    if (stale()) {
       f.cancel();
       await _reply(res, HttpStatus.serviceUnavailable, ProxyReason.superseded);
       return;
     }
+    live = f;
     _active.add(f);
     try {
       if (!f.ok) {
@@ -269,10 +301,24 @@ class ProxiedStream {
       }
       final skip = start - f.offset;
       final endEx = range?.endEx;
-      var length = contentLength - skip;
-      // أصل أعاد أكثر من المطلوب (تجاهل نهاية Range): نقصّ إلى endEx.
-      if (endEx != null && length > endEx - start) length = endEx - start;
+      final avail = contentLength - skip;
       final total = f.sourceLength;
+      // نهاية ما سنخدمه لـExoPlayer (حصرية): من الطول الكلي المعروف من أول رد.
+      int? want;
+      if (f.statusCode == HttpStatus.ok) {
+        want = start + avail; // الأصل تجاهل Range: رد واحد بلا تقطيع.
+      } else if (total != null) {
+        want = total;
+      } else if (avail < _lastReqEnd - start) {
+        want = start + avail; // أقصر مما طُلب = نهاية الملف.
+      }
+      if (want == null) {
+        _lastError = const UnknownLengthException();
+        await _reply(res, HttpStatus.badGateway, ProxyReason.unknownLength);
+        return;
+      }
+      if (endEx != null && want > endEx) want = endEx;
+      final length = want - start;
       if (length <= 0) {
         if (total != null) res.headers.set(HttpHeaders.contentRangeHeader, 'bytes */$total');
         await _reply(res, HttpStatus.requestedRangeNotSatisfiable, null);
@@ -282,15 +328,60 @@ class ProxiedStream {
       res.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
       if (range != null) {
         res.statusCode = HttpStatus.partialContent;
-        res.headers.set(HttpHeaders.contentRangeHeader, 'bytes $start-${start + length - 1}/${total ?? '*'}');
+        res.headers.set(HttpHeaders.contentRangeHeader, 'bytes $start-${want - 1}/${total ?? want}');
       } else {
         res.statusCode = HttpStatus.ok;
       }
       res.contentLength = length;
       // بلا تخزين في Dart: كل قطعة تُكتب فوراً، فيظهر انقطاع العميل مبكراً.
       res.bufferOutput = false;
+      final end = want;
+      final single = f.statusCode == HttpStatus.ok;
+      Stream<List<int>> body() async* {
+        var pos = start;
+        var cur = f;
+        var curSkip = skip;
+        var take = min(avail, single ? avail : _lastReqEnd - start);
+        take = min(take, end - pos);
+        while (true) {
+          var got = 0;
+          await for (final c in window(cur.body, skip: curSkip, length: take)) {
+            got += c.length;
+            yield c;
+          }
+          _active.remove(cur);
+          cur.cancel();
+          // قطعة أقصر مما وعدنا: نُنهي الجسم قصيراً فيعيد ExoPlayer الطلب.
+          if (got < take) return;
+          pos += got;
+          if (pos >= end || stale()) return;
+          RangeFetchResult next;
+          try {
+            next = await _fetchChunk(pos, end);
+          } catch (e) {
+            _lastError = e is RangeFetchNetworkException ? e : RangeFetchNetworkException(e.runtimeType.toString());
+            return;
+          }
+          if (stale()) {
+            next.cancel();
+            return;
+          }
+          live = next;
+          _active.add(next);
+          final nl = next.contentLength;
+          if (!next.ok || nl == null || next.offset > pos) {
+            _lastError = next.ok ? const OriginRangeMismatchException() : OriginStatusException(next.statusCode);
+            return; // الاستدلال في finally يقطعها.
+          }
+          cur = next;
+          curSkip = pos - next.offset;
+          take = min(min(nl - curSkip, _lastReqEnd - pos), end - pos);
+          if (take <= 0) return;
+        }
+      }
+
       try {
-        await res.addStream(window(f.body, skip: skip, length: length));
+        await res.addStream(body());
       } catch (_) {
         // العميل انقطع أثناء الكتابة.
       }
@@ -299,6 +390,9 @@ class ProxiedStream {
       // فيُقطع اتصال العميل ويعيد ExoPlayer الطلب من موضعه.
       await _closeQuietly(res);
     } finally {
+      final l = live;
+      if (l != null) _active.remove(l);
+      l?.cancel();
       _active.remove(f);
       f.cancel();
     }

@@ -46,7 +46,7 @@ class FakeGoogleVideo {
         case '/ok':
           final m = RegExp(r'bytes=(\d+)-(\d*)').firstMatch(req.headers.value('range') ?? '')!;
           final a = int.parse(m[1]!);
-          final b = m[2]!.isEmpty ? data.length - 1 : int.parse(m[2]!);
+          final b = m[2]!.isEmpty ? data.length - 1 : min(int.parse(m[2]!), data.length - 1); // كالأصل الحقيقي: يقصّ النهاية
           res.statusCode = 206;
           res.headers.set(HttpHeaders.contentRangeHeader, 'bytes $a-$b/${data.length}');
           res.contentLength = b - a + 1;
@@ -320,7 +320,7 @@ void main() {
       expect(r.headers.value(HttpHeaders.acceptRangesHeader), 'bytes');
       expect(r.body, g.data);
       expect(g.seenUa.single, ua);
-      expect(g.seenRange.single, 'bytes=0-');
+      expect(g.seenRange.single, 'bytes=0-8388607'); // قطعة محدودة لا مفتوحة
       expect(g.seenEncoding.single, 'identity');
     });
 
@@ -354,7 +354,7 @@ void main() {
 
     test('origin starting earlier than asked: proxy skips to the exact requested byte', () async {
       final r = await get(reg('/aligned').localUri, range: 'bytes=250-');
-      expect(g.seenRange.single, 'bytes=250-');
+      expect(g.seenRange.single, 'bytes=250-8388857');
       expect(r.status, 206);
       expect(r.headers.value(HttpHeaders.contentRangeHeader), 'bytes 250-999/1000');
       expect(r.body, g.data.sublist(250));
@@ -552,7 +552,7 @@ void main() {
         }, onDone: done.complete, onError: (Object e) => done.completeError(e));
         await done.future.timeout(const Duration(seconds: 20));
         expect(read, size);
-        expect(g.seenRange, ['bytes=0-'], reason: 'one origin request, never re-opened');
+        expect(g.seenRange, ['bytes=0-8388607', 'bytes=8388608-16777215'], reason: 'two bounded chunks, one at a time');
         client.close(force: true);
         await p.close();
       });

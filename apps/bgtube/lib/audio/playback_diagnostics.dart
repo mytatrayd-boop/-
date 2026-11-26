@@ -6,8 +6,9 @@ import 'range_fetcher.dart';
 /// يفصل بين "الخادم يرفض الرابط" و"المشغّل لا يستطيع فكّ الصوت".
 typedef StreamProbe = Future<String> Function(Uri url, Map<String, String> headers);
 
-/// يطلب أول بايتين بدالة الجلب نفسها التي يستعملها المشغّل ([fetchRange]) وبنفس
-/// الترويسات، فيطابق الفحص ما يرسله المشغّل فعلاً (D26). لا يرمي أبداً.
+/// يطلب أول قطعة حقيقية (نفس Range الذي يرسله الوكيل للأصل، [originChunkBytes])
+/// بدالة الجلب نفسها وبنفس الترويسات، ثم يقطع الاتصال دون قراءة الجسم، فيطابق
+/// الفحص ما يرسله المشغّل فعلاً (D26). لا يرمي أبداً.
 Future<String> httpStreamProbe(
   Uri url,
   Map<String, String> headers, {
@@ -15,9 +16,9 @@ Future<String> httpStreamProbe(
   Duration timeout = const Duration(seconds: 6),
 }) async {
   try {
-    final r = await fetch(url, headers, start: 0, end: 2).timeout(timeout);
+    final r = await fetch(url, headers, start: 0, end: originChunkBytes).timeout(timeout);
     r.cancel();
-    return 'probe HTTP ${r.statusCode}';
+    return 'probe HTTP ${r.statusCode} ${originRangeHeader(0, originChunkBytes)}';
   } on RangeFetchNetworkException catch (e) {
     return 'probe ${e.cause}';
   } catch (e) {

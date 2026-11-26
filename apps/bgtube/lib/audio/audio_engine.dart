@@ -46,10 +46,13 @@ class JustAudioEngine implements AudioEngine {
   ProxiedStream? get currentStream => _current;
 
   @override
-  String? get sourceErrorDetail => switch (_current?.lastError) {
-        null => null,
-        final e => 'proxy $e',
-      };
+  String? get sourceErrorDetail {
+    final s = _current;
+    final e = s?.lastError;
+    if (s == null || e == null) return null;
+    final range = s.lastOriginRange;
+    return 'proxy $e${range == null ? '' : ' $range chunk=${s.chunkBytes}'}';
+  }
 
   @override
   Stream<PlaybackEvent> get playbackEventStream => _p.playbackEventStream;
