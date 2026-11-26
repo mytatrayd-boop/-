@@ -17,7 +17,8 @@ val hasReleaseSigning = signingValue("storeFile", "ANDROID_KEYSTORE_PATH") != nu
 
 android {
     namespace = "com.bgtube.bgtube"
-    compileSdk = flutter.compileSdkVersion
+    // receive_sharing_intent يتطلب compileSdk 37 أو أحدث (فحص AAR metadata في بناء release).
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
