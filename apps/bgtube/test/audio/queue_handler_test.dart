@@ -5,6 +5,7 @@ import 'package:bgtube/core/app_failure.dart';
 import 'package:bgtube/domain/models/playback_position.dart';
 import 'package:bgtube/domain/models/resolved_audio.dart';
 import 'package:bgtube/domain/models/video_ref.dart';
+import 'package:bgtube/domain/ports/audio_source_resolver.dart';
 import 'package:bgtube/domain/playback_queue_model.dart';
 import 'package:bgtube/domain/ports/playback_queue.dart';
 import 'package:bgtube/domain/ports/queue_repository.dart';
@@ -45,6 +46,27 @@ class FakeQueueRepo implements QueueRepository {
   }
 }
 
+/// مستخرج بزمن استجابة يعدّ الطلبات الجارية معاً.
+class CountingResolver implements AudioSourceResolver {
+  CountingResolver(this.latency);
+  final Duration latency;
+  final calls = <String>[];
+  int active = 0;
+  int maxActive = 0;
+  @override
+  Future<ResolvedAudio> resolve(String videoId) async {
+    calls.add(videoId);
+    active++;
+    if (active > maxActive) maxActive = active;
+    try {
+      await Future<void>.delayed(latency);
+      return audio(videoId);
+    } finally {
+      active--;
+    }
+  }
+}
+
 String vid(int i) => 'V${i.toString().padLeft(10, '0')}';
 VideoRef ref(int i, {String? title}) => VideoRef(videoId: vid(i), title: title ?? 'Title $i');
 List<VideoRef> refs(int n) => [for (var i = 0; i < n; i++) ref(i)];
@@ -62,12 +84,14 @@ void main() {
   late FakeQueueRepo store;
   late BgtubeAudioHandler h;
 
-  BgtubeAudioHandler make() => BgtubeAudioHandler(
-        resolver: resolver,
+  // مهلة هدوء صفرية لاختبارات السلوك العام؛ اختبارات المهلة نفسها بساعة وهمية.
+  BgtubeAudioHandler make({Duration quiet = Duration.zero, AudioSourceResolver? r}) => BgtubeAudioHandler(
+        resolver: r ?? resolver,
         engine: engine,
         positions: positions,
         queueRepo: store,
         saveInterval: const Duration(hours: 1),
+        prefetchQuiet: quiet,
       );
 
   setUp(() {
@@ -390,18 +414,21 @@ void main() {
       expect(engine.setUrls.last.url.path, '/${vid(1)}');
     });
 
-    test('prefetch is discarded when the next item changes (reorder)', () async {
+    test('after a reorder the new next is prefetched and the old result is kept while its item stays', () async {
       await h.enqueue(refs(3), QueuePlacement.addToEnd);
       await ready();
       expect(resolver.calls, [vid(0), vid(1)]);
+      final b = h.queueState.value.entries[1].key;
       final c = h.queueState.value.entries[2].key;
-      expect(h.prefetchedKeys, {h.queueState.value.entries[1].key});
       await h.moveEntry(c, 1); // صار 2 هو التالي
-      // رُمي ناتج 1، واستُخرج التالي الجديد (2) مسبقاً.
-      expect(h.prefetchedKeys, {c});
+      await pumpAll();
+      expect(resolver.calls, [vid(0), vid(1), vid(2)]);
+      expect(h.prefetchedKeys, {b, c});
       await h.skipToNext();
       expect(currentId(), vid(2));
-      expect(resolver.calls, [vid(0), vid(1), vid(2)]);
+      expect(resolver.calls, [vid(0), vid(1), vid(2)]); // من الذاكرة
+      await h.removeEntry(b);
+      expect(h.prefetchedKeys, isEmpty); // عنصر حُذف: يُرمى ناتجه
     });
 
     test('play next after ready: the new next is prefetched, and the transition uses it', () async {
@@ -416,7 +443,7 @@ void main() {
       expect(resolver.calls, [vid(0), vid(1), vid(9)]); // بلا استخراج عند الانتقال
     });
 
-    test('reorder or removal of the next after ready prefetches the new next', () async {
+    test('removing the next after ready: the new next is used from memory if already extracted', () async {
       await h.enqueue(refs(4), QueuePlacement.addToEnd);
       await ready();
       await h.moveEntry(h.queueState.value.entries[3].key, 1);
@@ -424,10 +451,10 @@ void main() {
       expect(resolver.calls, [vid(0), vid(1), vid(3)]);
       await h.removeEntry(h.queueState.value.entries[1].key); // يحذف 3 فيصير 1 التالي
       await pumpAll();
-      expect(resolver.calls, [vid(0), vid(1), vid(3), vid(1)]);
-      expect(h.prefetchedKeys, {h.queueState.value.entries[1].key});
+      expect(resolver.calls, [vid(0), vid(1), vid(3)]); // 1 محفوظ: لا إعادة
       await h.skipToNext();
-      expect(resolver.calls, hasLength(4));
+      expect(currentId(), vid(1));
+      expect(resolver.calls, hasLength(3));
     });
 
     test('no prefetch before the current is ready, and a failed prefetch is not retried on every ready', () async {
@@ -468,6 +495,118 @@ void main() {
       await pumpAll();
       await ready();
       expect(h.queueState.value.entries[1].failed, isFalse); // نجح
+    });
+
+    test('20 quick edits that change the next: at most two prefetches, never two in flight', () {
+      fakeAsync((fa) {
+        final r = CountingResolver(const Duration(seconds: 1));
+        h = make(quiet: defaultPrefetchQuiet, r: r);
+        unawaited(h.enqueue(refs(30), QueuePlacement.addToEnd));
+        fa.elapse(const Duration(milliseconds: 1100));
+        engine.emitReady();
+        fa.flushMicrotasks(); // استخراج مسبق فوري لـ1 عند ready
+        for (var i = 0; i < 20; i++) {
+          final e = h.queueState.value.entries[2 + (i % 5)];
+          unawaited(h.moveEntry(e.key, 1));
+          fa.elapse(const Duration(milliseconds: 200));
+        }
+        fa.elapse(const Duration(seconds: 10));
+        final prefetches = r.calls.length - 1;
+        expect(prefetches, lessThanOrEqualTo(2));
+        expect(r.maxActive, 1);
+        // الأخير هو التالي ومحفوظ، فالانتقال لا يستخرج.
+        final before = r.calls.length;
+        unawaited(h.skipToNext());
+        fa.elapse(const Duration(seconds: 2));
+        expect(r.calls.length, before);
+      });
+    });
+
+    test('a slow prefetch in flight: the new next waits for it, then is fetched once', () {
+      fakeAsync((fa) {
+        final r = CountingResolver(const Duration(seconds: 5));
+        h = make(quiet: defaultPrefetchQuiet, r: r);
+        unawaited(h.enqueue(refs(4), QueuePlacement.addToEnd));
+        fa.elapse(const Duration(seconds: 5));
+        engine.emitReady();
+        fa.flushMicrotasks(); // 1 جارٍ (٥ ث)
+        unawaited(h.moveEntry(h.queueState.value.entries[3].key, 1)); // التالي صار 3
+        fa.elapse(const Duration(seconds: 3)); // انتهت المهلة و1 ما زال جارياً
+        expect(r.calls, [vid(0), vid(1)]);
+        expect(r.maxActive, 1);
+        fa.elapse(const Duration(seconds: 3)); // انتهى 1 فبدأ 3 مرة واحدة
+        expect(r.calls, [vid(0), vid(1), vid(3)]);
+        fa.elapse(const Duration(seconds: 6));
+        expect(r.maxActive, 1);
+        unawaited(h.skipToNext());
+        fa.elapse(const Duration(seconds: 1));
+        expect(currentId(), vid(3));
+        expect(r.calls, hasLength(3)); // من الذاكرة
+      });
+    });
+
+    test('swapping two items 20 times never re-extracts a video already extracted', () {
+      fakeAsync((fa) {
+        final r = CountingResolver(const Duration(milliseconds: 500));
+        h = make(quiet: defaultPrefetchQuiet, r: r);
+        unawaited(h.enqueue(refs(4), QueuePlacement.addToEnd));
+        fa.elapse(const Duration(seconds: 1));
+        engine.emitReady();
+        fa.flushMicrotasks();
+        for (var i = 0; i < 20; i++) {
+          unawaited(h.moveEntry(h.queueState.value.entries[2].key, 1));
+          fa.elapse(const Duration(seconds: 4)); // هدوء كامل بين كل تبديل
+        }
+        expect(r.calls.where((c) => c == vid(1)), hasLength(1));
+        expect(r.calls.where((c) => c == vid(2)), hasLength(1));
+        expect(r.maxActive, 1);
+      });
+    });
+
+    test('20 quick play-next + undo: a small bounded number of prefetches', () {
+      fakeAsync((fa) {
+        final r = CountingResolver(const Duration(seconds: 1));
+        h = make(quiet: defaultPrefetchQuiet, r: r);
+        unawaited(h.enqueue(refs(3), QueuePlacement.addToEnd));
+        fa.elapse(const Duration(milliseconds: 1100));
+        engine.emitReady();
+        fa.flushMicrotasks();
+        for (var i = 0; i < 20; i++) {
+          late EnqueueResult added;
+          h.enqueue([ref(100 + i)], QueuePlacement.playNext).then((x) => added = x);
+          fa.flushMicrotasks();
+          unawaited(h.removeEntries(added.keys));
+          fa.elapse(const Duration(milliseconds: 300));
+        }
+        fa.elapse(const Duration(seconds: 10));
+        expect(r.calls.where((c) => c.startsWith('V00000001')), isEmpty);
+        expect(r.calls.length - 1, lessThanOrEqualTo(2));
+        expect(r.maxActive, 1);
+      });
+    });
+
+    test('an item whose prefetch failed is tried again once it is the next of a new current', () async {
+      var failOnce = true;
+      resolver.immediate = (id) async {
+        if (id == vid(1) && failOnce) {
+          failOnce = false;
+          throw const AppFailure(FailureKind.network);
+        }
+        return audio(id);
+      };
+      await h.enqueue(refs(4), QueuePlacement.addToEnd);
+      await ready(); // 1 يفشل مسبقاً
+      final one = h.queueState.value.entries[1].key;
+      await h.moveEntry(one, 2); // [0, 2, 1, 3]
+      await pumpAll();
+      await h.moveEntry(h.queueState.value.entries[3].key, 3); // تعديل لا يغيّر التالي
+      await pumpAll();
+      expect(resolver.calls.where((c) => c == vid(1)), hasLength(1));
+      await h.skipToNext(); // إلى 2 (محفوظ)
+      await ready(); // التالي الآن 1 لحالي جديد
+      expect(resolver.calls.where((c) => c == vid(1)), hasLength(2));
+      await h.skipToNext();
+      expect(resolver.calls.where((c) => c == vid(1)), hasLength(2)); // من الذاكرة
     });
 
     test('a failed prefetch is swallowed; the real failure shows on transition', () async {

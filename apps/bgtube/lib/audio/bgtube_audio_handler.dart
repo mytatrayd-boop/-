@@ -32,13 +32,16 @@ class _Fetched {
   final DateTime fetchedAt;
 }
 
+/// الحفظ الدوري للموضع: ٣ ث حتى يتحقق ±٣ ث في SPEC (الميزة 10) عند قتل التطبيق.
+const defaultSaveInterval = Duration(seconds: 3);
+
+/// مهلة الهدوء بعد آخر تعديل يغيّر «التالي» قبل استخراجه مسبقاً (D28).
+const defaultPrefetchQuiet = Duration(milliseconds: 2500);
+
 /// معالج الصوت: يلفّ المشغّل ويعرضه عبر audio_service
 /// (خدمة مقدّمة + إشعار + شاشة قفل). يعتمد على المنفذ `AudioSourceResolver` فقط.
 /// ينفّذ أيضاً طابور التشغيل (D27): مصدر واحد في المشغّل في كل لحظة، والطابور
 /// نموذج صرف في domain.
-/// الحفظ الدوري للموضع: ٣ ث حتى يتحقق ±٣ ث في SPEC (الميزة 10) عند قتل التطبيق.
-const defaultSaveInterval = Duration(seconds: 3);
-
 class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements PlaybackController, PlaybackQueue {
   BgtubeAudioHandler({
     required this._resolver,
@@ -48,6 +51,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     this._queueRepo,
     this._saveInterval = defaultSaveInterval,
     this._probe,
+    this._prefetchQuiet = defaultPrefetchQuiet,
   }) : _player = engine ?? JustAudioEngine() {
     _restoreSpeed();
     _player.playbackEventStream.listen(
@@ -86,6 +90,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   final SpeedStore? _speedStore;
   final QueueRepository? _queueRepo;
   final Duration _saveInterval;
+  final Duration _prefetchQuiet;
 
   /// فحص الرابط عند فشل التشغيل النهائي (للتشخيص فقط). null = بلا فحص.
   final StreamProbe? _probe;
@@ -258,19 +263,33 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   @override
   Stream<VideoRef> get skippedFailures => _skipped.stream;
 
-  /// استخراج مسبق للتالي فقط: المفتاح وناتجه أو الطلب الجاري.
+  // ── الاستخراج المسبق (D27/D28) ──
+  // طلب جارٍ واحد على الأكثر؛ مهلة هدوء بعد تعديلات الطابور؛ ذاكرة صغيرة لنواتج
+  // ما زالت عناصرها في الطابور (لا يُعاد استخراج فيديو استُخرج)؛ وذاكرة فشل صغيرة.
+
+  /// النواتج المحفوظة بترتيب الإدراج (الأقدم أولاً)، بحد [maxPrefetched].
   final Map<int, _Fetched> _fetched = {};
+  static const maxPrefetched = 3;
+
+  /// الطلب المسبق الجاري (واحد على الأكثر).
   int? _prefetchKey;
   Future<ResolvedAudio>? _prefetchFuture;
+
+  /// عناصر فشل استخراجها المسبق (لا يُعاد لها حتى تصبح تالية لحالي جديد).
+  final Set<int> _prefetchFailed = {};
+  static const maxPrefetchFailed = 8;
+
+  Timer? _prefetchTimer;
+  int? _lastNextKey;
+
   /// الرمز الذي بلغ عنده الحالي ready (بعده يُستخرج التالي مسبقاً).
   int _readyToken = -1;
-  int? _prefetchFailedKey;
 
   /// هامش صلاحية الرابط المعروف انتهاؤه، وعمر الرابط المجهول انتهاؤه (D27).
   static const linkExpiryMargin = Duration(minutes: 10);
   static const unknownExpiryMaxAge = Duration(minutes: 30);
 
-  /// مفاتيح الناتج المحفوظ في الذاكرة (للاختبار: عنصران على الأكثر).
+  /// مفاتيح النواتج المحفوظة والطلب الجاري (للاختبار).
   @visibleForTesting
   Set<int> get prefetchedKeys => {..._fetched.keys, ?_prefetchKey};
 
@@ -289,8 +308,16 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     queue.add([for (final e in s.entries) _mediaItemFor(e)]);
     playbackState.add(playbackState.value.copyWith(queueIndex: _queueIndexOrNull));
     _pruneFetched();
-    // تغيّر التالي بعد جاهزية الحالي (شغّل التالي/ترتيب/حذف): يُستخرج الجديد مسبقاً.
-    if (prefetch && _loaded && _readyToken == _token) _prefetchNext();
+    // تغيّر التالي بعد جاهزية الحالي (شغّل التالي/ترتيب/حذف): يُستخرج الجديد
+    // مسبقاً بعد مهلة هدوء يعيدها كل تعديل، فلا تُطلق سلسلة سحب طلباً لكل خطوة.
+    final nextKey = s.next?.key;
+    if (nextKey != _lastNextKey) {
+      _lastNextKey = nextKey;
+      if (prefetch && _prefetchAllowed) {
+        _prefetchTimer?.cancel();
+        _prefetchTimer = Timer(_prefetchQuiet, _prefetchNext);
+      }
+    }
     if (persist) _persist(s);
   }
 
@@ -306,16 +333,27 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     );
   }
 
-  /// الذاكرة تحمل عنصرين على الأكثر: الحالي (لحظة الانتقال إليه) والتالي.
-  /// الاستخراج المسبق يُرمى إن لم يعد لأحدهما (ترتيب/حذف/إدراج).
+  /// يُبقي نواتج العناصر التي ما زالت في الطابور وصالحة، بحد [maxPrefetched]
+  /// (يُطرد الأقدم عدا التالي). الطلب الجاري لا يُلغى؛ ناتجه يُحفظ إن بقي عنصره.
   void _pruneFetched() {
-    final keep = {_queue.value.currentKey, _queue.value.next?.key};
-    _fetched.removeWhere((k, _) => !keep.contains(k));
-    if (_prefetchKey != null && !keep.contains(_prefetchKey)) {
-      _prefetchKey = null;
-      _prefetchFuture = null;
+    final s = _queue.value;
+    _fetched.removeWhere((k, f) => s.indexOfKey(k) < 0 || !_isFresh(f.audio, f.fetchedAt));
+    _prefetchFailed.removeWhere((k) => s.indexOfKey(k) < 0);
+    final nextKey = s.next?.key;
+    while (_fetched.length > maxPrefetched) {
+      final victim = _fetched.keys.firstWhere((k) => k != nextKey, orElse: () => _fetched.keys.first);
+      _fetched.remove(victim);
     }
   }
+
+  void _storeFetched(int key, _Fetched f) {
+    _fetched.remove(key); // يعيد ترتيبه كأحدث
+    _fetched[key] = f;
+    _pruneFetched();
+  }
+
+  /// الاستخراج المسبق مسموح بعد جاهزية الحالي فقط، وللرمز نفسه.
+  bool get _prefetchAllowed => _loaded && _readyToken == _token;
 
   bool _isFresh(ResolvedAudio audio, DateTime fetchedAt) {
     final now = clock.now();
@@ -324,40 +362,65 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     return now.difference(fetchedAt) < unknownExpiryMaxAge;
   }
 
-  /// يستخرج التالي مرة واحدة بعد جاهزية الحالي. لا يلمس المشغّل ولا الوكيل
-  /// (D26: لا preload للمصدر نفسه). فشله يُبتلع؛ الفشل الحقيقي يظهر عند الانتقال.
+  /// أول ready للحالي: يُستخرج التالي فوراً (بلا مهلة). لا يلمس المشغّل ولا
+  /// الوكيل (D26: لا preload للمصدر نفسه). فشله يُبتلع؛ الفشل الحقيقي يظهر عند
+  /// الانتقال. عنصر فشل سابقاً يُعاد له مرة لأنه صار تالياً لحالي جديد.
   void _maybePrefetch() {
     if (_readyToken == _token) return;
     _readyToken = _token;
-    _prefetchFailedKey = null;
+    final next = _queue.value.next;
+    if (next != null) _prefetchFailed.remove(next.key);
+    _prefetchTimer?.cancel();
     _prefetchNext();
   }
 
-  /// يستخرج التالي الحالي إن لم يكن جاهزاً أو جارياً. فشل عنصر لا يُعاد للرمز نفسه.
+  /// يستخرج «التالي» إن لم يكن محفوظاً صالحاً ولا فاشلاً. طلب واحد على الأكثر:
+  /// إن كان غيره جارياً ينتظر، وعند انتهائه يبدأ للتالي الجديد مرة واحدة.
   void _prefetchNext() {
+    if (!_prefetchAllowed) return;
+    if (_prefetchTimer?.isActive ?? false) return; // ما زالت التعديلات جارية
     final next = _queue.value.next;
     if (next == null) return;
     final have = _fetched[next.key];
     if (have != null && _isFresh(have.audio, have.fetchedAt)) return;
-    if (_prefetchKey == next.key || _prefetchFailedKey == next.key) return;
+    if (_prefetchFailed.contains(next.key)) return;
+    if (_prefetchKey != null) return; // واحد جارٍ؛ يُستأنف عند انتهائه
     final key = next.key;
-    final videoId = next.ref.videoId;
-    final future = _resolver.resolve(videoId);
+    final future = _resolver.resolve(next.ref.videoId);
     _prefetchKey = key;
     _prefetchFuture = future;
-    future.then((audio) {
-      if (_prefetchKey != key) return; // تغيّر التالي
-      _prefetchKey = null;
-      _prefetchFuture = null;
-      if (_queue.value.next?.key != key && _queue.value.currentKey != key) return;
-      _fetched[key] = _Fetched(audio, clock.now());
-    }, onError: (Object _) {
-      _prefetchFailedKey = key;
+    void done() {
       if (_prefetchKey == key) {
         _prefetchKey = null;
         _prefetchFuture = null;
       }
+    }
+    future.then((audio) {
+      final wasOurs = _prefetchKey == key;
+      done();
+      final f = _Fetched(audio, clock.now());
+      if (!_isFresh(f.audio, f.fetchedAt)) {
+        // رابط قريب الانتهاء من أصله: لا يُكرَّر استخراجه في حلقة؛ الانتقال يستخرج.
+        _rememberPrefetchFailure(key);
+      } else if (_queue.value.indexOfKey(key) >= 0) {
+        // يُحفظ ما دام عنصره في الطابور (حتى لو لم يعد التالي).
+        _storeFetched(key, f);
+      }
+      if (wasOurs) _prefetchNext(); // تغيّر التالي أثناءه: مرة واحدة للجديد
+    }, onError: (Object _) {
+      final wasOurs = _prefetchKey == key;
+      done();
+      _rememberPrefetchFailure(key);
+      if (wasOurs) _prefetchNext();
     });
+  }
+
+  void _rememberPrefetchFailure(int key) {
+    _prefetchFailed.remove(key);
+    _prefetchFailed.add(key);
+    while (_prefetchFailed.length > maxPrefetchFailed) {
+      _prefetchFailed.remove(_prefetchFailed.first);
+    }
   }
 
   /// يعطي ناتجاً جاهزاً للعنصر إن وُجد صالحاً، أو ينتظر استخراجه المسبق الجاري
@@ -367,10 +430,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     if (have != null) return _isFresh(have.audio, have.fetchedAt) ? have : null;
     if (_prefetchKey == key && _prefetchFuture != null) {
       final f = _prefetchFuture!;
-      _prefetchKey = null;
-      _prefetchFuture = null;
       try {
-        return _Fetched(await f, clock.now());
+        await f;
+        // ناتجه حُفظ عند اكتماله (ما دام العنصر في الطابور).
+        return _fetched.remove(key);
       } catch (_) {
         return null; // نعيد الاستخراج بأنفسنا فيظهر الفشل الحقيقي
       }
@@ -974,6 +1037,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   Future<void> dispose() async {
     _saveTimer?.cancel();
+    _prefetchTimer?.cancel();
     _sleepTimer?.cancel();
     await _skipped.close();
     await _player.dispose();
