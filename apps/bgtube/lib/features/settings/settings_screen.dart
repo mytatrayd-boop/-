@@ -188,7 +188,8 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
   }
 }
 
-/// حصة البحث: تقدير الاستخدام اليومي، وسطر «انتهت حصة البحث اليوم» عند النفاد.
+/// الحصة: وعاء البحث (100 طلب) والوعاء العام (10,000 وحدة)، كلٌّ وحده، مع سطر
+/// «انتهت…» للوعاء النافد (D29).
 class _QuotaSection extends ConsumerWidget {
   const _QuotaSection();
 
@@ -209,11 +210,18 @@ class _QuotaSection extends ConsumerWidget {
             ...switch (quota) {
               AsyncData(:final value) => [
                   Text(
-                    value.exhausted ? l.errorQuotaExceeded : l.quotaSearchesLeft(value.searchesLeft),
+                    value.search.exhausted ? l.errorQuotaExceeded : l.quotaSearchesLeft(value.search.left),
                     key: const Key('quotaStatus'),
-                    style: TextStyle(color: value.exhausted ? AppColors.warning : AppColors.textPrimary),
+                    style: TextStyle(color: value.search.exhausted ? AppColors.warning : AppColors.textPrimary),
                   ),
-                  Text(l.quotaUnits(value.used, value.limit), style: secondary),
+                  Text(l.quotaSearchUsage(value.search.used, value.search.limit),
+                      key: const Key('quotaSearch'), style: secondary),
+                  if (value.general.exhausted)
+                    Text(l.errorGeneralQuotaExceeded,
+                        key: const Key('quotaGeneralExhausted'), style: const TextStyle(color: AppColors.warning)),
+                  Text(l.quotaGeneralUsage(value.general.used, value.general.limit),
+                      key: const Key('quotaGeneral'), style: secondary),
+                  Text(l.quotaResetNote, style: secondary),
                 ],
               AsyncError() => [Text(l.quotaUnavailable, key: const Key('quotaStatus'), style: secondary)],
               _ => const <Widget>[],

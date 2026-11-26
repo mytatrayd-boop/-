@@ -175,7 +175,14 @@ void main() {
     await db.close();
   });
 
-  Future<int> used() async => (await api.quotaToday()).used;
+  /// مجموع الوعاءين (لاختبارات «لا حصة مستهلكة»).
+  Future<int> used() async {
+    final q = await api.quotaToday();
+    return q.general.used + q.search.used;
+  }
+
+  Future<int> searches() async => (await api.quotaToday()).search.used;
+  Future<int> general() async => (await api.quotaToday()).general.used;
 
   void serveSearch({String? next}) {
     server.handlers['search'] = (_) => ok(searchBody(next: next));
@@ -196,6 +203,13 @@ void main() {
       expect(req.url.toString(), isNot(contains('secret')));
       expect(req.url.queryParameters['q'], 'rock roll');
       expect(req.url.queryParameters['fields'], isNotEmpty);
+      expect(req.url.queryParameters['type'], 'video,channel');
+      expect(req.url.queryParameters['maxResults'], '20');
+      expect(req.url.queryParameters['part'], 'snippet');
+      final details = server.requests[1].url.queryParameters;
+      expect(details['part'], 'contentDetails');
+      expect(details['id'], 'vAAAAAAAAAA');
+      expect(details.containsKey('maxResults'), isFalse, reason: 'not allowed with id in videos.list');
       expect(page.nextPageToken, 'P2');
       expect(page.stale, isFalse);
       expect(page.items, hasLength(2)); // القائمة (playlist) أُهملت
@@ -208,8 +222,9 @@ void main() {
       final ch = (page.items[1] as ChannelResult).channel;
       expect(ch.id, 'UCchan');
       expect(ch.thumbUrl, 'https://yt3/c.jpg');
-      // search 100 + videos 1
-      expect(await used(), 101);
+      // search: طلب من وعاء البحث؛ videos: وحدة من الوعاء العام.
+      expect(await searches(), 1);
+      expect(await general(), 1);
     });
 
     test('load more sends the page token as a separate cached request', () async {
@@ -217,8 +232,9 @@ void main() {
       await api.search('rock');
       await api.search('rock', pageToken: 'P2');
       expect(server.requests.where((r) => r.url.path.endsWith('search')).last.url.queryParameters['pageToken'], 'P2');
-      // المدد للمعرّف نفسه من الكاش (24 ساعة).
-      expect(await used(), 201);
+      // كل صفحة طلب من وعاء البحث؛ المدد للمعرّف نفسه من الكاش (24 ساعة).
+      expect(await searches(), 2);
+      expect(await general(), 1);
     });
   });
 
@@ -293,63 +309,151 @@ void main() {
       await slow.dispose();
     });
 
-    test('signing out deletes the private cache (search, mine) and keeps public data', () async {
+    test('signing out deletes the whole cache (uploads and durations reveal the account too)', () async {
       serveSearch();
-      await api.search('rock'); // خاص (البحث) + مدد (عامة)
+      await api.search('rock');
       expect(await db.select(db.apiCache).get(), hasLength(2));
       auth.changes.add(AuthStatus.signedOut);
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
-      final left = await db.select(db.apiCache).get();
-      expect(left.map((r) => r.key.split('?').first), ['videos']);
+      await pumpEventQueue();
+      expect(await db.select(db.apiCache).get(), isEmpty);
+    });
+
+    test('signing in again after an expired session wipes the cache (maybe another account)', () async {
+      var title = 'القديمة';
+      server.handlers['channels'] = (_) => ok({
+            'items': [
+              {
+                'snippet': {'title': title},
+              },
+            ],
+          });
+      expect(await api.myChannelTitle(), 'القديمة');
+      auth.changes.add(AuthStatus.expired);
+      await pumpEventQueue();
+      expect(await db.select(db.apiCache).get(), hasLength(1), reason: 'expired alone keeps it');
+      title = 'الجديدة';
+      auth.changes.add(AuthStatus.signedIn);
+      // يُطلب فوراً كما يفعل مزوّد الإعدادات: ينتظر المسح فلا يقرأ القديم.
+      expect(await api.myChannelTitle(), 'الجديدة');
+    });
+
+    test('at startup without a session the leftover cache is wiped', () async {
+      serveSearch();
+      await api.search('rock');
+      auth.status = AuthStatus.signedOut;
+      await api.clearIfSignedOut();
+      expect(await db.select(db.apiCache).get(), isEmpty);
+    });
+
+    test('at startup with a session the cache stays', () async {
+      serveSearch();
+      await api.search('rock');
+      await api.clearIfSignedOut();
+      expect(await db.select(db.apiCache).get(), hasLength(2));
     });
   });
 
-  group('quota', () {
-    test('near the daily limit search is refused locally with quotaExceeded (no request)', () async {
-      await quotaStore.add('2026-11-26', 9401); // 9401 + 100 > 9500 (95%)
+  group('quota (two buckets: search 100 calls, general 10,000 units)', () {
+    test('search bucket: the 100th search is allowed, the 101st is refused locally (no request)', () async {
       serveSearch();
+      await quotaStore.add('2026-11-26', 'search', 99);
+      await api.search('a');
+      expect(await searches(), 100);
+      final n = server.requests.length;
+      await expectLater(api.search('b'),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.searchQuotaExceeded)));
+      expect(server.requests.length, n);
+      final q = await api.quotaToday();
+      expect(q.search.exhausted, isTrue);
+      expect(q.search.left, 0);
+      expect(q.general.exhausted, isFalse);
+    });
+
+    test('general bucket stops at exactly 95%: 9,499 + 1 allowed, 9,500 + 1 refused', () async {
+      server.handlers['channels'] = (_) => ok({'items': []});
+      await quotaStore.add('2026-11-26', 'general', 9499);
+      await api.myChannelTitle();
+      expect(await general(), 9500);
       await expectLater(
-          api.search('rock'), throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.quotaExceeded)));
-      expect(server.requests, isEmpty);
-      expect((await api.quotaToday()).exhausted, isFalse);
-      expect((await api.quotaToday()).searchesLeft, 0);
+          api.channelVideos('UCx'), throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.quotaExceeded)));
+      expect(server.requests, hasLength(1));
+    });
+
+    test('limits are configurable', () async {
+      final meter = QuotaMeter(quotaStore,
+          general: const BucketLimit(50, stopFraction: 0.5), search: const BucketLimit(3), clock: Clock(() => now));
+      expect(await meter.canSpend(QuotaBucket.general, 25), isTrue);
+      expect(await meter.canSpend(QuotaBucket.general, 26), isFalse);
+      await meter.spend(QuotaBucket.search, 3);
+      expect(await meter.canSpend(QuotaBucket.search, 1), isFalse);
+      final u = await meter.today();
+      expect(u.search.limit, 3);
+      expect(u.general.stopAt, 25);
+    });
+
+    test('search exhaustion does not stop the home feed or channels', () async {
+      await quotaStore.raiseTo('2026-11-26', 'search', 100);
+      server.handlers['subscriptions'] = (_) => ok({'items': []});
+      final page = await api.subscriptionFeed();
+      expect(page.items, isEmpty);
+      expect(server.endpoints, ['subscriptions']);
+    });
+
+    test('server 403 quotaExceeded on search marks only the search bucket', () async {
+      server.handlers['search'] = (_) => apiError(403, 'quotaExceeded');
+      await expectLater(api.search('rock'),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.searchQuotaExceeded)));
+      final q = await api.quotaToday();
+      expect(q.search.exhausted, isTrue);
+      expect(q.search.used, 100);
+      expect(q.general.exhausted, isFalse);
+      expect(q.general.used, 0);
+      // القوائم ما زالت تعمل.
+      server.handlers['channels'] = (_) => ok({'items': []});
+      expect(await api.myChannelTitle(), isNull);
+      // والبحث يُرفض محلياً بلا طلب.
+      final n = server.requests.length;
+      await expectLater(api.search('x'), throwsA(isA<AppFailure>()));
+      expect(server.requests.length, n);
+    });
+
+    test('server 403 quotaExceeded on a list marks only the general bucket', () async {
+      server.handlers['subscriptions'] = (_) => apiError(403, 'quotaExceeded');
+      await expectLater(api.subscriptionFeed(),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.quotaExceeded)));
+      final q = await api.quotaToday();
+      expect(q.general.used, 10000);
+      expect(q.general.exhausted, isTrue);
+      expect(q.search.exhausted, isFalse);
+      serveSearch();
+      final page = await api.search('rock');
+      expect(page.items, isNotEmpty, reason: 'search still works; durations are skipped quietly');
     });
 
     test('quota exhausted: cached results (even expired) are still served', () async {
       serveSearch();
       await api.search('rock');
       now = now.add(const Duration(hours: 7));
-      await quotaStore.raiseTo('2026-11-26', 10000);
+      await quotaStore.raiseTo('2026-11-26', 'search', 100);
       final n = server.requests.length;
       final page = await api.search('rock');
       expect(server.requests.length, n);
       expect(page.stale, isTrue);
     });
 
-    test('server 403 quotaExceeded marks the day exhausted; later reads are refused locally', () async {
-      server.handlers['search'] = (_) => apiError(403, 'quotaExceeded');
-      await expectLater(
-          api.search('rock'), throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.quotaExceeded)));
-      final q = await api.quotaToday();
-      expect(q.exhausted, isTrue);
-      expect(q.used, 10000);
-      final n = server.requests.length;
-      await expectLater(api.myChannelTitle(), throwsA(isA<AppFailure>()));
-      expect(server.requests.length, n, reason: 'no request after exhaustion');
-    });
-
-    test('the counter resets at midnight Pacific time, not UTC or device midnight', () async {
+    test('both counters reset at midnight Pacific time, not UTC or device midnight', () async {
       serveSearch();
       now = DateTime.utc(2026, 11, 27, 7, 59); // 23:59 PST في 26
       await api.search('a');
-      expect(await used(), 101);
+      expect(await searches(), 1);
+      expect(await general(), 1);
       now = DateTime.utc(2026, 11, 27, 8, 0); // 00:00 PST في 27
       expect(await used(), 0);
-      expect(await quotaStore.unitsFor('2026-11-26'), 101);
+      expect(await quotaStore.unitsFor('2026-11-26', 'search'), 1);
+      expect(await quotaStore.unitsFor('2026-11-26', 'general'), 1);
     });
 
-    test('a 1-unit read is counted as 1', () async {
+    test('a 1-unit read is counted as 1 in the general bucket', () async {
       server.handlers['channels'] = (_) => ok({
             'items': [
               {
@@ -358,7 +462,8 @@ void main() {
             ],
           });
       expect(await api.myChannelTitle(), 'قناتي');
-      expect(await used(), 1);
+      expect(await general(), 1);
+      expect(await searches(), 0);
       expect(server.requests.single.url.queryParameters['mine'], 'true');
     });
 
@@ -366,7 +471,16 @@ void main() {
       server.handlers['search'] = (_) => apiError(403, 'rateLimitExceeded');
       await expectLater(
           api.search('x'), throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.rateLimited)));
-      expect((await api.quotaToday()).exhausted, isFalse);
+      final q = await api.quotaToday();
+      expect(q.search.exhausted, isFalse);
+      expect(q.general.exhausted, isFalse);
+    });
+
+    test('403 insufficientPermissions is its own failure (grant permission), not a retry', () async {
+      server.handlers['subscriptions'] = (_) => apiError(403, 'insufficientPermissions');
+      await expectLater(api.subscriptionFeed(),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.insufficientPermissions)));
+      expect((await api.quotaToday()).general.exhausted, isFalse);
     });
   });
 
@@ -382,7 +496,7 @@ void main() {
       expect(page.items, isNotEmpty);
       expect(auth.invalidated, ['secret-token-1']);
       expect(server.requests[1].headers['Authorization'], 'Bearer secret-token-2');
-      expect(await used(), 101, reason: 'the retry is not counted twice');
+      expect(await searches(), 1, reason: 'the retry is not counted twice');
     });
 
     test('401 twice becomes AuthExpired', () async {
@@ -520,8 +634,17 @@ void main() {
       expect(await used(), 1 + 1 + 3 + 1);
       final sub = server.requests.firstWhere((r) => r.url.path.endsWith('subscriptions'));
       expect(sub.url.queryParameters['maxResults'], '${FeedLimits.channels}');
+      expect(sub.url.queryParameters['order'], 'unread');
+      final ch = server.requests.firstWhere((r) => r.url.path.endsWith('channels'));
+      expect(ch.url.queryParameters['maxResults'], '50');
+      expect(ch.url.queryParameters['part'], 'contentDetails');
+      expect(ch.url.queryParameters['id'], 'UC0,UC1,UC2');
       final pl = server.requests.firstWhere((r) => r.url.path.endsWith('playlistItems'));
       expect(pl.url.queryParameters['maxResults'], '${FeedLimits.perChannel}');
+      expect(pl.url.queryParameters['part'], 'snippet,contentDetails');
+      final vd = server.requests.firstWhere((r) => r.url.path.endsWith('videos'));
+      expect(vd.url.queryParameters['part'], 'contentDetails');
+      expect(await searches(), 0, reason: 'the feed never touches the search bucket');
     });
 
     test('opening again within 15 minutes costs nothing; pull to refresh refetches', () async {
@@ -541,6 +664,12 @@ void main() {
       final page = await api.subscriptionFeed();
       expect(page.items.map((v) => v.videoId), isNot(contains('C1NEWXXXXXX')));
       expect(page.items.map((v) => v.videoId), contains('C2NEWXXXXXX'));
+    });
+
+    test('every channel failing is an error, not an empty feed', () async {
+      serveFeed(broken: {'UU0', 'UU1', 'UU2'});
+      await expectLater(
+          api.subscriptionFeed(), throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.apiFailed)));
     });
 
     test('no subscriptions: empty page, nothing else requested', () async {

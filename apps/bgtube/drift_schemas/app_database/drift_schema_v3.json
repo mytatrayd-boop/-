@@ -489,6 +489,16 @@
             "dsl_features": []
           },
           {
+            "name": "bucket",
+            "getter_name": "bucket",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
             "name": "units",
             "getter_name": "units",
             "moor_type": "int",
@@ -503,7 +513,8 @@
         "without_rowid": false,
         "constraints": [],
         "explicit_pk": [
-          "day_pt"
+          "day_pt",
+          "bucket"
         ]
       }
     }
@@ -568,7 +579,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"quota\" (\"day_pt\" TEXT NOT NULL, \"units\" INTEGER NOT NULL, PRIMARY KEY (\"day_pt\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"quota\" (\"day_pt\" TEXT NOT NULL, \"bucket\" TEXT NOT NULL, \"units\" INTEGER NOT NULL, PRIMARY KEY (\"day_pt\", \"bucket\"));"
         }
       ]
     }

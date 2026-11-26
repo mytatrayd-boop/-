@@ -39,7 +39,8 @@ class PagedLoader<T> extends ChangeNotifier {
       final page = await _fetch(null, refresh);
       if (g != _gen) return;
       items = List.unmodifiable(page.items);
-      _next = page.nextPageToken;
+      // صفحة فارغة: لا طلب لما بعدها حتى لو أعاد الخادم رمزاً.
+      _next = page.items.isEmpty ? null : page.nextPageToken;
       stale = page.stale;
       loaded = true;
     } catch (e) {
@@ -63,7 +64,7 @@ class PagedLoader<T> extends ChangeNotifier {
       final page = await _fetch(token, false);
       if (g != _gen) return;
       items = List.unmodifiable([...items, ...page.items]);
-      _next = page.nextPageToken;
+      _next = page.items.isEmpty ? null : page.nextPageToken;
       stale = stale || page.stale;
     } catch (e) {
       if (g != _gen) return;

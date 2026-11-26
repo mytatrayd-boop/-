@@ -405,8 +405,8 @@ final class Schema3 extends i0.VersionedSchema {
       entityName: 'quota',
       withoutRowId: false,
       isStrict: false,
-      tableConstraints: ['PRIMARY KEY(day_pt)'],
-      columns: [_column_22, _column_23],
+      tableConstraints: ['PRIMARY KEY(day_pt, bucket)'],
+      columns: [_column_22, _column_23, _column_24],
       attachedDatabase: database,
     ),
     alias: null,
@@ -473,6 +473,8 @@ class Shape6 extends i0.VersionedTable {
   Shape6({required super.source, required super.alias}) : super.aliased();
   i1.GeneratedColumn<String> get dayPt =>
       columnsByName['day_pt']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get bucket =>
+      columnsByName['bucket']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<int> get units =>
       columnsByName['units']! as i1.GeneratedColumn<int>;
 }
@@ -485,7 +487,15 @@ i1.GeneratedColumn<String> _column_22(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<int> _column_23(String aliasedName) =>
+i1.GeneratedColumn<String> _column_23(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'bucket',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_24(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'units',
       aliasedName,

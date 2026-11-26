@@ -523,7 +523,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String quotaUnits(int used, int limit) {
+  String get quotaUnavailable => 'Unavailable';
+
+  @override
+  String get errorGeneralQuotaExceeded =>
+      'Today\'s YouTube quota for lists and channels is used up. It renews tomorrow. You can paste a link or play from your library.';
+
+  @override
+  String get errorInsufficientPermissions =>
+      'Your account hasn\'t given the app permission to read YouTube. Grant it to continue.';
+
+  @override
+  String get grantPermission => 'Grant permission';
+
+  @override
+  String get loadMore => 'More';
+
+  @override
+  String quotaSearchUsage(int used, int limit) {
     final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
       localeName,
     );
@@ -532,9 +549,22 @@ class AppLocalizationsEn extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String limitString = limitNumberFormat.format(limit);
 
-    return '$usedString of $limitString units used (resets at Pacific midnight)';
+    return '$usedString of $limitString searches today';
   }
 
   @override
-  String get quotaUnavailable => 'Unavailable';
+  String quotaGeneralUsage(int used, int limit) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat limitNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String limitString = limitNumberFormat.format(limit);
+
+    return 'Lists and channels: $usedString of $limitString units';
+  }
+
+  @override
+  String get quotaResetNote => 'Both quotas renew at midnight Pacific time';
 }

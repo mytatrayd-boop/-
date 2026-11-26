@@ -55,17 +55,17 @@ apps/bgtube/
 - الدخول عبر `google_sign_in` الرسمي (شاشة جوجل؛ لا نلمس كلمة المرور). الإصدار 7.x: التفويض فقط عبر `authorizationClient` بعميل Android وبلا serverClientId (D23). النطاقات: `youtube.readonly` للقراءة، و`youtube` فقط لعمليات الكتابة (إعجاب، إضافة/حذف من قائمة). تُطلب الكتابة عند أول استخدام فقط.
 - `AuthService`: `signIn`, `signOut`, `getAccessToken` (يُجدَّد عبر Play Services)، حالة `Stream`. مشروع OAuth في In production بدون توثيق (D7) فلا انتهاء أسبوعي؛ تجديد صامت عبر Play Services. السحب أو الإبطال → `AuthExpired` → رسالة "سجّل الدخول من جديد".
 - `YouTubeApi` (منفذ في domain) ينفّذه `YouTubeDataApi` في `data/youtube_api` فوق `http.Client` محقون؛ يطلب الرمز من `AuthService` لكل طلب ويضعه في ترويسة Authorization فقط (لا مفتاح API)، و401 يُبطل الرمز ويعيد مرة ثم `AuthExpired`. كل الطلبات من التطبيق مباشرة (لا خادم وسيط). التفاصيل والتكلفة في D29.
-- تكلفة الحصة (10,000/يوم): `search.list` ≈ 100؛ القراءات (`playlists`, `playlistItems`, `subscriptions`, `videos.list?myRating=like`, `videos`) = 1؛ الكتابة (`videos.rate`, `playlistItems.insert/delete`) ≈ 50.
-  - فيديوهات قناة: عبر قائمة الرفع (`playlistItems`، 1 وحدة) بدل البحث (100).
+- الحصة وعاءان منذ 1 يونيو 2026 (توثيق search.list وسجل المراجعات، D29): `search.list` في وعاء «Search Queries» مستقل بحد 100 طلب يومياً وتكلفة 1 لكل طلب (كل صفحة طلب)؛ وباقي الطرق في الوعاء العام (10,000/يوم): القراءات (`playlists`, `playlistItems`, `subscriptions`, `videos.list?myRating=like`, `videos`) = 1؛ الكتابة (`videos.rate`, `playlistItems.insert/delete`) ≈ 50.
+  - فيديوهات قناة: عبر قائمة الرفع (`playlistItems`، 1 وحدة من الوعاء العام) بدل البحث (وعاء الـ100 طلب).
   - تفاصيل المدة تُجلب دفعة واحدة `videos.list` (حتى 50 معرّفاً).
   - `fields=` لأقل الحقول، و`maxResults` معتدل.
 - الذاكرة المؤقتة (جدول `api_cache` بمفتاح = الطلب المطبَّع): مدة صلاحية: بحث 6 ساعات، قوائم/إعجابات/اشتراكات 15 دقيقة، تفاصيل فيديو 24 ساعة؛ يُبطَل مباشرة بعد أي عملية كتابة على المورد نفسه. التحديث يدوي (سحب للتحديث)، لا تحديث تلقائي.
-- عدّاد الحصة: جدول `quota` يجمع التكلفة التقديرية لليوم (يُصفَّر عند منتصف الليل بتوقيت المحيط الهادئ). عند تجاوز 95% أو عند ردّ 403 `quotaExceeded`: تظهر "انتهت حصة البحث اليوم" ويُخدَم المخزَّن فقط.
+- عدّاد الحصة: جدول `quota(dayPt, bucket, units)` بعدّاد لكل وعاء (`search` و`general`) يُصفَّر عند منتصف ليل المحيط الهادئ؛ الحدود قابلة للضبط (بحث 100، عام 10,000 يتوقف محلياً عند 95%). ردّ 403 `quotaExceeded` يعلّم وعاء نقطة النهاية التي ردّت فقط. نفاد البحث: "انتهت حصة البحث اليوم" والرئيسية والقنوات تعمل؛ نفاد العام: رسالة حصة القوائم. في الحالتين يُخدَم المخزَّن. 403 `insufficientPermissions`: زر «امنح الصلاحية».
 - التزامن: الكتابة تتم فوراً على يوتيوب ثم يُبطَل الكاش. السجل والمفضلة محليان فقط (D5).
 
 ## التخزين الآمن للرموز
 - لا نحفظ رمز وصول طويل الأمد بأنفسنا: Play Services يدير الجلسة ويصدر رموز وصول قصيرة العمر عند الطلب.
-- `flutter_secure_storage` (Android Keystore) لما نحتاجه فقط: علامة "توجد جلسة" وحدها (لا بريد ولا اسم ولا رموز، D23). `signOut` يمسحها ويمسح `api_cache` للبيانات الخاصة (عند بناء طبقة API).
+- `flutter_secure_storage` (Android Keystore) لما نحتاجه فقط: علامة "توجد جلسة" وحدها (لا بريد ولا اسم ولا رموز، D23). `signOut` يمسحها، وطبقة API تمسح `api_cache` كله (D29).
 - قاعدة: `data/auth` لا يستورده إلا `main.dart` وطبقة `data/youtube_api`؛ و`data/youtube_api` لا يستورده إلا `main.dart` ويستعمل منفذ `AuthService` لا تنفيذه؛ المستخرج وطبقة الصوت لا يعرفان auth ولا الواجهة (اختبار معماري).
 - ممنوع: تسجيل الرموز في السجلات، أو وضعها في shared_preferences/drift/ملفات، أو إرسالها لغير `googleapis.com`.
 - `android:allowBackup="false"` لمنع نسخ البيانات للسحابة.
@@ -90,7 +90,7 @@ apps/bgtube/
 - `favorites(videoId PK, title, channel, thumbUrl, durationSec, addedAt)`
 - `history(id PK, videoId, title, channel, thumbUrl, playedAt)` — حد أقصى 500 سجل.
 - `positions(videoId PK, positionMs, durationMs, updatedAt)`
-- `api_cache(key PK, json, fetchedAt, ttlSec, private)` و`quota(dayPt PK, units)` (v3، D29).
+- `api_cache(key PK, json, fetchedAt, ttlSec, private)` و`quota(dayPt, bucket, units, PK(dayPt, bucket))` (v3، D29). الكاش كله يُمسح عند الخروج وعند الإقلاع دون جلسة وعند الدخول بعد انتهاء الجلسة.
 - `queue_entries(key PK, ord, videoId, title?, author?, durationMs?, thumbUrl?, failed)`، و`queue_state(id=0 PK, currentKey?, updatedAt)`. موضع الحالي مصدره `positions` وحده.
 - `local_playlists(id PK auto, name 1..100, createdAt, updatedAt)`، و`local_playlist_items(playlistId FK cascade, ord, videoId, title?, author?, durationMs?, thumbUrl?, PK(playlistId, ord))`. محلية فقط ولا تُرسل إلى يوتيوب.
 - الإصدارات: v1 = `positions`، وv2 تضيف جداول الطابور والقوائم المحلية (`onUpgrade from<2`، و`PRAGMA foreign_keys=ON` في beforeOpen). المخططات تُصدَّر إلى `drift_schemas/` مع اختبارات ترحيل مولَّدة.

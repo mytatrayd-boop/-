@@ -75,21 +75,24 @@ class ApiCache extends Table {
   DateTimeColumn get fetchedAt => dateTime()();
   IntColumn get ttlSec => integer()();
 
-  /// بيانات الحساب: تُمسح عند تسجيل الخروج.
+  /// بيانات الحساب المباشرة (mine/البحث). للعلم فقط: الخروج يمسح الجدول كله (D29).
   BoolColumn get private => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column<Object>> get primaryKey => {key};
 }
 
-/// الوحدات المقدّرة لكل يوم بتوقيت المحيط الهادئ (v3، D29).
+/// الوحدات المقدّرة لكل يوم بتوقيت المحيط الهادئ ولكل وعاء حصة (v3، D29).
 @DataClassName('QuotaRow')
 class Quota extends Table {
   TextColumn get dayPt => text()();
+
+  /// `general` (10,000 وحدة) أو `search` (100 طلب).
+  TextColumn get bucket => text()();
   IntColumn get units => integer()();
 
   @override
-  Set<Column<Object>> get primaryKey => {dayPt};
+  Set<Column<Object>> get primaryKey => {dayPt, bucket};
 }
 
 @DriftDatabase(tables: [Positions, QueueEntries, QueueState, LocalPlaylists, LocalPlaylistItems, ApiCache, Quota])

@@ -14,8 +14,13 @@ enum FailureKind {
   signInFailed,
   signInUnavailable,
   signOutFailed,
-  // YouTube Data API (الميزة 3)
+  // YouTube Data API (الميزة 3، D29)
+  /// وعاء البحث (100 طلب يومياً) نفد.
+  searchQuotaExceeded,
+  /// الوعاء العام (10,000 وحدة) نفد.
   quotaExceeded,
+  /// الإذن الممنوح لا يغطي قراءة الحساب: يلزم منحه من جديد.
+  insufficientPermissions,
   apiFailed,
 }
 

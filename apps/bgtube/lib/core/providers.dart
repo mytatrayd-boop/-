@@ -110,6 +110,8 @@ class _NoYouTubeApi implements YouTubeApi {
   @override
   Future<String?> myChannelTitle() async => throw _f;
   @override
-  Future<QuotaUsage> quotaToday() async =>
-      const QuotaUsage(used: 0, limit: 10000, exhausted: false, searchesLeft: 95);
+  Future<QuotaUsage> quotaToday() async => const QuotaUsage(
+        general: BucketUsage(used: 0, limit: 10000, stopAt: 9500),
+        search: BucketUsage(used: 0, limit: 100, stopAt: 100),
+      );
 }

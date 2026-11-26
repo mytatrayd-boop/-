@@ -25,6 +25,20 @@ void main() {
       expect(pacificOffset(DateTime.utc(2026, 11, 1, 9, 0)), const Duration(hours: -8));
     });
 
+    test('other years: 2025 (Mar 9 / Nov 2) and 2027 (Mar 14 / Nov 7)', () {
+      expect(pacificOffset(DateTime.utc(2025, 3, 9, 9, 59)), const Duration(hours: -8));
+      expect(pacificOffset(DateTime.utc(2025, 3, 9, 10, 0)), const Duration(hours: -7));
+      expect(pacificOffset(DateTime.utc(2025, 11, 2, 8, 59)), const Duration(hours: -7));
+      expect(pacificOffset(DateTime.utc(2025, 11, 2, 9, 0)), const Duration(hours: -8));
+      expect(pacificOffset(DateTime.utc(2027, 3, 14, 9, 59)), const Duration(hours: -8));
+      expect(pacificOffset(DateTime.utc(2027, 3, 14, 10, 0)), const Duration(hours: -7));
+      expect(pacificOffset(DateTime.utc(2027, 11, 7, 8, 59)), const Duration(hours: -7));
+      expect(pacificOffset(DateTime.utc(2027, 11, 7, 9, 0)), const Duration(hours: -8));
+      // منتصف الليل صيفاً 2027 = 07:00 UTC.
+      expect(pacificDayKey(DateTime.utc(2027, 6, 1, 6, 59)), '2027-05-31');
+      expect(pacificDayKey(DateTime.utc(2027, 6, 1, 7, 0)), '2027-06-01');
+    });
+
     test('year boundary and local DateTime input', () {
       expect(pacificDayKey(DateTime.utc(2027, 1, 1, 5)), '2026-12-31');
       final local = DateTime.utc(2026, 11, 26, 20).toLocal();

@@ -532,7 +532,24 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String quotaUnits(int used, int limit) {
+  String get quotaUnavailable => 'غير متاح';
+
+  @override
+  String get errorGeneralQuotaExceeded =>
+      'انتهت حصة يوتيوب اليومية للقوائم والقنوات. تتجدد غداً. يمكنك لصق رابط أو تشغيل المكتبة.';
+
+  @override
+  String get errorInsufficientPermissions =>
+      'لم يمنح حسابك التطبيق صلاحية قراءة يوتيوب. امنحها للمتابعة.';
+
+  @override
+  String get grantPermission => 'امنح الصلاحية';
+
+  @override
+  String get loadMore => 'المزيد';
+
+  @override
+  String quotaSearchUsage(int used, int limit) {
     final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
       localeName,
     );
@@ -541,9 +558,22 @@ class AppLocalizationsAr extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String limitString = limitNumberFormat.format(limit);
 
-    return '$usedString من $limitString وحدة مستعملة (تُصفَّر عند منتصف ليل المحيط الهادئ)';
+    return '$usedString من $limitString عملية بحث اليوم';
   }
 
   @override
-  String get quotaUnavailable => 'غير متاح';
+  String quotaGeneralUsage(int used, int limit) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat limitNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String limitString = limitNumberFormat.format(limit);
+
+    return 'القوائم والقنوات: $usedString من $limitString وحدة';
+  }
+
+  @override
+  String get quotaResetNote => 'تتجدد الحصتان عند منتصف ليل المحيط الهادئ';
 }

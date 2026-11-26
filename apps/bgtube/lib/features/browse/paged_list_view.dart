@@ -1,6 +1,9 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_failure.dart';
+import '../../core/providers.dart';
+import '../../domain/ports/auth_service.dart';
 import '../../core/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../login/login_screen.dart';
@@ -8,8 +11,9 @@ import '../player/failure_message.dart';
 import 'paged_loader.dart';
 
 /// خطأ في موضع المحتوى: أيقونة وجملة واضحة وإجراء واحد (DESIGN: حالات الخطأ).
-/// الجلسة: زر الدخول. الحصة: «الصق رابطاً» إن توفّر. غير ذلك: «إعادة المحاولة».
-class ApiErrorView extends StatelessWidget {
+/// الجلسة: زر الدخول. الصلاحية: «امنح الصلاحية» (شاشة التفويض من جوجل). الحصة:
+/// «الصق رابطاً» إن توفّر. غير ذلك: «إعادة المحاولة».
+class ApiErrorView extends ConsumerWidget {
   const ApiErrorView({super.key, required this.failure, required this.onRetry, this.onPaste, this.compact = false});
 
   final AppFailure failure;
@@ -19,9 +23,21 @@ class ApiErrorView extends StatelessWidget {
   /// سطر صغير (أسفل قائمة) بدل بطاقة كاملة.
   final bool compact;
 
-  @override
-  Widget build(BuildContext context) {
+  /// يطلب الإذن من جديد عبر `AuthService.signIn` (التفويض التفاعلي بالنطاق نفسه).
+  Future<void> _grant(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      if (await ref.read(authServiceProvider).signIn() == SignInOutcome.signedIn) onRetry();
+    } on AppFailure catch (f) {
+      messenger.showSnackBar(SnackBar(content: Text(failureMessage(l, f))));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final quota = failure.kind == FailureKind.quotaExceeded || failure.kind == FailureKind.searchQuotaExceeded;
     final (IconData icon, Widget? action) = switch (failure.kind) {
       FailureKind.authExpired || FailureKind.notSignedIn => (
           Icons.account_circle_outlined,
@@ -33,7 +49,15 @@ class ApiErrorView extends StatelessWidget {
             child: Text(l.signIn),
           ),
         ),
-      FailureKind.quotaExceeded => (
+      FailureKind.insufficientPermissions => (
+          Icons.lock_open,
+          FilledButton(
+            key: const Key('apiErrorGrant'),
+            onPressed: () => _grant(context, ref),
+            child: Text(l.grantPermission),
+          ),
+        ),
+      FailureKind.quotaExceeded || FailureKind.searchQuotaExceeded => (
           Icons.hourglass_bottom,
           onPaste == null
               ? null
@@ -49,7 +73,7 @@ class ApiErrorView extends StatelessWidget {
         ),
     };
     final message = failure.kind == FailureKind.notSignedIn ? l.searchNeedsSignIn : failureMessage(l, failure);
-    final color = failure.kind == FailureKind.quotaExceeded ? AppColors.warning : AppColors.error;
+    final color = quota ? AppColors.warning : AppColors.error;
     if (compact) {
       return Padding(
         padding: const EdgeInsetsDirectional.all(16),
@@ -152,6 +176,7 @@ class PagedListView<T> extends StatelessWidget {
     this.header,
     this.onRefresh,
     this.onPaste,
+    this.autoLoadMore = true,
   });
 
   final PagedLoader<T> loader;
@@ -160,6 +185,9 @@ class PagedListView<T> extends StatelessWidget {
   final Widget? header;
   final Future<void> Function()? onRefresh;
   final VoidCallback? onPaste;
+
+  /// false: الصفحة التالية بزر «المزيد» صريح (البحث: كل صفحة طلب من وعاء الـ100).
+  final bool autoLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +239,7 @@ class PagedListView<T> extends StatelessWidget {
             if (i < top.length) return top[i];
             final j = i - top.length;
             if (j < items.length) return itemBuilder(context, items[j]);
-            return _Footer(loader: loader);
+            return _Footer(loader: loader, auto: autoLoadMore);
           },
         );
         return onRefresh == null ? list : RefreshIndicator(onRefresh: onRefresh!, child: list);
@@ -220,16 +248,31 @@ class PagedListView<T> extends StatelessWidget {
   }
 }
 
-/// آخر القائمة: يطلب الصفحة التالية عند ظهوره، بمؤشر صغير، أو سطر خطأ.
+/// آخر القائمة: يطلب الصفحة التالية عند ظهوره ([auto]) أو بزر «المزيد»، بمؤشر
+/// صغير، أو سطر خطأ.
 class _Footer extends StatelessWidget {
-  const _Footer({required this.loader});
+  const _Footer({required this.loader, required this.auto});
   final PagedLoader<Object?> loader;
+  final bool auto;
 
   @override
   Widget build(BuildContext context) {
     final f = loader.moreFailure;
     if (f != null) return ApiErrorView(failure: f, onRetry: loader.loadMore, compact: true);
     if (!loader.hasMore) return const SizedBox(height: 16);
+    if (!auto && !loader.loadingMore) {
+      return Padding(
+        padding: const EdgeInsetsDirectional.all(8),
+        child: Center(
+          child: OutlinedButton(
+            key: const Key('loadMoreButton'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: loader.loadMore,
+            child: Text(AppLocalizations.of(context).loadMore),
+          ),
+        ),
+      );
+    }
     if (!loader.loadingMore) {
       WidgetsBinding.instance.addPostFrameCallback((_) => loader.loadMore());
     }

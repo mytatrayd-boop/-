@@ -43,19 +43,35 @@ class ApiPage<T> {
   bool get hasMore => nextPageToken != null;
 }
 
-/// تقدير استهلاك الحصة اليوم (يومها بتوقيت المحيط الهادئ).
-class QuotaUsage {
-  const QuotaUsage({required this.used, required this.limit, required this.exhausted, required this.searchesLeft});
+/// وعاء الحصة (D29، توثيق search.list بعد 1 يونيو 2026): البحث له وعاء مستقل
+/// (100 طلب يومياً، وحدة لكل طلب)، وباقي الطرق في الوعاء العام (10,000 وحدة).
+enum QuotaBucket { general, search }
+
+/// استهلاك وعاء واحد اليوم (يومه بتوقيت المحيط الهادئ).
+class BucketUsage {
+  const BucketUsage({required this.used, required this.limit, required this.stopAt});
 
   /// الوحدات المقدّرة المستهلكة اليوم.
   final int used;
 
-  /// الحد اليومي (10,000 افتراضياً).
+  /// الحد اليومي.
   final int limit;
 
-  /// لا مزيد من الطلبات اليوم (تجاوز 95% أو ردّ quotaExceeded).
-  final bool exhausted;
+  /// حد التوقف المحلي (≤ الحد).
+  final int stopAt;
 
-  /// عدد عمليات البحث (≈100 وحدة) الممكنة قبل حد التوقف.
-  final int searchesLeft;
+  /// لا مزيد من الطلبات اليوم في هذا الوعاء.
+  bool get exhausted => used >= stopAt;
+
+  int get left => used >= stopAt ? 0 : stopAt - used;
+}
+
+/// تقدير الحصة اليوم للوعاءين.
+class QuotaUsage {
+  const QuotaUsage({required this.general, required this.search});
+
+  final BucketUsage general;
+  final BucketUsage search;
+
+  BucketUsage of(QuotaBucket b) => b == QuotaBucket.search ? search : general;
 }

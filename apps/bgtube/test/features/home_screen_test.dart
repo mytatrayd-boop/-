@@ -31,7 +31,10 @@ class FakeApi implements YouTubeApi {
   FutureOr<ApiPage<VideoRef>> Function(String id, String? token) onChannel = (_, _) => const ApiPage([]);
   FutureOr<ApiPage<VideoRef>> Function(bool refresh) onFeed = (_) => const ApiPage([]);
   String? channelTitle = 'قناتي';
-  QuotaUsage quota = const QuotaUsage(used: 320, limit: 10000, exhausted: false, searchesLeft: 91);
+  QuotaUsage quota = const QuotaUsage(
+    general: BucketUsage(used: 320, limit: 10000, stopAt: 9500),
+    search: BucketUsage(used: 9, limit: 100, stopAt: 100),
+  );
 
   @override
   Future<ApiPage<SearchResult>> search(String query, {String? pageToken}) async {
@@ -278,16 +281,47 @@ void main() {
       expect(api.searches, hasLength(1));
     });
 
-    testWidgets('scrolling to the end loads more with the page token', (t) async {
+    testWidgets('more search results only with an explicit "More" button (each page uses the 100/day bucket)',
+        (t) async {
       api.onSearch = (q, token) => token == null
           ? ApiPage([for (var i = 0; i < 12; i++) VideoResult(vid(i))], nextPageToken: 'P2')
-          : ApiPage([VideoResult(vid(99))]);
+          : ApiPage([VideoResult(vid(99))], nextPageToken: 'P3');
       await pumpHome(t, c: c, api: api);
       await search(t, 'x');
-      await t.scrollUntilVisible(find.text('Video 99'), 300, scrollable: find.byType(Scrollable).first);
+      await t.scrollUntilVisible(find.byKey(const Key('loadMoreButton')), 300,
+          scrollable: find.byType(Scrollable).first);
+      await t.pumpAndSettle();
+      expect(api.searches.map((s) => s.token), [null], reason: 'reaching the end does not fetch');
+      await t.tap(find.byKey(const Key('loadMoreButton')));
       await t.pumpAndSettle();
       expect(api.searches.map((s) => s.token), [null, 'P2']);
       expect(find.text('Video 99'), findsOneWidget);
+    });
+
+    testWidgets('an empty page ends the list even if the server returns a token', (t) async {
+      api.onSearch = (q, token) => const ApiPage([], nextPageToken: 'P2');
+      await pumpHome(t, c: c, api: api);
+      await search(t, 'x');
+      expect(find.byKey(const Key('loadMoreButton')), findsNothing);
+      expect(api.searches, hasLength(1));
+    });
+
+    testWidgets('channel videos load more automatically, but stop after an empty page', (t) async {
+      api.onSearch = (_, _) => const ApiPage([ChannelResult(ChannelSummary(id: 'UC1', title: 'Some Channel'))]);
+      api.onChannel = (_, token) => switch (token) {
+            null => ApiPage([for (var i = 0; i < 12; i++) vid(i)], nextPageToken: 'N2'),
+            'N2' => const ApiPage([], nextPageToken: 'N3'),
+            _ => ApiPage([vid(77)]),
+          };
+      await pumpHome(t, c: c, api: api);
+      await search(t, 'x');
+      await t.tap(find.text('Some Channel'));
+      await t.pumpAndSettle();
+      await t.scrollUntilVisible(find.text('Video 11'), 300, scrollable: find.byType(Scrollable).first);
+      await t.pumpAndSettle();
+      await t.drag(find.byType(Scrollable).first, const Offset(0, -2000));
+      await t.pumpAndSettle();
+      expect(api.channelCalls.map((x) => x.token), [null, 'N2']);
     });
 
     testWidgets('no results', (t) async {
@@ -297,7 +331,7 @@ void main() {
     });
 
     testWidgets('quota exhausted: the DESIGN message and a paste-link action, no crash', (t) async {
-      api.onSearch = (_, _) => throw const AppFailure(FailureKind.quotaExceeded);
+      api.onSearch = (_, _) => throw const AppFailure(FailureKind.searchQuotaExceeded);
       t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
         if (call.method == 'Clipboard.getData') return {'text': 'https://youtu.be/dQw4w9WgXcQ'};
         return null;
@@ -311,6 +345,36 @@ void main() {
       await t.pumpAndSettle();
       expect(c.played, ['dQw4w9WgXcQ']);
       expect(t.takeException(), isNull);
+    });
+
+    testWidgets('general quota exhausted on the feed has its own message and paste action', (t) async {
+      api.onFeed = (_) => throw const AppFailure(FailureKind.quotaExceeded);
+      await pumpHome(t, c: c, api: api);
+      expect(find.textContaining('انتهت حصة يوتيوب اليومية للقوائم'), findsOneWidget);
+      expect(find.byKey(const Key('apiErrorPaste')), findsOneWidget);
+    });
+
+    testWidgets('missing permission offers "Grant permission", which asks Google again then retries', (t) async {
+      var fail = true;
+      api.onFeed = (_) => fail ? throw const AppFailure(FailureKind.insufficientPermissions) : ApiPage([vid(1)]);
+      final auth = FakeAuthService(AuthStatus.signedIn);
+      await t.pumpWidget(ProviderScope(
+        overrides: [
+          playbackControllerProvider.overrideWithValue(c),
+          youTubeApiProvider.overrideWithValue(api),
+          authServiceProvider.overrideWithValue(auth),
+          localPlaylistRepositoryProvider.overrideWithValue(FakePlaylists()),
+        ],
+        child: const BgtubeApp(locale: Locale('ar')),
+      ));
+      await t.pumpAndSettle();
+      expect(find.textContaining('صلاحية قراءة يوتيوب'), findsOneWidget);
+      expect(find.byKey(const Key('apiErrorRetry')), findsNothing);
+      fail = false;
+      await t.tap(find.byKey(const Key('apiErrorGrant')));
+      await t.pumpAndSettle();
+      expect(auth.signInCalls, 1);
+      expect(find.text('Video 1'), findsOneWidget);
     });
 
     testWidgets('a link typed in the search field plays instead of searching', (t) async {
@@ -431,15 +495,31 @@ void main() {
       expect(find.text('متصل: قناتي'), findsOneWidget);
       expect(find.text('حصة البحث'), findsOneWidget);
       expect(find.text('91 عملية بحث متبقية اليوم'), findsOneWidget);
-      expect(find.textContaining('320 من 10,000 وحدة'), findsOneWidget);
+      expect(find.text('9 من 100 عملية بحث اليوم'), findsOneWidget);
+      expect(find.text('القوائم والقنوات: 320 من 10,000 وحدة'), findsOneWidget);
+      expect(find.byKey(const Key('quotaGeneralExhausted')), findsNothing);
     });
 
-    testWidgets('exhausted quota is stated in settings', (t) async {
-      api.quota = const QuotaUsage(used: 10000, limit: 10000, exhausted: true, searchesLeft: 0);
+    testWidgets('each exhausted bucket is stated on its own in settings', (t) async {
+      api.quota = const QuotaUsage(
+        general: BucketUsage(used: 10, limit: 10000, stopAt: 9500),
+        search: BucketUsage(used: 100, limit: 100, stopAt: 100),
+      );
       await pumpHome(t, c: c, api: api);
       await t.tap(find.byKey(const Key('navSettings')));
       await t.pumpAndSettle();
       expect(find.textContaining('انتهت حصة البحث اليوم'), findsOneWidget);
+      expect(find.byKey(const Key('quotaGeneralExhausted')), findsNothing);
+      api.quota = const QuotaUsage(
+        general: BucketUsage(used: 10000, limit: 10000, stopAt: 9500),
+        search: BucketUsage(used: 0, limit: 100, stopAt: 100),
+      );
+      await t.tap(find.byKey(const Key('navHome')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const Key('navSettings')));
+      await t.pumpAndSettle();
+      expect(find.text('100 عملية بحث متبقية اليوم'), findsOneWidget);
+      expect(find.byKey(const Key('quotaGeneralExhausted')), findsOneWidget);
     });
 
     testWidgets('without a channel name the generic text stays', (t) async {

@@ -22,32 +22,32 @@ void main() {
     expect(r.isFresh(t0.add(const Duration(minutes: 15))), isFalse);
   });
 
-  test('deletePrivate keeps public entries; deleteOlderThan prunes', () async {
+  test('deleteAll empties the cache; deleteOlderThan prunes', () async {
     final s = DriftApiCacheStore(db);
     final old = DateTime.utc(2026, 11, 1);
     final recent = DateTime.utc(2026, 11, 26);
     await s.write('mine', CachedResponse(json: '{}', fetchedAt: recent, ttl: Duration.zero), private: true);
     await s.write('pub', CachedResponse(json: '{}', fetchedAt: recent, ttl: Duration.zero), private: false);
     await s.write('old', CachedResponse(json: '{}', fetchedAt: old, ttl: Duration.zero), private: false);
-    await s.deletePrivate();
-    expect(await s.read('mine'), isNull);
-    expect(await s.read('pub'), isNotNull);
     await s.deleteOlderThan(DateTime.utc(2026, 11, 19));
     expect(await s.read('old'), isNull);
     expect(await s.read('pub'), isNotNull);
+    await s.deleteAll();
+    expect(await s.read('mine'), isNull);
+    expect(await s.read('pub'), isNull);
   });
 
-  test('quota adds atomically per Pacific day and raiseTo never lowers', () async {
+  test('quota adds atomically per Pacific day and bucket; raiseTo never lowers', () async {
     final q = DriftQuotaStore(db);
-    expect(await q.unitsFor('2026-11-26'), 0);
-    await Future.wait([q.add('2026-11-26', 100), q.add('2026-11-26', 1), q.add('2026-11-26', 1)]);
-    expect(await q.unitsFor('2026-11-26'), 102);
-    expect(await q.unitsFor('2026-11-27'), 0);
-    await q.raiseTo('2026-11-26', 50);
-    expect(await q.unitsFor('2026-11-26'), 102);
-    await q.raiseTo('2026-11-26', 10000);
-    expect(await q.unitsFor('2026-11-26'), 10000);
-    await q.raiseTo('2026-11-28', 10000);
-    expect(await q.unitsFor('2026-11-28'), 10000);
+    expect(await q.unitsFor('2026-11-26', 'general'), 0);
+    await Future.wait([q.add('2026-11-26', 'general', 5), q.add('2026-11-26', 'general', 1), q.add('2026-11-26', 'search', 1)]);
+    expect(await q.unitsFor('2026-11-26', 'general'), 6);
+    expect(await q.unitsFor('2026-11-26', 'search'), 1);
+    expect(await q.unitsFor('2026-11-27', 'general'), 0);
+    await q.raiseTo('2026-11-26', 'general', 3);
+    expect(await q.unitsFor('2026-11-26', 'general'), 6);
+    await q.raiseTo('2026-11-26', 'search', 100);
+    expect(await q.unitsFor('2026-11-26', 'search'), 100);
+    expect(await q.unitsFor('2026-11-26', 'general'), 6);
   });
 }

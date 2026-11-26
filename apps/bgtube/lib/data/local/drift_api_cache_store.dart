@@ -26,35 +26,36 @@ class DriftApiCacheStore implements ApiCacheStore {
           ));
 
   @override
-  Future<void> deletePrivate() => (_db.delete(_db.apiCache)..where((t) => t.private.equals(true))).go();
+  Future<void> deleteAll() => _db.delete(_db.apiCache).go();
 
   @override
   Future<void> deleteOlderThan(DateTime before) =>
       (_db.delete(_db.apiCache)..where((t) => t.fetchedAt.isSmallerThanValue(before))).go();
 }
 
-/// عدّاد الحصة اليومي (جدول `quota`). الإضافة ذرّية (upsert بجمع).
+/// عدّاد الحصة اليومي لكل وعاء (جدول `quota`). الإضافة ذرّية (upsert بجمع).
 class DriftQuotaStore implements QuotaStore {
   DriftQuotaStore(this._db);
   final AppDatabase _db;
 
   @override
-  Future<int> unitsFor(String day) async {
-    final row = await (_db.select(_db.quota)..where((t) => t.dayPt.equals(day))).getSingleOrNull();
+  Future<int> unitsFor(String day, String bucket) async {
+    final row = await (_db.select(_db.quota)..where((t) => t.dayPt.equals(day) & t.bucket.equals(bucket)))
+        .getSingleOrNull();
     return row?.units ?? 0;
   }
 
   @override
-  Future<void> add(String day, int units) => _db.customStatement(
-        'INSERT INTO quota (day_pt, units) VALUES (?, ?) '
-        'ON CONFLICT(day_pt) DO UPDATE SET units = units + excluded.units',
-        [day, units],
+  Future<void> add(String day, String bucket, int units) => _db.customStatement(
+        'INSERT INTO quota (day_pt, bucket, units) VALUES (?, ?, ?) '
+        'ON CONFLICT(day_pt, bucket) DO UPDATE SET units = units + excluded.units',
+        [day, bucket, units],
       );
 
   @override
-  Future<void> raiseTo(String day, int units) => _db.customStatement(
-        'INSERT INTO quota (day_pt, units) VALUES (?, ?) '
-        'ON CONFLICT(day_pt) DO UPDATE SET units = MAX(units, excluded.units)',
-        [day, units],
+  Future<void> raiseTo(String day, String bucket, int units) => _db.customStatement(
+        'INSERT INTO quota (day_pt, bucket, units) VALUES (?, ?, ?) '
+        'ON CONFLICT(day_pt, bucket) DO UPDATE SET units = MAX(units, excluded.units)',
+        [day, bucket, units],
       );
 }

@@ -878,17 +878,53 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{لا بحث متبقٍ اليوم} =1{بحث واحد متبقٍ اليوم} =2{بحثان متبقيان اليوم} few{{count} عمليات بحث متبقية اليوم} many{{count} عملية بحث متبقية اليوم} other{{count} عملية بحث متبقية اليوم}}'**
   String quotaSearchesLeft(int count);
 
-  /// No description provided for @quotaUnits.
-  ///
-  /// In ar, this message translates to:
-  /// **'{used} من {limit} وحدة مستعملة (تُصفَّر عند منتصف ليل المحيط الهادئ)'**
-  String quotaUnits(int used, int limit);
-
   /// No description provided for @quotaUnavailable.
   ///
   /// In ar, this message translates to:
   /// **'غير متاح'**
   String get quotaUnavailable;
+
+  /// No description provided for @errorGeneralQuotaExceeded.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت حصة يوتيوب اليومية للقوائم والقنوات. تتجدد غداً. يمكنك لصق رابط أو تشغيل المكتبة.'**
+  String get errorGeneralQuotaExceeded;
+
+  /// No description provided for @errorInsufficientPermissions.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يمنح حسابك التطبيق صلاحية قراءة يوتيوب. امنحها للمتابعة.'**
+  String get errorInsufficientPermissions;
+
+  /// No description provided for @grantPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'امنح الصلاحية'**
+  String get grantPermission;
+
+  /// No description provided for @loadMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'المزيد'**
+  String get loadMore;
+
+  /// No description provided for @quotaSearchUsage.
+  ///
+  /// In ar, this message translates to:
+  /// **'{used} من {limit} عملية بحث اليوم'**
+  String quotaSearchUsage(int used, int limit);
+
+  /// No description provided for @quotaGeneralUsage.
+  ///
+  /// In ar, this message translates to:
+  /// **'القوائم والقنوات: {used} من {limit} وحدة'**
+  String quotaGeneralUsage(int used, int limit);
+
+  /// No description provided for @quotaResetNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتجدد الحصتان عند منتصف ليل المحيط الهادئ'**
+  String get quotaResetNote;
 }
 
 class _AppLocalizationsDelegate

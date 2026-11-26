@@ -47,7 +47,6 @@ Future<void> main() async {
   final info = await PackageInfo.fromPlatform();
   // الحساب (D7/D22): لا يُمرَّر إلى المستخرج أبداً. الاستعادة صامتة ولا تؤخر الإقلاع.
   final auth = GoogleAuthService(PluginGoogleAuthGateway(), SecureAuthSessionStore());
-  unawaited(auth.restore());
   // الواجهة الرسمية (D29): رمز الحساب يمر هنا فقط، لا إلى المستخرج.
   final api = YouTubeDataApi(
     auth: auth,
@@ -55,6 +54,8 @@ Future<void> main() async {
     cache: DriftApiCacheStore(db),
     quota: QuotaMeter(DriftQuotaStore(db)),
   );
+  // بعد الاستعادة: دون جلسة يُمسح كاش الواجهة كله (خصوصية، D29).
+  unawaited(auth.restore().then((_) => api.clearIfSignedOut()));
   runApp(ProviderScope(
     overrides: [
       localeStoreProvider.overrideWithValue(localeStore),

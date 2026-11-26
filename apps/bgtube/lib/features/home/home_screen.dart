@@ -64,7 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _search?.dispose();
     setState(() {
       _query = t;
-      // البحث ≈100 وحدة: عند الإدخال فقط، بلا سحب للتحديث.
+      // البحث من وعاء مستقل (100 طلب يومياً): عند الإدخال فقط، بلا سحب للتحديث.
       _search = PagedLoader<SearchResult>((token, _) => api.search(t, pageToken: token))..load();
     });
   }
@@ -94,6 +94,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         key: ValueKey('search_$query'),
         loader: search,
         onPaste: _paste,
+        // كل صفحة بحث طلب من وعاء الـ100: بزر صريح لا بالتمرير.
+        autoLoadMore: false,
         header: _SearchHeader(query: query, onClose: _closeSearch),
         empty: EmptyListView(icon: Icons.search_off, message: l.searchNoResults(query)),
         itemBuilder: (context, r) => switch (r) {

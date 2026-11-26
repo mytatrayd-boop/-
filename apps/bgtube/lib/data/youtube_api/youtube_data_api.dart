@@ -56,11 +56,38 @@ class YouTubeDataApi implements YouTubeApi {
         // ignore: prefer_initializing_formals
         _quota = quota,
         _clock = clock ?? const Clock() {
-    // الخروج يمسح بيانات الحساب من الكاش (ARCHITECTURE: التخزين الآمن).
-    _authSub = auth.statusChanges.listen((s) {
-      if (s == AuthStatus.signedOut) unawaited(_safe(_cache.deletePrivate));
-    });
+    // الكاش كله يخص الحساب (حتى قوائم الرفع والمدد تكشف الاشتراكات والبحث): يُمسح
+    // عند الخروج، وعند الدخول بعد انتهاء الجلسة (قد يكون حساباً آخر)، D29.
+    _lastStatus = auth.status;
+    _authSub = auth.statusChanges.listen(_onStatus);
     unawaited(_safe(() => _cache.deleteOlderThan(_clock.now().subtract(const Duration(days: 7)))));
+  }
+
+  late AuthStatus _lastStatus;
+  Future<void>? _wiping;
+
+  /// يُستدعى من الحدث ومن كل طلب (الحالة تتغيّر قبل وصول الحدث، فلا يُقرأ كاش
+  /// الحساب السابق في الفجوة).
+  void _onStatus(AuthStatus s) {
+    final prev = _lastStatus;
+    if (s == prev) return;
+    _lastStatus = s;
+    if (s == AuthStatus.signedOut || (s == AuthStatus.signedIn && prev == AuthStatus.expired)) _wipe();
+  }
+
+  /// يمسح الكاش؛ الطلبات اللاحقة تنتظر انتهاء المسح فلا تقرأ بيانات الحساب السابق.
+  void _wipe() {
+    final previous = _wiping ?? Future<void>.value();
+    _wiping = previous.then((_) => _safe(_cache.deleteAll));
+  }
+
+  /// بعد استعادة الجلسة عند الإقلاع (main): إن لم تكن جلسة يُمسح ما بقي (خروج لم
+  /// يكتمل مسحه، أو تثبيت سابق).
+  Future<void> clearIfSignedOut() async {
+    if (_auth.status == AuthStatus.signedOut) {
+      _wipe();
+      await _wiping;
+    }
   }
 
   static const host = 'www.googleapis.com';
@@ -92,6 +119,7 @@ class YouTubeDataApi implements YouTubeApi {
         'fields': 'nextPageToken,items(id(kind,videoId,channelId),'
             'snippet(title,channelTitle,thumbnails(default/url,medium/url)))',
       },
+      bucket: QuotaBucket.search,
       cost: QuotaCost.search,
       ttl: CacheTtl.search,
       private: true,
@@ -127,7 +155,8 @@ class YouTubeDataApi implements YouTubeApi {
   }
 
   /// subscriptions.list (وحدة) ← channels.list للرفع (وحدة لكل 50) ← playlistItems
-  /// لكل قناة (وحدة لكل قناة) ← videos.list للمدد (وحدة). ≈28 وحدة لتحديث كامل.
+  /// لكل قناة (وحدة لكل قناة) ← videos.list للمدد (وحدة). ≈28 وحدة من الوعاء
+  /// العام لتحديث كامل، ولا شيء من وعاء البحث.
   @override
   Future<ApiPage<VideoRef>> subscriptionFeed({bool refresh = false}) async {
     final subs = await _get(
@@ -165,6 +194,7 @@ class YouTubeDataApi implements YouTubeApi {
         } on AppFailure catch (f) {
           // الجلسة لا تخص قناة بعينها: توقف الكل.
           if (f.kind == FailureKind.authExpired || f.kind == FailureKind.notSignedIn) rethrow;
+          if (f.kind == FailureKind.insufficientPermissions) rethrow;
           // قناة بلا رفع (404) أو نفاد الحصة لقناة غير مخزّنة: نتخطاها.
           if (f.kind == FailureKind.quotaExceeded) stale = true;
           firstFailure ??= f;
@@ -234,6 +264,7 @@ class YouTubeDataApi implements YouTubeApi {
         {
           'part': 'contentDetails',
           'id': batch.join(','),
+          'maxResults': '50',
           'fields': 'items(id,contentDetails/relatedPlaylists/uploads)',
         },
         cost: QuotaCost.read,
@@ -285,12 +316,16 @@ class YouTubeDataApi implements YouTubeApi {
   Future<_Fetched> _get(
     String endpoint,
     Map<String, String> params, {
+    QuotaBucket bucket = QuotaBucket.general,
     required int cost,
     required Duration ttl,
     required bool private,
     bool refresh = false,
   }) async {
     final key = cacheKey(endpoint, params);
+    _onStatus(_auth.status);
+    final wiping = _wiping;
+    if (wiping != null) await wiping;
     final cached = await _safeRead(key);
     final now = _clock.now();
     if (!refresh && cached != null && cached.isFresh(now)) {
@@ -304,8 +339,10 @@ class YouTubeDataApi implements YouTubeApi {
       return _Fetched(body, stale: true);
     }
 
-    if (!await _quota.canSpend(cost)) {
-      return fallback(const AppFailure(FailureKind.quotaExceeded));
+    final exhaustedKind =
+        bucket == QuotaBucket.search ? FailureKind.searchQuotaExceeded : FailureKind.quotaExceeded;
+    if (!await _quota.canSpend(bucket, cost)) {
+      return fallback(AppFailure(exhaustedKind));
     }
 
     final uri = Uri.https(host, '$basePath$endpoint', params);
@@ -314,7 +351,7 @@ class YouTubeDataApi implements YouTubeApi {
       // notSignedIn وAuthExpired من المنفذ تمر كما هي (ولا تُحسب من الحصة).
       final token = await _auth.accessToken();
       // يُحسب مرة واحدة لكل طلب يُرسل (إعادة 401 لا تُحسب مرتين).
-      if (attempt == 0) await _quota.spend(cost);
+      if (attempt == 0) await _quota.spend(bucket, cost);
       try {
         res = await _client
             .get(uri, headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'})
@@ -353,8 +390,14 @@ class YouTubeDataApi implements YouTubeApi {
     final reasons = errorReasons(errorBody);
     final detail = '$endpoint HTTP ${response.statusCode}${reasons.isEmpty ? '' : ' ${reasons.join(',')}'}';
     if (reasons.contains('quotaExceeded') || reasons.contains('dailyLimitExceeded')) {
-      await _quota.markExhausted();
-      return fallback(AppFailure(FailureKind.quotaExceeded, detail));
+      // وعاء نقطة النهاية التي ردّت وحدها (نفاد البحث لا يوقف الرئيسية).
+      await _quota.markExhausted(bucket);
+      return fallback(AppFailure(exhaustedKind, detail));
+    }
+    // الإذن الممنوح لا يغطي النطاق (رُفض مربع youtube.readonly أو سُحب): يلزم منحه.
+    if (reasons.contains('insufficientPermissions') ||
+        response.headers['www-authenticate']?.contains('insufficient_scope') == true) {
+      throw AppFailure(FailureKind.insufficientPermissions, detail);
     }
     if (response.statusCode == 429 ||
         reasons.contains('rateLimitExceeded') ||

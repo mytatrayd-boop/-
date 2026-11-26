@@ -151,6 +151,12 @@
   "accountSignedInAs": "Signed in: {name}",
   "settingsQuota": "Search quota",
   "quotaSearchesLeft": "{count, plural, =0{No searches left today} =1{1 search left today} other{{count} searches left today}}",
-  "quotaUnits": "{used} of {limit} units used (resets at Pacific midnight)",
-  "quotaUnavailable": "Unavailable"
+  "quotaUnavailable": "Unavailable",
+  "errorGeneralQuotaExceeded": "Today's YouTube quota for lists and channels is used up. It renews tomorrow. You can paste a link or play from your library.",
+  "errorInsufficientPermissions": "Your account hasn't given the app permission to read YouTube. Grant it to continue.",
+  "grantPermission": "Grant permission",
+  "loadMore": "More",
+  "quotaSearchUsage": "{used} of {limit} searches today",
+  "quotaGeneralUsage": "Lists and channels: {used} of {limit} units",
+  "quotaResetNote": "Both quotas renew at midnight Pacific time"
 }

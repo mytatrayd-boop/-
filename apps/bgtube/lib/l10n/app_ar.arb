@@ -279,8 +279,13 @@
       }
     }
   },
-  "quotaUnits": "{used} من {limit} وحدة مستعملة (تُصفَّر عند منتصف ليل المحيط الهادئ)",
-  "@quotaUnits": {
+  "quotaUnavailable": "غير متاح",
+  "errorGeneralQuotaExceeded": "انتهت حصة يوتيوب اليومية للقوائم والقنوات. تتجدد غداً. يمكنك لصق رابط أو تشغيل المكتبة.",
+  "errorInsufficientPermissions": "لم يمنح حسابك التطبيق صلاحية قراءة يوتيوب. امنحها للمتابعة.",
+  "grantPermission": "امنح الصلاحية",
+  "loadMore": "المزيد",
+  "quotaSearchUsage": "{used} من {limit} عملية بحث اليوم",
+  "@quotaSearchUsage": {
     "placeholders": {
       "used": {
         "type": "int",
@@ -292,5 +297,18 @@
       }
     }
   },
-  "quotaUnavailable": "غير متاح"
+  "quotaGeneralUsage": "القوائم والقنوات: {used} من {limit} وحدة",
+  "@quotaGeneralUsage": {
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "limit": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "quotaResetNote": "تتجدد الحصتان عند منتصف ليل المحيط الهادئ"
 }

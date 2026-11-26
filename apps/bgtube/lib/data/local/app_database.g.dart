@@ -2015,7 +2015,7 @@ class ApiCacheRow extends DataClass implements Insertable<ApiCacheRow> {
   final DateTime fetchedAt;
   final int ttlSec;
 
-  /// بيانات الحساب: تُمسح عند تسجيل الخروج.
+  /// بيانات الحساب المباشرة (mine/البحث). للعلم فقط: الخروج يمسح الجدول كله (D29).
   final bool private;
   const ApiCacheRow({
     required this.key,
@@ -2232,6 +2232,15 @@ class $QuotaTable extends Quota with TableInfo<$QuotaTable, QuotaRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _bucketMeta = const VerificationMeta('bucket');
+  @override
+  late final GeneratedColumn<String> bucket = GeneratedColumn<String>(
+    'bucket',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _unitsMeta = const VerificationMeta('units');
   @override
   late final GeneratedColumn<int> units = GeneratedColumn<int>(
@@ -2242,7 +2251,7 @@ class $QuotaTable extends Quota with TableInfo<$QuotaTable, QuotaRow> {
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [dayPt, units];
+  List<GeneratedColumn> get $columns => [dayPt, bucket, units];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2263,6 +2272,14 @@ class $QuotaTable extends Quota with TableInfo<$QuotaTable, QuotaRow> {
     } else if (isInserting) {
       context.missing(_dayPtMeta);
     }
+    if (data.containsKey('bucket')) {
+      context.handle(
+        _bucketMeta,
+        bucket.isAcceptableOrUnknown(data['bucket']!, _bucketMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bucketMeta);
+    }
     if (data.containsKey('units')) {
       context.handle(
         _unitsMeta,
@@ -2275,7 +2292,7 @@ class $QuotaTable extends Quota with TableInfo<$QuotaTable, QuotaRow> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {dayPt};
+  Set<GeneratedColumn> get $primaryKey => {dayPt, bucket};
   @override
   QuotaRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -2283,6 +2300,10 @@ class $QuotaTable extends Quota with TableInfo<$QuotaTable, QuotaRow> {
       dayPt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}day_pt'],
+      )!,
+      bucket: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bucket'],
       )!,
       units: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -2299,18 +2320,30 @@ class $QuotaTable extends Quota with TableInfo<$QuotaTable, QuotaRow> {
 
 class QuotaRow extends DataClass implements Insertable<QuotaRow> {
   final String dayPt;
+
+  /// `general` (10,000 وحدة) أو `search` (100 طلب).
+  final String bucket;
   final int units;
-  const QuotaRow({required this.dayPt, required this.units});
+  const QuotaRow({
+    required this.dayPt,
+    required this.bucket,
+    required this.units,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['day_pt'] = Variable<String>(dayPt);
+    map['bucket'] = Variable<String>(bucket);
     map['units'] = Variable<int>(units);
     return map;
   }
 
   QuotaCompanion toCompanion(bool nullToAbsent) {
-    return QuotaCompanion(dayPt: Value(dayPt), units: Value(units));
+    return QuotaCompanion(
+      dayPt: Value(dayPt),
+      bucket: Value(bucket),
+      units: Value(units),
+    );
   }
 
   factory QuotaRow.fromJson(
@@ -2320,6 +2353,7 @@ class QuotaRow extends DataClass implements Insertable<QuotaRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return QuotaRow(
       dayPt: serializer.fromJson<String>(json['dayPt']),
+      bucket: serializer.fromJson<String>(json['bucket']),
       units: serializer.fromJson<int>(json['units']),
     );
   }
@@ -2328,15 +2362,20 @@ class QuotaRow extends DataClass implements Insertable<QuotaRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'dayPt': serializer.toJson<String>(dayPt),
+      'bucket': serializer.toJson<String>(bucket),
       'units': serializer.toJson<int>(units),
     };
   }
 
-  QuotaRow copyWith({String? dayPt, int? units}) =>
-      QuotaRow(dayPt: dayPt ?? this.dayPt, units: units ?? this.units);
+  QuotaRow copyWith({String? dayPt, String? bucket, int? units}) => QuotaRow(
+    dayPt: dayPt ?? this.dayPt,
+    bucket: bucket ?? this.bucket,
+    units: units ?? this.units,
+  );
   QuotaRow copyWithCompanion(QuotaCompanion data) {
     return QuotaRow(
       dayPt: data.dayPt.present ? data.dayPt.value : this.dayPt,
+      bucket: data.bucket.present ? data.bucket.value : this.bucket,
       units: data.units.present ? data.units.value : this.units,
     );
   }
@@ -2345,43 +2384,51 @@ class QuotaRow extends DataClass implements Insertable<QuotaRow> {
   String toString() {
     return (StringBuffer('QuotaRow(')
           ..write('dayPt: $dayPt, ')
+          ..write('bucket: $bucket, ')
           ..write('units: $units')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(dayPt, units);
+  int get hashCode => Object.hash(dayPt, bucket, units);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is QuotaRow &&
           other.dayPt == this.dayPt &&
+          other.bucket == this.bucket &&
           other.units == this.units);
 }
 
 class QuotaCompanion extends UpdateCompanion<QuotaRow> {
   final Value<String> dayPt;
+  final Value<String> bucket;
   final Value<int> units;
   final Value<int> rowid;
   const QuotaCompanion({
     this.dayPt = const Value.absent(),
+    this.bucket = const Value.absent(),
     this.units = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuotaCompanion.insert({
     required String dayPt,
+    required String bucket,
     required int units,
     this.rowid = const Value.absent(),
   }) : dayPt = Value(dayPt),
+       bucket = Value(bucket),
        units = Value(units);
   static Insertable<QuotaRow> custom({
     Expression<String>? dayPt,
+    Expression<String>? bucket,
     Expression<int>? units,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (dayPt != null) 'day_pt': dayPt,
+      if (bucket != null) 'bucket': bucket,
       if (units != null) 'units': units,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2389,11 +2436,13 @@ class QuotaCompanion extends UpdateCompanion<QuotaRow> {
 
   QuotaCompanion copyWith({
     Value<String>? dayPt,
+    Value<String>? bucket,
     Value<int>? units,
     Value<int>? rowid,
   }) {
     return QuotaCompanion(
       dayPt: dayPt ?? this.dayPt,
+      bucket: bucket ?? this.bucket,
       units: units ?? this.units,
       rowid: rowid ?? this.rowid,
     );
@@ -2404,6 +2453,9 @@ class QuotaCompanion extends UpdateCompanion<QuotaRow> {
     final map = <String, Expression>{};
     if (dayPt.present) {
       map['day_pt'] = Variable<String>(dayPt.value);
+    }
+    if (bucket.present) {
+      map['bucket'] = Variable<String>(bucket.value);
     }
     if (units.present) {
       map['units'] = Variable<int>(units.value);
@@ -2418,6 +2470,7 @@ class QuotaCompanion extends UpdateCompanion<QuotaRow> {
   String toString() {
     return (StringBuffer('QuotaCompanion(')
           ..write('dayPt: $dayPt, ')
+          ..write('bucket: $bucket, ')
           ..write('units: $units, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3945,11 +3998,13 @@ typedef $$ApiCacheTableProcessedTableManager =
     >;
 typedef $$QuotaTableCreateCompanionBuilder = QuotaCompanion Function({
   required String dayPt,
+  required String bucket,
   required int units,
   Value<int> rowid,
 });
 typedef $$QuotaTableUpdateCompanionBuilder = QuotaCompanion Function({
   Value<String> dayPt,
+  Value<String> bucket,
   Value<int> units,
   Value<int> rowid,
 });
@@ -3964,6 +4019,11 @@ class $$QuotaTableFilterComposer extends Composer<_$AppDatabase, $QuotaTable> {
   });
   ColumnFilters<String> get dayPt => $composableBuilder(
     column: $table.dayPt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bucket => $composableBuilder(
+    column: $table.bucket,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3987,6 +4047,11 @@ class $$QuotaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bucket => $composableBuilder(
+    column: $table.bucket,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get units => $composableBuilder(
     column: $table.units,
     builder: (column) => ColumnOrderings(column),
@@ -4004,6 +4069,9 @@ class $$QuotaTableAnnotationComposer
   });
   GeneratedColumn<String> get dayPt =>
       $composableBuilder(column: $table.dayPt, builder: (column) => column);
+
+  GeneratedColumn<String> get bucket =>
+      $composableBuilder(column: $table.bucket, builder: (column) => column);
 
   GeneratedColumn<int> get units =>
       $composableBuilder(column: $table.units, builder: (column) => column);
@@ -4035,16 +4103,30 @@ class $$QuotaTableTableManager
               $$QuotaTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$QuotaTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> dayPt = const Value.absent(),
-            Value<int> units = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) => QuotaCompanion(dayPt: dayPt, units: units, rowid: rowid),
-          createCompanionCallback: ({
-            required String dayPt,
-            required int units,
-            Value<int> rowid = const Value.absent(),
-          }) => QuotaCompanion.insert(dayPt: dayPt, units: units, rowid: rowid),
+          updateCompanionCallback:
+              ({
+                Value<String> dayPt = const Value.absent(),
+                Value<String> bucket = const Value.absent(),
+                Value<int> units = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuotaCompanion(
+                dayPt: dayPt,
+                bucket: bucket,
+                units: units,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String dayPt,
+                required String bucket,
+                required int units,
+                Value<int> rowid = const Value.absent(),
+              }) => QuotaCompanion.insert(
+                dayPt: dayPt,
+                bucket: bucket,
+                units: units,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (

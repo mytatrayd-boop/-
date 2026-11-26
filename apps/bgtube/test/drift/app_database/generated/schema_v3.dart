@@ -1901,6 +1901,14 @@ class Quota extends Table with TableInfo<Quota, QuotaData> {
     requiredDuringInsert: true,
     $customConstraints: 'NOT NULL',
   );
+  late final GeneratedColumn<String> bucket = GeneratedColumn<String>(
+    'bucket',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
   late final GeneratedColumn<int> units = GeneratedColumn<int>(
     'units',
     aliasedName,
@@ -1910,14 +1918,14 @@ class Quota extends Table with TableInfo<Quota, QuotaData> {
     $customConstraints: 'NOT NULL',
   );
   @override
-  List<GeneratedColumn> get $columns => [dayPt, units];
+  List<GeneratedColumn> get $columns => [dayPt, bucket, units];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'quota';
   @override
-  Set<GeneratedColumn> get $primaryKey => {dayPt};
+  Set<GeneratedColumn> get $primaryKey => {dayPt, bucket};
   @override
   QuotaData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -1925,6 +1933,10 @@ class Quota extends Table with TableInfo<Quota, QuotaData> {
       dayPt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}day_pt'],
+      )!,
+      bucket: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bucket'],
       )!,
       units: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -1939,25 +1951,35 @@ class Quota extends Table with TableInfo<Quota, QuotaData> {
   }
 
   @override
-  List<String> get customConstraints => const ['PRIMARY KEY(day_pt)'];
+  List<String> get customConstraints => const ['PRIMARY KEY(day_pt, bucket)'];
   @override
   bool get dontWriteConstraints => true;
 }
 
 class QuotaData extends DataClass implements Insertable<QuotaData> {
   final String dayPt;
+  final String bucket;
   final int units;
-  const QuotaData({required this.dayPt, required this.units});
+  const QuotaData({
+    required this.dayPt,
+    required this.bucket,
+    required this.units,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['day_pt'] = Variable<String>(dayPt);
+    map['bucket'] = Variable<String>(bucket);
     map['units'] = Variable<int>(units);
     return map;
   }
 
   QuotaCompanion toCompanion(bool nullToAbsent) {
-    return QuotaCompanion(dayPt: Value(dayPt), units: Value(units));
+    return QuotaCompanion(
+      dayPt: Value(dayPt),
+      bucket: Value(bucket),
+      units: Value(units),
+    );
   }
 
   factory QuotaData.fromJson(
@@ -1967,6 +1989,7 @@ class QuotaData extends DataClass implements Insertable<QuotaData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return QuotaData(
       dayPt: serializer.fromJson<String>(json['dayPt']),
+      bucket: serializer.fromJson<String>(json['bucket']),
       units: serializer.fromJson<int>(json['units']),
     );
   }
@@ -1975,15 +1998,20 @@ class QuotaData extends DataClass implements Insertable<QuotaData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'dayPt': serializer.toJson<String>(dayPt),
+      'bucket': serializer.toJson<String>(bucket),
       'units': serializer.toJson<int>(units),
     };
   }
 
-  QuotaData copyWith({String? dayPt, int? units}) =>
-      QuotaData(dayPt: dayPt ?? this.dayPt, units: units ?? this.units);
+  QuotaData copyWith({String? dayPt, String? bucket, int? units}) => QuotaData(
+    dayPt: dayPt ?? this.dayPt,
+    bucket: bucket ?? this.bucket,
+    units: units ?? this.units,
+  );
   QuotaData copyWithCompanion(QuotaCompanion data) {
     return QuotaData(
       dayPt: data.dayPt.present ? data.dayPt.value : this.dayPt,
+      bucket: data.bucket.present ? data.bucket.value : this.bucket,
       units: data.units.present ? data.units.value : this.units,
     );
   }
@@ -1992,43 +2020,51 @@ class QuotaData extends DataClass implements Insertable<QuotaData> {
   String toString() {
     return (StringBuffer('QuotaData(')
           ..write('dayPt: $dayPt, ')
+          ..write('bucket: $bucket, ')
           ..write('units: $units')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(dayPt, units);
+  int get hashCode => Object.hash(dayPt, bucket, units);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is QuotaData &&
           other.dayPt == this.dayPt &&
+          other.bucket == this.bucket &&
           other.units == this.units);
 }
 
 class QuotaCompanion extends UpdateCompanion<QuotaData> {
   final Value<String> dayPt;
+  final Value<String> bucket;
   final Value<int> units;
   final Value<int> rowid;
   const QuotaCompanion({
     this.dayPt = const Value.absent(),
+    this.bucket = const Value.absent(),
     this.units = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuotaCompanion.insert({
     required String dayPt,
+    required String bucket,
     required int units,
     this.rowid = const Value.absent(),
   }) : dayPt = Value(dayPt),
+       bucket = Value(bucket),
        units = Value(units);
   static Insertable<QuotaData> custom({
     Expression<String>? dayPt,
+    Expression<String>? bucket,
     Expression<int>? units,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (dayPt != null) 'day_pt': dayPt,
+      if (bucket != null) 'bucket': bucket,
       if (units != null) 'units': units,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2036,11 +2072,13 @@ class QuotaCompanion extends UpdateCompanion<QuotaData> {
 
   QuotaCompanion copyWith({
     Value<String>? dayPt,
+    Value<String>? bucket,
     Value<int>? units,
     Value<int>? rowid,
   }) {
     return QuotaCompanion(
       dayPt: dayPt ?? this.dayPt,
+      bucket: bucket ?? this.bucket,
       units: units ?? this.units,
       rowid: rowid ?? this.rowid,
     );
@@ -2051,6 +2089,9 @@ class QuotaCompanion extends UpdateCompanion<QuotaData> {
     final map = <String, Expression>{};
     if (dayPt.present) {
       map['day_pt'] = Variable<String>(dayPt.value);
+    }
+    if (bucket.present) {
+      map['bucket'] = Variable<String>(bucket.value);
     }
     if (units.present) {
       map['units'] = Variable<int>(units.value);
@@ -2065,6 +2106,7 @@ class QuotaCompanion extends UpdateCompanion<QuotaData> {
   String toString() {
     return (StringBuffer('QuotaCompanion(')
           ..write('dayPt: $dayPt, ')
+          ..write('bucket: $bucket, ')
           ..write('units: $units, ')
           ..write('rowid: $rowid')
           ..write(')'))
