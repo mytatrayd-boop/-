@@ -106,4 +106,66 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsPersonalUse => 'تطبيق للاستخدام الشخصي فقط، وليس للنشر.';
+
+  @override
+  String get accountTitle => 'الحساب';
+
+  @override
+  String get accountSignedOut => 'غير مسجّل الدخول';
+
+  @override
+  String get accountSignedIn => 'متصل بحساب جوجل';
+
+  @override
+  String get signIn => 'تسجيل الدخول';
+
+  @override
+  String get signOut => 'تسجيل الخروج';
+
+  @override
+  String get signOutConfirmTitle => 'تسجيل الخروج؟';
+
+  @override
+  String get signOutConfirmBody => 'ستُمسح بيانات الدخول من هذا الجهاز.';
+
+  @override
+  String get cancel => 'إلغاء';
+
+  @override
+  String get loginExplain => 'سجّل الدخول لعرض قوائمك واشتراكاتك وإعجاباتك';
+
+  @override
+  String get loginContinue => 'المتابعة بحساب جوجل';
+
+  @override
+  String get loginNotNow => 'ليس الآن';
+
+  @override
+  String get loginNoPassword => 'التطبيق لا يرى كلمة مرورك';
+
+  @override
+  String get sessionExpired => 'انتهت جلستك، سجّل الدخول من جديد';
+
+  @override
+  String get errorNotSignedIn => 'سجّل الدخول لعرض حسابك';
+
+  @override
+  String get errorSignIn =>
+      'تعذّر تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى';
+
+  @override
+  String get errorSignInUnavailable => 'الدخول غير مفعّل بعد في هذه النسخة';
+
+  @override
+  String get errorSignOut => 'تعذّر تسجيل الخروج. حاول مرة أخرى';
+
+  @override
+  String get riskTitle => 'قبل أول دخول';
+
+  @override
+  String get riskBody =>
+      'هذا التطبيق يستخرج صوت يوتيوب بطريقة غير رسمية تخالف شروط يوتيوب. قد يؤدي ذلك إلى حجب شبكتك أو تقييد حسابك أو مشروع Google Cloud. الاستخراج منفصل عن حسابك ولا يتلقى أي رمز دخول، لكن الخطر يبقى قائماً.\n\nاستخدمه شخصياً فقط، ويُنصح بحساب لا تعتمد عليه في عمل حرج.\n\nستعرض جوجل تحذير «تطبيق غير موثّق»: اختر «متقدم» ثم «المتابعة».';
+
+  @override
+  String get riskAccept => 'أقرّ وأتابع';
 }

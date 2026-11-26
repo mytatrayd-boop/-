@@ -271,6 +271,126 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تطبيق للاستخدام الشخصي فقط، وليس للنشر.'**
   String get settingsPersonalUse;
+
+  /// No description provided for @accountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get accountTitle;
+
+  /// No description provided for @accountSignedOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مسجّل الدخول'**
+  String get accountSignedOut;
+
+  /// No description provided for @accountSignedIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصل بحساب جوجل'**
+  String get accountSignedIn;
+
+  /// No description provided for @signIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الدخول'**
+  String get signIn;
+
+  /// No description provided for @signOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الخروج'**
+  String get signOut;
+
+  /// No description provided for @signOutConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الخروج؟'**
+  String get signOutConfirmTitle;
+
+  /// No description provided for @signOutConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُمسح بيانات الدخول من هذا الجهاز.'**
+  String get signOutConfirmBody;
+
+  /// No description provided for @cancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cancel;
+
+  /// No description provided for @loginExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل الدخول لعرض قوائمك واشتراكاتك وإعجاباتك'**
+  String get loginExplain;
+
+  /// No description provided for @loginContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتابعة بحساب جوجل'**
+  String get loginContinue;
+
+  /// No description provided for @loginNotNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس الآن'**
+  String get loginNotNow;
+
+  /// No description provided for @loginNoPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'التطبيق لا يرى كلمة مرورك'**
+  String get loginNoPassword;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت جلستك، سجّل الدخول من جديد'**
+  String get sessionExpired;
+
+  /// No description provided for @errorNotSignedIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل الدخول لعرض حسابك'**
+  String get errorNotSignedIn;
+
+  /// No description provided for @errorSignIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى'**
+  String get errorSignIn;
+
+  /// No description provided for @errorSignInUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدخول غير مفعّل بعد في هذه النسخة'**
+  String get errorSignInUnavailable;
+
+  /// No description provided for @errorSignOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تسجيل الخروج. حاول مرة أخرى'**
+  String get errorSignOut;
+
+  /// No description provided for @riskTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل أول دخول'**
+  String get riskTitle;
+
+  /// No description provided for @riskBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا التطبيق يستخرج صوت يوتيوب بطريقة غير رسمية تخالف شروط يوتيوب. قد يؤدي ذلك إلى حجب شبكتك أو تقييد حسابك أو مشروع Google Cloud. الاستخراج منفصل عن حسابك ولا يتلقى أي رمز دخول، لكن الخطر يبقى قائماً.\n\nاستخدمه شخصياً فقط، ويُنصح بحساب لا تعتمد عليه في عمل حرج.\n\nستعرض جوجل تحذير «تطبيق غير موثّق»: اختر «متقدم» ثم «المتابعة».'**
+  String get riskBody;
+
+  /// No description provided for @riskAccept.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقرّ وأتابع'**
+  String get riskAccept;
 }
 
 class _AppLocalizationsDelegate

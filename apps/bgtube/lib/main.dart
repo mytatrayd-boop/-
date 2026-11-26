@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,11 @@ import 'app.dart';
 import 'audio/audio_init.dart';
 import 'core/providers.dart';
 import 'data/local/app_database.dart';
+import 'data/auth/auth_session_store.dart';
+import 'data/auth/google_auth_gateway.dart';
+import 'data/auth/google_auth_service.dart';
 import 'data/settings/prefs_locale_store.dart';
+import 'data/settings/prefs_risk_ack_store.dart';
 import 'data/settings/prefs_speed_store.dart';
 import 'data/local/drift_position_repository.dart';
 import 'data/incoming/receive_sharing_link_source.dart';
@@ -30,6 +36,9 @@ Future<void> main() async {
     // فشل القراءة: لغة الجهاز/العربية.
   }
   final info = await PackageInfo.fromPlatform();
+  // الحساب (D7/D22): لا يُمرَّر إلى المستخرج أبداً. الاستعادة صامتة ولا تؤخر الإقلاع.
+  final auth = GoogleAuthService(PluginGoogleAuthGateway(), SecureAuthSessionStore());
+  unawaited(auth.restore());
   runApp(ProviderScope(
     overrides: [
       localeStoreProvider.overrideWithValue(localeStore),
@@ -37,6 +46,8 @@ Future<void> main() async {
       appVersionProvider.overrideWithValue(info.version),
       playbackControllerProvider.overrideWithValue(handler),
       incomingLinkSourceProvider.overrideWithValue(ReceiveSharingLinkSource()),
+      authServiceProvider.overrideWithValue(auth),
+      riskAckStoreProvider.overrideWithValue(PrefsRiskAckStore()),
     ],
     child: const BgtubeApp(),
   ));

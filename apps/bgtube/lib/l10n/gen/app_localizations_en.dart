@@ -107,4 +107,69 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsPersonalUse =>
       'For personal use only; not for distribution.';
+
+  @override
+  String get accountTitle => 'Account';
+
+  @override
+  String get accountSignedOut => 'Not signed in';
+
+  @override
+  String get accountSignedIn => 'Connected to a Google account';
+
+  @override
+  String get signIn => 'Sign in';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get signOutConfirmTitle => 'Sign out?';
+
+  @override
+  String get signOutConfirmBody =>
+      'Your sign-in data will be removed from this device.';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get loginExplain =>
+      'Sign in to see your playlists, subscriptions and likes';
+
+  @override
+  String get loginContinue => 'Continue with Google';
+
+  @override
+  String get loginNotNow => 'Not now';
+
+  @override
+  String get loginNoPassword => 'The app never sees your password';
+
+  @override
+  String get sessionExpired => 'Your session has ended. Please sign in again';
+
+  @override
+  String get errorNotSignedIn => 'Sign in to see your account';
+
+  @override
+  String get errorSignIn =>
+      'Couldn\'t sign in. Check your connection and try again';
+
+  @override
+  String get errorSignInUnavailable =>
+      'Sign-in isn\'t enabled in this build yet';
+
+  @override
+  String get errorSignOut => 'Couldn\'t sign out. Please try again';
+
+  @override
+  String get riskTitle => 'Before your first sign-in';
+
+  @override
+  String get riskBody =>
+      'This app extracts YouTube audio in an unofficial way that breaks YouTube\'s terms. This may get your network blocked or your account or Google Cloud project restricted. Extraction is kept separate from your account and never receives a sign-in token, but the risk remains.\n\nUse it personally only, ideally with an account you don\'t rely on for critical work.\n\nGoogle will show an \"unverified app\" warning: choose \"Advanced\", then \"Continue\".';
+
+  @override
+  String get riskAccept => 'I understand, continue';
 }

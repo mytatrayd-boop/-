@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'core/theme.dart';
+import 'features/login/session_expired_listener.dart';
 import 'features/player/player_screen.dart';
 import 'features/settings/locale_controller.dart';
 import 'l10n/gen/app_localizations.dart';
@@ -32,7 +33,7 @@ class BgtubeApp extends ConsumerWidget {
         }
         return const Locale('ar');
       },
-      home: const PlayerScreen(),
+      home: const SessionExpiredListener(child: PlayerScreen()),
     );
   }
 }
