@@ -83,6 +83,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    // الخروج يغلق البحث المعروض (نتائج الحساب السابق)، خارج البناء.
+    ref.listen<AuthStatus>(authStatusProvider, (prev, next) {
+      if (next == AuthStatus.signedOut && _search != null) _closeSearch();
+    });
     final status = ref.watch(authStatusProvider);
     final feed = _feedFor(status);
     final search = _search;

@@ -66,6 +66,23 @@ class YouTubeDataApi implements YouTubeApi {
   late AuthStatus _lastStatus;
   Future<void>? _wiping;
 
+  /// يزيد مع كل مسح للكاش (خروج، أو دخول بعد انتهاء الجلسة).
+  int _generation = 0;
+
+  /// الحساب تغيّر منذ بدأ الطلب: لا تُعاد بياناته (وللمستدعي: لا جلسة لهذا الطلب).
+  void _guard(int generation) {
+    if (generation != _generation) throw const AppFailure(FailureKind.notSignedIn, 'session changed');
+  }
+
+  /// للطلبات المركّبة: ما بدأ قبل مسح لا يُعاد بعده (حتى ما ابتُلع فشله كالمدد).
+  Future<T> _scoped<T>(Future<T> Function() body) async {
+    _onStatus(_auth.status);
+    final generation = _generation;
+    final result = await body();
+    _guard(generation);
+    return result;
+  }
+
   /// يُستدعى من الحدث ومن كل طلب (الحالة تتغيّر قبل وصول الحدث، فلا يُقرأ كاش
   /// الحساب السابق في الفجوة).
   void _onStatus(AuthStatus s) {
@@ -77,6 +94,8 @@ class YouTubeDataApi implements YouTubeApi {
 
   /// يمسح الكاش؛ الطلبات اللاحقة تنتظر انتهاء المسح فلا تقرأ بيانات الحساب السابق.
   void _wipe() {
+    // جيل جديد: أي رد أو نسخة محفوظة من قبله لا يُكتب ولا يُعاد.
+    _generation++;
     final previous = _wiping ?? Future<void>.value();
     _wiping = previous.then((_) => _safe(_cache.deleteAll));
   }
@@ -106,7 +125,10 @@ class YouTubeDataApi implements YouTubeApi {
   // ───────────────────────── الطلبات العامة ─────────────────────────
 
   @override
-  Future<ApiPage<SearchResult>> search(String query, {String? pageToken}) async {
+  Future<ApiPage<SearchResult>> search(String query, {String? pageToken}) =>
+      _scoped(() => _searchImpl(query, pageToken: pageToken));
+
+  Future<ApiPage<SearchResult>> _searchImpl(String query, {String? pageToken}) async {
     final q = query.trim().replaceAll(RegExp(r'\s+'), ' ');
     final r = await _get(
       'search',
@@ -140,7 +162,10 @@ class YouTubeDataApi implements YouTubeApi {
   }
 
   @override
-  Future<ApiPage<VideoRef>> channelVideos(String channelId, {String? pageToken, bool refresh = false}) async {
+  Future<ApiPage<VideoRef>> channelVideos(String channelId, {String? pageToken, bool refresh = false}) =>
+      _scoped(() => _channelVideosImpl(channelId, pageToken: pageToken, refresh: refresh));
+
+  Future<ApiPage<VideoRef>> _channelVideosImpl(String channelId, {String? pageToken, bool refresh = false}) async {
     final uploads = await _uploads([channelId]);
     final playlist = uploads.map[channelId];
     if (playlist == null) return ApiPage(const [], stale: uploads.stale);
@@ -158,7 +183,10 @@ class YouTubeDataApi implements YouTubeApi {
   /// لكل قناة (وحدة لكل قناة) ← videos.list للمدد (وحدة). ≈28 وحدة من الوعاء
   /// العام لتحديث كامل، ولا شيء من وعاء البحث.
   @override
-  Future<ApiPage<VideoRef>> subscriptionFeed({bool refresh = false}) async {
+  Future<ApiPage<VideoRef>> subscriptionFeed({bool refresh = false}) =>
+      _scoped(() => _subscriptionFeedImpl(refresh: refresh));
+
+  Future<ApiPage<VideoRef>> _subscriptionFeedImpl({bool refresh = false}) async {
     final subs = await _get(
       'subscriptions',
       {
@@ -220,7 +248,10 @@ class YouTubeDataApi implements YouTubeApi {
   }
 
   @override
-  Future<String?> myChannelTitle() async {
+  Future<String?> myChannelTitle() =>
+      _scoped(() => _myChannelTitleImpl());
+
+  Future<String?> _myChannelTitleImpl() async {
     final r = await _get(
       'channels',
       {'part': 'snippet', 'mine': 'true', 'fields': 'items(snippet/title)'},
@@ -324,16 +355,20 @@ class YouTubeDataApi implements YouTubeApi {
   }) async {
     final key = cacheKey(endpoint, params);
     _onStatus(_auth.status);
+    final generation = _generation;
     final wiping = _wiping;
     if (wiping != null) await wiping;
     final cached = await _safeRead(key);
+    _guard(generation);
     final now = _clock.now();
     if (!refresh && cached != null && cached.isFresh(now)) {
       final body = _decode(cached.json);
       if (body != null) return _Fetched(body, stale: false);
     }
 
+    // النسخة المحفوظة قُرئت قبل أي مسح لاحق: لا تُعاد إن تغيّر الجيل.
     _Fetched fallback(AppFailure f) {
+      _guard(generation);
       final body = cached == null ? null : _decode(cached.json);
       if (body == null) throw f;
       return _Fetched(body, stale: true);
@@ -371,15 +406,20 @@ class YouTubeDataApi implements YouTubeApi {
       if (attempt == 1) throw const AuthExpired();
     }
     final response = res!;
+    // رد أُرسل قبل الخروج ووصل بعده: لا يُكتب ولا يُعاد.
+    _guard(generation);
 
     if (response.statusCode == 200) {
       final body = _decode(response.body);
       if (body == null) return fallback(AppFailure(FailureKind.apiFailed, '$endpoint bad json'));
+      // الفحص متزامن قبل إصدار الكتابة؛ أي مسح بعده يُصدَر بعدها في طابور drift.
+      _guard(generation);
       await _safe(() => _cache.write(
             key,
             CachedResponse(json: response.body, fetchedAt: _clock.now(), ttl: ttl),
             private: private,
           ));
+      _guard(generation);
       return _Fetched(body, stale: false);
     }
 

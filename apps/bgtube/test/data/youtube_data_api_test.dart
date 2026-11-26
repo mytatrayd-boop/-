@@ -337,6 +337,92 @@ void main() {
       expect(await api.myChannelTitle(), 'الجديدة');
     });
 
+    test('a response sent before sign-out and arriving after it is neither cached nor returned', () async {
+      final gate = Completer<http.Response>();
+      server.handlers['channels'] = (_) => gate.future;
+      final pending = api.myChannelTitle();
+      await pumpEventQueue();
+      expect(server.requests, hasLength(1));
+      auth.status = AuthStatus.signedOut;
+      auth.changes.add(AuthStatus.signedOut);
+      await pumpEventQueue();
+      gate.complete(ok({
+        'items': [
+          {
+            'snippet': {'title': 'old'},
+          },
+        ],
+      }));
+      await expectLater(
+          pending, throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.notSignedIn)));
+      await pumpEventQueue();
+      expect(await db.select(db.apiCache).get(), isEmpty);
+    });
+
+    test('same after expired -> signed in (maybe another account)', () async {
+      final gate = Completer<http.Response>();
+      server.handlers['channels'] = (_) => gate.future;
+      final pending = api.myChannelTitle();
+      await pumpEventQueue();
+      auth.status = AuthStatus.expired;
+      auth.changes.add(AuthStatus.expired);
+      await pumpEventQueue();
+      auth.status = AuthStatus.signedIn;
+      auth.changes.add(AuthStatus.signedIn);
+      await pumpEventQueue();
+      gate.complete(ok({
+        'items': [
+          {
+            'snippet': {'title': 'old'},
+          },
+        ],
+      }));
+      await expectLater(pending, throwsA(isA<AppFailure>()));
+      await pumpEventQueue();
+      expect(await db.select(db.apiCache).get(), isEmpty);
+      // الطلب الجديد يجلب حساب اليوم.
+      server.handlers['channels'] = (_) => ok({
+            'items': [
+              {
+                'snippet': {'title': 'new'},
+              },
+            ],
+          });
+      expect(await api.myChannelTitle(), 'new');
+    });
+
+    test('a saved copy read before sign-out is not returned as a fallback after it', () async {
+      serveSearch();
+      await api.search('rock');
+      now = now.add(const Duration(hours: 7)); // منتهية: سيُطلب من جديد
+      final gate = Completer<http.Response>();
+      server.handlers['search'] = (_) => gate.future;
+      final pending = api.search('rock');
+      await pumpEventQueue();
+      auth.status = AuthStatus.signedOut;
+      auth.changes.add(AuthStatus.signedOut);
+      await pumpEventQueue();
+      gate.completeError(const SocketException('down'));
+      await expectLater(
+          pending, throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.notSignedIn)));
+      expect(await db.select(db.apiCache).get(), isEmpty);
+    });
+
+    test('a composite request that swallowed a failure (durations) is not returned after sign-out', () async {
+      server.handlers['search'] = (_) => ok(searchBody());
+      final gate = Completer<http.Response>();
+      server.handlers['videos'] = (_) => gate.future;
+      final pending = api.search('rock');
+      await pumpEventQueue();
+      auth.status = AuthStatus.signedOut;
+      auth.changes.add(AuthStatus.signedOut);
+      await pumpEventQueue();
+      gate.complete(ok(durationsBody({})));
+      await expectLater(pending, throwsA(isA<AppFailure>()));
+      await pumpEventQueue();
+      expect(await db.select(db.apiCache).get(), isEmpty);
+    });
+
     test('at startup without a session the leftover cache is wiped', () async {
       serveSearch();
       await api.search('rock');
@@ -474,6 +560,15 @@ void main() {
       final q = await api.quotaToday();
       expect(q.search.exhausted, isFalse);
       expect(q.general.exhausted, isFalse);
+    });
+
+    test('a WWW-Authenticate insufficient_scope header alone means insufficientPermissions', () async {
+      server.handlers['subscriptions'] = (_) => http.Response('', 403, headers: {
+            'www-authenticate': 'Bearer realm="https://accounts.google.com/", error="insufficient_scope", '
+                'scope="https://www.googleapis.com/auth/youtube.readonly"',
+          });
+      await expectLater(api.subscriptionFeed(),
+          throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.insufficientPermissions)));
     });
 
     test('403 insufficientPermissions is its own failure (grant permission), not a retry', () async {

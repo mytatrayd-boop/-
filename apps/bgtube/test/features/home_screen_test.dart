@@ -409,6 +409,31 @@ void main() {
   });
 
   group('signed out', () {
+    testWidgets('signing out closes the shown search results', (t) async {
+      api.onSearch = (_, _) => ApiPage([VideoResult(vid(1))]);
+      final auth = FakeAuthService(AuthStatus.signedIn);
+      await t.pumpWidget(ProviderScope(
+        overrides: [
+          playbackControllerProvider.overrideWithValue(c),
+          youTubeApiProvider.overrideWithValue(api),
+          authServiceProvider.overrideWithValue(auth),
+          localPlaylistRepositoryProvider.overrideWithValue(FakePlaylists()),
+        ],
+        child: const BgtubeApp(locale: Locale('ar')),
+      ));
+      await t.pumpAndSettle();
+      await search(t, 'x');
+      expect(find.text('Video 1'), findsOneWidget);
+      auth.emit(AuthStatus.signedOut);
+      await t.pumpAndSettle();
+      expect(find.text('Video 1'), findsNothing);
+      expect(find.text('نتائج «x»'), findsNothing);
+      expect(find.byKey(const Key('guestHome')), findsOneWidget);
+      expect(t.widget<TextField>(find.byKey(const Key('searchField'))).controller!.text, isEmpty);
+      expect(t.takeException(), isNull);
+    });
+
+
     testWidgets('home invites to sign in and does not call the API', (t) async {
       await pumpHome(t, c: c, api: api, status: AuthStatus.signedOut);
       expect(find.textContaining('ابدأ بالبحث أو الصق رابطاً'), findsOneWidget);
