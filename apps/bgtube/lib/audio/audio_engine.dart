@@ -1,15 +1,20 @@
 import 'package:just_audio/just_audio.dart';
 
+import 'yt_stream_audio_source.dart';
+
 /// واجهة رفيعة على المشغّل الصوتي لتسهيل الاختبار بمشغّل وهمي.
 abstract interface class AudioEngine {
   Stream<PlaybackEvent> get playbackEventStream;
   Stream<bool> get playingStream;
   Stream<Duration> get positionStream;
+
+  /// مدة المصدر الحالي كما يعرفها المشغّل (null قبل التحميل).
+  Stream<Duration?> get durationStream;
   bool get playing;
   double get speed;
   Duration get position;
 
-  /// [headers] تُرسل مع طلبات الصوت عبر وكيل just_audio المحلي (D26).
+  /// يحمّل [url]. كل طلبات البايتات تمر عبر Dart بترويسات [headers] كما هي (D26).
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}});
   Future<void> play();
   Future<void> pause();
@@ -20,14 +25,24 @@ abstract interface class AudioEngine {
   Future<void> dispose();
 }
 
+/// يبني مصدر الصوت لرابط وترويسات (قابل للحقن في الاختبار).
+typedef YtSourceFactory = YtStreamAudioSource Function(Uri url, Map<String, String> headers);
+
+YtStreamAudioSource defaultYtSource(Uri url, Map<String, String> headers) =>
+    YtStreamAudioSource(url, Map<String, String>.unmodifiable(headers));
+
 class JustAudioEngine implements AudioEngine {
-  // useProxyForRequestHeaders: true (الافتراضي): ExoPlayer يطلب من وكيل just_audio
-  // على 127.0.0.1، والوكيل يجلب من googlevideo عبر HttpClient في Dart (المكدّس
-  // الذي نجح فحصه على الجهاز بـ206، بينما فشل ExoPlayer المباشر، D26). يمرّر
-  // Range وترويسات ExoPlayer ثم ترويساتنا فوقها. يتطلب network_security_config
-  // يسمح بـcleartext لـ127.0.0.1/localhost فقط.
-  JustAudioEngine([AudioPlayer? player]) : _p = player ?? AudioPlayer(useProxyForRequestHeaders: true);
+  // لا نستعمل AudioSource.uri: ExoPlayer المباشر فشل على الجهاز (probe 206 من
+  // Dart)، ووكيل just_audio للروابط يكتب User-Agent الخاص بـdart:io فوق
+  // ترويساتنا. بدلاً منهما YtStreamAudioSource: الوكيل المحلي يمرّر Range إلى
+  // request() ونحن نجلب بأنفسنا (D26).
+  JustAudioEngine({AudioPlayer? player, YtSourceFactory? sourceFactory})
+      : _p = player ?? AudioPlayer(),
+        _sourceFactory = sourceFactory ?? defaultYtSource;
+
   final AudioPlayer _p;
+  final YtSourceFactory _sourceFactory;
+  YtStreamAudioSource? _current;
 
   @override
   Stream<PlaybackEvent> get playbackEventStream => _p.playbackEventStream;
@@ -35,6 +50,8 @@ class JustAudioEngine implements AudioEngine {
   Stream<bool> get playingStream => _p.playingStream;
   @override
   Stream<Duration> get positionStream => _p.positionStream;
+  @override
+  Stream<Duration?> get durationStream => _p.durationStream;
   @override
   bool get playing => _p.playing;
   @override
@@ -44,18 +61,26 @@ class JustAudioEngine implements AudioEngine {
 
   @override
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
-    await _p.setAudioSource(
-      proxiedSource(url, headers),
-      initialPosition: initialPosition,
-    );
+    _closeCurrent(); // يُلغي طلبات المصدر السابق
+    final source = _sourceFactory(url, headers);
+    _current = source;
+    await _p.setAudioSource(source, initialPosition: initialPosition);
+  }
+
+  void _closeCurrent() {
+    _current?.close();
+    _current = null;
   }
 
   @override
   Future<void> play() => _p.play();
   @override
   Future<void> pause() => _p.pause();
+  // لا نغلق المصدر عند stop: just_audio يعيد تفعيله إن طُلب play بعدها؛ يُغلق
+  // عند تبديل المصدر أو التخلص من المشغّل.
   @override
   Future<void> stop() => _p.stop();
+
   @override
   Future<void> seek(Duration position) => _p.seek(position);
   @override
@@ -63,10 +88,8 @@ class JustAudioEngine implements AudioEngine {
   @override
   Future<void> setVolume(double volume) => _p.setVolume(volume);
   @override
-  Future<void> dispose() => _p.dispose();
+  Future<void> dispose() async {
+    _closeCurrent();
+    await _p.dispose();
+  }
 }
-
-/// مصدر يمر دائماً عبر الوكيل المحلي: just_audio يستعمل الوكيل فقط إن كانت
-/// headers غير null، فنمرّر خريطة (ولو فارغة) دائماً لروابط http(s).
-UriAudioSource proxiedSource(Uri url, Map<String, String> headers) =>
-    AudioSource.uri(url, headers: Map<String, String>.of(headers));

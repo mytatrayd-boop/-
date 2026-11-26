@@ -1,31 +1,25 @@
-import 'dart:async';
-
-import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart' show PlayerException, PlayerInterruptedException;
+
+import 'range_fetcher.dart';
 
 /// فحص سريع لرابط الصوت بعد فشل المشغّل: يعيد نصاً قصيراً مثل `probe HTTP 403`.
 /// يفصل بين "الخادم يرفض الرابط" و"المشغّل لا يستطيع فكّ الصوت".
 typedef StreamProbe = Future<String> Function(Uri url, Map<String, String> headers);
 
-/// يطلب أول بايتين فقط بنفس ترويسات المشغّل. لا يرمي أبداً.
+/// يطلب أول بايتين بدالة الجلب نفسها التي يستعملها المشغّل ([fetchRange]) وبنفس
+/// الترويسات، فيطابق الفحص ما يرسله المشغّل فعلاً (D26). لا يرمي أبداً.
 Future<String> httpStreamProbe(
   Uri url,
   Map<String, String> headers, {
-  http.Client? client,
+  RangeFetch fetch = defaultRangeFetch,
   Duration timeout = const Duration(seconds: 6),
 }) async {
-  final c = client ?? http.Client();
   try {
-    final req = http.Request('GET', url)
-      ..headers.addAll(headers)
-      ..headers['Range'] = 'bytes=0-1';
-    final res = await c.send(req).timeout(timeout);
-    unawaited(res.stream.drain<void>().catchError((Object _) {}));
-    return 'probe HTTP ${res.statusCode}';
+    final r = await fetch(url, headers, start: 0, end: 2).timeout(timeout);
+    r.cancel();
+    return 'probe HTTP ${r.statusCode}';
   } catch (e) {
     return 'probe ${e.runtimeType}';
-  } finally {
-    if (client == null) c.close();
   }
 }
 

@@ -33,6 +33,9 @@ class FakeEngine implements AudioEngine {
   Stream<bool> get playingStream => playingCtl.stream;
   @override
   Stream<Duration> get positionStream => const Stream.empty();
+  final durationCtl = StreamController<Duration?>.broadcast();
+  @override
+  Stream<Duration?> get durationStream => durationCtl.stream;
 
   final setHeaders = <Map<String, String>>[];
 
@@ -938,6 +941,90 @@ void main() {
       e.emitError();
       await settle();
       expect(d.failure.value!.debugDetail, 'PlayerException(0) boom · ANDROID itag140 mp4a.40.2 ip6');
+    });
+  });
+
+  group('late metadata and player duration (D26)', () {
+    late FakeResolver r;
+    late FakeEngine e;
+    late BgtubeAudioHandler d;
+
+    setUp(() {
+      r = FakeResolver();
+      e = FakeEngine();
+      d = BgtubeAudioHandler(resolver: r, engine: e);
+    });
+
+    ResolvedAudio quick(String id, Future<AudioMetadata?> late) => ResolvedAudio(
+          url: Uri.parse('https://example.com/$id'),
+          title: id, // المعرّف عنواناً مؤقتاً
+          lateMetadata: late,
+        );
+
+    test('metadata arriving after playback started updates nowPlaying and the notification', () async {
+      final late = Completer<AudioMetadata?>();
+      r.immediate = (id) async => quick(id, late.future);
+      await d.playVideo('AAAAAAAAAAA');
+      expect(e.log, contains('play')); // التشغيل لم ينتظر البيانات
+      expect(d.nowPlaying.value?.title, 'AAAAAAAAAAA');
+      late.complete(const AudioMetadata(
+        title: 'Real title',
+        author: 'Channel',
+        duration: Duration(minutes: 4),
+        thumbnailUrl: 'https://i.ytimg.com/x.jpg',
+      ));
+      await settle();
+      expect(d.nowPlaying.value?.title, 'Real title');
+      expect(d.nowPlaying.value?.author, 'Channel');
+      expect(d.nowPlaying.value?.duration, const Duration(minutes: 4));
+      final item = d.mediaItem.value!;
+      expect(item.title, 'Real title');
+      expect(item.artist, 'Channel');
+      expect(item.artUri, Uri.parse('https://i.ytimg.com/x.jpg'));
+    });
+
+    test('late metadata of a previous video is ignored', () async {
+      final lateA = Completer<AudioMetadata?>();
+      r.immediate = (id) async => quick(id, id == 'AAAAAAAAAAA' ? lateA.future : Completer<AudioMetadata?>().future);
+      await d.playVideo('AAAAAAAAAAA');
+      await d.playVideo('BBBBBBBBBBB');
+      lateA.complete(const AudioMetadata(title: 'Old A'));
+      await settle();
+      expect(d.nowPlaying.value?.videoId, 'BBBBBBBBBBB');
+      expect(d.nowPlaying.value?.title, 'BBBBBBBBBBB');
+      expect(d.mediaItem.value?.title, 'BBBBBBBBBBB');
+    });
+
+    test('failed late metadata leaves the id title, no crash', () async {
+      r.immediate = (id) async => quick(id, Future<AudioMetadata?>.value(null));
+      await d.playVideo('AAAAAAAAAAA');
+      await settle();
+      expect(d.nowPlaying.value?.title, 'AAAAAAAAAAA');
+    });
+
+    test('player duration fills nowPlaying and mediaItem (progress, notification, PositionPolicy)', () async {
+      r.immediate = (id) async => quick(id, Completer<AudioMetadata?>().future);
+      await d.playVideo('AAAAAAAAAAA');
+      expect(d.nowPlaying.value?.duration, isNull);
+      e.durationCtl.add(const Duration(minutes: 3, seconds: 33));
+      await settle();
+      expect(d.nowPlaying.value?.duration, const Duration(minutes: 3, seconds: 33));
+      expect(d.mediaItem.value?.duration, const Duration(minutes: 3, seconds: 33));
+      e.durationCtl.add(null); // تجاهل
+      await settle();
+      expect(d.nowPlaying.value?.duration, const Duration(minutes: 3, seconds: 33));
+    });
+
+    test('player duration wins over late metadata duration', () async {
+      final late = Completer<AudioMetadata?>();
+      r.immediate = (id) async => quick(id, late.future);
+      await d.playVideo('AAAAAAAAAAA');
+      e.durationCtl.add(const Duration(seconds: 200));
+      await settle();
+      late.complete(const AudioMetadata(title: 'T', duration: Duration(seconds: 199)));
+      await settle();
+      expect(d.nowPlaying.value?.duration, const Duration(seconds: 200));
+      expect(d.nowPlaying.value?.title, 'T');
     });
   });
 }

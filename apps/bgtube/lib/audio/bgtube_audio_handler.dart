@@ -44,6 +44,13 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       },
       onError: _onPlayerError,
     );
+    // المدة من المشغّل نفسه (أدق، وتعمل حين تتأخر البيانات الوصفية أو تفشل):
+    // لشريط التقدم والإشعار وPositionPolicy.
+    _player.durationStream.listen((d) {
+      final now = nowPlaying.value;
+      if (d == null || d <= Duration.zero || now == null || now.duration == d) return;
+      _updateNowPlaying(now.videoId, duration: d);
+    });
     _player.playingStream.listen((p) {
       playing.value = p;
       if (p) {
@@ -307,6 +314,23 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
         duration: audio.duration,
         artUri: audio.thumbnailUrl == null ? null : Uri.tryParse(audio.thumbnailUrl!),
       ));
+      final late = audio.lateMetadata;
+      if (late != null) {
+        unawaited(late.then((m) {
+          // لا نكتب بيانات فيديو سابق فوق الحالي. الرمز وحده لا يكفي: إعادة
+          // المحاولة للفيديو نفسه تغيّره والبيانات ما زالت صحيحة؛ فالمعيار هو
+          // أن الفيديو الحالي ما زال هو نفسه (يُفحص أيضاً داخل _updateNowPlaying).
+          if (m == null || _videoId != videoId) return;
+          _updateNowPlaying(
+            videoId,
+            title: m.title,
+            author: m.author,
+            // مدة المشغّل إن عُرفت أدق من البيانات الوصفية.
+            duration: nowPlaying.value?.duration ?? m.duration,
+            thumbnailUrl: m.thumbnailUrl,
+          );
+        }, onError: (Object _) {}));
+      }
       await _player.setUrl(audio.url, initialPosition: _resumeFrom, headers: audio.httpHeaders);
       if (token != _token) return;
       await _player.setSpeed(speed.value); // السرعة المختارة للفيديو الجديد
@@ -353,6 +377,33 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       await _fail(shown);
       unawaited(_enrichWithProbe(shown, error, audio));
     }
+  }
+
+  /// يحدّث العنوان/القناة/المدة/الصورة للفيديو الحالي في الواجهة والإشعار معاً.
+  void _updateNowPlaying(
+    String videoId, {
+    String? title,
+    String? author,
+    Duration? duration,
+    String? thumbnailUrl,
+  }) {
+    final now = nowPlaying.value;
+    if (now == null || now.videoId != videoId || _videoId != videoId) return;
+    final next = NowPlaying(
+      videoId: videoId,
+      title: title ?? now.title,
+      author: author ?? now.author,
+      duration: duration ?? now.duration,
+    );
+    nowPlaying.value = next;
+    final item = mediaItem.value;
+    mediaItem.add(MediaItem(
+      id: videoId,
+      title: next.title,
+      artist: next.author,
+      duration: next.duration,
+      artUri: thumbnailUrl != null ? Uri.tryParse(thumbnailUrl) : item?.artUri,
+    ));
   }
 
   /// يضيف نتيجة الفحص إلى الفشل المعروض إن بقي هو نفسه المعروض.

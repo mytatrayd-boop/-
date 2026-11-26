@@ -210,6 +210,26 @@ void main() {
       ]);
     });
 
+    test('fallback path is getManifest(videoId, requireWatchPage: false) with the library default', () async {
+      final r = resolver();
+      await r.resolve('dQw4w9WgXcQ'); // الأول افتراضي؛ الثاني ios
+      final seen = <(Object?, List<YoutubeApiClient>?, bool)>[];
+      when(() => streams.getManifest(any(),
+          ytClients: any(named: 'ytClients'),
+          requireWatchPage: any(named: 'requireWatchPage'))).thenAnswer((inv) async {
+        final c = inv.namedArguments[#ytClients] as List<YoutubeApiClient>?;
+        seen.add((inv.positionalArguments.first, c, inv.namedArguments[#requireWatchPage] as bool));
+        if (c != null) throw VideoUnavailableException('ios refused');
+        return StreamManifest([m4a140]);
+      });
+      await r.resolve('dQw4w9WgXcQ');
+      expect(seen.length, 2);
+      expect(seen[0].$1, 'dQw4w9WgXcQ');
+      expect(seen[0].$2, [YoutubeApiClient.ios]);
+      expect(seen[0].$3, isFalse);
+      expect(seen[1], ('dQw4w9WgXcQ', null, false));
+    });
+
     test('extraction failure detail has type and HTTP status, no message text', () async {
       when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
           .thenThrow(YoutubeExplodeException('Video dQw4w9WgXcQ returned 403 (stream: 140) https://x/y?sig=S'));
@@ -252,6 +272,42 @@ void main() {
       final a = await r.resolve('dQw4w9WgXcQ');
       expect(a.title, 'dQw4w9WgXcQ');
       expect(a.url.queryParameters['itag'], '140');
+      expect(a.lateMetadata, isNotNull);
+    });
+
+    test('late metadata is delivered when it finally arrives (not dropped)', () async {
+      final gate = Completer<Video>();
+      when(() => videos.get(any())).thenAnswer((_) => gate.future);
+      final r = YoutubeExplodeResolver(client: yt, now: () => now, metadataGrace: const Duration(milliseconds: 20));
+      final a = await r.resolve('dQw4w9WgXcQ');
+      final v = MockVideo();
+      final thumbs = MockThumbs();
+      when(() => thumbs.highResUrl).thenReturn('https://i.ytimg.com/late.jpg');
+      when(() => v.title).thenReturn('Late title');
+      when(() => v.author).thenReturn('Late author');
+      when(() => v.duration).thenReturn(const Duration(minutes: 5));
+      when(() => v.thumbnails).thenReturn(thumbs);
+      gate.complete(v);
+      final m = await a.lateMetadata!;
+      expect(m!.title, 'Late title');
+      expect(m.author, 'Late author');
+      expect(m.duration, const Duration(minutes: 5));
+      expect(m.thumbnailUrl, 'https://i.ytimg.com/late.jpg');
+    });
+
+    test('late metadata failure completes with null (no unhandled error)', () async {
+      final gate = Completer<Video>();
+      when(() => videos.get(any())).thenAnswer((_) => gate.future);
+      final r = YoutubeExplodeResolver(client: yt, now: () => now, metadataGrace: const Duration(milliseconds: 20));
+      final a = await r.resolve('dQw4w9WgXcQ');
+      gate.completeError(RequestLimitExceededException('429'));
+      expect(await a.lateMetadata, isNull);
+    });
+
+    test('on-time metadata: no lateMetadata', () async {
+      final a = await resolver().resolve('dQw4w9WgXcQ');
+      expect(a.title, 'Title');
+      expect(a.lateMetadata, isNull);
     });
 
     test('metadata failure alone does not block playback (title falls back to id)', () async {

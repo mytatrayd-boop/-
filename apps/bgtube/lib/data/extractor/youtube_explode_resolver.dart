@@ -78,8 +78,8 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
   /// السرعة (D26): البيانات الوصفية والـmanifest بالتوازي لا بالتسلسل، والـmanifest
   /// بلا صفحة المشاهدة (`requireWatchPage: false`): العملاء المستعملون لا يحتاجون
   /// فك توقيع، والمكتبة تجلب الصفحة تلقائياً إن احتاجها عميل (tv). فشل البيانات
-  /// الوصفية وحده أو تأخرها أكثر من [metadataGrace] لا يمنع التشغيل (العنوان
-  /// يصير المعرّف).
+  /// الوصفية وحده لا يمنع التشغيل (العنوان يصير المعرّف)، وتأخرها أكثر من
+  /// [metadataGrace] لا يؤخره: تصل لاحقاً عبر `lateMetadata`.
   Future<ResolvedAudio> _resolve(String videoId, List<YoutubeApiClient>? clients) async {
     final videoFuture = _yt.videos.get(videoId).then<Video?>((v) => v);
     final manifestFuture = _manifest(videoId, clients);
@@ -92,8 +92,11 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
       throw const AppFailure(FailureKind.extractionFailed, 'no audio streams');
     }
     Video? video;
+    var late = false;
     try {
       video = await videoFuture.timeout(metadataGrace);
+    } on TimeoutException {
+      late = true; // تكتمل لاحقاً عبر lateMetadata
     } catch (e) {
       video = null;
     }
@@ -106,6 +109,19 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
       expiresAt: expiryFromUrl(stream.url),
       httpHeaders: headersForStreamUrl(stream.url),
       sourceInfo: sourceInfoFor(stream),
+      lateMetadata: late
+          ? videoFuture.then<AudioMetadata?>(
+              (v) => v == null
+                  ? null
+                  : AudioMetadata(
+                      title: v.title,
+                      author: v.author,
+                      duration: v.duration,
+                      thumbnailUrl: v.thumbnails.highResUrl,
+                    ),
+              onError: (Object _) => null,
+            )
+          : null,
     );
   }
 

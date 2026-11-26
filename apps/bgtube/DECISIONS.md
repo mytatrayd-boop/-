@@ -141,16 +141,23 @@ ARB: ar افتراضي (RTL) وen، ثيم داكن فقط في MVP.
 - الإعدادات: في حالة "انتهت جلستك" يظهر "تسجيل الخروج" بجانب "تسجيل الدخول" (Wrap يلتف عند الخط الكبير).
 - قواعد معمارية إضافية: لا riverpod ولا core/providers.dart في lib/data/extractor وlib/audio؛ authService بلا حساسية للحالة؛ لا token/bearer/authorization في منفذَي التشغيل؛ headersForStreamUrl لا يعيد Authorization ولا Cookie.
 
-## D26. تمرير الصوت عبر Dart (وكيل just_audio) وتسريع التحضير (2026-11-26)
-- دليل الجهاز (APK 11): `PlayerException(0) Source error · probe HTTP 206 · ANDROID itag140 mp4a.40.2 ip4`. أي أن الرابط نفسه والترويسات نفسها يقبلها الخادم من HttpClient في Dart، ويفشل ExoPlayer المباشر (مكدّس Java). السبب الدقيق داخل ExoPlayer غير معروف، والحل لا يحتاجه.
-- القرار: `AudioPlayer(useProxyForRequestHeaders: true)` مع تمرير headers دائماً (ولو فارغة، فـjust_audio لا يستعمل الوكيل إن كانت null). ExoPlayer يطلب من `http://127.0.0.1:<port>`، والوكيل (`_proxyHandlerForUri` في just_audio 0.10.6، راجعته في المصدر) يجلب عبر HttpClient في Dart: ينسخ كل ترويسات ExoPlayer (ومنها Range) ثم يكتب ترويساتنا فوقها (User-Agent العميل)، ويبقي Host الأصلي، وينسخ الحالة والترويسات (206/Content-Range) كما هي. محاكاة الوكيل نفسه هنا على رابط حقيقي: `bytes=0-` أعطى 206 والملف كاملاً، و`bytes=1000000-` أعطى 206 وبقية الملف.
-- Android: `res/xml/network_security_config.xml` يمنع cleartext عامةً ويسمح به لـ127.0.0.1 وlocalhost فقط، ومربوط في AndroidManifest (`android:networkSecurityConfig`). لا `usesCleartextTraffic`. اختبار يتحقق من ذلك.
-- البديل إن لم يكفِ الوكيل: StreamAudioSource مخصص يخدم Range عبر http من Dart (لم يُنفَّذ لأن الوكيل يمرّر Range فعلاً).
-- السرعة:
-  1. البيانات الوصفية (`videos.get`، صفحة المشاهدة) والـmanifest بالتوازي لا بالتسلسل.
-  2. الـmanifest بـ`requireWatchPage: false` (العملاء المستعملون لا يحتاجون فك توقيع، والمكتبة تجلب الصفحة بنفسها لعميل tv). كانت صفحة المشاهدة تُجلب مرتين (مرة للوصف ومرة للـmanifest).
-  3. لا انتظار للبيانات الوصفية أكثر من ٣ ث بعد جاهزية الصوت، وفشلها وحده لا يمنع التشغيل (العنوان يصير المعرّف). قياس هنا تحت تقييد المعدّل: manifest الافتراضي القديم 24.8 ث ثم فشل، و`requireWatchPage: false` نجح في 1.4 ث، والحل الكامل الجديد 3.4 ث (الوصف مقيَّد فظهر المعرّف عنواناً).
-  4. الفحص (probe) لم يعد يؤخر إظهار الفشل: الفشل يظهر فوراً ويُستكمل السطر بنتيجة الفحص عند وصولها إن بقي الفشل نفسه معروضاً. مسار النجاح لا يفحص ولا يعيد المحاولة (اختبار).
+## D26. تمرير الصوت عبر Dart (StreamAudioSource خاص) وتسريع التحضير (2026-11-26، صُحّح بعد مراجعة المحاولة 3)
+- دليل الجهاز (APK 11): `PlayerException(0) Source error · probe HTTP 206 · ANDROID itag140 mp4a.40.2 ip4`. الرابط نفسه والترويسات نفسها يقبلها الخادم من HttpClient في Dart، ويفشل ExoPlayer المباشر (مكدّس Java). السبب الدقيق داخل ExoPlayer غير معروف، والحل لا يحتاجه.
+- **ما ثبت خطؤه (المحاولة 3):** اعتمدنا وكيل just_audio للروابط (`useProxyForRequestHeaders: true` مع `AudioSource.uri(headers:)`) وقلنا إنه يمرّر User-Agent العميل. خطأ: `_getUrl` في just_audio 0.10.6 يكتب `client.userAgent` (افتراضي dart:io: `Dart/x (dart:io)`) فوق ترويساتنا، فلم يكن UA العميل يُرسل أصلاً، والفحص لم يعد يطابق المشغّل. أثبته المراجع بخادم صدى. ومحاكاتي للوكيل حينها كانت نسخة كتبتها بنفسي دون ذلك السطر، فلم تكشفه.
+- **القرار الحالي:** `YtStreamAudioSource` (StreamAudioSource خاص) و`fetchRange`:
+  - على أندرويد يخدمه just_audio من وكيله المحلي (`addStreamAudioSource` → `_proxyHandlerForSource`): يحلّل ترويسة Range من ExoPlayer ويمرّر start/end (حصري) إلى `request()`، ثم يكتب 206 وContent-Range من offset/contentLength/sourceLength التي نعيدها (أو 200 دون Range). راجعته في المصدر.
+  - `fetchRange` يجلب كل طلب بنفسه عبر HttpClient: `userAgent = null` (لا UA لـdart:io) ثم ترويسات العميل كما هي، `Accept-Encoding: identity` و`autoUncompress = false` (إزاحات صحيحة)، Range صريح دائماً، مهلة اتصال 15 ث وخمول 30 ث. أخطاء ما قبل الرد تُرمى (just_audio يردّ 500)، و403 وغيرها → `RangeHttpException`، وأي خطأ/انقطاع/خمول أثناء الجسم يُنهي التيار (done) فلا يعلق. خادم يتجاهل Range (200): نتخطى حتى الإزاحة.
+  - تبديل المصدر أو التخلص من المشغّل يُغلق المصدر السابق ويقطع طلباته الجارية (لا عند stop، لأن just_audio قد يستأنفه).
+  - الفحص (probe) يستعمل الدالة نفسها (`defaultRangeFetch`) بالترويسات نفسها، فيطابق المشغّل.
+  - Android: `res/xml/network_security_config.xml` يمنع cleartext عامةً ويسمح به لـ127.0.0.1 وlocalhost فقط، ومربوط في AndroidManifest. لا `usesCleartextTraffic`.
+  - iOS لاحقاً: الوكيل المحلي يحتاج `NSAppTransportSecurity > NSAllowsLocalNetworking = true` فقط، لا `NSAllowsArbitraryLoads`.
+- **تجربة حقيقية هنا عبر YtStreamAudioSource نفسه (لا محاكاة):** request() من البداية: offset 0، 3449447 بايت كاملة؛ من 1000000: offset 1000000 و2449447 بايت؛ (2000000، 2000100): 100 بايت؛ الفحص `probe HTTP 206`. UA العميل يصل كما هو (اختبار بخادم محلي).
+- **السرعة:**
+  1. البيانات الوصفية والـmanifest بالتوازي، والـmanifest بـ`requireWatchPage: false` (وكذلك مسار الرجوع للافتراضي).
+  2. لا انتظار للبيانات الوصفية أكثر من ٣ ث بعد جاهزية الصوت؛ إن تأخرت تصل لاحقاً عبر `ResolvedAudio.lateMetadata` فيحدّث المعالج nowPlaying وmediaItem (إن بقي الفيديو نفسه). فشلها لا يمنع التشغيل (العنوان = المعرّف).
+  3. المدة تؤخذ أيضاً من `durationStream` للمشغّل (تتقدم على مدة البيانات الوصفية) لشريط التقدم والإشعار وPositionPolicy.
+  4. الفشل يظهر فوراً، والفحص يُكمل السطر لاحقاً؛ مسار النجاح بلا فحص ولا إعادة محاولة.
+  - قياسات هنا (تحت تقييد يوتيوب، متذبذبة): manifest القديم 24.8 ث ثم فشل؛ `requireWatchPage: false` 1.4 ث؛ الحل الكامل بين 3.4 و11.8 ث في تجارب مختلفة (الوصف مقيَّد).
 
 ## D27. طابور التشغيل والقوائم المحلية (الميزة 10، تصميم، 2026-11-26)
 - **النموذج (domain، Dart صرف)**: `VideoRef {videoId, title?, author?, duration?, thumbUrl?}` هو مدخل كل الشاشات. `QueueEntry {key, ref, failed}`، والمفتاح `key` عدد صحيح فريد لكل عنصر، فيمكن أن يتكرر الفيديو نفسه في الطابور. `QueueSnapshot {entries, currentKey}` قيمة غير قابلة للتغيير. العمليات دوال صرفة في `domain/playback_queue_model.dart`: `insertNext` و`append` و`remove` و`move` و`clearUpcoming` (يبقى الحالي) و`next` و`previousAction(position)` (تعيد restart أو goPrevious، والحد ٣ ث). نتتبّع الحالي بمفتاحه لا بفهرسه، فلا ينكسر عند الترتيب أو الحذف.

@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:bgtube/audio/playback_diagnostics.dart';
+import 'package:bgtube/audio/range_fetcher.dart';
+import 'package:bgtube/audio/yt_stream_audio_source.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:just_audio/just_audio.dart';
 
 void main() {
@@ -43,24 +43,42 @@ void main() {
   });
 
   group('httpStreamProbe', () {
-    test('sends the player headers and a tiny range, reports the status', () async {
-      late http.BaseRequest seen;
-      final client = MockClient((req) async {
-        seen = req;
-        return http.Response('', 403);
-      });
-      final r = await httpStreamProbe(
-        Uri.parse('https://x.googlevideo.com/v?c=ANDROID'),
-        {'User-Agent': 'UA'},
-        client: client,
-      );
+    test('uses the player fetch with the same headers and the first two bytes', () async {
+      final seen = <(Uri, Map<String, String>, int?, int?)>[];
+      var cancelled = false;
+      Future<RangeFetchResult> fetch(Uri u, Map<String, String> h, {int? start, int? end}) async {
+        seen.add((u, h, start, end));
+        return RangeFetchResult(
+          statusCode: 403,
+          offset: 0,
+          contentLength: null,
+          sourceLength: null,
+          contentType: 'text/plain',
+          body: const Stream.empty(),
+          cancel: () => cancelled = true,
+        );
+      }
+
+      final url = Uri.parse('https://x.googlevideo.com/v?c=ANDROID');
+      final r = await httpStreamProbe(url, {'User-Agent': 'UA'}, fetch: fetch);
       expect(r, 'probe HTTP 403');
-      expect(seen.headers['User-Agent'], 'UA');
-      expect(seen.headers['Range'], 'bytes=0-1');
+      final (u, h, start, end) = seen.single;
+      expect(u, url);
+      expect(h, {'User-Agent': 'UA'});
+      expect((start, end), (0, 2));
+      expect(cancelled, isTrue);
     });
+
+    test('player source and probe share the same fetch function by default', () {
+      final src = YtStreamAudioSource(Uri.parse('https://x/v'), const {});
+      expect(identical(src.fetcher, defaultRangeFetch), isTrue);
+      expect(identical(defaultRangeFetch, fetchRange), isTrue);
+    });
+
     test('network error becomes a short type, never throws', () async {
-      final client = MockClient((_) async => throw const SocketException('down'));
-      expect(await httpStreamProbe(Uri.parse('https://x/v'), const {}, client: client), 'probe SocketException');
+      Future<RangeFetchResult> fetch(Uri u, Map<String, String> h, {int? start, int? end}) async =>
+          throw const SocketException('down');
+      expect(await httpStreamProbe(Uri.parse('https://x/v'), const {}, fetch: fetch), 'probe SocketException');
     });
   });
 }
