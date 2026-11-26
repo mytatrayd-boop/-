@@ -176,6 +176,7 @@ class _NowPlayingArea extends StatelessWidget {
         if (failure != null) {
           return _ErrorView(
             message: failureMessage(l, failure),
+            detail: failure.debugDetail,
             // إعادة المحاولة تخصّ فشل التشغيل لا الرابط غير الصالح.
             onRetry: linkFailure == null ? controller.retry : null,
           );
@@ -211,9 +212,12 @@ class _NowPlayingArea extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, this.onRetry});
+  const _ErrorView({required this.message, this.detail, this.onRetry});
 
   final String message;
+
+  /// تشخيص تقني قصير (نوع الاستثناء/رمز HTTP) بخط صغير، لتفيد لقطة الشاشة.
+  final String? detail;
   final VoidCallback? onRetry;
 
   @override
@@ -226,6 +230,20 @@ class _ErrorView extends StatelessWidget {
           const Icon(Icons.error_outline, size: 48, color: AppColors.error),
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.error)),
+          if (detail case final d? when d.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 24),
+              child: SelectableText(
+                d,
+                key: const Key('failureDetail'),
+                textAlign: TextAlign.center,
+                // نص تقني لاتيني: اتجاه يسار-يمين حتى داخل واجهة عربية.
+                textDirection: TextDirection.ltr,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+              ),
+            ),
+          ],
           if (onRetry != null) ...[
             const SizedBox(height: 16),
             FilledButton(onPressed: onRetry, child: Text(l.retry)),

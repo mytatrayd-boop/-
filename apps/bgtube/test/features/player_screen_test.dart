@@ -120,6 +120,27 @@ void main() {
     expect(c.retries, 1);
   });
 
+  testWidgets('playback failure shows the technical detail small and LTR under the message', (t) async {
+    final c = FakeController();
+    await pump(t, c);
+    c.failure.value = const AppFailure(FailureKind.playbackFailed, 'PlayerException(0) Source error · probe HTTP 403');
+    await t.pumpAndSettle();
+    expect(find.textContaining('تعذّر تشغيل الصوت'), findsOneWidget);
+    final detail = t.widget<SelectableText>(find.byKey(const Key('failureDetail')));
+    expect(detail.data, 'PlayerException(0) Source error · probe HTTP 403');
+    expect(detail.textDirection, TextDirection.ltr);
+    expect(detail.style?.fontSize, 11);
+    expect(find.text('إعادة المحاولة'), findsOneWidget);
+  });
+
+  testWidgets('failure without detail shows no detail line', (t) async {
+    final c = FakeController();
+    await pump(t, c);
+    c.failure.value = const AppFailure(FailureKind.network);
+    await t.pumpAndSettle();
+    expect(find.byKey(const Key('failureDetail')), findsNothing);
+  });
+
   testWidgets('paste button plays link from clipboard', (t) async {
     final c = FakeController();
     t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {

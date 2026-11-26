@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart' show ProcessingState;
 
 import '../core/app_failure.dart';
 import '../domain/models/now_playing.dart';
+import '../domain/models/resolved_audio.dart';
 import '../domain/models/playback_position.dart';
 import '../domain/playback_speed.dart';
 import '../domain/position_policy.dart';
@@ -16,6 +17,7 @@ import '../domain/ports/playback_controller.dart';
 import '../domain/ports/position_repository.dart';
 import '../domain/ports/speed_store.dart';
 import 'audio_engine.dart';
+import 'playback_diagnostics.dart';
 import 'playback_state_mapper.dart';
 
 /// معالج الصوت: يلفّ المشغّل ويعرضه عبر audio_service
@@ -27,6 +29,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     this._positions,
     this._speedStore,
     this._saveInterval = const Duration(seconds: 5),
+    this._probe,
   }) : _player = engine ?? JustAudioEngine() {
     _restoreSpeed();
     _player.playbackEventStream.listen(
@@ -56,6 +59,12 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   final PositionRepository? _positions;
   final SpeedStore? _speedStore;
   final Duration _saveInterval;
+
+  /// فحص الرابط عند فشل التشغيل النهائي (للتشخيص فقط). null = بلا فحص.
+  final StreamProbe? _probe;
+
+  /// آخر مصدر محلول (للتشخيص).
+  ResolvedAudio? _lastAudio;
   Timer? _saveTimer;
 
   final AudioSourceResolver _resolver;
@@ -271,6 +280,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     final token = ++_token;
     _videoId = videoId;
     _loaded = false;
+    _lastAudio = null;
     failure.value = null;
     resolving.value = true;
     // أوقف الصوت القديم فوراً قبل حلّ الجديد.
@@ -283,6 +293,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     try {
       final audio = await _resolver.resolve(videoId);
       if (token != _token) return; // طلب أحدث حلّ محلّه
+      _lastAudio = audio;
       nowPlaying.value = NowPlaying(
         videoId: videoId,
         title: audio.title,
@@ -296,7 +307,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
         duration: audio.duration,
         artUri: audio.thumbnailUrl == null ? null : Uri.tryParse(audio.thumbnailUrl!),
       ));
-      await _player.setUrl(audio.url, initialPosition: _resumeFrom);
+      await _player.setUrl(audio.url, initialPosition: _resumeFrom, headers: audio.httpHeaders);
       if (token != _token) return;
       await _player.setSpeed(speed.value); // السرعة المختارة للفيديو الجديد
       if (token != _token) return;
@@ -336,8 +347,26 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       _captureResume();
       await _load(id);
     } else {
-      await _fail(AppFailure(FailureKind.playbackFailed, error.runtimeType.toString()));
+      final detail = await _playbackDetail(error);
+      if (token != _token) return; // طلب أحدث أثناء الفحص
+      await _fail(AppFailure(FailureKind.playbackFailed, detail));
     }
+  }
+
+  /// تشخيص قصير يظهر تحت رسالة الخطأ: خطأ المشغّل · نتيجة الفحص · المصدر.
+  Future<String> _playbackDetail(Object error) async {
+    final audio = _lastAudio;
+    final parts = [playerErrorDetail(error)];
+    final probe = _probe;
+    if (probe != null && audio != null) {
+      try {
+        parts.add(await probe(audio.url, audio.httpHeaders));
+      } catch (e) {
+        parts.add('probe ${e.runtimeType}');
+      }
+    }
+    if (audio?.sourceInfo case final info?) parts.add(info);
+    return sanitizeDetail(parts.join(' · '));
   }
 
   /// خطأ من تيار الأحداث. أثناء التحميل يلتقطه `_load` نفسه (يرمي setUrl أيضاً)،

@@ -34,9 +34,12 @@ class FakeEngine implements AudioEngine {
   @override
   Stream<Duration> get positionStream => const Stream.empty();
 
+  final setHeaders = <Map<String, String>>[];
+
   @override
-  Future<void> setUrl(Uri url, {required Duration initialPosition}) async {
+  Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
     log.add('setUrl');
+    setHeaders.add(headers);
     setUrls.add((url: url, start: initialPosition));
     await onSetUrl?.call(url);
   }
@@ -808,6 +811,95 @@ void main() {
         expect(t.sleepRemaining.value, const Duration(minutes: 44));
         t.cancelSleepTimer();
       });
+    });
+  });
+
+  group('playback diagnostics (D24)', () {
+    late FakeResolver r;
+    late FakeEngine e;
+    late BgtubeAudioHandler d;
+    final probed = <({Uri url, Map<String, String> headers})>[];
+    const ua = {'User-Agent': 'com.google.android.youtube/x'};
+
+    ResolvedAudio diagAudio(String id) => ResolvedAudio(
+          url: Uri.parse('https://rr1.googlevideo.com/videoplayback?id=$id&sig=SECRET&c=ANDROID'),
+          title: 'T',
+          httpHeaders: ua,
+          sourceInfo: 'ANDROID itag140 mp4a.40.2 ip6',
+        );
+
+    setUp(() {
+      probed.clear();
+      r = FakeResolver()..immediate = (id) async => diagAudio(id);
+      e = FakeEngine();
+      d = BgtubeAudioHandler(
+        resolver: r,
+        engine: e,
+        probe: (url, headers) async {
+          probed.add((url: url, headers: headers));
+          return 'probe HTTP 403';
+        },
+      );
+    });
+
+    test('resolver headers are passed to the engine on every load', () async {
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitError(); // محاولة تلقائية
+      await settle();
+      expect(e.setHeaders, [ua, ua]);
+    });
+
+    test('final playback failure carries player error, probe and source info', () async {
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitError();
+      await settle();
+      expect(probed, isEmpty); // لا فحص في المحاولة التلقائية
+      e.emitError();
+      await settle();
+      await settle();
+      final f = d.failure.value!;
+      expect(f.kind, FailureKind.playbackFailed);
+      expect(f.debugDetail, 'PlayerException(0) boom · probe HTTP 403 · ANDROID itag140 mp4a.40.2 ip6');
+      expect(probed.single.headers, ua);
+      expect(f.debugDetail, isNot(contains('SECRET')));
+      expect(f.debugDetail, isNot(contains('http')));
+    });
+
+    test('setUrl throwing twice still produces a detailed failure', () async {
+      e.onSetUrl = (_) async => throw PlayerException(1, 'MediaCodecAudioRenderer error, see https://x.googlevideo.com/a?sig=Z', null);
+      await d.playVideo('AAAAAAAAAAA');
+      await settle();
+      final detail = d.failure.value!.debugDetail!;
+      expect(detail, startsWith('PlayerException(1) MediaCodecAudioRenderer error'));
+      expect(detail, isNot(contains('sig=Z')));
+      expect(detail, contains('probe HTTP 403'));
+    });
+
+    test('a newer request during the probe wins (no stale failure)', () async {
+      final gate = Completer<String>();
+      d = BgtubeAudioHandler(resolver: r, engine: e, probe: (_, _) => gate.future);
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitError();
+      await settle();
+      e.emitError();
+      await settle();
+      r.immediate = (id) async => diagAudio(id);
+      final next = d.playVideo('BBBBBBBBBBB');
+      gate.complete('probe HTTP 200');
+      await next;
+      await settle();
+      expect(d.failure.value, isNull);
+      expect(e.setUrls.last.url.queryParameters['id'], 'BBBBBBBBBBB');
+    });
+
+    test('no probe configured -> detail without probe part', () async {
+      d = BgtubeAudioHandler(resolver: r, engine: e);
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitError();
+      await settle();
+      e.emitError();
+      await settle();
+      expect(d.failure.value!.debugDetail, 'PlayerException(0) boom · ANDROID itag140 mp4a.40.2 ip6');
     });
   });
 }

@@ -8,7 +8,7 @@ import '../../core/app_failure.dart';
 import '../../domain/models/resolved_audio.dart';
 import '../../domain/ports/audio_source_resolver.dart';
 
-/// مجموعات العملاء بالترتيب (D22). `null` = إدارة المكتبة الافتراضية
+/// مجموعات العملاء بالترتيب (D24). `null` = إدارة المكتبة الافتراضية
 /// (androidSdkless ثم tv). تُجرَّب المجموعة التالية عند طلب حلّ الفيديو نفسه
 /// مجدداً خلال [YoutubeExplodeResolver.retryWindow] (أي بعد فشل تشغيل).
 final List<List<YoutubeApiClient>?> defaultClientStrategies = [

@@ -22,7 +22,7 @@ abstract interface class AudioEngine {
 
 class JustAudioEngine implements AudioEngine {
   // useProxyForRequestHeaders: false: الترويسات تمر عبر DefaultHttpDataSource
-  // مباشرة؛ الوكيل المحلي يتطلب cleartext إلى 127.0.0.1 المحظور افتراضياً (D22).
+  // مباشرة؛ الوكيل المحلي يتطلب cleartext إلى 127.0.0.1 المحظور افتراضياً (D24).
   JustAudioEngine([AudioPlayer? player]) : _p = player ?? AudioPlayer(useProxyForRequestHeaders: false);
   final AudioPlayer _p;
 
