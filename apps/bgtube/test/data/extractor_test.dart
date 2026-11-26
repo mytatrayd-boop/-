@@ -132,6 +132,9 @@ void main() {
         ...dartFiles('lib/audio'),
         File('lib/domain/ports/audio_source_resolver.dart'),
         File('lib/domain/ports/playback_controller.dart'),
+        File('lib/domain/ports/playback_queue.dart'),
+        File('lib/domain/ports/queue_repository.dart'),
+        File('lib/domain/playback_queue_model.dart'),
       ]) {
         final src = f.readAsStringSync();
         expect(src, isNot(matches(RegExp(r"import\s+'[^']*auth"))), reason: f.path);
@@ -181,6 +184,9 @@ void main() {
       for (final path in [
         'lib/domain/ports/audio_source_resolver.dart',
         'lib/domain/ports/playback_controller.dart',
+        'lib/domain/ports/playback_queue.dart',
+        'lib/domain/ports/queue_repository.dart',
+        'lib/domain/ports/local_playlist_repository.dart',
       ]) {
         final src = File(path).readAsStringSync().toLowerCase();
         for (final word in ['token', 'bearer', 'authorization']) {
@@ -195,6 +201,27 @@ void main() {
         ...dartFiles('lib/audio'),
       ]) {
         expect(f.readAsStringSync(), isNot(contains('/data/')), reason: f.path);
+      }
+    });
+
+    test('audio_service is used inside lib/audio only (D27)', () {
+      for (final f in dartFiles('lib')) {
+        if (f.path.contains('lib/audio/')) continue;
+        expect(f.readAsStringSync(), isNot(contains('package:audio_service')), reason: f.path);
+      }
+    });
+
+    test('the queue model and ports in domain are pure (no flutter widgets, packages or data layer)', () {
+      for (final path in [
+        'lib/domain/playback_queue_model.dart',
+        'lib/domain/models/video_ref.dart',
+        'lib/domain/models/local_playlist.dart',
+        'lib/domain/ports/queue_repository.dart',
+        'lib/domain/ports/local_playlist_repository.dart',
+      ]) {
+        final src = File(path).readAsStringSync();
+        expect(src, isNot(contains('package:')), reason: path);
+        expect(src, isNot(contains('/data/')), reason: path);
       }
     });
   });

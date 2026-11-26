@@ -15,7 +15,7 @@ void main() {
     final st = toPlaybackState(event: event(ProcessingState.ready), playing: true, speed: 1);
     expect(st.playing, isTrue);
     expect(st.processingState, AudioProcessingState.ready);
-    expect(st.controls.first, MediaControl.pause);
+    expect(st.controls[1], MediaControl.pause);
     expect(st.controls, contains(MediaControl.stop));
     expect(st.updatePosition, const Duration(seconds: 5));
     expect(st.bufferedPosition, const Duration(seconds: 20));
@@ -23,7 +23,7 @@ void main() {
 
   test('paused shows play control', () {
     final st = toPlaybackState(event: event(ProcessingState.ready), playing: false, speed: 1);
-    expect(st.controls.first, MediaControl.play);
+    expect(st.controls[1], MediaControl.play);
   });
 
   test('maps every processing state', () {
@@ -42,5 +42,18 @@ void main() {
   test('seek is a system action (lock screen scrubbing)', () {
     final st = toPlaybackState(event: event(ProcessingState.ready), playing: true, speed: 1);
     expect(st.systemActions, contains(MediaAction.seek));
+  });
+
+  test('notification: previous, play/pause, next, stop; compact = previous, play/pause, next (D27)', () {
+    final st = toPlaybackState(event: event(ProcessingState.ready), playing: true, speed: 1, queueIndex: 2);
+    expect(st.controls, [
+      MediaControl.skipToPrevious,
+      MediaControl.pause,
+      MediaControl.skipToNext,
+      MediaControl.stop,
+    ]);
+    expect(st.androidCompactActionIndices, [0, 1, 2]);
+    expect(st.queueIndex, 2);
+    expect(st.systemActions, contains(MediaAction.skipToQueueItem));
   });
 }

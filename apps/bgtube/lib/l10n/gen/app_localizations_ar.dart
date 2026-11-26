@@ -168,4 +168,205 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get riskAccept => 'أقرّ وأتابع';
+
+  @override
+  String get errorQueueStopped => 'تعذّر تشغيل باقي الطابور. أعد المحاولة.';
+
+  @override
+  String get next => 'التالي';
+
+  @override
+  String get previous => 'السابق';
+
+  @override
+  String get queueTitle => 'الطابور';
+
+  @override
+  String queueNextUp(String title) {
+    return 'التالي: $title';
+  }
+
+  @override
+  String queueRemaining(String count) {
+    return '$count متبقية';
+  }
+
+  @override
+  String itemsSummary(String count, String duration) {
+    return '$count مقاطع · $duration';
+  }
+
+  @override
+  String itemsCount(String count) {
+    return '$count مقاطع';
+  }
+
+  @override
+  String get queueNowPlaying => 'يعمل الآن';
+
+  @override
+  String get queueEmpty => 'الطابور فارغ';
+
+  @override
+  String get queueNothingAfter =>
+      'لا شيء بعده. اضغط ⋮ على أي مقطع واختر «أضف للنهاية»';
+
+  @override
+  String get queueFailedItem => 'تعذّر تشغيله، تم تخطّيه';
+
+  @override
+  String queueSkippedSnack(String title) {
+    return 'تعذّر تشغيل «$title»، تم الانتقال للتالي';
+  }
+
+  @override
+  String get queueRemoved => 'حُذف من الطابور';
+
+  @override
+  String get queueClear => 'مسح الطابور';
+
+  @override
+  String get queueClearConfirmTitle => 'مسح الطابور؟';
+
+  @override
+  String get queueClearConfirmBody => 'سيبقى المقطع الحالي يعمل.';
+
+  @override
+  String get queueClearAction => 'مسح';
+
+  @override
+  String get queueCleared => 'مُسح الطابور';
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get queueSaveAsPlaylist => 'حفظ كقائمة';
+
+  @override
+  String get queueSaveAsLocalPlaylist => 'حفظ كقائمة محلية';
+
+  @override
+  String queueDefaultPlaylistName(String date) {
+    return 'طابور $date';
+  }
+
+  @override
+  String get playlistNameLabel => 'اسم القائمة';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String playlistSaved(String name) {
+    return 'حُفظت قائمة «$name»';
+  }
+
+  @override
+  String get open => 'فتح';
+
+  @override
+  String get queueRemove => 'إزالة من الطابور';
+
+  @override
+  String get queueMoveNext => 'نقل ليكون التالي';
+
+  @override
+  String get moveUp => 'نقل للأعلى';
+
+  @override
+  String get moveDown => 'نقل للأسفل';
+
+  @override
+  String get dragToReorder => 'اسحب لإعادة الترتيب';
+
+  @override
+  String get actionPlayNow => 'شغّل الآن';
+
+  @override
+  String get actionPlayNext => 'شغّل التالي';
+
+  @override
+  String get actionAddToEnd => 'أضف للنهاية';
+
+  @override
+  String get actionAddToLocalPlaylist => 'أضف إلى قائمة محلية…';
+
+  @override
+  String snackPlayNext(String title) {
+    return 'سيُشغَّل التالي: $title';
+  }
+
+  @override
+  String get snackAddedToEnd => 'أُضيف إلى نهاية الطابور';
+
+  @override
+  String snackAddedCount(String count) {
+    return 'أُضيف $count مقطعاً إلى الطابور';
+  }
+
+  @override
+  String queueTruncated(String max) {
+    return 'الطابور ممتلئ ($max مقطع)؛ لم يُضف الباقي';
+  }
+
+  @override
+  String get untitledVideo => 'مقطع من يوتيوب';
+
+  @override
+  String get localPlaylists => 'قوائمي المحلية';
+
+  @override
+  String get newPlaylist => 'قائمة جديدة';
+
+  @override
+  String get onDevice => 'على الجهاز';
+
+  @override
+  String get playlistsEmpty => 'لم تنشئ قوائم بعد. احفظ الطابور أو أنشئ قائمة';
+
+  @override
+  String get playlistEmpty => 'القائمة فارغة. أضف مقاطع من ⋮ على أي مقطع';
+
+  @override
+  String get playlistsLoadError => 'تعذّر فتح القوائم المحلية';
+
+  @override
+  String get rename => 'إعادة تسمية';
+
+  @override
+  String deletePlaylistTitle(String name) {
+    return 'حذف قائمة «$name»؟';
+  }
+
+  @override
+  String get deletePlaylistBody => 'لن تُحذف المقاطع من يوتيوب.';
+
+  @override
+  String get playAll => 'تشغيل الكل';
+
+  @override
+  String get addWholeList => 'أضف القائمة كلها';
+
+  @override
+  String addedToPlaylist(String name) {
+    return 'أُضيف إلى «$name»';
+  }
+
+  @override
+  String alreadyInPlaylist(String name) {
+    return 'موجود في «$name» بالفعل';
+  }
+
+  @override
+  String get removedFromPlaylist => 'حُذف من القائمة';
+
+  @override
+  String get moreActions => 'مزيد من الخيارات';
+
+  @override
+  String get saveFailed => 'تعذّر الحفظ. حاول مرة أخرى';
 }

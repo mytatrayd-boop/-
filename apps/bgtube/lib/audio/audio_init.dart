@@ -3,6 +3,7 @@ import 'package:audio_session/audio_session.dart';
 
 import '../domain/ports/audio_source_resolver.dart';
 import '../domain/ports/position_repository.dart';
+import '../domain/ports/queue_repository.dart';
 import '../domain/ports/speed_store.dart';
 import 'bgtube_audio_handler.dart';
 import 'playback_diagnostics.dart';
@@ -12,6 +13,7 @@ Future<BgtubeAudioHandler> initAudioHandler(
   AudioSourceResolver resolver, {
   PositionRepository? positions,
   SpeedStore? speedStore,
+  QueueRepository? queueRepository,
 }) async {
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
@@ -20,6 +22,7 @@ Future<BgtubeAudioHandler> initAudioHandler(
       resolver: resolver,
       positions: positions,
       speedStore: speedStore,
+      queueRepo: queueRepository,
       probe: httpStreamProbe,
     ),
     config: const AudioServiceConfig(

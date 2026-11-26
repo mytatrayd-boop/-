@@ -391,6 +391,354 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أقرّ وأتابع'**
   String get riskAccept;
+
+  /// No description provided for @errorQueueStopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تشغيل باقي الطابور. أعد المحاولة.'**
+  String get errorQueueStopped;
+
+  /// No description provided for @next.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي'**
+  String get next;
+
+  /// No description provided for @previous.
+  ///
+  /// In ar, this message translates to:
+  /// **'السابق'**
+  String get previous;
+
+  /// No description provided for @queueTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطابور'**
+  String get queueTitle;
+
+  /// No description provided for @queueNextUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي: {title}'**
+  String queueNextUp(String title);
+
+  /// No description provided for @queueRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} متبقية'**
+  String queueRemaining(String count);
+
+  /// No description provided for @itemsSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مقاطع · {duration}'**
+  String itemsSummary(String count, String duration);
+
+  /// No description provided for @itemsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مقاطع'**
+  String itemsCount(String count);
+
+  /// No description provided for @queueNowPlaying.
+  ///
+  /// In ar, this message translates to:
+  /// **'يعمل الآن'**
+  String get queueNowPlaying;
+
+  /// No description provided for @queueEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطابور فارغ'**
+  String get queueEmpty;
+
+  /// No description provided for @queueNothingAfter.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا شيء بعده. اضغط ⋮ على أي مقطع واختر «أضف للنهاية»'**
+  String get queueNothingAfter;
+
+  /// No description provided for @queueFailedItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تشغيله، تم تخطّيه'**
+  String get queueFailedItem;
+
+  /// No description provided for @queueSkippedSnack.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تشغيل «{title}»، تم الانتقال للتالي'**
+  String queueSkippedSnack(String title);
+
+  /// No description provided for @queueRemoved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذف من الطابور'**
+  String get queueRemoved;
+
+  /// No description provided for @queueClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الطابور'**
+  String get queueClear;
+
+  /// No description provided for @queueClearConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الطابور؟'**
+  String get queueClearConfirmTitle;
+
+  /// No description provided for @queueClearConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيبقى المقطع الحالي يعمل.'**
+  String get queueClearConfirmBody;
+
+  /// No description provided for @queueClearAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح'**
+  String get queueClearAction;
+
+  /// No description provided for @queueCleared.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُسح الطابور'**
+  String get queueCleared;
+
+  /// No description provided for @undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get undo;
+
+  /// No description provided for @delete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get delete;
+
+  /// No description provided for @queueSaveAsPlaylist.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ كقائمة'**
+  String get queueSaveAsPlaylist;
+
+  /// No description provided for @queueSaveAsLocalPlaylist.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ كقائمة محلية'**
+  String get queueSaveAsLocalPlaylist;
+
+  /// No description provided for @queueDefaultPlaylistName.
+  ///
+  /// In ar, this message translates to:
+  /// **'طابور {date}'**
+  String queueDefaultPlaylistName(String date);
+
+  /// No description provided for @playlistNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم القائمة'**
+  String get playlistNameLabel;
+
+  /// No description provided for @save.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get save;
+
+  /// No description provided for @playlistSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظت قائمة «{name}»'**
+  String playlistSaved(String name);
+
+  /// No description provided for @open.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح'**
+  String get open;
+
+  /// No description provided for @queueRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة من الطابور'**
+  String get queueRemove;
+
+  /// No description provided for @queueMoveNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقل ليكون التالي'**
+  String get queueMoveNext;
+
+  /// No description provided for @moveUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقل للأعلى'**
+  String get moveUp;
+
+  /// No description provided for @moveDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقل للأسفل'**
+  String get moveDown;
+
+  /// No description provided for @dragToReorder.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لإعادة الترتيب'**
+  String get dragToReorder;
+
+  /// No description provided for @actionPlayNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل الآن'**
+  String get actionPlayNow;
+
+  /// No description provided for @actionPlayNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل التالي'**
+  String get actionPlayNext;
+
+  /// No description provided for @actionAddToEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف للنهاية'**
+  String get actionAddToEnd;
+
+  /// No description provided for @actionAddToLocalPlaylist.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف إلى قائمة محلية…'**
+  String get actionAddToLocalPlaylist;
+
+  /// No description provided for @snackPlayNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُشغَّل التالي: {title}'**
+  String snackPlayNext(String title);
+
+  /// No description provided for @snackAddedToEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف إلى نهاية الطابور'**
+  String get snackAddedToEnd;
+
+  /// No description provided for @snackAddedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف {count} مقطعاً إلى الطابور'**
+  String snackAddedCount(String count);
+
+  /// No description provided for @queueTruncated.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطابور ممتلئ ({max} مقطع)؛ لم يُضف الباقي'**
+  String queueTruncated(String max);
+
+  /// No description provided for @untitledVideo.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقطع من يوتيوب'**
+  String get untitledVideo;
+
+  /// No description provided for @localPlaylists.
+  ///
+  /// In ar, this message translates to:
+  /// **'قوائمي المحلية'**
+  String get localPlaylists;
+
+  /// No description provided for @newPlaylist.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة جديدة'**
+  String get newPlaylist;
+
+  /// No description provided for @onDevice.
+  ///
+  /// In ar, this message translates to:
+  /// **'على الجهاز'**
+  String get onDevice;
+
+  /// No description provided for @playlistsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تنشئ قوائم بعد. احفظ الطابور أو أنشئ قائمة'**
+  String get playlistsEmpty;
+
+  /// No description provided for @playlistEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'القائمة فارغة. أضف مقاطع من ⋮ على أي مقطع'**
+  String get playlistEmpty;
+
+  /// No description provided for @playlistsLoadError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح القوائم المحلية'**
+  String get playlistsLoadError;
+
+  /// No description provided for @rename.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة تسمية'**
+  String get rename;
+
+  /// No description provided for @deletePlaylistTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف قائمة «{name}»؟'**
+  String deletePlaylistTitle(String name);
+
+  /// No description provided for @deletePlaylistBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لن تُحذف المقاطع من يوتيوب.'**
+  String get deletePlaylistBody;
+
+  /// No description provided for @playAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيل الكل'**
+  String get playAll;
+
+  /// No description provided for @addWholeList.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف القائمة كلها'**
+  String get addWholeList;
+
+  /// No description provided for @addedToPlaylist.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف إلى «{name}»'**
+  String addedToPlaylist(String name);
+
+  /// No description provided for @alreadyInPlaylist.
+  ///
+  /// In ar, this message translates to:
+  /// **'موجود في «{name}» بالفعل'**
+  String alreadyInPlaylist(String name);
+
+  /// No description provided for @removedFromPlaylist.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذف من القائمة'**
+  String get removedFromPlaylist;
+
+  /// No description provided for @moreActions.
+  ///
+  /// In ar, this message translates to:
+  /// **'مزيد من الخيارات'**
+  String get moreActions;
+
+  /// No description provided for @saveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الحفظ. حاول مرة أخرى'**
+  String get saveFailed;
 }
 
 class _AppLocalizationsDelegate

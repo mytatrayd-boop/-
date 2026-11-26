@@ -3,13 +3,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_failure.dart';
 import '../domain/ports/auth_service.dart';
 import '../domain/ports/incoming_link_source.dart';
+import '../domain/ports/local_playlist_repository.dart';
 import '../domain/ports/locale_store.dart';
 import '../domain/ports/playback_controller.dart';
+import '../domain/ports/playback_queue.dart';
 import '../domain/ports/risk_ack_store.dart';
 
 /// يُستبدل عند الإقلاع (main) بالمعالج الحقيقي، وفي الاختبارات بتنفيذ وهمي.
 final playbackControllerProvider = Provider<PlaybackController>(
   (ref) => throw UnimplementedError('playbackControllerProvider must be overridden'),
+);
+
+/// منفذ الطابور الوحيد (D27). يُربط في main بالمعالج نفسه؛ الافتراضي يأخذه من
+/// المتحكم إن كان ينفّذه (المعالج والمتحكم الوهمي في الاختبارات).
+final playbackQueueProvider = Provider<PlaybackQueue>((ref) {
+  final c = ref.watch(playbackControllerProvider);
+  if (c is PlaybackQueue) return c as PlaybackQueue;
+  throw UnimplementedError('playbackQueueProvider must be overridden');
+});
+
+/// القوائم المحلية. تُستبدل في main بتنفيذ drift.
+final localPlaylistRepositoryProvider = Provider<LocalPlaylistRepository>(
+  (ref) => throw UnimplementedError('localPlaylistRepositoryProvider must be overridden'),
 );
 
 /// يُستبدل عند الإقلاع بالمصدر الحقيقي؛ الافتراضي لا يرد منه شيء.

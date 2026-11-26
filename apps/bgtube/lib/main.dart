@@ -15,7 +15,9 @@ import 'data/auth/google_auth_service.dart';
 import 'data/settings/prefs_locale_store.dart';
 import 'data/settings/prefs_risk_ack_store.dart';
 import 'data/settings/prefs_speed_store.dart';
+import 'data/local/drift_local_playlist_repository.dart';
 import 'data/local/drift_position_repository.dart';
+import 'data/local/drift_queue_repository.dart';
 import 'data/incoming/receive_sharing_link_source.dart';
 import 'data/extractor/youtube_explode_resolver.dart';
 
@@ -27,7 +29,10 @@ Future<void> main() async {
     YoutubeExplodeResolver(),
     positions: DriftPositionRepository(db),
     speedStore: PrefsSpeedStore(),
+    queueRepository: DriftQueueRepository(db),
   );
+  // الطابور المحفوظ يظهر دون استخراج ولا تشغيل تلقائي (D27)، ولا يؤخر الإقلاع.
+  unawaited(handler.restoreQueue());
   final localeStore = PrefsLocaleStore();
   String? languageCode;
   try {
@@ -45,6 +50,8 @@ Future<void> main() async {
       initialLanguageCodeProvider.overrideWithValue(languageCode),
       appVersionProvider.overrideWithValue(info.version),
       playbackControllerProvider.overrideWithValue(handler),
+      playbackQueueProvider.overrideWithValue(handler),
+      localPlaylistRepositoryProvider.overrideWithValue(DriftLocalPlaylistRepository(db)),
       incomingLinkSourceProvider.overrideWithValue(ReceiveSharingLinkSource()),
       authServiceProvider.overrideWithValue(auth),
       riskAckStoreProvider.overrideWithValue(PrefsRiskAckStore()),

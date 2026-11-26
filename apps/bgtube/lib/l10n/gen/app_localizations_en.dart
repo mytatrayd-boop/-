@@ -172,4 +172,208 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get riskAccept => 'I understand, continue';
+
+  @override
+  String get errorQueueStopped =>
+      'Couldn\'t play the rest of the queue. Try again.';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get previous => 'Previous';
+
+  @override
+  String get queueTitle => 'Queue';
+
+  @override
+  String queueNextUp(String title) {
+    return 'Next: $title';
+  }
+
+  @override
+  String queueRemaining(String count) {
+    return '$count left';
+  }
+
+  @override
+  String itemsSummary(String count, String duration) {
+    return '$count items · $duration';
+  }
+
+  @override
+  String itemsCount(String count) {
+    return '$count items';
+  }
+
+  @override
+  String get queueNowPlaying => 'Now playing';
+
+  @override
+  String get queueEmpty => 'The queue is empty';
+
+  @override
+  String get queueNothingAfter =>
+      'Nothing after this. Tap ⋮ on any item and choose “Add to end”';
+
+  @override
+  String get queueFailedItem => 'Couldn\'t play it, skipped';
+
+  @override
+  String queueSkippedSnack(String title) {
+    return 'Couldn\'t play “$title”, moved to the next';
+  }
+
+  @override
+  String get queueRemoved => 'Removed from the queue';
+
+  @override
+  String get queueClear => 'Clear queue';
+
+  @override
+  String get queueClearConfirmTitle => 'Clear the queue?';
+
+  @override
+  String get queueClearConfirmBody => 'The current item keeps playing.';
+
+  @override
+  String get queueClearAction => 'Clear';
+
+  @override
+  String get queueCleared => 'Queue cleared';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get queueSaveAsPlaylist => 'Save as playlist';
+
+  @override
+  String get queueSaveAsLocalPlaylist => 'Save as local playlist';
+
+  @override
+  String queueDefaultPlaylistName(String date) {
+    return 'Queue $date';
+  }
+
+  @override
+  String get playlistNameLabel => 'Playlist name';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String playlistSaved(String name) {
+    return 'Saved playlist “$name”';
+  }
+
+  @override
+  String get open => 'Open';
+
+  @override
+  String get queueRemove => 'Remove from queue';
+
+  @override
+  String get queueMoveNext => 'Move to play next';
+
+  @override
+  String get moveUp => 'Move up';
+
+  @override
+  String get moveDown => 'Move down';
+
+  @override
+  String get dragToReorder => 'Drag to reorder';
+
+  @override
+  String get actionPlayNow => 'Play now';
+
+  @override
+  String get actionPlayNext => 'Play next';
+
+  @override
+  String get actionAddToEnd => 'Add to end';
+
+  @override
+  String get actionAddToLocalPlaylist => 'Add to local playlist…';
+
+  @override
+  String snackPlayNext(String title) {
+    return 'Playing next: $title';
+  }
+
+  @override
+  String get snackAddedToEnd => 'Added to the end of the queue';
+
+  @override
+  String snackAddedCount(String count) {
+    return 'Added $count items to the queue';
+  }
+
+  @override
+  String queueTruncated(String max) {
+    return 'The queue is full ($max items); the rest wasn\'t added';
+  }
+
+  @override
+  String get untitledVideo => 'YouTube video';
+
+  @override
+  String get localPlaylists => 'My local playlists';
+
+  @override
+  String get newPlaylist => 'New playlist';
+
+  @override
+  String get onDevice => 'On device';
+
+  @override
+  String get playlistsEmpty =>
+      'No playlists yet. Save the queue or create a playlist';
+
+  @override
+  String get playlistEmpty =>
+      'This playlist is empty. Add items from ⋮ on any item';
+
+  @override
+  String get playlistsLoadError => 'Couldn\'t open local playlists';
+
+  @override
+  String get rename => 'Rename';
+
+  @override
+  String deletePlaylistTitle(String name) {
+    return 'Delete playlist “$name”?';
+  }
+
+  @override
+  String get deletePlaylistBody => 'Nothing is deleted from YouTube.';
+
+  @override
+  String get playAll => 'Play all';
+
+  @override
+  String get addWholeList => 'Add the whole list';
+
+  @override
+  String addedToPlaylist(String name) {
+    return 'Added to “$name”';
+  }
+
+  @override
+  String alreadyInPlaylist(String name) {
+    return 'Already in “$name”';
+  }
+
+  @override
+  String get removedFromPlaylist => 'Removed from the playlist';
+
+  @override
+  String get moreActions => 'More options';
+
+  @override
+  String get saveFailed => 'Couldn\'t save. Try again';
 }

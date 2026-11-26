@@ -9,37 +9,53 @@ import '../core/app_failure.dart';
 import '../domain/models/now_playing.dart';
 import '../domain/models/resolved_audio.dart';
 import '../domain/models/playback_position.dart';
+import '../domain/models/video_ref.dart';
+import '../domain/playback_queue_model.dart';
+import '../domain/playback_queue_model.dart' as model show clearUpcoming;
 import '../domain/playback_speed.dart';
 import '../domain/position_policy.dart';
 import '../domain/sleep_timer.dart';
 import '../domain/ports/audio_source_resolver.dart';
 import '../domain/ports/playback_controller.dart';
+import '../domain/ports/playback_queue.dart';
 import '../domain/ports/position_repository.dart';
+import '../domain/ports/queue_repository.dart';
 import '../domain/ports/speed_store.dart';
 import 'audio_engine.dart';
 import 'playback_diagnostics.dart';
 import 'playback_state_mapper.dart';
 
+/// ناتج استخراج محفوظ في الذاكرة (الحالي أو التالي فقط، D27).
+class _Fetched {
+  _Fetched(this.audio, this.fetchedAt);
+  final ResolvedAudio audio;
+  final DateTime fetchedAt;
+}
+
 /// معالج الصوت: يلفّ المشغّل ويعرضه عبر audio_service
 /// (خدمة مقدّمة + إشعار + شاشة قفل). يعتمد على المنفذ `AudioSourceResolver` فقط.
-class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements PlaybackController {
+/// ينفّذ أيضاً طابور التشغيل (D27): مصدر واحد في المشغّل في كل لحظة، والطابور
+/// نموذج صرف في domain.
+class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements PlaybackController, PlaybackQueue {
   BgtubeAudioHandler({
     required this._resolver,
     AudioEngine? engine,
     this._positions,
     this._speedStore,
+    this._queueRepo,
     this._saveInterval = const Duration(seconds: 5),
     this._probe,
   }) : _player = engine ?? JustAudioEngine() {
     _restoreSpeed();
     _player.playbackEventStream.listen(
       (event) {
-        if (event.processingState == ProcessingState.ready) _autoRetried = false;
+        if (event.processingState == ProcessingState.ready) _onReady();
         if (event.processingState == ProcessingState.completed) _onCompleted();
         playbackState.add(toPlaybackState(
           event: event,
           playing: _player.playing,
           speed: _player.speed,
+          queueIndex: _queueIndexOrNull,
         ));
       },
       onError: _onPlayerError,
@@ -65,13 +81,15 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
 
   final PositionRepository? _positions;
   final SpeedStore? _speedStore;
+  final QueueRepository? _queueRepo;
   final Duration _saveInterval;
 
   /// فحص الرابط عند فشل التشغيل النهائي (للتشخيص فقط). null = بلا فحص.
   final StreamProbe? _probe;
 
-  /// آخر مصدر محلول (للتشخيص).
+  /// آخر مصدر محلول (للتشخيص ولمعرفة انتهاء الرابط) ووقت جلبه.
   ResolvedAudio? _lastAudio;
+  DateTime? _lastFetchedAt;
   Timer? _saveTimer;
 
   final AudioSourceResolver _resolver;
@@ -138,8 +156,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   bool _sleepExpiredWhileLoading = false;
 
   /// مؤقت النوم يعمل هنا داخل المعالج (خدمة مقدّمة) فيستمر والشاشة مغلقة.
-  /// العدّ بعدد النبضات لا بالساعة. يبقى فعّالاً عند تبديل الفيديو أو الإيقاف
-  /// المؤقت اليدوي، ويُلغى عند stop() أو cancelSleepTimer().
+  /// يبقى فعّالاً عند تبديل الفيديو أو الانتقال في الطابور أو الإيقاف المؤقت
+  /// اليدوي، ويُلغى عند stop() أو cancelSleepTimer().
   @override
   void startSleepTimer(Duration duration) {
     if (duration <= Duration.zero) return;
@@ -178,6 +196,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     }
   }
 
+  /// الانتهاء `pause()` لا stop: لا completed ولا انتقال، فيتوقف الطابور كله.
   Future<void> _finishSleep() async {
     _sleepTimer?.cancel();
     _sleepTimer = null;
@@ -198,6 +217,8 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   @override
   final ValueNotifier<NowPlaying?> nowPlaying = ValueNotifier(null);
 
+  /// الفيديو الذي يعمل عليه المشغّل (محمّل أو يُحمَّل أو فشل). null بعد stop
+  /// أو بعد الاستعادة قبل أول تشغيل.
   String? _videoId;
   int _token = 0;
   bool _autoRetried = false;
@@ -208,17 +229,368 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   /// true بعد نجاح تحميل مصدر الفيديو الحالي في المشغّل.
   bool _loaded = false;
 
-  /// يبدأ تشغيل فيديو. الفشل لا يُرمى؛ يُنشر في [failure].
+  /// الرمز الذي حُمّل عنده المصدر الحالي؛ completed يُعتدّ به فقط إن طابق [_token].
+  int _loadedToken = -1;
+
+  /// الرمز الذي عولج عنده completed (انتهى الحالي ولا انتقال بعده = نهاية الطابور).
+  int _completedToken = -1;
+
+  // ───────────────────────────── الطابور ─────────────────────────────
+
+  final ValueNotifier<QueueSnapshot> _queue = ValueNotifier(QueueSnapshot.empty);
+
   @override
-  Future<void> playVideo(String videoId) async {
+  ValueListenable<QueueSnapshot> get queueState => _queue;
+
+  int _keySeq = 1;
+
+  /// فشلات نهائية متتالية بلا نجاح أو طلب مستخدم بينها.
+  int _consecutiveFailures = 0;
+  static const maxConsecutiveFailures = 3;
+
+  final _skipped = StreamController<VideoRef>.broadcast();
+
+  @override
+  Stream<VideoRef> get skippedFailures => _skipped.stream;
+
+  /// استخراج مسبق للتالي فقط: المفتاح وناتجه أو الطلب الجاري.
+  final Map<int, _Fetched> _fetched = {};
+  int? _prefetchKey;
+  Future<ResolvedAudio>? _prefetchFuture;
+  int _prefetchToken = -1;
+
+  /// هامش صلاحية الرابط المعروف انتهاؤه، وعمر الرابط المجهول انتهاؤه (D27).
+  static const linkExpiryMargin = Duration(minutes: 10);
+  static const unknownExpiryMaxAge = Duration(minutes: 30);
+
+  /// مفاتيح الناتج المحفوظ في الذاكرة (للاختبار: عنصران على الأكثر).
+  @visibleForTesting
+  Set<int> get prefetchedKeys => {..._fetched.keys, ?_prefetchKey};
+
+  int? get _queueIndexOrNull {
+    final i = _queue.value.currentIndex;
+    return i < 0 ? null : i;
+  }
+
+  List<QueueEntry> _newEntries(List<VideoRef> refs) =>
+      [for (final r in refs) QueueEntry(key: _keySeq++, ref: r)];
+
+  /// ينشر اللقطة في الواجهة وaudio_service ويحفظها ويقلّم الاستخراج المسبق.
+  void _setQueue(QueueSnapshot s, {bool persist = true}) {
+    if (s == _queue.value) return;
+    _queue.value = s;
+    queue.add([for (final e in s.entries) _mediaItemFor(e)]);
+    playbackState.add(playbackState.value.copyWith(queueIndex: _queueIndexOrNull));
+    _pruneFetched();
+    if (persist) _persist(s);
+  }
+
+  MediaItem _mediaItemFor(QueueEntry e, {String? titleOverride, String? author, Duration? duration, String? art}) {
+    final thumb = art ?? e.ref.thumbUrl;
+    return MediaItem(
+      id: '${e.key}',
+      title: titleOverride ?? e.ref.title ?? e.ref.videoId,
+      artist: author ?? e.ref.author,
+      duration: duration ?? e.ref.duration,
+      artUri: thumb == null ? null : Uri.tryParse(thumb),
+      extras: {'videoId': e.ref.videoId},
+    );
+  }
+
+  /// الذاكرة تحمل عنصرين على الأكثر: الحالي (لحظة الانتقال إليه) والتالي.
+  /// الاستخراج المسبق يُرمى إن لم يعد لأحدهما (ترتيب/حذف/إدراج).
+  void _pruneFetched() {
+    final keep = {_queue.value.currentKey, _queue.value.next?.key};
+    _fetched.removeWhere((k, _) => !keep.contains(k));
+    if (_prefetchKey != null && !keep.contains(_prefetchKey)) {
+      _prefetchKey = null;
+      _prefetchFuture = null;
+    }
+  }
+
+  bool _isFresh(ResolvedAudio audio, DateTime fetchedAt) {
+    final now = clock.now();
+    final exp = audio.expiresAt;
+    if (exp != null) return exp.difference(now) > linkExpiryMargin;
+    return now.difference(fetchedAt) < unknownExpiryMaxAge;
+  }
+
+  /// يستخرج التالي مرة واحدة بعد جاهزية الحالي. لا يلمس المشغّل ولا الوكيل
+  /// (D26: لا preload للمصدر نفسه). فشله يُبتلع؛ الفشل الحقيقي يظهر عند الانتقال.
+  void _maybePrefetch() {
+    if (_prefetchToken == _token) return;
+    _prefetchToken = _token;
+    final next = _queue.value.next;
+    if (next == null) return;
+    final have = _fetched[next.key];
+    if (have != null && _isFresh(have.audio, have.fetchedAt)) return;
+    if (_prefetchKey == next.key) return;
+    final key = next.key;
+    final videoId = next.ref.videoId;
+    final future = _resolver.resolve(videoId);
+    _prefetchKey = key;
+    _prefetchFuture = future;
+    future.then((audio) {
+      if (_prefetchKey != key) return; // تغيّر التالي
+      _prefetchKey = null;
+      _prefetchFuture = null;
+      if (_queue.value.next?.key != key && _queue.value.currentKey != key) return;
+      _fetched[key] = _Fetched(audio, clock.now());
+    }, onError: (Object _) {
+      if (_prefetchKey == key) {
+        _prefetchKey = null;
+        _prefetchFuture = null;
+      }
+    });
+  }
+
+  /// يعطي ناتجاً جاهزاً للعنصر إن وُجد صالحاً، أو ينتظر استخراجه المسبق الجاري
+  /// بدل تكراره (فلا يُستهلك تدوير العملاء في D24).
+  Future<_Fetched?> _takeFetched(int key) async {
+    final have = _fetched.remove(key);
+    if (have != null) return _isFresh(have.audio, have.fetchedAt) ? have : null;
+    if (_prefetchKey == key && _prefetchFuture != null) {
+      final f = _prefetchFuture!;
+      _prefetchKey = null;
+      _prefetchFuture = null;
+      try {
+        return _Fetched(await f, clock.now());
+      } catch (_) {
+        return null; // نعيد الاستخراج بأنفسنا فيظهر الفشل الحقيقي
+      }
+    }
+    return null;
+  }
+
+  // ─────────── الحفظ: كتابات متسلسلة، تُدمج اللقطات المنتظرة فتُكتب الأحدث ───────────
+
+  QueueSnapshot? _pendingSave;
+  Future<void>? _saveLoop;
+
+  /// يكتمل حين تُكتب كل اللقطات المنتظرة (للاختبار).
+  @visibleForTesting
+  Future<void> get queueSavesIdle => _saveLoop ?? Future.value();
+
+  void _persist(QueueSnapshot s) {
+    if (_queueRepo == null) return;
+    _pendingSave = s;
+    _saveLoop ??= _runSaves();
+  }
+
+  Future<void> _runSaves() async {
+    try {
+      while (_pendingSave != null) {
+        final snap = _pendingSave!;
+        _pendingSave = null;
+        try {
+          await _queueRepo!.save(snap);
+        } catch (e) {
+          debugPrint('queue save failed: ${e.runtimeType}'); // لا يكسر التشغيل
+        }
+      }
+    } finally {
+      _saveLoop = null;
+    }
+  }
+
+  /// يستعيد الطابور المحفوظ عند الإقلاع: ينشره مع المقطع الحالي دون استخراج ولا
+  /// تشغيل. أول play() يحمّل الحالي من موضعه المحفوظ. ما أُضيف قبل اكتمال
+  /// الاستعادة (مشاركة عند البدء البارد) يبقى بعد المستعاد ويبقى حالياً.
+  Future<void> restoreQueue() async {
+    final repo = _queueRepo;
+    if (repo == null) return;
+    QueueSnapshot? stored;
+    try {
+      stored = await repo.load();
+    } catch (e) {
+      debugPrint('queue restore failed: ${e.runtimeType}');
+      return;
+    }
+    if (stored == null || stored.isEmpty) return;
+    // مفاتيح جديدة للجلسة: لا تصادم مع ما أُضيف قبل الاستعادة.
+    int? currentKey;
+    final restored = <QueueEntry>[];
+    for (final e in stored.entries) {
+      final k = _keySeq++;
+      if (e.key == stored.currentKey) currentKey = k;
+      restored.add(e.copyWith(key: k));
+    }
+    final live = _queue.value;
+    if (live.isEmpty) {
+      final room = restored.take(PlaybackQueue.maxLength).toList();
+      final snap = QueueSnapshot(
+        entries: room,
+        currentKey: room.any((e) => e.key == currentKey) ? currentKey : room.first.key,
+      );
+      _setQueue(snap, persist: false);
+      if (_videoId == null) _publishIdleCurrent();
+    } else {
+      final room = PlaybackQueue.maxLength - live.entries.length;
+      final merged = [...restored.take(room < 0 ? 0 : room), ...live.entries];
+      _setQueue(QueueSnapshot(entries: merged, currentKey: live.currentKey));
+    }
+  }
+
+  /// ينشر الحالي في الواجهة والإشعار دون تحميل (بعد الاستعادة أو حذف الحالي).
+  void _publishIdleCurrent() {
+    final cur = _queue.value.current;
+    if (cur == null) {
+      nowPlaying.value = null;
+      return;
+    }
+    nowPlaying.value = NowPlaying(
+      videoId: cur.ref.videoId,
+      title: cur.ref.title ?? cur.ref.videoId,
+      author: cur.ref.author,
+      duration: cur.ref.duration,
+    );
+    mediaItem.add(_mediaItemFor(cur));
+  }
+
+  @override
+  Future<EnqueueResult> enqueue(List<VideoRef> refs, QueuePlacement placement) async {
+    if (refs.isEmpty) return const EnqueueResult([]);
+    final before = _queue.value;
+    final room = PlaybackQueue.maxLength - before.entries.length;
+    final take = refs.length <= room ? refs : refs.sublist(0, room < 0 ? 0 : room);
+    final truncated = take.length < refs.length;
+    if (take.isEmpty) return EnqueueResult(const [], truncated: truncated);
+    final added = _newEntries(take);
+    final keys = [for (final e in added) e.key];
+    final startPlayback = before.isEmpty;
+    switch (placement) {
+      case QueuePlacement.playNow:
+      case QueuePlacement.playNext:
+        _setQueue(insertNext(before, added));
+      case QueuePlacement.addToEnd:
+        _setQueue(append(before, added));
+    }
+    if (placement == QueuePlacement.playNow || startPlayback) {
+      // ينتظر التحميل (playVideo يعيد بعد اكتماله كما كان)؛ الواجهة لا تعرض
+      // رسالة تأكيد في هذه الحالة بل المشغّل.
+      await _transitionTo(keys.first, user: true);
+    }
+    return EnqueueResult(keys, truncated: truncated);
+  }
+
+  /// يبدأ تشغيل فيديو: غلاف لـ`enqueue([ref], playNow)` (D27). الفشل لا يُرمى؛
+  /// يُنشر في [failure].
+  @override
+  Future<void> playVideo(String videoId) => enqueue([VideoRef(videoId: videoId)], QueuePlacement.playNow);
+
+  @override
+  Future<void> skipToNext() async {
+    final next = _queue.value.next;
+    if (next == null) return;
+    await _transitionTo(next.key, user: true);
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    final s = _queue.value;
+    switch (previousAction(s, _loaded ? _player.position : Duration.zero)) {
+      case PreviousAction.restart:
+        if (_loaded) await _player.seek(Duration.zero);
+      case PreviousAction.goPrevious:
+        await _transitionTo(s.previous!.key, user: true);
+    }
+  }
+
+  @override
+  Future<void> skipToQueueItem(int index) async {
+    final entries = _queue.value.entries;
+    if (index < 0 || index >= entries.length) return;
+    await jumpTo(entries[index].key);
+  }
+
+  @override
+  Future<void> jumpTo(int key) async {
+    final s = _queue.value;
+    if (s.indexOfKey(key) < 0) return;
+    if (key == s.currentKey) {
+      if (failure.value != null && _videoId != null) return retry();
+      if (!_loaded && !resolving.value) return _transitionTo(key, user: true);
+      return _player.play();
+    }
+    await _transitionTo(key, user: true);
+  }
+
+  @override
+  Future<void> removeEntry(int key) async {
+    final s = _queue.value;
+    if (s.indexOfKey(key) < 0) return;
+    if (key != s.currentKey) {
+      _setQueue(remove(s, key));
+      return;
+    }
+    // حذف الحالي: ينتقل إلى التالي بحالة التشغيل نفسها.
+    final wasActive = _player.playing || resolving.value;
+    final next = s.next;
+    if (next != null) {
+      await _savePosition();
+      _setQueue(remove(s, key));
+      await _transitionTo(next.key, user: true, autoplay: wasActive);
+      return;
+    }
+    await _unloadAndSet(remove(s, key));
+  }
+
+  /// يوقف المشغّل ويجعل [s] هي الطابور، والحالي فيها غير محمّل (يُحمَّل عند play).
+  Future<void> _unloadAndSet(QueueSnapshot s) async {
+    _token++;
+    await _savePosition();
+    _videoId = null;
+    _loaded = false;
+    _lastAudio = null;
+    resolving.value = false;
+    failure.value = null;
+    _setQueue(s);
+    _publishIdleCurrent();
+    await _player.stop();
+  }
+
+  @override
+  Future<void> removeEntries(List<int> keys) async {
+    final cur = _queue.value.currentKey;
+    var s = _queue.value;
+    for (final k in keys) {
+      if (k != cur) s = remove(s, k);
+    }
+    _setQueue(s);
+    if (cur != null && keys.contains(cur)) await removeEntry(cur);
+  }
+
+  @override
+  Future<void> moveEntry(int key, int toIndex) async => _setQueue(move(_queue.value, key, toIndex));
+
+  @override
+  Future<void> clearUpcoming() async => _setQueue(model.clearUpcoming(_queue.value));
+
+  @override
+  Future<void> restoreEntries(List<IndexedEntry> removed) async {
+    final wasEmpty = _queue.value.isEmpty;
+    _setQueue(reinsert(_queue.value, removed));
+    if (wasEmpty && _videoId == null) _publishIdleCurrent();
+  }
+
+  /// ينتقل إلى عنصر. [user] = طلب مستخدم (يصفّر عدّ الفشلات وعلامة انتهاء
+  /// المؤقت أثناء التحميل، ويزيل علامة فشل العنصر). الانتقال التلقائي ليس طلباً.
+  /// الأحدث يفوز: الرمز يُزاد قبل أي انتظار.
+  Future<void> _transitionTo(int key, {required bool user, bool autoplay = true}) async {
+    final token = ++_token;
+    if (user) {
+      _sleepExpiredWhileLoading = false;
+      _consecutiveFailures = 0;
+    }
     _autoRetried = false;
-    _sleepExpiredWhileLoading = false; // طلب تشغيل جديد من المستخدم
     _resumeFrom = Duration.zero;
-    final token = _token;
-    await _savePosition(); // موضع الفيديو السابق قبل استبداله
+    var s = setCurrent(_queue.value, key);
+    if (user) s = markFailed(s, key, false);
+    _setQueue(s);
+    await _savePosition(); // موضع الحالي قبل استبداله
     // stop() (أو طلب أحدث) أثناء الحفظ: لا نبدأ تشغيلاً بعد إيقاف المستخدم.
     if (token != _token) return;
-    return _load(videoId, resumeSaved: true);
+    await _loadEntry(key, token, resumeSaved: true, useCache: true, autoplay: autoplay);
   }
 
   /// يحفظ/يحذف موضع الفيديو الحالي حسب [PositionPolicy]. لا يرمي أبداً:
@@ -248,14 +620,35 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     }
   }
 
-  /// انتهى الفيديو: لا استئناف في المرة القادمة.
+  void _onReady() {
+    _autoRetried = false;
+    if (!_loaded || _loadedToken != _token) return;
+    // نجح الحالي: يُصفَّر عدّ الفشلات وتُزال علامته، ثم يُستخرج التالي.
+    _consecutiveFailures = 0;
+    final key = _queue.value.currentKey;
+    if (key != null) _setQueue(markFailed(_queue.value, key, false));
+    _maybePrefetch();
+  }
+
+  /// انتهى الفيديو: لا استئناف في المرة القادمة، ثم التالي تلقائياً إن وُجد.
   void _onCompleted() {
+    // completed قديم (من مصدر سابق أثناء انتقال) أو مكرر: يُتجاهل.
+    if (!_loaded || _loadedToken != _token || _completedToken == _token) return;
+    _completedToken = _token;
     _saveTimer?.cancel(); // لا حفظ دوري بعد الانتهاء
     _saveTimer = null;
     final repo = _positions;
     final id = _videoId;
-    if (repo == null || id == null) return;
-    repo.delete(id).catchError((Object _) {});
+    if (repo != null && id != null) repo.delete(id).catchError((Object _) {});
+    final next = _queue.value.next;
+    if (next == null) return; // نهاية الطابور: يتوقف (لا تكرار)
+    final token = _token;
+    // إن ضغط المستخدم «التالي» في اللحظة نفسها فاز طلبه (الرمز تغيّر).
+    scheduleMicrotask(() {
+      if (token != _token) return;
+      final n = _queue.value.next;
+      if (n != null) _transitionTo(n.key, user: false);
+    });
   }
 
   Future<Duration> _savedPosition(String videoId) async {
@@ -267,15 +660,18 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     }
   }
 
-  /// يعيد المحاولة لآخر فيديو (يحافظ على الموضع إن كان قد بدأ).
+  /// يعيد المحاولة للمقطع الحالي (يحافظ على الموضع إن كان قد بدأ)، باستخراج جديد.
   @override
   Future<void> retry() {
     final id = _videoId;
-    if (id == null) return Future.value();
+    final key = _queue.value.currentKey;
+    if (id == null || key == null) return Future.value();
     _autoRetried = false;
     _sleepExpiredWhileLoading = false;
+    _consecutiveFailures = 0;
+    _setQueue(markFailed(_queue.value, key, false));
     _captureResume();
-    return _load(id);
+    return _loadEntry(key, ++_token);
   }
 
   /// يحفظ موضع المشغّل إن كان مصدر الفيديو الحالي محمّلاً (قبل أي إيقاف).
@@ -283,13 +679,32 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     if (_loaded) _resumeFrom = _player.position;
   }
 
-  Future<void> _load(String videoId, {bool resumeSaved = false}) async {
-    final token = ++_token;
+  /// يحمّل عنصراً بالرمز [token] (يجب أن يكون الأحدث). [useCache] يستعمل
+  /// الاستخراج المسبق؛ إعادة المحاولة لا تستعمله (تدوير العملاء، D24).
+  Future<void> _loadEntry(
+    int key,
+    int token, {
+    bool resumeSaved = false,
+    bool useCache = false,
+    bool autoplay = true,
+  }) async {
+    final entry = _queue.value.entryByKey(key);
+    if (entry == null || token != _token) return;
+    final videoId = entry.ref.videoId;
     _videoId = videoId;
     _loaded = false;
     _lastAudio = null;
     failure.value = null;
     resolving.value = true;
+    if (nowPlaying.value?.videoId != videoId || mediaItem.value?.id != '$key') {
+      nowPlaying.value = NowPlaying(
+        videoId: videoId,
+        title: entry.ref.title ?? videoId,
+        author: entry.ref.author,
+        duration: entry.ref.duration,
+      );
+      mediaItem.add(_mediaItemFor(entry));
+    }
     // أوقف الصوت القديم فوراً قبل حلّ الجديد.
     await _player.stop();
     if (token != _token) return;
@@ -298,44 +713,42 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       if (token != _token) return;
     }
     try {
-      final audio = await _resolver.resolve(videoId);
-      if (token != _token) return; // طلب أحدث حلّ محلّه
+      final cached = useCache ? await _takeFetched(key) : null;
+      if (token != _token) return;
+      final ResolvedAudio audio;
+      if (cached != null) {
+        audio = cached.audio;
+        _lastFetchedAt = cached.fetchedAt;
+      } else {
+        audio = await _resolver.resolve(videoId);
+        if (token != _token) return; // طلب أحدث حلّ محلّه
+        _lastFetchedAt = clock.now();
+      }
       _lastAudio = audio;
-      nowPlaying.value = NowPlaying(
-        videoId: videoId,
-        title: audio.title,
-        author: audio.author,
-        duration: audio.duration,
-      );
-      mediaItem.add(MediaItem(
-        id: videoId,
-        title: audio.title,
-        artist: audio.author,
-        duration: audio.duration,
-        artUri: audio.thumbnailUrl == null ? null : Uri.tryParse(audio.thumbnailUrl!),
-      ));
+      _applyMetadata(key, videoId,
+          title: audio.title, author: audio.author, duration: audio.duration, thumbUrl: audio.thumbnailUrl);
       final late = audio.lateMetadata;
       if (late != null) {
         unawaited(late.then((m) {
           // لا نكتب بيانات فيديو سابق فوق الحالي. الرمز وحده لا يكفي: إعادة
           // المحاولة للفيديو نفسه تغيّره والبيانات ما زالت صحيحة؛ فالمعيار هو
-          // أن الفيديو الحالي ما زال هو نفسه (يُفحص أيضاً داخل _updateNowPlaying).
+          // أن الفيديو الحالي ما زال هو نفسه.
           if (m == null || _videoId != videoId) return;
-          _updateNowPlaying(
-            videoId,
-            title: m.title,
-            author: m.author,
-            // مدة المشغّل إن عُرفت أدق من البيانات الوصفية.
-            duration: nowPlaying.value?.duration ?? m.duration,
-            thumbnailUrl: m.thumbnailUrl,
-          );
+          _applyMetadata(key, videoId,
+              title: m.title,
+              author: m.author,
+              // مدة المشغّل إن عُرفت أدق من البيانات الوصفية.
+              duration: nowPlaying.value?.duration ?? m.duration,
+              thumbUrl: m.thumbnailUrl,
+              late: true);
         }, onError: (Object _) {}));
       }
       await _player.setUrl(audio.url, initialPosition: _resumeFrom, headers: audio.httpHeaders);
       if (token != _token) return;
-      await _player.setSpeed(speed.value); // السرعة المختارة للفيديو الجديد
+      await _player.setSpeed(speed.value); // السرعة المختارة لكل عنصر
       if (token != _token) return;
       _loaded = true;
+      _loadedToken = token;
       resolving.value = false;
       if (_sleepExpiredWhileLoading) {
         // انتهى مؤقت النوم أثناء التحميل: يبقى محمّلاً ومتوقفاً (الاستئناف يدوي).
@@ -343,13 +756,66 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
         await _player.setVolume(1.0);
         return;
       }
+      if (!autoplay) return;
       await _player.play();
     } on AppFailure catch (e) {
-      if (token == _token) await _fail(e);
+      if (token == _token) await _finalFailure(e);
     } catch (e) {
       // خطأ من المشغّل أثناء التحميل: يُعالَج هنا لا من تيار الأحداث (انظر _onPlayerError).
       if (token == _token) await _handleEngineError(token, e);
     }
+  }
+
+  /// يدمج البيانات الوصفية في العنصر (يُحفظ) وفي الواجهة والإشعار. لا يُستبدل
+  /// عنوان معروف بالمعرّف الذي يعود عند فشل البيانات الوصفية (D26).
+  void _applyMetadata(
+    int key,
+    String videoId, {
+    required String title,
+    String? author,
+    Duration? duration,
+    String? thumbUrl,
+    bool late = false,
+  }) {
+    final entry = _queue.value.entryByKey(key);
+    if (entry == null) return;
+    final enriched = enrichRef(entry.ref, title: title, author: author, duration: duration, thumbUrl: thumbUrl);
+    _setQueue(updateRef(_queue.value, key, enriched));
+    final realTitle = title.isNotEmpty && title != videoId ? title : null;
+    if (late) {
+      _updateNowPlaying(videoId,
+          title: realTitle, author: author, duration: duration, thumbnailUrl: thumbUrl);
+      return;
+    }
+    nowPlaying.value = NowPlaying(
+      videoId: videoId,
+      title: enriched.title ?? title,
+      author: author ?? enriched.author,
+      duration: duration ?? enriched.duration,
+    );
+    mediaItem.add(_mediaItemFor(entry.copyWith(ref: enriched),
+        titleOverride: enriched.title ?? title,
+        author: author ?? enriched.author,
+        duration: duration ?? enriched.duration,
+        art: thumbUrl));
+  }
+
+  /// فشل نهائي للحالي (D27): يُعلَّم ويُتخطّى إلى التالي. يتوقف الطابور ويظهر
+  /// الفشل مع «إعادة المحاولة» دون تعليم عند network أو بعد ٣ فشلات متتالية.
+  /// الأخير في الطابور يُعلَّم ويظهر فشله.
+  Future<void> _finalFailure(AppFailure f) async {
+    final key = _queue.value.currentKey;
+    if (key == null || f.kind == FailureKind.network) return _fail(f);
+    _consecutiveFailures++;
+    if (_consecutiveFailures >= maxConsecutiveFailures) {
+      return _fail(AppFailure(FailureKind.queueStopped, f.debugDetail ?? f.kind.name));
+    }
+    _setQueue(markFailed(_queue.value, key, true));
+    final next = _queue.value.next;
+    if (next == null) return _fail(f);
+    final ref = _queue.value.entryByKey(key)!.ref;
+    _skipped.add(ref);
+    await _transitionTo(next.key, user: false);
   }
 
   Future<void> _fail(AppFailure f) async {
@@ -362,20 +828,21 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     _loaded = false;
   }
 
-  /// خطأ مشغّل: محاولة تلقائية واحدة بحلّ جديد، ثم فشل ظاهر.
+  /// خطأ مشغّل: محاولة تلقائية واحدة بحلّ جديد، ثم فشل نهائي.
   Future<void> _handleEngineError(int token, Object error) async {
     if (token != _token) return;
-    final id = _videoId;
-    if (id != null && !_autoRetried) {
+    final key = _queue.value.currentKey;
+    if (_videoId != null && key != null && !_autoRetried) {
       _autoRetried = true;
       _captureResume();
-      await _load(id);
+      _fetched.remove(key);
+      await _loadEntry(key, ++_token);
     } else {
       // الفشل يظهر فوراً؛ الفحص (حتى 6 ث) يُكمل السطر التشخيصي لاحقاً (D26).
       final audio = _lastAudio;
       final shown = AppFailure(FailureKind.playbackFailed, _playbackDetail(error, audio, null));
-      await _fail(shown);
-      unawaited(_enrichWithProbe(shown, error, audio));
+      await _finalFailure(shown);
+      if (identical(failure.value, shown)) unawaited(_enrichWithProbe(shown, error, audio));
     }
   }
 
@@ -398,11 +865,12 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     nowPlaying.value = next;
     final item = mediaItem.value;
     mediaItem.add(MediaItem(
-      id: videoId,
+      id: item?.id ?? '${_queue.value.currentKey}',
       title: next.title,
       artist: next.author,
       duration: next.duration,
       artUri: thumbnailUrl != null ? Uri.tryParse(thumbnailUrl) : item?.artUri,
+      extras: {'videoId': videoId},
     ));
   }
 
@@ -429,15 +897,37 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
     return sanitizeDetail(parts.join(' · '));
   }
 
-  /// خطأ من تيار الأحداث. أثناء التحميل يلتقطه `_load` نفسه (يرمي setUrl أيضاً)،
+  /// خطأ من تيار الأحداث. أثناء التحميل يلتقطه `_loadEntry` نفسه (يرمي setUrl أيضاً)،
   /// فيُتجاهل هنا لمنع معالجته مرتين.
   void _onPlayerError(Object error, StackTrace _) {
     if (resolving.value || _videoId == null) return;
     _handleEngineError(_token, error);
   }
 
+  /// تشغيل/استئناف. إن لم يكن هناك مصدر محمّل (بعد الاستعادة أو stop) يحمّل
+  /// الحالي من موضعه المحفوظ؛ وإن انتهى الطابور يعيده من أوله؛ وإن انتهت صلاحية
+  /// الرابط بعد إيقاف طويل يعيد تحميله من موضعه.
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() async {
+    final s = _queue.value;
+    final cur = s.currentKey;
+    if (cur == null || resolving.value) return _player.play();
+    if (_loaded && _completedToken == _token && _completedToken == _loadedToken && s.next == null) {
+      return _transitionTo(s.entries.first.key, user: true);
+    }
+    if (!_loaded) {
+      if (failure.value != null && _videoId != null) return retry();
+      return _transitionTo(cur, user: true);
+    }
+    final audio = _lastAudio;
+    final fetchedAt = _lastFetchedAt;
+    if (!_player.playing && audio != null && fetchedAt != null && !_isFresh(audio, fetchedAt)) {
+      _captureResume();
+      _fetched.remove(cur);
+      return _loadEntry(cur, ++_token);
+    }
+    return _player.play();
+  }
 
   @override
   Future<void> pause() => _player.pause();
@@ -445,9 +935,10 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   @override
   Future<void> seek(Duration position) => _player.seek(position);
 
+  /// يُبطل كل شيء ويوقف المشغّل ومؤقت النوم، ولا يمسح الطابور (D27).
   @override
   Future<void> stop() async {
-    _token++; // أولاً: يُبطل أي playVideo ينتظر حفظ الفيديو السابق
+    _token++; // أولاً: يُبطل أي انتقال ينتظر حفظ الفيديو السابق
     _sleepExpiredWhileLoading = false;
     cancelSleepTimer();
     await _savePosition(); // قبل تصفير الحالة
@@ -466,6 +957,7 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
   Future<void> dispose() async {
     _saveTimer?.cancel();
     _sleepTimer?.cancel();
+    await _skipped.close();
     await _player.dispose();
   }
 }

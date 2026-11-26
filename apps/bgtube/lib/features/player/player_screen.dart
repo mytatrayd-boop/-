@@ -10,11 +10,17 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../domain/incoming_link.dart';
 import '../../domain/models/now_playing.dart';
+import '../../domain/models/video_ref.dart';
+import '../../domain/playback_queue_model.dart';
 import '../../domain/playback_speed.dart';
 import '../../domain/sleep_timer.dart';
 import '../../domain/ports/playback_controller.dart';
+import '../../domain/ports/playback_queue.dart';
 import '../../domain/youtube_link_parser.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../local_playlists/local_playlists_screen.dart';
+import '../queue/queue_sheet.dart';
+import '../queue/queue_ui.dart';
 import '../settings/settings_screen.dart';
 import 'failure_message.dart';
 import 'format_duration.dart';
@@ -32,10 +38,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   AppFailure? _linkFailure;
 
   StreamSubscription<String>? _incomingSub;
+  StreamSubscription<VideoRef>? _skippedSub;
 
   @override
   void initState() {
     super.initState();
+    // مقطع فشل وتُخطّي: رسالة قصيرة (DESIGN 4أ).
+    _skippedSub = ref.read(playbackQueueProvider).skippedFailures.listen((r) {
+      if (!mounted) return;
+      final l = AppLocalizations.of(context);
+      showUndoSnack(ScaffoldMessenger.of(context), l, l.queueSkippedSnack(shortTitle(l, r)));
+    });
     final source = ref.read(incomingLinkSourceProvider);
     // أثناء التشغيل.
     _incomingSub = source.texts.listen(_handleIncoming);
@@ -56,19 +69,29 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   @override
   void dispose() {
     _incomingSub?.cancel();
+    _skippedSub?.cancel();
     _text.dispose();
     super.dispose();
   }
 
+  /// لصق أو مشاركة: إن كان الطابور فارغاً يبدأ التشغيل مباشرة بلا ورقة، وإلا
+  /// ورقة بثلاثة خيارات: «شغّل الآن» و«شغّل التالي» و«أضف للنهاية» (DESIGN ⋮).
   Future<void> _submit(String raw, {bool shared = false}) async {
-    final controller = ref.read(playbackControllerProvider);
+    final queue = ref.read(playbackQueueProvider);
     try {
       final link = shared ? parseSharedText(raw) : parseYoutubeLink(raw);
       final id = link.videoId;
       if (id == null) throw const AppFailure(FailureKind.playlistNotSupported);
       setState(() => _linkFailure = null);
       FocusScope.of(context).unfocus();
-      await controller.playVideo(id);
+      final refs = [VideoRef(videoId: id)];
+      if (queue.queueState.value.isEmpty) {
+        await queue.enqueue(refs, QueuePlacement.playNow);
+        return;
+      }
+      final placement = await showPlacementSheet(context, includePlayNow: true);
+      if (placement == null || !mounted) return;
+      await enqueueWithFeedback(context, queue, refs, placement);
     } on AppFailure catch (f) {
       setState(() => _linkFailure = f);
     }
@@ -91,12 +114,33 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final controller = ref.watch(playbackControllerProvider);
+    final queue = ref.watch(playbackQueueProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l.appTitle),
         backgroundColor: AppColors.background,
         actions: [
+          // بعد الإيقاف يختفي المشغّل ويبقى الطابور محفوظاً: مدخل إليه من هنا.
+          ListenableBuilder(
+            listenable: Listenable.merge([controller.nowPlaying, queue.queueState]),
+            builder: (context, _) => controller.nowPlaying.value == null && !queue.queueState.value.isEmpty
+                ? IconButton(
+                    key: const Key('appBarQueue'),
+                    tooltip: l.queueTitle,
+                    icon: const Icon(Icons.queue_music),
+                    onPressed: () => showQueueSheet(context),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          // المكتبة لم تُبنَ بعد: «قوائمي المحلية» من هنا (D28).
+          IconButton(
+            key: const Key('openLocalPlaylists'),
+            tooltip: l.localPlaylists,
+            icon: const Icon(Icons.library_music_outlined),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(builder: (_) => const LocalPlaylistsScreen())),
+          ),
           IconButton(
             tooltip: l.settings,
             icon: const Icon(Icons.settings),
@@ -110,7 +154,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           padding: const EdgeInsetsDirectional.all(16),
           child: Column(
             children: [
-              Expanded(child: _NowPlayingArea(controller: controller, linkFailure: _linkFailure)),
+              Expanded(child: _NowPlayingArea(controller: controller, queue: queue, linkFailure: _linkFailure)),
               const SizedBox(height: 16),
               _InputRow(
                 controller: _text,
@@ -158,9 +202,10 @@ class _InputRow extends StatelessWidget {
 }
 
 class _NowPlayingArea extends StatelessWidget {
-  const _NowPlayingArea({required this.controller, required this.linkFailure});
+  const _NowPlayingArea({required this.controller, required this.queue, required this.linkFailure});
 
   final PlaybackController controller;
+  final PlaybackQueue queue;
   final AppFailure? linkFailure;
 
   @override
@@ -205,7 +250,7 @@ class _NowPlayingArea extends StatelessWidget {
             ),
           );
         }
-        return _PlayerPanel(controller: controller, now: now);
+        return _PlayerPanel(controller: controller, queue: queue, now: now);
       },
     );
   }
@@ -255,9 +300,10 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _PlayerPanel extends StatelessWidget {
-  const _PlayerPanel({required this.controller, required this.now});
+  const _PlayerPanel({required this.controller, required this.queue, required this.now});
 
   final PlaybackController controller;
+  final PlaybackQueue queue;
   final NowPlaying now;
 
   @override
@@ -319,34 +365,128 @@ class _PlayerPanel extends StatelessWidget {
             },
           ),
         ),
+        const SizedBox(height: 4),
+        _NextUpLine(queue: queue),
+        const SizedBox(height: 4),
+        // ترتيب (السابق | تشغيل | التالي) ثابت LTR كعُرف المشغّلات (DESIGN).
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: ValueListenableBuilder<QueueSnapshot>(
+            valueListenable: queue.queueState,
+            builder: (context, s, _) => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  key: const Key('previousButton'),
+                  tooltip: l.previous,
+                  iconSize: 32,
+                  constraints: const BoxConstraints.tightFor(width: 56, height: 56),
+                  // «السابق» بعد ٣ ث يعيد المقطع من بدايته، فيبقى مفعّلاً.
+                  onPressed: queue.skipToPrevious,
+                  icon: const Icon(Icons.skip_previous),
+                ),
+                const SizedBox(width: 16),
+                ValueListenableBuilder<bool>(
+                  valueListenable: controller.playing,
+                  builder: (context, playing, _) => IconButton.filled(
+                    tooltip: playing ? l.pause : l.play,
+                    iconSize: 40,
+                    constraints: const BoxConstraints.tightFor(width: 64, height: 64),
+                    onPressed: playing ? controller.pause : controller.play,
+                    icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  key: const Key('nextButton'),
+                  tooltip: l.next,
+                  iconSize: 32,
+                  constraints: const BoxConstraints.tightFor(width: 56, height: 56),
+                  onPressed: s.next == null ? null : queue.skipToNext, // معطّل في آخر الطابور
+                  icon: const Icon(Icons.skip_next),
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
               tooltip: l.stop,
-              iconSize: 32,
+              iconSize: 28,
               constraints: const BoxConstraints.tightFor(width: 56, height: 56),
               onPressed: controller.stop,
               icon: const Icon(Icons.stop),
             ),
-            const SizedBox(width: 16),
-            ValueListenableBuilder<bool>(
-              valueListenable: controller.playing,
-              builder: (context, playing, _) => IconButton.filled(
-                tooltip: playing ? l.pause : l.play,
-                iconSize: 40,
-                constraints: const BoxConstraints.tightFor(width: 64, height: 64),
-                onPressed: playing ? controller.pause : controller.play,
-                icon: Icon(playing ? Icons.pause : Icons.play_arrow),
-              ),
-            ),
-            const SizedBox(width: 16),
             _SpeedButton(controller: controller),
             _SleepButton(controller: controller),
+            _QueueButton(queue: queue),
           ],
         ),
       ],
+    );
+  }
+}
+
+/// «التالي: {العنوان}» (سطر واحد) عند وجود طابور؛ يفتح شاشة الطابور.
+class _NextUpLine extends StatelessWidget {
+  const _NextUpLine({required this.queue});
+  final PlaybackQueue queue;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ValueListenableBuilder<QueueSnapshot>(
+      valueListenable: queue.queueState,
+      builder: (context, s, _) {
+        final next = s.next;
+        if (next == null) return const SizedBox(height: 0);
+        final text = l.queueNextUp(videoTitle(l, next.ref));
+        return InkWell(
+          key: const Key('nextUpLine'),
+          onTap: () => showQueueSheet(context),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// زر الطابور مع شارة عدد المتبقي.
+class _QueueButton extends StatelessWidget {
+  const _QueueButton({required this.queue});
+  final PlaybackQueue queue;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ValueListenableBuilder<QueueSnapshot>(
+      valueListenable: queue.queueState,
+      builder: (context, s, _) {
+        final n = s.remainingCount;
+        return IconButton(
+          key: const Key('queueButton'),
+          tooltip: n == 0 ? l.queueTitle : '${l.queueTitle} · ${l.queueRemaining(formatCount(context, n))}',
+          constraints: const BoxConstraints.tightFor(width: 56, height: 56),
+          onPressed: () => showQueueSheet(context),
+          icon: Badge(
+            isLabelVisible: n > 0,
+            label: Text(formatCount(context, n)),
+            child: const Icon(Icons.queue_music),
+          ),
+        );
+      },
     );
   }
 }

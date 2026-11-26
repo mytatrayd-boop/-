@@ -6,6 +6,8 @@ enum FailureKind {
   network,
   rateLimited,
   playbackFailed,
+  // الطابور (الميزة 10): توقف بعد فشلات متتالية
+  queueStopped,
   // الحساب (الميزة 4)
   authExpired,
   notSignedIn,

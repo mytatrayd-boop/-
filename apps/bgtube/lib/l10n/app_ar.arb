@@ -69,5 +69,157 @@
   "errorSignOut": "تعذّر تسجيل الخروج. حاول مرة أخرى",
   "riskTitle": "قبل أول دخول",
   "riskBody": "هذا التطبيق يستخرج صوت يوتيوب بطريقة غير رسمية تخالف شروط يوتيوب. قد يؤدي ذلك إلى حجب شبكتك أو تقييد حسابك أو مشروع Google Cloud. الاستخراج منفصل عن حسابك ولا يتلقى أي رمز دخول، لكن الخطر يبقى قائماً.\n\nاستخدمه شخصياً فقط، ويُنصح بحساب لا تعتمد عليه في عمل حرج.\n\nستعرض جوجل تحذير «تطبيق غير موثّق»: اختر «متقدم» ثم «المتابعة».",
-  "riskAccept": "أقرّ وأتابع"
+  "riskAccept": "أقرّ وأتابع",
+  "errorQueueStopped": "تعذّر تشغيل باقي الطابور. أعد المحاولة.",
+  "next": "التالي",
+  "previous": "السابق",
+  "queueTitle": "الطابور",
+  "queueNextUp": "التالي: {title}",
+  "@queueNextUp": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "queueRemaining": "{count} متبقية",
+  "@queueRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "itemsSummary": "{count} مقاطع · {duration}",
+  "@itemsSummary": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "itemsCount": "{count} مقاطع",
+  "@itemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "queueNowPlaying": "يعمل الآن",
+  "queueEmpty": "الطابور فارغ",
+  "queueNothingAfter": "لا شيء بعده. اضغط ⋮ على أي مقطع واختر «أضف للنهاية»",
+  "queueFailedItem": "تعذّر تشغيله، تم تخطّيه",
+  "queueSkippedSnack": "تعذّر تشغيل «{title}»، تم الانتقال للتالي",
+  "@queueSkippedSnack": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "queueRemoved": "حُذف من الطابور",
+  "queueClear": "مسح الطابور",
+  "queueClearConfirmTitle": "مسح الطابور؟",
+  "queueClearConfirmBody": "سيبقى المقطع الحالي يعمل.",
+  "queueClearAction": "مسح",
+  "queueCleared": "مُسح الطابور",
+  "undo": "تراجع",
+  "delete": "حذف",
+  "queueSaveAsPlaylist": "حفظ كقائمة",
+  "queueSaveAsLocalPlaylist": "حفظ كقائمة محلية",
+  "queueDefaultPlaylistName": "طابور {date}",
+  "@queueDefaultPlaylistName": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistNameLabel": "اسم القائمة",
+  "save": "حفظ",
+  "playlistSaved": "حُفظت قائمة «{name}»",
+  "@playlistSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "open": "فتح",
+  "queueRemove": "إزالة من الطابور",
+  "queueMoveNext": "نقل ليكون التالي",
+  "moveUp": "نقل للأعلى",
+  "moveDown": "نقل للأسفل",
+  "dragToReorder": "اسحب لإعادة الترتيب",
+  "actionPlayNow": "شغّل الآن",
+  "actionPlayNext": "شغّل التالي",
+  "actionAddToEnd": "أضف للنهاية",
+  "actionAddToLocalPlaylist": "أضف إلى قائمة محلية…",
+  "snackPlayNext": "سيُشغَّل التالي: {title}",
+  "@snackPlayNext": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "snackAddedToEnd": "أُضيف إلى نهاية الطابور",
+  "snackAddedCount": "أُضيف {count} مقطعاً إلى الطابور",
+  "@snackAddedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "queueTruncated": "الطابور ممتلئ ({max} مقطع)؛ لم يُضف الباقي",
+  "@queueTruncated": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "untitledVideo": "مقطع من يوتيوب",
+  "localPlaylists": "قوائمي المحلية",
+  "newPlaylist": "قائمة جديدة",
+  "onDevice": "على الجهاز",
+  "playlistsEmpty": "لم تنشئ قوائم بعد. احفظ الطابور أو أنشئ قائمة",
+  "playlistEmpty": "القائمة فارغة. أضف مقاطع من ⋮ على أي مقطع",
+  "playlistsLoadError": "تعذّر فتح القوائم المحلية",
+  "rename": "إعادة تسمية",
+  "deletePlaylistTitle": "حذف قائمة «{name}»؟",
+  "@deletePlaylistTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePlaylistBody": "لن تُحذف المقاطع من يوتيوب.",
+  "playAll": "تشغيل الكل",
+  "addWholeList": "أضف القائمة كلها",
+  "addedToPlaylist": "أُضيف إلى «{name}»",
+  "@addedToPlaylist": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alreadyInPlaylist": "موجود في «{name}» بالفعل",
+  "@alreadyInPlaylist": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removedFromPlaylist": "حُذف من القائمة",
+  "moreActions": "مزيد من الخيارات",
+  "saveFailed": "تعذّر الحفظ. حاول مرة أخرى"
 }

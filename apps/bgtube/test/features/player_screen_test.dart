@@ -3,13 +3,18 @@ import 'package:bgtube/core/app_failure.dart';
 import 'package:bgtube/core/providers.dart';
 import 'package:bgtube/domain/models/now_playing.dart';
 import 'package:bgtube/features/player/format_duration.dart';
+import 'package:bgtube/domain/models/video_ref.dart';
+import 'package:bgtube/domain/playback_queue_model.dart';
 import 'package:bgtube/domain/ports/playback_controller.dart';
+import 'package:bgtube/domain/ports/playback_queue.dart';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
-class FakeController implements PlaybackController {
+/// متحكم وهمي ينفّذ المنفذين معاً (كالمعالج الحقيقي)، والطابور بنموذجه الصرف.
+class FakeController implements PlaybackController, PlaybackQueue {
   @override
   final ValueNotifier<AppFailure?> failure = ValueNotifier(null);
   @override
@@ -40,12 +45,17 @@ class FakeController implements PlaybackController {
     speed.value = s;
   }
 
+  /// المعرّفات التي طُلب تشغيلها الآن (playVideo أو enqueue بـplayNow أو طابور فارغ).
   final played = <String>[];
+  final enqueued = <({List<String> ids, QueuePlacement placement})>[];
   int retries = 0;
   int pauses = 0;
+  int nexts = 0;
+  int previouses = 0;
+  final jumps = <int>[];
 
   @override
-  Future<void> playVideo(String videoId) async => played.add(videoId);
+  Future<void> playVideo(String videoId) async => enqueue([VideoRef(videoId: videoId)], QueuePlacement.playNow);
   @override
   Future<void> retry() async => retries++;
   @override
@@ -56,7 +66,67 @@ class FakeController implements PlaybackController {
   Future<void> stop() async {}
   @override
   Future<void> seek(Duration position) async {}
+
+  // ── الطابور ──
+  @override
+  final ValueNotifier<QueueSnapshot> queueState = ValueNotifier(QueueSnapshot.empty);
+  int _key = 1;
+  final skipped = StreamController<VideoRef>.broadcast();
+  @override
+  Stream<VideoRef> get skippedFailures => skipped.stream;
+
+  @override
+  Future<EnqueueResult> enqueue(List<VideoRef> refs, QueuePlacement placement) async {
+    final wasEmpty = queueState.value.isEmpty;
+    final room = PlaybackQueue.maxLength - queueState.value.entries.length;
+    final take = refs.take(room).toList();
+    final added = [for (final r in take) QueueEntry(key: _key++, ref: r)];
+    enqueued.add((ids: [for (final r in take) r.videoId], placement: placement));
+    queueState.value = placement == QueuePlacement.addToEnd
+        ? append(queueState.value, added)
+        : insertNext(queueState.value, added);
+    if (added.isNotEmpty && (placement == QueuePlacement.playNow || wasEmpty)) {
+      queueState.value = setCurrent(queueState.value, added.first.key);
+      played.add(added.first.ref.videoId);
+    }
+    return EnqueueResult([for (final e in added) e.key], truncated: take.length < refs.length);
+  }
+
+  @override
+  Future<void> skipToNext() async => nexts++;
+  @override
+  Future<void> skipToPrevious() async => previouses++;
+  @override
+  Future<void> jumpTo(int key) async {
+    jumps.add(key);
+    queueState.value = setCurrent(queueState.value, key);
+  }
+
+  @override
+  Future<void> removeEntry(int key) async => queueState.value = remove(queueState.value, key);
+  @override
+  Future<void> moveEntry(int key, int toIndex) async => queueState.value = move(queueState.value, key, toIndex);
+  @override
+  Future<void> clearUpcoming() async => queueState.value = clearUpcomingOf(queueState.value);
+  @override
+  Future<void> removeEntries(List<int> keys) async {
+    for (final k in keys) {
+      queueState.value = remove(queueState.value, k);
+    }
+  }
+
+  @override
+  Future<void> restoreEntries(List<IndexedEntry> removed) async =>
+      queueState.value = reinsert(queueState.value, removed);
+
+  /// يملأ الطابور مباشرة للاختبار.
+  void seed(List<VideoRef> refs, {int current = 0}) {
+    final entries = [for (final r in refs) QueueEntry(key: _key++, ref: r)];
+    queueState.value = QueueSnapshot(entries: entries, currentKey: entries.isEmpty ? null : entries[current].key);
+  }
 }
+
+QueueSnapshot clearUpcomingOf(QueueSnapshot s) => clearUpcoming(s);
 
 Future<void> pump(WidgetTester t, FakeController c, {Locale locale = const Locale('ar')}) async {
   await t.pumpWidget(ProviderScope(
