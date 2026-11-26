@@ -68,8 +68,11 @@ class JustAudioEngine implements AudioEngine {
   }
 
   void _closeCurrent() {
-    _current?.close();
-    _current = null;
+    try {
+      _current?.close();
+    } finally {
+      _current = null;
+    }
   }
 
   @override

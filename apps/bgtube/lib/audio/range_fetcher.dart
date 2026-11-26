@@ -48,7 +48,7 @@ Future<RangeFetchResult> fetchRange(
   int? end,
   HttpClient Function()? clientFactory,
   Duration timeout = const Duration(seconds: 15),
-  Duration idleTimeout = const Duration(seconds: 30),
+  Duration idleTimeout = const Duration(seconds: 10),
 }) async {
   final client = (clientFactory ?? HttpClient.new)()
     ..userAgent = null
@@ -86,6 +86,9 @@ Future<RangeFetchResult> fetchRange(
     StreamSubscription<List<int>>? sub;
     Timer? idle;
     var closed = false;
+    // لا نعتمد على out.hasListener: يصير false بعد إلغاء الاشتراك أيضاً، فيُظن
+    // أن الجسم لم يُستمع إليه ونستمع إلى res مرة ثانية (Bad state).
+    var listened = false;
     void finish() {
       if (closed) return;
       closed = true;
@@ -102,6 +105,9 @@ Future<RangeFetchResult> fetchRange(
 
     out = StreamController<List<int>>(
       onListen: () {
+        listened = true;
+        // أُلغي قبل الاستماع: res سبق أن استُمع إليه لإغلاقه، والتيار مغلق.
+        if (closed) return;
         armIdle();
         sub = res.listen(
           (chunk) {
@@ -134,7 +140,8 @@ Future<RangeFetchResult> fetchRange(
       contentType: type,
       body: out.stream,
       cancel: () {
-        if (!out.hasListener) {
+        if (closed) return;
+        if (!listened) {
           // لم يُستمع للجسم: أغلق الاتصال دون انتظار.
           closed = true;
           client.close(force: true);

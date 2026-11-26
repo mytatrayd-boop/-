@@ -83,6 +83,57 @@ void main() {
       expect(sources.last.isClosed, isTrue);
     });
 
+    test('setUrl twice after a cancelled body (real fetchRange) does not throw and loads the new source',
+        () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final hangs = <HttpResponse>[];
+      server.listen((req) async {
+        final res = req.response
+          ..bufferOutput = false
+          ..statusCode = 206
+          ..contentLength = 1000;
+        res.headers.set(HttpHeaders.contentRangeHeader, 'bytes 0-999/1000');
+        res.add(List<int>.filled(10, 1));
+        await res.flush();
+        hangs.add(res);
+      });
+      addTearDown(() async {
+        for (final h in hangs) {
+          unawaited(h.close().catchError((Object _) {}));
+        }
+        await server.close(force: true);
+      });
+      final sources = <YtStreamAudioSource>[];
+      final e = JustAudioEngine(
+        player: player,
+        sourceFactory: (u, h) {
+          final s = YtStreamAudioSource(u, h);
+          sources.add(s);
+          return s;
+        },
+      );
+      final local = Uri.parse('http://127.0.0.1:${server.port}/a');
+      await e.setUrl(local, initialPosition: Duration.zero, headers: ua);
+      // كما يفعل وكيل just_audio: يستمع ثم يلغي الاشتراك.
+      final r = await sources.first.request(0, null);
+      await r.stream.listen((_) {}).cancel();
+
+      await e.setUrl(local.replace(path: '/b'), initialPosition: Duration.zero, headers: ua);
+      expect(identical(loadedSource(), sources[1]), isTrue);
+      expect(sources.first.isClosed, isTrue);
+      final r2 = await sources[1].request(0, null);
+      await r2.stream.listen((_) {}).cancel();
+
+      await e.setUrl(local.replace(path: '/c'), initialPosition: Duration.zero, headers: ua);
+      expect(identical(loadedSource(), sources[2]), isTrue);
+      expect(sources[1].isClosed, isTrue);
+      final r3 = await sources[2].request(0, null);
+      expect(r3.contentLength, 1000);
+      final sub = r3.stream.listen((_) {});
+      await e.dispose();
+      await sub.cancel();
+    });
+
     test('durationStream comes from the player', () async {
       final ctl = StreamController<Duration?>.broadcast();
       when(() => player.durationStream).thenAnswer((_) => ctl.stream);
