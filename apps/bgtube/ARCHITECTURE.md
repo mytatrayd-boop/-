@@ -31,15 +31,15 @@ apps/bgtube/
     l10n/             app_ar.arb, app_en.arb
     domain/           نماذج صرفة وواجهات (لا تعتمد على أي حزمة خارجية)
       models/         Video, Playlist, Channel, PlaybackPosition
-      ports/          AudioSourceResolver, AuthService, YouTubeApi, repositories
+      ports/          AudioSourceResolver, AuthService, YouTubeApi, PlaybackQueue, QueueRepository, LocalPlaylistRepository, ...
     data/
       extractor/      تنفيذ AudioSourceResolver (الوحيد الذي يعرف youtube_explode)
       auth/           تنفيذ AuthService (google_sign_in + التخزين الآمن)
       youtube_api/    عميل Data API v3 + الذاكرة المؤقتة + عدّاد الحصة
-      local/          drift: favorites, history, positions, api_cache, quota
+      local/          drift: favorites, history, positions, api_cache, quota, queue, local_playlists
     audio/            AudioHandler (audio_service) + مؤقت النوم + حفظ الموضع
     features/         player, search, library, playlists, subscriptions,
-                      favorites, history, settings, login   (شاشة + مزوّد حالة لكل ميزة)
+                      favorites, history, settings, login, queue, local_playlists   (شاشة + مزوّد حالة لكل ميزة)
   test/               مرآة lib/ ؛ unit + widget
   android/            AndroidManifest: INTERNET, FOREGROUND_SERVICE(+MEDIA_PLAYBACK), WAKE_LOCK, intent-filter للمشاركة
 ```
@@ -76,7 +76,14 @@ apps/bgtube/
 - السرعة 0.75–2 عبر `setSpeed` (نغمة ثابتة)، وتُحفظ لكل تشغيل لاحق في الإعدادات.
 - مؤقت النوم (15/30/60): مؤقت داخل المعالج (لا في واجهة المستخدم) يخفّض الصوت تدريجياً ثم يوقف؛ يعرض الوقت المتبقي عبر Stream.
 - حفظ الموضع: كل ~5 ثوانٍ وعند الإيقاف/الخروج، في جدول `positions`؛ لا يُحفظ إن كانت المشاهدة < 10 ثوانٍ؛ يُحذف عند الاقتراب من النهاية.
-- طابور: قائمة تشغيل بالترتيب؛ تُحلّ الروابط كسولاً (الحالي والتالي فقط).
+- الطابور (الميزة 10، التفاصيل في D27):
+  - النموذج صرف في domain: `VideoRef` و`QueueEntry{key, ref, failed}` و`QueueSnapshot{entries, currentKey}`. عملياته في `playback_queue_model.dart`، ونتتبّع الحالي بمفتاحه لا بفهرسه.
+  - منفذ واحد للإضافة والتحكم هو `PlaybackQueue`: `enqueue(refs, playNow|playNext|addToEnd)` والتالي والسابق و`jumpTo` و`removeEntry` و`moveEntry` و`clearUpcoming`. تنفّذه `BgtubeAudioHandler`، وكل الشاشات تضيف عبره فقط، و`playVideo` غلاف له.
+  - المشغّل بمصدر واحد في كل لحظة (لا playlist في just_audio). المعالج ينشر `queue` و`mediaItem` و`queueIndex` في audio_service، ويعيد تعريف skipToNext/Previous/QueueItem. "السابق" بعد ٣ ث يعيد المقطع من بدايته.
+  - استخراج كسول للحالي، وللتالي بعد جاهزية الحالي فقط، في ذاكرة من عنصرين مع هامش انتهاء ١٠ د.
+  - الفاشل نهائياً يُعلَّم ويُتخطّى. يتوقف الطابور مع "إعادة المحاولة" عند `network` أو بعد ٣ فشلات متتالية.
+  - الأحدث يفوز عبر `_token`. مؤقت النوم يستمر عبر المقاطع، وانتهاؤه `pause` فيتوقف الطابور. السرعة تُطبَّق على كل عنصر.
+  - الحفظ لقطة كاملة في drift عند كل تغيير. الاستعادة عند الإقلاع بلا استخراج ولا تشغيل، وأول `play()` يحمّل الحالي من `positions`.
 - بطارية: تنبيه إرشادي لاستثناء التطبيق من تحسين البطارية.
 
 ## نموذج البيانات المحلي (drift)
@@ -85,6 +92,9 @@ apps/bgtube/
 - `positions(videoId PK, positionMs, durationMs, updatedAt)`
 - `api_cache(key PK, json, fetchedAt, ttlSec, private)`
 - `quota(dayPT PK, units)`
+- `queue_entries(key PK, ord, videoId, title?, author?, durationMs?, thumbUrl?, failed)`، و`queue_state(id=0 PK, currentKey?, updatedAt)`. موضع الحالي مصدره `positions` وحده.
+- `local_playlists(id PK auto, name 1..100, createdAt, updatedAt)`، و`local_playlist_items(playlistId FK cascade, ord, videoId, title?, author?, durationMs?, thumbUrl?, PK(playlistId, ord))`. محلية فقط ولا تُرسل إلى يوتيوب.
+- الإصدارات: v1 = `positions`، وv2 تضيف جداول الطابور والقوائم المحلية (`onUpgrade from<2`، و`PRAGMA foreign_keys=ON` في beforeOpen). المخططات تُصدَّر إلى `drift_schemas/` مع اختبارات ترحيل مولَّدة.
 - الإعدادات (shared_preferences): اللغة، السرعة، آخر مؤقت.
 
 ## الأمان والخصوصية
@@ -99,6 +109,7 @@ apps/bgtube/
 - Unit بـmocktail: `YouTubeApi` مع `dio` وهمي (401 → AuthExpired، 403 quota → رسالة الحصة).
 - اختبار معماري: لا استيراد من `data/extractor` خارج ربط المزوّدات، ولا يعتمد التنفيذ على `auth`.
 - Widget: الشاشات بالعربية RTL (لا overflow)، الحالات الفارغة والخطأ و"إعادة المحاولة"، مع تنفيذات وهمية للمنافذ.
-- drift في الذاكرة لاختبار المستودعات.
-- يدوي على جهاز حقيقي (لا يغطيه الآلي): شاشة مغلقة 10 دقائق، مكالمة، إشعار/قفل، مشاركة من يوتيوب، تزامن الإعجاب خلال دقيقة، انتهاء رمز الدخول، قتل البطارية للخدمة.
+- drift في الذاكرة لاختبار المستودعات، واختبار ترحيل المخطط (v1→v2 يحفظ `positions`).
+- الطابور: وحدات للنموذج الصرف، والمعالج بمشغّل وهمي يغطي الانتقال التلقائي وسباق الضغط على "التالي" وتخطّي الفاشل وحدوده، وأنه لا يستخرج غير الحالي والتالي في طابور من ٢٠٠، وانتهاء الرابط، ومؤقت النوم والسرعة عبر الانتقالات. اختبار معماري: audio_service داخل `lib/audio` فقط.
+- يدوي على جهاز حقيقي (لا يغطيه الآلي): شاشة مغلقة 10 دقائق، مكالمة، إشعار/قفل، مشاركة من يوتيوب، طابور من ٣ مقاطع بشاشة مغلقة مع التالي/السابق من الإشعار وشاشة القفل، قتل التطبيق ثم استئناف الطابور، تزامن الإعجاب خلال دقيقة، انتهاء رمز الدخول، قتل البطارية للخدمة.
 - أوامر الجودة: `flutter analyze` و`flutter test` بلا أخطاء قبل أي تسليم.
