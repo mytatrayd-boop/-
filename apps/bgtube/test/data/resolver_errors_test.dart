@@ -29,7 +29,11 @@ void main() {
   });
 
   Future<void> expectKind(Object error, FailureKind kind) async {
+    // الـmanifest هو ما يحدد النجاح (البيانات الوصفية تُجلب بالتوازي وفشلها وحده لا يمنع).
     when(() => videos.get(any())).thenAnswer((_) async => throw error);
+    when(() => streams.getManifest(any(),
+            ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
+        .thenAnswer((_) async => throw error);
     final r = YoutubeExplodeResolver(client: yt);
     await expectLater(
       r.resolve('dQw4w9WgXcQ'),
@@ -68,6 +72,9 @@ void main() {
 
   test('slow extractor times out as network failure', () async {
     when(() => videos.get(any())).thenAnswer((_) => Completer<Video>().future);
+    when(() => streams.getManifest(any(),
+            ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
+        .thenAnswer((_) => Completer<StreamManifest>().future);
     final r = YoutubeExplodeResolver(
       client: yt,
       timeout: const Duration(milliseconds: 20),

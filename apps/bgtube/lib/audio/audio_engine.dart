@@ -9,7 +9,7 @@ abstract interface class AudioEngine {
   double get speed;
   Duration get position;
 
-  /// [headers] تُرسل أصلياً مع طلبات ExoPlayer (بلا وكيل محلي).
+  /// [headers] تُرسل مع طلبات الصوت عبر وكيل just_audio المحلي (D26).
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}});
   Future<void> play();
   Future<void> pause();
@@ -21,9 +21,12 @@ abstract interface class AudioEngine {
 }
 
 class JustAudioEngine implements AudioEngine {
-  // useProxyForRequestHeaders: false: الترويسات تمر عبر DefaultHttpDataSource
-  // مباشرة؛ الوكيل المحلي يتطلب cleartext إلى 127.0.0.1 المحظور افتراضياً (D24).
-  JustAudioEngine([AudioPlayer? player]) : _p = player ?? AudioPlayer(useProxyForRequestHeaders: false);
+  // useProxyForRequestHeaders: true (الافتراضي): ExoPlayer يطلب من وكيل just_audio
+  // على 127.0.0.1، والوكيل يجلب من googlevideo عبر HttpClient في Dart (المكدّس
+  // الذي نجح فحصه على الجهاز بـ206، بينما فشل ExoPlayer المباشر، D26). يمرّر
+  // Range وترويسات ExoPlayer ثم ترويساتنا فوقها. يتطلب network_security_config
+  // يسمح بـcleartext لـ127.0.0.1/localhost فقط.
+  JustAudioEngine([AudioPlayer? player]) : _p = player ?? AudioPlayer(useProxyForRequestHeaders: true);
   final AudioPlayer _p;
 
   @override
@@ -42,7 +45,7 @@ class JustAudioEngine implements AudioEngine {
   @override
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
     await _p.setAudioSource(
-      AudioSource.uri(url, headers: headers.isEmpty ? null : headers),
+      proxiedSource(url, headers),
       initialPosition: initialPosition,
     );
   }
@@ -62,3 +65,8 @@ class JustAudioEngine implements AudioEngine {
   @override
   Future<void> dispose() => _p.dispose();
 }
+
+/// مصدر يمر دائماً عبر الوكيل المحلي: just_audio يستعمل الوكيل فقط إن كانت
+/// headers غير null، فنمرّر خريطة (ولو فارغة) دائماً لروابط http(s).
+UriAudioSource proxiedSource(Uri url, Map<String, String> headers) =>
+    AudioSource.uri(url, headers: Map<String, String>.of(headers)) as UriAudioSource;

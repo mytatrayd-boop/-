@@ -70,32 +70,50 @@ class YoutubeExplodeResolver implements AudioSourceResolver {
     }
   }
 
+  /// السرعة (D26): البيانات الوصفية والـmanifest بالتوازي لا بالتسلسل، والـmanifest
+  /// بلا صفحة المشاهدة (`requireWatchPage: false`): العملاء المستعملون لا يحتاجون
+  /// فك توقيع، والمكتبة تجلب الصفحة تلقائياً إن احتاجها عميل (tv). فشل البيانات
+  /// الوصفية وحده لا يمنع التشغيل (العنوان يصير المعرّف).
   Future<ResolvedAudio> _resolve(String videoId, List<YoutubeApiClient>? clients) async {
-    final video = await _yt.videos.get(videoId);
-    StreamManifest manifest;
+    final videoFuture = _yt.videos.get(videoId).then<Video?>((v) => v);
+    final manifestFuture = _manifest(videoId, clients);
+    // نمنع خطأً غير ملتقَط إن فشل أحدهما قبل انتظار الآخر.
+    videoFuture.ignore();
+    manifestFuture.ignore();
+    final manifest = await manifestFuture;
+    final stream = pickAudioStream(manifest.audioOnly);
+    if (stream == null) {
+      throw const AppFailure(FailureKind.extractionFailed, 'no audio streams');
+    }
+    Video? video;
     try {
-      manifest = await _yt.videos.streamsClient.getManifest(videoId, ytClients: clients);
+      video = await videoFuture;
+    } catch (e) {
+      video = null;
+    }
+    return ResolvedAudio(
+      url: stream.url,
+      title: video?.title ?? videoId,
+      author: video?.author,
+      duration: video?.duration,
+      thumbnailUrl: video?.thumbnails.highResUrl,
+      expiresAt: expiryFromUrl(stream.url),
+      httpHeaders: headersForStreamUrl(stream.url),
+      sourceInfo: sourceInfoFor(stream),
+    );
+  }
+
+  Future<StreamManifest> _manifest(String videoId, List<YoutubeApiClient>? clients) async {
+    final streams = _yt.videos.streamsClient;
+    try {
+      return await streams.getManifest(videoId, ytClients: clients, requireWatchPage: false);
     } on RequestLimitExceededException {
       rethrow;
     } catch (_) {
       if (clients == null) rethrow;
       // العميل البديل فشل: نعود لإدارة المكتبة الافتراضية مرة واحدة.
-      manifest = await _yt.videos.streamsClient.getManifest(videoId);
+      return streams.getManifest(videoId, requireWatchPage: false);
     }
-    final stream = pickAudioStream(manifest.audioOnly);
-    if (stream == null) {
-      throw const AppFailure(FailureKind.extractionFailed, 'no audio streams');
-    }
-    return ResolvedAudio(
-      url: stream.url,
-      title: video.title,
-      author: video.author,
-      duration: video.duration,
-      thumbnailUrl: video.thumbnails.highResUrl,
-      expiresAt: expiryFromUrl(stream.url),
-      httpHeaders: headersForStreamUrl(stream.url),
-      sourceInfo: sourceInfoFor(stream),
-    );
   }
 
   void dispose() => _yt.close();

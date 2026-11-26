@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bgtube/core/app_failure.dart';
 import 'package:bgtube/data/extractor/youtube_explode_resolver.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -148,7 +150,7 @@ void main() {
       when(() => yt.videos).thenReturn(videos);
       when(() => videos.streamsClient).thenReturn(streams);
       when(() => videos.get(any())).thenAnswer((_) async => video);
-      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'))).thenAnswer((inv) async {
+      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage'))).thenAnswer((inv) async {
         calls.add(inv.namedArguments[#ytClients] as List<YoutubeApiClient>?);
         return StreamManifest([opus251, m4a140]);
       });
@@ -194,7 +196,7 @@ void main() {
     test('alternative client failing falls back to the default once', () async {
       final r = resolver();
       await r.resolve('dQw4w9WgXcQ');
-      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'))).thenAnswer((inv) async {
+      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage'))).thenAnswer((inv) async {
         final c = inv.namedArguments[#ytClients] as List<YoutubeApiClient>?;
         calls.add(c);
         if (c != null) throw VideoUnavailableException('ios refused');
@@ -209,7 +211,7 @@ void main() {
     });
 
     test('extraction failure detail has type and HTTP status, no message text', () async {
-      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients')))
+      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
           .thenThrow(YoutubeExplodeException('Video dQw4w9WgXcQ returned 403 (stream: 140) https://x/y?sig=S'));
       await expectLater(
         resolver().resolve('dQw4w9WgXcQ'),
@@ -219,8 +221,56 @@ void main() {
       );
     });
 
+    test('manifest is fetched without the watch page, in parallel with metadata', () async {
+      final videoGate = Completer<Video>();
+      when(() => videos.get(any())).thenAnswer((_) => videoGate.future);
+      final watchPage = <bool>[];
+      when(() => streams.getManifest(any(),
+          ytClients: any(named: 'ytClients'),
+          requireWatchPage: any(named: 'requireWatchPage'))).thenAnswer((inv) async {
+        watchPage.add(inv.namedArguments[#requireWatchPage] as bool);
+        return StreamManifest([m4a140]);
+      });
+      final pending = resolver().resolve('dQw4w9WgXcQ');
+      await pumpEventQueue();
+      // الـmanifest طُلب قبل اكتمال البيانات الوصفية (لا تسلسل).
+      expect(watchPage, [false]);
+      final v = MockVideo();
+      final thumbs = MockThumbs();
+      when(() => thumbs.highResUrl).thenReturn('t');
+      when(() => v.title).thenReturn('Late');
+      when(() => v.author).thenReturn('A');
+      when(() => v.duration).thenReturn(null);
+      when(() => v.thumbnails).thenReturn(thumbs);
+      videoGate.complete(v);
+      expect((await pending).title, 'Late');
+    });
+
+    test('metadata failure alone does not block playback (title falls back to id)', () async {
+      when(() => videos.get(any())).thenAnswer((_) async => throw RequestLimitExceededException('429'));
+      final a = await resolver().resolve('dQw4w9WgXcQ');
+      expect(a.title, 'dQw4w9WgXcQ');
+      expect(a.author, isNull);
+      expect(a.url.queryParameters['itag'], '140');
+    });
+
+    test('manifest failure while metadata is still pending -> mapped failure, no unhandled error', () async {
+      when(() => videos.get(any())).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        throw StateError('late metadata failure');
+      });
+      when(() => streams.getManifest(any(),
+              ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
+          .thenAnswer((_) async => throw RequestLimitExceededException('429'));
+      await expectLater(
+        resolver().resolve('dQw4w9WgXcQ'),
+        throwsA(isA<AppFailure>().having((f) => f.kind, 'kind', FailureKind.rateLimited)),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+
     test('no playable audio -> extractionFailed', () async {
-      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients')))
+      when(() => streams.getManifest(any(), ytClients: any(named: 'ytClients'), requireWatchPage: any(named: 'requireWatchPage')))
           .thenAnswer((_) async => StreamManifest(const []));
       await expectLater(
         resolver().resolve('dQw4w9WgXcQ'),

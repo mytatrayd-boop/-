@@ -347,24 +347,32 @@ class BgtubeAudioHandler extends BaseAudioHandler with SeekHandler implements Pl
       _captureResume();
       await _load(id);
     } else {
-      final detail = await _playbackDetail(error);
-      if (token != _token) return; // طلب أحدث أثناء الفحص
-      await _fail(AppFailure(FailureKind.playbackFailed, detail));
+      // الفشل يظهر فوراً؛ الفحص (حتى 6 ث) يُكمل السطر التشخيصي لاحقاً (D26).
+      final audio = _lastAudio;
+      final shown = AppFailure(FailureKind.playbackFailed, _playbackDetail(error, audio, null));
+      await _fail(shown);
+      unawaited(_enrichWithProbe(shown, error, audio));
     }
   }
 
-  /// تشخيص قصير يظهر تحت رسالة الخطأ: خطأ المشغّل · نتيجة الفحص · المصدر.
-  Future<String> _playbackDetail(Object error) async {
-    final audio = _lastAudio;
-    final parts = [playerErrorDetail(error)];
+  /// يضيف نتيجة الفحص إلى الفشل المعروض إن بقي هو نفسه المعروض.
+  Future<void> _enrichWithProbe(AppFailure shown, Object error, ResolvedAudio? audio) async {
     final probe = _probe;
-    if (probe != null && audio != null) {
-      try {
-        parts.add(await probe(audio.url, audio.httpHeaders));
-      } catch (e) {
-        parts.add('probe ${e.runtimeType}');
-      }
+    if (probe == null || audio == null) return;
+    String result;
+    try {
+      result = await probe(audio.url, audio.httpHeaders);
+    } catch (e) {
+      result = 'probe ${e.runtimeType}';
     }
+    if (!identical(failure.value, shown)) return; // إعادة محاولة/طلب أحدث/إيقاف
+    failure.value = AppFailure(FailureKind.playbackFailed, _playbackDetail(error, audio, result));
+  }
+
+  /// تشخيص قصير يظهر تحت رسالة الخطأ: خطأ المشغّل · نتيجة الفحص · المصدر.
+  String _playbackDetail(Object error, ResolvedAudio? audio, String? probeResult) {
+    final parts = [playerErrorDetail(error)];
+    if (probeResult != null) parts.add(probeResult);
     if (audio?.sourceInfo case final info?) parts.add(info);
     return sanitizeDetail(parts.join(' · '));
   }

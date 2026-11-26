@@ -875,6 +875,44 @@ void main() {
       expect(detail, contains('probe HTTP 403'));
     });
 
+    test('failure shows immediately; the probe result is added when it arrives', () async {
+      final gate = Completer<String>();
+      d = BgtubeAudioHandler(resolver: r, engine: e, probe: (_, _) => gate.future);
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitError();
+      await settle();
+      e.emitError();
+      await settle();
+      // لا انتظار للفحص قبل إظهار الفشل.
+      expect(d.failure.value?.kind, FailureKind.playbackFailed);
+      expect(d.failure.value?.debugDetail, 'PlayerException(0) boom · ANDROID itag140 mp4a.40.2 ip6');
+      gate.complete('probe HTTP 206');
+      await settle();
+      expect(d.failure.value?.debugDetail, 'PlayerException(0) boom · probe HTTP 206 · ANDROID itag140 mp4a.40.2 ip6');
+    });
+
+    test('success path never probes', () async {
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitReady();
+      await settle();
+      expect(probed, isEmpty);
+      expect(e.log, contains('play'));
+    });
+
+    test('manual retry during the probe: late probe result does not resurrect the failure', () async {
+      final gate = Completer<String>();
+      d = BgtubeAudioHandler(resolver: r, engine: e, probe: (_, _) => gate.future);
+      await d.playVideo('AAAAAAAAAAA');
+      e.emitError();
+      await settle();
+      e.emitError();
+      await settle();
+      await d.retry();
+      gate.complete('probe HTTP 403');
+      await settle();
+      expect(d.failure.value, isNull);
+    });
+
     test('a newer request during the probe wins (no stale failure)', () async {
       final gate = Completer<String>();
       d = BgtubeAudioHandler(resolver: r, engine: e, probe: (_, _) => gate.future);
