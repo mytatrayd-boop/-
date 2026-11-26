@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bgtube/audio/audio_engine.dart';
-import 'package:bgtube/audio/yt_stream_audio_source.dart';
+import 'package:bgtube/audio/local_stream_proxy.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mocktail/mocktail.dart';
@@ -31,113 +31,111 @@ void main() {
           .captured
           .last as AudioSource;
 
-  group('JustAudioEngine (D26)', () {
-    test('default: loads our Dart-fetching source, never a plain/proxied UriAudioSource', () async {
-      final e = JustAudioEngine(player: player);
+  group('JustAudioEngine (D26, own local proxy)', () {
+    late LocalStreamProxy proxy;
+    setUp(() => proxy = LocalStreamProxy());
+    tearDown(() => proxy.close());
+
+    test('loads a plain UriAudioSource on our 127.0.0.1 proxy: no headers, no signed url', () async {
+      final e = JustAudioEngine(player: player, proxy: proxy);
       await e.setUrl(url, initialPosition: const Duration(seconds: 7), headers: ua);
       final call = verify(() => player.setAudioSource(captureAny(), initialPosition: captureAny(named: 'initialPosition')));
       call.called(1);
       expect(call.captured[1], const Duration(seconds: 7));
-      final s = call.captured[0] as AudioSource;
-      expect(s, isA<YtStreamAudioSource>());
-      expect(s, isNot(isA<UriAudioSource>()));
-      s as YtStreamAudioSource;
-      expect(s.url, url);
-      expect(s.headers, ua);
+      final s = call.captured[0] as UriAudioSource;
+      expect(s.uri.scheme, 'http');
+      expect(s.uri.host, '127.0.0.1');
+      expect(s.uri.port, proxy.port);
+      expect(s.uri.hasQuery, isFalse);
+      expect(s.uri.toString(), isNot(contains('googlevideo')));
+      // بلا ترويسات: لا يُفعَّل وكيل just_audio. UA يُرسل من وكيلنا إلى الأصل.
+      expect(s.headers, isNull);
+      expect(e.currentStream!.localUri, s.uri);
+      expect(e.currentStream!.url, url);
+      expect(e.currentStream!.headers, ua);
     });
 
-    test('uses the injected factory with the exact url and headers', () async {
-      final made = <YtStreamAudioSource>[];
-      final e = JustAudioEngine(
-        player: player,
-        sourceFactory: (u, h) {
-          final s = YtStreamAudioSource(u, h);
-          made.add(s);
-          return s;
-        },
-      );
+    test('switching source closes the previous one; stop keeps it; dispose closes it and the proxy', () async {
+      final e = JustAudioEngine(player: player, proxy: proxy);
       await e.setUrl(url, initialPosition: Duration.zero, headers: ua);
-      expect(made.single.url, url);
-      expect(made.single.headers, ua);
-      expect(identical(loadedSource(), made.single), isTrue);
-    });
-
-    test('switching source closes the previous one (its requests are cancelled)', () async {
-      final sources = <YtStreamAudioSource>[];
-      final e = JustAudioEngine(
-        player: player,
-        sourceFactory: (u, h) {
-          final s = YtStreamAudioSource(u, h);
-          sources.add(s);
-          return s;
-        },
-      );
-      await e.setUrl(url, initialPosition: Duration.zero, headers: ua);
-      expect(sources.single.isClosed, isFalse);
+      final first = e.currentStream!;
       await e.setUrl(url.replace(path: '/b'), initialPosition: Duration.zero, headers: ua);
-      expect(sources.first.isClosed, isTrue);
-      expect(sources.last.isClosed, isFalse);
+      final second = e.currentStream!;
+      expect(first.isClosed, isTrue);
+      expect(second.isClosed, isFalse);
+      expect(proxy.registeredCount, 1);
+      expect((loadedSource() as UriAudioSource).uri, second.localUri);
+      expect(second.localUri, isNot(first.localUri));
       await e.stop(); // stop لا يغلق (قد يُستأنف)
-      expect(sources.last.isClosed, isFalse);
+      expect(second.isClosed, isFalse);
       await e.dispose();
-      expect(sources.last.isClosed, isTrue);
+      expect(second.isClosed, isTrue);
+      expect(proxy.registeredCount, 0);
     });
 
-    test('setUrl twice after a cancelled body (real fetchRange) does not throw and loads the new source',
-        () async {
+    test('concurrent setUrl calls leave exactly one registered source', () async {
+      final e = JustAudioEngine(player: player, proxy: proxy);
+      await Future.wait([
+        e.setUrl(url, initialPosition: Duration.zero, headers: ua),
+        e.setUrl(url.replace(path: '/b'), initialPosition: Duration.zero, headers: ua),
+      ]);
+      expect(proxy.registeredCount, 1);
+      expect(e.currentStream!.url.path, '/b');
+    });
+
+    test('end to end with a real origin: bytes via the local uri; switching cuts the old request', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      final hangs = <HttpResponse>[];
+      final seenUa = <String?>[];
+      var open = 0;
       server.listen((req) async {
+        seenUa.add(req.headers.value(HttpHeaders.userAgentHeader));
         final res = req.response
           ..bufferOutput = false
           ..statusCode = 206
-          ..contentLength = 1000;
-        res.headers.set(HttpHeaders.contentRangeHeader, 'bytes 0-999/1000');
-        res.add(List<int>.filled(10, 1));
-        await res.flush();
-        hangs.add(res);
-      });
-      addTearDown(() async {
-        for (final h in hangs) {
-          unawaited(h.close().catchError((Object _) {}));
+          ..contentLength = 100000000;
+        res.headers.set(HttpHeaders.contentRangeHeader, 'bytes 0-99999999/100000000');
+        open++;
+        var gone = false;
+        unawaited(res.done.then((_) {}, onError: (Object _) {}).whenComplete(() {
+          gone = true;
+          open--;
+        }));
+        while (!gone) {
+          res.add(List<int>.filled(100, 1));
+          await Future<void>.delayed(const Duration(milliseconds: 10));
         }
-        await server.close(force: true);
       });
-      final sources = <YtStreamAudioSource>[];
-      final e = JustAudioEngine(
-        player: player,
-        sourceFactory: (u, h) {
-          final s = YtStreamAudioSource(u, h);
-          sources.add(s);
-          return s;
-        },
-      );
-      final local = Uri.parse('http://127.0.0.1:${server.port}/a');
-      await e.setUrl(local, initialPosition: Duration.zero, headers: ua);
-      // كما يفعل وكيل just_audio: يستمع ثم يلغي الاشتراك.
-      final r = await sources.first.request(0, null);
-      await r.stream.listen((_) {}).cancel();
-
-      await e.setUrl(local.replace(path: '/b'), initialPosition: Duration.zero, headers: ua);
-      expect(identical(loadedSource(), sources[1]), isTrue);
-      expect(sources.first.isClosed, isTrue);
-      final r2 = await sources[1].request(0, null);
-      await r2.stream.listen((_) {}).cancel();
-
-      await e.setUrl(local.replace(path: '/c'), initialPosition: Duration.zero, headers: ua);
-      expect(identical(loadedSource(), sources[2]), isTrue);
-      expect(sources[1].isClosed, isTrue);
-      final r3 = await sources[2].request(0, null);
-      expect(r3.contentLength, 1000);
-      final sub = r3.stream.listen((_) {});
+      addTearDown(() => server.close(force: true));
+      final e = JustAudioEngine(player: player, proxy: proxy);
+      final origin = Uri.parse('http://127.0.0.1:${server.port}/a?sig=X');
+      await e.setUrl(origin, initialPosition: Duration.zero, headers: ua);
+      final local = (loadedSource() as UriAudioSource).uri;
+      final c = HttpClient();
+      addTearDown(() => c.close(force: true));
+      final req = await c.getUrl(local);
+      req.headers.set(HttpHeaders.rangeHeader, 'bytes=0-');
+      final res = await req.close();
+      expect(res.statusCode, 206);
+      final ended = res.drain<void>().catchError((Object _) {});
+      expect(seenUa.single, ua['User-Agent']);
+      expect(open, 1);
+      await e.setUrl(origin.replace(path: '/b'), initialPosition: Duration.zero, headers: ua);
+      await ended.timeout(const Duration(seconds: 5));
+      final sw = Stopwatch()..start();
+      while (open != 0 && sw.elapsed < const Duration(seconds: 5)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(open, 0);
+      final again = await (await c.getUrl(local)).close();
+      expect(again.statusCode, 404);
+      await again.drain<void>();
       await e.dispose();
-      await sub.cancel();
     });
 
     test('durationStream comes from the player', () async {
       final ctl = StreamController<Duration?>.broadcast();
       when(() => player.durationStream).thenAnswer((_) => ctl.stream);
-      final e = JustAudioEngine(player: player);
+      final e = JustAudioEngine(player: player, proxy: proxy);
       final got = <Duration?>[];
       final sub = e.durationStream.listen(got.add);
       ctl.add(const Duration(minutes: 3));

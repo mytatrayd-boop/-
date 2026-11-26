@@ -1,6 +1,6 @@
 import 'package:just_audio/just_audio.dart';
 
-import 'yt_stream_audio_source.dart';
+import 'local_stream_proxy.dart';
 
 /// واجهة رفيعة على المشغّل الصوتي لتسهيل الاختبار بمشغّل وهمي.
 abstract interface class AudioEngine {
@@ -14,7 +14,7 @@ abstract interface class AudioEngine {
   double get speed;
   Duration get position;
 
-  /// يحمّل [url]. كل طلبات البايتات تمر عبر Dart بترويسات [headers] كما هي (D26).
+  /// يحمّل [url]. كل طلبات البايتات تمر عبر وكيلنا المحلي بترويسات [headers] كما هي (D26).
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}});
   Future<void> play();
   Future<void> pause();
@@ -25,24 +25,21 @@ abstract interface class AudioEngine {
   Future<void> dispose();
 }
 
-/// يبني مصدر الصوت لرابط وترويسات (قابل للحقن في الاختبار).
-typedef YtSourceFactory = YtStreamAudioSource Function(Uri url, Map<String, String> headers);
-
-YtStreamAudioSource defaultYtSource(Uri url, Map<String, String> headers) =>
-    YtStreamAudioSource(url, Map<String, String>.unmodifiable(headers));
-
 class JustAudioEngine implements AudioEngine {
-  // لا نستعمل AudioSource.uri: ExoPlayer المباشر فشل على الجهاز (probe 206 من
-  // Dart)، ووكيل just_audio للروابط يكتب User-Agent الخاص بـdart:io فوق
-  // ترويساتنا. بدلاً منهما YtStreamAudioSource: الوكيل المحلي يمرّر Range إلى
-  // request() ونحن نجلب بأنفسنا (D26).
-  JustAudioEngine({AudioPlayer? player, YtSourceFactory? sourceFactory})
-      : _p = player ?? AudioPlayer(),
-        _sourceFactory = sourceFactory ?? defaultYtSource;
+  // لا نعطي ExoPlayer رابط googlevideo مباشرة (فشل على الجهاز، D26)، ولا نستعمل
+  // وكيل just_audio (لا ضغط عكسي فيُنزَّل الملف كله إلى الذاكرة، ويكتب UA الخاص
+  // بـdart:io، وفيه أخطاء غير معالجة). بدلاً منهما وكيلنا [LocalStreamProxy]:
+  // ExoPlayer ← http://127.0.0.1:port/<token> ← fetchRange بترويسات العميل.
+  JustAudioEngine({AudioPlayer? player, LocalStreamProxy? proxy})
+      : _p = player ?? AudioPlayer(useProxyForRequestHeaders: false),
+        _proxy = proxy ?? LocalStreamProxy();
 
   final AudioPlayer _p;
-  final YtSourceFactory _sourceFactory;
-  YtStreamAudioSource? _current;
+  final LocalStreamProxy _proxy;
+  ProxiedStream? _current;
+
+  /// المصدر المحمَّل حالياً في الوكيل (للاختبار والتشخيص).
+  ProxiedStream? get currentStream => _current;
 
   @override
   Stream<PlaybackEvent> get playbackEventStream => _p.playbackEventStream;
@@ -61,10 +58,13 @@ class JustAudioEngine implements AudioEngine {
 
   @override
   Future<void> setUrl(Uri url, {required Duration initialPosition, Map<String, String> headers = const {}}) async {
-    _closeCurrent(); // يُلغي طلبات المصدر السابق
-    final source = _sourceFactory(url, headers);
-    _current = source;
-    await _p.setAudioSource(source, initialPosition: initialPosition);
+    await _proxy.start();
+    // بعد await: الأحدث يغلق ما قبله، فلا يتسرّب مصدر عند setUrl متزامن.
+    _closeCurrent(); // يقطع طلبات المصدر السابق ويُزيل مساره
+    final stream = _proxy.register(url, headers);
+    _current = stream;
+    // بلا headers: لا يُفعَّل وكيل just_audio؛ UA العميل يرسله وكيلنا إلى الأصل.
+    await _p.setAudioSource(AudioSource.uri(stream.localUri), initialPosition: initialPosition);
   }
 
   void _closeCurrent() {
@@ -93,6 +93,7 @@ class JustAudioEngine implements AudioEngine {
   @override
   Future<void> dispose() async {
     _closeCurrent();
+    await _proxy.close();
     await _p.dispose();
   }
 }

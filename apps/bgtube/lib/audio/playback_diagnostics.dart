@@ -18,6 +18,8 @@ Future<String> httpStreamProbe(
     final r = await fetch(url, headers, start: 0, end: 2).timeout(timeout);
     r.cancel();
     return 'probe HTTP ${r.statusCode}';
+  } on RangeFetchNetworkException catch (e) {
+    return 'probe ${e.cause}';
   } catch (e) {
     return 'probe ${e.runtimeType}';
   }

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'socket_buffers.dart';
+
 /// نتيجة طلب Range واحد. [body] لا يرمي أبداً: أي خطأ شبكة أو انقطاع أو خمول
 /// يُنهيه (done) فلا يعلَق القارئ. [cancel] يقطع الاتصال فوراً.
 class RangeFetchResult {
@@ -27,7 +29,7 @@ class RangeFetchResult {
   bool get ok => statusCode == HttpStatus.ok || statusCode == HttpStatus.partialContent;
 }
 
-/// الجالب الوحيد للبايتات: يستعمله المشغّل (YtStreamAudioSource) والفحص معاً.
+/// الجالب الوحيد للبايتات: يستعمله المشغّل (عبر LocalStreamProxy) والفحص معاً.
 const RangeFetch defaultRangeFetch = fetchRange;
 
 typedef RangeFetch = Future<RangeFetchResult> Function(
@@ -37,10 +39,24 @@ typedef RangeFetch = Future<RangeFetchResult> Function(
   int? end,
 });
 
+/// خطأ شبكة قبل وصول الرد. لا يحمل الرابط الموقّع ولا رسالة الخطأ الأصلية
+/// (HttpException وغيره يضمّنان الرابط في نصّهما)، بل نوع السبب فقط.
+class RangeFetchNetworkException implements Exception {
+  const RangeFetchNetworkException(this.cause);
+
+  /// نوع الخطأ الأصلي فقط، مثل `SocketException` أو `TimeoutException`.
+  final String cause;
+  @override
+  String toString() => 'RangeFetchNetworkException($cause)';
+}
+
 /// يجلب [start, end) (end حصري؛ null = حتى النهاية) عبر HttpClient في Dart
 /// بترويساتنا كما هي: `userAgent = null` كي لا يضيف dart:io "Dart/x (dart:io)"
 /// فوق User-Agent العميل (D26)، وبلا ضغط كي تبقى إزاحات البايتات صحيحة.
-/// أخطاء الاتصال قبل الرد تُرمى (SocketException/HandshakeException/TimeoutException).
+/// أخطاء الاتصال قبل الرد تُرمى [RangeFetchNetworkException] (بلا رابط).
+///
+/// الجسم يحترم الضغط العكسي: إيقاف القارئ مؤقتاً يوقف القراءة من المقبس فيتوقف
+/// الأصل عن الإرسال، ومهلة الخمول لا تُحسب أثناء الإيقاف (القارئ هو البطيء لا الأصل).
 Future<RangeFetchResult> fetchRange(
   Uri url,
   Map<String, String> headers, {
@@ -49,8 +65,14 @@ Future<RangeFetchResult> fetchRange(
   HttpClient Function()? clientFactory,
   Duration timeout = const Duration(seconds: 15),
   Duration idleTimeout = const Duration(seconds: 10),
+  int? receiveBufferBytes = socketBufferBytes,
 }) async {
-  final client = (clientFactory ?? HttpClient.new)()
+  final client = (clientFactory ?? HttpClient.new)();
+  // مخزن استقبال صغير: إيقاف القارئ يوقف الأصل بعد بضع مئات KB لا عشرات MB.
+  if (receiveBufferBytes != null) {
+    client.connectionFactory = limitedConnectionFactory(receiveBytes: receiveBufferBytes);
+  }
+  client
     ..userAgent = null
     ..autoUncompress = false
     ..connectionTimeout = timeout;
@@ -127,8 +149,15 @@ Future<RangeFetchResult> fetchRange(
           cancelOnError: true,
         );
       },
-      onPause: () => sub?.pause(),
-      onResume: () => sub?.resume(),
+      onPause: () {
+        idle?.cancel();
+        sub?.pause();
+      },
+      onResume: () {
+        if (closed) return;
+        armIdle();
+        sub?.resume();
+      },
       onCancel: finish,
     );
 
@@ -152,9 +181,9 @@ Future<RangeFetchResult> fetchRange(
         }
       },
     );
-  } catch (_) {
+  } catch (e) {
     client.close(force: true);
-    rethrow;
+    throw RangeFetchNetworkException(e.runtimeType.toString());
   }
 }
 

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:bgtube/audio/playback_diagnostics.dart';
 import 'package:bgtube/audio/range_fetcher.dart';
-import 'package:bgtube/audio/yt_stream_audio_source.dart';
+import 'package:bgtube/audio/local_stream_proxy.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -70,8 +70,7 @@ void main() {
     });
 
     test('player source and probe share the same fetch function by default', () {
-      final src = YtStreamAudioSource(Uri.parse('https://x/v'), const {});
-      expect(identical(src.fetcher, defaultRangeFetch), isTrue);
+      expect(identical(LocalStreamProxy().fetcher, defaultRangeFetch), isTrue);
       expect(identical(defaultRangeFetch, fetchRange), isTrue);
     });
 
@@ -79,6 +78,12 @@ void main() {
       Future<RangeFetchResult> fetch(Uri u, Map<String, String> h, {int? start, int? end}) async =>
           throw const SocketException('down');
       expect(await httpStreamProbe(Uri.parse('https://x/v'), const {}, fetch: fetch), 'probe SocketException');
+    });
+
+    test('wrapped network error reports its cause type only', () async {
+      Future<RangeFetchResult> fetch(Uri u, Map<String, String> h, {int? start, int? end}) async =>
+          throw const RangeFetchNetworkException('HandshakeException');
+      expect(await httpStreamProbe(Uri.parse('https://x/v'), const {}, fetch: fetch), 'probe HandshakeException');
     });
   });
 }
