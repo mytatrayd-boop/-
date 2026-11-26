@@ -107,10 +107,46 @@ void main() {
       }
     });
 
+    test('only main.dart (and the future API layer) imports data/auth', () {
+      for (final f in dartFiles('lib')) {
+        if (f.path.contains('data/auth') ||
+            f.path.contains('data/youtube_api') ||
+            f.path.endsWith('lib/main.dart')) {
+          continue;
+        }
+        expect(f.readAsStringSync(), isNot(contains('data/auth')), reason: f.path);
+      }
+    });
+
+    test('only data/auth imports google_sign_in and flutter_secure_storage', () {
+      for (final f in dartFiles('lib')) {
+        if (f.path.contains('data/auth')) continue;
+        final src = f.readAsStringSync();
+        expect(src, isNot(contains('package:google_sign_in')), reason: f.path);
+        expect(src, isNot(contains('package:flutter_secure_storage')), reason: f.path);
+      }
+    });
+
+    test('audio playback layer does not know the account', () {
+      for (final f in [
+        ...dartFiles('lib/audio'),
+        File('lib/domain/ports/audio_source_resolver.dart'),
+        File('lib/domain/ports/playback_controller.dart'),
+      ]) {
+        final src = f.readAsStringSync();
+        expect(src, isNot(matches(RegExp(r"import\s+'[^']*auth"))), reason: f.path);
+        expect(src, isNot(contains('AuthService')), reason: f.path);
+        expect(src, isNot(contains('accessToken')), reason: f.path);
+      }
+    });
+
     test('extractor does not depend on auth or account code', () {
       for (final f in dartFiles('lib/data/extractor')) {
         final src = f.readAsStringSync();
         expect(src, isNot(contains('/auth/')), reason: f.path);
+        expect(src, isNot(contains('auth_service')), reason: f.path);
+        expect(src, isNot(contains('AuthService')), reason: f.path);
+        expect(src, isNot(contains('accessToken')), reason: f.path);
         expect(src, isNot(contains('google_sign_in')), reason: f.path);
         expect(src, isNot(contains('flutter_secure_storage')), reason: f.path);
       }
